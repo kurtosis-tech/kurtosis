@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	
+	"github.com/docker/docker/client"
 )
 
 func main() {
