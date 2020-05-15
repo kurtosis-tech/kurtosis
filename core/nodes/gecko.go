@@ -19,6 +19,8 @@ import (
 	"github.com/gmarchetti/kurtosis/utils"
 )
 
+
+// Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
 type GeckoNode struct {
 	GeckoImageName, HttpPortOnHost, StakingPortOnHost string
 	Context context.Context
@@ -30,6 +32,7 @@ func (node *GeckoNode) GetRespID() string {
 	return node.respID
 }
 
+// Creates a Docker container for the Gecko Node.
 func (node *GeckoNode) Create() {
 	nodeConfig := utils.GetBasicGeckoNodeConfig(node.GeckoImageName)
 	nodeToHostConfig:= utils.GetNodeToHostConfig(node.HttpPortOnHost, node.StakingPortOnHost)
@@ -40,12 +43,14 @@ func (node *GeckoNode) Create() {
 	}
 }
 
+// Runs the Docker container with default options.
 func (node *GeckoNode) Run() {
 	if err := node.Client.ContainerStart(node.Context, node.respID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
 }
 
+// Waits on the Docker container, and if it exits, exposes logs to stdout.
 func (node *GeckoNode) WaitAndGrabLogsOnError() {
 	statusCh, errCh := node.Client.ContainerWait(node.Context, node.respID, container.WaitConditionNotRunning)
 

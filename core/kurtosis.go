@@ -21,13 +21,15 @@ func main() {
 	)
 	flag.Parse()
 	
-	// Initialize a Docker client and panic if any error occurs in the process.
+	// Initialize default environment context.
 	ctx := context.Background()
+	// Initialize a Docker client and panic if any error occurs in the process.
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
+	// Create a gecko node.
 	geckoNode := &nodes.GeckoNode{
 		GeckoImageName: *geckoImageNameArg,
 		HttpPortOnHost: "9650",
