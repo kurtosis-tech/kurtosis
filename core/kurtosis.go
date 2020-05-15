@@ -4,12 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 
 	"github.com/gmarchetti/kurtosis/nodes"
 )
@@ -26,41 +22,24 @@ func main() {
 	flag.Parse()
 	
 	// Initialize a Docker client and panic if any error occurs in the process.
+	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
-
 	geckoNode := &nodes.GeckoNode{
 		GeckoImageName: *geckoImageNameArg,
 		HttpPortOnHost: "9650",
 		StakingPortOnHost: "9651",
+		Context: ctx,
+		Client: cli,
 	}
 
 	
 	// Create the container based on the configurations, but don't start it yet.
-	ctx := context.Background()
-	geckoNode.Create(ctx, cli)
-	geckoNode.Run(ctx, cli)
-
-	// Wait on the container to return
-	statusCh, errCh := cli.ContainerWait(ctx, geckoNode.GetRespID(), container.WaitConditionNotRunning)
-	select {
-		case err := <-errCh:
-			if err != nil {
-				panic(err)
-			}
-		case <-statusCh:
-	}
-
-	// Once container has returned, grab the logs.
-	out, err := cli.ContainerLogs(ctx, geckoNode.GetRespID(), types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		panic(err)
-	}
-
-	// Copy the logs to stdout.
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
+	geckoNode.Create()
+	geckoNode.Run()
+	geckoNode.WaitAndGrabLogsOnError()
 }
