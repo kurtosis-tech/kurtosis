@@ -15,6 +15,31 @@ const DEFAULT_GECKO_HTTP_PORT = nat.Port("9650/tcp")
 const DEFAULT_GECKO_STAKING_PORT = nat.Port("9651/tcp")
 const LOCAL_HOST_IP = "0.0.0.0"
 
+/*type GeckoNode struct {
+	GeckoImageName, HttpPortOnHost, StakingPortOnHost string
+	respID string
+}
+
+func (node *GeckoNode) Create(ctx context.Context, cli *client.Client) {
+	nodeConfig := getBasicGeckoNodeConfig(node.GeckoImageName)
+	nodeToHostConfig:= getNodeToHostConfig(node.HttpPortOnHost, node.StakingPortOnHost)
+	resp, err := cli.ContainerCreate(ctx, nodeConfig, nodeToHostConfig, nil, "")
+	node.respID = resp.ID
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (node *GeckoNode) Run(ctx context.Context, cli *client.Client) {
+	if err := cli.ContainerStart(ctx, node.respID, types.ContainerStartOptions{}); err != nil {
+		panic(err)
+	}
+}
+
+func (node *GeckoNode) GetRespID() string {
+	return node.respID
+}*/
+
 // Creates a basic Gecko Node Docker container configuration
 func GetBasicGeckoNodeConfig(nodeImageName string) *container.Config {
 	var geckoStartCommand = [5]string{
