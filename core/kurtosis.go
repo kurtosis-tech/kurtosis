@@ -21,6 +21,39 @@ var GECKO_START_COMMAND = [5]string{
 	"--staking-tls-enabled=false",
 }
 
+func getNodeConfig(nodeImageName string, nodeStartCommand [5]string) *container.Config {
+	nodeConfig := &container.Config{
+		Image: nodeImageName,
+		ExposedPorts: nat.PortSet{
+			"9650/tcp": struct{}{},
+			"9651/tcp": struct{}{},
+		},
+		Cmd:   nodeStartCommand[:len(nodeStartCommand)],
+		Tty: false,
+	}
+	return nodeConfig
+}
+
+func getNodeToHostConfig(hostHttpPort string, hostStakingPort string) *container.HostConfig {
+	nodeToHostConfig := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			"9650/tcp": []nat.PortBinding{
+				{
+					HostIP: "0.0.0.0",
+					HostPort: hostHttpPort,
+				},
+			},
+			"9651/tcp": []nat.PortBinding{
+				{
+					HostIP: "0.0.0.0",
+					HostPort: hostStakingPort,
+				},
+			},
+		},
+	}
+	return nodeToHostConfig
+}
+
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
 
@@ -42,34 +75,10 @@ func main() {
 
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running!")
 
-	config := &container.Config{
-		Image: GECKO_IMAGE_NAME,
-		ExposedPorts: nat.PortSet{
-			"9650/tcp": struct{}{},
-			"9651/tcp": struct{}{},
-		},
-		Cmd:   GECKO_START_COMMAND[:5],
-		Tty: false,
-	}
-	
-	hostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"9650/tcp": []nat.PortBinding{
-				{
-					HostIP: "0.0.0.0",
-					HostPort: "9650",
-				},
-			},
-			"9651/tcp": []nat.PortBinding{
-				{
-					HostIP: "0.0.0.0",
-					HostPort: "9651",
-				},
-			},
-		},
-	}
+	nodeConfig := getNodeConfig(GECKO_IMAGE_NAME, GECKO_START_COMMAND)
+	nodeToHostConfig := getNodeToHostConfig("9650", "9651")
 
-	resp, err := cli.ContainerCreate(ctx, config, hostConfig, nil, "")
+	resp, err := cli.ContainerCreate(ctx, nodeConfig, nodeToHostConfig, nil, "")
 	if err != nil {
 		panic(err)
 	}
