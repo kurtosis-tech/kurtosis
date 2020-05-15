@@ -9,7 +9,7 @@ Docker Engine running in your environment.
 # Install
 
 Clone this repository and cd into it.  
-Run `go install github.com/gmarchetti/kurtosis`. This will build the main binary and put it on your path.  
+Run `go install`. This will build the main binary and put it on your path.  
 
 # Usage
 
