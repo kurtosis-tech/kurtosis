@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
 
 	// Creates a configuration object representing the container itself, based on a prebuilt image.
-	nodeConfig := utils.GetGeckoNodeConfig(*geckoImageNameArg)
+	nodeConfig := utils.GetBasicGeckoNodeConfig(*geckoImageNameArg)
 
 	// Creates a configuration object representing the mappings between the container and the host.
 	nodeToHostConfig := utils.GetNodeToHostConfig("9650", "9651")
