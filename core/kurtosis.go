@@ -13,7 +13,7 @@ import (
 	"github.com/gmarchetti/kurtosis/utils"
 )
 
-var GECKO_IMAGE_NAME = "gecko-f290f73"
+const GECKO_IMAGE_NAME = "gecko-f290f73"
 var GECKO_START_COMMAND = [5]string{
 	"/gecko/build/ava",
 	"--public-ip=127.0.0.1",
@@ -26,6 +26,7 @@ func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
 
 	ctx := context.Background()
+	
 	fmt.Println("Here are your containers that are currently running:")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
