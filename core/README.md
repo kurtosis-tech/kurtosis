@@ -15,6 +15,8 @@ Run `go install`. This will build the main binary and put it on your path.
 
 Run `kurtosis -help` or `kurtosis -h` to see command line usage.
 
+Example: `kurtosis -gecko-image-name gecko-f290f73`
+
 # Architecture
 
 Kurtosis runs a prebuilt Gecko image, which must already exist in your Docker engine.  
