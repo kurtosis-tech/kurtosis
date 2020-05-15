@@ -9,7 +9,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/docker/go-connections/nat"
+
+	"github.com/gmarchetti/kurtosis/utils"
 )
 
 var GECKO_IMAGE_NAME = "gecko-f290f73"
@@ -19,39 +20,6 @@ var GECKO_START_COMMAND = [5]string{
 	"--snow-sample-size=1",
 	"--snow-quorum-size=1",
 	"--staking-tls-enabled=false",
-}
-
-func getNodeConfig(nodeImageName string, nodeStartCommand [5]string) *container.Config {
-	nodeConfig := &container.Config{
-		Image: nodeImageName,
-		ExposedPorts: nat.PortSet{
-			"9650/tcp": struct{}{},
-			"9651/tcp": struct{}{},
-		},
-		Cmd:   nodeStartCommand[:len(nodeStartCommand)],
-		Tty: false,
-	}
-	return nodeConfig
-}
-
-func getNodeToHostConfig(hostHttpPort string, hostStakingPort string) *container.HostConfig {
-	nodeToHostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			"9650/tcp": []nat.PortBinding{
-				{
-					HostIP: "0.0.0.0",
-					HostPort: hostHttpPort,
-				},
-			},
-			"9651/tcp": []nat.PortBinding{
-				{
-					HostIP: "0.0.0.0",
-					HostPort: hostStakingPort,
-				},
-			},
-		},
-	}
-	return nodeToHostConfig
 }
 
 func main() {
@@ -75,8 +43,8 @@ func main() {
 
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running!")
 
-	nodeConfig := getNodeConfig(GECKO_IMAGE_NAME, GECKO_START_COMMAND)
-	nodeToHostConfig := getNodeToHostConfig("9650", "9651")
+	nodeConfig := utils.GetNodeConfig(GECKO_IMAGE_NAME, GECKO_START_COMMAND)
+	nodeToHostConfig := utils.GetNodeToHostConfig("9650", "9651")
 
 	resp, err := cli.ContainerCreate(ctx, nodeConfig, nodeToHostConfig, nil, "")
 	if err != nil {
