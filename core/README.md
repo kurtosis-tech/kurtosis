@@ -3,7 +3,7 @@ E2E Testing Harness for Ava
 
 # Requirements
 
-Golang version 1.13.x. 
+Golang version 1.13.x.   
 Docker Engine running in your environment.
 
 # Install
