@@ -9,12 +9,12 @@ Docker Engine running in your environment.
 # Install
 
 Clone this repository and cd into it.  
-Run `go install`. This will build the main binary and put it on your path.  
+Run `cd ava_initalizer; go build`. This will build the main binary and leave it in the ava_initializer folder.
 
 # Usage
 
-Run `kurtosis -help` or `kurtosis -h` to see command line usage.  
-Example: `kurtosis -gecko-image-name gecko-f290f73`
+Run `./ava_initalizer -help` or `./ava_initalizer -h` to see command line usage.  
+Example: `./ava_initalizer -gecko-image-name gecko-f290f73`
 
 # Architecture
 
