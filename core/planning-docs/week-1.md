@@ -1,19 +1,23 @@
+* [ ] BasicTestSuiteRunner that runs a basic image
+
+
+
+
 Kurtosis Common API
 -------------------
-* [ ] POGO class ServiceContainer with Constructor(String containerId)
-* [ ] POGO class LivenessRequest to represent the params needed to make a request to a service to check its liveness, containing:
+* [x] POGO class ServiceContainer with Constructor(String containerId)
+* [x] POGO class JsonRpcLivenessRequest to represent the params needed to make a request to a service to check its liveness, containing:
     * Endpoint to query
     * Method
     * JSON RPC version to use
     * Params
-* [ ] Abstract class `JsonRpcServiceConfig<P extends Enum>`, representing the Docker config specific to a container that will a) wait for an optional dependency JSON RPC service to start and b) run a service that will start serving JSON RPC, listening on a set of ports. P = an enum of the ports used by the service outside HTTP
-    * [ ] Abstract method GetDockerImage() -> String
-    * [ ] Abstract method GetHttpPort() -> int to inform the user of this class what port the service config will be listening on inside the container
-    * [ ] Abstract method GetOtherPorts() -> `Map<P, int>` to inform the user of this class what other ports the service will be listening on inside the container
-    * [ ] Abstract method GetStartCommand(`Map<Pair<String, int>`, LivenessRequest> dependencies) that should return the command line call needed to start this Docker image, with dependencies possibly empty if this node has no dependencies
+* [x] Abstract class `JsonRpcServiceConfig<P extends Enum>`, representing the Docker config specific to a container that will a) wait for an optional dependency JSON RPC service to start and b) run a service that will start serving JSON RPC, listening on a set of ports. P = an enum of the ports used by the service outside HTTP
+    * [x] Abstract method GetDockerImage() -> String
+    * [x] Abstract method GetHttpPort() -> int to inform the user of this class what port the service config will be listening on inside the container
+    * [x] Abstract method GetOtherPorts() -> `Map<P, int>` to inform the user of this class what other ports the service will be listening on inside the container
+    * [x] Abstract method GetStartCommand(`Map<Pair<String, int>, JsonRpcLivenessRequest>` dependencies) that should return the command line call needed to start this Docker image, with dependencies possibly empty if this node has no dependencies
         * NOTE: if necessary and the command has dependencies, this command should use the information about dependencies to include an image-specific busy loop for checking if the boot nodes are up first
-    * [ ] Abstract method GetLivenessRequest() -> LivenessRequest to inform users of this class what request they should make to the HTTP port to verify liveness
-    * [ ] Method Initialize(Docker docker) -> ServiceContainer which instantiates a service using the methods on this config
+    * [x] Abstract method GetLivenessRequest() -> JsonRpcLivenessRequest to inform users of this class what request they should make to the HTTP port to verify liveness
 * [NOT THIS WEEK] Class HostPortUsageTracker, a very simple and constantly-running service that keeps track of what ports are already used on the host with:
     * Constructor(int acceptablePortStart, int acceptablePortEnd) that stores the params initializes a new `Set<int>` of usedPorts
     * Method GetNextFreePort() -> int, which maybe checks that the port it thinks is free is actually free before returning it?
@@ -21,7 +25,7 @@ Kurtosis Common API
     * `Map<int, String>` which maps serviceId -> IP addresses inside Docker's network
     * `Map<int, int>` mapping serviceId -> http port
     * `Map<int, Map<? extends Enum, int>>` mapping serviceId -> custom ports
-    * `Map<Pair<String, int>, LivenessRequest>` containing the final liveness requests that need to be monitored for the network to be guaranteed alive (which are all the leaves of the config's DAG)
+    * `Map<Pair<String, int>, JsonRpcLivenessRequest>` containing the final liveness requests that need to be monitored for the network to be guaranteed alive (which are all the leaves of the config's DAG)
     * ...and getters....
 * [ ] Class JsonRpcServiceNetworkConfig with:
     * [ ] Builder with:
@@ -53,7 +57,7 @@ Ava Impl of Commons API
     * [ ] Method GetJsonRpcPort() returns 9650
     * [ ] Method GetOtherPorts() returns a map of STAKING_PORT -> 9651
     * [ ] Method GetStartCommand that uses the constructor params to return a command, runnable by the Docker container that Gecko is based on, to check the liveness of the dependencies using the given liveness requests (likely a Bash while loop)
-    * [ ] Method GetLivenessRequest() returns a LivenessRequest representing the getCurrentValidators API call
+    * [ ] Method GetLivenessRequest() returns a JsonRpcLivenessRequest representing the getCurrentValidators API call
 
 ### Ava Network Implementations
 TODO Doesn't need to be exactly like this
@@ -86,8 +90,8 @@ The idea here is that the clients wrap this initializer in a very thin library o
 * [ ] Class TestSuiteRunner that that provides a class, meant to be embedded in a CLI, for running the tests
     * [ ] Constructor(String testControllerDockerImageRef, `Map<String, TestNetworkConfigProvider>` tests)
     * [ ] Method RunTests(DockerSdk docker, List<String> testIds, int parallelism) that:
-        1. Retrieves the given tests from the map
-        1. Spins up threads = parallelism, each of which:
+        1. [ ] Retrieves the given tests from the map
+        1. [ ] Spins up threads = parallelism, each of which:
             1. Pulls the corresponding TestNetworkConfigProvider for the test being run
             2. Runs TestNetworkConfigProvider.GetNetworkConfig().Initialize(docker) to create the cluster and get back a JsonRpcNetwork object with its dimensions
             3. Serializes the JsonRpcNetwork defining the test network's state to YAML
