@@ -8,12 +8,16 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	"github.com/gmarchetti/kurtosis/commons"
 	"github.com/gmarchetti/kurtosis/nodes"
 	"os"
+	"strconv"
 )
 
+// TODO replace these with FreeHostPortProvider in the future
 const DEFAULT_GECKO_HTTP_PORT = nat.Port("9650/tcp")
 const DEFAULT_GECKO_STAKING_PORT = nat.Port("9651/tcp")
+
 const LOCAL_HOST_IP = "0.0.0.0"
 
 type TestSuiteRunner struct {
@@ -45,18 +49,16 @@ func (testSuiteRunner TestSuiteRunner) RunTests() () {
 		panic(err)
 	}
 
-	geckoNode := &nodes.GeckoNode{
-		GeckoImageName: testSuiteRunner.imageName,
-		HttpPortOnHost: "9650",
-		StakingPortOnHost: "9651",
-	}
-
+	// TODO set up non-null nodes (indicating that they're not boot nodes)
+	bootNodes := make(map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest)
+	geckoNodeConfig := nodes.NewGeckoServiceConfig(testSuiteRunner.imageName, bootNodes)
 
 	// Create the container based on the configurations, but don't start it yet.
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
-	nodeConfig := getBasicGeckoNodeConfig(geckoNode.GeckoImageName)
-	nodeToHostConfig:= getNodeToHostConfig(geckoNode.HttpPortOnHost, geckoNode.StakingPortOnHost)
-	resp, err := dockerClient.ContainerCreate(dockerCtx, nodeConfig, nodeToHostConfig, nil, "")
+	containerConfigPtr := getContainerCfgFromServiceCfg(*geckoNodeConfig)
+
+	containerHostConfigPtr := getContainerHostConfig(geckoNodeConfig)
+	resp, err := dockerClient.ContainerCreate(dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
 	containerId := resp.ID
 	if err != nil {
 		panic(err)
@@ -67,57 +69,69 @@ func (testSuiteRunner TestSuiteRunner) RunTests() () {
 
 	// TODO add a timeout here
 	waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
+
+	// TODO gracefully shut down all the Docker containers we started here
 }
 
 // ======================== Private helper functions =====================================
 
-// Creates a basic Gecko Node Docker container configuration
-func getBasicGeckoNodeConfig(nodeImageName string) *container.Config {
-	var geckoStartCommand = [5]string{
-		"/gecko/build/ava",
-		"--public-ip=127.0.0.1",
-		"--snow-sample-size=1",
-		"--snow-quorum-size=1",
-		"--staking-tls-enabled=false",
-	}
-	return getGeckoNodeConfig(nodeImageName, geckoStartCommand)
-}
-
+// TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func getGeckoNodeConfig(nodeImageName string, nodeStartCommand [5]string) *container.Config {
-	nodeConfig := &container.Config{
-		Image: nodeImageName,
-		ExposedPorts: nat.PortSet{
-			DEFAULT_GECKO_HTTP_PORT: struct{}{},
-			DEFAULT_GECKO_STAKING_PORT: struct{}{},
-		},
-		Cmd:   nodeStartCommand[:len(nodeStartCommand)],
+func getContainerCfgFromServiceCfg(serviceConfig commons.JsonRpcServiceConfig) *container.Config {
+	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
+	if err != nil {
+		panic("Could not parse port int - this is VERY weird")
+	}
+
+	portSet := nat.PortSet{
+		jsonRpcPort: struct{}{},
+	}
+	for _, port := range serviceConfig.GetOtherPorts() {
+		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
+		if err != nil {
+			panic("Could not parse port int - this is VERY weird")
+		}
+		portSet[otherPort] = struct{}{}
+	}
+
+	nodeConfigPtr := &container.Config{
+		Image: serviceConfig.GetDockerImage(),
+		// TODO allow modifying of protocol at some point
+		ExposedPorts: portSet,
+		Cmd: serviceConfig.GetContainerStartCommand(),
 		Tty: false,
 	}
-	return nodeConfig
+	return nodeConfigPtr
 }
 
-// Creates a Docker-Container-To-Host Port mapping, defining how a Container's HTTP and Staking ports
-// are exposed on Host ports.
-func getNodeToHostConfig(hostHttpPort string, hostStakingPort string) *container.HostConfig {
-	nodeToHostConfig := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			DEFAULT_GECKO_HTTP_PORT: []nat.PortBinding{
-				{
-					HostIP: LOCAL_HOST_IP,
-					HostPort: hostHttpPort,
-				},
-			},
-			DEFAULT_GECKO_STAKING_PORT: []nat.PortBinding{
-				{
-					HostIP: LOCAL_HOST_IP,
-					HostPort: hostStakingPort,
-				},
-			},
+// Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
+// mapped to the host ports
+func getContainerHostConfig(serviceConfig commons.JsonRpcServiceConfig) *container.HostConfig {
+	// TODO right nwo this is hardcoded - replace these with FreeHostPortProvider in the future, so we can have
+	//  arbitrary service-specific ports!
+	jsonRpcPortBinding := []nat.PortBinding{
+		{
+			HostIP: LOCAL_HOST_IP,
+			HostPort: strconv.Itoa(serviceConfig.GetJsonRpcPort()),
 		},
 	}
-	return nodeToHostConfig
+	// TODO this shouldn't be Ava-specific here
+	stakingPortInt := strconv.Itoa(serviceConfig.GetOtherPorts()[nodes.STAKING_PORT_ID])
+	stakingPortBinding := []nat.PortBinding{
+		{
+			HostIP: LOCAL_HOST_IP,
+			HostPort: stakingPortInt,
+		},
+	}
+
+	containerHostConfigPtr := &container.HostConfig{
+		PortBindings: nat.PortMap{
+			DEFAULT_GECKO_HTTP_PORT: jsonRpcPortBinding,
+			DEFAULT_GECKO_STAKING_PORT: stakingPortBinding,
+		},
+	}
+	return containerHostConfigPtr
 }
 
 func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Client, containerId string) {
