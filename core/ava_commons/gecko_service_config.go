@@ -4,14 +4,13 @@ Contains types to represent nodes contained in Docker containers.
 
 */
 
-package nodes
+package ava_commons
 
 import "github.com/gmarchetti/kurtosis/commons"
 
-// TODO make this an implementation of JsonRpcServiceConfig
 // Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
 type GeckoServiceConfig struct {
-	// Will be nil if this node should be a boot node
+	// Will be empty if this node should be a boot node
 	bootNodes      map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest
 	geckoImageName string
 }

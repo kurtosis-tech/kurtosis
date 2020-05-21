@@ -4,6 +4,7 @@ package commons
 
 type JsonRpcServiceSocket struct {
 	IPAddress string
+	// TODO probably better to make this nat.Port type
 	Port int
 }
 
