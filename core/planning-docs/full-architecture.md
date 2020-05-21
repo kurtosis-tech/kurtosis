@@ -39,24 +39,22 @@ This is a library that is included by both the test initializer and the test con
 
 This might be able to be replaced by either Docker Compose templating, or Golang docker-compose bindings... but [the only ones I've found are deprecated](https://github.com/callicoder/go-docker-compose).
 
-* [ ] POGO class ServiceContainer with Constructor(String containerId)
-* [ ] POGO class LivenessRequest to represent the params needed to make a request to a service to check its liveness, containing:
+* [x] POGO class LivenessRequest to represent the params needed to make a request to a service to check its liveness, containing:
     * Endpoint to query
     * Method
     * JSON RPC version to use
     * Params
-* [ ] Abstract class `JsonRpcServiceConfig<P extends Enum>`, representing the Docker config specific to a container that will a) wait for an optional dependency JSON RPC service to start and b) run a service that will start serving JSON RPC, listening on a set of ports. P = an enum of the ports used by the service outside HTTP
-    * [ ] Abstract method GetDockerImage() -> String
-    * [ ] Abstract method GetHttpPort() -> int to inform the user of this class what port the service config will be listening on inside the container
-    * [ ] Abstract method GetOtherPorts() -> `Map<P, int>` to inform the user of this class what other ports the service will be listening on inside the container
-    * [ ] Abstract method GetStartCommand(`Map<Pair<String, int>`, LivenessRequest> dependencies) that should return the command line call needed to start this Docker image, with dependencies possibly empty if this node has no dependencies
+* [x] Abstract class `JsonRpcServiceConfig<P extends Enum>`, representing the Docker config specific to a container that will a) wait for an optional dependency JSON RPC service to start and b) run a service that will start serving JSON RPC, listening on a set of ports. P = an enum of the ports used by the service outside HTTP
+    * [x] Abstract method GetDockerImage() -> String
+    * [x] Abstract method GetHttpPort() -> int to inform the user of this class what port the service config will be listening on inside the container
+    * [x] Abstract method GetOtherPorts() -> `Map<P, int>` to inform the user of this class what other ports the service will be listening on inside the container
+    * [x] Abstract method GetStartCommand(`Map<Pair<String, int>`, LivenessRequest> dependencies) that should return the command line call needed to start this Docker image, with dependencies possibly empty if this node has no dependencies
         * NOTE: if necessary and the command has dependencies, this command should use the information about dependencies to include an image-specific busy loop for checking if the boot nodes are up first
-    * [ ] Abstract method GetLivenessRequest() -> LivenessRequest to inform users of this class what request they should make to the HTTP port to verify liveness
-    * [ ] Method Initialize(Docker docker) -> ServiceContainer which instantiates a service using the methods on this config
+    * [x] Abstract method GetLivenessRequest() -> LivenessRequest to inform users of this class what request they should make to the HTTP port to verify liveness
 * [ ] Class HostPortUsageTracker, a very simple and constantly-running service that keeps track of what ports are already used on the host with:
     * Constructor(int acceptablePortStart, int acceptablePortEnd) that stores the params initializes a new `Set<int>` of usedPorts
     * Method GetNextFreePort() -> int, which maybe checks that the port it thinks is free is actually free before returning it?
-* [ ] Class JsonRpcServiceNetwork, a POGO that stores:
+* [x] Class JsonRpcServiceNetwork, a POGO that stores:
     * `Map<int, String>` which maps serviceId -> IP addresses inside Docker's network
     * `Map<int, int>` mapping serviceId -> http port
     * `Map<int, Map<? extends Enum, int>>` mapping serviceId -> custom ports
@@ -71,7 +69,7 @@ This might be able to be replaced by either Docker Compose templating, or Golang
             3. Stores the JsonRpcServiceConfig in a `Map<int, JsonRpcServiceConfig>` nodes
             4. Stores the dependencies in a DAG
         * NOTE: we'll create an AddLink call later, that will allow us to modify the network configuration of nodes
-    * [ ] Method Initialize(DockerSdk docker, HostPortUsageTracker tracker) -> `Map<int, Pair<String, int>>` which:
+    * [x] Method Initialize(DockerSdk docker, HostPortUsageTracker tracker) -> `Map<int, Pair<String, int>>` which:
         1. Create new Docker network with networkID
         2. TODO make any specific networking customizations (e.g. latency between nodes)
         3. Start root nodes of DAG, using the port tracker to map host ports to ports the services are listening on in their containers
@@ -82,7 +80,7 @@ This might be able to be replaced by either Docker Compose templating, or Golang
 NOTE: THE BELOW IS UGLY AND NEEDS TO BE CHANGED! The basic idea is, it's the bridge between the initializer saying "this is the type of Docker container cluster I initialized" and the test controller going "gotcha, I recognize this type of cluster so I know what class to wrap this in". I'm guessing the initializer will pass this information to the test controller by serializing the JsonRpcServiceNetwork to file and mounting it on the test controller's container.
 
 * [ ] Interface TestNetworkConfigProvider with:
-    * [ ] Method GetConfig() -> JsonRpcServiceNetworkConfig that returns the config used to create the Docker containers
+    * [x] Method GetConfig() -> JsonRpcServiceNetworkConfig that returns the config used to create the Docker containers
     * [ ] Method GetType() -> `<E extends Enum>`
 * [ ] Interface `TestNetworkDeserializer<E extends Enum>`, which is a class that will be used on the test controller side for reading the information that the initializer gave it about what type of Docker cluster exists, with:
     * [ ] Method GetTestNetworkClass(E extends Enum) -> `Class<? extends TestNetwork>` , so that the user knows which specific type to cast the TestNetwork to after it comes out the other side
@@ -95,14 +93,14 @@ NOTE: THE BELOW IS UGLY AND NEEDS TO BE CHANGED! The basic idea is, it's the bri
 Ava Impl of Commons API
 -----------------------
 ### Ava Service Implementations
-* [ ] Enum GeckoV1Ports:
+* [x] Enum GeckoV1Ports:
     * STAKING_PORT
-* [ ] Class GeckoV1ServiceConfig implements JsonRpcServiceConfig<GeckoV1Ports>:
-    * [ ] Constructor(String dockerImage, ...Gecko v1-particular params...)
-    * [ ] Method GetHttpPort() returns 9650
-    * [ ] Method GetOtherPorts() returns a map of STAKING_PORT -> 9651
-    * [ ] Method GetStartCommand that uses the constructor params to return a command, runnable by the Docker container that Gecko is based on, to check the liveness of the dependencies using the given liveness requests (likely a Bash while loop)
-    * [ ] Method GetLivenessRequest() returns a LivenessRequest representing the getCurrentValidators API call
+* [x] Class GeckoV1ServiceConfig implements JsonRpcServiceConfig<GeckoV1Ports>:
+    * [x] Constructor(String dockerImage, ...Gecko v1-particular params...)
+    * [x] Method GetHttpPort() returns 9650
+    * [x] Method GetOtherPorts() returns a map of STAKING_PORT -> 9651
+    * [x] Method GetStartCommand that uses the constructor params to return a command, runnable by the Docker container that Gecko is based on, to check the liveness of the dependencies using the given liveness requests (likely a Bash while loop)
+    * [x] Method GetLivenessRequest() returns a LivenessRequest representing the getCurrentValidators API call
 
 ### Ava Network Implementations
 * [ ] Class TwoNodeGeckoV1TestNetwork implements TestNetwork, with:
