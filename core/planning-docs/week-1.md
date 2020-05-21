@@ -1,4 +1,5 @@
 * [ ] TestSuiteRunner needs to throw an error if a user double-registers a test with the same name
+* [ ] Upgrade code to pull images from Docker Hub, not just locally
 * [ ] Implement FreeHostPortTracker
     1. [ ] Create thread-safe object that tracks free ports with:
         * [ ] Method to dole out free ports
