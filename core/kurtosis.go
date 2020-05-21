@@ -1,18 +1,14 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	
-	"github.com/docker/docker/client"
-
-	"github.com/gmarchetti/kurtosis/nodes"
+	"github.com/gmarchetti/kurtosis/initializer"
 )
 
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
-	
+
 	// Define and parse command line flags.
 	geckoImageNameArg := flag.String(
 		"gecko-image-name", 
@@ -20,28 +16,7 @@ func main() {
 		"the name of a pre-built gecko image in your docker engine.",
 	)
 	flag.Parse()
-	
-	// Initialize default environment context.
-	ctx := context.Background()
-	// Initialize a Docker client and panic if any error occurs in the process.
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		panic(err)
-	}
 
-	// Create a gecko node.
-	geckoNode := &nodes.GeckoNode{
-		GeckoImageName: *geckoImageNameArg,
-		HttpPortOnHost: "9650",
-		StakingPortOnHost: "9651",
-		Context: ctx,
-		Client: cli,
-	}
-
-	
-	// Create the container based on the configurations, but don't start it yet.
-	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
-	geckoNode.Create()
-	geckoNode.Run()
-	geckoNode.WaitAndGrabLogsOnError()
+	testSuiteRunner := initializer.NewTestSuiteRunner(*geckoImageNameArg)
+	testSuiteRunner.RunTests()
 }
