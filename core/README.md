@@ -13,7 +13,7 @@ Run `./scripts/build.sh`. This will build the main binary and put it the `build/
 
 # Usage
 
-Run `kurtosis -help` or `kurtosis -h` to see command line usage.  
+Run `./build/kurtosis -help` or `./build/kurtosis -h` to see command line usage.  
 Example: `kurtosis -gecko-image-name gecko-f290f73`
 
 # Architecture
