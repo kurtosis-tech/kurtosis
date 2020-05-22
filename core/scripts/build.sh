@@ -4,10 +4,13 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-PREFIX="${PREFIX:-$(pwd)/build}"
+BUILD_PREFIX="${PREFIX:-$(pwd)/build}"
 MAIN_BINARY="kurtosis"
 
-go build -o "$PREFIX/$MAIN_BINARY" "$GECKO_PATH/main/"*.go
+KURTOSIS_PKG=github.com/gmarchetti/kurtosis
+KURTOSIS_PATH="$GOPATH/src/$KURTOSIS_PKG"
+
+go build -o "$PREFIX/$MAIN_BINARY" "$KURTOSIS_PKG/main/"*.go
 
 if [[ -f "$PREFIX/$MAIN_BINARY" ]]; then
         echo "Build Successful"
