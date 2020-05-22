@@ -28,13 +28,13 @@ func (runner TestSuiteRunner) RegisterTest(name string, configProvider commons.T
 
 // Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
 // do a set implementation)
-func (testSuiteRunner TestSuiteRunner) RunTests() () {
+func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client and panic if any error occurs in the process.
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	// TODO implement parallelism and specific test selection here
@@ -46,6 +46,7 @@ func (testSuiteRunner TestSuiteRunner) RunTests() () {
 		}
 	}
 
+	return nil
 	// TODO add a timeout here
 	// TODO gracefully shut down all the Docker containers we started here
 }
