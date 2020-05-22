@@ -25,5 +25,8 @@ func main() {
 
 	// Create the container based on the configurations, but don't start it yet.
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
-	testSuiteRunner.RunTests()
+	error := testSuiteRunner.RunTests()
+	if error != nil {
+		panic(error)
+	}
 }

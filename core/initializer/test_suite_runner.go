@@ -2,12 +2,16 @@ package initializer
 
 import (
 	"context"
+	"os"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+
 	"github.com/gmarchetti/kurtosis/commons"
-	"os"
+
+	"github.com/palantir/stacktrace"
 )
 
 
@@ -28,13 +32,13 @@ func (runner TestSuiteRunner) RegisterTest(name string, configProvider commons.T
 
 // Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
 // do a set implementation)
-func (testSuiteRunner TestSuiteRunner) RunTests() () {
+func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
-	// Initialize a Docker client and panic if any error occurs in the process.
+	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
 	// TODO implement parallelism and specific test selection here
@@ -46,6 +50,7 @@ func (testSuiteRunner TestSuiteRunner) RunTests() () {
 		}
 	}
 
+	return nil
 	// TODO add a timeout here
 	// TODO gracefully shut down all the Docker containers we started here
 }
@@ -53,13 +58,13 @@ func (testSuiteRunner TestSuiteRunner) RunTests() () {
 // ======================== Private helper functions =====================================
 
 
-func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Client, containerId string) {
+func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
 	statusCh, errCh := dockerClient.ContainerWait(dockerCtx, containerId, container.WaitConditionNotRunning)
 
 	select {
 	case err := <-errCh:
 		if err != nil {
-			panic(err)
+			return stacktrace.Propagate(err, "Failed to wait for container to return.")
 		}
 	case <-statusCh:
 	}
@@ -67,9 +72,10 @@ func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Clie
 	// If the container stops and there is an error, grab the logs.
 	out, err := dockerClient.ContainerLogs(dockerCtx, containerId, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
-		panic(err)
+		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
 	}
 
 	// Copy the logs to stdout.
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	return nil
 }
