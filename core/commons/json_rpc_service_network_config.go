@@ -2,11 +2,15 @@ package commons
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"strconv"
+
+	"github.com/palantir/stacktrace"
+
 )
 
 const LOCAL_HOST_IP = "0.0.0.0"
@@ -27,21 +31,21 @@ func NewJsonRpcServiceNetworkConfig(serviceCfgs map[int]JsonRpcServiceConfig) *J
 	}
 }
 
-func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Context, dockerClient *client.Client) *JsonRpcServiceNetwork {
+func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Context, dockerClient *client.Client) (network *JsonRpcServiceNetwork, err error) {
 	serviceContainerIds := make(map[int]string)
 	for serviceId, serviceCfg := range networkCfg.services {
-		containerConfigPtr := getContainerCfgFromServiceCfg(serviceCfg)
+		containerConfigPtr, err := getContainerCfgFromServiceCfg(serviceCfg)
 
 		// TODO need to use FreeHostPortProvider here
 		containerHostConfigPtr := getContainerHostConfig(serviceCfg)
 		// TODO probably use a UUID for the network name (and maybe include test name too)
 		resp, err := dockerClient.ContainerCreate(dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
-		containerId := resp.ID
 		if err != nil {
-			panic(err)
+			return nil, stacktrace.Propagate(err, "Could not create Docker container from image %v.", serviceCfg.GetDockerImage())
 		}
+		containerId := resp.ID
 		if err := dockerClient.ContainerStart(dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
-			panic(err)
+			return nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", serviceCfg.GetDockerImage())
 		}
 		serviceContainerIds[serviceId] = containerId
 	}
@@ -54,16 +58,16 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Con
 		ServiceJsonRpcPorts:     nil,
 		ServiceCustomPorts:      nil,
 		NetworkLivenessRequests: nil,
-	}
+	}, nil
 }
 
 // TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) *container.Config {
+func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) (config *container.Config, err error) {
 	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
 	if err != nil {
-		panic("Could not parse port int - this is VERY weird")
+		return nil, stacktrace.Propagate(err, "Could not parse port int.")
 	}
 
 	portSet := nat.PortSet{
@@ -72,7 +76,7 @@ func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) *containe
 	for _, port := range serviceConfig.GetOtherPorts() {
 		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
 		if err != nil {
-			panic("Could not parse port int - this is VERY weird")
+			return nil, stacktrace.Propagate(err, "Could not parse port int.")
 		}
 		portSet[otherPort] = struct{}{}
 	}
@@ -84,7 +88,7 @@ func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) *containe
 		Cmd: serviceConfig.GetContainerStartCommand(),
 		Tty: false,
 	}
-	return nodeConfigPtr
+	return nodeConfigPtr, nil
 }
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
