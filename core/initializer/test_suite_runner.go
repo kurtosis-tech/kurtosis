@@ -2,12 +2,16 @@ package initializer
 
 import (
 	"context"
+	"os"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+
 	"github.com/gmarchetti/kurtosis/commons"
-	"os"
+
+	"github.com/palantir/stacktrace"
 )
 
 
@@ -34,7 +38,7 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	// Initialize a Docker client and panic if any error occurs in the process.
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
 	// TODO implement parallelism and specific test selection here
