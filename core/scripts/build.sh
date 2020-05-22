@@ -19,7 +19,7 @@ go build -o "$MAIN_BINARY_OUTPUT_PATH" "$KURTOSIS_PATH/$MAIN_DIR/"*.go
 if [[ -f "$MAIN_BINARY_OUTPUT_PATH" ]]; then
         echo "Build Successful"
         echo "Built kurtosis binary to $MAIN_BINARY_OUTPUT_PATH"
-        echo "Run $MAIN_BINARY_OUTPUT_PATH --help for usage."
+        echo "Run '$MAIN_BINARY_OUTPUT_PATH --help' for usage."
 else
         echo "Build failure"
 fi
