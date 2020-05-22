@@ -44,7 +44,10 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	// TODO implement parallelism and specific test selection here
 	for _, configProvider := range testSuiteRunner.tests {
 		testNetworkCfg := configProvider.GetNetworkConfig()
-		serviceNetwork := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		if err != nil {
+			return stacktrace.Propagate(err,"Failed to create and run test network.")
+		}
 		for _, containerId := range serviceNetwork.ServiceContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
 		}
