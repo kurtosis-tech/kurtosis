@@ -8,9 +8,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-
 	"github.com/palantir/stacktrace"
-
 )
 
 const LOCAL_HOST_IP = "0.0.0.0"
@@ -19,16 +17,61 @@ const LOCAL_HOST_IP = "0.0.0.0"
 const DEFAULT_GECKO_HTTP_PORT = nat.Port("9650/tcp")
 const DEFAULT_GECKO_STAKING_PORT = nat.Port("9651/tcp")
 
+type JsonRpcServiceNetworkConfigBuilder struct {
+	serviceConfigs map[int]JsonRpcServiceConfig
+
+	// Maps service_id -> set(ids of services that depend on the service)
+	// The 'map' value is only because Go doesn't have a set type
+	serviceDependents map[int]map[int]bool
+
+	// Tracks the next node ID that will be doled out upon a call to AddNode
+	nextNodeId int
+}
+
+func NewJsonRpcServiceNetworkConfigBuilder() *JsonRpcServiceNetworkConfigBuilder {
+	serviceConfigs := make(map[int]JsonRpcServiceConfig)
+	serviceDependencies := make(map[int]map[int]bool)
+	return &JsonRpcServiceNetworkConfigBuilder{
+		serviceConfigs:    serviceConfigs,
+		serviceDependents: serviceDependencies,
+	}
+}
+
+// Adds a node to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
+// If no dependencies should be specified, the dependencies map should be empty (not nil)
+func (builder JsonRpcServiceNetworkConfigBuilder) AddNode(config JsonRpcServiceConfig, dependencies map[int]bool) (int, error) {
+	for dependencyId, _ := range(dependencies) {
+		if _, found := builder.serviceConfigs[dependencyId]; !found {
+			return 0, stacktrace.NewError("Declared a dependency on %v but no service with this ID has been registered", dependencyId)
+		}
+	}
+	nodeId := builder.nextNodeId
+	builder.nextNodeId++
+	builder.serviceConfigs[nodeId] = config
+	for dependencyId, _ := range(dependencies) {
+		if dependents, found := builder.serviceDependents[dependencyId]; found {
+			dependents[nodeId] = true
+		} else {
+			newDependents := make(map[int]bool)
+			newDependents[nodeId] = true
+			builder.serviceDependents[dependencyId] = newDependents
+		}
+	}
+
+	return nodeId, nil
+}
+
+func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetworkConfig {
+	return &JsonRpcServiceNetworkConfig{
+		services:          builder.serviceConfigs,
+		serviceDependents: builder.serviceDependents,
+	}
+}
+
 
 type JsonRpcServiceNetworkConfig struct {
 	services map[int]JsonRpcServiceConfig
-}
-
-// TODO replace this with a fluent builder, to make it a bunch easier to add nodes with dependencies
-func NewJsonRpcServiceNetworkConfig(serviceCfgs map[int]JsonRpcServiceConfig) *JsonRpcServiceNetworkConfig {
-	return &JsonRpcServiceNetworkConfig{
-		services:  serviceCfgs,
-	}
+	serviceDependents map[int]map[int]bool
 }
 
 func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Context, dockerClient *client.Client) (network *JsonRpcServiceNetwork, err error) {

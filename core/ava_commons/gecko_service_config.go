@@ -10,8 +10,6 @@ import "github.com/gmarchetti/kurtosis/commons"
 
 // Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
 type GeckoServiceConfig struct {
-	// Will be empty if this node should be a boot node
-	bootNodes      map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest
 	geckoImageName string
 }
 
@@ -23,10 +21,8 @@ const (
 )
 
 // TODO implement more Ava-specific params here, like snow quorum
-// bootNodes should contain a mapping of bootnode socket -> liveness request to make to verify it's up
-func NewGeckoServiceConfig(dockerImage string, bootNodes map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) *GeckoServiceConfig {
+func NewGeckoServiceConfig(dockerImage string) *GeckoServiceConfig {
 	return &GeckoServiceConfig{
-		bootNodes:      bootNodes,
 		geckoImageName: dockerImage,
 	}
 }
@@ -46,7 +42,8 @@ func (g GeckoServiceConfig) GetOtherPorts() map[commons.ServiceSpecificPort]int 
 }
 
 // TODO actually return a different command based on the dependencies!
-func (g GeckoServiceConfig) GetContainerStartCommand() []string {
+// Contains the
+func (g GeckoServiceConfig) GetContainerStartCommand(dependencyLivenessReqs map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) []string {
 	return []string{
 		"/gecko/build/ava",
 		"--public-ip=127.0.0.1",
