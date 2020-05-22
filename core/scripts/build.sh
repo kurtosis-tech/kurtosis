@@ -4,16 +4,22 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-BUILD_PREFIX="${PREFIX:-$(pwd)/build}"
-MAIN_BINARY="kurtosis"
 
-KURTOSIS_PKG=github.com/gmarchetti/kurtosis
-KURTOSIS_PATH="$GOPATH/src/$KURTOSIS_PKG"
+SCRIPTS_PATH=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
+KURTOSIS_PATH=$(dirname "${SCRIPTS_PATH}")
 
-go build -o "$PREFIX/$MAIN_BINARY" "$KURTOSIS_PKG/main/"*.go
+BUILD_DIR="build"
+MAIN_DIR="ava_initializer"
+MAIN_BINARY_OUTPUT_FILE="kurtosis"
+MAIN_BINARY_OUTPUT_PATH="$KURTOSIS_PATH/$BUILD_DIR/$MAIN_BINARY_OUTPUT_FILE"
 
-if [[ -f "$PREFIX/$MAIN_BINARY" ]]; then
+
+go build -o "$MAIN_BINARY_OUTPUT_PATH" "$KURTOSIS_PATH/$MAIN_DIR/"*.go
+
+if [[ -f "$MAIN_BINARY_OUTPUT_PATH" ]]; then
         echo "Build Successful"
+        echo "Built kurtosis binary to $MAIN_BINARY_OUTPUT_PATH"
+        echo "Run $MAIN_BINARY_OUTPUT_PATH --help for usage."
 else
         echo "Build failure"
 fi
