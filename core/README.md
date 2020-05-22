@@ -9,7 +9,7 @@ Docker Engine running in your environment.
 # Install
 
 Clone this repository and cd into it.  
-Run `go install`. This will build the main binary and put it on your path.  
+Run `./scripts/build.sh`. This will build the main binary and put it the `build/` directory of this repository.  
 
 # Usage
 
