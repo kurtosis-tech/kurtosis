@@ -18,8 +18,8 @@ func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) *FreeHostPortT
 }
 
 func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
-	for port, taken := range hostPortTracker.takenPorts {
-		if !taken {
+	for port := hostPortTracker.PortRangeStart; port < hostPortTracker.PortRangeEnd; port++ {
+		if _, ok := hostPortTracker.takenPorts[port]; !ok {
 			hostPortTracker.takenPorts[port] = true
 			return port, nil
 		}
