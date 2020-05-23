@@ -10,9 +10,6 @@ type FreeHostPortTracker struct {
 
 func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) *FreeHostPortTracker {
 	portMap := make(map[int]bool)
-	for i := portRangeStart; i < portRangeEnd; i++ {
-		portMap[i] = false
-	}
 	return &FreeHostPortTracker{
 		PortRangeStart: portRangeStart,
 		PortRangeEnd: portRangeEnd,
@@ -31,9 +28,9 @@ func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
 }
 
 func (hostPortTracker FreeHostPortTracker) ReleasePort(port int) (err error) {
-	if hostPortTracker.takenPorts[port] {
-		hostPortTracker.takenPorts[port] = false
+	if _, ok := hostPortTracker.takenPorts[port]; ok {
+		delete(hostPortTracker.takenPorts, port)
 	}
-	return stacktrace.NewError("Tried to free port %v, but it was already free.", port)
+	return nil
 }
 
