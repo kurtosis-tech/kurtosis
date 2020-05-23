@@ -30,7 +30,10 @@ func (manager DockerManager) GetFreePort() (freePort *nat.Port, err error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
 	}
-	port := nat.Port(strconv.Itoa(freePortInt) + "/tcp")
+	port, err := nat.NewPort("tcp", strconv.Itoa(freePortInt))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	return &port, nil
 }
 
