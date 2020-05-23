@@ -36,11 +36,8 @@ func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
 	return -1, stacktrace.NewError("There are no more free ports available given the host port range.")
 }
 
-func (hostPortTracker FreeHostPortTracker) ReleasePort(port int) (err error) {
-	if _, ok := hostPortTracker.takenPorts[port]; ok {
-		delete(hostPortTracker.takenPorts, port)
-	}
-	return nil
+func (hostPortTracker FreeHostPortTracker) ReleasePort(port int) {
+	delete(hostPortTracker.takenPorts, port)
 }
 
 func isPortValid(port int) bool {
