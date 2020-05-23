@@ -12,10 +12,6 @@ import (
 // TODO TODO TODO - do we ever need to handle different local host IPs?
 const LOCAL_HOST_IP = "0.0.0.0"
 
-// TODO TODO TODO get these from serviceconfig
-const DEFAULT_GECKO_HTTP_PORT = nat.Port("9650/tcp")
-const DEFAULT_GECKO_STAKING_PORT = nat.Port("9651/tcp")
-
 type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
@@ -84,4 +80,34 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 		},
 	}
 	return containerHostConfigPtr, nil
+}
+
+// TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
+// Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
+// Gecko HTTP and Staking ports inside the Container are the standard defaults.
+func (manager *DockerManager) GetContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) (config *container.Config, err error) {
+	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not parse port int.")
+	}
+
+	portSet := nat.PortSet{
+		jsonRpcPort: struct{}{},
+	}
+	for _, port := range serviceConfig.GetOtherPorts() {
+		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not parse port int.")
+		}
+		portSet[otherPort] = struct{}{}
+	}
+
+	nodeConfigPtr := &container.Config{
+		Image: serviceConfig.GetDockerImage(),
+		// TODO allow modifying of protocol at some point
+		ExposedPorts: portSet,
+		Cmd: serviceConfig.GetContainerStartCommand(),
+		Tty: false,
+	}
+	return nodeConfigPtr, nil
 }

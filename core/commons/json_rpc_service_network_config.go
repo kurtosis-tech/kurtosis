@@ -1,12 +1,7 @@
 package commons
 
 import (
-	"strconv"
-
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/go-connections/nat"
-
 	"github.com/palantir/stacktrace"
 )
 
@@ -25,7 +20,7 @@ func NewJsonRpcServiceNetworkConfig(serviceCfgs map[int]JsonRpcServiceConfig) *J
 func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManager) (network *JsonRpcServiceNetwork, err error) {
 	serviceContainerIds := make(map[int]string)
 	for serviceId, serviceCfg := range networkCfg.services {
-		containerConfigPtr, err := getContainerCfgFromServiceCfg(serviceCfg)
+		containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(serviceCfg)
 
 		containerHostConfigPtr, err := manager.GetContainerHostConfig(serviceCfg)
 		if err != nil {
@@ -53,35 +48,3 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManage
 		NetworkLivenessRequests: nil,
 	}, nil
 }
-
-// TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
-// Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
-// Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) (config *container.Config, err error) {
-	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not parse port int.")
-	}
-
-	portSet := nat.PortSet{
-		jsonRpcPort: struct{}{},
-	}
-	for _, port := range serviceConfig.GetOtherPorts() {
-		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not parse port int.")
-		}
-		portSet[otherPort] = struct{}{}
-	}
-
-	nodeConfigPtr := &container.Config{
-		Image: serviceConfig.GetDockerImage(),
-		// TODO allow modifying of protocol at some point
-		ExposedPorts: portSet,
-		Cmd: serviceConfig.GetContainerStartCommand(),
-		Tty: false,
-	}
-	return nodeConfigPtr, nil
-}
-
-
