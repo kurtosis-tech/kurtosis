@@ -31,7 +31,7 @@ func (runner TestSuiteRunner) RegisterTest(name string, configProvider commons.T
 
 // Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
 // do a set implementation)
-func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
+func (runner TestSuiteRunner) RunTests() (err error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client
@@ -41,7 +41,7 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	}
 
 	// TODO implement parallelism and specific test selection here
-	for testName, configProvider := range testSuiteRunner.tests {
+	for testName, configProvider := range runner.tests {
 		testNetworkCfg := configProvider.GetNetworkConfig()
 		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
 		if err != nil {

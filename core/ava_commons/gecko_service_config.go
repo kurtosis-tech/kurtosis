@@ -6,7 +6,11 @@ Contains types to represent nodes contained in Docker containers.
 
 package ava_commons
 
-import "github.com/gmarchetti/kurtosis/commons"
+import (
+	"fmt"
+	"github.com/gmarchetti/kurtosis/commons"
+	"strings"
+)
 
 // Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
 type GeckoServiceConfig struct {
@@ -43,15 +47,25 @@ func (g GeckoServiceConfig) GetOtherPorts() map[commons.ServiceSpecificPort]int 
 
 // Argument will be a map of (IP,port) -> request to make to check if a node is up
 func (g GeckoServiceConfig) GetContainerStartCommand(dependencyLivenessReqs map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) []string {
-	// If bootstrap nodes are up then Gecko will wait until they are, so we only need the IPs and ports
-	// TODO actually return a different command based on the dependencies!
-	return []string{
+	commandList := []string{
 		"/gecko/build/ava",
 		"--public-ip=127.0.0.1",
 		"--snow-sample-size=1",
 		"--snow-quorum-size=1",
 		"--staking-tls-enabled=false",
 	}
+
+	// If bootstrap nodes are down then Gecko will wait until they are, so we don't actually need to busy-loop making
+	// requests to the nodes
+	if dependencyLivenessReqs != nil && len(dependencyLivenessReqs) > 0 {
+		socketStrs := make([]string, 0, len(dependencyLivenessReqs))
+		for socket, _ := range dependencyLivenessReqs {
+			socketStrs = append(socketStrs, fmt.Sprintf("%s:%d", socket.IPAddress, socket.Port))
+		}
+		joinedSockets := strings.Join(socketStrs, ",")
+		commandList = append(commandList, "--bootstrap-ips=" + joinedSockets)
+	}
+	return commandList
 }
 
 func (g GeckoServiceConfig) GetLivenessRequest() commons.JsonRpcRequest {
