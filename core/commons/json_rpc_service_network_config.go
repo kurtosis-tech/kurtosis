@@ -1,19 +1,15 @@
 package commons
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
 	"github.com/palantir/stacktrace"
-
 )
 
-const LOCAL_HOST_IP = "0.0.0.0"
 
 // TODO replace these with FreeHostPortProvider in the future (this class shouldn't know anything about Ava)
 const DEFAULT_GECKO_HTTP_PORT = nat.Port("9650/tcp")
@@ -31,20 +27,23 @@ func NewJsonRpcServiceNetworkConfig(serviceCfgs map[int]JsonRpcServiceConfig) *J
 	}
 }
 
-func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Context, dockerClient *client.Client) (network *JsonRpcServiceNetwork, err error) {
+func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManager) (network *JsonRpcServiceNetwork, err error) {
 	serviceContainerIds := make(map[int]string)
 	for serviceId, serviceCfg := range networkCfg.services {
 		containerConfigPtr, err := getContainerCfgFromServiceCfg(serviceCfg)
 
 		// TODO need to use FreeHostPortProvider here
-		containerHostConfigPtr := getContainerHostConfig(serviceCfg)
+		containerHostConfigPtr, err := getContainerHostConfig(serviceCfg, manager)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "")
+		}
 		// TODO probably use a UUID for the network name (and maybe include test name too)
-		resp, err := dockerClient.ContainerCreate(dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
+		resp, err := manager.DockerClient.ContainerCreate(manager.DockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Could not create Docker container from image %v.", serviceCfg.GetDockerImage())
 		}
 		containerId := resp.ID
-		if err := dockerClient.ContainerStart(dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
+		if err := manager.DockerClient.ContainerStart(manager.DockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 			return nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", serviceCfg.GetDockerImage())
 		}
 		serviceContainerIds[serviceId] = containerId
@@ -93,21 +92,29 @@ func getContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) (config *
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func getContainerHostConfig(serviceConfig JsonRpcServiceConfig) *container.HostConfig {
+func getContainerHostConfig(serviceConfig JsonRpcServiceConfig,  manager *DockerManager) (hostConfig *container.HostConfig, err error) {
+	freeRpcPort, err := manager.GetFreePort()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	// TODO right nwo this is hardcoded - replace these with FreeHostPortProvider in the future, so we can have
 	//  arbitrary service-specific ports!
 	jsonRpcPortBinding := []nat.PortBinding{
 		{
-			HostIP: LOCAL_HOST_IP,
-			HostPort: strconv.Itoa(serviceConfig.GetJsonRpcPort()),
+			HostIP: manager.GetLocalHostIp(),
+			HostPort: freeRpcPort.Port(),
 		},
 	}
-	// TODO this shouldn't be here - this class should have nothing Ava-specific
-	stakingPortInt := strconv.Itoa(serviceConfig.GetOtherPorts()[0]) // This is actually STAKING_PORT_ID, but I get an import cycle if I actually use it
+
+	// TODO cycle through serviceConfig.GetOtherPorts to bind every one, not just default gecko staking port
+	freeStakingPort, err := manager.GetFreePort()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	stakingPortBinding := []nat.PortBinding{
 		{
-			HostIP: LOCAL_HOST_IP,
-			HostPort: stakingPortInt,
+			HostIP: manager.GetLocalHostIp(),
+			HostPort: freeStakingPort.Port(),
 		},
 	}
 
@@ -117,6 +124,6 @@ func getContainerHostConfig(serviceConfig JsonRpcServiceConfig) *container.HostC
 			DEFAULT_GECKO_STAKING_PORT: stakingPortBinding,
 		},
 	}
-	return containerHostConfigPtr
+	return containerHostConfigPtr, nil
 }
 

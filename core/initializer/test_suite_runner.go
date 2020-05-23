@@ -3,7 +3,6 @@ package initializer
 import (
 	"context"
 	"os"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -13,6 +12,9 @@ import (
 
 	"github.com/palantir/stacktrace"
 )
+
+const START_HOST_PORT_RANGE = 9650
+const END_HOST_PORT_RANGE = 9651
 
 
 type TestSuiteRunner struct {
@@ -41,10 +43,12 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
+	dockerManager := commons.NewDockerManager(dockerCtx, dockerClient, START_HOST_PORT_RANGE, END_HOST_PORT_RANGE)
+
 	// TODO implement parallelism and specific test selection here
 	for _, configProvider := range testSuiteRunner.tests {
 		testNetworkCfg := configProvider.GetNetworkConfig()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err,"Failed to create and run test network.")
 		}
