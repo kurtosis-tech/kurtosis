@@ -10,6 +10,6 @@ func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() *commons.JsonR
 	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName)
 
 	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
-	builder.AddNode(geckoNodeConfig, make(map[int]bool))
+	builder.AddService(geckoNodeConfig, make(map[int]bool))
 	return builder.Build()
 }

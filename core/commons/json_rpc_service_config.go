@@ -35,5 +35,5 @@ type JsonRpcServiceConfig interface {
 	GetContainerStartCommand(dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string
 
 	// Returns an object containing information about how to query this JSON rpc service for liveness
-	GetLivenessRequest() *JsonRpcRequest
+	GetLivenessRequest() JsonRpcRequest
 }

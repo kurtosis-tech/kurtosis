@@ -54,8 +54,8 @@ func (g GeckoServiceConfig) GetContainerStartCommand(dependencyLivenessReqs map[
 	}
 }
 
-func (g GeckoServiceConfig) GetLivenessRequest() *commons.JsonRpcRequest {
-	return &commons.JsonRpcRequest{
+func (g GeckoServiceConfig) GetLivenessRequest() commons.JsonRpcRequest {
+	return commons.JsonRpcRequest{
 		Endpoint: "/ext/P",
 		Method: "platform.getCurrentValidators",
 		RpcVersion: commons.RPC_VERSION_1_0,

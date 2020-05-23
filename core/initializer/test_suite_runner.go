@@ -2,14 +2,13 @@ package initializer
 
 import (
 	"context"
+	"github.com/gmarchetti/kurtosis/commons"
 	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-
-	"github.com/gmarchetti/kurtosis/commons"
 
 	"github.com/palantir/stacktrace"
 )
@@ -42,9 +41,12 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	}
 
 	// TODO implement parallelism and specific test selection here
-	for _, configProvider := range testSuiteRunner.tests {
+	for testName, configProvider := range testSuiteRunner.tests {
 		testNetworkCfg := configProvider.GetNetworkConfig()
-		serviceNetwork := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
+		}
 		for _, containerId := range serviceNetwork.ServiceContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
 		}
