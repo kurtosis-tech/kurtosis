@@ -14,7 +14,7 @@ import (
 )
 
 const START_HOST_PORT_RANGE = 9650
-const END_HOST_PORT_RANGE = 9651
+const END_HOST_PORT_RANGE = 9652
 
 
 type TestSuiteRunner struct {
