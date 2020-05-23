@@ -2,7 +2,7 @@ package ava_commons
 
 import (
 	"github.com/gmarchetti/kurtosis/commons"
-	"github.com/palantir/stacktrace"
+	"gotest.tools/assert"
 	"testing"
 )
 
@@ -17,7 +17,7 @@ func TestGetContainerStartCommand(t *testing.T) {
 		"--staking-tls-enabled=false",
 	}
 	actualNoDeps := svcConfig.GetContainerStartCommand(make(map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest))
-	verifySliceEquality(t, expectedNoDeps, actualNoDeps)
+	assert.DeepEqual(t, expectedNoDeps, actualNoDeps)
 
 	socket := commons.JsonRpcServiceSocket{
 		IPAddress: "dep1",
@@ -34,18 +34,6 @@ func TestGetContainerStartCommand(t *testing.T) {
 	}
 	expectedWithDeps := append(expectedNoDeps, "--bootstrap-ips=dep1:1234")
 	actualWithDeps := svcConfig.GetContainerStartCommand(testDependencyReqs)
-	verifySliceEquality(t, expectedWithDeps, actualWithDeps)
+	assert.DeepEqual(t, expectedWithDeps, actualWithDeps)
 
-}
-
-func verifySliceEquality(t *testing.T, expected []string, actual []string) {
-	if (len(expected) != len(actual)) {
-		t.Fatal(stacktrace.NewError("Expected slice of length %v but got %v", len(expected), len(actual)))
-	}
-	for idx, expectedElem := range expected {
-		actualElem := actual[idx]
-		if (expectedElem != actualElem) {
-			t.Fatal(stacktrace.NewError("Expected elem '%v' at position %v but got '%v'", expectedElem, idx, actualElem))
-		}
-	}
 }

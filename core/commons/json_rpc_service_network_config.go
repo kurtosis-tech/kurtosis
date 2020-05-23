@@ -41,12 +41,11 @@ func NewJsonRpcServiceNetworkConfigBuilder() *JsonRpcServiceNetworkConfigBuilder
 // Adds a serivce to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns the ID of the service, to be used with future AddService calls to declare dependencies on the service
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
-func (builder JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServiceConfig, dependencies map[int]bool) (int, error) {
+func (builder *JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServiceConfig, dependencies map[int]bool) (int, error) {
 	if dependencies == nil {
 		return 0, stacktrace.NewError("Dependencies map was nil; use an empty map to specify no dependencies")
 	}
 
-	// TODO add test that ensures that the user absolutely cannot add a dependency on a service that doesn't yet exist
 	// Golang maps are passed by-ref, so we do a defensive copy here so user can't change their input and mess
 	// with our internal data structure
 	dependenciesCopy := make(map[int]bool)
@@ -58,10 +57,9 @@ func (builder JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServi
 	}
 
 	serviceId := builder.nextServiceId
-	builder.nextServiceId++
+	builder.nextServiceId = builder.nextServiceId + 1
 	builder.serviceConfigs[serviceId] = config
 
-	// TODO Unit test to ensure that this list is correctly maintained
 	builder.onlyDependentServices[serviceId] = true
 	for dependencyId, _ := range dependencies {
 		// This is safe to do even if the key doesn't exist (i.e. another previously-declared service also depends on it)
@@ -77,7 +75,6 @@ func (builder JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServi
 }
 
 func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetworkConfig {
-	// TODO tests to ensure that our defensive copies protect us like we want
 	// Defensive copy, so user calling functions on the builder after building won't affect the
 	// state of the object we already built
 	serviceConfigsCopy := make(map[int]JsonRpcServiceConfig)
@@ -92,7 +89,6 @@ func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetwork
 		}
 		serviceDependenciesCopy[serviceId] = dependenciesCopy
 	}
-	// TODO test to ensure that this slice defensive copy works as expected
 	serviceStartOrderCopy := make([]int, len(builder.servicesStartOrder))
 	copy(serviceStartOrderCopy, builder.servicesStartOrder)
 
