@@ -18,12 +18,16 @@ type DockerManager struct {
 	freeHostPortTracker *FreeHostPortTracker
 }
 
-func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) *DockerManager {
+func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
-		freeHostPortTracker: NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd),
-	}
+		freeHostPortTracker: freeHostPortTracker,
+	}, nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
@@ -49,8 +53,7 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
 	}
-	// TODO right nwo this is hardcoded - replace these with FreeHostPortProvider in the future, so we can have
-	//  arbitrary service-specific ports!
+
 	jsonRpcPortBinding := []nat.PortBinding{
 		{
 			HostIP: manager.getLocalHostIp(),

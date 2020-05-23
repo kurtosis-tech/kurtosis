@@ -2,19 +2,28 @@ package commons
 
 import "github.com/palantir/stacktrace"
 
+const VALID_PORT_RANGE_START = 1024
+const VALID_PORT_RANGE_END = 65535
+
 type FreeHostPortTracker struct {
 	portRangeStart int
 	portRangeEnd   int
 	takenPorts     map[int]bool
 }
 
-func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) *FreeHostPortTracker {
+func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) (freeHostPortTracker *FreeHostPortTracker, err error) {
 	portMap := make(map[int]bool)
+	if portRangeEnd <= portRangeStart {
+		return nil, stacktrace.NewError("FreeHostPortTracker requires end port range greater than start port range.")
+	}
+	if !isPortValid(portRangeStart) || !isPortValid(portRangeEnd) {
+		return nil, stacktrace.NewError("FreeHostPortTracker requires port range between %s and %s, inclusive.", VALID_PORT_RANGE_START, VALID_PORT_RANGE_END)
+	}
 	return &FreeHostPortTracker{
 		portRangeStart: portRangeStart,
 		portRangeEnd:   portRangeEnd,
 		takenPorts:     portMap,
-	}
+	}, nil
 }
 
 func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
@@ -34,3 +43,6 @@ func (hostPortTracker FreeHostPortTracker) ReleasePort(port int) (err error) {
 	return nil
 }
 
+func isPortValid(port int) bool {
+	return port >= VALID_PORT_RANGE_START && port <= VALID_PORT_RANGE_END
+}
