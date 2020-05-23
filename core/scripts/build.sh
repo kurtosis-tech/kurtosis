@@ -13,7 +13,9 @@ MAIN_DIR="ava_initializer"
 MAIN_BINARY_OUTPUT_FILE="kurtosis"
 MAIN_BINARY_OUTPUT_PATH="$KURTOSIS_PATH/$BUILD_DIR/$MAIN_BINARY_OUTPUT_FILE"
 
-
+echo "Running unit tests..."
+go test "${KURTOSIS_PATH}"/...
+echo "Building..."
 go build -o "$MAIN_BINARY_OUTPUT_PATH" "$KURTOSIS_PATH/$MAIN_DIR/"*.go
 
 if [[ -f "$MAIN_BINARY_OUTPUT_PATH" ]]; then
