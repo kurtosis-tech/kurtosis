@@ -3,22 +3,22 @@ package commons
 import "github.com/palantir/stacktrace"
 
 type FreeHostPortTracker struct {
-	PortRangeStart int
-	PortRangeEnd int
-	takenPorts map[int]bool
+	portRangeStart int
+	portRangeEnd   int
+	takenPorts     map[int]bool
 }
 
 func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) *FreeHostPortTracker {
 	portMap := make(map[int]bool)
 	return &FreeHostPortTracker{
-		PortRangeStart: portRangeStart,
-		PortRangeEnd: portRangeEnd,
-		takenPorts: portMap,
+		portRangeStart: portRangeStart,
+		portRangeEnd:   portRangeEnd,
+		takenPorts:     portMap,
 	}
 }
 
 func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
-	for port := hostPortTracker.PortRangeStart; port < hostPortTracker.PortRangeEnd; port++ {
+	for port := hostPortTracker.portRangeStart; port < hostPortTracker.portRangeEnd; port++ {
 		if _, ok := hostPortTracker.takenPorts[port]; !ok {
 			hostPortTracker.takenPorts[port] = true
 			return port, nil
