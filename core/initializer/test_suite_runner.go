@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/gmarchetti/kurtosis/commons"
 	"os"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -12,6 +11,9 @@ import (
 
 	"github.com/palantir/stacktrace"
 )
+
+const START_HOST_PORT_RANGE = 9650
+const END_HOST_PORT_RANGE = 9652
 
 
 type TestSuiteRunner struct {
@@ -40,10 +42,15 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
+	dockerManager, err := commons.NewDockerManager(dockerCtx, dockerClient, START_HOST_PORT_RANGE, END_HOST_PORT_RANGE)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
+	}
+
 	// TODO implement parallelism and specific test selection here
 	for testName, configProvider := range runner.tests {
 		testNetworkCfg := configProvider.GetNetworkConfig()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerCtx, dockerClient)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
