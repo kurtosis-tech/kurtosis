@@ -32,7 +32,7 @@ type JsonRpcServiceConfig interface {
 
 	// Should return a command to be run in the Docker container running the RPC service, with an image-appropriate
 	// busy loop to wait for dependencies to come up
-	GetContainerStartCommand() []string
+	GetContainerStartCommand(dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string
 
 	// Returns an object containing information about how to query this JSON rpc service for liveness
 	GetLivenessRequest() *JsonRpcRequest

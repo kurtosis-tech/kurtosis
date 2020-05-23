@@ -41,9 +41,10 @@ func (g GeckoServiceConfig) GetOtherPorts() map[commons.ServiceSpecificPort]int 
 	return result
 }
 
-// TODO actually return a different command based on the dependencies!
-// Contains the
+// Argument will be a map of (IP,port) -> request to make to check if a node is up
 func (g GeckoServiceConfig) GetContainerStartCommand(dependencyLivenessReqs map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) []string {
+	// If bootstrap nodes are up then Gecko will wait until they are, so we only need the IPs and ports
+	// TODO actually return a different command based on the dependencies!
 	return []string{
 		"/gecko/build/ava",
 		"--public-ip=127.0.0.1",

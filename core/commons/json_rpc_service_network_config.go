@@ -1,6 +1,7 @@
 package commons
 
 import (
+	"container/list"
 	"context"
 	"strconv"
 
@@ -24,16 +25,21 @@ type JsonRpcServiceNetworkConfigBuilder struct {
 	// The 'map' value is only because Go doesn't have a set type
 	serviceDependents map[int]map[int]bool
 
+	// A "set" of service IDs that don't depend on anything and so can be started first
+	servicesWithoutDependencies map[int]bool
+
 	// Tracks the next node ID that will be doled out upon a call to AddNode
 	nextNodeId int
 }
 
 func NewJsonRpcServiceNetworkConfigBuilder() *JsonRpcServiceNetworkConfigBuilder {
 	serviceConfigs := make(map[int]JsonRpcServiceConfig)
-	serviceDependencies := make(map[int]map[int]bool)
+	serviceDependents := make(map[int]map[int]bool)
+	servicesWithoutDependencies := make(map[int]bool)
 	return &JsonRpcServiceNetworkConfigBuilder{
 		serviceConfigs:    serviceConfigs,
-		serviceDependents: serviceDependencies,
+		serviceDependents: serviceDependents,
+		servicesWithoutDependencies: servicesWithoutDependencies,
 	}
 }
 
@@ -48,14 +54,18 @@ func (builder JsonRpcServiceNetworkConfigBuilder) AddNode(config JsonRpcServiceC
 	nodeId := builder.nextNodeId
 	builder.nextNodeId++
 	builder.serviceConfigs[nodeId] = config
-	for dependencyId, _ := range(dependencies) {
-		if dependents, found := builder.serviceDependents[dependencyId]; found {
-			dependents[nodeId] = true
-		} else {
-			newDependents := make(map[int]bool)
-			newDependents[nodeId] = true
-			builder.serviceDependents[dependencyId] = newDependents
+	if len(dependencies) > 0 {
+		for dependencyId, _ := range(dependencies) {
+			if dependents, found := builder.serviceDependents[dependencyId]; found {
+				dependents[nodeId] = true
+			} else {
+				newDependents := make(map[int]bool)
+				newDependents[nodeId] = true
+				builder.serviceDependents[dependencyId] = newDependents
+			}
 		}
+	} else {
+		builder.servicesWithoutDependencies[nodeId] = true
 	}
 
 	return nodeId, nil
@@ -65,6 +75,7 @@ func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetwork
 	return &JsonRpcServiceNetworkConfig{
 		services:          builder.serviceConfigs,
 		serviceDependents: builder.serviceDependents,
+		servicesWithoutDependencies: builder.servicesWithoutDependencies,
 	}
 }
 
@@ -72,9 +83,27 @@ func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetwork
 type JsonRpcServiceNetworkConfig struct {
 	services map[int]JsonRpcServiceConfig
 	serviceDependents map[int]map[int]bool
+	servicesWithoutDependencies map[int]bool
 }
 
 func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(dockerCtx context.Context, dockerClient *client.Client) (network *JsonRpcServiceNetwork, err error) {
+	toStartQueue := make([]int, 0)
+	alreadyStarted := make(map[int]bool)
+	for serviceId, _ := range networkCfg.servicesWithoutDependencies {
+		toStartQueue = append(toStartQueue, serviceId)
+	}
+
+	for len(toStartQueue) > 0 {
+		serviceToStart := toStartQueue[0]
+		toStartQueue = toStartQueue[1:]
+
+	}
+
+
+
+
+
+
 	serviceContainerIds := make(map[int]string)
 	for serviceId, serviceCfg := range networkCfg.services {
 		containerConfigPtr, err := getContainerCfgFromServiceCfg(serviceCfg)

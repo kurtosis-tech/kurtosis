@@ -7,8 +7,7 @@ type SingleNodeAvaNetworkCfgProvider struct{
 }
 func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() *commons.JsonRpcServiceNetworkConfig {
 	// TODO set up non-null nodes (indicating that they're not boot nodes)
-	bootNodes := make(map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest)
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, bootNodes)
+	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName)
 
 	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
 	builder.AddNode(geckoNodeConfig, make(map[int]bool))
