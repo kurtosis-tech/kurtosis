@@ -75,6 +75,7 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 	}
 
 	httpPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
+	// TODO cycle through serviceConfig.getOtherPorts to bind every one, not just gecko staking port
 	stakingPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetOtherPorts()[0]))
 	containerHostConfigPtr := &container.HostConfig{
 		PortBindings: nat.PortMap{
