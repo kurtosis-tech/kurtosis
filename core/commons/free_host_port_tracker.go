@@ -17,7 +17,7 @@ func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) (freeHostPortT
 		return nil, stacktrace.NewError("FreeHostPortTracker requires end port range greater than start port range.")
 	}
 	if !isPortValid(portRangeStart) || !isPortValid(portRangeEnd) {
-		return nil, stacktrace.NewError("FreeHostPortTracker requires port range between %s and %s, inclusive.", VALID_PORT_RANGE_START, VALID_PORT_RANGE_END)
+		return nil, stacktrace.NewError("FreeHostPortTracker requires port range between %v and %v, inclusive.", VALID_PORT_RANGE_START, VALID_PORT_RANGE_END)
 	}
 	return &FreeHostPortTracker{
 		portRangeStart: portRangeStart,
