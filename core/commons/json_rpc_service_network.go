@@ -3,6 +3,7 @@ package commons
 type JsonRpcServiceNetwork struct {
 	NetworkId string
 	ServiceContainerIds map[int]string
+	// TODO replace this with JsonRpcServiceSocket object
 	ServiceIps map[int]string
 	// TODO might be better to make this a nat.Port object
 	ServiceJsonRpcPorts map[int]int

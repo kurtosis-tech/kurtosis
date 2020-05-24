@@ -6,28 +6,54 @@ Contains types to represent nodes contained in Docker containers.
 
 package ava_commons
 
-import "github.com/gmarchetti/kurtosis/commons"
-
-// Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
-type GeckoServiceConfig struct {
-	// Will be empty if this node should be a boot node
-	bootNodes      map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest
-	geckoImageName string
-}
+import (
+	"fmt"
+	"github.com/gmarchetti/kurtosis/commons"
+	"strings"
+)
 
 const (
-	STAKING_PORT_ID commons.ServiceSpecificPort = 0
-
 	HTTP_PORT = 9650
 	STAKING_PORT = 9651
 )
 
+// Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
+type GeckoServiceConfig struct {
+	geckoImageName string
+	snowSampleSize int
+	snowQuorumSize int
+	stakingTlsEnabled bool
+	logLevel GeckoLogLevel
+}
+
+type GeckoLogLevel string
+
+
+// "Enum" of Gecko-specific ports
+const (
+	STAKING_PORT_ID commons.ServiceSpecificPort = 0
+)
+
+// "Enum" of Gecko log levels
+const (
+	LOG_LEVEL_VERBOSE GeckoLogLevel = "verbo"
+	LOG_LEVEL_DEBUG GeckoLogLevel = "debug"
+	LOG_LEVEL_INFO GeckoLogLevel = "info"
+)
+
 // TODO implement more Ava-specific params here, like snow quorum
-// bootNodes should contain a mapping of bootnode socket -> liveness request to make to verify it's up
-func NewGeckoServiceConfig(dockerImage string, bootNodes map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) *GeckoServiceConfig {
+func NewGeckoServiceConfig(
+			dockerImage string,
+			snowSampleSize int,
+			snowQuorumSize int,
+			stakingTlsEnabled bool,
+			logLevel GeckoLogLevel) *GeckoServiceConfig {
 	return &GeckoServiceConfig{
-		bootNodes:      bootNodes,
-		geckoImageName: dockerImage,
+		geckoImageName:    dockerImage,
+		snowSampleSize:    snowSampleSize,
+		snowQuorumSize:    snowQuorumSize,
+		stakingTlsEnabled: stakingTlsEnabled,
+		logLevel: 		   logLevel,
 	}
 }
 
@@ -45,19 +71,40 @@ func (g GeckoServiceConfig) GetOtherPorts() map[commons.ServiceSpecificPort]int 
 	return result
 }
 
-// TODO actually return a different command based on the dependencies!
-func (g GeckoServiceConfig) GetContainerStartCommand() []string {
-	return []string{
+// TODO The "ipAddrOffset" is a nasty janky hack because we have to give the public IP address! It will go away soon, when Gecko no longer needs this
+// Argument will be a map of (IP,port) -> request to make to check if a node is up
+func (g GeckoServiceConfig) GetContainerStartCommand(ipAddrOffset int, dependencyLivenessReqs map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest) []string {
+	commandList := []string{
 		"/gecko/build/ava",
-		"--public-ip=127.0.0.1",
-		"--snow-sample-size=1",
-		"--snow-quorum-size=1",
-		"--staking-tls-enabled=false",
+		// TODO this entire flag will go away soon!!
+		fmt.Sprintf("--public-ip=172.17.0.%d", 2 + ipAddrOffset),
+		"--network-id=local",
+		fmt.Sprintf("--http-port=%d", HTTP_PORT),
+		fmt.Sprintf("--staking-port=%d", STAKING_PORT),
+		"--log-level=verbo",
+		fmt.Sprintf("--snow-sample-size=%d", g.snowSampleSize),
+		fmt.Sprintf("--snow-quorum-size=%d", g.snowQuorumSize),
+		fmt.Sprintf("--staking-tls-enabled=%v", g.stakingTlsEnabled),
 	}
+
+	// If bootstrap nodes are down then Gecko will wait until they are, so we don't actually need to busy-loop making
+	// requests to the nodes
+	if dependencyLivenessReqs != nil && len(dependencyLivenessReqs) > 0 {
+		socketStrs := make([]string, 0, len(dependencyLivenessReqs))
+		for socket, _ := range dependencyLivenessReqs {
+			// TODO I hardcoded this to be the staking port rather than the RPC port, because there's currently no way to access the dependencys' staking port - fix!!!!!!!
+			socketStrs = append(socketStrs, fmt.Sprintf("%s:%d", socket.IPAddress, 9651))
+			// socketStrs = append(socketStrs, fmt.Sprintf("%s:%d", socket.IPAddress, socket.Port))
+		}
+		joinedSockets := strings.Join(socketStrs, ",")
+		commandList = append(commandList, "--bootstrap-ips=" + joinedSockets)
+	}
+
+	return commandList
 }
 
-func (g GeckoServiceConfig) GetLivenessRequest() *commons.JsonRpcRequest {
-	return &commons.JsonRpcRequest{
+func (g GeckoServiceConfig) GetLivenessRequest() commons.JsonRpcRequest {
+	return commons.JsonRpcRequest{
 		Endpoint: "/ext/P",
 		Method: "platform.getCurrentValidators",
 		RpcVersion: commons.RPC_VERSION_1_0,

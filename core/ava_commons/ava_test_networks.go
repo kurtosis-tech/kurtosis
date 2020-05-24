@@ -1,19 +1,43 @@
 package ava_commons
 
-import "github.com/gmarchetti/kurtosis/commons"
+import (
+	"github.com/gmarchetti/kurtosis/commons"
+	"github.com/palantir/stacktrace"
+)
 
 type SingleNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() *commons.JsonRpcServiceNetworkConfig {
-	// TODO set up non-null nodes (indicating that they're not boot nodes)
-	bootNodes := make(map[commons.JsonRpcServiceSocket]commons.JsonRpcRequest)
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, bootNodes)
-	serviceConfigs := map[int]commons.JsonRpcServiceConfig {
-		// TODO just a meaningless dummy value here; we'll want 10 of these as soon as we have node deps hooked up
-		0: geckoNodeConfig,
-	}
+func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
+	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 1, 1, false, LOG_LEVEL_INFO)
 
-	// TODO once we have a builder here that allows declaring node dependencies, we'd declar deps on boot nodes here
-	return commons.NewJsonRpcServiceNetworkConfig(serviceConfigs)
+	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
+	_, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not add service")
+	}
+	return builder.Build(), nil
+}
+
+type TwoNodeAvaNetworkCfgProvider struct{
+	GeckoImageName string
+}
+func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
+	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 2, 2, false, LOG_LEVEL_INFO)
+
+	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
+	bootNode, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not add bootnode service")
+	}
+	_, err = builder.AddService(
+		geckoNodeConfig,
+		map[int]bool{
+			bootNode: true,
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Could not add dependent service")
+	}
+	return builder.Build(), nil
 }

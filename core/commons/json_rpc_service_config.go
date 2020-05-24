@@ -30,10 +30,11 @@ type JsonRpcServiceConfig interface {
 	// Thus, we have to rely on a user to invent their own "enum" and use that
 	GetOtherPorts() map[ServiceSpecificPort]int
 
+	// TODO The ipAddrOffset is a hack that will go away as soon as Gecko doesn't need the --public-ip flag!
 	// Should return a command to be run in the Docker container running the RPC service, with an image-appropriate
 	// busy loop to wait for dependencies to come up
-	GetContainerStartCommand() []string
+	GetContainerStartCommand(ipAddrOffset int, dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string
 
 	// Returns an object containing information about how to query this JSON rpc service for liveness
-	GetLivenessRequest() *JsonRpcRequest
+	GetLivenessRequest() JsonRpcRequest
 }

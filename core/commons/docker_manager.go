@@ -88,7 +88,11 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 // TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func (manager *DockerManager) GetContainerCfgFromServiceCfg(serviceConfig JsonRpcServiceConfig) (config *container.Config, err error) {
+func (manager *DockerManager) GetContainerCfgFromServiceCfg(
+			// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
+			ipAddrOffset int,
+			serviceConfig JsonRpcServiceConfig,
+			dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) (config *container.Config, err error) {
 	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not parse port int.")
@@ -105,11 +109,12 @@ func (manager *DockerManager) GetContainerCfgFromServiceCfg(serviceConfig JsonRp
 		portSet[otherPort] = struct{}{}
 	}
 
+	startCmdArgs := serviceConfig.GetContainerStartCommand(ipAddrOffset, dependencyLivenessReqs)
 	nodeConfigPtr := &container.Config{
 		Image: serviceConfig.GetDockerImage(),
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
-		Cmd: serviceConfig.GetContainerStartCommand(),
+		Cmd: startCmdArgs,
 		Tty: false,
 	}
 	return nodeConfigPtr, nil

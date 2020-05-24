@@ -27,6 +27,7 @@ func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) (freeHostPortT
 }
 
 func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
+	// TODO need to verify that a port we think is free is actually free before giving it back
 	for port := hostPortTracker.portRangeStart; port < hostPortTracker.portRangeEnd; port++ {
 		if _, ok := hostPortTracker.takenPorts[port]; !ok {
 			hostPortTracker.takenPorts[port] = true

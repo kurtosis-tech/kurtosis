@@ -17,5 +17,8 @@ build/
 # files for JetBrains IDE
 .idea/
 
+# Built binary
+./kurtosis
+
 # Dependency directories (remove the comment below to include it)
 # vendor/

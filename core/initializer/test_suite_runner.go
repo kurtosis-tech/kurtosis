@@ -2,19 +2,19 @@ package initializer
 
 import (
 	"context"
-	"os"
+	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-
 	"github.com/gmarchetti/kurtosis/commons"
+	"os"
 
 	"github.com/palantir/stacktrace"
 )
 
 const START_HOST_PORT_RANGE = 9650
-const END_HOST_PORT_RANGE = 9652
+const END_HOST_PORT_RANGE = 9654
 
 
 type TestSuiteRunner struct {
@@ -34,7 +34,7 @@ func (runner TestSuiteRunner) RegisterTest(name string, configProvider commons.T
 
 // Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
 // do a set implementation)
-func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
+func (runner TestSuiteRunner) RunTests() (err error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client
@@ -49,11 +49,15 @@ func (testSuiteRunner TestSuiteRunner) RunTests() (err error) {
 	}
 
 	// TODO implement parallelism and specific test selection here
-	for _, configProvider := range testSuiteRunner.tests {
-		testNetworkCfg := configProvider.GetNetworkConfig()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(dockerManager)
+	for testName, configProvider := range runner.tests {
+		testNetworkCfg, err := configProvider.GetNetworkConfig()
 		if err != nil {
-			return stacktrace.Propagate(err,"Failed to create and run test network.")
+			stacktrace.Propagate(err, "Unable to get network config from config provider")
+		}
+		networkName := testName + uuid.Generate().String()
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 		for _, containerId := range serviceNetwork.ServiceContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
@@ -80,7 +84,13 @@ func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Clie
 	}
 
 	// If the container stops and there is an error, grab the logs.
-	out, err := dockerClient.ContainerLogs(dockerCtx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	out, err := dockerClient.ContainerLogs(
+		dockerCtx,
+		containerId,
+		types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+		})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
 	}
