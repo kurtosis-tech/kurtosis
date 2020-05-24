@@ -1,5 +1,4 @@
 * [ ] TestSuiteRunner needs to throw an error if a user double-registers a test with the same name
-* [ ] Upgrade code to pull images from Docker Hub, not just locally
 * [x] Implement FreeHostPortTracker
     1. [x] Create thread-safe object that tracks free ports with:
         * [x] Method to dole out free ports
@@ -23,4 +22,3 @@
     * [ ] Switch JsonRpcServiceNetwork's port fields
     * [ ] Switch JsonRpcServiceConfig's port field
 * [ ] Ascertain whether we should be passing structs around by value, or by reference
-* [ ] Implement graceful cleanup of Docker containers in TestSuiteRunner that's impossible to skip (even if an exception is thrown)
