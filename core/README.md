@@ -29,6 +29,10 @@ Run this every time after you kill kurtosis, because the containers will hang ar
 One way to do this is as follows:
 
 ```
+docker rm $(docker stop $(docker ps -a -q --filter ancestor="${STEPHEN_GECKO_IMAGE}" --format="{{.ID}}"))
+```
+
+```
 dockerclearall() { docker stop $(docker ps -a -q); docker rm -v $(docker ps -a -q) }
 alias dclear=dockerclearall
 ```
