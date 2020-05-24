@@ -133,7 +133,7 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(networkName string, m
 		}
 
 		serviceCfg := networkCfg.serviceConfigs[serviceId]
-		containerIpAddr, containerId, err := manager.CreateAndStart(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
+		containerIpAddr, containerId, err := manager.CreateAndStartContainerForService(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "")
 		}

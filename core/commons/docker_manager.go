@@ -31,18 +31,18 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 	}, nil
 }
 
-func (manager DockerManager) CreateAndStart(
+func (manager DockerManager) CreateAndStartContainerForService(
 	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	serviceId int,
 	serviceCfg JsonRpcServiceConfig,
 	dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) (containerIpAddr string, containerId string, err error) {
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-	containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(serviceId, serviceCfg, dependencyLivenessReqs)
+	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(serviceId, serviceCfg, dependencyLivenessReqs)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.GetContainerHostConfig(serviceCfg)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(serviceCfg)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -81,7 +81,7 @@ func (manager DockerManager) getLocalHostIp() string {
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServiceConfig) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(serviceConfig JsonRpcServiceConfig) (hostConfig *container.HostConfig, err error) {
 	freeRpcPort, err := manager.getFreePort()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
@@ -121,7 +121,7 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 // TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func (manager *DockerManager) GetContainerCfgFromServiceCfg(
+func (manager *DockerManager) getContainerCfgFromServiceCfg(
 			// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 			ipAddrOffset int,
 			serviceConfig JsonRpcServiceConfig,
