@@ -42,8 +42,10 @@ func (t TestJsonRpcServiceConfig) GetLivenessRequest() JsonRpcRequest {
 	}
 }
 
+// TODO test disallowing nonexistent configurations
+
 func TestDisallowingNonexistentDependencies(t *testing.T) {
-	builder := NewJsonRpcServiceNetworkConfigBuilder()
+	builder := NewServiceNetworkConfigBuilder()
 	config := TestJsonRpcServiceConfig{}
 
 	dependencies := map[int]bool{
@@ -56,8 +58,10 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 	}
 }
 
+// TODO test configuration IDs get incremented!
+
 func TestIdsDifferent(t *testing.T) {
-	builder := NewJsonRpcServiceNetworkConfigBuilder()
+	builder := NewServiceNetworkConfigBuilder()
 	config := TestJsonRpcServiceConfig{}
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -71,7 +75,7 @@ func TestIdsDifferent(t *testing.T) {
 }
 
 func TestDependencyBookkeeping(t *testing.T) {
-	builder := NewJsonRpcServiceNetworkConfigBuilder()
+	builder := NewServiceNetworkConfigBuilder()
 	config := TestJsonRpcServiceConfig{}
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
@@ -137,7 +141,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 }
 
 func TestDefensiveCopies(t *testing.T) {
-	builder := NewJsonRpcServiceNetworkConfigBuilder()
+	builder := NewServiceNetworkConfigBuilder()
 	config := TestJsonRpcServiceConfig{}
 
 	dependencyMap := make(map[int]bool)
@@ -160,6 +164,7 @@ func TestDefensiveCopies(t *testing.T) {
 	assert.Equal(t, 1, len(svcDependencies))
 	dependencyMap[99] = true
 	assert.Equal(t, 0, len(svcDependencies[svc1]))
+	// TODO test that our configurationIds map is defensively cpied
 
 	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }

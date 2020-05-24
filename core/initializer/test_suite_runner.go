@@ -59,7 +59,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
-		for _, containerId := range serviceNetwork.ServiceContainerIds {
+		for _, containerId := range serviceNetwork.ContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
 		}
 	}

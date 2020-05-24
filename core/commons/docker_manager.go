@@ -48,39 +48,28 @@ func (manager DockerManager) getLocalHostIp() string {
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServiceConfig) (hostConfig *container.HostConfig, err error) {
-	freeRpcPort, err := manager.getFreePort()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
+func (manager *DockerManager) GetContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
+	portMap := nat.PortMap{}
+	for port, _ := range usedPorts {
+		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not create port object fro port '%v'", port)
+		}
 
-	jsonRpcPortBinding := []nat.PortBinding{
-		{
-			HostIP: manager.getLocalHostIp(),
-			HostPort: freeRpcPort.Port(),
-		},
-	}
+		freeHostPort, err := manager.getFreePort()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Could not get a free host port!")
+		}
 
-	// TODO cycle through serviceConfig.GetOtherPorts to bind every one, not just default gecko staking port
-	freeStakingPort, err := manager.getFreePort()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
+		portMap[portObj] = []nat.PortBinding{
+			{
+				HostIP: manager.getLocalHostIp(),
+				HostPort: freeHostPort.Port(),
+			},
+		}
 	}
-	stakingPortBinding := []nat.PortBinding{
-		{
-			HostIP: manager.getLocalHostIp(),
-			HostPort: freeStakingPort.Port(),
-		},
-	}
-
-	httpPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
-	// TODO cycle through serviceConfig.getOtherPorts to bind every one, not just gecko staking port
-	stakingPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetOtherPorts()[0]))
 	containerHostConfigPtr := &container.HostConfig{
-		PortBindings: nat.PortMap{
-			httpPort: jsonRpcPortBinding,
-			stakingPort: stakingPortBinding,
-		},
+		PortBindings: portMap,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -89,19 +78,11 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
 func (manager *DockerManager) GetContainerCfgFromServiceCfg(
-			// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
-			ipAddrOffset int,
-			serviceConfig JsonRpcServiceConfig,
-			dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) (config *container.Config, err error) {
-	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Could not parse port int.")
-	}
-
-	portSet := nat.PortSet{
-		jsonRpcPort: struct{}{},
-	}
-	for _, port := range serviceConfig.GetOtherPorts() {
+			dockerImage string,
+			usedPorts map[int]bool,
+			startCmdArgs []string) (config *container.Config, err error) {
+	portSet := nat.PortSet{}
+	for port, _ := range usedPorts {
 		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Could not parse port int.")
@@ -109,9 +90,8 @@ func (manager *DockerManager) GetContainerCfgFromServiceCfg(
 		portSet[otherPort] = struct{}{}
 	}
 
-	startCmdArgs := serviceConfig.GetContainerStartCommand(ipAddrOffset, dependencyLivenessReqs)
 	nodeConfigPtr := &container.Config{
-		Image: serviceConfig.GetDockerImage(),
+		Image: dockerImage,
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
 		Cmd: startCmdArgs,

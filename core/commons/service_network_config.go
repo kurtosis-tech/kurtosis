@@ -1,13 +1,13 @@
 package commons
 
 import (
-	"github.com/docker/docker/api/types"
 	"github.com/palantir/stacktrace"
 )
 
 // Builder to ease the declaration of the network state we want
-type JsonRpcServiceNetworkConfigBuilder struct {
-	serviceConfigs map[int]JsonRpcServiceConfig
+type ServiceNetworkConfigBuilder struct {
+	// Maps a node to the configuration that will be used to construct it
+	serviceConfigs map[int]int
 
 	// Maps service_id -> set(ids that the service depends on)
 	// The 'map' value is only because Go doesn't have a Set type
@@ -22,26 +22,47 @@ type JsonRpcServiceNetworkConfigBuilder struct {
 
 	// Tracks the next service ID that will be doled out upon a call to AddService
 	nextServiceId int
+
+	// Factories that will be used to construct the nodes at build time
+	configurations map[int]ServiceFactory
+
+	// Tracks the next service configuration ID that will be doled out upon a call to AddConfiguration
+	nextConfigurationId int
 }
 
-func NewJsonRpcServiceNetworkConfigBuilder() *JsonRpcServiceNetworkConfigBuilder {
-	serviceConfigs := make(map[int]JsonRpcServiceConfig)
+func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
+	serviceConfigs := make(map[int]int)
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
 	onlyDependentServices := make(map[int]bool)
-	return &JsonRpcServiceNetworkConfigBuilder{
+	configurations := make(map[int]ServiceFactory)
+	return &ServiceNetworkConfigBuilder{
 		serviceConfigs:      serviceConfigs,
 		serviceDependencies: serviceDependencies,
 		servicesStartOrder:  serviceStartOrder,
 		onlyDependentServices: onlyDependentServices,
 		nextServiceId:       0,
+		configurations: 	 configurations,
+		nextConfigurationId: 0,
 	}
+}
+
+// Adds a service configuration to the network, that can be referenced later with AddService
+func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory ServiceFactory) int {
+	configurationId := builder.nextConfigurationId
+	builder.nextConfigurationId = builder.nextConfigurationId + 1
+	builder.configurations[configurationId] = factory
+	return configurationId
 }
 
 // Adds a serivce to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns the ID of the service, to be used with future AddService calls to declare dependencies on the service
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
-func (builder *JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServiceConfig, dependencies map[int]bool) (int, error) {
+func (builder *ServiceNetworkConfigBuilder) AddService(configurationId int, dependencies map[int]bool) (int, error) {
+	if _, found := builder.configurations[configurationId]; !found {
+		return 0, stacktrace.NewError("No configuration with ID '%v' has been registered", configurationId)
+	}
+
 	if dependencies == nil {
 		return 0, stacktrace.NewError("Dependencies map was nil; use an empty map to specify no dependencies")
 	}
@@ -58,7 +79,7 @@ func (builder *JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServ
 
 	serviceId := builder.nextServiceId
 	builder.nextServiceId = builder.nextServiceId + 1
-	builder.serviceConfigs[serviceId] = config
+	builder.serviceConfigs[serviceId] = configurationId
 
 	builder.onlyDependentServices[serviceId] = true
 	for dependencyId, _ := range dependencies {
@@ -74,12 +95,12 @@ func (builder *JsonRpcServiceNetworkConfigBuilder) AddService(config JsonRpcServ
 	return serviceId, nil
 }
 
-func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetworkConfig {
+func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 	// Defensive copy, so user calling functions on the builder after building won't affect the
 	// state of the object we already built
-	serviceConfigsCopy := make(map[int]JsonRpcServiceConfig)
-	for serviceId, serviceCfg := range builder.serviceConfigs {
-		serviceConfigsCopy[serviceId] = serviceCfg
+	serviceConfigsCopy := make(map[int]int)
+	for serviceId, configId := range builder.serviceConfigs {
+		serviceConfigsCopy[serviceId] = configId
 	}
 	serviceDependenciesCopy := make(map[int]map[int]bool)
 	for serviceId, dependencies := range builder.serviceDependencies {
@@ -97,83 +118,60 @@ func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetwork
 		onlyDependentServicesCopy[dependencyId] = true
 	}
 
-	return &JsonRpcServiceNetworkConfig{
+	configurationsCopy := make(map[int]ServiceFactory)
+	for configurationId, factory := range builder.configurations {
+		configurationsCopy[configurationId] = factory
+	}
+
+	return &ServiceNetworkConfig{
 		serviceConfigs:      serviceConfigsCopy,
 		serviceDependencies: serviceDependenciesCopy,
 		servicesStartOrder:  serviceStartOrderCopy,
 		onlyDependentServices: onlyDependentServicesCopy,
+		configurations:      configurationsCopy,
 	}
 }
 
 // Object declaring the state of the network to be created
-type JsonRpcServiceNetworkConfig struct {
-	// TODO make this be a single map[int]RunningService objects
-	serviceConfigs map[int]JsonRpcServiceConfig
+type ServiceNetworkConfig struct {
+	serviceConfigs map[int]int
 	serviceDependencies map[int]map[int]bool
 	servicesStartOrder []int
+	// Do we actually need to keep this onlyDependents list ?? We've been doing it for liveness-checking, but maybe we just
+	// push that to the implementer of the network (make them do the calls based off what they know)
+	// Don't want to rip it out yet though because it was a pain to put in
 	onlyDependentServices map[int]bool
+	configurations map[int]ServiceFactory
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(networkName string, manager *DockerManager) (network *JsonRpcServiceNetwork, err error) {
-	serviceLivenessReqs := make(map[int]JsonRpcRequest)
-	for serviceId, serviceCfg := range networkCfg.serviceConfigs {
-		serviceLivenessReqs[serviceId] = serviceCfg.GetLivenessRequest()
-	}
-
-	// TODO this isn't sufficient - we'll need to also store service-specific ports (e.g. staking port)
-	runningServices := make(map[int]JsonRpcServiceSocket)
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *DockerManager) (*ServiceNetwork, error) {
+	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
-		serviceDependenciesLivenessReqs := make(map[JsonRpcServiceSocket]JsonRpcRequest)
+		serviceDependencies := make([]Service, len(serviceDependenciesIds))
 		for dependencyId, _ := range serviceDependenciesIds {
 			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
-			dependencySocket := runningServices[dependencyId]
-			serviceDependenciesLivenessReqs[dependencySocket] = serviceLivenessReqs[dependencyId]
+			serviceDependencies = append(serviceDependencies, runningServices[dependencyId])
 		}
 
-		serviceCfg := networkCfg.serviceConfigs[serviceId]
+		configId := networkCfg.serviceConfigs[serviceId]
+		factory := networkCfg.configurations[configId]
+
 		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-		containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
-
-
-		
-		containerHostConfigPtr, err := manager.GetContainerHostConfig(serviceCfg)
+		service, containerId, err := factory.Construct(serviceId, manager, serviceDependencies)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "")
+			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
-		// TODO probably use a UUID for the network name (and maybe include test name too)
-		resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not create Docker container from image %v.", serviceCfg.GetDockerImage())
-		}
-		containerId := resp.ID
-		if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
-			return nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", serviceCfg.GetDockerImage())
-		}
-
-		containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the contaienr's IP")
-		}
-		containerIpAddr := containerJson.NetworkSettings.IPAddress
-
+		runningServices[serviceId] = service
 		serviceContainerIds[serviceId] = containerId
-		runningServices[serviceId] = JsonRpcServiceSocket{
-			IPAddress: containerIpAddr,
-			Port:      serviceCfg.GetJsonRpcPort(),
-		}
 	}
 
-
 	// TODO actually fill in all the other stuff besides container ID
-	return &JsonRpcServiceNetwork{
-		NetworkId:               "",
-		ServiceContainerIds:     serviceContainerIds,
-		ServiceIps:              nil,
-		ServiceJsonRpcPorts:     nil,
-		ServiceCustomPorts:      nil,
-		NetworkLivenessRequests: nil,
+	return &ServiceNetwork{
+		NetworkId:      "",
+		ContainerIds:   serviceContainerIds,
+		Services: 		runningServices,
 	}, nil
 }
