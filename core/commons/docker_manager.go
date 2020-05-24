@@ -2,6 +2,7 @@ package commons
 
 import (
 	"context"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -30,6 +31,38 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 	}, nil
 }
 
+func (manager DockerManager) CreateAndStartContainerForService(
+	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
+	dockerImage string,
+	usedPorts map[int]bool,
+	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
+
+	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
+	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
+	}
+	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
+	}
+	// TODO probably use a UUID for the network name (and maybe include test name too)
+	resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
+	}
+	containerId = resp.ID
+	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
+		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
+	}
+	containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
+	if err != nil {
+		return "","", stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the container's IP")
+	}
+	containerIpAddr = containerJson.NetworkSettings.IPAddress
+	return containerIpAddr, containerId, nil
+}
+
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
 	freePortInt, err := manager.freeHostPortTracker.GetFreePort()
 	if err != nil {
@@ -48,7 +81,7 @@ func (manager DockerManager) getLocalHostIp() string {
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func (manager *DockerManager) GetContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
 	portMap := nat.PortMap{}
 	for port, _ := range usedPorts {
 		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
@@ -77,7 +110,7 @@ func (manager *DockerManager) GetContainerHostConfig(usedPorts map[int]bool) (ho
 // TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func (manager *DockerManager) GetContainerCfgFromServiceCfg(
+func (manager *DockerManager) getContainerCfgFromServiceCfg(
 			dockerImage string,
 			usedPorts map[int]bool,
 			startCmdArgs []string) (config *container.Config, err error) {

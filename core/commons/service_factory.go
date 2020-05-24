@@ -1,9 +1,6 @@
 package commons
 
-import (
-	"github.com/docker/docker/api/types"
-	"github.com/palantir/stacktrace"
-)
+import "github.com/palantir/stacktrace"
 
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
 type ServiceFactory struct {
@@ -26,26 +23,9 @@ func (factory ServiceFactory) Construct(
 	startCmdArgs := factory.config.GetStartCommand(ipAddrOffset, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
-	containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
-
-	containerHostConfigPtr, err := manager.GetContainerHostConfig(usedPorts)
+	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "")
+		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	// TODO probably use a UUID for the network name (and maybe include test name too)
-	resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
-	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
-	}
-	containerId := resp.ID
-	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
-		return nil, "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
-	}
-
-	containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
-	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the container's IP")
-	}
-	containerIpAddr := containerJson.NetworkSettings.IPAddress
-	return factory.config.GetServiceFromIp(containerIpAddr), containerId, nil
+	return factory.config.GetServiceFromIp(ipAddr), containerId, nil
 }
