@@ -26,7 +26,7 @@ type ServiceNetworkConfigBuilder struct {
 	// Factories that will be used to construct the nodes at build time
 	configurations map[int]ServiceFactory
 
-	// Tracks the next service configuration ID that will be doled out upon a call to AddConfiguration
+	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
 }
 
@@ -150,11 +150,12 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
-		serviceDependencies := make([]Service, len(serviceDependenciesIds))
+		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
 		for dependencyId, _ := range serviceDependenciesIds {
 			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
 			serviceDependencies = append(serviceDependencies, runningServices[dependencyId])
 		}
+		println("Dependencies for svc %v: %v", serviceId, serviceDependencies)
 
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]

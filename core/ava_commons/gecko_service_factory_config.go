@@ -78,12 +78,6 @@ func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 }
 
 func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []commons.Service) []string {
-	// TODO realllllllly wish Go had generics, so we didn't have to do this!
-	avaDependencies := make([]AvaService, 0, len(dependencies))
-	for _, service := range dependencies {
-		avaDependencies = append(avaDependencies, service.(AvaService))
-	}
-
 	commandList := []string{
 		"/gecko/build/ava",
 		// TODO this entire flag will go away soon!!
@@ -99,7 +93,14 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 
 	// If bootstrap nodes are down then Gecko will wait until they are, so we don't actually need to busy-loop making
 	// requests to the nodes
-	if avaDependencies != nil && len(avaDependencies) > 0 {
+	if dependencies != nil && len(dependencies) > 0 {
+		// TODO realllllllly wish Go had generics, so we didn't have to do this!
+		avaDependencies := make([]AvaService, 0, len(dependencies))
+		for _, service := range dependencies {
+			println(fmt.Sprintf("Service: %v", service))
+			avaDependencies = append(avaDependencies, service.(AvaService))
+		}
+
 		socketStrs := make([]string, 0, len(avaDependencies))
 		for _, service := range avaDependencies {
 			socket := service.GetStakingSocket()
@@ -113,6 +114,6 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 }
 
 func (g GeckoServiceFactoryConfig) GetServiceFromIp(ipAddr string) commons.Service {
-	panic("implement me")
+	return GeckoService{ipAddr: ipAddr}
 }
 
