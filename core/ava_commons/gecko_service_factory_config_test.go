@@ -18,6 +18,10 @@ func TestGetContainerStartCommand(t *testing.T) {
 	expectedNoDeps := []string{
 		"/gecko/build/ava",
 		"--public-ip=172.17.0.2",
+		"--network-id=local",
+		"--http-port=9650",
+		"--staking-port=9651",
+		"--log-level=info",
 		"--snow-sample-size=1",
 		"--snow-quorum-size=1",
 		"--staking-tls-enabled=false",

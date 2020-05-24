@@ -91,7 +91,7 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 		"--network-id=local",
 		fmt.Sprintf("--http-port=%d", httpPort),
 		fmt.Sprintf("--staking-port=%d", stakingPort),
-		"--log-level=verbo",
+		fmt.Sprintf("--log-level=%s", g.logLevel),
 		fmt.Sprintf("--snow-sample-size=%d", g.snowSampleSize),
 		fmt.Sprintf("--snow-quorum-size=%d", g.snowQuorumSize),
 		fmt.Sprintf("--staking-tls-enabled=%v", g.stakingTlsEnabled),

@@ -1,52 +1,44 @@
 package commons
 
 import (
-	"fmt"
 	"gotest.tools/assert"
 	"testing"
 )
 
-type TestJsonRpcServiceConfig struct {}
+type TestService struct {}
 
-func (t TestJsonRpcServiceConfig) GetDockerImage() string {
-	return "testImage"
+type TestFactoryConfig struct {}
+func (t TestFactoryConfig) GetDockerImage() string {
+	return "TEST"
 }
 
-func (t TestJsonRpcServiceConfig) GetJsonRpcPort() int {
-	return 1234
+func (t TestFactoryConfig) GetUsedPorts() map[int]bool {
+	return make(map[int]bool)
 }
 
-func (t TestJsonRpcServiceConfig) GetOtherPorts() map[ServiceSpecificPort]int {
-	return make(map[ServiceSpecificPort]int)
+func (t TestFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []Service) []string {
+	return make([]string, 0)
 }
 
-// TODO the "ipAddrOffset" arg will go away as soon as Gecko no longer needs --public-ips flag!
-func (t TestJsonRpcServiceConfig) GetContainerStartCommand(ipAddrOffset int, dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string {
-	cmdArgs := []string{
-		"arg1",
-		"arg2",
-	}
-	for socket, _ := range dependencyLivenessReqs {
-		cmdArgs = append(cmdArgs, fmt.Sprintf("%v:%v", socket.IPAddress, socket.Port))
-	}
-	return cmdArgs
+func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) Service {
+	return TestService{}
 }
 
-func (t TestJsonRpcServiceConfig) GetLivenessRequest() JsonRpcRequest {
-	return JsonRpcRequest{
-		Endpoint:   "testEndpoint",
-		Method:     "testMethod",
-		RpcVersion: "1.0",
-		Params:     nil,
-		ID:         0,
+func getTestServiceFactory() *ServiceFactory {
+	return NewServiceFactory(TestFactoryConfig{})
+}
+
+func TestDisallowingNonexistentConfigs(t *testing.T) {
+	builder := NewServiceNetworkConfigBuilder()
+	_, err := builder.AddService(0, make(map[int]bool))
+	if err == nil {
+		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
 	}
 }
-
-// TODO test disallowing nonexistent configurations
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := TestJsonRpcServiceConfig{}
+	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	dependencies := map[int]bool{
 		0: true,
@@ -62,7 +54,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := TestJsonRpcServiceConfig{}
+	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -76,7 +68,7 @@ func TestIdsDifferent(t *testing.T) {
 
 func TestDependencyBookkeeping(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := TestJsonRpcServiceConfig{}
+	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -142,7 +134,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := TestJsonRpcServiceConfig{}
+	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	dependencyMap := make(map[int]bool)
 	svc1, err := builder.AddService(config, dependencyMap)
@@ -152,6 +144,7 @@ func TestDefensiveCopies(t *testing.T) {
 
 	networkConfig := builder.Build()
 
+	_ = builder.AddServiceConfiguration(*getTestServiceFactory())
 	_, err = builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -159,12 +152,12 @@ func TestDefensiveCopies(t *testing.T) {
 	assert.Equal(t, 1, len(networkConfig.onlyDependentServices))
 	assert.Equal(t, 1, len(networkConfig.serviceConfigs))
 	assert.Equal(t, 1, len(networkConfig.servicesStartOrder))
+	assert.Equal(t, 1, len(networkConfig.configurations))
 
 	svcDependencies := networkConfig.serviceDependencies
 	assert.Equal(t, 1, len(svcDependencies))
 	dependencyMap[99] = true
 	assert.Equal(t, 0, len(svcDependencies[svc1]))
-	// TODO test that our configurationIds map is defensively cpied
 
 	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }
