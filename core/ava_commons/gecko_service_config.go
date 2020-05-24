@@ -18,13 +18,20 @@ type GeckoServiceConfig struct {
 	snowSampleSize int
 	snowQuorumSize int
 	stakingTlsEnabled bool
+	logLevel GeckoLogLevel
 }
+
+type GeckoLogLevel string
 
 const (
 	STAKING_PORT_ID commons.ServiceSpecificPort = 0
 
 	HTTP_PORT = 9650
 	STAKING_PORT = 9651
+
+	LOG_LEVEL_VERBOSE GeckoLogLevel = "verbo"
+	LOG_LEVEL_DEBUG GeckoLogLevel = "debug"
+	LOG_LEVEL_INFO GeckoLogLevel = "info"
 )
 
 // TODO implement more Ava-specific params here, like snow quorum
@@ -32,12 +39,14 @@ func NewGeckoServiceConfig(
 			dockerImage string,
 			snowSampleSize int,
 			snowQuorumSize int,
-			stakingTlsEnabled bool) *GeckoServiceConfig {
+			stakingTlsEnabled bool,
+			logLevel GeckoLogLevel) *GeckoServiceConfig {
 	return &GeckoServiceConfig{
 		geckoImageName:    dockerImage,
 		snowSampleSize:    snowSampleSize,
 		snowQuorumSize:    snowQuorumSize,
 		stakingTlsEnabled: stakingTlsEnabled,
+		logLevel: 		   logLevel,
 	}
 }
 
@@ -73,7 +82,6 @@ func (g GeckoServiceConfig) GetContainerStartCommand(ipAddrOffset int, dependenc
 
 	// If bootstrap nodes are down then Gecko will wait until they are, so we don't actually need to busy-loop making
 	// requests to the nodes
-
 	if dependencyLivenessReqs != nil && len(dependencyLivenessReqs) > 0 {
 		socketStrs := make([]string, 0, len(dependencyLivenessReqs))
 		for socket, _ := range dependencyLivenessReqs {
@@ -84,20 +92,6 @@ func (g GeckoServiceConfig) GetContainerStartCommand(ipAddrOffset int, dependenc
 		joinedSockets := strings.Join(socketStrs, ",")
 		commandList = append(commandList, "--bootstrap-ips=" + joinedSockets)
 	}
-
-	/*
-	// TODO DEbugging remove me!
-	if len(dependencyLivenessReqs) > 0 {
-		joined := strings.Join(commandList, " ")
-		waitArgs := []string{
-			"bash",
-			"-c",
-			"sleep 10; " + joined + "",
-		}
-		commandList = waitArgs
-	}
-
-	 */
 
 	return commandList
 }

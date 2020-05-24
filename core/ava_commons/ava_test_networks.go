@@ -9,7 +9,7 @@ type SingleNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
 func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 1, 1, false)
+	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 1, 1, false, LOG_LEVEL_INFO)
 
 	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
 	_, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
@@ -23,7 +23,7 @@ type TwoNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
 func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 2, 2, false)
+	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 2, 2, false, LOG_LEVEL_INFO)
 
 	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
 	bootNode, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
