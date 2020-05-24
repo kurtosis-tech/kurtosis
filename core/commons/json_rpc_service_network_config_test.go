@@ -20,7 +20,8 @@ func (t TestJsonRpcServiceConfig) GetOtherPorts() map[ServiceSpecificPort]int {
 	return make(map[ServiceSpecificPort]int)
 }
 
-func (t TestJsonRpcServiceConfig) GetContainerStartCommand(dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string {
+// TODO the "ipAddrOffset" arg will go away as soon as Gecko no longer needs --public-ips flag!
+func (t TestJsonRpcServiceConfig) GetContainerStartCommand(ipAddrOffset int, dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) []string {
 	cmdArgs := []string{
 		"arg1",
 		"arg2",
@@ -159,4 +160,8 @@ func TestDefensiveCopies(t *testing.T) {
 	assert.Equal(t, 1, len(svcDependencies))
 	dependencyMap[99] = true
 	assert.Equal(t, 0, len(svcDependencies[svc1]))
+
+	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }
+
+

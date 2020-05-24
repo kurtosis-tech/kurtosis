@@ -5,6 +5,7 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
+// Builder to ease the declaration of the network state we want
 type JsonRpcServiceNetworkConfigBuilder struct {
 	serviceConfigs map[int]JsonRpcServiceConfig
 
@@ -104,6 +105,7 @@ func (builder JsonRpcServiceNetworkConfigBuilder) Build() *JsonRpcServiceNetwork
 	}
 }
 
+// Object declaring the state of the network to be created
 type JsonRpcServiceNetworkConfig struct {
 	// TODO make this be a single map[int]RunningService objects
 	serviceConfigs map[int]JsonRpcServiceConfig
@@ -119,13 +121,14 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(networkName string, m
 		serviceLivenessReqs[serviceId] = serviceCfg.GetLivenessRequest()
 	}
 
+	// TODO this isn't sufficient - we'll need to also store service-specific ports (e.g. staking port)
 	runningServices := make(map[int]JsonRpcServiceSocket)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependenciesLivenessReqs := make(map[JsonRpcServiceSocket]JsonRpcRequest)
 		for dependencyId, _ := range serviceDependenciesIds {
-			// We're guaranteed that this service will already be running due to the ordering we enforce in the builder
+			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
 			dependencySocket := runningServices[dependencyId]
 			serviceDependenciesLivenessReqs[dependencySocket] = serviceLivenessReqs[dependencyId]
 		}

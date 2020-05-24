@@ -2,7 +2,6 @@ package commons
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -111,7 +110,6 @@ func (manager *DockerManager) GetContainerCfgFromServiceCfg(
 	}
 
 	startCmdArgs := serviceConfig.GetContainerStartCommand(ipAddrOffset, dependencyLivenessReqs)
-	println(fmt.Sprintf("%v", startCmdArgs))
 	nodeConfigPtr := &container.Config{
 		Image: serviceConfig.GetDockerImage(),
 		// TODO allow modifying of protocol at some point

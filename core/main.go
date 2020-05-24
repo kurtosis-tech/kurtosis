@@ -20,6 +20,7 @@ func main() {
 
 	testSuiteRunner := initializer.NewTestSuiteRunner()
 
+	// TODO Uncomment this when our RunTests method supports calling tests by name (rather than just running all tests)
 	/*
 	singleNodeNetwork := ava_commons.SingleNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
 	testSuiteRunner.RegisterTest("singleNodeNetwork", singleNodeNetwork)
