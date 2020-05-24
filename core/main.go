@@ -18,6 +18,20 @@ func main() {
 	)
 	flag.Parse()
 
+	portRangeStart := flag.String(
+		"port-range-start",
+		"9650", // by default, pick commit that was on master May 14, 2020.
+		"Beginning of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
+	flag.Parse()
+
+	portRangeEnd := flag.String(
+		"port-range-end",
+		"9670", // by default, pick commit that was on master May 14, 2020.
+		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
+	flag.Parse()
+
 	testSuiteRunner := initializer.NewTestSuiteRunner()
 
 	// TODO Uncomment this when our RunTests method supports calling tests by name (rather than just running all tests)
