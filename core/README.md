@@ -24,17 +24,24 @@ Currently, the ports that the container will run on for HTTP and for staking on 
 
 # Helpful Tip
 
-Create an alias in your shell .rc file to stop and clear all Docker containers in one line.  
+Create an alias in your shell .rc file to stop and clear all Docker containers created by Kurtosis in one line.  
 Run this every time after you kill kurtosis, because the containers will hang around.  
 One way to do this is as follows:
 
 ```
-docker rm $(docker stop $(docker ps -a -q --filter ancestor="${STEPHEN_GECKO_IMAGE}" --format="{{.ID}}"))
+# alias for clearing kurtosis containers 
+kurtosisclearall() {  docker rm $(docker stop $(docker ps -a -q --filter ancestor="$1" --format="{{.ID}}")) } 
+alias kclear=kurtosisclearall
 ```
 
+Usage:
 ```
-dockerclearall() { docker stop $(docker ps -a -q); docker rm -v $(docker ps -a -q) }
-alias dclear=dockerclearall
+export GECKO_IMAGE=gecko-684ca4e
+# run kurtosis
+./build/kurtosis -gecko-image-name="${GECKO_IMAGE}"
+# ...kill kurtosis manually...
+# clear the docker containers initialized by kurtosis
+kclear ${GECKO_IMAGE} 
 ```
 
 # TODO
