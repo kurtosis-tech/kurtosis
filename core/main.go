@@ -26,7 +26,7 @@ func main() {
 	testSuiteRunner.RegisterTest("singleNodeNetwork", singleNodeNetwork)
 	 */
 
-	twoNodeNetwork := ava_commons.TwoNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
+	twoNodeNetwork := ava_commons.TenNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
 	testSuiteRunner.RegisterTest("twoNodeNetwork", twoNodeNetwork)
 
 	// Create the container based on the configurations, but don't start it yet.
