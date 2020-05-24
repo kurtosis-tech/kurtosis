@@ -12,6 +12,11 @@ import (
 	"strings"
 )
 
+const (
+	HTTP_PORT = 9650
+	STAKING_PORT = 9651
+)
+
 // Type representing a Gecko Node and which ports on the host machine it will use for HTTP and Staking.
 type GeckoServiceConfig struct {
 	geckoImageName string
@@ -23,12 +28,14 @@ type GeckoServiceConfig struct {
 
 type GeckoLogLevel string
 
+
+// "Enum" of Gecko-specific ports
 const (
 	STAKING_PORT_ID commons.ServiceSpecificPort = 0
+)
 
-	HTTP_PORT = 9650
-	STAKING_PORT = 9651
-
+// "Enum" of Gecko log levels
+const (
 	LOG_LEVEL_VERBOSE GeckoLogLevel = "verbo"
 	LOG_LEVEL_DEBUG GeckoLogLevel = "debug"
 	LOG_LEVEL_INFO GeckoLogLevel = "info"
