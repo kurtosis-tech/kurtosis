@@ -1,7 +1,6 @@
 package commons
 
 import (
-	"github.com/docker/docker/api/types"
 	"github.com/palantir/stacktrace"
 )
 
@@ -134,30 +133,10 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(networkName string, m
 		}
 
 		serviceCfg := networkCfg.serviceConfigs[serviceId]
-		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-		containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
-
-
-		
-		containerHostConfigPtr, err := manager.GetContainerHostConfig(serviceCfg)
+		containerIpAddr, containerId, err := manager.CreateAndStartContainerForService(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "")
 		}
-		// TODO probably use a UUID for the network name (and maybe include test name too)
-		resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not create Docker container from image %v.", serviceCfg.GetDockerImage())
-		}
-		containerId := resp.ID
-		if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
-			return nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", serviceCfg.GetDockerImage())
-		}
-
-		containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the contaienr's IP")
-		}
-		containerIpAddr := containerJson.NetworkSettings.IPAddress
 
 		serviceContainerIds[serviceId] = containerId
 		runningServices[serviceId] = JsonRpcServiceSocket{
