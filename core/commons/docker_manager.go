@@ -2,6 +2,7 @@ package commons
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -89,7 +90,8 @@ func (manager *DockerManager) GetContainerHostConfig(serviceConfig JsonRpcServic
 // Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
 // Gecko HTTP and Staking ports inside the Container are the standard defaults.
 func (manager *DockerManager) GetContainerCfgFromServiceCfg(
-			hostname string,
+			// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
+			ipAddrOffset int,
 			serviceConfig JsonRpcServiceConfig,
 			dependencyLivenessReqs map[JsonRpcServiceSocket]JsonRpcRequest) (config *container.Config, err error) {
 	jsonRpcPort, err := nat.NewPort("tcp", strconv.Itoa(serviceConfig.GetJsonRpcPort()))
@@ -108,12 +110,13 @@ func (manager *DockerManager) GetContainerCfgFromServiceCfg(
 		portSet[otherPort] = struct{}{}
 	}
 
+	startCmdArgs := serviceConfig.GetContainerStartCommand(ipAddrOffset, dependencyLivenessReqs)
+	println(fmt.Sprintf("%v", startCmdArgs))
 	nodeConfigPtr := &container.Config{
 		Image: serviceConfig.GetDockerImage(),
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
-		Hostname: hostname,
-		Cmd: serviceConfig.GetContainerStartCommand(dependencyLivenessReqs),
+		Cmd: startCmdArgs,
 		Tty: false,
 	}
 	return nodeConfigPtr, nil

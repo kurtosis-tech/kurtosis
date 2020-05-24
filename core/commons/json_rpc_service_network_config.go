@@ -1,7 +1,6 @@
 package commons
 
 import (
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/palantir/stacktrace"
 )
@@ -113,7 +112,8 @@ type JsonRpcServiceNetworkConfig struct {
 	onlyDependentServices map[int]bool
 }
 
-func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManager) (network *JsonRpcServiceNetwork, err error) {
+// TODO use the network name to create a new network!!
+func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(networkName string, manager *DockerManager) (network *JsonRpcServiceNetwork, err error) {
 	serviceLivenessReqs := make(map[int]JsonRpcRequest)
 	for serviceId, serviceCfg := range networkCfg.serviceConfigs {
 		serviceLivenessReqs[serviceId] = serviceCfg.GetLivenessRequest()
@@ -131,9 +131,11 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManage
 		}
 
 		serviceCfg := networkCfg.serviceConfigs[serviceId]
-		hostname := fmt.Sprintf("service-%v", serviceId)
-		containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(hostname, serviceCfg, serviceDependenciesLivenessReqs)
+		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
+		containerConfigPtr, err := manager.GetContainerCfgFromServiceCfg(serviceId, serviceCfg, serviceDependenciesLivenessReqs)
 
+
+		
 		containerHostConfigPtr, err := manager.GetContainerHostConfig(serviceCfg)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "")
@@ -147,9 +149,16 @@ func (networkCfg JsonRpcServiceNetworkConfig) CreateAndRun(manager *DockerManage
 		if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 			return nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", serviceCfg.GetDockerImage())
 		}
+
+		containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the contaienr's IP")
+		}
+		containerIpAddr := containerJson.NetworkSettings.IPAddress
+
 		serviceContainerIds[serviceId] = containerId
 		runningServices[serviceId] = JsonRpcServiceSocket{
-			IPAddress: hostname,
+			IPAddress: containerIpAddr,
 			Port:      serviceCfg.GetJsonRpcPort(),
 		}
 	}

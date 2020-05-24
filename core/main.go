@@ -20,8 +20,13 @@ func main() {
 
 	testSuiteRunner := initializer.NewTestSuiteRunner()
 
-	network := ava_commons.SingleNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
-	testSuiteRunner.RegisterTest("singleNodeNetwork", network)
+	/*
+	singleNodeNetwork := ava_commons.SingleNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
+	testSuiteRunner.RegisterTest("singleNodeNetwork", singleNodeNetwork)
+	 */
+
+	twoNodeNetwork := ava_commons.TwoNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
+	testSuiteRunner.RegisterTest("twoNodeNetwork", twoNodeNetwork)
 
 	// Create the container based on the configurations, but don't start it yet.
 	fmt.Println("I'm going to run a Gecko node, and hang while it's running! Kill me and then clear your docker containers.")
