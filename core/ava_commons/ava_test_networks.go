@@ -77,7 +77,7 @@ func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpc
 		bootNode1: true,
 		bootNode2: true,
 	}
-	for i:=4; i < 10; i++ {
+	for i:=3; i < 10; i++ {
 		_, err := builder.AddService(
 			geckoNodeConfig,
 			bootNodeMap,
