@@ -60,7 +60,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		return "","", stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the container's IP")
 	}
 	containerIpAddr = containerJson.NetworkSettings.IPAddress
-	return containerIpAddr, containerId,nil
+	return containerIpAddr, containerId, nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
