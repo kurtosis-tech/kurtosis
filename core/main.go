@@ -16,14 +16,12 @@ func main() {
 		"gecko-f290f73", // by default, pick commit that was on master May 14, 2020.
 		"the name of a pre-built gecko image in your docker engine.",
 	)
-	flag.Parse()
 
 	portRangeStartArg := flag.Int(
 		"port-range-start",
 		9650,
 		"Beginning of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
-	flag.Parse()
 
 	portRangeEndArg := flag.Int(
 		"port-range-end",
