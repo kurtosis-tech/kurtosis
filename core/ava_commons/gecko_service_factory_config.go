@@ -97,7 +97,6 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 		// TODO realllllllly wish Go had generics, so we didn't have to do this!
 		avaDependencies := make([]AvaService, 0, len(dependencies))
 		for _, service := range dependencies {
-			println(fmt.Sprintf("Service: %v", service))
 			avaDependencies = append(avaDependencies, service.(AvaService))
 		}
 

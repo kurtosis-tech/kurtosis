@@ -155,7 +155,6 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
 			serviceDependencies = append(serviceDependencies, runningServices[dependencyId])
 		}
-		println("Dependencies for svc %v: %v", serviceId, serviceDependencies)
 
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]
