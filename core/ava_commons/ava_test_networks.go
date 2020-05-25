@@ -8,11 +8,18 @@ import (
 type SingleNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 1, 1, false, LOG_LEVEL_INFO)
+func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+	factoryConfig := NewGeckoServiceFactoryConfig(
+		network.GeckoImageName,
+		1,
+		1,
+		false,
+		LOG_LEVEL_DEBUG)
+	factory := commons.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
-	_, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
+	builder := commons.NewServiceNetworkConfigBuilder()
+	config1 := builder.AddServiceConfiguration(*factory)
+	_, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not add service")
 	}
@@ -22,16 +29,23 @@ func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.Json
 type TwoNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 2, 2, false, LOG_LEVEL_INFO)
+func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+	factoryConfig := NewGeckoServiceFactoryConfig(
+		network.GeckoImageName,
+		2,
+		2,
+		false,
+		LOG_LEVEL_DEBUG)
+	factory := commons.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
-	bootNode, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
+	builder := commons.NewServiceNetworkConfigBuilder()
+	config1 := builder.AddServiceConfiguration(*factory)
+	bootNode, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not add bootnode service")
 	}
 	_, err = builder.AddService(
-		geckoNodeConfig,
+		config1,
 		map[int]bool{
 			bootNode: true,
 		},
@@ -45,16 +59,23 @@ func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpc
 type TenNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpcServiceNetworkConfig, error) {
-	geckoNodeConfig := NewGeckoServiceConfig(network.GeckoImageName, 2, 2, false, LOG_LEVEL_INFO)
+func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+	factoryConfig := NewGeckoServiceFactoryConfig(
+		network.GeckoImageName,
+		2,
+		2,
+		false,
+		LOG_LEVEL_DEBUG)
+	factory := commons.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewJsonRpcServiceNetworkConfigBuilder()
-	bootNode0, err := builder.AddService(geckoNodeConfig, make(map[int]bool))
+	builder := commons.NewServiceNetworkConfigBuilder()
+	config1 := builder.AddServiceConfiguration(*factory)
+	bootNode0, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not add bootnode service")
 	}
 	bootNode1, err := builder.AddService(
-		geckoNodeConfig,
+		config1,
 		map[int]bool{
 			bootNode0: true,
 		},
@@ -63,7 +84,7 @@ func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpc
 		return nil, stacktrace.Propagate(err, "Could not add dependent service")
 	}
 	bootNode2, err := builder.AddService(
-		geckoNodeConfig,
+		config1,
 		map[int]bool{
 			bootNode0: true,
 			bootNode1: true,
@@ -79,7 +100,7 @@ func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.JsonRpc
 	}
 	for i:=3; i < 10; i++ {
 		_, err := builder.AddService(
-			geckoNodeConfig,
+			config1,
 			bootNodeMap,
 		)
 		if err != nil {
