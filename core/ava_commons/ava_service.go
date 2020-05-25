@@ -1,9 +1,11 @@
 package ava_commons
 
-import "github.com/gmarchetti/kurtosis/commons"
+import (
+	"github.com/gmarchetti/kurtosis/commons/testnet"
+)
 
 type AvaService interface {
-	commons.Service
+	testnet.Service
 
-	GetStakingSocket() commons.ServiceSocket
+	GetStakingSocket() testnet.ServiceSocket
 }

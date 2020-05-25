@@ -1,23 +1,23 @@
 package ava_commons
 
 import (
-	"github.com/gmarchetti/kurtosis/commons"
+	"github.com/gmarchetti/kurtosis/commons/testnet"
 	"github.com/palantir/stacktrace"
 )
 
 type SingleNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*testnet.ServiceNetworkConfig, error) {
 	factoryConfig := NewGeckoServiceFactoryConfig(
 		network.GeckoImageName,
 		1,
 		1,
 		false,
 		LOG_LEVEL_DEBUG)
-	factory := commons.NewServiceFactory(factoryConfig)
+	factory := testnet.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewServiceNetworkConfigBuilder()
+	builder := testnet.NewServiceNetworkConfigBuilder()
 	config1 := builder.AddServiceConfiguration(*factory)
 	_, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
@@ -29,16 +29,16 @@ func (network SingleNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.Serv
 type TwoNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*testnet.ServiceNetworkConfig, error) {
 	factoryConfig := NewGeckoServiceFactoryConfig(
 		network.GeckoImageName,
 		2,
 		2,
 		false,
 		LOG_LEVEL_DEBUG)
-	factory := commons.NewServiceFactory(factoryConfig)
+	factory := testnet.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewServiceNetworkConfigBuilder()
+	builder := testnet.NewServiceNetworkConfigBuilder()
 	config1 := builder.AddServiceConfiguration(*factory)
 	bootNode, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
@@ -59,16 +59,16 @@ func (network TwoNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.Service
 type TenNodeAvaNetworkCfgProvider struct{
 	GeckoImageName string
 }
-func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*commons.ServiceNetworkConfig, error) {
+func (network TenNodeAvaNetworkCfgProvider) GetNetworkConfig() (*testnet.ServiceNetworkConfig, error) {
 	factoryConfig := NewGeckoServiceFactoryConfig(
 		network.GeckoImageName,
 		2,
 		2,
 		false,
 		LOG_LEVEL_DEBUG)
-	factory := commons.NewServiceFactory(factoryConfig)
+	factory := testnet.NewServiceFactory(factoryConfig)
 
-	builder := commons.NewServiceNetworkConfigBuilder()
+	builder := testnet.NewServiceNetworkConfigBuilder()
 	config1 := builder.AddServiceConfiguration(*factory)
 	bootNode0, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {
