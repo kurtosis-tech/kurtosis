@@ -13,17 +13,18 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-const START_HOST_PORT_RANGE = 9650
-const END_HOST_PORT_RANGE = 9670
-
 
 type TestSuiteRunner struct {
 	tests map[string]commons.TestNetworkConfigProvider
+	startPortRange int
+	endPortRange int
 }
 
-func NewTestSuiteRunner() *TestSuiteRunner {
+func NewTestSuiteRunner(startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		tests: make(map[string]commons.TestNetworkConfigProvider),
+		startPortRange: startPortRange,
+		endPortRange: endPortRange,
 	}
 }
 
@@ -43,7 +44,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	dockerManager, err := commons.NewDockerManager(dockerCtx, dockerClient, START_HOST_PORT_RANGE, END_HOST_PORT_RANGE)
+	dockerManager, err := commons.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}

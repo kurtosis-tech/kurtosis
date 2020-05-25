@@ -18,7 +18,21 @@ func main() {
 	)
 	flag.Parse()
 
-	testSuiteRunner := initializer.NewTestSuiteRunner()
+	portRangeStartArg := flag.Int(
+		"port-range-start",
+		9650,
+		"Beginning of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
+	flag.Parse()
+
+	portRangeEndArg := flag.Int(
+		"port-range-end",
+		9670,
+		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
+	flag.Parse()
+
+	testSuiteRunner := initializer.NewTestSuiteRunner(*portRangeStartArg, *portRangeEndArg)
 
 	// TODO Uncomment this when our RunTests method supports calling tests by name (rather than just running all tests)
 	/*
