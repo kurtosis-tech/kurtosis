@@ -1,6 +1,10 @@
 package commons
 
-import "github.com/palantir/stacktrace"
+import (
+	"github.com/palantir/stacktrace"
+	"net"
+	"strconv"
+)
 
 const VALID_PORT_RANGE_START = 1024
 const VALID_PORT_RANGE_END = 65535
@@ -27,11 +31,12 @@ func NewFreeHostPortTracker(portRangeStart int, portRangeEnd int) (freeHostPortT
 }
 
 func (hostPortTracker FreeHostPortTracker) GetFreePort() (port int, err error) {
-	// TODO need to verify that a port we think is free is actually free before giving it back
 	for port := hostPortTracker.portRangeStart; port < hostPortTracker.portRangeEnd; port++ {
 		if _, ok := hostPortTracker.takenPorts[port]; !ok {
-			hostPortTracker.takenPorts[port] = true
-			return port, nil
+			if isPortFree(port) {
+				hostPortTracker.takenPorts[port] = true
+				return port, nil
+			}
 		}
 	}
 	return -1, stacktrace.NewError("There are no more free ports available given the host port range.")
@@ -43,4 +48,13 @@ func (hostPortTracker FreeHostPortTracker) ReleasePort(port int) {
 
 func isPortValid(port int) bool {
 	return port >= VALID_PORT_RANGE_START && port <= VALID_PORT_RANGE_END
+}
+
+func isPortFree(port int) bool {
+	ln, err := net.Listen("tcp", ":" + strconv.Itoa(port))
+	if err != nil {
+		return false
+	}
+	_ = ln.Close()
+	return true
 }
