@@ -1,4 +1,4 @@
-package commons
+package testnet
 
 import "github.com/docker/go-connections/nat"
 

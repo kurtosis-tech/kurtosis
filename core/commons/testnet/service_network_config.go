@@ -1,6 +1,7 @@
-package commons
+package testnet
 
 import (
+	"github.com/gmarchetti/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
 )
 
@@ -145,7 +146,7 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *DockerManager) (*ServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*ServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {

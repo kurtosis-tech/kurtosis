@@ -1,4 +1,4 @@
-package commons
+package testnet
 
 import (
 	"gotest.tools/assert"
