@@ -3,7 +3,7 @@ package ava_commons
 import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/gmarchetti/kurtosis/commons"
+	"github.com/gmarchetti/kurtosis/commons/testnet"
 	"strconv"
 	"strings"
 )
@@ -25,13 +25,13 @@ func NewGeckoService(ipAddr string) *GeckoService {
 	}
 }
 
-func (g GeckoService) GetStakingSocket() commons.ServiceSocket {
+func (g GeckoService) GetStakingSocket() testnet.ServiceSocket {
 	stakingPort, err := nat.NewPort("tcp", strconv.Itoa(stakingPort))
 	if err != nil {
 		// Realllllly don't think we should deal with propagating this one.... it means the user mistyped an integer
 		panic(err)
 	}
-	return *commons.NewServiceSocket(g.ipAddr, stakingPort)
+	return *testnet.NewServiceSocket(g.ipAddr, stakingPort)
 }
 
 // TODO implement a GetJsonRpcSocket function, which we'll need for testing
@@ -77,7 +77,7 @@ func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 	}
 }
 
-func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []commons.Service) []string {
+func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []testnet.Service) []string {
 	commandList := []string{
 		"/gecko/build/ava",
 		// TODO this entire flag will go away soon!!
@@ -113,7 +113,7 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 	return commandList
 }
 
-func (g GeckoServiceFactoryConfig) GetServiceFromIp(ipAddr string) commons.Service {
+func (g GeckoServiceFactoryConfig) GetServiceFromIp(ipAddr string) testnet.Service {
 	return GeckoService{ipAddr: ipAddr}
 }
 

@@ -1,4 +1,4 @@
-package commons
+package testnet
 
 type TestNetworkConfigProvider interface {
 	GetNetworkConfig() (*ServiceNetworkConfig, error)
