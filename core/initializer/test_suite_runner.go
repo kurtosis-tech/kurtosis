@@ -7,7 +7,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/gmarchetti/kurtosis/commons"
+	"github.com/gmarchetti/kurtosis/commons/docker"
+	"github.com/gmarchetti/kurtosis/commons/testnet"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -15,19 +16,20 @@ import (
 
 
 type TestSuiteRunner struct {
+	tests map[string]testnet.TestNetworkConfigProvider
 	startPortRange int
 	endPortRange int
 }
 
 func NewTestSuiteRunner(testSuite TestSuite, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
-		tests: make(map[string]commons.TestNetworkConfigProvider),
+		tests: make(map[string]testnet.TestNetworkConfigProvider),
 		startPortRange: startPortRange,
 		endPortRange: endPortRange,
 	}
 }
 
-func (runner TestSuiteRunner) RegisterTest(name string, configProvider commons.TestNetworkConfigProvider) {
+func (runner TestSuiteRunner) RegisterTest(name string, configProvider testnet.TestNetworkConfigProvider) {
 	// TODO check if the test already exists and throw an error if so (means an error in the user code)
 	runner.tests[name] = configProvider
 }
@@ -43,7 +45,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	dockerManager, err := commons.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
