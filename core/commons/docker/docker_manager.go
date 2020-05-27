@@ -25,10 +25,12 @@ type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 	freeHostPortTracker *FreeHostPortTracker
+	freeIpAddrTrackers map[string]*FreeIpAddrTracker
 }
 
 func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
 	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
+	freeIpAddrTrackers := make(map[string]*FreeIpAddrTracker)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
 	}
@@ -36,6 +38,7 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 		freeHostPortTracker: freeHostPortTracker,
+		freeIpAddrTrackers: freeIpAddrTrackers,
 	}, nil
 }
 
@@ -70,6 +73,11 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
+	ipAddrTracker := manager.freeIpAddrTrackers[dockerNetwork]
+	if ipAddrTracker == nil {
+		manager.freeIpAddrTrackers[dockerNetwork] = NewFreeIpAddrTracker(dockerNetwork, SUBNET_MASK)
+	}
+
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
 	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
@@ -88,9 +96,13 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	ipAddr, err := manager.getIPAddr(dockerNetwork, containerId)
+	ipAddr, err := ipAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return "","", stacktrace.Propagate(err, "Inspect network failed, which is necessary to get the container's IP")
+		return "","", stacktrace.Propagate(err, "Faild to allocate a static IP for the container.")
+	}
+	err = manager.connectToNetwork(dockerNetwork, containerId, ipAddr)
+	if err != nil {
+		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	return ipAddr, containerId, nil
 }
@@ -106,6 +118,7 @@ func (manager DockerManager) createNetwork(name string, subnetMask string) (id s
 	if err != nil {
 		return "", stacktrace.Propagate( err, "")
 	}
+	manager.freeIpAddrTrackers[name] = NewFreeIpAddrTracker(name, subnetMask)
 	return resp.ID, nil
 }
 
@@ -189,6 +202,24 @@ func (manager DockerManager) getIPAddr(networkName string, containerId string) (
 	return ipAddr, nil
 }
 
+func (manager DockerManager) connectToNetwork(networkName string, containerId string, staticIpAddr string) (err error) {
+	networkId, err := manager.getNetworkId(networkName)
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	err = manager.dockerClient.NetworkConnect(
+		context.Background(),
+		networkId,
+		containerId,
+		&network.EndpointSettings{
+			IPAddress: staticIpAddr,
+		})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to inspect container %s.", containerId)
+	}
+	return nil
+}
+
 func (manager DockerManager) pullImage(imageName string) (err error) {
 	log.Printf("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
@@ -224,7 +255,6 @@ func (manager *DockerManager) getContainerHostConfig(networkName string, usedPor
 	}
 	containerHostConfigPtr := &container.HostConfig{
 		PortBindings: portMap,
-		NetworkMode: container.NetworkMode(networkName),
 	}
 	return containerHostConfigPtr, nil
 }

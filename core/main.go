@@ -25,7 +25,7 @@ func main() {
 
 	portRangeEndArg := flag.Int(
 		"port-range-end",
-		9670,
+		9700,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
 	flag.Parse()
