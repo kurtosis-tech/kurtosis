@@ -7,6 +7,8 @@ import (
 	"github.com/gmarchetti/kurtosis/initializer"
 )
 
+const SUBNET_MASK = "172.18.0.0/16"
+
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
 
@@ -33,6 +35,7 @@ func main() {
 	testSuiteRunner := initializer.NewTestSuiteRunner(
 		testsuite.AvaTestSuite{},
 		*geckoImageNameArg,
+		SUBNET_MASK,
 		*portRangeStartArg,
 		*portRangeEndArg)
 

@@ -14,20 +14,20 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-const SUBNET_MASK = "172.18.0.0/16"
-
 
 type TestSuiteRunner struct {
 	testSuite testsuite.TestSuite
 	testImageName string
+	subnetMask string
 	startPortRange int
 	endPortRange int
 }
 
-func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, subnetMask string, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite: testSuite,
 		testImageName: testImageName,
+		subnetMask: subnetMask,
 		startPortRange: startPortRange,
 		endPortRange: endPortRange,
 	}
@@ -44,7 +44,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient,  SUBNET_MASK, runner.startPortRange, runner.endPortRange)
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient,  runner.subnetMask, runner.startPortRange, runner.endPortRange)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
@@ -59,7 +59,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 		networkName := testName + uuid.Generate().String()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, SUBNET_MASK, dockerManager)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, runner.subnetMask, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
