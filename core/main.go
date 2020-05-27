@@ -7,7 +7,7 @@ import (
 	"github.com/gmarchetti/kurtosis/initializer"
 )
 
-const DEFAULT_SUBNET_MASK = "172.18.0.0/16"
+const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 const DEFAULT_STARTING_PORT = 9650
 const DEFAULT_ENDING_PORT = 9670
 
@@ -36,8 +36,7 @@ func main() {
 	subnetMaskArg := flag.String(
 		"subnet-mask",
 		DEFAULT_SUBNET_MASK,
-		fmt.Sprint("Subnet mask used for assigning Public IPs to nodes. Default is %s", DEFAULT_SUBNET_MASK),
-	)
+		"Subnet mask used for assigning Public IPs to nodes. Must be a valid private internet address subnet according to RFC-1918",)
 	flag.Parse()
 
 	testSuiteRunner := initializer.NewTestSuiteRunner(
