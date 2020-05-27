@@ -1,4 +1,4 @@
-package ava_commons
+package services
 
 import (
 	"github.com/gmarchetti/kurtosis/commons/testnet"

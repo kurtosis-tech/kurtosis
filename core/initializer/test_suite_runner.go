@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gmarchetti/kurtosis/commons/docker"
-	"github.com/gmarchetti/kurtosis/commons/testnet"
+	"github.com/gmarchetti/kurtosis/commons/testsuite"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -16,22 +16,19 @@ import (
 
 
 type TestSuiteRunner struct {
-	tests map[string]testnet.TestNetworkConfigProvider
+	testSuite testsuite.TestSuite
+	testImageName string
 	startPortRange int
 	endPortRange int
 }
 
-func NewTestSuiteRunner(startPortRange int, endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
-		tests: make(map[string]testnet.TestNetworkConfigProvider),
+		testSuite: testSuite,
+		testImageName: testImageName,
 		startPortRange: startPortRange,
 		endPortRange: endPortRange,
 	}
-}
-
-func (runner TestSuiteRunner) RegisterTest(name string, configProvider testnet.TestNetworkConfigProvider) {
-	// TODO check if the test already exists and throw an error if so (means an error in the user code)
-	runner.tests[name] = configProvider
 }
 
 // Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
@@ -50,9 +47,12 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
 
+	tests := runner.testSuite.GetTests()
+
 	// TODO implement parallelism and specific test selection here
-	for testName, configProvider := range runner.tests {
-		testNetworkCfg, err := configProvider.GetNetworkConfig()
+	for testName, config := range tests {
+		networkLoader := config.NetworkLoader
+		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName)
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
@@ -61,6 +61,8 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
+
+		// TODO Actually spin up TestController and run the tests here
 		for _, containerId := range serviceNetwork.ContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
 		}

@@ -1,4 +1,4 @@
-package ava_commons
+package services
 
 import (
 	"fmt"
@@ -25,7 +25,6 @@ func NewGeckoService(ipAddr string) *GeckoService {
 		ipAddr:      ipAddr,
 	}
 }
-
 func (g GeckoService) GetStakingSocket() testnet.ServiceSocket {
 	stakingPort, err := nat.NewPort("tcp", strconv.Itoa(stakingPort))
 	if err != nil {
@@ -35,22 +34,28 @@ func (g GeckoService) GetStakingSocket() testnet.ServiceSocket {
 	return *testnet.NewServiceSocket(g.ipAddr, stakingPort)
 }
 
-// TODO implement a GetJsonRpcSocket function, which we'll need for testing
+func (g GeckoService) GetJsonRpcSocket() testnet.ServiceSocket {
+	httpPort, err := nat.NewPort("tcp", strconv.Itoa(httpPort))
+	if err != nil {
+		panic(err)
+	}
+	return *testnet.NewServiceSocket(g.ipAddr, httpPort)
+}
 
 // ================ Gecko Service Factory =============================
 type geckoLogLevel string
 const (
 	LOG_LEVEL_VERBOSE geckoLogLevel = "verbo"
-	LOG_LEVEL_DEBUG geckoLogLevel = "debug"
-	LOG_LEVEL_INFO geckoLogLevel = "info"
+	LOG_LEVEL_DEBUG   geckoLogLevel = "debug"
+	LOG_LEVEL_INFO    geckoLogLevel = "info"
 )
 
 type GeckoServiceFactoryConfig struct {
-	dockerImage string
-	snowSampleSize int
-	snowQuorumSize int
+	dockerImage       string
+	snowSampleSize    int
+	snowQuorumSize    int
 	stakingTlsEnabled bool
-	logLevel geckoLogLevel
+	logLevel          geckoLogLevel
 }
 
 func NewGeckoServiceFactoryConfig(dockerImage string,
@@ -73,7 +78,7 @@ func (g GeckoServiceFactoryConfig) GetDockerImage() string {
 
 func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 	return map[int]bool{
-		httpPort: true,
+		httpPort:    true,
 		stakingPort: true,
 	}
 }
