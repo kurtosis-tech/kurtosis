@@ -2,5 +2,5 @@ package testsuite
 
 type TestSuite interface {
 	// Intended to be implemented by the user to register whatever tests they please
-	RegisterTests(builder TestRegistryBuilder)
+	GetTests() map[string]TestConfig
 }

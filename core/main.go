@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gmarchetti/kurtosis/ava_commons/networks"
+	"github.com/gmarchetti/kurtosis/ava_commons/testsuite"
 	"github.com/gmarchetti/kurtosis/initializer"
 )
 
@@ -30,19 +30,11 @@ func main() {
 	)
 	flag.Parse()
 
-	testSuiteRunner := initializer.NewTestSuiteRunner(*portRangeStartArg, *portRangeEndArg)
-
-	// TODO Uncomment this when our RunTests method supports calling tests by name (rather than just running all tests)
-	/*
-	singleNodeNetwork := ava_commons.SingleNodeGeckoNetwork{GeckoImageName: *geckoImageNameArg}
-	testSuiteRunner.RegisterTest("singleNodeNetwork", singleNodeNetwork)
-
-	twoNodeNetwork := ava_commons.TwoNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
-	testSuiteRunner.RegisterTest("twoNodeNetwork", twoNodeNetwork)
-	 */
-
-	tenNodeNetwork := networks.TenNodeGeckoNetworkLoader{GeckoImageName: *geckoImageNameArg}
-	testSuiteRunner.RegisterTest("tenNodeNetwork", tenNodeNetwork)
+	testSuiteRunner := initializer.NewTestSuiteRunner(
+		testsuite.AvaTestSuite{},
+		*geckoImageNameArg,
+		*portRangeStartArg,
+		*portRangeEndArg)
 
 	// Create the container based on the configurations, but don't start it yet.
 	fmt.Println("I'm going to run a Gecko testnet, and hang while it's running! Kill me and then clear your docker containers.")

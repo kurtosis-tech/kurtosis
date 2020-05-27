@@ -7,9 +7,15 @@ import (
 
 type AvaTestSuite struct {}
 
-func (a AvaTestSuite) RegisterTests(builder testsuite.TestRegistryBuilder) {
-	builder.AddTest("singleNodeGeckoNetwork", networks.SingleNodeGeckoNetworkLoader{}, SingleNodeGeckoNetworkBasicTest{})
-	builder.AddTest("twoNodeGeckoNetwork", networks.SingleNodeGeckoNetworkLoader{}, SingleNodeGeckoNetworkBasicTest{})
-	builder.AddTest("tenNodeGeckoNetwork", networks.SingleNodeGeckoNetworkLoader{}, SingleNodeGeckoNetworkBasicTest{})
+func (a AvaTestSuite) GetTests() map[string]testsuite.TestConfig {
+	result := make(map[string]testsuite.TestConfig)
+
+	// TODO register tests for the other networks here
+	result["singleNodeGeckoNetwork"] = testsuite.TestConfig{
+		Test: SingleNodeGeckoNetworkBasicTest{},
+		NetworkLoader: networks.SingleNodeGeckoNetworkLoader{},
+	}
+
+	return result
 }
 
