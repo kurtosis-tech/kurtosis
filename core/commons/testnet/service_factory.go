@@ -5,8 +5,6 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-const NETWORK_NAME="kurtosis-bridge"
-
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
 type ServiceFactory struct {
 	config ServiceFactoryConfig
@@ -32,7 +30,7 @@ func (factory ServiceFactory) Construct(
 	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
-	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, staticIp, NETWORK_NAME, usedPorts, startCmdArgs)
+	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, staticIp, usedPorts, startCmdArgs)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}

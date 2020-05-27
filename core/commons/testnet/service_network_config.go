@@ -30,9 +30,12 @@ type ServiceNetworkConfigBuilder struct {
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
 
+	// Defines the subnet that public IPs for services will be generated from.
+	subnetMask string
+
 }
 
-func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
+func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuilder {
 	serviceConfigs := make(map[int]int)
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
@@ -46,6 +49,7 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 		nextServiceId:       0,
 		configurations: 	 configurations,
 		nextConfigurationId: 0,
+		subnetMask: subnetMask,
 	}
 }
 
@@ -131,11 +135,13 @@ func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 		servicesStartOrder:  serviceStartOrderCopy,
 		onlyDependentServices: onlyDependentServicesCopy,
 		configurations:      configurationsCopy,
+		subnetMask: builder.subnetMask,
 	}
 }
 
 // Object declaring the state of the network to be created
 type ServiceNetworkConfig struct {
+	subnetMask string
 	serviceConfigs map[int]int
 	serviceDependencies map[int]map[int]bool
 	servicesStartOrder []int
@@ -147,10 +153,10 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, subnetMask string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
-	publicIpProvider := NewFreeIpAddrTracker(networkName, subnetMask)
+	publicIpProvider := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))

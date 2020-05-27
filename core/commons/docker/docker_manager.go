@@ -16,8 +16,8 @@ import (
 	"strings"
 )
 
-// TODO TODO TODO - do we ever need to handle different local host IPs?
-const LOCAL_HOST_IP = "0.0.0.0"
+const LOCAL_HOST_IP = "127.0.0.1"
+const DOCKER_NETWORK_NAME ="kurtosis-bridge"
 
 
 type DockerManager struct {
@@ -50,7 +50,6 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	dockerImage string,
 	staticIp string,
-	dockerNetwork string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
 
@@ -66,13 +65,13 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
-	networkExistsLocally, err := manager.isNetworkAvailableLocally(dockerNetwork)
+	networkExistsLocally, err := manager.isNetworkAvailableLocally(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
 	}
 
 	if !networkExistsLocally {
-		_, err := manager.createNetwork(dockerNetwork, manager.subnetMask)
+		_, err := manager.createNetwork(DOCKER_NETWORK_NAME, manager.subnetMask)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "Failed to create Docker network.")
 		}
