@@ -7,7 +7,9 @@ import (
 	"github.com/gmarchetti/kurtosis/initializer"
 )
 
-const SUBNET_MASK = "172.18.0.0/16"
+const DEFAULT_SUBNET_MASK = "172.18.0.0/16"
+const DEFAULT_STARTING_PORT = 9650
+const DEFAULT_ENDING_PORT = 9670
 
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
@@ -21,21 +23,27 @@ func main() {
 
 	portRangeStartArg := flag.Int(
 		"port-range-start",
-		9650,
+		DEFAULT_STARTING_PORT,
 		"Beginning of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
 
 	portRangeEndArg := flag.Int(
 		"port-range-end",
-		9700,
+		DEFAULT_ENDING_PORT,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
+
+	subnetMaskArg := flag.String(
+		"subnet-mask",
+		DEFAULT_SUBNET_MASK,
+		fmt.Sprint("Subnet mask used for assigning Public IPs to nodes. Default is %s", DEFAULT_SUBNET_MASK),
 	)
 	flag.Parse()
 
 	testSuiteRunner := initializer.NewTestSuiteRunner(
 		testsuite.AvaTestSuite{},
 		*geckoImageNameArg,
-		SUBNET_MASK,
+		*subnetMaskArg,
 		*portRangeStartArg,
 		*portRangeEndArg)
 
