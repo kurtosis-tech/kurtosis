@@ -146,7 +146,7 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*ServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
@@ -170,7 +170,7 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 	}
 
 	// TODO actually fill in all the other stuff besides container ID
-	return &ServiceNetwork{
+	return &RawServiceNetwork{
 		NetworkId:      "",
 		ContainerIds:   serviceContainerIds,
 		Services: 		runningServices,
