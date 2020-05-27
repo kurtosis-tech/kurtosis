@@ -1,12 +1,16 @@
-package commons
+package docker
 
 import (
 	"context"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
+	"io"
+	"io/ioutil"
+	"log"
 	"strconv"
 )
 
@@ -36,6 +40,18 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	dockerImage string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
+
+	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to check for image availability.")
+	}
+
+	if !imageExistsLocally {
+		err = manager.pullImage(dockerImage)
+		if err != nil {
+			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image.")
+		}
+	}
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
 	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
@@ -77,6 +93,32 @@ func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
 
 func (manager DockerManager) getLocalHostIp() string {
 	return LOCAL_HOST_IP
+}
+
+func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvailable bool, err error) {
+	referenceArg := filters.Arg("reference", imageName)
+	filters := filters.NewArgs(referenceArg)
+	images, err := manager.dockerClient.ImageList(
+		context.Background(),
+		types.ImageListOptions{
+			All: true,
+			Filters: filters,
+		})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to list images.")
+	}
+	return len(images) > 0, nil
+}
+
+func (manager DockerManager) pullImage(imageName string) (err error) {
+	log.Printf("Pulling image %s...", imageName)
+	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		return stacktrace.Propagate(err, "")
+	}
+	defer out.Close()
+	io.Copy(ioutil.Discard, out)
+	return nil
 }
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are

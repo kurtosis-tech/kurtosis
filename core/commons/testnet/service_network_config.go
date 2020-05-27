@@ -1,6 +1,7 @@
-package commons
+package testnet
 
 import (
+	"github.com/gmarchetti/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
 )
 
@@ -47,6 +48,7 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 	}
 }
 
+// TODO rename to WithServiceConfiguration
 // Adds a service configuration to the network, that can be referenced later with AddService
 func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory ServiceFactory) int {
 	configurationId := builder.nextConfigurationId
@@ -55,6 +57,7 @@ func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory Serv
 	return configurationId
 }
 
+// TODO rename to WithService
 // Adds a serivce to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns the ID of the service, to be used with future AddService calls to declare dependencies on the service
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
@@ -145,7 +148,7 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *DockerManager) (*ServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
@@ -155,7 +158,6 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
 			serviceDependencies = append(serviceDependencies, runningServices[dependencyId])
 		}
-		println("Dependencies for svc %v: %v", serviceId, serviceDependencies)
 
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]
@@ -170,7 +172,7 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 	}
 
 	// TODO actually fill in all the other stuff besides container ID
-	return &ServiceNetwork{
+	return &RawServiceNetwork{
 		NetworkId:      "",
 		ContainerIds:   serviceContainerIds,
 		Services: 		runningServices,

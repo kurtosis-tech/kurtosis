@@ -1,4 +1,4 @@
-package commons
+package testnet
 
 type ServiceNetwork struct {
 	NetworkId string

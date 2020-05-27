@@ -15,12 +15,11 @@ import (
 
 
 type TestSuiteRunner struct {
-	tests map[string]commons.TestNetworkConfigProvider
 	startPortRange int
 	endPortRange int
 }
 
-func NewTestSuiteRunner(startPortRange int, endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(testSuite TestSuite, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		tests: make(map[string]commons.TestNetworkConfigProvider),
 		startPortRange: startPortRange,

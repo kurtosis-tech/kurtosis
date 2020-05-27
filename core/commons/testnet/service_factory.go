@@ -1,6 +1,9 @@
-package commons
+package testnet
 
-import "github.com/palantir/stacktrace"
+import (
+	"github.com/gmarchetti/kurtosis/commons/docker"
+	"github.com/palantir/stacktrace"
+)
 
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
 type ServiceFactory struct {
@@ -17,7 +20,7 @@ func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
 // If Go had generics, this would be genericized so that the arg type = return type
 func (factory ServiceFactory) Construct(
 			ipAddrOffset int,
-			manager *DockerManager,
+			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
 	dockerImage := factory.config.GetDockerImage()
 	startCmdArgs := factory.config.GetStartCommand(ipAddrOffset, dependencies)

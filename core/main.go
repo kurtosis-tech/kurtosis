@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gmarchetti/kurtosis/ava_commons"
+	"github.com/gmarchetti/kurtosis/ava_commons/networks"
 	"github.com/gmarchetti/kurtosis/initializer"
 )
 
@@ -34,14 +34,14 @@ func main() {
 
 	// TODO Uncomment this when our RunTests method supports calling tests by name (rather than just running all tests)
 	/*
-	singleNodeNetwork := ava_commons.SingleNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
+	singleNodeNetwork := ava_commons.SingleNodeGeckoNetwork{GeckoImageName: *geckoImageNameArg}
 	testSuiteRunner.RegisterTest("singleNodeNetwork", singleNodeNetwork)
 
 	twoNodeNetwork := ava_commons.TwoNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
 	testSuiteRunner.RegisterTest("twoNodeNetwork", twoNodeNetwork)
 	 */
 
-	tenNodeNetwork := ava_commons.TenNodeAvaNetworkCfgProvider{GeckoImageName: *geckoImageNameArg}
+	tenNodeNetwork := networks.TenNodeGeckoNetworkLoader{GeckoImageName: *geckoImageNameArg}
 	testSuiteRunner.RegisterTest("tenNodeNetwork", tenNodeNetwork)
 
 	// Create the container based on the configurations, but don't start it yet.
