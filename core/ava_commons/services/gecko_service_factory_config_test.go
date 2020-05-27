@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/gmarchetti/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"gotest.tools/assert"
 	"testing"
 )

@@ -7,8 +7,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/gmarchetti/kurtosis/commons/docker"
-	"github.com/gmarchetti/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/commons/docker"
+	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"os"
 
 	"github.com/palantir/stacktrace"
