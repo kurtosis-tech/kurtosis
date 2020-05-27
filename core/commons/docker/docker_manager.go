@@ -202,7 +202,7 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 			IPAddress: staticIpAddr,
 		})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to inspect container %s.", containerId)
+		return stacktrace.Propagate(err, "Failed to connect container %s to network %s.", containerId, networkName)
 	}
 	return nil
 }
@@ -242,6 +242,7 @@ func (manager *DockerManager) getContainerHostConfig(networkName string, usedPor
 	}
 	containerHostConfigPtr := &container.HostConfig{
 		PortBindings: portMap,
+		NetworkMode: container.NetworkMode("default"),
 	}
 	return containerHostConfigPtr, nil
 }
