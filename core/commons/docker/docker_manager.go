@@ -19,18 +19,15 @@ import (
 // TODO TODO TODO - do we ever need to handle different local host IPs?
 const LOCAL_HOST_IP = "0.0.0.0"
 const SUBNET_MASK = "172.18.0.0/16"
-//const SUBNET_IP_RANGE = "172.18.0.0/16"
 
 type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 	freeHostPortTracker *FreeHostPortTracker
-	freeIpAddrTrackers map[string]*FreeIpAddrTracker
 }
 
 func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
 	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
-	freeIpAddrTrackers := make(map[string]*FreeIpAddrTracker)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
 	}
@@ -38,13 +35,13 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 		freeHostPortTracker: freeHostPortTracker,
-		freeIpAddrTrackers: freeIpAddrTrackers,
 	}, nil
 }
 
 func (manager DockerManager) CreateAndStartContainerForService(
 	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	dockerImage string,
+	staticIp string,
 	dockerNetwork string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
@@ -73,11 +70,6 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
-	ipAddrTracker := manager.freeIpAddrTrackers[dockerNetwork]
-	if ipAddrTracker == nil {
-		manager.freeIpAddrTrackers[dockerNetwork] = NewFreeIpAddrTracker(dockerNetwork, SUBNET_MASK)
-	}
-
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
 	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
@@ -96,15 +88,11 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	ipAddr, err := ipAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return "","", stacktrace.Propagate(err, "Faild to allocate a static IP for the container.")
-	}
-	err = manager.connectToNetwork(dockerNetwork, containerId, ipAddr)
+	err = manager.connectToNetwork(dockerNetwork, containerId, staticIp)
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
-	return ipAddr, containerId, nil
+	return staticIp, containerId, nil
 }
 
 func (manager DockerManager) createNetwork(name string, subnetMask string) (id string, err error)  {
@@ -118,7 +106,6 @@ func (manager DockerManager) createNetwork(name string, subnetMask string) (id s
 	if err != nil {
 		return "", stacktrace.Propagate( err, "")
 	}
-	manager.freeIpAddrTrackers[name] = NewFreeIpAddrTracker(name, subnetMask)
 	return resp.ID, nil
 }
 

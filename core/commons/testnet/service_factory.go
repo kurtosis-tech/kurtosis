@@ -21,14 +21,18 @@ func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
 // TODO needing to pass in hte ipAddrOffset is a nasty awful hack here that will go away when the --public-ips flag is gone!
 // If Go had generics, this would be genericized so that the arg type = return type
 func (factory ServiceFactory) Construct(
-			ipAddrOffset int,
+			publicIpTracker *FreeIpAddrTracker,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
 	dockerImage := factory.config.GetDockerImage()
-	startCmdArgs := factory.config.GetStartCommand(ipAddrOffset, dependencies)
+	staticIp, err := publicIpTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "Could not allocate static IP address.")
+	}
+	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
-	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, NETWORK_NAME, usedPorts, startCmdArgs)
+	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, staticIp, NETWORK_NAME, usedPorts, startCmdArgs)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}

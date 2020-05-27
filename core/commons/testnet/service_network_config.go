@@ -29,6 +29,7 @@ type ServiceNetworkConfigBuilder struct {
 
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
+
 }
 
 func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
@@ -146,9 +147,10 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, subnetMask string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
+	publicIpProvider := NewFreeIpAddrTracker(networkName, subnetMask)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
@@ -161,7 +163,7 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 		factory := networkCfg.configurations[configId]
 
 		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-		service, containerId, err := factory.Construct(serviceId, manager, serviceDependencies)
+		service, containerId, err := factory.Construct(publicIpProvider, manager, serviceDependencies)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}

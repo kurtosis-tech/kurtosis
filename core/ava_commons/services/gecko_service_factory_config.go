@@ -83,13 +83,13 @@ func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 	}
 }
 
-func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []testnet.Service) []string {
-	publicIpFlag := fmt.Sprintf("--public-ip=172.18.0.%d", 2 + ipAddrOffset)
+func (g GeckoServiceFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []testnet.Service) []string {
+	publicIpFlag := fmt.Sprintf("--public-ip=%s", publicIpAddr)
 	log.Printf("Public IP: %s", publicIpFlag)
 	commandList := []string{
 		"/gecko/build/ava",
 		// TODO this entire flag will go away soon!!
-		// publicIpFlag,
+		publicIpFlag,
 		"--network-id=local",
 		fmt.Sprintf("--http-port=%d", httpPort),
 		fmt.Sprintf("--staking-port=%d", stakingPort),

@@ -14,6 +14,8 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
+const SUBNET_MASK = "172.18.0.0/16"
+
 
 type TestSuiteRunner struct {
 	testSuite testsuite.TestSuite
@@ -57,7 +59,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 		networkName := testName + uuid.Generate().String()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, SUBNET_MASK, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
