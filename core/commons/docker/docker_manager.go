@@ -82,7 +82,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(dockerNetwork, usedPorts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(DOCKER_NETWORK_NAME, usedPorts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -95,7 +95,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	err = manager.connectToNetwork(dockerNetwork, containerId, staticIp)
+	err = manager.connectToNetwork(DOCKER_NETWORK_NAME, containerId, staticIp)
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
