@@ -48,7 +48,6 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 	}
 }
 
-// TODO rename to WithServiceConfiguration
 // Adds a service configuration to the network, that can be referenced later with AddService
 func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory ServiceFactory) int {
 	configurationId := builder.nextConfigurationId
@@ -57,7 +56,6 @@ func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory Serv
 	return configurationId
 }
 
-// TODO rename to WithService
 // Adds a serivce to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns the ID of the service, to be used with future AddService calls to declare dependencies on the service
 // If no dependencies should be specified, the dependencies map should be empty (not nil)

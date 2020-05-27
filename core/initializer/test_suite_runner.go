@@ -61,6 +61,8 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
+
+		// TODO Actually spin up TestController and run the tests here
 		for _, containerId := range serviceNetwork.ContainerIds {
 			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
 		}
