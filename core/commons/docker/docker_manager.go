@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
@@ -12,10 +13,13 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
+	"strings"
 )
 
 // TODO TODO TODO - do we ever need to handle different local host IPs?
 const LOCAL_HOST_IP = "0.0.0.0"
+const SUBNET_MASK = "172.18.0.0/16"
+//const SUBNET_IP_RANGE = "172.18.0.0/16"
 
 type DockerManager struct {
 	dockerCtx           context.Context
@@ -38,6 +42,7 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 func (manager DockerManager) CreateAndStartContainerForService(
 	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	dockerImage string,
+	dockerNetwork string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
 
@@ -53,12 +58,24 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
+	networkExistsLocally, err := manager.isNetworkAvailableLocally(dockerNetwork)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
+	}
+
+	if !networkExistsLocally {
+		_, err := manager.createNetwork(dockerNetwork, SUBNET_MASK)
+		if err != nil {
+			return "", "", stacktrace.Propagate(err, "Failed to create Docker network.")
+		}
+	}
+
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
 	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(dockerNetwork, usedPorts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -71,12 +88,25 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
+	ipAddr, err := manager.getIPAddr(dockerNetwork, containerId)
 	if err != nil {
-		return "","", stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the container's IP")
+		return "","", stacktrace.Propagate(err, "Inspect network failed, which is necessary to get the container's IP")
 	}
-	containerIpAddr = containerJson.NetworkSettings.IPAddress
-	return containerIpAddr, containerId, nil
+	return ipAddr, containerId, nil
+}
+
+func (manager DockerManager) createNetwork(name string, subnetMask string) (id string, err error)  {
+	ipamConfig := []network.IPAMConfig{{Subnet: SUBNET_MASK}}
+	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
+		Driver: "bridge",
+		IPAM: &network.IPAM{
+			Config: ipamConfig,
+		},
+	})
+	if err != nil {
+		return "", stacktrace.Propagate( err, "")
+	}
+	return resp.ID, nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
@@ -110,6 +140,55 @@ func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvaila
 	return len(images) > 0, nil
 }
 
+func (manager DockerManager) isNetworkAvailableLocally(networkName string) (isAvailable bool, err error) {
+	referenceArg := filters.Arg("name", networkName)
+	filters := filters.NewArgs(referenceArg)
+	networks, err := manager.dockerClient.NetworkList(
+		context.Background(),
+		types.NetworkListOptions{
+			Filters: filters,
+		})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to list networks.")
+	}
+	return len(networks) > 0, nil
+}
+
+func (manager DockerManager) getNetworkId(networkName string) (networkId string, err error) {
+	referenceArg := filters.Arg("name", networkName)
+	filters := filters.NewArgs(referenceArg)
+	networks, err := manager.dockerClient.NetworkList(
+		context.Background(),
+		types.NetworkListOptions{
+			Filters: filters,
+		})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to list networks.")
+	}
+	if len(networks) == 0 {
+		return "", stacktrace.NewError("Network does not exist.")
+	}
+	return networks[0].ID, nil
+}
+
+func (manager DockerManager) getIPAddr(networkName string, containerId string) (ipAddr string, err error) {
+	networkId, err := manager.getNetworkId(networkName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "")
+	}
+	networkJson, err := manager.dockerClient.NetworkInspect(
+		context.Background(),
+		networkId,
+		types.NetworkInspectOptions{})
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to inspect container %s.", containerId)
+	}
+	//log.Printf("NetworkJson: %+v", networkJson)
+	ipAddrCIDR := networkJson.Containers[containerId].IPv4Address
+	ipAddr = strings.Split(ipAddrCIDR, "/")[0]
+	return ipAddr, nil
+}
+
 func (manager DockerManager) pullImage(imageName string) (err error) {
 	log.Printf("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
@@ -123,7 +202,7 @@ func (manager DockerManager) pullImage(imageName string) (err error) {
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(networkName string, usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
 	portMap := nat.PortMap{}
 	for port, _ := range usedPorts {
 		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
@@ -145,6 +224,7 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 	}
 	containerHostConfigPtr := &container.HostConfig{
 		PortBindings: portMap,
+		NetworkMode: container.NetworkMode(networkName),
 	}
 	return containerHostConfigPtr, nil
 }
