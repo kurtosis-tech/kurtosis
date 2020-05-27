@@ -18,15 +18,22 @@ import (
 
 // TODO TODO TODO - do we ever need to handle different local host IPs?
 const LOCAL_HOST_IP = "0.0.0.0"
-const SUBNET_MASK = "172.18.0.0/16"
+
 
 type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 	freeHostPortTracker *FreeHostPortTracker
+	subnetMask string
 }
 
-func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+func NewDockerManager(
+	dockerCtx context.Context,
+	dockerClient *client.Client,
+	subnetMask string,
+	hostPortRangeStart int,
+	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+
 	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "")
@@ -35,6 +42,7 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, ho
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 		freeHostPortTracker: freeHostPortTracker,
+		subnetMask: subnetMask,
 	}, nil
 }
 
@@ -64,7 +72,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	}
 
 	if !networkExistsLocally {
-		_, err := manager.createNetwork(dockerNetwork, SUBNET_MASK)
+		_, err := manager.createNetwork(dockerNetwork, manager.subnetMask)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "Failed to create Docker network.")
 		}
@@ -96,7 +104,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 }
 
 func (manager DockerManager) createNetwork(name string, subnetMask string) (id string, err error)  {
-	ipamConfig := []network.IPAMConfig{{Subnet: SUBNET_MASK}}
+	ipamConfig := []network.IPAMConfig{{Subnet: subnetMask}}
 	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
 		Driver: "bridge",
 		IPAM: &network.IPAM{
