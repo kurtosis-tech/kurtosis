@@ -43,6 +43,14 @@ func NewDockerManager(
 }
 
 func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
+	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
+	}
+	// Network already exists - return existing id.
+	if ok {
+		return networkId, nil
+	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
 	}}
