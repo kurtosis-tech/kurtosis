@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/gmarchetti/kurtosis/ava_commons/testsuite"
-	"github.com/gmarchetti/kurtosis/initializer"
+	"github.com/kurtosis-tech/kurtosis/ava_commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/initializer"
 )
 
 const DEFAULT_SUBNET_MASK = "172.23.0.0/16"

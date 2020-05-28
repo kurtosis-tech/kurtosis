@@ -1,6 +1,6 @@
 package testsuite
 
-import "github.com/gmarchetti/kurtosis/commons/testnet"
+import "github.com/kurtosis-tech/kurtosis/commons/testnet"
 
 /*
 This interface should be implemented by the user and is responsible for:

@@ -1,8 +1,8 @@
 package testsuite
 
 import (
-	"github.com/gmarchetti/kurtosis/ava_commons/networks"
-	"github.com/gmarchetti/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/ava_commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 )
 
 type AvaTestSuite struct {}

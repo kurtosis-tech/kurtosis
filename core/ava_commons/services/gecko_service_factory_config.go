@@ -3,7 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/gmarchetti/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"log"
 	"strconv"
 	"strings"
@@ -59,10 +59,10 @@ type GeckoServiceFactoryConfig struct {
 }
 
 func NewGeckoServiceFactoryConfig(dockerImage string,
-			snowSampleSize int,
-			snowQuorumSize int,
-			stakingTlsEnabled bool,
-			logLevel geckoLogLevel) *GeckoServiceFactoryConfig {
+	snowSampleSize int,
+	snowQuorumSize int,
+	stakingTlsEnabled bool,
+	logLevel geckoLogLevel) *GeckoServiceFactoryConfig {
 	return &GeckoServiceFactoryConfig{
 		dockerImage:       dockerImage,
 		snowSampleSize:    snowSampleSize,
@@ -123,4 +123,3 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(publicIpAddr string, dependen
 func (g GeckoServiceFactoryConfig) GetServiceFromIp(ipAddr string) testnet.Service {
 	return GeckoService{ipAddr: ipAddr}
 }
-

@@ -1,7 +1,7 @@
 package testnet
 
 import (
-	"github.com/gmarchetti/kurtosis/commons/docker"
+	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
 )
 

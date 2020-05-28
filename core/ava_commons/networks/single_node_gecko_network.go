@@ -1,8 +1,8 @@
 package networks
 
 import (
-	"github.com/gmarchetti/kurtosis/ava_commons/services"
-	"github.com/gmarchetti/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/ava_commons/services"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"github.com/palantir/stacktrace"
 )
 
