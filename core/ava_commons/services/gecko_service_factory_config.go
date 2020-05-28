@@ -3,7 +3,7 @@ package services
 import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/gmarchetti/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"strconv"
 	"strings"
 )

@@ -1,4 +1,4 @@
-module github.com/gmarchetti/kurtosis
+module github.com/kurtosis-tech/kurtosis
 
 go 1.13
 
