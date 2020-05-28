@@ -160,7 +160,7 @@ func (manager DockerManager) getNetworkId(networkName string) (networkId string,
 		return "", false, stacktrace.Propagate(err, "Failed to list networks.")
 	}
 	if len(networks) == 0 {
-		return "", true, nil
+		return "", false, nil
 	}
 	return networks[0].ID, true, nil
 }
