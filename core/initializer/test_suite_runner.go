@@ -18,16 +18,16 @@ import (
 type TestSuiteRunner struct {
 	testSuite testsuite.TestSuite
 	testImageName string
-	subnetMask string
 	startPortRange int
 	endPortRange int
 }
 
-func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, subnetMask string, startPortRange int, endPortRange int) *TestSuiteRunner {
+const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+
+func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite: testSuite,
 		testImageName: testImageName,
-		subnetMask: subnetMask,
 		startPortRange: startPortRange,
 		endPortRange: endPortRange,
 	}
@@ -52,7 +52,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	tests := runner.testSuite.GetTests()
 
 	// TODO TODO TODO Support creating one network per testnet
-	_, err = dockerManager.CreateNetwork(runner.subnetMask)
+	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
 	}
@@ -60,7 +60,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {
 		networkLoader := config.NetworkLoader
-		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName, runner.subnetMask)
+		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName, DEFAULT_SUBNET_MASK)
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}

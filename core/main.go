@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer"
 )
 
-const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+
 const DEFAULT_STARTING_PORT = 9650
 const DEFAULT_ENDING_PORT = 9670
 
@@ -32,17 +32,11 @@ func main() {
 		DEFAULT_ENDING_PORT,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
-
-	subnetMaskArg := flag.String(
-		"subnet-mask",
-		DEFAULT_SUBNET_MASK,
-		"Subnet mask used for assigning Public IPs to nodes. Must be a valid private internet address subnet according to RFC-1918",)
 	flag.Parse()
 
 	testSuiteRunner := initializer.NewTestSuiteRunner(
 		testsuite.AvaTestSuite{},
 		*geckoImageNameArg,
-		*subnetMaskArg,
 		*portRangeStartArg,
 		*portRangeEndArg)
 
