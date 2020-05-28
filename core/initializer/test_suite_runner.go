@@ -44,13 +44,18 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	// TODO: Right now all tests run using the same subnetMask. We should have a different subnetMask per test to achieve subnet isolation between tests
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient,  runner.subnetMask, runner.startPortRange, runner.endPortRange)
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
 
 	tests := runner.testSuite.GetTests()
+
+	// TODO TODO TODO Support creating one network per testnet
+	_, err = dockerManager.CreateNetwork(runner.subnetMask)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
+	}
 
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {

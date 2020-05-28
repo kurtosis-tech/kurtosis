@@ -23,13 +23,11 @@ type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 	freeHostPortTracker *FreeHostPortTracker
-	subnetMask string
 }
 
 func NewDockerManager(
 	dockerCtx context.Context,
 	dockerClient *client.Client,
-	subnetMask string,
 	hostPortRangeStart int,
 	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
 
@@ -41,8 +39,23 @@ func NewDockerManager(
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 		freeHostPortTracker: freeHostPortTracker,
-		subnetMask: subnetMask,
 	}, nil
+}
+
+func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
+	ipamConfig := []network.IPAMConfig{{
+		Subnet: subnetMask,
+	}}
+	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
+		Driver: "bridge",
+		IPAM: &network.IPAM{
+			Config: ipamConfig,
+		},
+	})
+	if err != nil {
+		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", DOCKER_NETWORK_NAME, subnetMask)
+	}
+	return resp.ID, nil
 }
 
 func (manager DockerManager) CreateAndStartContainerForService(
@@ -67,12 +80,8 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
 	}
-
 	if !networkExistsLocally {
-		_, err := manager.createNetwork(DOCKER_NETWORK_NAME, manager.subnetMask)
-		if err != nil {
-			return "", "", stacktrace.Propagate(err, "Failed to create Docker network.")
-		}
+		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
 	}
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
@@ -98,22 +107,6 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	return staticIp, containerId, nil
-}
-
-func (manager DockerManager) createNetwork(name string, subnetMask string) (id string, err error)  {
-	ipamConfig := []network.IPAMConfig{{
-			Subnet: subnetMask,
-	}}
-	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
-		Driver: "bridge",
-		IPAM: &network.IPAM{
-			Config: ipamConfig,
-		},
-	})
-	if err != nil {
-		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
-	}
-	return resp.ID, nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
