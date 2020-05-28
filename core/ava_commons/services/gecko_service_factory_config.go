@@ -85,7 +85,6 @@ func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 
 func (g GeckoServiceFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []testnet.Service) []string {
 	publicIpFlag := fmt.Sprintf("--public-ip=%s", publicIpAddr)
-	log.Printf("Public IP: %s", publicIpFlag)
 	commandList := []string{
 		"/gecko/build/ava",
 		// TODO this entire flag will go away soon!!

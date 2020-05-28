@@ -156,7 +156,10 @@ type ServiceNetworkConfig struct {
 func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
-	publicIpProvider := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
+	publicIpProvider, err := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))

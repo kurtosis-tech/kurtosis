@@ -13,7 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"strconv"
-	"strings"
 )
 
 const LOCAL_HOST_IP = "127.0.0.1"
@@ -36,7 +35,7 @@ func NewDockerManager(
 
 	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
+		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
 	}
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
@@ -65,7 +64,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
-	networkExistsLocally, err := manager.isNetworkAvailableLocally(DOCKER_NETWORK_NAME)
+	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
 	}
@@ -82,7 +81,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(DOCKER_NETWORK_NAME, usedPorts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -103,7 +102,9 @@ func (manager DockerManager) CreateAndStartContainerForService(
 }
 
 func (manager DockerManager) createNetwork(name string, subnetMask string) (id string, err error)  {
-	ipamConfig := []network.IPAMConfig{{Subnet: subnetMask}}
+	ipamConfig := []network.IPAMConfig{{
+			Subnet: subnetMask,
+	}}
 	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
 		Driver: "bridge",
 		IPAM: &network.IPAM{
@@ -111,7 +112,7 @@ func (manager DockerManager) createNetwork(name string, subnetMask string) (id s
 		},
 	})
 	if err != nil {
-		return "", stacktrace.Propagate( err, "")
+		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
 	return resp.ID, nil
 }
@@ -147,7 +148,7 @@ func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvaila
 	return len(images) > 0, nil
 }
 
-func (manager DockerManager) isNetworkAvailableLocally(networkName string) (isAvailable bool, err error) {
+func (manager DockerManager) getNetworkId(networkName string) (networkId string, ok bool, err error) {
 	referenceArg := filters.Arg("name", networkName)
 	filters := filters.NewArgs(referenceArg)
 	networks, err := manager.dockerClient.NetworkList(
@@ -156,50 +157,18 @@ func (manager DockerManager) isNetworkAvailableLocally(networkName string) (isAv
 			Filters: filters,
 		})
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to list networks.")
-	}
-	return len(networks) > 0, nil
-}
-
-func (manager DockerManager) getNetworkId(networkName string) (networkId string, err error) {
-	referenceArg := filters.Arg("name", networkName)
-	filters := filters.NewArgs(referenceArg)
-	networks, err := manager.dockerClient.NetworkList(
-		context.Background(),
-		types.NetworkListOptions{
-			Filters: filters,
-		})
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to list networks.")
+		return "", false, stacktrace.Propagate(err, "Failed to list networks.")
 	}
 	if len(networks) == 0 {
-		return "", stacktrace.NewError("Network does not exist.")
+		return "", true, nil
 	}
-	return networks[0].ID, nil
-}
-
-func (manager DockerManager) getIPAddr(networkName string, containerId string) (ipAddr string, err error) {
-	networkId, err := manager.getNetworkId(networkName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "")
-	}
-	networkJson, err := manager.dockerClient.NetworkInspect(
-		context.Background(),
-		networkId,
-		types.NetworkInspectOptions{})
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to inspect container %s.", containerId)
-	}
-	//log.Printf("NetworkJson: %+v", networkJson)
-	ipAddrCIDR := networkJson.Containers[containerId].IPv4Address
-	ipAddr = strings.Split(ipAddrCIDR, "/")[0]
-	return ipAddr, nil
+	return networks[0].ID, true, nil
 }
 
 func (manager DockerManager) connectToNetwork(networkName string, containerId string, staticIpAddr string) (err error) {
-	networkId, err := manager.getNetworkId(networkName)
-	if err != nil {
-		return stacktrace.Propagate(err, "")
+	networkId, ok, err := manager.getNetworkId(networkName)
+	if err != nil || !ok {
+		return stacktrace.Propagate(err, "Failed to get network id for %s", networkName)
 	}
 	err = manager.dockerClient.NetworkConnect(
 		context.Background(),
@@ -218,7 +187,7 @@ func (manager DockerManager) pullImage(imageName string) (err error) {
 	log.Printf("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
-		return stacktrace.Propagate(err, "")
+		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}
 	defer out.Close()
 	io.Copy(ioutil.Discard, out)
@@ -227,7 +196,7 @@ func (manager DockerManager) pullImage(imageName string) (err error) {
 
 // Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
 // mapped to the host ports
-func (manager *DockerManager) getContainerHostConfig(networkName string, usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
 	portMap := nat.PortMap{}
 	for port, _ := range usedPorts {
 		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
