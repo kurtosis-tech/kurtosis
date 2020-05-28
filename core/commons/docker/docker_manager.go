@@ -46,7 +46,6 @@ func NewDockerManager(
 }
 
 func (manager DockerManager) CreateAndStartContainerForService(
-	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	dockerImage string,
 	staticIp string,
 	usedPorts map[int]bool,

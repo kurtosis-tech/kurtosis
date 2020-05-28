@@ -171,8 +171,11 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]
 
-		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-		service, containerId, err := factory.Construct(publicIpProvider, manager, serviceDependencies)
+		staticIp, err := publicIpProvider.GetFreeIpAddr()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
+		}
+		service, containerId, err := factory.Construct(staticIp, manager, serviceDependencies)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}

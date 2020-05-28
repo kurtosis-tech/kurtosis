@@ -8,7 +8,6 @@ type ServiceFactoryConfig interface {
 	GetUsedPorts() map[int]bool
 
 	// TODO somehow, some way verify that the types of these two functions are equal
-	// TODO This ipAddrOffset is a nasty hack that will go away when public-ips is gone!
 	// If Go had generics, dependencies should be of type []T
 	GetStartCommand(publicIpAddr string, dependencies []Service) []string
 
