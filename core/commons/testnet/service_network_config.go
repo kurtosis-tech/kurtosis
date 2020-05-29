@@ -30,9 +30,6 @@ type ServiceNetworkConfigBuilder struct {
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
 
-	// Defines the subnet that public IPs for services will be generated from.
-	subnetMask string
-
 }
 
 func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {

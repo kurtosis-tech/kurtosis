@@ -61,7 +61,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {
 		networkLoader := config.NetworkLoader
-		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName, DEFAULT_SUBNET_MASK)
+		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName)
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
