@@ -27,7 +27,7 @@ func main() {
 
 	testControllerImageNameArg := flag.String(
 		"test-controller-image-name",
-		"ava-test-controller",
+		"",
 		"The name of a pre-built test controller image, either on the local Docker engine or in Docker Hub",
 	)
 	portRangeStartArg := flag.Int(
