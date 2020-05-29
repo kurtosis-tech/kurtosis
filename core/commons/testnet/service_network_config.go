@@ -35,7 +35,7 @@ type ServiceNetworkConfigBuilder struct {
 
 }
 
-func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuilder {
+func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 	serviceConfigs := make(map[int]int)
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
@@ -49,7 +49,6 @@ func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuil
 		nextServiceId:       0,
 		configurations: 	 configurations,
 		nextConfigurationId: 0,
-		subnetMask: subnetMask,
 	}
 }
 
@@ -135,13 +134,11 @@ func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 		servicesStartOrder:  serviceStartOrderCopy,
 		onlyDependentServices: onlyDependentServicesCopy,
 		configurations:      configurationsCopy,
-		subnetMask: builder.subnetMask,
 	}
 }
 
 // Object declaring the state of the network to be created
 type ServiceNetworkConfig struct {
-	subnetMask string
 	serviceConfigs map[int]int
 	serviceDependencies map[int]map[int]bool
 	servicesStartOrder []int
@@ -185,8 +182,4 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 		ContainerIds:   serviceContainerIds,
 		Services: 		runningServices,
 	}, nil
-}
-
-func (networkCfg ServiceNetworkConfig) GetSubnetMask() string {
-	return networkCfg.subnetMask
 }

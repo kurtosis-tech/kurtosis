@@ -66,7 +66,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 		networkName := testName + uuid.Generate().String()
-		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, testNetworkCfg.GetSubnetMask())
+		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, DEFAULT_SUBNET_MASK)
 		if err != nil {
 			return stacktrace.Propagate(err, "")
 		}
