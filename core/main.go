@@ -17,6 +17,11 @@ func main() {
 		"the name of a pre-built gecko image in your docker engine.",
 	)
 
+	testControllerImageNameArg := flag.Int(
+		"test-controller",
+		9670,
+		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
+	)
 	portRangeStartArg := flag.Int(
 		"port-range-start",
 		9650,
@@ -28,6 +33,7 @@ func main() {
 		9670,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
+
 	flag.Parse()
 
 	testSuiteRunner := initializer.NewTestSuiteRunner(

@@ -18,16 +18,23 @@ import (
 type TestSuiteRunner struct {
 	testSuite testsuite.TestSuite
 	testImageName string
+	testControllerImageName string
 	startPortRange int
 	endPortRange int
 }
 
-func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(
+			testSuite testsuite.TestSuite,
+			testImageName string,
+			testControllerImageName string,
+			startPortRange int,
+			endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
-		testSuite: testSuite,
-		testImageName: testImageName,
-		startPortRange: startPortRange,
-		endPortRange: endPortRange,
+		testSuite:               testSuite,
+		testImageName:           testImageName,
+		testControllerImageName: testControllerImageName,
+		startPortRange:          startPortRange,
+		endPortRange:            endPortRange,
 	}
 }
 
@@ -61,6 +68,16 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
+
+		controllerArgs := []string{
+			// TODO make this the filepath of the volume
+			"/tmp/foo",
+			testName,
+		}
+
+		// TODO replace this with FreeHostPOrtTracker so we don't get port conflicts
+		usedPorts := make(map[int]bool)
+		dockerManager.CreateAndStartContainerForService(runner.testControllerImageName, usedPorts, controllerArgs)
 
 		// TODO Actually spin up TestController and run the tests here
 		for _, containerId := range serviceNetwork.ContainerIds {
