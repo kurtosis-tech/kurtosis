@@ -9,9 +9,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"log"
 	"strconv"
 )
 
@@ -86,6 +86,8 @@ func (manager DockerManager) CreateAndStartControllerContainer(
 	*/
 
 	startCmdArgs := []string{
+		// TODO make this parameterized by the build!
+		"controller",
 		testName,
 	}
 
@@ -217,7 +219,7 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 }
 
 func (manager DockerManager) pullImage(imageName string) (err error) {
-	log.Printf("Pulling image %s...", imageName)
+	logrus.Infof("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)

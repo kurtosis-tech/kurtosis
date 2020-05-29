@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/kurtosis-tech/kurtosis/commons/testnet"
+	"log"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -94,6 +95,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Could not get IP address for controller")
 		}
 
+		// TODO allow passing in the path to the controller executable, as it can vary by image
 		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
 			runner.testControllerImageName,
 			// TODO change this to use FreeIpAddrTracker!!
@@ -110,6 +112,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 
 		// TODO gracefully shut down all the service containers we started
 		for _, containerId := range serviceNetwork.ContainerIds {
+			log.Printf("Waiting for containerId %v", containerId)
 			waitAndGrabLogsOnExit(dockerCtx, dockerClient, containerId)
 		}
 
