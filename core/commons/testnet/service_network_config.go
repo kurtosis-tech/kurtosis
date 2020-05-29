@@ -153,13 +153,9 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddrTracker, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
-	publicIpProvider, err := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
@@ -189,4 +185,8 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 		ContainerIds:   serviceContainerIds,
 		Services: 		runningServices,
 	}, nil
+}
+
+func (networkCfg ServiceNetworkConfig) GetSubnetMask() string {
+	return networkCfg.subnetMask
 }

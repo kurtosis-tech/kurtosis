@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -65,7 +66,11 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 		networkName := testName + uuid.Generate().String()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
+		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, testNetworkCfg.GetSubnetMask())
+		if err != nil {
+			return stacktrace.Propagate(err, "")
+		}
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(publicIpProvider, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
