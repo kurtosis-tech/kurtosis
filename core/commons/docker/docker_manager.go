@@ -101,7 +101,17 @@ func (manager DockerManager) CreateAndStartContainer(
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
 
-	manager.ensureImageExistsLocally(dockerImage)
+	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to check for image availability.")
+	}
+
+	if !imageExistsLocally {
+		err = manager.pullImage(dockerImage)
+		if err != nil {
+			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image.")
+		}
+	}
 
 	// TODO replace with configurable network
 	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
@@ -135,21 +145,6 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	return staticIp, containerId, nil
-}
-
-func (manager DockerManager) ensureImageExistsLocally(dockerImage string) error {
-	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to check for image availability.")
-	}
-
-	if !imageExistsLocally {
-		err = manager.pullImage(dockerImage)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to pull Docker image.")
-		}
-	}
-	return nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
