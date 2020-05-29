@@ -17,7 +17,7 @@ func (network TwoNodeGeckoNetwork) GetDependentNode() services.GeckoService {
 }
 
 type TwoNodeGeckoNetworkLoader struct {}
-func (loader TwoNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string, subnetMask string) (*testnet.ServiceNetworkConfig, error) {
+func (loader TwoNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string) (*testnet.ServiceNetworkConfig, error) {
 	factoryConfig := services.NewGeckoServiceFactoryConfig(
 		testImageName,
 		2,
@@ -26,7 +26,7 @@ func (loader TwoNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string, s
 		services.LOG_LEVEL_DEBUG)
 	factory := testnet.NewServiceFactory(factoryConfig)
 
-	builder := testnet.NewServiceNetworkConfigBuilder(subnetMask)
+	builder := testnet.NewServiceNetworkConfigBuilder()
 	config1 := builder.AddServiceConfiguration(*factory)
 	bootNode, err := builder.AddService(config1, make(map[int]bool))
 	if err != nil {

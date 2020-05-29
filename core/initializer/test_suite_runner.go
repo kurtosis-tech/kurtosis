@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -68,7 +69,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {
 		networkLoader := config.NetworkLoader
-		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName, DEFAULT_SUBNET_MASK)
+		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName)
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
@@ -76,19 +77,31 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		testInstanceUuid := uuid.Generate()
 		// TODO push the network name generation lower??
 		networkName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
+		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, DEFAULT_SUBNET_MASK)
+		if err != nil {
+			return stacktrace.Propagate(err, "")
+		}
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(publicIpProvider, dockerManager)
+		// TODO if we get an err back, we need to shut down whatever containers were started
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
 		volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+		controllerIp, err := publicIpProvider.GetFreeIpAddr()
+		if err != nil {
+			// TODO we still need to shut down the service network if we get an error here!
+			return stacktrace.Propagate(err, "Could not get IP address for controller")
+		}
+
 		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
 			runner.testControllerImageName,
 			// TODO change this to use FreeIpAddrTracker!!
-			"172.23.0.99",
+			controllerIp,
 			testName,
 			volumeName)
 		if err != nil {
+			// TODO if we get an error here we still need to shut down the container network!
 			return stacktrace.Propagate(err, "Could not start test controller")
 		}
 

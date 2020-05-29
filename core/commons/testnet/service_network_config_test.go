@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-const TEST_SUBNET_MASK="172.17.0.2/16"
-
 
 type TestService struct {}
 
@@ -32,7 +30,7 @@ func getTestServiceFactory() *ServiceFactory {
 }
 
 func TestDisallowingNonexistentConfigs(t *testing.T) {
-	builder := NewServiceNetworkConfigBuilder(TEST_SUBNET_MASK)
+	builder := NewServiceNetworkConfigBuilder()
 	_, err := builder.AddService(0, make(map[int]bool))
 	if err == nil {
 		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
@@ -40,7 +38,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 }
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
-	builder := NewServiceNetworkConfigBuilder(TEST_SUBNET_MASK)
+	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	dependencies := map[int]bool{
@@ -56,7 +54,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 // TODO test configuration IDs get incremented!
 
 func TestIdsDifferent(t *testing.T) {
-	builder := NewServiceNetworkConfigBuilder(TEST_SUBNET_MASK)
+	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -70,7 +68,7 @@ func TestIdsDifferent(t *testing.T) {
 }
 
 func TestDependencyBookkeeping(t *testing.T) {
-	builder := NewServiceNetworkConfigBuilder(TEST_SUBNET_MASK)
+	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
@@ -136,7 +134,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 }
 
 func TestDefensiveCopies(t *testing.T) {
-	builder := NewServiceNetworkConfigBuilder(TEST_SUBNET_MASK)
+	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddServiceConfiguration(*getTestServiceFactory())
 
 	dependencyMap := make(map[int]bool)

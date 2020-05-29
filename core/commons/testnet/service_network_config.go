@@ -30,12 +30,9 @@ type ServiceNetworkConfigBuilder struct {
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
 
-	// Defines the subnet that public IPs for services will be generated from.
-	subnetMask string
-
 }
 
-func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuilder {
+func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 	serviceConfigs := make(map[int]int)
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
@@ -49,7 +46,6 @@ func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuil
 		nextServiceId:       0,
 		configurations: 	 configurations,
 		nextConfigurationId: 0,
-		subnetMask: subnetMask,
 	}
 }
 
@@ -135,13 +131,11 @@ func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 		servicesStartOrder:  serviceStartOrderCopy,
 		onlyDependentServices: onlyDependentServicesCopy,
 		configurations:      configurationsCopy,
-		subnetMask: builder.subnetMask,
 	}
 }
 
 // Object declaring the state of the network to be created
 type ServiceNetworkConfig struct {
-	subnetMask string
 	serviceConfigs map[int]int
 	serviceDependencies map[int]map[int]bool
 	servicesStartOrder []int
@@ -153,13 +147,9 @@ type ServiceNetworkConfig struct {
 }
 
 // TODO use the network name to create a new network!!
-func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
+func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddrTracker, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
-	publicIpProvider, err := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
@@ -173,10 +163,13 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 
 		staticIp, err := publicIpProvider.GetFreeIpAddr()
 		if err != nil {
+			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
 			return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 		}
 		service, containerId, err := factory.Construct(staticIp, manager, serviceDependencies)
+		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 		if err != nil {
+			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
 		runningServices[serviceId] = service
