@@ -10,7 +10,7 @@ import (
 
 
 const DEFAULT_STARTING_PORT = 9650
-const DEFAULT_ENDING_PORT = 9670
+const DEFAULT_ENDING_PORT = 10650
 
 func main() {
 	// TODO make this configurable
@@ -21,7 +21,7 @@ func main() {
 	// Define and parse command line flags.
 	geckoImageNameArg := flag.String(
 		"gecko-image-name", 
-		"gecko-f290f73", // by default, pick commit that was on master May 14, 2020.
+		"",
 		"The name of a pre-built Gecko image, either on the local Docker engine or in Docker Hub",
 	)
 
