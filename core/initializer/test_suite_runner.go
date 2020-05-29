@@ -2,14 +2,16 @@ package initializer
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/kurtosis-tech/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -19,18 +21,25 @@ import (
 type TestSuiteRunner struct {
 	testSuite testsuite.TestSuite
 	testImageName string
+	testControllerImageName string
 	startPortRange int
 	endPortRange int
 }
 
 const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(
+			testSuite testsuite.TestSuite,
+			testImageName string,
+			testControllerImageName string,
+			startPortRange int,
+			endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
-		testSuite: testSuite,
-		testImageName: testImageName,
-		startPortRange: startPortRange,
-		endPortRange: endPortRange,
+		testSuite:               testSuite,
+		testImageName:           testImageName,
+		testControllerImageName: testControllerImageName,
+		startPortRange:          startPortRange,
+		endPortRange:            endPortRange,
 	}
 }
 
@@ -65,31 +74,55 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
-		networkName := testName + uuid.Generate().String()
+
+		testInstanceUuid := uuid.Generate()
+		// TODO push the network name generation lower??
+		networkName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
 		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, DEFAULT_SUBNET_MASK)
 		if err != nil {
 			return stacktrace.Propagate(err, "")
 		}
 		serviceNetwork, err := testNetworkCfg.CreateAndRun(publicIpProvider, dockerManager)
+		// TODO if we get an err back, we need to shut down whatever containers were started
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		// TODO Actually spin up TestController and run the tests here
-		for _, containerId := range serviceNetwork.ContainerIds {
-			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
+		volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+		controllerIp, err := publicIpProvider.GetFreeIpAddr()
+		if err != nil {
+			// TODO we still need to shut down the service network if we get an error here!
+			return stacktrace.Propagate(err, "Could not get IP address for controller")
 		}
-	}
 
+		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
+			runner.testControllerImageName,
+			// TODO change this to use FreeIpAddrTracker!!
+			controllerIp,
+			testName,
+			volumeName)
+		if err != nil {
+			// TODO if we get an error here we still need to shut down the container network!
+			return stacktrace.Propagate(err, "Could not start test controller")
+		}
+
+		// TODO add a timeout here if the test doesn't complete successfully
+		waitAndGrabLogsOnExit(dockerCtx, dockerClient, controllerContainerId)
+
+		// TODO gracefully shut down all the service containers we started
+		for _, containerId := range serviceNetwork.ContainerIds {
+			logrus.Infof("Waiting for containerId %v", containerId)
+			waitAndGrabLogsOnExit(dockerCtx, dockerClient, containerId)
+		}
+
+	}
 	return nil
-	// TODO add a timeout here
-	// TODO gracefully shut down all the Docker containers we started here
 }
 
 // ======================== Private helper functions =====================================
 
 
-func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
+func waitAndGrabLogsOnExit(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
 	statusCh, errCh := dockerClient.ContainerWait(dockerCtx, containerId, container.WaitConditionNotRunning)
 
 	select {
@@ -100,7 +133,7 @@ func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Clie
 	case <-statusCh:
 	}
 
-	// If the container stops and there is an error, grab the logs.
+	// Grab logs on container quit
 	out, err := dockerClient.ContainerLogs(
 		dockerCtx,
 		containerId,

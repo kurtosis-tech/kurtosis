@@ -163,10 +163,12 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 
 		staticIp, err := publicIpProvider.GetFreeIpAddr()
 		if err != nil {
+			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
 			return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 		}
 		service, containerId, err := factory.Construct(staticIp, manager, serviceDependencies)
 		if err != nil {
+			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
 		runningServices[serviceId] = service
@@ -175,7 +177,6 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 
 	// TODO actually fill in all the other stuff besides container ID
 	return &RawServiceNetwork{
-		NetworkId:      "",
 		ContainerIds:   serviceContainerIds,
 		Services: 		runningServices,
 	}, nil

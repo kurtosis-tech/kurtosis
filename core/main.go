@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/ava_commons/testsuite"
 	"github.com/kurtosis-tech/kurtosis/initializer"
+	"github.com/sirupsen/logrus"
 )
 
 
@@ -12,15 +13,23 @@ const DEFAULT_STARTING_PORT = 9650
 const DEFAULT_ENDING_PORT = 10650
 
 func main() {
+	// TODO make this configurable
+	logrus.SetLevel(logrus.TraceLevel)
+
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
 
 	// Define and parse command line flags.
 	geckoImageNameArg := flag.String(
 		"gecko-image-name", 
 		"",
-		"the name of a pre-built gecko image in your docker engine.",
+		"The name of a pre-built Gecko image, either on the local Docker engine or in Docker Hub",
 	)
 
+	testControllerImageNameArg := flag.String(
+		"test-controller-image-name",
+		"",
+		"The name of a pre-built test controller image, either on the local Docker engine or in Docker Hub",
+	)
 	portRangeStartArg := flag.Int(
 		"port-range-start",
 		DEFAULT_STARTING_PORT,
@@ -32,11 +41,13 @@ func main() {
 		DEFAULT_ENDING_PORT,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
+
 	flag.Parse()
 
 	testSuiteRunner := initializer.NewTestSuiteRunner(
 		testsuite.AvaTestSuite{},
 		*geckoImageNameArg,
+		*testControllerImageNameArg,
 		*portRangeStartArg,
 		*portRangeEndArg)
 

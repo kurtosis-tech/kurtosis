@@ -9,15 +9,16 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"log"
 	"strconv"
 )
 
-const LOCAL_HOST_IP = "127.0.0.1"
-const DOCKER_NETWORK_NAME ="kurtosis-bridge"
-
+const (
+	LOCAL_HOST_IP = "127.0.0.1"
+	DOCKER_NETWORK_NAME ="kurtosis-bridge"
+)
 
 type DockerManager struct {
 	dockerCtx           context.Context
@@ -66,7 +67,35 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	return resp.ID, nil
 }
 
-func (manager DockerManager) CreateAndStartContainerForService(
+func (manager DockerManager) CreateAndStartControllerContainer(
+		dockerImage string,
+		staticIp string,
+		testName string,
+		volumeName string) (containerIpAddr string, containerId string, err error){
+
+	// TODO uncomment me
+	/*
+	volumeName := fmt.Sprintf("volume-%v-%v", testName, instanceUuid.String())
+	volume.VolumeCreateBody{
+		Driver:     "",
+		DriverOpts: nil,
+		Labels:     nil,
+		Name:       volumeName,
+	}
+	manager.dockerClient.VolumeCreate()
+	*/
+
+	startCmdArgs := []string{
+		// TODO make this parameterized by the build!
+		"controller",
+		testName,
+	}
+
+	controllerIp, controllerContainerId, err := manager.CreateAndStartContainer(dockerImage, staticIp, make(map[int]bool), startCmdArgs)
+	return controllerIp, controllerContainerId, err
+}
+
+func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
 	staticIp string,
 	usedPorts map[int]bool,
@@ -84,6 +113,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		}
 	}
 
+	// TODO replace with configurable network
 	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
@@ -93,7 +123,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	}
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -184,7 +214,7 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 }
 
 func (manager DockerManager) pullImage(imageName string) (err error) {
-	log.Printf("Pulling image %s...", imageName)
+	logrus.Infof("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
@@ -223,10 +253,8 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 	return containerHostConfigPtr, nil
 }
 
-// TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
-// Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
-// Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func (manager *DockerManager) getContainerCfgFromServiceCfg(
+// Creates a Docker container representing a service that will listen on ports in the network
+func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			usedPorts map[int]bool,
 			startCmdArgs []string) (config *container.Config, err error) {
