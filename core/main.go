@@ -9,7 +9,7 @@ import (
 
 
 const DEFAULT_STARTING_PORT = 9650
-const DEFAULT_ENDING_PORT = 9670
+const DEFAULT_ENDING_PORT = 10650
 
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
@@ -17,7 +17,7 @@ func main() {
 	// Define and parse command line flags.
 	geckoImageNameArg := flag.String(
 		"gecko-image-name", 
-		"gecko-f290f73", // by default, pick commit that was on master May 14, 2020.
+		"",
 		"the name of a pre-built gecko image in your docker engine.",
 	)
 

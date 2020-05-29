@@ -31,7 +31,7 @@ func NewDockerManager(
 	hostPortRangeStart int,
 	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
 
-	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
+	freeHostPortTracker, err := NewFreeHostPortTracker(LOCAL_HOST_IP, hostPortRangeStart, hostPortRangeEnd)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
 	}
