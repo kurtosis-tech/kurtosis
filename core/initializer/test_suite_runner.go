@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -71,37 +72,42 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
-		networkName := testName + uuid.Generate().String()
+
+		testInstanceUuid := uuid.Generate()
+		// TODO push the network name generation lower??
+		networkName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
 		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		controllerArgs := []string{
-			// TODO make this the filepath of the volume
-			"/tmp/foo",
+		volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
+			runner.testControllerImageName,
+			// TODO change this to use FreeIpAddrTracker!!
+			"172.23.0.99",
 			testName,
+			volumeName)
+		if err != nil {
+			return stacktrace.Propagate(err, "Could not start test controller")
 		}
 
-		// TODO replace this with FreeHostPOrtTracker so we don't get port conflicts
-		usedPorts := make(map[int]bool)
-		dockerManager.CreateAndStartContainerForService(runner.testControllerImageName, usedPorts, controllerArgs)
+		// TODO add a timeout here if the test doesn't complete successfully
+		waitAndGrabLogsOnExit(dockerCtx, dockerClient, controllerContainerId)
 
-		// TODO Actually spin up TestController and run the tests here
+		// TODO gracefully shut down all the service containers we started
 		for _, containerId := range serviceNetwork.ContainerIds {
-			waitAndGrabLogsOnError(dockerCtx, dockerClient, containerId)
+			waitAndGrabLogsOnExit(dockerCtx, dockerClient, containerId)
 		}
-	}
 
+	}
 	return nil
-	// TODO add a timeout here
-	// TODO gracefully shut down all the Docker containers we started here
 }
 
 // ======================== Private helper functions =====================================
 
 
-func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
+func waitAndGrabLogsOnExit(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
 	statusCh, errCh := dockerClient.ContainerWait(dockerCtx, containerId, container.WaitConditionNotRunning)
 
 	select {
@@ -112,7 +118,7 @@ func waitAndGrabLogsOnError(dockerCtx context.Context, dockerClient *client.Clie
 	case <-statusCh:
 	}
 
-	// If the container stops and there is an error, grab the logs.
+	// Grab logs on container quit
 	out, err := dockerClient.ContainerLogs(
 		dockerCtx,
 		containerId,

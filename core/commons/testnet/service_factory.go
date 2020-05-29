@@ -25,7 +25,7 @@ func (factory ServiceFactory) Construct(
 	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
-	ipAddr, containerId, err := manager.CreateAndStartContainerForService(dockerImage, staticIp, usedPorts, startCmdArgs)
+	ipAddr, containerId, err := manager.CreateAndStartContainer(dockerImage, staticIp, usedPorts, startCmdArgs)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}

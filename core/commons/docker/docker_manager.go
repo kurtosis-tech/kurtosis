@@ -15,9 +15,10 @@ import (
 	"strconv"
 )
 
-const LOCAL_HOST_IP = "127.0.0.1"
-const DOCKER_NETWORK_NAME ="kurtosis-bridge"
-
+const (
+	LOCAL_HOST_IP = "127.0.0.1"
+	DOCKER_NETWORK_NAME ="kurtosis-bridge"
+)
 
 type DockerManager struct {
 	dockerCtx           context.Context
@@ -40,11 +41,6 @@ func NewDockerManager(
 		dockerClient:        dockerClient,
 		freeHostPortTracker: freeHostPortTracker,
 	}, nil
-}
-
-func (manager DockerManager) CreateAndStartContainerForController(dockerImage string, testName string) {
-	// TODO create volume here
-
 }
 
 func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
@@ -71,24 +67,41 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	return resp.ID, nil
 }
 
-func (manager DockerManager) CreateAndStartContainerForService(
+func (manager DockerManager) CreateAndStartControllerContainer(
+		dockerImage string,
+		staticIp string,
+		testName string,
+		volumeName string) (containerIpAddr string, containerId string, err error){
+
+	// TODO uncomment me
+	/*
+	volumeName := fmt.Sprintf("volume-%v-%v", testName, instanceUuid.String())
+	volume.VolumeCreateBody{
+		Driver:     "",
+		DriverOpts: nil,
+		Labels:     nil,
+		Name:       volumeName,
+	}
+	manager.dockerClient.VolumeCreate()
+	*/
+
+	startCmdArgs := []string{
+		testName,
+	}
+
+	controllerIp, controllerContainerId, err := manager.CreateAndStartContainer(dockerImage, staticIp, make(map[int]bool), startCmdArgs)
+	return controllerIp, controllerContainerId, err
+}
+
+func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
 	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
 
-	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
-	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Failed to check for image availability.")
-	}
+	manager.ensureImageExistsLocally(dockerImage)
 
-	if !imageExistsLocally {
-		err = manager.pullImage(dockerImage)
-		if err != nil {
-			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image.")
-		}
-	}
-
+	// TODO replace with configurable network
 	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
@@ -98,7 +111,7 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	}
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-	containerConfigPtr, err := manager.getContainerCfgFromServiceCfg(dockerImage, usedPorts, startCmdArgs)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -120,6 +133,21 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	return staticIp, containerId, nil
+}
+
+func (manager DockerManager) ensureImageExistsLocally(dockerImage string) error {
+	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to check for image availability.")
+	}
+
+	if !imageExistsLocally {
+		err = manager.pullImage(dockerImage)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to pull Docker image.")
+		}
+	}
+	return nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
@@ -228,10 +256,8 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 	return containerHostConfigPtr, nil
 }
 
-// TODO should I actually be passing sorta-complex objects like JsonRpcServiceConfig by value???
-// Creates a more generalized Docker Container configuration for Gecko, with a 5-parameter initialization command.
-// Gecko HTTP and Staking ports inside the Container are the standard defaults.
-func (manager *DockerManager) getContainerCfgFromServiceCfg(
+// Creates a Docker container representing a service that will listen on ports in the network
+func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			usedPorts map[int]bool,
 			startCmdArgs []string) (config *container.Config, err error) {
