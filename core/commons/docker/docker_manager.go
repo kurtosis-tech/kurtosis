@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
@@ -14,8 +15,9 @@ import (
 	"strconv"
 )
 
-// TODO TODO TODO - do we ever need to handle different local host IPs?
-const LOCAL_HOST_IP = "0.0.0.0"
+const LOCAL_HOST_IP = "127.0.0.1"
+const DOCKER_NETWORK_NAME ="kurtosis-bridge"
+
 
 type DockerManager struct {
 	dockerCtx           context.Context
@@ -23,10 +25,15 @@ type DockerManager struct {
 	freeHostPortTracker *FreeHostPortTracker
 }
 
-func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client, hostPortRangeStart int, hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+func NewDockerManager(
+	dockerCtx context.Context,
+	dockerClient *client.Client,
+	hostPortRangeStart int,
+	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+
 	freeHostPortTracker, err := NewFreeHostPortTracker(hostPortRangeStart, hostPortRangeEnd)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
+		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
 	}
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
@@ -40,9 +47,33 @@ func (manager DockerManager) CreateAndStartContainerForController(dockerImage st
 
 }
 
+func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
+	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
+	}
+	// Network already exists - return existing id.
+	if ok {
+		return networkId, nil
+	}
+	ipamConfig := []network.IPAMConfig{{
+		Subnet: subnetMask,
+	}}
+	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
+		Driver: "bridge",
+		IPAM: &network.IPAM{
+			Config: ipamConfig,
+		},
+	})
+	if err != nil {
+		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", DOCKER_NETWORK_NAME, subnetMask)
+	}
+	return resp.ID, nil
+}
+
 func (manager DockerManager) CreateAndStartContainerForService(
-	// TODO This arg is a hack that will go away as soon as Gecko removes the --public-ip command!
 	dockerImage string,
+	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
 
@@ -56,6 +87,14 @@ func (manager DockerManager) CreateAndStartContainerForService(
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image.")
 		}
+	}
+
+	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
+	}
+	if !networkExistsLocally {
+		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
 	}
 
 	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
@@ -76,12 +115,11 @@ func (manager DockerManager) CreateAndStartContainerForService(
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	containerJson, err := manager.dockerClient.ContainerInspect(manager.dockerCtx, containerId)
+	err = manager.connectToNetwork(DOCKER_NETWORK_NAME, containerId, staticIp)
 	if err != nil {
-		return "","", stacktrace.Propagate(err, "Inspect container failed, which is necessary to get the container's IP")
+		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
-	containerIpAddr = containerJson.NetworkSettings.IPAddress
-	return containerIpAddr, containerId, nil
+	return staticIp, containerId, nil
 }
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
@@ -115,11 +153,46 @@ func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvaila
 	return len(images) > 0, nil
 }
 
+func (manager DockerManager) getNetworkId(networkName string) (networkId string, ok bool, err error) {
+	referenceArg := filters.Arg("name", networkName)
+	filters := filters.NewArgs(referenceArg)
+	networks, err := manager.dockerClient.NetworkList(
+		context.Background(),
+		types.NetworkListOptions{
+			Filters: filters,
+		})
+	if err != nil {
+		return "", false, stacktrace.Propagate(err, "Failed to list networks.")
+	}
+	if len(networks) == 0 {
+		return "", false, nil
+	}
+	return networks[0].ID, true, nil
+}
+
+func (manager DockerManager) connectToNetwork(networkName string, containerId string, staticIpAddr string) (err error) {
+	networkId, ok, err := manager.getNetworkId(networkName)
+	if err != nil || !ok {
+		return stacktrace.Propagate(err, "Failed to get network id for %s", networkName)
+	}
+	err = manager.dockerClient.NetworkConnect(
+		context.Background(),
+		networkId,
+		containerId,
+		&network.EndpointSettings{
+			IPAddress: staticIpAddr,
+		})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to connect container %s to network %s.", containerId, networkName)
+	}
+	return nil
+}
+
 func (manager DockerManager) pullImage(imageName string) (err error) {
 	log.Printf("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
-		return stacktrace.Propagate(err, "")
+		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}
 	defer out.Close()
 	io.Copy(ioutil.Discard, out)
@@ -150,6 +223,7 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 	}
 	containerHostConfigPtr := &container.HostConfig{
 		PortBindings: portMap,
+		NetworkMode: container.NetworkMode("default"),
 	}
 	return containerHostConfigPtr, nil
 }

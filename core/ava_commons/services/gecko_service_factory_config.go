@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/testnet"
+	"log"
 	"strconv"
 	"strings"
 )
@@ -58,10 +59,10 @@ type GeckoServiceFactoryConfig struct {
 }
 
 func NewGeckoServiceFactoryConfig(dockerImage string,
-			snowSampleSize int,
-			snowQuorumSize int,
-			stakingTlsEnabled bool,
-			logLevel geckoLogLevel) *GeckoServiceFactoryConfig {
+	snowSampleSize int,
+	snowQuorumSize int,
+	stakingTlsEnabled bool,
+	logLevel geckoLogLevel) *GeckoServiceFactoryConfig {
 	return &GeckoServiceFactoryConfig{
 		dockerImage:       dockerImage,
 		snowSampleSize:    snowSampleSize,
@@ -82,11 +83,11 @@ func (g GeckoServiceFactoryConfig) GetUsedPorts() map[int]bool {
 	}
 }
 
-func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []testnet.Service) []string {
+func (g GeckoServiceFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []testnet.Service) []string {
+	publicIpFlag := fmt.Sprintf("--public-ip=%s", publicIpAddr)
 	commandList := []string{
 		"/gecko/build/ava",
-		// TODO this entire flag will go away soon!!
-		fmt.Sprintf("--public-ip=172.17.0.%d", 2 + ipAddrOffset),
+		publicIpFlag,
 		"--network-id=local",
 		fmt.Sprintf("--http-port=%d", httpPort),
 		fmt.Sprintf("--staking-port=%d", stakingPort),
@@ -113,11 +114,10 @@ func (g GeckoServiceFactoryConfig) GetStartCommand(ipAddrOffset int, dependencie
 		joinedSockets := strings.Join(socketStrs, ",")
 		commandList = append(commandList, "--bootstrap-ips=" + joinedSockets)
 	}
-
+	log.Printf("Command List: %+v", commandList)
 	return commandList
 }
 
 func (g GeckoServiceFactoryConfig) GetServiceFromIp(ipAddr string) testnet.Service {
 	return GeckoService{ipAddr: ipAddr}
 }
-

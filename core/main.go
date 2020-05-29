@@ -7,6 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer"
 )
 
+
+const DEFAULT_STARTING_PORT = 9650
+const DEFAULT_ENDING_PORT = 9670
+
 func main() {
 	fmt.Println("Welcome to Kurtosis E2E Testing for Ava.")
 
@@ -24,13 +28,13 @@ func main() {
 	)
 	portRangeStartArg := flag.Int(
 		"port-range-start",
-		9650,
+		DEFAULT_STARTING_PORT,
 		"Beginning of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
 
 	portRangeEndArg := flag.Int(
 		"port-range-end",
-		9670,
+		DEFAULT_ENDING_PORT,
 		"End of port range to be used by testnet on the local environment. Must be between 1024-65535",
 	)
 

@@ -29,9 +29,13 @@ type ServiceNetworkConfigBuilder struct {
 
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
+
+	// Defines the subnet that public IPs for services will be generated from.
+	subnetMask string
+
 }
 
-func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
+func NewServiceNetworkConfigBuilder(subnetMask string) *ServiceNetworkConfigBuilder {
 	serviceConfigs := make(map[int]int)
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
@@ -45,6 +49,7 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 		nextServiceId:       0,
 		configurations: 	 configurations,
 		nextConfigurationId: 0,
+		subnetMask: subnetMask,
 	}
 }
 
@@ -130,11 +135,13 @@ func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 		servicesStartOrder:  serviceStartOrderCopy,
 		onlyDependentServices: onlyDependentServicesCopy,
 		configurations:      configurationsCopy,
+		subnetMask: builder.subnetMask,
 	}
 }
 
 // Object declaring the state of the network to be created
 type ServiceNetworkConfig struct {
+	subnetMask string
 	serviceConfigs map[int]int
 	serviceDependencies map[int]map[int]bool
 	servicesStartOrder []int
@@ -149,6 +156,10 @@ type ServiceNetworkConfig struct {
 func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
 	serviceContainerIds := make(map[int]string)
+	publicIpProvider, err := NewFreeIpAddrTracker(networkName, networkCfg.subnetMask)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "")
+	}
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
@@ -160,8 +171,11 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(networkName string, manager 
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]
 
-		// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-		service, containerId, err := factory.Construct(serviceId, manager, serviceDependencies)
+		staticIp, err := publicIpProvider.GetFreeIpAddr()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
+		}
+		service, containerId, err := factory.Construct(staticIp, manager, serviceDependencies)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
