@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+
 type TestService struct {}
 
 type TestFactoryConfig struct {}
@@ -16,7 +17,7 @@ func (t TestFactoryConfig) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestFactoryConfig) GetStartCommand(ipAddrOffset int, dependencies []Service) []string {
+func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []Service) []string {
 	return make([]string, 0)
 }
 

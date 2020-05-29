@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"os"
 
 	"github.com/palantir/stacktrace"
@@ -21,6 +22,8 @@ type TestSuiteRunner struct {
 	startPortRange int
 	endPortRange int
 }
+
+const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
 func NewTestSuiteRunner(testSuite testsuite.TestSuite, testImageName string, startPortRange int, endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
@@ -49,6 +52,12 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 
 	tests := runner.testSuite.GetTests()
 
+	// TODO TODO TODO Support creating one network per testnet
+	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
+	}
+
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {
 		networkLoader := config.NetworkLoader
@@ -57,7 +66,11 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 		networkName := testName + uuid.Generate().String()
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(networkName, dockerManager)
+		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, DEFAULT_SUBNET_MASK)
+		if err != nil {
+			return stacktrace.Propagate(err, "")
+		}
+		serviceNetwork, err := testNetworkCfg.CreateAndRun(publicIpProvider, dockerManager)
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
