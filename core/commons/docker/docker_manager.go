@@ -297,7 +297,9 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		AutoRemove: true, // Make our containers clean themselves up after they're done
+		// TODO set this back to true so we nicely clean ourselves up!
+		AutoRemove: false,
+		// AutoRemove: true, // Make our containers clean themselves up after they're done
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
 		VolumeDriver: "overlay2",
@@ -331,11 +333,11 @@ func (manager *DockerManager) getContainerCfg(
 	nodeConfigPtr := &container.Config{
 		AttachStdout: attachStdOutErr,
 		AttachStderr: attachStdOutErr,
+		Tty: attachStdOutErr,
 		Image: dockerImage,
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
 		Cmd: startCmdArgs,
-		Tty: false,
 		Env: envVariablesSlice,
 	}
 	return nodeConfigPtr, nil

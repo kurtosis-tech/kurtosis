@@ -162,6 +162,9 @@ func runControllerContainer(
 		map[string]string{
 			tmpfile.Name(): containerMountpoint,
 		})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to run test controller container")
+	}
 
 	// TODO add a timeout here if the test doesn't complete successfully
 	err = manager.WaitForExit(controllerContainerId)
