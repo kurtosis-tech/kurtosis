@@ -55,12 +55,14 @@ This means Kurtosis will be running in a container in the same docker environmen
 ### Running Kurtosis in Docker
 
 In the root directory of this repository, run 
-`./scripts/build_image.sh` to build the Kurtosis docker image.
+`./scripts/build_image.sh` to build the Kurtosis docker image. It will create an image with tag kurtosis-<COMMIT_HASH>.
 
 To run Kurtosis in Docker, be sure to bind the docker socket of the container with the host docker socket, so they use the same docker engine.
 Also, specify the Gecko image and the Test Controller image at container runtime.
 
-`docker run -ti -v /var/run/docker.sock:/var/run/docker.sock --env DEFAULT_GECKO_IMAGE="gecko-60668c3" --env TEST_CONTROLLER_IMAGE=ava-controller:latest kurtosis-docker`
+Example command:
+
+`docker run -ti -v /var/run/docker.sock:/var/run/docker.sock --env DEFAULT_GECKO_IMAGE="gecko-60668c3" --env TEST_CONTROLLER_IMAGE=ava-controller:latest kurtosis-5006918`
 
 # TODO
 
