@@ -2,16 +2,21 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 )
 
@@ -67,39 +72,39 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	return resp.ID, nil
 }
 
-func (manager DockerManager) CreateAndStartControllerContainer(
-		dockerImage string,
-		staticIp string,
-		testName string,
-		volumeName string) (containerIpAddr string, containerId string, err error){
-
-	// TODO uncomment me
-	/*
-	volumeName := fmt.Sprintf("volume-%v-%v", testName, instanceUuid.String())
-	volume.VolumeCreateBody{
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     nil,
+func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
+	volumeConfig := volume.VolumeCreateBody{
+		Driver:     "overlay2",
 		Name:       volumeName,
 	}
-	manager.dockerClient.VolumeCreate()
-	*/
 
-	startCmdArgs := []string{
-		// TODO make this parameterized by the build!
-		"controller",
-		testName,
+	volume, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
 
-	controllerIp, controllerContainerId, err := manager.CreateAndStartContainer(dockerImage, staticIp, make(map[int]bool), startCmdArgs)
-	return controllerIp, controllerContainerId, err
+	// TODO no idea if this will work
+	return volume.Mountpoint, nil
 }
 
+
+/*
+NOTE: nil startCmdArgs will use the Docker container default
+
+Args:
+	dockerImage: image to start
+	staticIp: IP the container will be assigned
+	usedPorts: a pseudo-set of the ports that the container will listen on (and should be mapped to host ports)
+	startCmdArgs: the args that will be used to run the container (leave as nil to run the CMD in the image)
+	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted on container startup
+ */
 func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
 	staticIp string,
 	usedPorts map[int]bool,
-	startCmdArgs []string) (containerIpAddr string, containerId string, err error) {
+	startCmdArgs []string,
+	envVariables map[string]string,
+	volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
@@ -122,12 +127,11 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
 	}
 
-	// TODO this relies on serviceId being incremental, and is a total hack until --public-ips flag is gone from Gecko!
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts, volumeMounts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -146,6 +150,36 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	return staticIp, containerId, nil
 }
+
+func (manager DockerManager) WaitAndGrabLogsOnExit(containerId string) (err error) {
+	statusCh, errCh := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to wait for container to return.")
+		}
+	case <-statusCh:
+	}
+
+	// Grab logs on container quit
+	out, err := manager.dockerClient.ContainerLogs(
+		manager.dockerCtx,
+		containerId,
+		types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+		})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
+	}
+
+	// TODO let the user specify a destination of their choice (rather than assuming Stdin/Stdout)
+	// Copy the logs to stdout.
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	return nil
+}
+
 
 func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
 	freePortInt, err := manager.freeHostPortTracker.GetFreePort()
@@ -224,9 +258,15 @@ func (manager DockerManager) pullImage(imageName string) (err error) {
 	return nil
 }
 
-// Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
-// mapped to the host ports
-func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (hostConfig *container.HostConfig, err error) {
+/*
+Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON RPC and service-specific ports are
+mapped to the host ports.
+
+Args:
+	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
+	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup
+ */
+func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 	portMap := nat.PortMap{}
 	for port, _ := range usedPorts {
 		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
@@ -246,9 +286,25 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 			},
 		}
 	}
+
+	mountsList := make([]mount.Mount, 0, len(volumeMounts))
+	for volumeName, containerMountpoint := range volumeMounts {
+		mount := mount.Mount{
+			Type:          mount.TypeVolume,
+			Source:        volumeName,
+			Target:        containerMountpoint,
+			// TODO change this if we ever pull data from the containers
+			ReadOnly:      true,
+		}
+		mountsList = append(mountsList, mount)
+	}
+
 	containerHostConfigPtr := &container.HostConfig{
+		AutoRemove: true, // Make our containers clean themselves up after they're done
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
+		VolumeDriver: "overlay2",
+		Mounts: mountsList,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -257,7 +313,8 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool) (ho
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			usedPorts map[int]bool,
-			startCmdArgs []string) (config *container.Config, err error) {
+			startCmdArgs []string,
+			envVariables map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
 		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
@@ -267,12 +324,18 @@ func (manager *DockerManager) getContainerCfg(
 		portSet[otherPort] = struct{}{}
 	}
 
+	envVariablesSlice := make([]string, 0, len(envVariables))
+	for key, val := range envVariables {
+		envVariablesSlice = append(envVariablesSlice, fmt.Sprintf("%v=%v", key, val))
+	}
+
 	nodeConfigPtr := &container.Config{
 		Image: dockerImage,
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
 		Cmd: startCmdArgs,
 		Tty: false,
+		Env: envVariablesSlice,
 	}
 	return nodeConfigPtr, nil
 }

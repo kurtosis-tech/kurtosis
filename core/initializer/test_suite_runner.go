@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/distribution/uuid"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
-	"github.com/sirupsen/logrus"
-	"os"
-
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
 
@@ -26,7 +22,16 @@ type TestSuiteRunner struct {
 	endPortRange int
 }
 
-const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+const (
+	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+
+	CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH = "/data/network"
+
+	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
+	TEST_NAME_BASH_ARG = "TEST_NAME"
+	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
+)
+
 
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
@@ -88,31 +93,12 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
-		controllerIp, err := publicIpProvider.GetFreeIpAddr()
-		if err != nil {
-			// TODO we still need to shut down the service network if we get an error here!
-			return stacktrace.Propagate(err, "Could not get IP address for controller")
-		}
-
-		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
-			runner.testControllerImageName,
-			// TODO change this to use FreeIpAddrTracker!!
-			controllerIp,
-			testName,
-			volumeName)
-		if err != nil {
-			// TODO if we get an error here we still need to shut down the container network!
-			return stacktrace.Propagate(err, "Could not start test controller")
-		}
-
-		// TODO add a timeout here if the test doesn't complete successfully
-		waitAndGrabLogsOnExit(dockerCtx, dockerClient, controllerContainerId)
+		runControllerContainer(dockerManager, runner.testControllerImageName, publicIpProvider, testName, testInstanceUuid)
 
 		// TODO gracefully shut down all the service containers we started
 		for _, containerId := range serviceNetwork.ContainerIds {
 			logrus.Infof("Waiting for containerId %v", containerId)
-			waitAndGrabLogsOnExit(dockerCtx, dockerClient, containerId)
+			dockerManager.WaitAndGrabLogsOnExit(containerId)
 		}
 
 	}
@@ -122,30 +108,57 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 // ======================== Private helper functions =====================================
 
 
-func waitAndGrabLogsOnExit(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
-	statusCh, errCh := dockerClient.ContainerWait(dockerCtx, containerId, container.WaitConditionNotRunning)
 
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to wait for container to return.")
-		}
-	case <-statusCh:
-	}
+func runControllerContainer(
+		manager *docker.DockerManager,
+		dockerImage string,
+		ipProvider *testnet.FreeIpAddrTracker,
+		testName string,
+		testInstanceUuid uuid.UUID) (err error){
 
-	// Grab logs on container quit
-	out, err := dockerClient.ContainerLogs(
-		dockerCtx,
-		containerId,
-		types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-		})
+	volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
+		// TODO we still need to shut down the service network if we get an error here!
+		return stacktrace.Propagate(err, "Could not get IP address for controller")
 	}
 
-	// Copy the logs to stdout.
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	mountpathOnHost, err := manager.CreateVolume(volumeName)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not create volume to pass network info to test controller")
+	}
+
+	// TODO just for testing
+	filepath := mountpathOnHost + "/testing.txt"
+	err = ioutil.WriteFile(filepath, []byte("JSON data would go here"), 0644)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not write data to testing file")
+	}
+
+	envVariables := map[string]string{
+		TEST_NAME_BASH_ARG: testName,
+		// TODO just for testing
+		NETWORK_FILEPATH_ARG: CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt",
+	}
+
+	ipAddr, err := ipProvider.GetFreeIpAddr()
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
+	}
+
+	_, controllerContainerId, err := manager.CreateAndStartContainer(
+		dockerImage,
+		ipAddr,
+		make(map[int]bool),
+		nil,
+		envVariables,
+		map[string]string{
+			volumeName: CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH,
+		})
+
+	// TODO add a timeout here if the test doesn't complete successfully
+	manager.WaitAndGrabLogsOnExit(controllerContainerId)
+
+	// TODO clean up the volume we created
+
 	return nil
 }
