@@ -137,12 +137,12 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}
 	containerId = resp.ID
-	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
-		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
-	}
 	err = manager.connectToNetwork(DOCKER_NETWORK_NAME, containerId, staticIp)
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
+	}
+	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
+		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
 	return staticIp, containerId, nil
 }
