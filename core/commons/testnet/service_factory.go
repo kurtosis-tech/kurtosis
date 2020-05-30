@@ -25,7 +25,16 @@ func (factory ServiceFactory) Construct(
 	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
-	ipAddr, containerId, err := manager.CreateAndStartContainer(dockerImage, staticIp, usedPorts, startCmdArgs)
+	// TODO mount volumes when we want services to read/write state to disk
+	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
+	//   the testing code knowing about the specifics of the image (like where the binary is located)
+	ipAddr, containerId, err := manager.CreateAndStartContainer(
+			dockerImage,
+			staticIp,
+			usedPorts,
+			startCmdArgs,
+			make(map[string]string),
+			make(map[string]string))
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
