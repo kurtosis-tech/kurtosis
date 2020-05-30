@@ -4,17 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/distribution/uuid"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/testnet"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
-	"github.com/sirupsen/logrus"
-	"os"
-
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
 
@@ -26,7 +22,16 @@ type TestSuiteRunner struct {
 	endPortRange int
 }
 
-const DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+const (
+	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+
+	CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH = "/data/network"
+
+	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
+	TEST_NAME_BASH_ARG = "TEST_NAME"
+	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
+)
+
 
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
@@ -88,31 +93,18 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
-		controllerIp, err := publicIpProvider.GetFreeIpAddr()
+		err = runControllerContainer(dockerManager, runner.testControllerImageName, publicIpProvider, testName, testInstanceUuid)
 		if err != nil {
-			// TODO we still need to shut down the service network if we get an error here!
-			return stacktrace.Propagate(err, "Could not get IP address for controller")
+			// TODO we need to clean up the Docker network still!
+			return stacktrace.Propagate(err, "An error occurred running the test controller")
 		}
 
-		_, controllerContainerId, err := dockerManager.CreateAndStartControllerContainer(
-			runner.testControllerImageName,
-			// TODO change this to use FreeIpAddrTracker!!
-			controllerIp,
-			testName,
-			volumeName)
-		if err != nil {
-			// TODO if we get an error here we still need to shut down the container network!
-			return stacktrace.Propagate(err, "Could not start test controller")
-		}
-
-		// TODO add a timeout here if the test doesn't complete successfully
-		waitAndGrabLogsOnExit(dockerCtx, dockerClient, controllerContainerId)
 
 		// TODO gracefully shut down all the service containers we started
 		for _, containerId := range serviceNetwork.ContainerIds {
 			logrus.Infof("Waiting for containerId %v", containerId)
-			waitAndGrabLogsOnExit(dockerCtx, dockerClient, containerId)
+			dockerManager.WaitForExit(containerId)
+			// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
 		}
 
 	}
@@ -122,30 +114,61 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 // ======================== Private helper functions =====================================
 
 
-func waitAndGrabLogsOnExit(dockerCtx context.Context, dockerClient *client.Client, containerId string) (err error) {
-	statusCh, errCh := dockerClient.ContainerWait(dockerCtx, containerId, container.WaitConditionNotRunning)
 
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to wait for container to return.")
-		}
-	case <-statusCh:
+func runControllerContainer(
+		manager *docker.DockerManager,
+		dockerImage string,
+		ipProvider *testnet.FreeIpAddrTracker,
+		testName string,
+		testInstanceUuid uuid.UUID) (err error){
+
+	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
+	//  out from underneath the test??
+	networkFilename := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+	tmpfile, err := ioutil.TempFile("", networkFilename)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	// Grab logs on container quit
-	out, err := dockerClient.ContainerLogs(
-		dockerCtx,
-		containerId,
-		types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
+	// TODO replace this with the actual JSON of the network
+	err = ioutil.WriteFile(tmpfile.Name(), []byte("JSON data would go here"), 0644)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not write data to testing file")
+	}
+	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
+	//  but because this is a tmpfile we don't fuss about checking them
+	defer tmpfile.Close()
+	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
+
+	envVariables := map[string]string{
+		TEST_NAME_BASH_ARG: testName,
+		// TODO just for testing; replace with a dynamic filename
+		NETWORK_FILEPATH_ARG: containerMountpoint,
+	}
+
+	ipAddr, err := ipProvider.GetFreeIpAddr()
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
+	}
+
+	_, controllerContainerId, err := manager.CreateAndStartContainer(
+		dockerImage,
+		ipAddr,
+		make(map[int]bool),
+		nil, // Use the default image CMD (which is parameterized)
+		envVariables,
+		map[string]string{
+			tmpfile.Name(): containerMountpoint,
 		})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
+		return stacktrace.Propagate(err, "Failed to run test controller container")
 	}
 
-	// Copy the logs to stdout.
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	// TODO add a timeout here if the test doesn't complete successfully
+	err = manager.WaitForExit(controllerContainerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed when waiting for controller to exit")
+	}
+
 	return nil
 }

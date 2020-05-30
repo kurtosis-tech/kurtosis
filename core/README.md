@@ -13,6 +13,8 @@ Run `./scripts/build.sh`. This will build the main binary and put it the `build/
 
 Clone [the test controller](https://github.com/kurtosis-tech/ava-test-controller) and run `docker build .` inside the directory.
 
+TODO: explain the Bash environment variables that will get set
+
 # Usage
 
 Run `./build/kurtosis -help` or `./build/kurtosis -h` to see command line usage.  
