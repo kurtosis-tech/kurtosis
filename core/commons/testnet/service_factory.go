@@ -30,6 +30,8 @@ func (factory ServiceFactory) Construct(
 	//   the testing code knowing about the specifics of the image (like where the binary is located)
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
 			dockerImage,
+			// TODO make the service write logfiles to a volume that we can grab later!
+			false,
 			staticIp,
 			usedPorts,
 			startCmdArgs,

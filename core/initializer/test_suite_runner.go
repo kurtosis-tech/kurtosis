@@ -93,12 +93,18 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		runControllerContainer(dockerManager, runner.testControllerImageName, publicIpProvider, testName, testInstanceUuid)
+		err = runControllerContainer(dockerManager, runner.testControllerImageName, publicIpProvider, testName, testInstanceUuid)
+		if err != nil {
+			// TODO we need to clean up the Docker network still!
+			return stacktrace.Propagate(err, "An error occurred running the test controller")
+		}
+
 
 		// TODO gracefully shut down all the service containers we started
 		for _, containerId := range serviceNetwork.ContainerIds {
 			logrus.Infof("Waiting for containerId %v", containerId)
-			dockerManager.WaitAndGrabLogsOnExit(containerId)
+			dockerManager.WaitForExit(containerId)
+			// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
 		}
 
 	}
@@ -116,28 +122,29 @@ func runControllerContainer(
 		testName string,
 		testInstanceUuid uuid.UUID) (err error){
 
-	volumeName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
+	//  out from underneath the test??
+	networkFilename := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+	tmpfile, err := ioutil.TempFile("", networkFilename)
 	if err != nil {
-		// TODO we still need to shut down the service network if we get an error here!
-		return stacktrace.Propagate(err, "Could not get IP address for controller")
+		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	mountpathOnHost, err := manager.CreateVolume(volumeName)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not create volume to pass network info to test controller")
-	}
+	// TODO debugging
+	logrus.Debugf("Tempfile filepath: %v", tmpfile.Name())
 
 	// TODO just for testing
-	filepath := mountpathOnHost + "/testing.txt"
-	err = ioutil.WriteFile(filepath, []byte("JSON data would go here"), 0644)
+	err = ioutil.WriteFile(tmpfile.Name(), []byte("JSON data would go here"), 0644)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not write data to testing file")
 	}
+	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
+
 
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
 		// TODO just for testing
-		NETWORK_FILEPATH_ARG: CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt",
+		NETWORK_FILEPATH_ARG: containerMountpoint,
 	}
 
 	ipAddr, err := ipProvider.GetFreeIpAddr()
@@ -147,18 +154,20 @@ func runControllerContainer(
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		dockerImage,
+		true,
 		ipAddr,
 		make(map[int]bool),
 		nil,
 		envVariables,
 		map[string]string{
-			volumeName: CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH,
+			tmpfile.Name(): containerMountpoint,
 		})
 
 	// TODO add a timeout here if the test doesn't complete successfully
-	manager.WaitAndGrabLogsOnExit(controllerContainerId)
-
-	// TODO clean up the volume we created
+	err = manager.WaitForExit(controllerContainerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed when waiting for controller to exit")
+	}
 
 	return nil
 }

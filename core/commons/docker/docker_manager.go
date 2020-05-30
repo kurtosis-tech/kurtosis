@@ -6,17 +6,13 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"os"
 	"strconv"
 )
 
@@ -72,9 +68,12 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	return resp.ID, nil
 }
 
+// TODO we use bind mounts rather than volumes right now because they're wayyyyyy simpler, but it was a gigantic pain to
+//  figure out how to create a volume because the API sucks so going to leave this here in case we use volumes in the future
+//   ~ 2020-05-30
+/*
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
-		Driver:     "overlay2",
 		Name:       volumeName,
 	}
 
@@ -83,9 +82,10 @@ func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string,
 		return "", stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
 
-	// TODO no idea if this will work
+	// TODO this still isn't tested yet; this might not be the right call
 	return volume.Mountpoint, nil
 }
+ */
 
 
 /*
@@ -93,18 +93,20 @@ NOTE: nil startCmdArgs will use the Docker container default
 
 Args:
 	dockerImage: image to start
+	attachStdOutErr: whether the container's STDOUT and STDERR should be attached to the caller's
 	staticIp: IP the container will be assigned
 	usedPorts: a pseudo-set of the ports that the container will listen on (and should be mapped to host ports)
 	startCmdArgs: the args that will be used to run the container (leave as nil to run the CMD in the image)
-	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted on container startup
+	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
  */
 func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
+	attachStdOutErr bool,
 	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string,
 	envVariables map[string]string,
-	volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
+	bindMounts map[string]string) (containerIpAddr string, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
@@ -127,11 +129,11 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, attachStdOutErr, usedPorts, startCmdArgs, envVariables)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts, volumeMounts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts, bindMounts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -151,7 +153,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	return staticIp, containerId, nil
 }
 
-func (manager DockerManager) WaitAndGrabLogsOnExit(containerId string) (err error) {
+func (manager DockerManager) WaitForExit(containerId string) (err error) {
 	statusCh, errCh := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
 
 	select {
@@ -161,22 +163,6 @@ func (manager DockerManager) WaitAndGrabLogsOnExit(containerId string) (err erro
 		}
 	case <-statusCh:
 	}
-
-	// Grab logs on container quit
-	out, err := manager.dockerClient.ContainerLogs(
-		manager.dockerCtx,
-		containerId,
-		types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-		})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to retrieve container logs.")
-	}
-
-	// TODO let the user specify a destination of their choice (rather than assuming Stdin/Stdout)
-	// Copy the logs to stdout.
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 	return nil
 }
 
@@ -264,9 +250,9 @@ mapped to the host ports.
 
 Args:
 	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
-	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup
+	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted at container startup
  */
-func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bindMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 	portMap := nat.PortMap{}
 	for port, _ := range usedPorts {
 		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
@@ -287,6 +273,10 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, vol
 		}
 	}
 
+	// TODO we don't use volumes right now because binds are wayyyyyy simpler, but the Docker volume API was a
+	//   gigantic pain to figure out so I'm going to leave this here for now in case we do use them in the future
+	//   ~ 2020-05-30
+	/*
 	mountsList := make([]mount.Mount, 0, len(volumeMounts))
 	for volumeName, containerMountpoint := range volumeMounts {
 		mount := mount.Mount{
@@ -298,13 +288,21 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, vol
 		}
 		mountsList = append(mountsList, mount)
 	}
+	 */
+
+	bindsList := make([]string, 0, len(bindMounts))
+	for hostFilepath, containerFilepath := range bindMounts {
+		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
+	}
 
 	containerHostConfigPtr := &container.HostConfig{
+		Binds: bindsList,
 		AutoRemove: true, // Make our containers clean themselves up after they're done
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
 		VolumeDriver: "overlay2",
-		Mounts: mountsList,
+		// TODO see note above about volumes
+		// Mounts: mountsList,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -312,6 +310,7 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, vol
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
+			attachStdOutErr bool,
 			usedPorts map[int]bool,
 			startCmdArgs []string,
 			envVariables map[string]string) (config *container.Config, err error) {
@@ -330,6 +329,8 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
+		AttachStdout: attachStdOutErr,
+		AttachStderr: attachStdOutErr,
 		Image: dockerImage,
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
