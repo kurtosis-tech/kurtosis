@@ -130,10 +130,7 @@ func runControllerContainer(
 		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	// TODO debugging
-	logrus.Debugf("Tempfile filepath: %v", tmpfile.Name())
-
-	// TODO just for testing
+	// TODO replace this with the actual JSON of the network
 	err = ioutil.WriteFile(tmpfile.Name(), []byte("JSON data would go here"), 0644)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not write data to testing file")
@@ -141,13 +138,11 @@ func runControllerContainer(
 	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
 	//  but because this is a tmpfile we don't fuss about checking them
 	defer tmpfile.Close()
-
-
 	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
 
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
-		// TODO just for testing
+		// TODO just for testing; replace with a dynamic filename
 		NETWORK_FILEPATH_ARG: containerMountpoint,
 	}
 
@@ -160,7 +155,7 @@ func runControllerContainer(
 		dockerImage,
 		ipAddr,
 		make(map[int]bool),
-		nil,
+		nil, // Use the default image CMD (which is parameterized)
 		envVariables,
 		map[string]string{
 			tmpfile.Name(): containerMountpoint,

@@ -27,7 +27,8 @@ func (factory ServiceFactory) Construct(
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
-	//   the testing code knowing about the specifics of the image (like where the binary is located)
+	//   the testing code knowing about the specifics of the image (like where the binary is located). However, this relies
+	//   on the service images being parameterized with environment variables.
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
 			dockerImage,
 			staticIp,

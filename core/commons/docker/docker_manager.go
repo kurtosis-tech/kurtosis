@@ -89,7 +89,7 @@ func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string,
 
 
 /*
-NOTE: nil startCmdArgs will use the Docker container default
+Creates a Docker container with the given args and starts it.
 
 Args:
 	dockerImage: image to start
@@ -153,6 +153,9 @@ func (manager DockerManager) CreateAndStartContainer(
 	return staticIp, containerId, nil
 }
 
+/*
+Blocks until the given container exits.
+ */
 func (manager DockerManager) WaitForExit(containerId string) (err error) {
 	statusCh, errCh := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
 
@@ -297,12 +300,12 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		// TODO set this back to true so we nicely clean ourselves up!
+		// TODO we should set this to true so we can nicely clean ourselves up, BUT we need a way to:
+		//  1) attach to teh test controller so we get its logs
+		//  2) get the logs from the services
 		AutoRemove: false,
-		// AutoRemove: true, // Make our containers clean themselves up after they're done
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
-		VolumeDriver: "overlay2",
 		// TODO see note above about volumes
 		// Mounts: mountsList,
 	}
