@@ -7,10 +7,10 @@ import (
 )
 
 type SingleNodeGeckoNetwork struct{
-	rawNetwork testnet.RawServiceNetwork
+	node services.GeckoService
 }
 func (network SingleNodeGeckoNetwork) GetNode() services.GeckoService {
-	return network.rawNetwork.Services[0].(services.GeckoService)
+	return network.node
 }
 
 type SingleNodeGeckoNetworkLoader struct {}
@@ -31,6 +31,8 @@ func (loader SingleNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string
 	}
 	return builder.Build(), nil
 }
-func (loader SingleNodeGeckoNetworkLoader) LoadNetwork(network testnet.RawServiceNetwork) (interface{}, error) {
-	return SingleNodeGeckoNetwork{rawNetwork: network}, nil
+func (loader SingleNodeGeckoNetworkLoader) LoadNetwork(ipAddrs map[int]string) (interface{}, error) {
+	return SingleNodeGeckoNetwork{
+		node: *services.NewGeckoService(ipAddrs[0]),
+	}, nil
 }

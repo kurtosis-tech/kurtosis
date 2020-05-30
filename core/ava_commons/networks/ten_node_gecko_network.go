@@ -7,15 +7,15 @@ import (
 )
 
 type TenNodeGeckoNetwork struct{
-	rawNetwork testnet.RawServiceNetwork
+	geckoServices map[int]services.GeckoService
 }
 func (network TenNodeGeckoNetwork) GetGeckoService(i int) (services.GeckoService, error){
-	if i < 0 || i >= len(network.rawNetwork.Services) {
+	if i < 0 || i >= len(network.geckoServices) {
 		return services.GeckoService{}, stacktrace.NewError("Invalid Gecko service ID")
 	}
 	// TODO if we're just getting services back from the ServiceConfigBuilder, then how can we make assumptions here??
-	service := network.rawNetwork.Services[i]
-	return service.(services.GeckoService), nil
+	service := network.geckoServices[i]
+	return service, nil
 }
 
 
@@ -71,6 +71,12 @@ func (loader TenNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string) (
 
 	return builder.Build(), nil
 }
-func (loader TenNodeGeckoNetworkLoader) LoadNetwork(rawNetwork testnet.RawServiceNetwork) (interface{}, error) {
-	return TenNodeGeckoNetwork{rawNetwork: rawNetwork}, nil
+func (loader TenNodeGeckoNetworkLoader) LoadNetwork(ipAddrs map[int]string) (interface{}, error) {
+	geckoServices := make(map[int]services.GeckoService)
+	for serviceId, ipAddr := range ipAddrs {
+		geckoServices[serviceId] = *services.NewGeckoService(ipAddr)
+	}
+	return TenNodeGeckoNetwork{
+		geckoServices: geckoServices,
+	}, nil
 }
