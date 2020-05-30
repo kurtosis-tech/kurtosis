@@ -55,7 +55,7 @@ This means Kurtosis will be running in a container in the same docker environmen
 ### Running Kurtosis in Docker
 
 In the root directory of this repository, run 
-`docker build -t kurtosis-docker` to build the Kurtosis docker image.
+`./scripts/build_image.sh` to build the Kurtosis docker image.
 
 To run Kurtosis in Docker, be sure to bind the docker socket of the container with the host docker socket, so they use the same docker engine.
 Also, specify the Gecko image and the Test Controller image at container runtime.
