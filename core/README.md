@@ -11,15 +11,17 @@ Docker Engine running in your environment.
 Clone this repository and cd into it.  
 Run `./scripts/build.sh`. This will build the main binary and put it the `build/` directory of this repository.  
 
+Clone [the test controller](https://github.com/kurtosis-tech/ava-test-controller) and run `docker build .` inside the directory.
+
 # Usage
 
 Run `./build/kurtosis -help` or `./build/kurtosis -h` to see command line usage.  
-Example: `kurtosis -gecko-image-name gecko-f290f73`
+Example: `kurtosis --gecko-image-name=gecko-f290f73 --test-controller-image-name=YOURIMAGE`
 
 # Architecture
 
-Kurtosis runs a prebuilt Gecko image, which must already exist in your Docker engine.  
-The name of this image is specified by a command line argument.  
+Kurtosis builds a network of Gecko Docker images and runs a Docker container to run tests against it.
+Both images must already exist in your Docker engine, and the names of both images are specified by a command line argument.  
 Currently, the ports that the container will run on for HTTP and for staking on your host machine are hard-coded to the standard Gecko defaults - 9650 for HTTP, 9651 for staking.
 
 # Helpful Tip
@@ -46,8 +48,4 @@ kclear ${GECKO_IMAGE}
 
 # TODO
 
-* Run multiple containers with different container-host port mappings for HTTP and staking.
-* Run boot node (no peers) and then point subsequent containers to existing containers as they start up.
 * Ability to run spectators versus stakers
-* Create a testing container that triggers RPC calls against a target node. 
-
