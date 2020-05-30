@@ -138,8 +138,12 @@ func runControllerContainer(
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not write data to testing file")
 	}
-	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
+	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
+	//  but because this is a tmpfile we don't fuss about checking them
+	defer tmpfile.Close()
 
+
+	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
 
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
@@ -154,7 +158,6 @@ func runControllerContainer(
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		dockerImage,
-		true,
 		ipAddr,
 		make(map[int]bool),
 		nil,

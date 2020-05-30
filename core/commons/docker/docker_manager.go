@@ -101,7 +101,6 @@ Args:
  */
 func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
-	attachStdOutErr bool,
 	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string,
@@ -129,7 +128,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, attachStdOutErr, usedPorts, startCmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -143,6 +142,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}
 	containerId = resp.ID
+
 	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
@@ -312,7 +312,6 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
-			attachStdOutErr bool,
 			usedPorts map[int]bool,
 			startCmdArgs []string,
 			envVariables map[string]string) (config *container.Config, err error) {
@@ -331,9 +330,7 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		AttachStdout: attachStdOutErr,
-		AttachStderr: attachStdOutErr,
-		Tty: attachStdOutErr,
+		Tty: false,
 		Image: dockerImage,
 		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
