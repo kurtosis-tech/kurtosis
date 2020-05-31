@@ -19,6 +19,7 @@ ${LATEST_KURTOSIS_TAG}) &
 kurtosis_pid=$!
 
 sleep 15
+docker ps -a
 kill ${kurtosis_pid}
 
 ACTUAL_EXIT_STATUS=$(docker ps -a --latest --filter ancestor=kurtosistech/ava-test-controller:latest --format="{{.Status}}")
