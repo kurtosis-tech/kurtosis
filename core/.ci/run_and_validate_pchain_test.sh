@@ -1,3 +1,5 @@
+set -x
+
 SCRIPTS_PATH=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 KURTOSIS_PATH=$(dirname "${SCRIPTS_PATH}")
 
