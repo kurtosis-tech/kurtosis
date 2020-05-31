@@ -22,7 +22,7 @@ kill ${kurtosis_pid}
 ACTUAL_EXIT_STATUS=$(docker ps -a --latest --filter ancestor=kurtosistech/ava-test-controller:latest --format="{{.Status}}")
 EXPECTED_EXIT_STATUS="Exited \(0\).*"
 
-echo "${ACTUAL_EXIT_STATUS}"
+echo "Exit status: ${ACTUAL_EXIT_STATUS}"
 
 # Clear containers.
 echo "Clearing kurtosis testnet containers."
