@@ -1,5 +1,3 @@
-set -x
-
 SCRIPTS_PATH=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 KURTOSIS_PATH=$(dirname "${SCRIPTS_PATH}")
 
@@ -18,6 +16,7 @@ ${LATEST_KURTOSIS_TAG}) &
 
 kurtosis_pid=$!
 
+# Sleep while Kurtosis spins up testnet and runs controller to execute tests.
 sleep 90
 docker image ls
 docker ps -a
