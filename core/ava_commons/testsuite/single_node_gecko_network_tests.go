@@ -30,7 +30,7 @@ func (test SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context tes
 	}
 
 	resp, err := http.Post(
-		fmt.Sprintf("%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort()),
+		fmt.Sprintf("http://%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort()),
 		"application/json",
 		bytes.NewBuffer(requestBody),
 	)
@@ -64,7 +64,7 @@ func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context 
 
 	var validatorList ValidatorList
 	jsonRpcSocket := castedNetwork.GetNode().GetJsonRpcSocket()
-	endpoint := fmt.Sprintf("%v:%v/%v", jsonRpcSocket.GetIpAddr(), jsonRpcSocket.GetPort(), GetPChainEndpoint())
+	endpoint := fmt.Sprintf("http://%v:%v/%v", jsonRpcSocket.GetIpAddr(), jsonRpcSocket.GetPort().Int(), GetPChainEndpoint())
 	for i := 0; i < RETRIES; i++ {
 		resp, err := http.Post(endpoint, "application/json", jsonBuffer)
 		if err != nil {
