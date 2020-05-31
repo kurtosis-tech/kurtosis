@@ -19,6 +19,7 @@ ${LATEST_KURTOSIS_TAG}) &
 kurtosis_pid=$!
 
 sleep 15
+docker image ls
 docker ps -a
 kill ${kurtosis_pid}
 
