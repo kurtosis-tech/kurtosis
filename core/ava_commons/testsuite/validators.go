@@ -16,6 +16,7 @@ type ValidatorResponse struct {
 	Id int
 }
 
+// TODO move this somewhere else
 func GetPChainEndpoint() string {
 	return "ext/P"
 }

@@ -50,8 +50,10 @@ func (test SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context tes
 
 type SingleNodeNetworkGetValidatorsTest struct{}
 func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context testsuite.TestContext) {
+	castedNetwork := network.(networks.SingleNodeGeckoNetwork)
+
+	// TODO Move these into a better location
 	RPC_BODY := `{"jsonrpc": "2.0", "method": "platform.getCurrentValidators", "params":{},"id": 1}`
-	// TODO TODO TODO Put retry configuration into sensible client object
 	RETRIES := 5
 	RETRY_WAIT_SECONDS := 5*time.Second
 
@@ -61,8 +63,10 @@ func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context 
 	logrus.Infof("Test request as string: %s", jsonBuffer.String())
 
 	var validatorList ValidatorList
+	jsonRpcSocket := castedNetwork.GetNode().GetJsonRpcSocket()
+	endpoint := fmt.Sprintf("%v:%v/%v", jsonRpcSocket.GetIpAddr(), jsonRpcSocket.GetPort(), GetPChainEndpoint())
 	for i := 0; i < RETRIES; i++ {
-		resp, err := http.Post(TEST_TARGET_URL+pchain.GetPChainEndpoint(), "application/json", jsonBuffer)
+		resp, err := http.Post(endpoint, "application/json", jsonBuffer)
 		if err != nil {
 			logrus.Infof("Attempted connection...: %s", err.Error())
 			logrus.Infof("Could not connect on attempt %d, retrying...", i+1)
@@ -76,7 +80,7 @@ func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context 
 			logrus.Fatalln(err)
 		}
 
-		var validatorResponse pchain.ValidatorResponse
+		var validatorResponse ValidatorResponse
 		json.Unmarshal(body, &validatorResponse)
 
 		validatorList = validatorResponse.Result["validators"]
