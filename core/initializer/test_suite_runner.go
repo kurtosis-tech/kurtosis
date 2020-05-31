@@ -94,6 +94,8 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
+		// TODO wait for network to completely start up before running the container!
+
 		err = runControllerContainer(
 			dockerManager,
 			serviceNetwork,

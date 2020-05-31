@@ -30,7 +30,7 @@ func (test SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context tes
 	}
 
 	resp, err := http.Post(
-		fmt.Sprintf("http://%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort()),
+		fmt.Sprintf("http://%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort().Int()),
 		"application/json",
 		bytes.NewBuffer(requestBody),
 	)
@@ -55,6 +55,8 @@ func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context 
 	// TODO Move these into a better location
 	RPC_BODY := `{"jsonrpc": "2.0", "method": "platform.getCurrentValidators", "params":{},"id": 1}`
 	RETRIES := 5
+
+	// TODO we shouldn't need to retry once we wait for the network to come up
 	RETRY_WAIT_SECONDS := 5*time.Second
 
 	// Run RPC Test on PChain.
@@ -92,8 +94,6 @@ func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context 
 	for _, validator := range validatorList {
 		logrus.Infof("Validator id: %s", validator.Id)
 	}
-	if len(validatorList) < 1 {
-		logrus.Infof("Failed to find a single validator.")
-	}
+	context.AssertTrue(len(validatorList) >= 1)
 }
 

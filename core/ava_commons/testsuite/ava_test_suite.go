@@ -12,21 +12,18 @@ func (a AvaTestSuite) GetTests() map[string]testsuite.TestConfig {
 
 	singleNodeNetworkLoaer := networks.SingleNodeGeckoNetworkLoader{}
 
+	/*
 	result["singleNodeBasicTest"] = testsuite.TestConfig{
 		Test: SingleNodeGeckoNetworkBasicTest{},
 		NetworkLoader: singleNodeNetworkLoaer,
 	}
-	/*
+	*/
+
+	// TODO make make the network loader-getting step a part of the Test itself
 	result["singleNodeGetValidatorsTest"] = testsuite.TestConfig{
-		Test: SingleNodeGeckoNetworkBasicTest{},
+		Test: SingleNodeNetworkGetValidatorsTest{},
 		NetworkLoader: singleNodeNetworkLoaer,
 	}
-	result["tenNodeGeckoNetwork"] = testsuite.TestConfig{
-		Test: TenNodeGeckoNetworkBasicTest{},
-		NetworkLoader: networks.TenNodeGeckoNetworkLoader{},
-	}
-
-	 */
 
 	return result
 }
