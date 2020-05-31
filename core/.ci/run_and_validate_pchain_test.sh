@@ -3,10 +3,11 @@ KURTOSIS_PATH=$(dirname "${SCRIPTS_PATH}")
 
 LATEST_KURTOSIS_TAG="kurtosistech/kurtosis:latest"
 LATEST_CONTROLLER_TAG="kurtosistech/ava-test-controller:latest"
-DEFAULT_GECKO_IMAGE="gecko-60668c3"
+DEFAULT_GECKO_IMAGE="kurtosistech/gecko:latest"
 
-#bash "${KURTOSIS_PATH}"/scripts/build_image.sh ${LATEST_KURTOSIS_TAG}
-#docker pull ${LATEST_CONTROLLER_TAG}
+bash "${KURTOSIS_PATH}"/scripts/build_image.sh ${LATEST_KURTOSIS_TAG}
+docker pull ${LATEST_CONTROLLER_TAG}
+docker pull ${DEFAULT_GECKO_IMAGE}
 
 (docker run -v /var/run/docker.sock:/var/run/docker.sock \
 --env DEFAULT_GECKO_IMAGE="${DEFAULT_GECKO_IMAGE}" \
