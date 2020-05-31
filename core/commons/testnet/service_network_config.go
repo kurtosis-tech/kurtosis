@@ -177,7 +177,6 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 		serviceContainerIds[serviceId] = containerId
 	}
 
-	// TODO actually fill in all the other stuff besides container ID
 	return &RawServiceNetwork{
 		ContainerIds:   serviceContainerIds,
 		ServiceIPs: serviceIps,
