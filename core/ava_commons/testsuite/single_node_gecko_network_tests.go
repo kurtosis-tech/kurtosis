@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/ava_commons/networks"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
+	"time"
+)
+
+const (
 )
 
 type SingleNodeGeckoNetworkBasicTest struct {}
-func (s SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context testsuite.TestContext) {
+func (test SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context testsuite.TestContext) {
 	castedNetwork := network.(networks.SingleNodeGeckoNetwork)
 	httpSocket := castedNetwork.GetNode().GetJsonRpcSocket()
 
@@ -43,4 +48,48 @@ func (s SingleNodeGeckoNetworkBasicTest) Run(network interface{}, context testsu
 	println(string(body))
 }
 
+type SingleNodeNetworkGetValidatorsTest struct{}
+func (test SingleNodeNetworkGetValidatorsTest) Run(network interface{}, context testsuite.TestContext) {
+	RPC_BODY := `{"jsonrpc": "2.0", "method": "platform.getCurrentValidators", "params":{},"id": 1}`
+	// TODO TODO TODO Put retry configuration into sensible client object
+	RETRIES := 5
+	RETRY_WAIT_SECONDS := 5*time.Second
+
+	// Run RPC Test on PChain.
+	var jsonStr = []byte(RPC_BODY)
+	var jsonBuffer = bytes.NewBuffer(jsonStr)
+	logrus.Infof("Test request as string: %s", jsonBuffer.String())
+
+	var validatorList ValidatorList
+	for i := 0; i < RETRIES; i++ {
+		resp, err := http.Post(TEST_TARGET_URL+pchain.GetPChainEndpoint(), "application/json", jsonBuffer)
+		if err != nil {
+			logrus.Infof("Attempted connection...: %s", err.Error())
+			logrus.Infof("Could not connect on attempt %d, retrying...", i+1)
+			time.Sleep(RETRY_WAIT_SECONDS)
+			continue
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+
+		var validatorResponse pchain.ValidatorResponse
+		json.Unmarshal(body, &validatorResponse)
+
+		validatorList = validatorResponse.Result["validators"]
+		if len(validatorList) > 0 {
+			logrus.Infof("Found validators!")
+			break
+		}
+	}
+	for _, validator := range validatorList {
+		logrus.Infof("Validator id: %s", validator.Id)
+	}
+	if len(validatorList) < 1 {
+		logrus.Infof("Failed to find a single validator.")
+	}
+}
 
