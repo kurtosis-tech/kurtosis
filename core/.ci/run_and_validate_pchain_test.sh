@@ -11,14 +11,14 @@ bash "${KURTOSIS_PATH}"/scripts/build_image.sh ${LATEST_KURTOSIS_TAG}
 docker pull ${LATEST_CONTROLLER_TAG}
 docker pull ${DEFAULT_GECKO_IMAGE}
 
-docker run -v /var/run/docker.sock:/var/run/docker.sock \
+(docker run -v /var/run/docker.sock:/var/run/docker.sock \
 --env DEFAULT_GECKO_IMAGE="${DEFAULT_GECKO_IMAGE}" \
 --env TEST_CONTROLLER_IMAGE="${LATEST_CONTROLLER_TAG}" \
-${LATEST_KURTOSIS_TAG}
+${LATEST_KURTOSIS_TAG}) &
 
 kurtosis_pid=$!
 
-sleep 15
+sleep 60
 docker image ls
 docker ps -a
 kill ${kurtosis_pid}
