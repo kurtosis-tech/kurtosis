@@ -81,10 +81,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 
-		testInstanceUuid := uuid.Generate()
-		// TODO push the network name generation lower??
-		networkName := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
-		publicIpProvider, err := testnet.NewFreeIpAddrTracker(networkName, DEFAULT_SUBNET_MASK)
+		publicIpProvider, err := testnet.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
 		if err != nil {
 			return stacktrace.Propagate(err, "")
 		}
@@ -96,6 +93,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 
 		// TODO wait for network to completely start up before running the container!
 
+		testInstanceUuid := uuid.Generate()
 		err = runControllerContainer(
 			dockerManager,
 			serviceNetwork,

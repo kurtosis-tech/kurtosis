@@ -7,19 +7,17 @@ import (
 )
 
 type FreeIpAddrTracker struct {
-	networkName string
 	subnet *net.IPNet
 	takenIps map[string]bool
 }
 
-func NewFreeIpAddrTracker(networkName string, subnetMask string) (ipAddrTracker *FreeIpAddrTracker, err error) {
+func NewFreeIpAddrTracker(subnetMask string) (ipAddrTracker *FreeIpAddrTracker, err error) {
 	_, ipv4Net, err := net.ParseCIDR(subnetMask)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse subnet %s as CIDR.", subnetMask)
 	}
 	takenIps := map[string]bool{}
 	ipAddrTracker = &FreeIpAddrTracker{
-		networkName: networkName,
 		subnet: ipv4Net,
 		takenIps: takenIps,
 	}
