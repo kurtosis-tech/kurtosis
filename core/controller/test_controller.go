@@ -21,9 +21,9 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	// TODO create a TestSuiteContext object for returning the state of all the tests
 
 	// TODO run multiple tests
-	testConfigs := controller.testSuite.GetTests()
-	logrus.Debugf("Test configs: %v", testConfigs)
-	testConfig, found := testConfigs[testName]
+	tests := controller.testSuite.GetTests()
+	logrus.Debugf("Test configs: %v", tests)
+	test, found := tests[testName]
 	if !found {
 		return false, stacktrace.NewError("Nonexistent test: %v", testName)
 	}
@@ -43,14 +43,14 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
-	untypedNetwork, err := testConfig.NetworkLoader.LoadNetwork(rawServiceNetwork.ServiceIPs)
+	untypedNetwork, err := test.GetNetworkLoader().LoadNetwork(rawServiceNetwork.ServiceIPs)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Unable to load network from service IPs")
 	}
 
 	testSucceeded := true
 	context := testsuite.TestContext{}
-	testConfig.Test.Run(untypedNetwork, context)
+	test.Run(untypedNetwork, context)
 	defer func() {
 		if result := recover(); result != nil {
 			testSucceeded = false
