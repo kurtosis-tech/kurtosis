@@ -1,5 +1,5 @@
 set -euo pipefail
-SCRIPT_PATH="$(cd "$(dirname "${0}")" && pwd)"
+SCRIPTS_PATH="$(cd "$(dirname "${0}")" && pwd)"
 KURTOSIS_PATH="$(dirname "${SCRIPTS_PATH}")"
 
 LATEST_KURTOSIS_TAG="kurtosistech/kurtosis:latest"
