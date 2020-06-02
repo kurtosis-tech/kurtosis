@@ -7,4 +7,4 @@ services:
   - docker
 
 script:
-  - .ci/run_and_validate_pchain_test.sh
+  - scripts/build.sh

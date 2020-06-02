@@ -13,14 +13,8 @@ MAIN_BINARY_OUTPUT_FILE="kurtosis"
 MAIN_BINARY_OUTPUT_PATH="$KURTOSIS_PATH/$BUILD_DIR/$MAIN_BINARY_OUTPUT_FILE"
 
 echo "Running unit tests..."
-go test "${KURTOSIS_PATH}"/...
-echo "Building..."
-go build -o "$MAIN_BINARY_OUTPUT_PATH" "$KURTOSIS_PATH"/main.go
-
-if [[ -f "$MAIN_BINARY_OUTPUT_PATH" ]]; then
-        echo "Build Successful"
-        echo "Built kurtosis binary to $MAIN_BINARY_OUTPUT_PATH"
-        echo "Run '$MAIN_BINARY_OUTPUT_PATH --help' for usage."
-else
-        echo "Build failure"
+if ! go test "${KURTOSIS_PATH}/..."; then
+    echo "Tests failed!"
+    exit 1
 fi
+echo "Tests succeeded"

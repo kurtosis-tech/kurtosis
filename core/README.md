@@ -1,5 +1,5 @@
 # kurtosis
-E2E Testing Harness for Ava
+E2E Testing Harness for Service-based Networks
 
 # Requirements
 
