@@ -30,7 +30,7 @@ func (s TenNodeGeckoNetworkBasicTest) Run(network interface{}, context testsuite
 	}
 
 	resp, err := http.Post(
-		fmt.Sprintf("%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort()),
+		fmt.Sprintf("http://%v:%v/ext/admin", httpSocket.GetIpAddr(), httpSocket.GetPort().Int()),
 		"application/json",
 		bytes.NewBuffer(requestBody),
 	)

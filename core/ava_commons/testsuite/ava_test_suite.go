@@ -10,16 +10,19 @@ type AvaTestSuite struct {}
 func (a AvaTestSuite) GetTests() map[string]testsuite.TestConfig {
 	result := make(map[string]testsuite.TestConfig)
 
-	// TODO register tests for the other networks here
+	singleNodeNetworkLoaer := networks.SingleNodeGeckoNetworkLoader{}
+
 	/*
-	result["singleNodeGeckoNetwork"] = testsuite.TestConfig{
+	result["singleNodeBasicTest"] = testsuite.TestConfig{
 		Test: SingleNodeGeckoNetworkBasicTest{},
-		NetworkLoader: networks.SingleNodeGeckoNetworkLoader{},
+		NetworkLoader: singleNodeNetworkLoaer,
 	}
-	 */
-	result["tenNodeGeckoNetwork"] = testsuite.TestConfig{
-		Test: TenNodeGeckoNetworkBasicTest{},
-		NetworkLoader: networks.TenNodeGeckoNetworkLoader{},
+	*/
+
+	// TODO make make the network loader-getting step a part of the Test itself
+	result["singleNodeGetValidatorsTest"] = testsuite.TestConfig{
+		Test: SingleNodeNetworkGetValidatorsTest{},
+		NetworkLoader: singleNodeNetworkLoaer,
 	}
 
 	return result

@@ -11,5 +11,5 @@ type TestNetworkLoader interface {
 	GetNetworkConfig(testImageName string) (*testnet.ServiceNetworkConfig, error)
 
 	// If Go had generics, this return type would be parameterized to be the actual type of network a test will consume
-	LoadNetwork(network testnet.RawServiceNetwork) (interface{}, error)
+	LoadNetwork(ipAddrs map[int]string) (interface{}, error)
 }
