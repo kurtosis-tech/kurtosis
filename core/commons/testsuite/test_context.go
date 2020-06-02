@@ -1,4 +1,4 @@
-package controller
+package testsuite
 
 import "fmt"
 

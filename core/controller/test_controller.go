@@ -49,7 +49,7 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	}
 
 	testSucceeded := true
-	context := TestContext{}
+	context := testsuite.TestContext{}
 	testConfig.Test.Run(untypedNetwork, context)
 	defer func() {
 		if result := recover(); result != nil {
