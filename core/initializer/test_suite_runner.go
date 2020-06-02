@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"context"
+	"encoding/gob"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -93,7 +94,13 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
-		err = runControllerContainer(dockerManager, runner.testControllerImageName, publicIpProvider, testName, testInstanceUuid)
+		err = runControllerContainer(
+			dockerManager,
+			serviceNetwork,
+			runner.testControllerImageName,
+			publicIpProvider,
+			testName,
+			testInstanceUuid)
 		if err != nil {
 			// TODO we need to clean up the Docker network still!
 			return stacktrace.Propagate(err, "An error occurred running the test controller")
@@ -117,6 +124,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 
 func runControllerContainer(
 		manager *docker.DockerManager,
+		rawServiceNetwork *testnet.RawServiceNetwork,
 		dockerImage string,
 		ipProvider *testnet.FreeIpAddrTracker,
 		testName string,
@@ -124,22 +132,25 @@ func runControllerContainer(
 
 	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
 	//  out from underneath the test??
-	networkFilename := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
-	tmpfile, err := ioutil.TempFile("", networkFilename)
+	testNetworkInfoFilename := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+	tmpfile, err := ioutil.TempFile("", testNetworkInfoFilename)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	// TODO replace this with the actual JSON of the network
-	err = ioutil.WriteFile(tmpfile.Name(), []byte("JSON data would go here"), 0644)
+	logrus.Debugf("Temp filepath: %v", tmpfile.Name())
+
+	encoder := gob.NewEncoder(tmpfile)
+	println(fmt.Sprintf("%v", rawServiceNetwork))
+	err = encoder.Encode(rawServiceNetwork)
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not write data to testing file")
+		return stacktrace.Propagate(err, "Could not write service network state to file")
 	}
 	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
 	//  but because this is a tmpfile we don't fuss about checking them
 	defer tmpfile.Close()
-	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/testing.txt"
 
+	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/network-info"
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
 		// TODO just for testing; replace with a dynamic filename

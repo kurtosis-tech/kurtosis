@@ -7,13 +7,14 @@ import (
 )
 
 type TwoNodeGeckoNetwork struct{
-	rawNetwork testnet.RawServiceNetwork
+	bootNode services.GeckoService
+	dependentNode services.GeckoService
 }
 func (network TwoNodeGeckoNetwork) GetBootNode() services.GeckoService {
-	return network.rawNetwork.Services[0].(services.GeckoService)
+	return network.bootNode
 }
 func (network TwoNodeGeckoNetwork) GetDependentNode() services.GeckoService {
-	return network.rawNetwork.Services[1].(services.GeckoService)
+	return network.dependentNode
 }
 
 type TwoNodeGeckoNetworkLoader struct {}
@@ -43,6 +44,11 @@ func (loader TwoNodeGeckoNetworkLoader) GetNetworkConfig(testImageName string) (
 	}
 	return builder.Build(), nil
 }
-func (loader TwoNodeGeckoNetworkLoader) LoadNetwork(rawNetwork testnet.RawServiceNetwork) (interface{}, error) {
-	return TwoNodeGeckoNetwork{rawNetwork: rawNetwork}, nil
+func (loader TwoNodeGeckoNetworkLoader) LoadNetwork(ipAddrs map[int]string) (interface{}, error) {
+	bootNode := services.NewGeckoService(ipAddrs[0])
+	dependentNode := services.NewGeckoService(ipAddrs[1])
+	return TwoNodeGeckoNetwork{
+		bootNode:      *bootNode,
+		dependentNode: *dependentNode,
+	}, nil
 }

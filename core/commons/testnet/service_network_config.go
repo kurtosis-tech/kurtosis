@@ -149,6 +149,7 @@ type ServiceNetworkConfig struct {
 // TODO use the network name to create a new network!!
 func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddrTracker, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]Service)
+	serviceIps := make(map[int]string)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
@@ -172,12 +173,13 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
 		runningServices[serviceId] = service
+		serviceIps[serviceId] = staticIp
 		serviceContainerIds[serviceId] = containerId
 	}
 
 	// TODO actually fill in all the other stuff besides container ID
 	return &RawServiceNetwork{
 		ContainerIds:   serviceContainerIds,
-		Services: 		runningServices,
+		ServiceIPs: serviceIps,
 	}, nil
 }
