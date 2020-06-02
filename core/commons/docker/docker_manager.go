@@ -119,7 +119,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	// TODO replace with configurable network
+	// TODO replace with custom per-test networks
 	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")

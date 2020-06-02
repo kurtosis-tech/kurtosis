@@ -94,6 +94,8 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 
+		// TODO wait for network to completely start up before running the container!
+
 		err = runControllerContainer(
 			dockerManager,
 			serviceNetwork,
@@ -138,10 +140,10 @@ func runControllerContainer(
 		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	logrus.Debugf("Temp filepath: %v", tmpfile.Name())
+	logrus.Debugf("Temp filepath to write network file to: %v", tmpfile.Name())
+	logrus.Debugf("Raw service network contents: %v", rawServiceNetwork)
 
 	encoder := gob.NewEncoder(tmpfile)
-	println(fmt.Sprintf("%v", rawServiceNetwork))
 	err = encoder.Encode(rawServiceNetwork)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not write service network state to file")
