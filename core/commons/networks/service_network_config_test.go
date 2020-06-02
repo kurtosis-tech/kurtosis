@@ -1,6 +1,7 @@
-package testnet
+package networks
 
 import (
+	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"gotest.tools/assert"
 	"testing"
 )
@@ -17,16 +18,16 @@ func (t TestFactoryConfig) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []Service) []string {
+func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []services.Service) []string {
 	return make([]string, 0)
 }
 
-func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) Service {
+func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
 
-func getTestServiceFactory() *ServiceFactory {
-	return NewServiceFactory(TestFactoryConfig{})
+func getTestServiceFactory() *services.ServiceFactory {
+	return services.NewServiceFactory(TestFactoryConfig{})
 }
 
 func TestDisallowingNonexistentConfigs(t *testing.T) {

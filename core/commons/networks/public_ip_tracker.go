@@ -1,4 +1,4 @@
-package testnet
+package networks
 
 import (
 	"encoding/binary"

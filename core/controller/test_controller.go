@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/gob"
-	"github.com/kurtosis-tech/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -38,7 +38,7 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	}
 	decoder := gob.NewDecoder(fp)
 
-	var rawServiceNetwork testnet.RawServiceNetwork
+	var rawServiceNetwork networks.RawServiceNetwork
 	err = decoder.Decode(&rawServiceNetwork)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
@@ -49,7 +49,7 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	}
 
 	testSucceeded := true
-	context := testsuite.TestContext{}
+	context := TestContext{}
 	testConfig.Test.Run(untypedNetwork, context)
 	defer func() {
 		if result := recover(); result != nil {
