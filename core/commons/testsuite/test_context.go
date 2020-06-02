@@ -10,5 +10,7 @@ func (context TestContext) Fatal(err error) {
 }
 
 func (context TestContext) AssertTrue(condition bool) {
-	panic(fmt.Sprintf("Assertion failed"))
+	if (!condition) {
+		panic(fmt.Sprintf("Assertion failed"))
+	}
 }

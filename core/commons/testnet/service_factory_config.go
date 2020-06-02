@@ -7,7 +7,7 @@ type ServiceFactoryConfig interface {
 
 	GetUsedPorts() map[int]bool
 
-	// TODO somehow, some way verify that the types of these two functions are equal
+	// TODO when Go gets generics, make the type of 'dependencies' be the same as the output of GetStartCommand
 	// If Go had generics, dependencies should be of type []T
 	GetStartCommand(publicIpAddr string, dependencies []Service) []string
 
