@@ -1,4 +1,4 @@
-package testnet
+package services
 
 // Contains configuration determining what type of objects the ServiceFactory will produce
 // This is implicitly a DockerContainerServiceFactoryConfig; we could abstract it easily if we wanted other foundations for services

@@ -1,4 +1,4 @@
-package testnet
+package services
 
 import "github.com/docker/go-connections/nat"
 

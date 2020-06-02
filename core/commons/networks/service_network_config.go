@@ -1,7 +1,8 @@
-package testnet
+package networks
 
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
+	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
 )
 
@@ -25,7 +26,7 @@ type ServiceNetworkConfigBuilder struct {
 	nextServiceId int
 
 	// Factories that will be used to construct the nodes at build time
-	configurations map[int]ServiceFactory
+	configurations map[int]services.ServiceFactory
 
 	// Tracks the next service configuration ID that will be doled out upon a call to AddServiceConfiguration
 	nextConfigurationId int
@@ -37,7 +38,7 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 	serviceDependencies := make(map[int]map[int]bool)
 	serviceStartOrder := make([]int, 0)
 	onlyDependentServices := make(map[int]bool)
-	configurations := make(map[int]ServiceFactory)
+	configurations := make(map[int]services.ServiceFactory)
 	return &ServiceNetworkConfigBuilder{
 		serviceConfigs:      serviceConfigs,
 		serviceDependencies: serviceDependencies,
@@ -50,7 +51,7 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 }
 
 // Adds a service configuration to the network, that can be referenced later with AddService
-func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory ServiceFactory) int {
+func (builder *ServiceNetworkConfigBuilder) AddServiceConfiguration(factory services.ServiceFactory) int {
 	configurationId := builder.nextConfigurationId
 	builder.nextConfigurationId = builder.nextConfigurationId + 1
 	builder.configurations[configurationId] = factory
@@ -120,7 +121,7 @@ func (builder ServiceNetworkConfigBuilder) Build() *ServiceNetworkConfig {
 		onlyDependentServicesCopy[dependencyId] = true
 	}
 
-	configurationsCopy := make(map[int]ServiceFactory)
+	configurationsCopy := make(map[int]services.ServiceFactory)
 	for configurationId, factory := range builder.configurations {
 		configurationsCopy[configurationId] = factory
 	}
@@ -143,17 +144,17 @@ type ServiceNetworkConfig struct {
 	// push that to the implementer of the network (make them do the calls based off what they know)
 	// Don't want to rip it out yet though because it was a pain to put in
 	onlyDependentServices map[int]bool
-	configurations map[int]ServiceFactory
+	configurations map[int]services.ServiceFactory
 }
 
 // TODO use the network name to create a new network!!
 func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddrTracker, manager *docker.DockerManager) (*RawServiceNetwork, error) {
-	runningServices := make(map[int]Service)
+	runningServices := make(map[int]services.Service)
 	serviceIps := make(map[int]string)
 	serviceContainerIds := make(map[int]string)
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
-		serviceDependencies := make([]Service, 0, len(serviceDependenciesIds))
+		serviceDependencies := make([]services.Service, 0, len(serviceDependenciesIds))
 		for dependencyId, _ := range serviceDependenciesIds {
 			// We're guaranteed that this dependency will already be running due to the ordering we enforce in the builder
 			serviceDependencies = append(serviceDependencies, runningServices[dependencyId])

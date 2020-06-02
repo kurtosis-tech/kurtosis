@@ -7,7 +7,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/testnet"
+	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -16,11 +16,11 @@ import (
 
 
 type TestSuiteRunner struct {
-	testSuite testsuite.TestSuite
-	testImageName string
+	testSuite               testsuite.TestSuite
+	testServiceImageName    string
 	testControllerImageName string
-	startPortRange int
-	endPortRange int
+	startPortRange          int
+	endPortRange            int
 }
 
 const (
@@ -36,13 +36,13 @@ const (
 
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
-			testImageName string,
+			testServiceImageName string,
 			testControllerImageName string,
 			startPortRange int,
 			endPortRange int) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
-		testImageName:           testImageName,
+		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
 		startPortRange:          startPortRange,
 		endPortRange:            endPortRange,
@@ -76,12 +76,12 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	// TODO implement parallelism and specific test selection here
 	for testName, config := range tests {
 		networkLoader := config.NetworkLoader
-		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testImageName)
+		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testServiceImageName)
 		if err != nil {
 			stacktrace.Propagate(err, "Unable to get network config from config provider")
 		}
 
-		publicIpProvider, err := testnet.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
+		publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
 		if err != nil {
 			return stacktrace.Propagate(err, "")
 		}
@@ -124,9 +124,9 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 
 func runControllerContainer(
 		manager *docker.DockerManager,
-		rawServiceNetwork *testnet.RawServiceNetwork,
+		rawServiceNetwork *networks.RawServiceNetwork,
 		dockerImage string,
-		ipProvider *testnet.FreeIpAddrTracker,
+		ipProvider *networks.FreeIpAddrTracker,
 		testName string,
 		testInstanceUuid uuid.UUID) (err error){
 
