@@ -14,6 +14,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strconv"
+	"time"
 )
 
 const (
@@ -151,6 +152,17 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
 	return staticIp, containerId, nil
+}
+
+/*
+Stops the container with the given container ID, waiting for the provided timeout before forcefully terminating the container
+ */
+func (manager DockerManager) StopContainer(containerId string, timeout *time.Duration) error {
+	err := manager.dockerClient.ContainerStop(manager.dockerCtx, containerId, timeout)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
+	}
+	return nil
 }
 
 /*

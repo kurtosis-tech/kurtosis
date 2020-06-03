@@ -147,11 +147,20 @@ type ServiceNetworkConfig struct {
 	configurations map[int]services.ServiceFactory
 }
 
+/*
+This method will create a running instantion of the configured network
+
+Returns:
+	A struct containing information about the network. If an error occurs midway through creation, there will be several
+		containers left hanging around and *the network return value will contain only the already-started containers*! A
+		user of this method should check if the error result is set and, if so, shut down the running containers!
+ */
 // TODO use the network name to create a new network!!
 func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddrTracker, manager *docker.DockerManager) (*RawServiceNetwork, error) {
 	runningServices := make(map[int]services.Service)
 	serviceIps := make(map[int]string)
 	serviceContainerIds := make(map[int]string)
+
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]services.Service, 0, len(serviceDependenciesIds))
@@ -165,14 +174,20 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 
 		staticIp, err := publicIpProvider.GetFreeIpAddr()
 		if err != nil {
-			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
-			return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
+			return &RawServiceNetwork{
+				ServiceIPs:   serviceIps,
+				ContainerIds: serviceContainerIds,
+			}, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 		}
+
 		service, containerId, err := factory.Construct(staticIp, manager, serviceDependencies)
 		if err != nil {
-			// TODO an error here means we have a half-created network that we need to return to the user so they can shut down!
-			return nil, stacktrace.Propagate(err, "Failed to construct service from factory")
+			return &RawServiceNetwork{
+				ServiceIPs:   serviceIps,
+				ContainerIds: serviceContainerIds,
+			}, stacktrace.Propagate(err, "Failed to construct service from factory")
 		}
+
 		runningServices[serviceId] = service
 		serviceIps[serviceId] = staticIp
 		serviceContainerIds[serviceId] = containerId
