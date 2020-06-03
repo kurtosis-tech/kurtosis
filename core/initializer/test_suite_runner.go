@@ -189,7 +189,7 @@ func runControllerContainer(
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
-	logrus.Info("Controller container stopped")
+	logrus.Info("Controller container exited")
 
 	return nil
 }
@@ -201,11 +201,13 @@ It is safe to pass in nil to the networkToStop
 func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout *time.Duration) {
 	logrus.Info("Stopping service container network...")
 	for _, containerId := range networkToStop.ContainerIds {
+		logrus.Debugf("Stopping container with ID '%v'", containerId)
 		err := manager.StopContainer(containerId, stopTimeout)
 		if err != nil {
 			logrus.Warnf("An error occurred stopping container ID '%v'; continuing on with stopping other containers...", containerId)
 			logrus.Warn(err)
 		}
+		logrus.Debugf("Container with ID '%v' successfully stopped", containerId)
 	}
 	logrus.Info("Finished stopping service container network")
 }
