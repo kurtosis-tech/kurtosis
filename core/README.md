@@ -1,71 +1,57 @@
-# kurtosis
-E2E Testing Harness for Service-based Networks
+# Kurtosis
+Kurtosis is a library framework for end-to-end testing distributed systems in Docker.
 
-# Requirements
+## Architecture
+The Kurtosis architecture has three components:
 
-Golang version 1.13.x.   
-Docker Engine running in your environment.
+1. An **initializer**, which is responsible for spinning up the node networks required by the tests
+2. The **network**, composed of nodes running in Docker with user-defined parameters
+3. The **controller**, a Docker image running the code that actually makes requests to the network to run the tests
 
-# Install
+The control flow goes:
 
-Clone this repository and cd into it.  
-Run `./scripts/build.sh`. This will build the main binary and put it the `build/` directory of this repository.  
+1. The initializer launches and looks at what tests need to be run
+2. For each test:
+    1. The initializer spins up the Docker images of the network that the test requires
+    2. The initializer spins up a Docker image of the controller, passing to the controller the test name and network IP information
+    3. The controller runs the desired test while the initializer waits for it to complete
+4. After all tests are run, the initializer returns the results of the tests
 
-Clone [the test controller](https://github.com/kurtosis-tech/ava-test-controller) and run `docker build .` inside the directory.
+## Getting Started
+At a high level, you'll need the following to start writing tests:
 
-TODO: explain the Bash environment variables that will get set
+1. One or more network definitions, to tell the initializer what shape of network to spin up
+2. One or more tests that consume those networks, make calls to the networks, and fail if necessary
+3. A `main.go` file that runs the controller code
+4. A `main.go` file that runs the initializer
 
-# Usage
+More concretely, you'll need at least:
 
-Run `./build/kurtosis -help` or `./build/kurtosis -h` to see command line usage.  
-Example: `kurtosis --gecko-image-name=gecko-f290f73 --test-controller-image-name=YOURIMAGE`
+### Commons
+1. A struct representing a node in your network (identified by an IP address), with functions for the calls that can be made to the node
+    * NOTE: Tests will use this object, so it should have whatever methods needed to make test-writing clean and easy
+1. An implementation of the `ServiceFactoryConfig` interface to handle the particulars of spinning up a Docker image running your service
+1. A struct representing a specific instantion of a network (e.g. `ThreeNodeNetwork`), composed of the nodes you've defined
+    * NOTE This object will be passed directly to the tests, so it should be given whichever methods make test-writing clean and easy (e.g. `GetNodeOne()`, `GetNodeTwo()`, etc.)
+1. A struct implementing the `TestNetworkLoader` interface for bootstrapping your network, which defines:
+    1. How to create the network out of Docker images (using the `ServiceFactory` whose config you defined)
+    2. How to construct the network out of a set of IPs
+1. A test implementing the `Test` class
+    * NOTE: Because Go doesn't have generics yet, the first line of your `Run` method should be casting the generic network to your custom-defined struct representing the type of network that the test consumes
+1. A struct implementing the `TestSuite` class, which registers the tests that are available in the test suite
 
-# Architecture
+### Initializer
+1. A `main.go` for the initializer that constructs an instance of `TestSuiteRunner` (which handles all the initialization)
 
-Kurtosis builds a network of Gecko Docker images and runs a Docker container to run tests against it.
-Both images must already exist in your Docker engine, and the names of both images are specified by a command line argument.  
-Currently, the ports that the container will run on for HTTP and for staking on your host machine are hard-coded to the standard Gecko defaults - 9650 for HTTP, 9651 for staking.
+### Controller
+1. A `main.go` for the controller that constructs an instance of `TestController` for running a given test
+1. A Docker image that runs the controller's `main.go`, which will be launched by the initializer
+    * NOTE: the initializer will set two special environment variables in the controller image's shell: `TEST_NAME` and `NETWORK_DATA_FILEPATH`. These should be consumed by your controller's `main.go` and passed as-is to the `NewTestController` call.
 
-# Helpful Tip
+Some implementation tips:
+* We recommend structuring your code into the same `commons`, `initializer`, and `controller` packages listed above.
+* Make an interface representing the calls that every single node on your network can receive (e.g. `ElasticsearchService`), and create sub-interfaces for more specific calls (e.g. `ElasticsearchMasterService`)
+* Both network-creating and network-loading functions are intentionally centralized in the `TestNetworkLoader` interface so that constant IDs can be defined for each node and used in both network creation & loading
 
-Create an alias in your shell .rc file to stop and clear all Docker containers created by Kurtosis in one line.  
-Run this every time after you kill kurtosis, because the containers will hang around.  
-One way to do this is as follows:
-
-```
-# alias for clearing kurtosis containers 
-kurtosisclearall() {  docker rm $(docker stop $(docker ps -a -q --filter ancestor="$1" --format="{{.ID}}")) } 
-alias kclear=kurtosisclearall
-```
-
-Usage:
-```
-export GECKO_IMAGE=gecko-684ca4e
-# run kurtosis
-./build/kurtosis -gecko-image-name="${GECKO_IMAGE}"
-# ...kill kurtosis manually...
-# clear the docker containers initialized by kurtosis
-kclear ${GECKO_IMAGE} 
-```
-
-# Kurtosis in Docker
-
-Kurtosis in Docker is based on the "Docker in Docker" docker image.
-It connects to your host docker engine, rather than deploying its own docker engine.
-This means Kurtosis will be running in a container in the same docker environment as the testnet and test controller containers.
-
-### Running Kurtosis in Docker
-
-In the root directory of this repository, run 
-`./scripts/build_image.sh` to build the Kurtosis docker image. It will create an image with tag kurtosis-<COMMIT_HASH>.
-
-To run Kurtosis in Docker, be sure to bind the docker socket of the container with the host docker socket, so they use the same docker engine.
-Also, specify the Gecko image and the Test Controller image at container runtime.
-
-Example command:
-
-`docker run -ti -v /var/run/docker.sock:/var/run/docker.sock --env DEFAULT_GECKO_IMAGE="gecko-60668c3" --env TEST_CONTROLLER_IMAGE=ava-controller:latest kurtosis-5006918`
-
-# TODO
-
-* Ability to run spectators versus stakers
+## Examples
+See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation
