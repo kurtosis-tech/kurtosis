@@ -5,5 +5,5 @@ type Test interface {
 	// as produced by the TestNetworkLoader
 	Run(network interface{}, context TestContext)
 
-	// TODO add a GetNetworkLoader function
+	GetNetworkLoader() TestNetworkLoader
 }
