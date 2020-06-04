@@ -46,10 +46,12 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 
 	networkLoader := test.GetNetworkLoader()
 
-	networkCfg, err := networkLoader.GetNetworkConfig()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get test network config")
+	builder := networks.NewServiceNetworkConfigBuilder()
+	if err := networkLoader.ConfigureNetwork(builder); err != nil {
+		return false, stacktrace.Propagate(err, "Could not configure network")
 	}
+	networkCfg := builder.Build()
+
 	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not load network from raw service information")

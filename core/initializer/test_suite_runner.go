@@ -108,10 +108,12 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 	for testName, test := range testsToRun {
 		logrus.Infof("Running test: %v", testName)
 		networkLoader := test.GetNetworkLoader()
-		testNetworkCfg, err := networkLoader.GetNetworkConfig()
-		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get network test from test provider")
+
+		builder := networks.NewServiceNetworkConfigBuilder()
+		if err := networkLoader.ConfigureNetwork(builder); err != nil {
+			return stacktrace.Propagate(err, "Unable to configure test network")
 		}
+		testNetworkCfg := builder.Build()
 
 		logrus.Infof("Creating network for test...")
 		publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
