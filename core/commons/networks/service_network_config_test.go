@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"gotest.tools/assert"
 	"testing"
+	"time"
 )
 
 
@@ -24,6 +25,14 @@ func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []s
 
 func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
+}
+
+func (t TestFactoryConfig) IsServiceUp(toCheck services.Service, dependencies []services.Service) bool {
+	return true
+}
+
+func (t TestFactoryConfig) GetStartupTimeout() time.Duration {
+	return 30 * time.Second
 }
 
 func getTestServiceFactory() *services.ServiceFactory {

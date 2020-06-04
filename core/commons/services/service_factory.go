@@ -60,5 +60,5 @@ func (factory ServiceFactory) WaitForStartup(toCheck Service, dependencies []Ser
 		}
 		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
 	}
-	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start")
+	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start", startupTimeout)
 }
