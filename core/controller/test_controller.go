@@ -18,9 +18,6 @@ func NewTestController(testSuite testsuite.TestSuite) *TestController {
 }
 
 func (controller TestController) RunTests(testName string, networkInfoFilepath string) (bool, error) {
-	// TODO create a TestSuiteContext object for returning the state of all the tests
-
-	// TODO run multiple tests
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
@@ -67,6 +64,6 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 		}
 	}()
 
-	// TODO return a TestSuiteResults object that provides detailed info about each test?
+	// Should we return a TestSuiteResults object that provides detailed info about each test?
 	return testSucceeded, nil
 }

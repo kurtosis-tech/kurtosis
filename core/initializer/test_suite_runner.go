@@ -136,6 +136,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 
 		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
+		// TODO after printing logs, delete each container
 	}
 	return nil
 }

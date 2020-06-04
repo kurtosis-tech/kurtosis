@@ -312,10 +312,6 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		// TODO we should set this to true so we can nicely clean ourselves up, BUT we need a way to:
-		//  1) attach to teh test controller so we get its logs
-		//  2) get the logs from the services
-		AutoRemove: false,
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
 		// TODO see note above about volumes
