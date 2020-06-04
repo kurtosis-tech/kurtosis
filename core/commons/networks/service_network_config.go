@@ -12,7 +12,7 @@ type serviceConfig struct {
 	// Nil has a special meaning of "use the image being tested"
 	dockerImage *string
 	availabilityChecker services.ServiceAvailabilityChecker
-	initializer services.ServiceFactory
+	initializer services.ServiceInitializer
 }
 
 // Builder to ease the declaration of the network state we want
@@ -64,12 +64,12 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkConfigBuilder) AddStaticImageConfiguration(
 		dockerImage *string,
-		initializerCore services.ServiceFactoryConfig,
+		initializerCore services.ServiceInitializerCore,
 		availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
 	serviceConfig := serviceConfig{
 		dockerImage: dockerImage,
 		availabilityChecker: *services.NewServiceAvailabilityChecker(availabilityCheckerCore),
-		initializer:         *services.NewServiceFactory(initializerCore),
+		initializer:         *services.NewServiceInitializer(initializerCore),
 	}
 	configurationId := builder.nextConfigurationId
 	builder.nextConfigurationId = builder.nextConfigurationId + 1
@@ -80,7 +80,7 @@ func (builder *ServiceNetworkConfigBuilder) AddStaticImageConfiguration(
 // Adds a service configuration to the network that will run the Docker image being tested
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkConfigBuilder) AddTestImageConfiguration(
-		initializerCore services.ServiceFactoryConfig,
+		initializerCore services.ServiceInitializerCore,
 		availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
 	return builder.AddStaticImageConfiguration(nil, initializerCore, availabilityCheckerCore)
 }
@@ -212,7 +212,7 @@ func (networkCfg ServiceNetworkConfig) CreateNetwork(testImage string, publicIpP
 			dockerImagePtr = &testImage
 		}
 
-		service, containerId, err := config.initializer.Construct(*dockerImagePtr, staticIp, manager, serviceDependencies)
+		service, containerId, err := config.initializer.CreateService(*dockerImagePtr, staticIp, manager, serviceDependencies)
 		if err != nil {
 			return &RawServiceNetwork{
 				ServiceIPs:   serviceIps,

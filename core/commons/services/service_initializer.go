@@ -5,27 +5,25 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-// TODO Rename to ServiceInitializer
-// This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
-type ServiceFactory struct {
-	config ServiceFactoryConfig
+// This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
+type ServiceInitializer struct {
+	core ServiceInitializerCore
 }
 
-func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
-	return &ServiceFactory{
-		config: config,
+func NewServiceInitializer(core ServiceInitializerCore) *ServiceInitializer {
+	return &ServiceInitializer{
+		core: core,
 	}
 }
 
-// TODO Rename to CreateService
 // If Go had generics, this would be genericized so that the arg type = return type
-func (factory ServiceFactory) Construct(
+func (initializer ServiceInitializer) CreateService(
 			dockerImage string,
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
-	usedPorts := factory.config.GetUsedPorts()
+	startCmdArgs := initializer.core.GetStartCommand(staticIp, dependencies)
+	usedPorts := initializer.core.GetUsedPorts()
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
@@ -41,9 +39,9 @@ func (factory ServiceFactory) Construct(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return factory.config.GetServiceFromIp(ipAddr), containerId, nil
+	return initializer.core.GetServiceFromIp(ipAddr), containerId, nil
 }
 
-func (factory ServiceFactory) LoadService(ipAddr string) Service {
-	return factory.config.GetServiceFromIp(ipAddr)
+func (initializer ServiceInitializer) LoadService(ipAddr string) Service {
+	return initializer.core.GetServiceFromIp(ipAddr)
 }

@@ -23,7 +23,7 @@ func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies [
 func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
-func getTestInitializerCore() services.ServiceFactoryConfig {
+func getTestInitializerCore() services.ServiceInitializerCore {
 	return TestInitializerCore{}
 }
 
