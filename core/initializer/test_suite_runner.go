@@ -52,9 +52,10 @@ func NewTestSuiteRunner(
 	}
 }
 
-// Runs the tests whose names are defined in the given map (the map value is ignored - this is a hacky way to
-// do a set implementation)
-func (runner TestSuiteRunner) RunTests() (err error) {
+/*
+Runs the tests with the given names. If no tests are specifically defined, all tests are run.
+ */
+func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client
@@ -68,14 +69,33 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
 
+	// TODO no need to parse duration and deal with the err; we can use the proper 3 * time.Seconds, etc. syntax
 	containerStopTimeout, err := time.ParseDuration(CONTAINER_STOP_TIMEOUT_STR)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not parse container stop timeout string '%v'; this is likely a code error", CONTAINER_STOP_TIMEOUT_STR)
 	}
 
-	tests := runner.testSuite.GetTests()
+	allTests := runner.testSuite.GetTests()
+	if len(testNamesToRun) == 0 {
+		testNamesToRun = make([]string, 0, len(runner.testSuite.GetTests()))
+		for testName, _ := range allTests {
+			testNamesToRun = append(testNamesToRun, testName)
+		}
+	}
+
+	// Validate all the requested tests exist
+	testsToRun := make(map[string]testsuite.Test)
+	for _, testName := range testNamesToRun {
+		test, found := allTests[testName]
+		if !found {
+			return stacktrace.NewError("No test registered with name '%v'", testName)
+		}
+		testsToRun[testName] = test
+	}
+
+
 	executionInstanceId := uuid.Generate()
-	logrus.Infof("Running tests with execution ID: %v", executionInstanceId.String())
+	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
 	// TODO TODO TODO Support creating one network per testnet
 	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK)
@@ -83,8 +103,9 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		return stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
 	}
 
-	// TODO implement parallelism and specific test selection here
-	for testName, test := range tests {
+	// TODO implement parallelism
+	// TODO implement capturing test results
+	for testName, test := range testsToRun {
 		logrus.Infof("Running test: %v", testName)
 		networkLoader := test.GetNetworkLoader()
 		testNetworkCfg, err := networkLoader.GetNetworkConfig()
