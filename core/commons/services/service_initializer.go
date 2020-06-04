@@ -5,25 +5,25 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-// This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
+// This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
-	config ServiceInitializerCore
+	core ServiceInitializerCore
 }
 
-func NewServiceInitializer(config ServiceInitializerCore) *ServiceInitializer {
+func NewServiceInitializer(core ServiceInitializerCore) *ServiceInitializer {
 	return &ServiceInitializer{
-		config: config,
+		core: core,
 	}
 }
 
 // If Go had generics, this would be genericized so that the arg type = return type
-func (factory ServiceInitializer) CreateService(
+func (initializer ServiceInitializer) CreateService(
 			dockerImage string,
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
-	usedPorts := factory.config.GetUsedPorts()
+	startCmdArgs := initializer.core.GetStartCommand(staticIp, dependencies)
+	usedPorts := initializer.core.GetUsedPorts()
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
@@ -39,9 +39,9 @@ func (factory ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return factory.config.GetServiceFromIp(ipAddr), containerId, nil
+	return initializer.core.GetServiceFromIp(ipAddr), containerId, nil
 }
 
-func (factory ServiceInitializer) LoadService(ipAddr string) Service {
-	return factory.config.GetServiceFromIp(ipAddr)
+func (initializer ServiceInitializer) LoadService(ipAddr string) Service {
+	return initializer.core.GetServiceFromIp(ipAddr)
 }

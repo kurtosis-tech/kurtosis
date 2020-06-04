@@ -30,7 +30,7 @@ More concretely, you'll need at least:
 ### Commons
 1. A struct representing a node in your network (identified by an IP address), with functions for the calls that can be made to the node
     * NOTE: Tests will use this object, so it should have whatever methods needed to make test-writing clean and easy
-1. An implementation of the `ServiceFactoryConfig` interface to handle the particulars of spinning up a Docker image running your service
+1. An implementation of the `ServiceInitializerCore` interface to handle the particulars of spinning up a Docker image running your service
 1. A struct representing a specific instantion of a network (e.g. `ThreeNodeNetwork`), composed of the nodes you've defined
     * NOTE This object will be passed directly to the tests, so it should be given whichever methods make test-writing clean and easy (e.g. `GetNodeOne()`, `GetNodeTwo()`, etc.)
 1. A struct implementing the `TestNetworkLoader` interface for bootstrapping your network, which defines:
