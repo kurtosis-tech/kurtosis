@@ -27,13 +27,14 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH = "/data/network"
+	CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH = "/data/network/network-info"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_NAME_BASH_ARG = "TEST_NAME"
 	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
 
-	CONTAINER_STOP_TIMEOUT_STR = "30s"
+	// How long to wait before force-killing a container
+	CONTAINER_STOP_TIMEOUT = 30 * time.Second
 )
 
 
@@ -67,12 +68,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
-	}
-
-	// TODO no need to parse duration and deal with the err; we can use the proper 3 * time.Seconds, etc. syntax
-	containerStopTimeout, err := time.ParseDuration(CONTAINER_STOP_TIMEOUT_STR)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not parse container stop timeout string '%v'; this is likely a code error", CONTAINER_STOP_TIMEOUT_STR)
 	}
 
 	allTests := runner.testSuite.GetTests()
@@ -122,7 +117,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 		}
 		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
 		if err != nil {
-			stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
+			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 		logrus.Info("Network created successfully")
@@ -135,10 +130,10 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 			testName,
 			executionInstanceId)
 		if err != nil {
-			stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
+			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 			return stacktrace.Propagate(err, "An error occurred running the test controller")
 		}
-		stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
+		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 
 		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
 	}
@@ -178,7 +173,7 @@ func runControllerContainer(
 	//  but because this is a tmpfile we don't fuss about checking them
 	defer tmpfile.Close()
 
-	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/network-info"
+	containerMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
 		// TODO just for testing; replace with a dynamic filename
@@ -219,7 +214,7 @@ func runControllerContainer(
 Makes a best-effort attempt to stop the containers in the given network, waiting for the given timeout.
 It is safe to pass in nil to the networkToStop
  */
-func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout *time.Duration) {
+func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout time.Duration) {
 	logrus.Info("Stopping service container network...")
 	for _, containerId := range networkToStop.ContainerIds {
 		logrus.Debugf("Stopping container with ID '%v'", containerId)
