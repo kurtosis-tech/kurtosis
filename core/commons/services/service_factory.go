@@ -5,6 +5,7 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
+// TODO Rename to ServiceInitializer
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
 type ServiceFactory struct {
 	config ServiceFactoryConfig
@@ -16,12 +17,13 @@ func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
 	}
 }
 
+// TODO Rename to CreateService
 // If Go had generics, this would be genericized so that the arg type = return type
 func (factory ServiceFactory) Construct(
+			dockerImage string,
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	dockerImage := factory.config.GetDockerImage()
 	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
@@ -40,4 +42,8 @@ func (factory ServiceFactory) Construct(
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
 	return factory.config.GetServiceFromIp(ipAddr), containerId, nil
+}
+
+func (factory ServiceFactory) LoadService(ipAddr string) Service {
+	return factory.config.GetServiceFromIp(ipAddr)
 }

@@ -87,7 +87,7 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 	for testName, test := range tests {
 		logrus.Infof("Running test: %v", testName)
 		networkLoader := test.GetNetworkLoader()
-		testNetworkCfg, err := networkLoader.GetNetworkConfig(runner.testServiceImageName)
+		testNetworkCfg, err := networkLoader.GetNetworkConfig()
 		if err != nil {
 			return stacktrace.Propagate(err, "Unable to get network test from test provider")
 		}
@@ -97,14 +97,12 @@ func (runner TestSuiteRunner) RunTests() (err error) {
 		if err != nil {
 			return stacktrace.Propagate(err, "")
 		}
-		serviceNetwork, err := testNetworkCfg.CreateAndRun(publicIpProvider, dockerManager)
+		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
 		if err != nil {
 			stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
 			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
 		}
 		logrus.Info("Network created successfully")
-
-		// TODO wait for network to completely start up before running the container!
 
 		err = runControllerContainer(
 			dockerManager,
