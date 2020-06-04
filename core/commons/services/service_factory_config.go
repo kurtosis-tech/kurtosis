@@ -1,5 +1,7 @@
 package services
 
+import "os"
+
 // Contains configuration determining what type of objects the ServiceFactory will produce
 // This is implicitly a DockerContainerServiceFactoryConfig; we could abstract it easily if we wanted other foundations for services
 type ServiceFactoryConfig interface {
@@ -13,5 +15,9 @@ type ServiceFactoryConfig interface {
 
 	// If Go had generics, the return type would be T
 	GetServiceFromIp(ipAddr string) Service
+
+	GetFilepathsToMount() map[string]bool
+
+	InitializeMountedFiles(mountedFiles map[string]*os.File)
 }
 
