@@ -273,7 +273,7 @@ func (networkCfg ServiceNetworkConfig) LoadNetwork(rawInfo RawServiceNetwork) (m
 		if err := config.availabilityChecker.WaitForStartup(service, serviceDependencies); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred waiting for service %v to start up", serviceId)
 		}
-		logrus.Debugf("Service %v is available")
+		logrus.Debugf("Service %v is available", serviceId)
 	}
 	logrus.Info("Network is available")
 

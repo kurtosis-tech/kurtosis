@@ -10,35 +10,36 @@ import (
 
 type TestService struct {}
 
-type TestFactoryConfig struct {}
-func (t TestFactoryConfig) GetDockerImage() string {
-	return "TEST"
-}
-
-func (t TestFactoryConfig) GetUsedPorts() map[int]bool {
+// ======================== Test Initializer Core ========================
+type TestInitializerCore struct {}
+func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []services.Service) []string {
+func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) []string {
 	return make([]string, 0)
 }
 
-func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) services.Service {
+func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
+func getTestInitializerCore() services.ServiceFactoryConfig {
+	return TestInitializerCore{}
+}
 
-func (t TestFactoryConfig) IsServiceUp(toCheck services.Service, dependencies []services.Service) bool {
+// ======================== Test Availability Checker Core ========================
+type TestAvailabilityCheckerCore struct {}
+func (t TestAvailabilityCheckerCore) IsServiceUp(toCheck services.Service, dependencies []services.Service) bool {
 	return true
 }
-
-func (t TestFactoryConfig) GetStartupTimeout() time.Duration {
+func (t TestAvailabilityCheckerCore) GetTimeout() time.Duration {
 	return 30 * time.Second
 }
-
-func getTestServiceFactory() *services.ServiceFactory {
-	return services.NewServiceFactory(TestFactoryConfig{})
+func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
+	return TestAvailabilityCheckerCore{}
 }
 
+// ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
 	_, err := builder.AddService(0, make(map[int]bool))
@@ -49,7 +50,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	dependencies := map[int]bool{
 		0: true,
@@ -65,7 +66,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -79,7 +80,7 @@ func TestIdsDifferent(t *testing.T) {
 
 func TestDependencyBookkeeping(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -145,7 +146,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	dependencyMap := make(map[int]bool)
 	svc1, err := builder.AddService(config, dependencyMap)
@@ -155,7 +156,7 @@ func TestDefensiveCopies(t *testing.T) {
 
 	networkConfig := builder.Build()
 
-	_ = builder.AddStaticImageConfiguration(*getTestServiceFactory())
+	_ = builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 	_, err = builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
