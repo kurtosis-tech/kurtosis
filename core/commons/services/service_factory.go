@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 )
 
@@ -29,8 +30,15 @@ func (factory ServiceFactory) Construct(
 
 	filepathsToMount := factory.config.GetFilepathsToMount()
 	logrus.Debugf("Filepaths to mount: %+v", filepathsToMount)
-	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	osFiles := make(map[string]*os.File)
+	for filePath, _ := range filepathsToMount {
+		tmpFile, err := ioutil.TempFile("", filePath)
+		if err != nil {
+			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
+		}
+		osFiles[filePath] = tmpFile
+	}
+	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
 	factory.config.InitializeMountedFiles(osFiles)
 
