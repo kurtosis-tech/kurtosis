@@ -171,5 +171,3 @@ func TestDefensiveCopies(t *testing.T) {
 
 	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }
-
-
