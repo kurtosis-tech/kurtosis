@@ -3,6 +3,7 @@ package networks
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"gotest.tools/assert"
+	"os"
 	"testing"
 )
 
@@ -24,6 +25,13 @@ func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []s
 
 func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
+}
+
+func (t TestFactoryConfig) GetFilepathsToMount() map[string]bool {
+	return make(map[string]bool)
+}
+
+func (t TestFactoryConfig) InitializeMountedFiles(filepathsToMount map[string]*os.File) {
 }
 
 func getTestServiceFactory() *services.ServiceFactory {
