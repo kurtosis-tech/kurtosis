@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
@@ -29,8 +30,9 @@ func (factory ServiceFactory) Construct(
 	filepathsToMount := factory.config.GetFilepathsToMount()
 	logrus.Debugf("Filepaths to mount: %+v", filepathsToMount)
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
+	osFiles := make(map[string]*os.File)
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
-
+	factory.config.InitializeMountedFiles(osFiles)
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
