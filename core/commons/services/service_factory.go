@@ -7,28 +7,19 @@ import (
 )
 
 const (
-	TIME_BETWEEN_STARTUP_POLLS_STR = "1s"
+	TIME_BETWEEN_STARTUP_POLLS = 1 * time.Second
 )
 
 // TODO Rename to ServiceInitializer
 // This implicitly is a Docker container factory, but we could abstract to other backends if we wanted later
 type ServiceFactory struct {
 	config ServiceFactoryConfig
-	timeBetweenStartupPolls time.Duration
 }
 
-func NewServiceFactory(config ServiceFactoryConfig) (*ServiceFactory, error) {
-	timeBetweenStartupPolls, err := time.ParseDuration(TIME_BETWEEN_STARTUP_POLLS_STR)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"Could not parse string indicating time between startup polls '%v'; this is likely a code problem",
-			TIME_BETWEEN_STARTUP_POLLS_STR)
-	}
+func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
 	return &ServiceFactory{
 		config: config,
-		timeBetweenStartupPolls: timeBetweenStartupPolls,
-	}, nil
+	}
 }
 
 // TODO Rename to NewInstance
@@ -61,13 +52,13 @@ func (factory ServiceFactory) Construct(
 // Waits for the given service to start up by making requests (configured by the core) to the service until the service
 //  is reported as up or the timeout is reached
 func (factory ServiceFactory) WaitForStartup(toCheck Service, dependencies []Service) error {
-	startupTimeoutMillis := factory.config.GetStartupTimeoutMillis()
+	startupTimeout := factory.config.GetStartupTimeout()
 	pollStartTime := time.Now()
-	for time.Since(pollStartTime).Milliseconds() < startupTimeoutMillis {
+	for time.Since(pollStartTime) < startupTimeout {
 		if factory.config.IsServiceUp(toCheck, dependencies) {
 			return nil
 		}
-		time.Sleep(factory.timeBetweenStartupPolls)
+		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
 	}
 	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start")
 }

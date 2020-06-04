@@ -1,5 +1,7 @@
 package services
 
+import "time"
+
 // TODO Rename this ServiceInitializerCore
 // Contains configuration determining what type of objects the ServiceFactory will produce
 // This is implicitly a DockerContainerServiceFactoryConfig; we could abstract it easily if we wanted other foundations for services
@@ -25,6 +27,6 @@ type ServiceFactoryConfig interface {
 	IsServiceUp(toCheck Service, dependencies []Service) bool
 
 	// How long to wait for the service to start up before giving up
-	GetStartupTimeoutMillis() int64
+	GetStartupTimeout() time.Duration
 }
 
