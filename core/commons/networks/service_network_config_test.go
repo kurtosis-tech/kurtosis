@@ -49,7 +49,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
 
 	dependencies := map[int]bool{
 		0: true,
@@ -65,7 +65,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -79,7 +79,7 @@ func TestIdsDifferent(t *testing.T) {
 
 func TestDependencyBookkeeping(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -145,7 +145,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddStaticImageConfiguration(*getTestServiceFactory())
 
 	dependencyMap := make(map[int]bool)
 	svc1, err := builder.AddService(config, dependencyMap)
@@ -155,7 +155,7 @@ func TestDefensiveCopies(t *testing.T) {
 
 	networkConfig := builder.Build()
 
-	_ = builder.AddServiceConfiguration(*getTestServiceFactory())
+	_ = builder.AddStaticImageConfiguration(*getTestServiceFactory())
 	_, err = builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")

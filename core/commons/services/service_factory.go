@@ -3,12 +3,6 @@ package services
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
-	"time"
-)
-
-const (
-	TIME_BETWEEN_STARTUP_POLLS = 1 * time.Second
 )
 
 // TODO Rename to ServiceInitializer
@@ -23,13 +17,13 @@ func NewServiceFactory(config ServiceFactoryConfig) *ServiceFactory {
 	}
 }
 
-// TODO Rename to NewInstance
+// TODO Rename to CreateService
 // If Go had generics, this would be genericized so that the arg type = return type
 func (factory ServiceFactory) Construct(
+			dockerImage string,
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	dockerImage := factory.config.GetDockerImage()
 	startCmdArgs := factory.config.GetStartCommand(staticIp, dependencies)
 	usedPorts := factory.config.GetUsedPorts()
 
@@ -50,17 +44,6 @@ func (factory ServiceFactory) Construct(
 	return factory.config.GetServiceFromIp(ipAddr), containerId, nil
 }
 
-// Waits for the given service to start up by making requests (configured by the core) to the service until the service
-//  is reported as up or the timeout is reached
-func (factory ServiceFactory) WaitForStartup(toCheck Service, dependencies []Service) error {
-	startupTimeout := factory.config.GetStartupTimeout()
-	pollStartTime := time.Now()
-	for time.Since(pollStartTime) < startupTimeout {
-		if factory.config.IsServiceUp(toCheck, dependencies) {
-			return nil
-		}
-		logrus.Tracef("Service is not yet available; sleeping for %v before retrying...", TIME_BETWEEN_STARTUP_POLLS)
-		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
-	}
-	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start", startupTimeout)
+func (factory ServiceFactory) LoadService(ipAddr string) Service {
+	return factory.config.GetServiceFromIp(ipAddr)
 }

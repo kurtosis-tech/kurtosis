@@ -43,10 +43,18 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
-	untypedNetwork, err := test.GetNetworkLoader().LoadNetwork(rawServiceNetwork.ServiceIPs)
+
+	networkLoader := test.GetNetworkLoader()
+
+	networkCfg, err := networkLoader.GetNetworkConfig()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Unable to load network from service IPs")
+		return false, stacktrace.Propagate(err, "Could not get test network config")
 	}
+	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not load network from raw service information")
+	}
+	untypedNetwork, err := networkLoader.WrapNetwork(serviceNetwork)
 
 	testSucceeded := true
 	context := testsuite.TestContext{}

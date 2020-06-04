@@ -2,16 +2,15 @@ package testsuite
 
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons/services"
 )
 
-/*
-This interface should be implemented by the user and is responsible for:
-1) creating a network config so that the initializer can use it to create a network and
-2) parsing the RawServiceNetwork object passed over to the TestController to create the actual network the test will  receive
- */
+// This class is intended to provide an easy place to capture the specifics of configuring a network
 type TestNetworkLoader interface {
-	GetNetworkConfig(testImageName string) (*networks.ServiceNetworkConfig, error)
+	GetNetworkConfig() (*networks.ServiceNetworkConfig, error)
 
-	// If Go had generics, this return type would be parameterized to be the actual type of network a test will consume
-	LoadNetwork(ipAddrs map[int]string) (interface{}, error)
+	// TODO When Go has generics, make the input and output types parameterized
+	// Wraps the map of service_id -> service with a user-custom object representing the network, so the user can expose
+	//  whatever methods they please so writing tests is as simple as possible
+	WrapNetwork(services map[int]services.Service) (interface{}, error)
 }
