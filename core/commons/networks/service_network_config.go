@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 // Builder to ease the declaration of the network state we want
@@ -163,6 +164,7 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 	allServiceDependencies := make(map[int][]services.Service)
 
 	// First pass: start all services
+	logrus.Info("Starting test network containers...")
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]services.Service, 0, len(serviceDependenciesIds))
@@ -195,6 +197,7 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 		serviceContainerIds[serviceId] = containerId
 		allServiceDependencies[serviceId] = serviceDependencies
 	}
+	logrus.Info("Test network containers started")
 
 	startedNetwork := RawServiceNetwork{
 		ServiceIPs:   serviceIps,
@@ -202,15 +205,20 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 	}
 
 	// Second pass: wait for all services to come up
+	logrus.Info("Waiting for network to become available...")
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		service := runningServices[serviceId]
 		serviceDependencies := allServiceDependencies[serviceId]
 		configId := networkCfg.serviceConfigs[serviceId]
 		factory := networkCfg.configurations[configId]
+
+		logrus.Debugf("Waiting for service %v to become available...", serviceId)
 		if err := factory.WaitForStartup(service, serviceDependencies); err != nil {
 			return &startedNetwork, stacktrace.Propagate(err, "An error occurred waiting for service %v to start up", serviceId)
 		}
+		logrus.Debugf("Service %v is available")
 	}
+	logrus.Info("Network is available")
 
 	return &startedNetwork, nil
 }

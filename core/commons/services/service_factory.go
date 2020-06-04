@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -58,6 +59,7 @@ func (factory ServiceFactory) WaitForStartup(toCheck Service, dependencies []Ser
 		if factory.config.IsServiceUp(toCheck, dependencies) {
 			return nil
 		}
+		logrus.Tracef("Service is not yet available; sleeping for %v before retrying...", TIME_BETWEEN_STARTUP_POLLS)
 		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
 	}
 	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start", startupTimeout)
