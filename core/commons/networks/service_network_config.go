@@ -160,7 +160,9 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 	runningServices := make(map[int]services.Service)
 	serviceIps := make(map[int]string)
 	serviceContainerIds := make(map[int]string)
+	allServiceDependencies := make(map[int][]services.Service)
 
+	// First pass: start all services
 	for _, serviceId := range networkCfg.servicesStartOrder {
 		serviceDependenciesIds := networkCfg.serviceDependencies[serviceId]
 		serviceDependencies := make([]services.Service, 0, len(serviceDependenciesIds))
@@ -191,10 +193,24 @@ func (networkCfg ServiceNetworkConfig) CreateAndRun(publicIpProvider *FreeIpAddr
 		runningServices[serviceId] = service
 		serviceIps[serviceId] = staticIp
 		serviceContainerIds[serviceId] = containerId
+		allServiceDependencies[serviceId] = serviceDependencies
 	}
 
-	return &RawServiceNetwork{
-		ContainerIds:   serviceContainerIds,
-		ServiceIPs: serviceIps,
-	}, nil
+	startedNetwork := RawServiceNetwork{
+		ServiceIPs:   serviceIps,
+		ContainerIds: serviceContainerIds,
+	}
+
+	// Second pass: wait for all services to come up
+	for _, serviceId := range networkCfg.servicesStartOrder {
+		service := runningServices[serviceId]
+		serviceDependencies := allServiceDependencies[serviceId]
+		configId := networkCfg.serviceConfigs[serviceId]
+		factory := networkCfg.configurations[configId]
+		if err := factory.WaitForStartup(service, serviceDependencies); err != nil {
+			return &startedNetwork, stacktrace.Propagate(err, "An error occurred waiting for service %v to start up", serviceId)
+		}
+	}
+
+	return &startedNetwork, nil
 }
