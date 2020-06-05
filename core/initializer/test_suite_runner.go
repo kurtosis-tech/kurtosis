@@ -12,6 +12,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"sort"
 	"time"
 )
 
@@ -86,6 +87,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 			testNamesToRun = append(testNamesToRun, testName)
 		}
 	}
+	sort.Strings(testNamesToRun)
 
 	// Validate all the requested tests exist
 	testsToRun := make(map[string]testsuite.Test)
