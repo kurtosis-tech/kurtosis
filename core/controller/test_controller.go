@@ -64,7 +64,8 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	// TODO test that this panic recovery actually works!
 	defer func() {
 		if result := recover(); result != nil {
-			logrus.Error(stacktrace.Propagate(err, "Error when running test '%v'", testName))
+			resultErr := result.(error)
+			logrus.Error(stacktrace.Propagate(resultErr, "Error when running test '%v'", testName))
 			testSucceeded = false
 		}
 	}()
