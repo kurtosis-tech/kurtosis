@@ -65,7 +65,8 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	defer func() {
 		if result := recover(); result != nil {
 			resultErr := result.(error)
-			logrus.Error(stacktrace.Propagate(resultErr, "Error when running test '%v'", testName))
+			logrus.Errorf("Error when running test: %v", testName)
+			logrus.Error(resultErr.Error())
 			testSucceeded = false
 		}
 	}()
