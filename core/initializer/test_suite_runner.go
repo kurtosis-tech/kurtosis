@@ -113,7 +113,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
-		logrus.Infof("Running test: %v", testName)
+		logrus.Infof("---------------------------------- %v --------------------------------", testName)
 		networkLoader, err := test.GetNetworkLoader()
 		if err != nil {
 			testResults[testName] = logTestResult(testName, err, false)
