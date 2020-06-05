@@ -41,7 +41,10 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
 
-	networkLoader := test.GetNetworkLoader()
+	networkLoader, err := test.GetNetworkLoader()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not get network loader")
+	}
 
 	builder := networks.NewServiceNetworkConfigBuilder()
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {

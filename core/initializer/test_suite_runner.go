@@ -114,7 +114,13 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
 		logrus.Infof("Running test: %v", testName)
-		networkLoader := test.GetNetworkLoader()
+		networkLoader, err := test.GetNetworkLoader()
+		if err != nil {
+			logrus.Error("An error occurred getting the network loader:")
+			logrus.Error(err)
+			testResults[testName] = ERRORED
+			continue
+		}
 
 		builder := networks.NewServiceNetworkConfigBuilder()
 		if err := networkLoader.ConfigureNetwork(builder); err != nil {
