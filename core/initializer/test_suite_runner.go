@@ -12,9 +12,17 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"sort"
 	"time"
 )
 
+type TestResult string
+// "enum" for TestResult
+const (
+	PASSED TestResult = "PASSED"
+	FAILED TestResult = "FAILED"
+	ERRORED TestResult = "ERRORED"   // Indicates an error during setup that prevented the test from running
+)
 
 type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
@@ -27,13 +35,16 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH = "/data/network"
+	CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH = "/data/network/network-info"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_NAME_BASH_ARG = "TEST_NAME"
 	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
 
-	CONTAINER_STOP_TIMEOUT_STR = "30s"
+	// How long to wait before force-killing a container
+	CONTAINER_STOP_TIMEOUT = 30 * time.Second
+
+	SUCCESS_EXIT_CODE = 0
 )
 
 
@@ -55,24 +66,18 @@ func NewTestSuiteRunner(
 /*
 Runs the tests with the given names. If no tests are specifically defined, all tests are run.
  */
-func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
+func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]TestResult, error) {
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+		return nil, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
 	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error in initializing Docker Manager.")
-	}
-
-	// TODO no need to parse duration and deal with the err; we can use the proper 3 * time.Seconds, etc. syntax
-	containerStopTimeout, err := time.ParseDuration(CONTAINER_STOP_TIMEOUT_STR)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not parse container stop timeout string '%v'; this is likely a code error", CONTAINER_STOP_TIMEOUT_STR)
+		return nil, stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
 
 	allTests := runner.testSuite.GetTests()
@@ -82,13 +87,14 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 			testNamesToRun = append(testNamesToRun, testName)
 		}
 	}
+	sort.Strings(testNamesToRun)
 
 	// Validate all the requested tests exist
 	testsToRun := make(map[string]testsuite.Test)
 	for _, testName := range testNamesToRun {
 		test, found := allTests[testName]
 		if !found {
-			return stacktrace.NewError("No test registered with name '%v'", testName)
+			return nil, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
 		testsToRun[testName] = test
 	}
@@ -100,32 +106,50 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 	// TODO TODO TODO Support creating one network per testnet
 	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
+		return nil, stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
 	}
 
+	// TODO break everything inside this for loop into its own function for readability
 	// TODO implement parallelism
-	// TODO implement capturing test results
+	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
 		logrus.Infof("Running test: %v", testName)
-		networkLoader := test.GetNetworkLoader()
-		testNetworkCfg, err := networkLoader.GetNetworkConfig()
+		networkLoader, err := test.GetNetworkLoader()
 		if err != nil {
-			return stacktrace.Propagate(err, "Unable to get network test from test provider")
+			logrus.Error("An error occurred getting the network loader:")
+			logrus.Error(err)
+			testResults[testName] = ERRORED
+			continue
 		}
+
+		builder := networks.NewServiceNetworkConfigBuilder()
+		if err := networkLoader.ConfigureNetwork(builder); err != nil {
+			logrus.Error("An error occurred configuring the test network:")
+			logrus.Error(err)
+			testResults[testName] = ERRORED
+			continue
+		}
+		testNetworkCfg := builder.Build()
 
 		logrus.Infof("Creating network for test...")
 		publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
 		if err != nil {
-			return stacktrace.Propagate(err, "")
+			logrus.Error("An error occurred creating the free IP provider:")
+			logrus.Error(err)
+			testResults[testName] = ERRORED
+			continue
 		}
 		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
 		if err != nil {
-			stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
-			return stacktrace.Propagate(err, "Unable to create network for test '%v'", testName)
+			logrus.Error("An error occurred creating the test network:")
+			logrus.Error(err)
+			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
+			testResults[testName] = ERRORED
+			continue
 		}
 		logrus.Info("Network created successfully")
 
-		err = runControllerContainer(
+		testPassed, err := runControllerContainer(
 			dockerManager,
 			serviceNetwork,
 			runner.testControllerImageName,
@@ -133,35 +157,60 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (err error) {
 			testName,
 			executionInstanceId)
 		if err != nil {
-			stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
-			return stacktrace.Propagate(err, "An error occurred running the test controller")
+			logrus.Error("An error occurred running the test controller:")
+			logrus.Error(err)
+			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
+			testResults[testName] = ERRORED
+			continue
 		}
-		stopNetwork(dockerManager, serviceNetwork, &containerStopTimeout)
+		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 
+		if testPassed {
+			testResults[testName] = PASSED
+		} else {
+			testResults[testName] = FAILED
+		}
 		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
+		// TODO after printing logs, delete each container
 	}
-	return nil
+
+	return testResults, nil
 }
 
 // ======================== Private helper functions =====================================
 
 
 
+/*
+Runs the controller container against the given test network.
+
+Args:
+	manager: the Docker manager, used for starting container & waiting for it to finish
+	rawServiceNetwork: the network to run against
+	dockerImage: the Docker image of the controller that will be started
+	ipProvider: IP provider to give the controller container its address
+	testName: name of test to run
+	executionUuid: UUID tying together all the tests in this run of the test suite
+
+Returns:
+	bool: true if the test succeeded, false if not
+	error: if any error occurred during the execution of the controller (independent of the test itself)
+ */
 func runControllerContainer(
 		manager *docker.DockerManager,
 		rawServiceNetwork *networks.RawServiceNetwork,
 		dockerImage string,
 		ipProvider *networks.FreeIpAddrTracker,
 		testName string,
-		testInstanceUuid uuid.UUID) (err error){
+		executionUuid uuid.UUID) (bool, error){
 	logrus.Info("Launching controller container...")
 
 	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
 	//  out from underneath the test??
-	testNetworkInfoFilename := fmt.Sprintf("%v-%v", testName, testInstanceUuid.String())
+	testNetworkInfoFilename := fmt.Sprintf("%v-%v", testName, executionUuid.String())
 	tmpfile, err := ioutil.TempFile("", testNetworkInfoFilename)
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
+		return false, stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
 	logrus.Debugf("Temp filepath to write network file to: %v", tmpfile.Name())
@@ -170,13 +219,13 @@ func runControllerContainer(
 	encoder := gob.NewEncoder(tmpfile)
 	err = encoder.Encode(rawServiceNetwork)
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not write service network state to file")
+		return false, stacktrace.Propagate(err, "Could not write service network state to file")
 	}
 	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
 	//  but because this is a tmpfile we don't fuss about checking them
 	defer tmpfile.Close()
 
-	containerMountpoint := CONTAINER_NETWORK_INFO_VOLUME_MOUNTPATH + "/network-info"
+	containerMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
 		// TODO just for testing; replace with a dynamic filename
@@ -185,7 +234,7 @@ func runControllerContainer(
 
 	ipAddr, err := ipProvider.GetFreeIpAddr()
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
+		return false, stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
 	}
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
@@ -198,33 +247,33 @@ func runControllerContainer(
 			tmpfile.Name(): containerMountpoint,
 		})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to run test controller container")
+		return false, stacktrace.Propagate(err, "Failed to run test controller container")
 	}
 	logrus.Info("Controller container started successfully")
 
 	logrus.Info("Waiting for controller container to exit...")
 	// TODO add a timeout here if the test doesn't complete successfully
-	err = manager.WaitForExit(controllerContainerId)
+	exitCode, err := manager.WaitForExit(controllerContainerId)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed when waiting for controller to exit")
+		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
-	logrus.Info("Controller container exited")
+	logrus.Info("Controller container exited successfully")
 
-	return nil
+	return exitCode == SUCCESS_EXIT_CODE, nil
 }
 
 /*
 Makes a best-effort attempt to stop the containers in the given network, waiting for the given timeout.
 It is safe to pass in nil to the networkToStop
  */
-func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout *time.Duration) {
+func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout time.Duration) {
 	logrus.Info("Stopping service container network...")
 	for _, containerId := range networkToStop.ContainerIds {
 		logrus.Debugf("Stopping container with ID '%v'", containerId)
-		err := manager.StopContainer(containerId, stopTimeout)
+		err := manager.StopContainer(containerId, &stopTimeout)
 		if err != nil {
-			logrus.Warnf("An error occurred stopping container ID '%v'; continuing on with stopping other containers...", containerId)
-			logrus.Warn(err)
+			logrus.Errorf("An error occurred stopping container ID '%v'; proceeding to stop other containers:", containerId)
+			logrus.Error(err)
 		}
 		logrus.Debugf("Container with ID '%v' successfully stopped", containerId)
 	}

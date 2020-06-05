@@ -18,9 +18,6 @@ func NewTestController(testSuite testsuite.TestSuite) *TestController {
 }
 
 func (controller TestController) RunTests(testName string, networkInfoFilepath string) (bool, error) {
-	// TODO create a TestSuiteContext object for returning the state of all the tests
-
-	// TODO run multiple tests
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
@@ -44,12 +41,17 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
 
-	networkLoader := test.GetNetworkLoader()
-
-	networkCfg, err := networkLoader.GetNetworkConfig()
+	networkLoader, err := test.GetNetworkLoader()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get test network config")
+		return false, stacktrace.Propagate(err, "Could not get network loader")
 	}
+
+	builder := networks.NewServiceNetworkConfigBuilder()
+	if err := networkLoader.ConfigureNetwork(builder); err != nil {
+		return false, stacktrace.Propagate(err, "Could not configure network")
+	}
+	networkCfg := builder.Build()
+
 	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not load network from raw service information")
@@ -65,6 +67,6 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 		}
 	}()
 
-	// TODO return a TestSuiteResults object that provides detailed info about each test?
+	// Should we return a TestSuiteResults object that provides detailed info about each test?
 	return testSucceeded, nil
 }

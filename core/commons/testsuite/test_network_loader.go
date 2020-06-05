@@ -7,7 +7,7 @@ import (
 
 // This class is intended to provide an easy place to capture the specifics of configuring a network
 type TestNetworkLoader interface {
-	GetNetworkConfig() (*networks.ServiceNetworkConfig, error)
+	ConfigureNetwork(builder *networks.ServiceNetworkConfigBuilder) error
 
 	// TODO When Go has generics, make the input and output types parameterized
 	// Wraps the map of service_id -> service with a user-custom object representing the network, so the user can expose
