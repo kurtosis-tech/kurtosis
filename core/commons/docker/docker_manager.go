@@ -171,14 +171,16 @@ Blocks until the given container exits.
 func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, err error) {
 	statusChannel, errChannel := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
 
+	// Blocks until one of the channels returns
 	select {
-	case err := <-errChannel:
-		if err != nil {
-			return 1, stacktrace.Propagate(err, "Failed to wait for container to return.")
-		}
+	case channErr := <-errChannel:
+		exitCode = 1
+		err = stacktrace.Propagate(channErr, "Failed to wait for container to return.")
 	case status := <-statusChannel:
-		return status.StatusCode, nil
+		exitCode = status.StatusCode
+		err = nil
 	}
+	return
 }
 
 
