@@ -168,17 +168,17 @@ func (manager DockerManager) StopContainer(containerId string, timeout *time.Dur
 /*
 Blocks until the given container exits.
  */
-func (manager DockerManager) WaitForExit(containerId string) (err error) {
-	statusCh, errCh := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
+func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, err error) {
+	statusChannel, errChannel := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
 
 	select {
-	case err := <-errCh:
+	case err := <-errChannel:
 		if err != nil {
-			return stacktrace.Propagate(err, "Failed to wait for container to return.")
+			return 1, stacktrace.Propagate(err, "Failed to wait for container to return.")
 		}
-	case <-statusCh:
+	case status := <-statusChannel:
+		return status.StatusCode, nil
 	}
-	return nil
 }
 
 
