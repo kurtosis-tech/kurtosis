@@ -60,12 +60,17 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 
 	testSucceeded := true
 	context := testsuite.TestContext{}
-	test.Run(untypedNetwork, context)
+
+	// TODO test that this panic recovery actually works!
 	defer func() {
 		if result := recover(); result != nil {
+			resultErr := result.(error)
+			logrus.Errorf("Error when running test: %v", testName)
+			logrus.Error(resultErr.Error())
 			testSucceeded = false
 		}
 	}()
+	test.Run(untypedNetwork, context)
 
 	// Should we return a TestSuiteResults object that provides detailed info about each test?
 	return testSucceeded, nil

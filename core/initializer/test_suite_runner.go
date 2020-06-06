@@ -113,20 +113,16 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
-		logrus.Infof("Running test: %v", testName)
+		logrus.Infof("---------------------------------- %v --------------------------------", testName)
 		networkLoader, err := test.GetNetworkLoader()
 		if err != nil {
-			logrus.Error("An error occurred getting the network loader:")
-			logrus.Error(err)
-			testResults[testName] = ERRORED
+			testResults[testName] = logTestResult(testName, err, false)
 			continue
 		}
 
 		builder := networks.NewServiceNetworkConfigBuilder()
 		if err := networkLoader.ConfigureNetwork(builder); err != nil {
-			logrus.Error("An error occurred configuring the test network:")
-			logrus.Error(err)
-			testResults[testName] = ERRORED
+			testResults[testName] = logTestResult(testName, err, false)
 			continue
 		}
 		testNetworkCfg := builder.Build()
@@ -134,17 +130,12 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		logrus.Infof("Creating network for test...")
 		publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
 		if err != nil {
-			logrus.Error("An error occurred creating the free IP provider:")
-			logrus.Error(err)
-			testResults[testName] = ERRORED
+			testResults[testName] = logTestResult(testName, err, false)
 			continue
 		}
 		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
 		if err != nil {
-			logrus.Error("An error occurred creating the test network:")
-			logrus.Error(err)
-			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-			testResults[testName] = ERRORED
+			testResults[testName] = logTestResult(testName, err, false)
 			continue
 		}
 		logrus.Info("Network created successfully")
@@ -157,19 +148,12 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 			testName,
 			executionInstanceId)
 		if err != nil {
-			logrus.Error("An error occurred running the test controller:")
-			logrus.Error(err)
+			testResults[testName] = logTestResult(testName, err, false)
 			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-			testResults[testName] = ERRORED
 			continue
 		}
 		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-
-		if testPassed {
-			testResults[testName] = PASSED
-		} else {
-			testResults[testName] = FAILED
-		}
+		testResults[testName] = logTestResult(testName, nil, testPassed)
 		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
 		// TODO after printing logs, delete each container
 	}
@@ -179,6 +163,33 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 
 // ======================== Private helper functions =====================================
 
+/*
+Handles determining the proper test status and logging it.
+Returns the TestResult for convenience.
+ */
+func logTestResult(testName string, err error, testPassed bool) TestResult {
+	var result TestResult
+	if err != nil {
+		result = ERRORED
+	} else {
+		if testPassed {
+			result = PASSED
+		} else {
+			result = FAILED
+		}
+	}
+
+	switch result {
+	case ERRORED:
+		logrus.Warnf("Test %v %v", testName, result)
+		logrus.Warnf("Error reason: %v", err)
+	case PASSED:
+		logrus.Infof("Test %v %v", testName, result)
+	case FAILED:
+		logrus.Warnf("Test %v %v", testName, result)
+	}
+	return result
+}
 
 
 /*
