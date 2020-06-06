@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	CONTAINER_SERVICE_INFO_MOUNTED_DIR = "/data/service/"
-	SERVICE_DATA_DIR_ARG = "SERVICE_DATA_DIR"
+	CONTAINER_SERVICE_DATA_DIR = "/data/service/"
 )
 
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
@@ -30,7 +29,7 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs := initializer.core.GetStartCommand(staticIp, dependencies)
+	startCmdArgs := initializer.core.GetStartCommand(staticIp, CONTAINER_SERVICE_DATA_DIR, dependencies)
 	usedPorts := initializer.core.GetUsedPorts()
 
 	filepathsToMount := initializer.core.GetFilepathsToMount()
@@ -49,13 +48,10 @@ func (initializer ServiceInitializer) CreateService(
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
 		filePointer.Close()
-		bindMounts[filePointer.Name()] = CONTAINER_SERVICE_INFO_MOUNTED_DIR + filePath
+		bindMounts[filePointer.Name()] = CONTAINER_SERVICE_DATA_DIR + filePath
 	}
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
-	}
-	envVariables := map[string]string{
-		SERVICE_DATA_DIR_ARG: CONTAINER_SERVICE_INFO_MOUNTED_DIR,
 	}
 
 	// TODO mount volumes when we want services to read/write state to disk
@@ -67,7 +63,7 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp,
 			usedPorts,
 			startCmdArgs,
-			envVariables,
+			make(map[string]string),
 			// TODO pass in the mappings for each tempfile -> user-desired mount location
 			bindMounts)
 	if err != nil {
