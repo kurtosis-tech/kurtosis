@@ -18,9 +18,6 @@ func NewTestController(testSuite testsuite.TestSuite) *TestController {
 }
 
 func (controller TestController) RunTests(testName string, networkInfoFilepath string) (bool, error) {
-	// TODO create a TestSuiteContext object for returning the state of all the tests
-
-	// TODO run multiple tests
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
@@ -43,20 +40,38 @@ func (controller TestController) RunTests(testName string, networkInfoFilepath s
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
-	untypedNetwork, err := test.GetNetworkLoader().LoadNetwork(rawServiceNetwork.ServiceIPs)
+
+	networkLoader, err := test.GetNetworkLoader()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Unable to load network from service IPs")
+		return false, stacktrace.Propagate(err, "Could not get network loader")
 	}
+
+	builder := networks.NewServiceNetworkConfigBuilder()
+	if err := networkLoader.ConfigureNetwork(builder); err != nil {
+		return false, stacktrace.Propagate(err, "Could not configure network")
+	}
+	networkCfg := builder.Build()
+
+	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not load network from raw service information")
+	}
+	untypedNetwork, err := networkLoader.WrapNetwork(serviceNetwork)
 
 	testSucceeded := true
 	context := testsuite.TestContext{}
-	test.Run(untypedNetwork, context)
+
+	// TODO test that this panic recovery actually works!
 	defer func() {
 		if result := recover(); result != nil {
+			resultErr := result.(error)
+			logrus.Errorf("Error when running test: %v", testName)
+			logrus.Error(resultErr.Error())
 			testSucceeded = false
 		}
 	}()
+	test.Run(untypedNetwork, context)
 
-	// TODO return a TestSuiteResults object that provides detailed info about each test?
+	// Should we return a TestSuiteResults object that provides detailed info about each test?
 	return testSucceeded, nil
 }
