@@ -28,7 +28,7 @@ func (initializer ServiceInitializer) CreateService(
 	startCmdArgs := initializer.core.GetStartCommand(staticIp, dependencies)
 	usedPorts := initializer.core.GetUsedPorts()
 
-	filepathsToMount := factory.config.GetFilepathsToMount()
+	filepathsToMount := initializer.core.GetFilepathsToMount()
 	logrus.Debugf("Filepaths to mount: %+v", filepathsToMount)
 	osFiles := make(map[string]*os.File)
 	for filePath, _ := range filepathsToMount {
@@ -40,7 +40,7 @@ func (initializer ServiceInitializer) CreateService(
 	}
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
-	factory.config.InitializeMountedFiles(osFiles)
+	initializer.core.InitializeMountedFiles(osFiles)
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
