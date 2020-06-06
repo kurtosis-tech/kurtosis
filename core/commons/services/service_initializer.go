@@ -10,7 +10,7 @@ import (
 
 const (
 	CONTAINER_SERVICE_INFO_MOUNTED_DIR = "/data/service/"
-	SERVICE_DATA_DIR_ARG = "SERVICE_DATA_FILEPATH"
+	SERVICE_DATA_DIR_ARG = "SERVICE_DATA_DIR"
 )
 
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
