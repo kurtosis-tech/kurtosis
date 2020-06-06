@@ -18,6 +18,6 @@ type ServiceInitializerCore interface {
 
 	GetFilepathsToMount() map[string]bool
 
-	InitializeMountedFiles(mountedFiles map[string]*os.File)
+	InitializeMountedFiles(mountedFiles map[string]*os.File) error
 }
 

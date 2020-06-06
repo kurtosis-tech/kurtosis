@@ -40,7 +40,13 @@ func (initializer ServiceInitializer) CreateService(
 	}
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
-	initializer.core.InitializeMountedFiles(osFiles)
+	err := initializer.core.InitializeMountedFiles(osFiles)
+	for _, filePointer := range osFiles {
+		filePointer.Close()
+	}
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
+	}
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
