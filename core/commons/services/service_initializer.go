@@ -47,7 +47,7 @@ func (initializer ServiceInitializer) CreateService(
 	}
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
-	err = initializer.core.InitializeMountedFiles(osFiles)
+	err = initializer.core.InitializeMountedFiles(osFiles, dependencies)
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
 		filePointer.Close()
