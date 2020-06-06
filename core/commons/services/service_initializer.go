@@ -3,7 +3,6 @@ package services
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 )
@@ -34,9 +33,8 @@ func (initializer ServiceInitializer) CreateService(
 		return nil, "", stacktrace.Propagate(err, "Failed to create start command.")
 	}
 	usedPorts := initializer.core.GetUsedPorts()
-
 	filepathsToMount := initializer.core.GetFilepathsToMount()
-	logrus.Debugf("Filepaths to mount: %+v", filepathsToMount)
+
 	osFiles := make(map[string]*os.File)
 	for filePath, _ := range filepathsToMount {
 		tmpFile, err := ioutil.TempFile("", filePath)
