@@ -29,7 +29,10 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs := initializer.core.GetStartCommand(staticIp, CONTAINER_SERVICE_DATA_DIR, dependencies)
+	startCmdArgs, err := initializer.core.GetStartCommand(staticIp, CONTAINER_SERVICE_DATA_DIR, dependencies)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "Failed to create start command.")
+	}
 	usedPorts := initializer.core.GetUsedPorts()
 
 	filepathsToMount := initializer.core.GetFilepathsToMount()
@@ -44,7 +47,7 @@ func (initializer ServiceInitializer) CreateService(
 	}
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
-	err := initializer.core.InitializeMountedFiles(osFiles)
+	err = initializer.core.InitializeMountedFiles(osFiles)
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
 		filePointer.Close()

@@ -17,8 +17,8 @@ func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestInitializerCore) GetStartCommand(publicIpAddr string, serviceDataDir string, dependencies []services.Service) []string {
-	return make([]string, 0)
+func (t TestInitializerCore) GetStartCommand(publicIpAddr string, serviceDataDir string, dependencies []services.Service) ([]string, error) {
+	return make([]string, 0), nil
 }
 
 func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
