@@ -30,7 +30,8 @@ func (t TestInitializerCore) GetFilepathsToMount() map[string]bool {
 	return make(map[string]bool)
 }
 
-func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]*os.File) {
+func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]*os.File) error {
+	return nil
 }
 
 func getTestInitializerCore() services.ServiceInitializerCore {

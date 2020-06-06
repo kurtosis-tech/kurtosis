@@ -8,6 +8,11 @@ import (
 	"os"
 )
 
+const (
+	CONTAINER_SERVICE_INFO_MOUNTED_DIR = "/data/service/"
+	SERVICE_DATA_DIR_ARG = "SERVICE_DATA_FILEPATH"
+)
+
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
 	core ServiceInitializerCore
@@ -41,11 +46,16 @@ func (initializer ServiceInitializer) CreateService(
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
 	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
 	err := initializer.core.InitializeMountedFiles(osFiles)
-	for _, filePointer := range osFiles {
+	bindMounts := make(map[string]string)
+	for filePath, filePointer := range osFiles {
 		filePointer.Close()
+		bindMounts[filePointer.Name()] = CONTAINER_SERVICE_INFO_MOUNTED_DIR + filePath
 	}
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
+	}
+	envVariables := map[string]string{
+		SERVICE_DATA_DIR_ARG: CONTAINER_SERVICE_INFO_MOUNTED_DIR,
 	}
 
 	// TODO mount volumes when we want services to read/write state to disk
@@ -57,9 +67,9 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp,
 			usedPorts,
 			startCmdArgs,
-			make(map[string]string),
+			envVariables,
 			// TODO pass in the mappings for each tempfile -> user-desired mount location
-			make(map[string]string))
+			bindMounts)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
