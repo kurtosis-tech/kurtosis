@@ -40,6 +40,7 @@ func (initializer ServiceInitializer) CreateService(
 		if err != nil {
 			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store info for passing to test controller at %s", tmpFileNameOnHost)
 		}
+		defer tmpFile.Close()
 		osFiles[filePath] = tmpFile
 	}
 	// TODO create a temp file on the parent host, just like we do for the controller's network info file
@@ -47,7 +48,6 @@ func (initializer ServiceInitializer) CreateService(
 	err = initializer.core.InitializeMountedFiles(osFiles, dependencies)
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
-		filePointer.Close()
 		bindMounts[filePointer.Name()] = filePath
 	}
 	if err != nil {
