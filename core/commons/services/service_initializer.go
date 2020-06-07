@@ -5,6 +5,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 
@@ -34,7 +35,8 @@ func (initializer ServiceInitializer) CreateService(
 
 	osFiles := make(map[string]*os.File)
 	for filePath, _ := range filepathsToMount {
-		tmpFile, err := ioutil.TempFile("", filePath)
+		tmpFileNameOnHost := strings.ReplaceAll(filePath, "/", "_")
+		tmpFile, err := ioutil.TempFile("", tmpFileNameOnHost)
 		if err != nil {
 			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store info for passing to test controller")
 		}
