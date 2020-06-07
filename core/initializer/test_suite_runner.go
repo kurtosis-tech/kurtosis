@@ -249,7 +249,6 @@ func runControllerContainer(
 	containerLogInfoMountpoint := CONTAINER_LOG_INFO_MOUNTED_FILEPATH
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
-		// TODO just for testing; replace with a dynamic filename
 		NETWORK_FILEPATH_ARG: containerNetworkInfoMountpoint,
 		LOG_FILEPATH_ARG: containerLogInfoMountpoint,
 	}
