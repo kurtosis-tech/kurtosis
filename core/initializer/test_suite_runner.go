@@ -244,6 +244,7 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
+	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
 	containerNetworkInfoMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
 	containerLogInfoMountpoint := CONTAINER_LOG_INFO_MOUNTED_FILEPATH
