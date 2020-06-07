@@ -3,33 +3,55 @@ package networks
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"gotest.tools/assert"
+	"os"
 	"testing"
+	"time"
 )
 
 
 type TestService struct {}
 
-type TestFactoryConfig struct {}
-func (t TestFactoryConfig) GetDockerImage() string {
-	return "TEST"
-}
-
-func (t TestFactoryConfig) GetUsedPorts() map[int]bool {
+// ======================== Test Initializer Core ========================
+type TestInitializerCore struct {}
+func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestFactoryConfig) GetStartCommand(publicIpAddr string, dependencies []services.Service) []string {
-	return make([]string, 0)
+func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) ([]string, error) {
+	return make([]string, 0), nil
 }
 
-func (t TestFactoryConfig) GetServiceFromIp(ipAddr string) services.Service {
+func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
 
-func getTestServiceFactory() *services.ServiceFactory {
-	return services.NewServiceFactory(TestFactoryConfig{})
+
+func (t TestInitializerCore) GetFilepathsToMount() map[string]bool {
+	return make(map[string]bool)
 }
 
+func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]*os.File, dependencies []services.Service) error {
+	return nil
+}
+
+func getTestInitializerCore() services.ServiceInitializerCore {
+	return TestInitializerCore{}
+}
+
+
+// ======================== Test Availability Checker Core ========================
+type TestAvailabilityCheckerCore struct {}
+func (t TestAvailabilityCheckerCore) IsServiceUp(toCheck services.Service, dependencies []services.Service) bool {
+	return true
+}
+func (t TestAvailabilityCheckerCore) GetTimeout() time.Duration {
+	return 30 * time.Second
+}
+func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
+	return TestAvailabilityCheckerCore{}
+}
+
+// ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
 	_, err := builder.AddService(0, make(map[int]bool))
@@ -40,7 +62,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	dependencies := map[int]bool{
 		0: true,
@@ -56,7 +78,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -70,7 +92,7 @@ func TestIdsDifferent(t *testing.T) {
 
 func TestDependencyBookkeeping(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	svc1, err := builder.AddService(config, make(map[int]bool))
 	if err != nil {
@@ -136,7 +158,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	config := builder.AddServiceConfiguration(*getTestServiceFactory())
+	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	dependencyMap := make(map[int]bool)
 	svc1, err := builder.AddService(config, dependencyMap)
@@ -146,7 +168,7 @@ func TestDefensiveCopies(t *testing.T) {
 
 	networkConfig := builder.Build()
 
-	_ = builder.AddServiceConfiguration(*getTestServiceFactory())
+	_ = builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 	_, err = builder.AddService(config, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
@@ -163,5 +185,3 @@ func TestDefensiveCopies(t *testing.T) {
 
 	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }
-
-

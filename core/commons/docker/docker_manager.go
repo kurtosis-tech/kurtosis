@@ -168,17 +168,19 @@ func (manager DockerManager) StopContainer(containerId string, timeout *time.Dur
 /*
 Blocks until the given container exits.
  */
-func (manager DockerManager) WaitForExit(containerId string) (err error) {
-	statusCh, errCh := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
+func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, err error) {
+	statusChannel, errChannel := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
 
+	// Blocks until one of the channels returns
 	select {
-	case err := <-errCh:
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to wait for container to return.")
-		}
-	case <-statusCh:
+	case channErr := <-errChannel:
+		exitCode = 1
+		err = stacktrace.Propagate(channErr, "Failed to wait for container to return.")
+	case status := <-statusChannel:
+		exitCode = status.StatusCode
+		err = nil
 	}
-	return nil
+	return
 }
 
 
@@ -312,10 +314,6 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		// TODO we should set this to true so we can nicely clean ourselves up, BUT we need a way to:
-		//  1) attach to teh test controller so we get its logs
-		//  2) get the logs from the services
-		AutoRemove: false,
 		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
 		// TODO see note above about volumes
