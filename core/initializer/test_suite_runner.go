@@ -287,7 +287,8 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
 	}
-	logrus.Infof("Controller log: %s", string(buf))
+	logrus.Infof("Printing Controller logs:")
+	logrus.Info(string(buf))
 
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
