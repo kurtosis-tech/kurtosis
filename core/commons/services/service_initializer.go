@@ -36,7 +36,7 @@ func (initializer ServiceInitializer) CreateService(
 	for filePath, _ := range filepathsToMount {
 		tmpFile, err := ioutil.TempFile("", filePath)
 		if err != nil {
-			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
+			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store info for passing to test controller")
 		}
 		osFiles[filePath] = tmpFile
 	}
