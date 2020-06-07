@@ -36,10 +36,12 @@ const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
 	CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH = "/data/network/network-info"
+	CONTAINER_LOG_INFO_MOUNTED_FILEPATH = "/data/service/container-log"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_NAME_BASH_ARG = "TEST_NAME"
 	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
+	LOG_FILEPATH_ARG = "LOG_FILEPATH"
 
 	// How long to wait before force-killing a container
 	CONTAINER_STOP_TIMEOUT = 30 * time.Second
@@ -219,28 +221,37 @@ func runControllerContainer(
 	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
 	//  out from underneath the test??
 	testNetworkInfoFilename := fmt.Sprintf("%v-%v", testName, executionUuid.String())
-	tmpfile, err := ioutil.TempFile("", testNetworkInfoFilename)
+	networkInfoTmpFile, err := ioutil.TempFile("", testNetworkInfoFilename)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
 	}
 
-	logrus.Debugf("Temp filepath to write network file to: %v", tmpfile.Name())
+	logrus.Debugf("Temp filepath to write network file to: %v", networkInfoTmpFile.Name())
 	logrus.Debugf("Raw service network contents: %v", rawServiceNetwork)
 
-	encoder := gob.NewEncoder(tmpfile)
+	encoder := gob.NewEncoder(networkInfoTmpFile)
 	err = encoder.Encode(rawServiceNetwork)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not write service network state to file")
 	}
 	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
-	//  but because this is a tmpfile we don't fuss about checking them
-	defer tmpfile.Close()
+	//  but because this is a networkInfoTmpFile we don't fuss about checking them
+	defer networkInfoTmpFile.Close()
 
-	containerMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
+	testControllerLogFilename := fmt.Sprintf("%v-%v-%s", testName, executionUuid.String(), "logs")
+	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
+	}
+	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
+
+	containerNetworkInfoMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
+	containerLogInfoMountpoint := CONTAINER_LOG_INFO_MOUNTED_FILEPATH
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG: testName,
 		// TODO just for testing; replace with a dynamic filename
-		NETWORK_FILEPATH_ARG: containerMountpoint,
+		NETWORK_FILEPATH_ARG: containerNetworkInfoMountpoint,
+		LOG_FILEPATH_ARG: containerLogInfoMountpoint,
 	}
 
 	ipAddr, err := ipProvider.GetFreeIpAddr()
@@ -255,7 +266,8 @@ func runControllerContainer(
 		nil, // Use the default image CMD (which is parameterized)
 		envVariables,
 		map[string]string{
-			tmpfile.Name(): containerMountpoint,
+			networkInfoTmpFile.Name(): containerNetworkInfoMountpoint,
+			logTmpFile.Name():         containerLogInfoMountpoint,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
@@ -268,7 +280,15 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
+
 	logrus.Info("Controller container exited successfully")
+	logTmpFile.Close()
+	buf, err := ioutil.ReadFile(logTmpFile.Name())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
+	}
+	logrus.Infof("Printing Controller logs:")
+	logrus.Info(string(buf))
 
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
