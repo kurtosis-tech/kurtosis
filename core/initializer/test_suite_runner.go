@@ -260,7 +260,7 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
 	}
-	logrus.Info("Controller container started successfully")
+	logrus.Infof("Controller container started successfully with id %s", controllerContainerId)
 
 	logrus.Info("Waiting for controller container to exit...")
 	// TODO add a timeout here if the test doesn't complete successfully

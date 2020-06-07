@@ -3,6 +3,7 @@ package networks
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"gotest.tools/assert"
+	"os"
 	"testing"
 	"time"
 )
@@ -16,16 +17,27 @@ func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) []string {
-	return make([]string, 0)
+func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) ([]string, error) {
+	return make([]string, 0), nil
 }
 
 func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
+
+
+func (t TestInitializerCore) GetFilepathsToMount() map[string]bool {
+	return make(map[string]bool)
+}
+
+func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]*os.File, dependencies []services.Service) error {
+	return nil
+}
+
 func getTestInitializerCore() services.ServiceInitializerCore {
 	return TestInitializerCore{}
 }
+
 
 // ======================== Test Availability Checker Core ========================
 type TestAvailabilityCheckerCore struct {}
@@ -173,5 +185,3 @@ func TestDefensiveCopies(t *testing.T) {
 
 	// TODO test that the dependencies in the GetStartCommand are what we expect!
 }
-
-

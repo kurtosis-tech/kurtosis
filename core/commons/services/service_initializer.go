@@ -3,7 +3,11 @@ package services
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"io/ioutil"
+	"os"
+	"strings"
 )
+
 
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
@@ -22,8 +26,32 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs := initializer.core.GetStartCommand(staticIp, dependencies)
+	startCmdArgs, err := initializer.core.GetStartCommand(staticIp, dependencies)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "Failed to create start command.")
+	}
 	usedPorts := initializer.core.GetUsedPorts()
+	filepathsToMount := initializer.core.GetFilepathsToMount()
+
+	osFiles := make(map[string]*os.File)
+	for filePath, _ := range filepathsToMount {
+		tmpFileNameOnHost := strings.ReplaceAll(filePath, "/", "_")
+		tmpFile, err := ioutil.TempFile("", tmpFileNameOnHost)
+		if err != nil {
+			return nil, "", stacktrace.Propagate(err, "Could not create tempfile to store info for passing to test controller at %s", tmpFileNameOnHost)
+		}
+		defer tmpFile.Close()
+		osFiles[filePath] = tmpFile
+	}
+
+	err = initializer.core.InitializeMountedFiles(osFiles, dependencies)
+	bindMounts := make(map[string]string)
+	for filePath, filePointer := range osFiles {
+		bindMounts[filePointer.Name()] = filePath
+	}
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
+	}
 
 	// TODO mount volumes when we want services to read/write state to disk
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
@@ -35,7 +63,7 @@ func (initializer ServiceInitializer) CreateService(
 			usedPorts,
 			startCmdArgs,
 			make(map[string]string),
-			make(map[string]string))
+			bindMounts)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
