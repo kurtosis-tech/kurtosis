@@ -17,7 +17,7 @@ func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestInitializerCore) GetStartCommand(publicIpAddr string, serviceDataDir string, dependencies []services.Service) ([]string, error) {
+func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) ([]string, error) {
 	return make([]string, 0), nil
 }
 

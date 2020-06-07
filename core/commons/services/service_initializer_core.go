@@ -11,7 +11,7 @@ type ServiceInitializerCore interface {
 
 	// TODO when Go gets generics, make the type of 'dependencies' to be []N
 	// If Go had generics, dependencies should be of type []T
-	GetStartCommand(publicIpAddr string, serviceDataDir string, dependencies []Service) ([]string, error)
+	GetStartCommand(publicIpAddr string, dependencies []Service) ([]string, error)
 
 	// TODO When Go has generics, make this return type to be S
 	GetServiceFromIp(ipAddr string) Service

@@ -7,9 +7,6 @@ import (
 	"os"
 )
 
-const (
-	CONTAINER_SERVICE_DATA_DIR = "/data/service/"
-)
 
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
@@ -28,7 +25,7 @@ func (initializer ServiceInitializer) CreateService(
 			staticIp string,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
-	startCmdArgs, err := initializer.core.GetStartCommand(staticIp, CONTAINER_SERVICE_DATA_DIR, dependencies)
+	startCmdArgs, err := initializer.core.GetStartCommand(staticIp, dependencies)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Failed to create start command.")
 	}
@@ -49,7 +46,7 @@ func (initializer ServiceInitializer) CreateService(
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
 		filePointer.Close()
-		bindMounts[filePointer.Name()] = CONTAINER_SERVICE_DATA_DIR + filePath
+		bindMounts[filePointer.Name()] = filePath
 	}
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
