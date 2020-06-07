@@ -1,6 +1,7 @@
 package initializer
 
 import (
+	"bytes"
 	"context"
 	"encoding/gob"
 	"fmt"
@@ -239,7 +240,7 @@ func runControllerContainer(
 	defer networkInfoTmpFile.Close()
 
 	testControllerLogFilename := fmt.Sprintf("%v-%v-%s", testName, executionUuid.String(), "logs")
-	logTmpfile, err := ioutil.TempFile("", testControllerLogFilename)
+	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
@@ -266,7 +267,7 @@ func runControllerContainer(
 		envVariables,
 		map[string]string{
 			networkInfoTmpFile.Name(): containerNetworkInfoMountpoint,
-			logTmpfile.Name(): containerLogInfoMountpoint,
+			logTmpFile.Name():         containerLogInfoMountpoint,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
@@ -279,7 +280,11 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
+
 	logrus.Info("Controller container exited successfully")
+	buf := bytes.NewBuffer(nil)
+	logTmpFile.ReadAt(buf.Bytes(), 0)
+	logrus.Infof("Controller log: %s", buf.String())
 
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
