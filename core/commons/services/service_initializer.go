@@ -43,8 +43,7 @@ func (initializer ServiceInitializer) CreateService(
 		defer tmpFile.Close()
 		osFiles[filePath] = tmpFile
 	}
-	// TODO create a temp file on the parent host, just like we do for the controller's network info file
-	// TODO call factory.config.InitializeMountedFiles to fill in the file contents (closing the temporary file after)
+
 	err = initializer.core.InitializeMountedFiles(osFiles, dependencies)
 	bindMounts := make(map[string]string)
 	for filePath, filePointer := range osFiles {
@@ -64,7 +63,6 @@ func (initializer ServiceInitializer) CreateService(
 			usedPorts,
 			startCmdArgs,
 			make(map[string]string),
-			// TODO pass in the mappings for each tempfile -> user-desired mount location
 			bindMounts)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
