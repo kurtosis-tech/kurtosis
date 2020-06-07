@@ -1,7 +1,6 @@
 package initializer
 
 import (
-	"bytes"
 	"context"
 	"encoding/gob"
 	"fmt"
@@ -283,9 +282,12 @@ func runControllerContainer(
 	}
 
 	logrus.Info("Controller container exited successfully")
-	buf := bytes.NewBuffer(nil)
-	logTmpFile.ReadAt(buf.Bytes(), 0)
-	logrus.Infof("Controller log: %s", buf.String())
+	logTmpFile.Close()
+	buf, err := ioutil.ReadFile(logTmpFile.Name())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
+	}
+	logrus.Infof("Controller log: %s", string(buf))
 
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
