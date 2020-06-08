@@ -31,9 +31,6 @@ type ServiceNetworkConfigBuilder struct {
 	// and, when they're all up, the entire network is ready
 	onlyDependentServices map[int]bool
 
-	// Tracks the next service ID that will be doled out upon a call to AddService
-	nextServiceId int
-
 	// Factories that will be used to construct the nodes at build time
 	configurations map[int]serviceConfig
 
@@ -54,7 +51,6 @@ func NewServiceNetworkConfigBuilder() *ServiceNetworkConfigBuilder {
 		serviceDependencies: serviceDependencies,
 		servicesStartOrder:  serviceStartOrder,
 		onlyDependentServices: onlyDependentServices,
-		nextServiceId:       0,
 		configurations: 	 configurations,
 		nextConfigurationId: 0,
 	}
@@ -107,8 +103,6 @@ func (builder *ServiceNetworkConfigBuilder) AddService(networkConfigurationId in
 		dependenciesCopy[dependencyId] = true
 	}
 
-	serviceId := builder.nextServiceId
-	builder.nextServiceId = builder.nextServiceId + 1
 	builder.serviceConfigs[serviceId] = networkConfigurationId
 
 	builder.onlyDependentServices[serviceId] = true
