@@ -103,8 +103,8 @@ func (builder *ServiceNetworkConfigBuilder) AddService(serviceConfigurationId in
 		dependenciesCopy[dependencyId] = true
 	}
 
-	if networkId, exists := builder.serviceConfigs[serviceId]; exists {
-		return 0, stacktrace.NewError("Service ID %d already registered in network with id %d", serviceId, networkId)
+	if _, exists := builder.serviceConfigs[serviceId]; exists {
+		return 0, stacktrace.NewError("Service ID %d is already registered with network.", serviceId)
 	}
 
 	builder.serviceConfigs[serviceId] = serviceConfigurationId
