@@ -81,12 +81,12 @@ func (builder *ServiceNetworkConfigBuilder) AddTestImageConfiguration(
 	return builder.AddStaticImageConfiguration(nil, initializerCore, availabilityCheckerCore)
 }
 
-// Adds a serivce to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
+// Adds a service to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns the ID of the service, to be used with future AddService calls to declare dependencies on the service
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
-func (builder *ServiceNetworkConfigBuilder) AddService(networkConfigurationId int, serviceId int, dependencies map[int]bool) (int, error) {
-	if _, found := builder.configurations[networkConfigurationId]; !found {
-		return 0, stacktrace.NewError("No network configuration with ID '%v' has been registered", networkConfigurationId)
+func (builder *ServiceNetworkConfigBuilder) AddService(serviceConfigurationId int, serviceId int, dependencies map[int]bool) (int, error) {
+	if _, found := builder.configurations[serviceConfigurationId]; !found {
+		return 0, stacktrace.NewError("No network configuration with ID '%v' has been registered", serviceConfigurationId)
 	}
 
 	if dependencies == nil {
@@ -107,7 +107,7 @@ func (builder *ServiceNetworkConfigBuilder) AddService(networkConfigurationId in
 		return 0, stacktrace.NewError("Service ID %d already registered in network with id %d", serviceId, networkId)
 	}
 
-	builder.serviceConfigs[serviceId] = networkConfigurationId
+	builder.serviceConfigs[serviceId] = serviceConfigurationId
 
 	builder.onlyDependentServices[serviceId] = true
 	for dependencyId, _ := range dependencies {
