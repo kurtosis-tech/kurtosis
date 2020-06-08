@@ -74,7 +74,23 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 	}
 }
 
-// TODO test configuration IDs get incremented!
+
+func TestConfigurationIdsDifferent(t *testing.T) {
+	testImage := "testImage"
+	idSet := make(map[int]bool)
+	builder := NewServiceNetworkConfigBuilder()
+	config1 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	idSet[config1] = true
+	config2 := builder.AddStaticImageConfiguration(&testImage, getTestInitializerCore(), getTestCheckerCore())
+	idSet[config2] = true
+	config3 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	idSet[config3] = true
+	config4 := builder.AddStaticImageConfiguration(&testImage, getTestInitializerCore(), getTestCheckerCore())
+	idSet[config4] = true
+	config5 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	idSet[config5] = true
+	assert.Assert(t, len(idSet) == 5, "IDs should be different.")
+}
 
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
