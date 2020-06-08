@@ -54,7 +54,7 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 // ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
-	_, err := builder.AddService(0, make(map[int]bool))
+	_, err := builder.AddService(0, 0, make(map[int]bool))
 	if err == nil {
 		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
 	}
@@ -68,7 +68,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 		0: true,
 	}
 
-	_, err := builder.AddService(config, dependencies)
+	_, err := builder.AddService(config, 0, dependencies)
 	if err == nil {
 		t.Fatal("Expected error when declaring a dependency on a service ID that doesn't exist")
 	}
@@ -95,11 +95,11 @@ func TestConfigurationIdsDifferent(t *testing.T) {
 func TestIdsDifferent(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
-	svc1, err := builder.AddService(config, make(map[int]bool))
+	svc1, err := builder.AddService(config, 1, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
-	svc2, err := builder.AddService(config, make(map[int]bool))
+	svc2, err := builder.AddService(config, 2, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -110,12 +110,12 @@ func TestDependencyBookkeeping(t *testing.T) {
 	builder := NewServiceNetworkConfigBuilder()
 	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
-	svc1, err := builder.AddService(config, make(map[int]bool))
+	svc1, err := builder.AddService(config, 1, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
 
-	svc2, err := builder.AddService(config, make(map[int]bool))
+	svc2, err := builder.AddService(config, 2, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -124,7 +124,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 		svc1: true,
 		svc2: true,
 	}
-	svc3, err := builder.AddService(config, svc3Deps)
+	svc3, err := builder.AddService(config, 3, svc3Deps)
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -133,7 +133,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 		svc1: true,
 		svc3: true,
 	}
-	svc4, err := builder.AddService(config, svc4Deps)
+	svc4, err := builder.AddService(config, 4, svc4Deps)
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -141,7 +141,7 @@ func TestDependencyBookkeeping(t *testing.T) {
 	svc5Deps := map[int]bool{
 		svc2: true,
 	}
-	svc5, err := builder.AddService(config, svc5Deps)
+	svc5, err := builder.AddService(config, 5, svc5Deps)
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -177,7 +177,7 @@ func TestDefensiveCopies(t *testing.T) {
 	config := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
 
 	dependencyMap := make(map[int]bool)
-	svc1, err := builder.AddService(config, dependencyMap)
+	svc1, err := builder.AddService(config, 1, dependencyMap)
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
@@ -185,7 +185,7 @@ func TestDefensiveCopies(t *testing.T) {
 	networkConfig := builder.Build()
 
 	_ = builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
-	_, err = builder.AddService(config, make(map[int]bool))
+	_, err = builder.AddService(config, 2, make(map[int]bool))
 	if err != nil {
 		t.Fatal("Add service shouldn't return error here")
 	}
