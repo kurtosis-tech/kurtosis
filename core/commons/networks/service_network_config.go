@@ -86,7 +86,7 @@ func (builder *ServiceNetworkConfigBuilder) AddTestImageConfiguration(
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
 func (builder *ServiceNetworkConfigBuilder) AddService(serviceConfigurationId int, serviceId int, dependencies map[int]bool) (int, error) {
 	if _, found := builder.configurations[serviceConfigurationId]; !found {
-		return 0, stacktrace.NewError("No network configuration with ID '%v' has been registered", serviceConfigurationId)
+		return 0, stacktrace.NewError("No service configuration with ID '%v' has been registered", serviceConfigurationId)
 	}
 
 	if dependencies == nil {
