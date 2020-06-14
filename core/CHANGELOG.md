@@ -1,3 +1,6 @@
+# 0.3.1
+* explicitly specify service IDs in network configurations
+
 # 0.3.0
 * Stop the node network after the test controller runs
 * Rename ServiceFactory(,Config) -> ServiceInitializer(,Core)
