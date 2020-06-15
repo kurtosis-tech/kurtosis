@@ -7,6 +7,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
+	"time"
 )
 
 type TestController struct {
@@ -17,61 +18,87 @@ func NewTestController(testSuite testsuite.TestSuite) *TestController {
 	return &TestController{testSuite: testSuite}
 }
 
-func (controller TestController) RunTests(testName string, networkInfoFilepath string) (bool, error) {
+func (controller TestController) RunTest(testName string, networkInfoFilepath string) (error) {
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
 	if !found {
-		return false, stacktrace.NewError("Nonexistent test: %v", testName)
+		return stacktrace.NewError("Nonexistent test: %v", testName)
 	}
 
 	if _, err := os.Stat(networkInfoFilepath); err != nil {
-		return false, stacktrace.Propagate(err, "Nonexistent file: %v", networkInfoFilepath)
+		return stacktrace.Propagate(err, "Nonexistent file: %v", networkInfoFilepath)
 	}
 
 	fp, err := os.Open(networkInfoFilepath)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not open file for reading: %v", networkInfoFilepath)
+		return stacktrace.Propagate(err, "Could not open file for reading: %v", networkInfoFilepath)
 	}
 	decoder := gob.NewDecoder(fp)
 
 	var rawServiceNetwork networks.RawServiceNetwork
 	err = decoder.Decode(&rawServiceNetwork)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
+		return stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
 	}
 
 	networkLoader, err := test.GetNetworkLoader()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get network loader")
+		return stacktrace.Propagate(err, "Could not get network loader")
 	}
 
 	builder := networks.NewServiceNetworkConfigBuilder()
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
-		return false, stacktrace.Propagate(err, "Could not configure network")
+		return stacktrace.Propagate(err, "Could not configure network")
 	}
 	networkCfg := builder.Build()
 
 	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not load network from raw service information")
+		return stacktrace.Propagate(err, "Could not load network from raw service information")
 	}
+
 	untypedNetwork, err := networkLoader.WrapNetwork(serviceNetwork)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error occurred wrapping network in user-defined network type")
+	}
 
-	testSucceeded := true
-	context := testsuite.TestContext{}
+	testResultChan := make(chan error)
 
-	// TODO test that this panic recovery actually works!
-	defer func() {
-		if result := recover(); result != nil {
-			resultErr := result.(error)
-			logrus.Errorf("Error when running test: %v", testName)
-			logrus.Error(resultErr.Error())
-			testSucceeded = false
-		}
+	go func() {
+		testResultChan <- runTest(test, untypedNetwork)
 	}()
-	test.Run(untypedNetwork, context)
+
+	// Time out the test so a poorly-written test doesn't run forever
+	testTimeout := test.GetTimeout()
+	var timedOut bool
+	var resultErr error
+	select {
+	case resultErr = <- testResultChan:
+		timedOut = false
+	case <- time.After(testTimeout):
+		timedOut = true
+	}
+
+	if timedOut {
+		return stacktrace.NewError("Timed out after %v waiting for test to complete", testTimeout)
+	}
+
+	if resultErr != nil {
+		return stacktrace.Propagate(err, "An error occurred when running the test")
+	}
 
 	// Should we return a TestSuiteResults object that provides detailed info about each test?
-	return testSucceeded, nil
+	return nil
+}
+
+// Little helper function meant to be run inside a goroutine that runs the test
+func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) {
+	defer func() {
+		if recoverResult := recover(); recoverResult != nil {
+			resultErr = recoverResult.(error)
+		}
+	}()
+	test.Run(untypedNetwork, testsuite.TestContext{})
+	return nil
 }
