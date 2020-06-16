@@ -28,8 +28,6 @@ type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
 	testServiceImageName    string
 	testControllerImageName string
-	startPortRange          int
-	endPortRange            int
 }
 
 const (
@@ -50,18 +48,11 @@ const (
 )
 
 
-func NewTestSuiteRunner(
-			testSuite testsuite.TestSuite,
-			testServiceImageName string,
-			testControllerImageName string,
-			startPortRange int,
-			endPortRange int) *TestSuiteRunner {
+func NewTestSuiteRunner(testSuite testsuite.TestSuite, testServiceImageName string, testControllerImageName string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
-		startPortRange:          startPortRange,
-		endPortRange:            endPortRange,
 	}
 }
 
