@@ -133,7 +133,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts, bindMounts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -182,23 +182,10 @@ func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, er
 	}
 	return
 }
-
-
-func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
-	freePortInt, err := manager.freeHostPortTracker.GetFreePort()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
-	port, err := nat.NewPort("tcp", strconv.Itoa(freePortInt))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
-	return &port, nil
-}
-
+/*
 func (manager DockerManager) getLocalHostIp() string {
 	return LOCAL_HOST_IP
-}
+}*/
 
 func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvailable bool, err error) {
 	referenceArg := filters.Arg("reference", imageName)
@@ -269,26 +256,7 @@ Args:
 	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
 	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted at container startup
  */
-func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bindMounts map[string]string) (hostConfig *container.HostConfig, err error) {
-	portMap := nat.PortMap{}
-	for port, _ := range usedPorts {
-		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not create port object fro port '%v'", port)
-		}
-
-		freeHostPort, err := manager.getFreePort()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not get a free host port!")
-		}
-
-		portMap[portObj] = []nat.PortBinding{
-			{
-				HostIP: manager.getLocalHostIp(),
-				HostPort: freeHostPort.Port(),
-			},
-		}
-	}
+func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 
 	// TODO we don't use volumes right now because binds are wayyyyyy simpler, but the Docker volume API was a
 	//   gigantic pain to figure out so I'm going to leave this here for now in case we do use them in the future
@@ -314,7 +282,6 @@ func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bin
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
 		// TODO see note above about volumes
 		// Mounts: mountsList,
