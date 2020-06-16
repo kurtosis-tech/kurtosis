@@ -27,10 +27,6 @@ type DockerManager struct {
 }
 
 func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
-
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
-	}
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
