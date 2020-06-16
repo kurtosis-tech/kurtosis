@@ -77,7 +77,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		return nil, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}

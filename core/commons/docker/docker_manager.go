@@ -18,30 +18,22 @@ import (
 )
 
 const (
-	LOCAL_HOST_IP = "127.0.0.1"
 	DOCKER_NETWORK_NAME ="kurtosis-bridge"
 )
 
 type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
-	freeHostPortTracker *FreeHostPortTracker
 }
 
-func NewDockerManager(
-	dockerCtx context.Context,
-	dockerClient *client.Client,
-	hostPortRangeStart int,
-	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
+func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 
-	freeHostPortTracker, err := NewFreeHostPortTracker(LOCAL_HOST_IP, hostPortRangeStart, hostPortRangeEnd)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
 	}
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
-		freeHostPortTracker: freeHostPortTracker,
 	}, nil
 }
 
@@ -182,10 +174,6 @@ func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, er
 	}
 	return
 }
-/*
-func (manager DockerManager) getLocalHostIp() string {
-	return LOCAL_HOST_IP
-}*/
 
 func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvailable bool, err error) {
 	referenceArg := filters.Arg("reference", imageName)
