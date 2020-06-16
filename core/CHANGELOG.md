@@ -1,3 +1,6 @@
+# TBD
+* removing freeHostPortTracker and all host-container port mappings
+
 # 0.3.1
 * explicitly specify service IDs in network configurations
 
