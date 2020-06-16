@@ -1,5 +1,6 @@
 # TBD
 * Make tests declare a timeout and mark them as failed if they don't complete in that time
+* Explicitly declare which IP will be the gateway IP in managed subnets
 
 # 0.3.1
 * explicitly specify service IDs in network configurations
