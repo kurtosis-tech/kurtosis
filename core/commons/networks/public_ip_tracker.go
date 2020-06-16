@@ -27,11 +27,6 @@ func NewFreeIpAddrTracker(subnetMask string) (ipAddrTracker *FreeIpAddrTracker, 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get gatewayIP for network %v.", ipv4Net)
 	}
-	// HACK: remove the first IP - by default Docker uses this as the gateway.
-	_, err = ipAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get gatewayIP for network %v.", ipv4Net)
-	}
 	return ipAddrTracker, nil
 }
 
