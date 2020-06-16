@@ -1,5 +1,6 @@
 # TBD
 * remove freeHostPortTracker and all host-container port mappings
+* Make tests declare a timeout and mark them as failed if they don't complete in that time
 
 # 0.3.1
 * explicitly specify service IDs in network configurations
