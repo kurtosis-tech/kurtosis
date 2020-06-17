@@ -108,12 +108,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
-	// TODO TODO TODO Support creating one network per testnet
-	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
-	}
-
 	// TODO break everything inside this for loop into its own function for readability
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
@@ -137,6 +131,16 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		if err != nil {
 			testResults[testName] = logTestResult(testName, err, false)
 			continue
+		}
+		gatewayIp, err := publicIpProvider.GetFreeIpAddr()
+		if err != nil {
+			testResults[testName] = logTestResult(testName, err, false)
+			continue
+		}
+		// TODO TODO TODO Support creating one network per testnet
+		_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK, gatewayIp)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
 		}
 		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
 		if err != nil {

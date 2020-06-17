@@ -21,16 +21,10 @@ func NewFreeIpAddrTracker(subnetMask string) (ipAddrTracker *FreeIpAddrTracker, 
 		subnet: ipv4Net,
 		takenIps: takenIps,
 	}
-	// TODO TODO TODO: Explicitly pass gatewayIP to Docker Network and count from there.
-	// HACK: remove the zeroth IP - Docker doesn't use this for container space..
+	// remove the zeroth IP - it's only for marking subnet addresses.
 	_, err = ipAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get gatewayIP for network %v.", ipv4Net)
-	}
-	// HACK: remove the first IP - by default Docker uses this as the gateway.
-	_, err = ipAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get gatewayIP for network %v.", ipv4Net)
+		return nil, stacktrace.Propagate(err, "Failed to remove zeroth IP.")
 	}
 	return ipAddrTracker, nil
 }

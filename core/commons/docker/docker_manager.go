@@ -33,7 +33,7 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (d
 	}, nil
 }
 
-func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) (id string, err error)  {
 	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
@@ -44,6 +44,7 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
+		Gateway: gatewayIP,
 	}}
 	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
 		Driver: "bridge",
