@@ -31,8 +31,6 @@ type TestSuiteRunner struct {
 
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
-	startPortRange          int
-	endPortRange            int
 }
 
 const (
@@ -61,16 +59,12 @@ func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
 			testServiceImageName string,
 			testControllerImageName string,
-			testControllerLogLevel string,
-			startPortRange int,
-			endPortRange int) *TestSuiteRunner {
+			testControllerLogLevel string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
 		testControllerLogLevel: testControllerLogLevel,
-		startPortRange:          startPortRange,
-		endPortRange:            endPortRange,
 	}
 }
 
@@ -86,7 +80,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		return nil, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient, runner.startPortRange, runner.endPortRange)
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error in initializing Docker Manager.")
 	}
