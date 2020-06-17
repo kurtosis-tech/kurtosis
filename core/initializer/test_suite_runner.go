@@ -28,6 +28,9 @@ type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
 	testServiceImageName    string
 	testControllerImageName string
+
+	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
+	testControllerLogLevel	string
 }
 
 const (
@@ -40,6 +43,7 @@ const (
 	TEST_NAME_BASH_ARG = "TEST_NAME"
 	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
 	LOG_FILEPATH_ARG = "LOG_FILEPATH"
+	LOG_LEVEL_ARG = "LOG_LEVEL"
 
 	// How long to wait before force-killing a container
 	CONTAINER_STOP_TIMEOUT = 30 * time.Second
@@ -48,11 +52,19 @@ const (
 )
 
 
-func NewTestSuiteRunner(testSuite testsuite.TestSuite, testServiceImageName string, testControllerImageName string) *TestSuiteRunner {
+/*
+Creates a new TestSuiteRunner with the following arguments
+ */
+func NewTestSuiteRunner(
+			testSuite testsuite.TestSuite,
+			testServiceImageName string,
+			testControllerImageName string,
+			testControllerLogLevel string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
+		testControllerLogLevel: testControllerLogLevel,
 	}
 }
 
@@ -137,6 +149,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 			dockerManager,
 			serviceNetwork,
 			runner.testControllerImageName,
+			runner.testControllerLogLevel,
 			publicIpProvider,
 			testName,
 			executionInstanceId)
@@ -204,6 +217,7 @@ func runControllerContainer(
 		manager *docker.DockerManager,
 		rawServiceNetwork *networks.RawServiceNetwork,
 		dockerImage string,
+		logLevel string,
 		ipProvider *networks.FreeIpAddrTracker,
 		testName string,
 		executionUuid uuid.UUID) (bool, error){
@@ -242,6 +256,7 @@ func runControllerContainer(
 		TEST_NAME_BASH_ARG: testName,
 		NETWORK_FILEPATH_ARG: containerNetworkInfoMountpoint,
 		LOG_FILEPATH_ARG: containerLogInfoMountpoint,
+		LOG_LEVEL_ARG: logLevel,
 	}
 
 	ipAddr, err := ipProvider.GetFreeIpAddr()
