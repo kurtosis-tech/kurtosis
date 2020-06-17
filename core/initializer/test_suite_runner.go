@@ -113,70 +113,25 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
 		logrus.Infof("---------------------------------- %v --------------------------------", testName)
-		networkLoader, err := test.GetNetworkLoader()
-		if err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			continue
-		}
-
-		builder := networks.NewServiceNetworkConfigBuilder()
-		if err := networkLoader.ConfigureNetwork(builder); err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			continue
-		}
-		testNetworkCfg := builder.Build()
-
-		logrus.Infof("Creating network for test...")
-		publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
-		if err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			continue
-		}
-		gatewayIp, err := publicIpProvider.GetFreeIpAddr()
-		if err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			continue
-		}
-		// TODO TODO TODO Support creating one network per testnet
-		_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK, gatewayIp)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error in creating docker subnet for testnet.")
-		}
-		serviceNetwork, err := testNetworkCfg.CreateNetwork(runner.testServiceImageName, publicIpProvider, dockerManager)
-		if err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			continue
-		}
-		logrus.Info("Network created successfully")
-
-		testPassed, err := runControllerContainer(
+		testPassed, err := runTest(
 			dockerManager,
-			serviceNetwork,
 			runner.testControllerImageName,
 			runner.testControllerLogLevel,
-			publicIpProvider,
+			executionInstanceId,
+			runner.testServiceImageName,
 			testName,
-			executionInstanceId)
-		if err != nil {
-			testResults[testName] = logTestResult(testName, err, false)
-			stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-			continue
-		}
-		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-		testResults[testName] = logTestResult(testName, nil, testPassed)
-		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
-		// TODO after printing logs, delete each container
+			test)
+		testResults[testName] = logTestResult(testName, err, testPassed)
 	}
 
 	return testResults, nil
 }
 
 // ======================== Private helper functions =====================================
-
 /*
 Handles determining the proper test status and logging it.
 Returns the TestResult for convenience.
- */
+*/
 func logTestResult(testName string, err error, testPassed bool) TestResult {
 	var result TestResult
 	if err != nil {
@@ -200,6 +155,63 @@ func logTestResult(testName string, err error, testPassed bool) TestResult {
 	}
 	return result
 }
+
+func runTest(
+			dockerManager *docker.DockerManager,
+			testControllerImageName string,
+			testControllerLogLevel string,
+			executionInstanceId uuid.UUID,
+			testServiceImageName string,
+			testName string,
+			test testsuite.Test) (bool, error) {
+	networkLoader, err := test.GetNetworkLoader()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not get network loader")
+	}
+
+	builder := networks.NewServiceNetworkConfigBuilder()
+	if err := networkLoader.ConfigureNetwork(builder); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred while configuring the network")
+	}
+	testNetworkCfg := builder.Build()
+
+	logrus.Infof("Creating network for test...")
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Could not create the free IP addr tracker")
+	}
+	gatewayIp, err := publicIpProvider.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
+	}
+	// TODO TODO TODO Support creating one network per testnet
+	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK, gatewayIp)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
+	}
+	serviceNetwork, err := testNetworkCfg.CreateNetwork(testServiceImageName, publicIpProvider, dockerManager)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Error occurred creating testnet")
+	}
+	// Make sure we  make a best-effort attempt to stop the network we created no matter what happens
+	defer stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
+	logrus.Info("Network created successfully")
+
+	testPassed, err := runControllerContainer(
+		dockerManager,
+		serviceNetwork,
+		testControllerImageName,
+		testControllerLogLevel,
+		publicIpProvider,
+		testName,
+		executionInstanceId)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred while running the test", testName)
+	}
+	return testPassed, nil
+	// TODO after printing logs, delete each container
+}
+
 
 
 /*
