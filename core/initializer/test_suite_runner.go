@@ -206,7 +206,7 @@ func runTest(
 		testName,
 		executionInstanceId)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred while running the test", testName)
+		return false, stacktrace.Propagate(err, "An error occurred while running the test")
 	}
 	return testPassed, nil
 	// TODO after printing logs, delete each container
