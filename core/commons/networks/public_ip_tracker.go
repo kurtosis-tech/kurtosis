@@ -24,7 +24,7 @@ func NewFreeIpAddrTracker(subnetMask string) (ipAddrTracker *FreeIpAddrTracker, 
 	// remove the zeroth IP - it's only for marking subnet addresses.
 	_, err = ipAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get remove zeroth IP.")
+		return nil, stacktrace.Propagate(err, "Failed to remove zeroth IP.")
 	}
 	return ipAddrTracker, nil
 }
