@@ -253,7 +253,7 @@ func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]strin
 			Type:          mount.TypeVolume,
 			Source:        volumeName,
 			Target:        containerMountpoint,
-			// TODO change this if we ever pull data from the containers
+			// TODO change this if we ever have the containers write their logs to file
 			ReadOnly:      true,
 		}
 		mountsList = append(mountsList, mount)
