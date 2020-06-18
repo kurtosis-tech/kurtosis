@@ -164,7 +164,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		}
 		stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
 		testResults[testName] = logTestResult(testName, nil, testPassed)
-		// TODO after the service containers have been changed to write logs to disk, print each container's logs here for convenience
 		// TODO after printing logs, delete each container
 	}
 
