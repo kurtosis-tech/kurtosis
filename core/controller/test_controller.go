@@ -1,24 +1,59 @@
 package controller
 
 import (
-	"encoding/gob"
+	"context"
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
 	"time"
 )
 
+const (
+	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+)
+
 type TestController struct {
+	subnetMask string
+	gatewayIp string
+	testControllerIp string
 	testSuite testsuite.TestSuite
+	testImageName string
 }
 
-func NewTestController(testSuite testsuite.TestSuite) *TestController {
-	return &TestController{testSuite: testSuite}
+/*
+Creates a new TestController with the given properties
+Args:
+	subnetMask: Mask of the network that the TestController is living in, and from which it should dole out IPs to the testnet containers
+	gatewayIp: The IP of the gateway that's running the Docker network that the TestController and the containers run in
+	testControllerIp: The IP address of the controller itself
+	testSuite: A pre-defined set of tests that the user will choose to run a single test from
+	testImageName: The Docker image representing the version of the node that is being tested
+ */
+func NewTestController(
+			subnetMask string,
+			gatewayIp string,
+			testControllerIp string,
+			testSuite testsuite.TestSuite,
+			testImageName string) *TestController {
+	return &TestController{
+		subnetMask:       subnetMask,
+		gatewayIp:        gatewayIp,
+		testControllerIp: testControllerIp,
+		testSuite:        testSuite,
+		testImageName:    testImageName,
+	}
 }
 
-func (controller TestController) RunTest(testName string, networkInfoFilepath string) (error) {
+/*
+Creates a new TestController that will run one of the tests from the test suite given at construction time
+Args:
+	testName: Name of test to run
+	testImageName: Name of the Docker image representing a node being tested
+ */
+func (controller TestController) RunTest(testName string, ) (error) {
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
@@ -26,32 +61,39 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 		return stacktrace.NewError("Nonexistent test: %v", testName)
 	}
 
-	if _, err := os.Stat(networkInfoFilepath); err != nil {
-		return stacktrace.Propagate(err, "Nonexistent file: %v", networkInfoFilepath)
-	}
-
-	fp, err := os.Open(networkInfoFilepath)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not open file for reading: %v", networkInfoFilepath)
-	}
-	decoder := gob.NewDecoder(fp)
-
-	var rawServiceNetwork networks.RawServiceNetwork
-	err = decoder.Decode(&rawServiceNetwork)
-	if err != nil {
-		return stacktrace.Propagate(err, "Decoding raw service network information failed for file: %v", networkInfoFilepath)
-	}
-
 	networkLoader, err := test.GetNetworkLoader()
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not get network loader")
 	}
 
-	builder := networks.NewServiceNetworkConfigBuilder()
+	// Initialize default environment context.
+	dockerCtx := context.Background()
+	// Initialize a Docker client
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+	}
+	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager")
+	}
+
+	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
+	freeIpTracker, err := networks.NewFreeIpAddrTracker(controller.subnetMask, alreadyTakenIps)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
+	}
+
+	builder := networks.NewServiceNetworkBuilder(testName, dockerManager, freeIpTracker)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
 		return stacktrace.Propagate(err, "Could not configure network")
 	}
-	networkCfg := builder.Build()
+	network := builder.Build()
+
+	availabilityCheckers, err := networkLoader.BootstrapNetwork(network);
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred bootstrapping the network to its starting state")
+	}
 
 	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
 	if err != nil {
