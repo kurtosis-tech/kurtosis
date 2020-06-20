@@ -8,16 +8,21 @@ import (
 	"time"
 )
 
+type ServiceNode struct {
+	ipAddr string
+
+	// If Go had generics, we'd make this object genericized and use that as the return type here
+	service services.Service
+
+	containerId string
+}
+
 type ServiceNetwork struct {
 	freeIpTracker *FreeIpAddrTracker
 
 	dockerManager *docker.DockerManager
 
-	// If Go had generics, we'd make this object genericized and use that as the return type here
-	services map[int]services.Service
-
-	// NOTE: we'll likely need to create an object encapsulating all information about a service - its containerId, its IP,
-	containerIds map[int]string
+	serviceNodes map[int]ServiceNode
 
 	configurations map[int]serviceConfig
 }
@@ -31,7 +36,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		return nil, stacktrace.NewError("No service configuration with ID '%v' has been registered", configurationId)
 	}
 
-	if _, exists := network.services[serviceId]; exists {
+	if _, exists := network.serviceNodes[serviceId]; exists {
 		return nil, stacktrace.NewError("Service ID %d already exists in the network", serviceId)
 	}
 
@@ -43,7 +48,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	// with our internal data structure
 	dependencyServices := make([]services.Service, 0, len(dependencies))
 	for dependencyId, _ := range dependencies  {
-		dependency, found := network.services[dependencyId]
+		dependency, found := network.serviceNodes[dependencyId]
 		if !found {
 			return nil, stacktrace.NewError("Declared a dependency on %v but no service with this ID has been registered", dependencyId)
 		}
@@ -60,8 +65,11 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		return nil, stacktrace.Propagate(err, "An error occurred creating service %v from configuration %v", serviceId, configurationId)
 	}
 
-	network.containerIds[serviceId] = containerId
-	network.services[serviceId] = service
+	network.serviceNodes[serviceId] = ServiceNode{
+		ipAddr:      staticIp,
+		service:     service,
+		containerId: containerId,
+	}
 
 	availabilityChecker := services.NewServiceAvailabilityChecker(config.availabilityCheckerCore, service, dependencyServices)
 	return availabilityChecker, nil
@@ -70,28 +78,36 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 /*
 Stops the container with the given service ID, and stops tracking it in the network
  */
-func (network *ServiceNetwork) RemoveService(serviceId int) error {
-	// TODO
+func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout time.Duration) error {
+	nodeInfo, found := network.serviceNodes[serviceId]
+	if !found {
+		return stacktrace.NewError("No service with ID %v found", serviceId)
+	}
+
+	logrus.Debugf("Removing service ID %v...", serviceId)
+	delete(network.serviceNodes, serviceId)
+
+	// Make a best-effort attempt to stop the container
+	err := network.dockerManager.StopContainer(nodeInfo.containerId, &containerStopTimeout)
+	if err != nil {
+		logrus.Errorf(
+			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
+			serviceId,
+			nodeInfo.containerId)
+		logrus.Error(err)
+	}
+	logrus.Debugf("Successfully removed service ID %v", serviceId)
 	return nil
 }
 
 /*
-Makes a best-effort attempt to stop all the containers in the network, waiting for the given timeout.
+Makes a best-effort attempt to remove all the containers in the network, waiting for the given timeout.
 Args:
 	containerStopTimeout: How long to wait for each container to stop before force-killing it
 */
-func (network *ServiceNetwork) Stop(containerStopTimeout time.Duration) error {
-	for serviceId, containerId := range network.containerIds {
-		logrus.Debugf("Stopping service ID %v with container ID '%v'", serviceId, containerId)
-		err := network.dockerManager.StopContainer(containerId, &containerStopTimeout)
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
-				serviceId,
-				containerId)
-		}
-		logrus.Debugf("Container with ID '%v' successfully stopped", containerId)
+func (network *ServiceNetwork) RemoveAll(containerStopTimeout time.Duration) error {
+	for serviceId, _ := range network.serviceNodes {
+		network.RemoveService(serviceId, containerStopTimeout)
 	}
 	return nil
 }

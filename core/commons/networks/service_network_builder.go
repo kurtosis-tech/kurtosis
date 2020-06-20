@@ -71,9 +71,8 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	}
 
 	return &ServiceNetwork{
-		freeIpTracker: builder.freeIpTracker,
-		services: make(map[int]services.Service),
-		containerIds: make(map[int]string),
+		freeIpTracker:  builder.freeIpTracker,
+		serviceNodes:   make(map[int]ServiceNode),
 		configurations: configurationsCopy,
 	}
 }

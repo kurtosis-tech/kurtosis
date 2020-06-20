@@ -43,6 +43,7 @@ const (
 	LOG_FILEPATH_ARG = "LOG_FILEPATH"
 	LOG_LEVEL_ARG = "LOG_LEVEL"
 	TEST_IMAGE_NAME_ARG = "TEST_IMAGE_NAME"
+	TEST_CONTROLLER_IP_ARG = "TEST_CONTROLLER_IP"
 
 	SUCCESS_EXIT_CODE = 0
 )
@@ -179,10 +180,14 @@ func runTest(
 	logrus.Info("Docker network created successfully")
 
 	logrus.Info("Running test controller...")
+	controllerIp, err := publicIpProvider.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.NewError("An error occurred getting an IP for the test controller")
+	}
 	testPassed, err := runControllerContainer(
 		dockerManager,
 		gatewayIp,
-		publicIpProvider,
+		controllerIp,
 		testControllerImageName,
 		testControllerLogLevel,
 		testServiceImageName,
@@ -215,7 +220,7 @@ Returns:
 func runControllerContainer(
 		manager *docker.DockerManager,
 		gatewayIp string,
-		ipProvider *networks.FreeIpAddrTracker,
+		controllerIpAddr string,
 		controllerImageName string,
 		logLevel string,
 		testServiceImageName string,
@@ -236,16 +241,12 @@ func runControllerContainer(
 		LOG_FILEPATH_ARG:    containerLogInfoMountpoint,
 		LOG_LEVEL_ARG:       logLevel,
 		TEST_IMAGE_NAME_ARG: testServiceImageName,
-	}
-
-	ipAddr, err := ipProvider.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
+		TEST_CONTROLLER_IP_ARG: controllerIpAddr,
 	}
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		controllerImageName,
-		ipAddr,
+		controllerIpAddr,
 		make(map[int]bool),
 		nil, // Use the default image CMD (which is parameterized)
 		envVariables,

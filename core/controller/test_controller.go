@@ -99,7 +99,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	network := builder.Build()
 	defer func() {
 		logrus.Info("Stopping test network...")
-		err := network.Stop(CONTAINER_STOP_TIMEOUT)
+		err := network.RemoveAll(CONTAINER_STOP_TIMEOUT)
 		if err != nil {
 			logrus.Error("An error occurred stopping the network")
 			logrus.Error(err)
