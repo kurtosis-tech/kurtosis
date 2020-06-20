@@ -4,11 +4,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
+	"time"
 )
-
-type serviceNode struct {
-
-}
 
 type ServiceNetwork struct {
 	freeIpTracker *FreeIpAddrTracker
@@ -62,17 +60,38 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		return nil, stacktrace.Propagate(err, "An error occurred creating service %v from configuration %v", serviceId, configurationId)
 	}
 
+	network.containerIds[serviceId] = containerId
 	network.services[serviceId] = service
 
-	runningServices[serviceId] = service
-	serviceIps[serviceId] = staticIp
-	serviceContainerIds[serviceId] = containerId
-	allServiceDependencies[serviceId] = serviceDependencies
+	availabilityChecker := services.NewServiceAvailabilityChecker(config.availabilityCheckerCore, service, dependencyServices)
+	return availabilityChecker, nil
+}
 
-	// Because we require the dependencies in the set to already be in the network config, we can simply use the
-	// order in which AddService is called to generate a traversal through the dependency DAG (no need to use any
-	// DAG traversal algorithms)
-	builder.servicesStartOrder = append(builder.servicesStartOrder, serviceId)
-	builder.serviceDependencies[serviceId] = dependenciesCopy
-	return serviceId, nil
+/*
+Stops the container with the given service ID, and stops tracking it in the network
+ */
+func (network *ServiceNetwork) RemoveService(serviceId int) error {
+	// TODO
+	return nil
+}
+
+/*
+Makes a best-effort attempt to stop all the containers in the network, waiting for the given timeout.
+Args:
+	containerStopTimeout: How long to wait for each container to stop before force-killing it
+*/
+func (network *ServiceNetwork) Stop(containerStopTimeout time.Duration) error {
+	for serviceId, containerId := range network.containerIds {
+		logrus.Debugf("Stopping service ID %v with container ID '%v'", serviceId, containerId)
+		err := network.dockerManager.StopContainer(containerId, &containerStopTimeout)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
+				serviceId,
+				containerId)
+		}
+		logrus.Debugf("Container with ID '%v' successfully stopped", containerId)
+	}
+	return nil
 }

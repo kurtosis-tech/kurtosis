@@ -50,7 +50,7 @@ More concretely, you'll need at least:
 ### Controller
 1. A `main.go` for the controller that constructs an instance of `TestController` for running a given test
 1. A Docker image that runs the controller's `main.go`, which will be launched by the initializer
-    * NOTE: the initializer will set two special environment variables in the controller image's shell: `TEST_NAME` and `NETWORK_DATA_FILEPATH`. These should be consumed by your controller's `main.go` and passed as-is to the `NewTestController` call.
+    * NOTE: the initializer will set two special environment variables in the controller image's shell: `TEST_NAME` and `NETWORK_DATA_FILEPATH` (TODO list out all of them!). These should be consumed by your controller's `main.go` and passed as-is to the `NewTestController` call.
 
 Some implementation tips:
 * We recommend structuring your code into the same `commons`, `initializer`, and `controller` packages listed above.

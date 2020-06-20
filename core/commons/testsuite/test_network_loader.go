@@ -14,12 +14,12 @@ type TestNetworkLoader interface {
 	Hook for the user to initialize the network to whatever state they'd like the Test to have
 	Args:
 		network: The network that the user should call AddService on
-	Returns: A slice of availability checkers that, should they all return successfully, mean the network is counted as available
+	Returns: A map of serviceId -> availability checkers that indicate that the network is started if all checkers return
 	 */
-	BootstrapNetwork(network *networks.ServiceNetwork) ([]services.ServiceAvailabilityChecker, error)
+	InitializeNetwork(network *networks.ServiceNetwork) (map[int]services.ServiceAvailabilityChecker, error)
 
 	// TODO When Go has generics, make the input and output types parameterized
-	// Wraps the map of service_id -> service with a user-custom object representing the network, so the user can expose
+	// Wraps the network with a user-custom object representing the network, so the user can expose
 	//  whatever methods they please so writing tests is as simple as possible
-	WrapNetwork(services map[int]services.Service) (interface{}, error)
+	WrapNetwork(network *networks.ServiceNetwork) (interface{}, error)
 }

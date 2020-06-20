@@ -7,14 +7,14 @@ import (
 
 type serviceConfig struct {
 	dockerImage string
-	availabilityChecker services.ServiceAvailabilityChecker
+	availabilityCheckerCore services.ServiceAvailabilityCheckerCore
 	initializer services.ServiceInitializer
 }
 
 type ServiceNetworkBuilder struct {
 	testImage string
 
-	dockerManager docker.DockerManager
+	dockerManager *docker.DockerManager
 
 	freeIpTracker *FreeIpAddrTracker
 
@@ -26,7 +26,7 @@ type ServiceNetworkBuilder struct {
 }
 
 // The test image is the Docker image of the service being tested
-func NewServiceNetworkBuilder(testImage string, dockerManager docker.DockerManager, freeIpTracker *FreeIpAddrTracker) *ServiceNetworkBuilder {
+func NewServiceNetworkBuilder(testImage string, dockerManager *docker.DockerManager, freeIpTracker *FreeIpAddrTracker) *ServiceNetworkBuilder {
 	configurations := make(map[int]serviceConfig)
 	return &ServiceNetworkBuilder{
 		testImage: 		testImage,
@@ -40,12 +40,12 @@ func NewServiceNetworkBuilder(testImage string, dockerManager docker.DockerManag
 // Adds a service configuration to the network that will run a static Docker image
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
-	dockerImage string,
-	initializerCore services.ServiceInitializerCore,
-	availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
+			dockerImage string,
+			initializerCore services.ServiceInitializerCore,
+			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
 	serviceConfig := serviceConfig{
 		dockerImage: dockerImage,
-		availabilityChecker: *services.NewServiceAvailabilityChecker(availabilityCheckerCore),
+		availabilityCheckerCore: availabilityCheckerCore,
 		initializer:         *services.NewServiceInitializer(initializerCore),
 	}
 	configurationId := builder.nextConfigurationId
@@ -57,8 +57,8 @@ func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
 // Adds a service configuration to the network that will run the Docker image being tested
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddTestImageConfiguration(
-	initializerCore services.ServiceInitializerCore,
-	availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
+			initializerCore services.ServiceInitializerCore,
+			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
 	return builder.AddStaticImageConfiguration(builder.testImage, initializerCore, availabilityCheckerCore)
 }
 

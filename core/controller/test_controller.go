@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+	// How long to wait before force-killing a container
+	CONTAINER_STOP_TIMEOUT = 30 * time.Second
 )
 
 type TestController struct {
@@ -52,57 +53,84 @@ Creates a new TestController that will run one of the tests from the test suite 
 Args:
 	testName: Name of test to run
 	testImageName: Name of the Docker image representing a node being tested
+
+Returns:
+	setupErr: Indicates an error setting up the test that prevented the test from running
+	testErr: Indicates an error in the test itself, indicating a test failure
  */
-func (controller TestController) RunTest(testName string, ) (error) {
+func (controller TestController) RunTest(testName string) (setupErr error, testErr error) {
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
 	test, found := tests[testName]
 	if !found {
-		return stacktrace.NewError("Nonexistent test: %v", testName)
+		return stacktrace.NewError("Nonexistent test: %v", testName), nil
 	}
 
 	networkLoader, err := test.GetNetworkLoader()
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not get network loader")
+		return stacktrace.Propagate(err, "Could not get network loader"), nil
 	}
 
+	logrus.Info("Connecting to Docker environment...")
 	// Initialize default environment context.
 	dockerCtx := context.Background()
 	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment."), nil
 	}
 	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager")
+		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager"), nil
 	}
+	logrus.Info("Connected to Docker environment")
 
+	logrus.Info("Configuring test network...")
 	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
 	freeIpTracker, err := networks.NewFreeIpAddrTracker(controller.subnetMask, alreadyTakenIps)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
+		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil
 	}
 
 	builder := networks.NewServiceNetworkBuilder(testName, dockerManager, freeIpTracker)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
-		return stacktrace.Propagate(err, "Could not configure network")
+		return stacktrace.Propagate(err, "Could not configure test network"), nil
 	}
 	network := builder.Build()
+	defer func() {
+		logrus.Info("Stopping test network...")
+		err := network.Stop(CONTAINER_STOP_TIMEOUT)
+		if err != nil {
+			logrus.Error("An error occurred stopping the network")
+			logrus.Error(err)
+		} else {
+			logrus.Info("Successfully stopped the test network")
+		}
+	}()
+	logrus.Info("Test network configured")
 
-	availabilityCheckers, err := networkLoader.BootstrapNetwork(network);
+	logrus.Info("Initializing test network...")
+	availabilityCheckers, err := networkLoader.InitializeNetwork(network);
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred bootstrapping the network to its starting state")
+		return stacktrace.Propagate(err, "An error occurred initialized the network to its starting state"), nil
 	}
+	logrus.Info("Test network initialized")
 
-	serviceNetwork, err := networkCfg.LoadNetwork(rawServiceNetwork)
-	if err != nil {
-		return stacktrace.Propagate(err, "Could not load network from raw service information")
+	// Second pass: wait for all services to come up
+	logrus.Info("Waiting for test network to become available...")
+	for serviceId, availabilityChecker := range availabilityCheckers {
+		logrus.Debugf("Waiting for service %v to become available...", serviceId)
+		if err := availabilityChecker.WaitForStartup(); err != nil {
+			return stacktrace.Propagate(err, "An error occurred waiting for service with ID %v to start up", serviceId), nil
+		}
+		logrus.Debugf("Service %v is available", serviceId)
 	}
+	logrus.Info("Test network is available")
 
-	untypedNetwork, err := networkLoader.WrapNetwork(serviceNetwork)
+	logrus.Info("Executing test...")
+	untypedNetwork, err := networkLoader.WrapNetwork(network)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error occurred wrapping network in user-defined network type")
+		return stacktrace.Propagate(err, "Error occurred wrapping network in user-defined network type"), nil
 	}
 
 	testResultChan := make(chan error)
@@ -114,24 +142,25 @@ func (controller TestController) RunTest(testName string, ) (error) {
 	// Time out the test so a poorly-written test doesn't run forever
 	testTimeout := test.GetTimeout()
 	var timedOut bool
-	var resultErr error
+	var testResultErr error
 	select {
-	case resultErr = <- testResultChan:
+	case testResultErr = <- testResultChan:
 		timedOut = false
 	case <- time.After(testTimeout):
 		timedOut = true
 	}
 
 	if timedOut {
-		return stacktrace.NewError("Timed out after %v waiting for test to complete", testTimeout)
+		return nil, stacktrace.NewError("Timed out after %v waiting for test to complete", testTimeout)
 	}
 
-	if resultErr != nil {
-		return stacktrace.Propagate(err, "An error occurred when running the test")
+	logrus.Info("Test execution completed")
+
+	if testResultErr != nil {
+		return nil, stacktrace.Propagate(testResultErr, "An error occurred when running the test")
 	}
 
-	// Should we return a TestSuiteResults object that provides detailed info about each test?
-	return nil
+	return nil, nil
 }
 
 // Little helper function meant to be run inside a goroutine that runs the test
