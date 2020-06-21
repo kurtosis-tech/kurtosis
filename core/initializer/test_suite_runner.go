@@ -244,6 +244,8 @@ func runControllerContainer(
 		TEST_CONTROLLER_IP_ARG: controllerIpAddr,
 	}
 
+	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
+
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		controllerImageName,
 		controllerIpAddr,
