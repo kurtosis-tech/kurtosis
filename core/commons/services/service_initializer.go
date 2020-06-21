@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -52,6 +53,14 @@ func (initializer ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not initialize mounted files for service.")
 	}
+
+	logrus.Debugf(
+		"Create service arguments: dockerImage %v, staticIp %v, usedPorts %v, startCmdArgs %v, bindMounts %v",
+		dockerImage,
+		staticIp,
+		usedPorts,
+		startCmdArgs,
+		bindMounts)
 
 	// TODO we really want GetEnvVariables instead of GetStartCmd because every image should be nicely parameterized to avoid
 	//   the testing code knowing about the specifics of the image (like where the binary is located). However, this relies
