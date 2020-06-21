@@ -27,6 +27,10 @@ type ServiceNetwork struct {
 	configurations map[int]serviceConfig
 }
 
+func (network *ServiceNetwork) GetSize() int {
+	return len(network.serviceNodes)
+}
+
 // Adds a service to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
 // Returns an AvailabilityChecker for checking when the service is actually availabile
 // If no dependencies should be specified, the dependencies map should be empty (not nil)
@@ -66,9 +70,9 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	}
 
 	network.serviceNodes[serviceId] = ServiceNode{
-		ipAddr:      staticIp,
-		service:     service,
-		containerId: containerId,
+		IpAddr:      staticIp,
+		Service:     service,
+		ContainerId: containerId,
 	}
 
 	availabilityChecker := services.NewServiceAvailabilityChecker(config.availabilityCheckerCore, service, dependencyServices)
@@ -97,12 +101,12 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 	delete(network.serviceNodes, serviceId)
 
 	// Make a best-effort attempt to stop the container
-	err := network.dockerManager.StopContainer(nodeInfo.containerId, &containerStopTimeout)
+	err := network.dockerManager.StopContainer(nodeInfo.ContainerId, &containerStopTimeout)
 	if err != nil {
 		logrus.Errorf(
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
 			serviceId,
-			nodeInfo.containerId)
+			nodeInfo.ContainerId)
 		logrus.Error(err)
 	}
 	logrus.Debugf("Successfully removed service ID %v", serviceId)
