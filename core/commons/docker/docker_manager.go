@@ -6,7 +6,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
@@ -241,25 +240,21 @@ Args:
 	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup
  */
 func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
-	mountsList := make([]mount.Mount, 0, len(volumeMounts))
-	for volumeName, containerMountpoint := range volumeMounts {
-		mount := mount.Mount{
-			Type:          mount.TypeVolume,
-			Source:        volumeName,
-			Target:        containerMountpoint,
-		}
-		mountsList = append(mountsList, mount)
-	}
-
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
 		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
 	}
+	for volumeName, containerFilepath := range volumeMounts {
+		// Yes, it's SUPER confusing that "volumes" need to be put into the "binds" section because there's
+		//  a separate thing called a "bind mount".... blame the Docker API
+		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
+	}
+
+	logrus.Debugf("Binds: %v", bindsList)
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		NetworkMode: container.NetworkMode("default"),
-		Mounts: mountsList,
 	}
 	return containerHostConfigPtr, nil
 }
