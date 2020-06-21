@@ -9,12 +9,12 @@ import (
 )
 
 type ServiceNode struct {
-	ipAddr string
+	IpAddr string
 
 	// If Go had generics, we'd make this object genericized and use that as the return type here
-	service services.Service
+	Service services.Service
 
-	containerId string
+	ContainerId string
 }
 
 type ServiceNetwork struct {
