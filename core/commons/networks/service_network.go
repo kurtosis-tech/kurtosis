@@ -64,7 +64,8 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 	}
 
-	service, containerId, err := config.initializer.CreateService(config.dockerImage, staticIp, network.dockerManager, dependencyServices)
+	initializer := services.NewServiceInitializer(config.initializerCore)
+	service, containerId, err := initializer.CreateService(config.dockerImage, staticIp, network.dockerManager, dependencyServices)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service %v from configuration %v", serviceId, configurationId)
 	}

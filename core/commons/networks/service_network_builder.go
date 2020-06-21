@@ -9,7 +9,7 @@ import (
 type serviceConfig struct {
 	dockerImage string
 	availabilityCheckerCore services.ServiceAvailabilityCheckerCore
-	initializer services.ServiceInitializer
+	initializerCore services.ServiceInitializerCore
 }
 
 type ServiceNetworkBuilder struct {
@@ -48,7 +48,7 @@ func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
 	serviceConfig := serviceConfig{
 		dockerImage: dockerImage,
 		availabilityCheckerCore: availabilityCheckerCore,
-		initializer:         *services.NewServiceInitializer(initializerCore),
+		initializerCore:         initializerCore,
 	}
 	builder.configurations[configurationId] = serviceConfig
 	return nil
