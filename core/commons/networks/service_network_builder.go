@@ -3,6 +3,7 @@ package networks
 import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
+	"github.com/palantir/stacktrace"
 )
 
 type serviceConfig struct {
@@ -20,9 +21,6 @@ type ServiceNetworkBuilder struct {
 
 	// Factories that will be used to construct the nodes
 	configurations map[int]serviceConfig
-
-	// Tracks the next service configuration ID that will be doled out upon a call to AddStaticImageConfiguration
-	nextConfigurationId int
 }
 
 // The test image is the Docker image of the service being tested
@@ -33,33 +31,36 @@ func NewServiceNetworkBuilder(testImage string, dockerManager *docker.DockerMana
 		dockerManager: dockerManager,
 		freeIpTracker: freeIpTracker,
 		configurations: 	 configurations,
-		nextConfigurationId: 0,
 	}
 }
 
 // Adds a service configuration to the network that will run a static Docker image
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
+			configurationId int,
 			dockerImage string,
 			initializerCore services.ServiceInitializerCore,
-			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
+			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
+	if _, found := builder.configurations[configurationId]; found {
+		return stacktrace.NewError("Configuration ID %v is already registered", configurationId)
+	}
+
 	serviceConfig := serviceConfig{
 		dockerImage: dockerImage,
 		availabilityCheckerCore: availabilityCheckerCore,
 		initializer:         *services.NewServiceInitializer(initializerCore),
 	}
-	configurationId := builder.nextConfigurationId
-	builder.nextConfigurationId = builder.nextConfigurationId + 1
 	builder.configurations[configurationId] = serviceConfig
-	return configurationId
+	return nil
 }
 
 // Adds a service configuration to the network that will run the Docker image being tested
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddTestImageConfiguration(
+			configurationId int,
 			initializerCore services.ServiceInitializerCore,
-			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) int {
-	return builder.AddStaticImageConfiguration(builder.testImage, initializerCore, availabilityCheckerCore)
+			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
+	return builder.AddStaticImageConfiguration(configurationId, builder.testImage, initializerCore, availabilityCheckerCore)
 }
 
 func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {

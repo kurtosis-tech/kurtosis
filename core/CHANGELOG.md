@@ -5,6 +5,7 @@
 * Refactored the big `for` loop inside `TestSuiteRunner.RunTests` into a separate helper function
 * Use `defer` to stop the testnet after it's created, so we stop it even in the event of unanticipated panics
 * Allow tests to stop network nodes
+* Force the user to provide a static configuration ID, so they can reference it later in their tests
 
 # 0.3.1
 * explicitly specify service IDs in network configurations

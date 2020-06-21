@@ -5,30 +5,33 @@ import (
 	"testing"
 )
 
-func TestConfigurationIdsDifferent(t *testing.T) {
-	testImage := "testImage"
-	idSet := make(map[int]bool)
+func TestDisallowingSameIds(t *testing.T) {
 	builder := NewServiceNetworkBuilder("test", nil, nil)
-	config1 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
-	idSet[config1] = true
-	config2 := builder.AddStaticImageConfiguration(testImage, getTestInitializerCore(), getTestCheckerCore())
-	idSet[config2] = true
-	config3 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
-	idSet[config3] = true
-	config4 := builder.AddStaticImageConfiguration(testImage, getTestInitializerCore(), getTestCheckerCore())
-	idSet[config4] = true
-	config5 := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
-	idSet[config5] = true
-	assert.Assert(t, len(idSet) == 5, "IDs should be different.")
+	err := builder.AddTestImageConfiguration(0, getTestInitializerCore(), getTestCheckerCore())
+	if err != nil {
+		t.Fatal("Adding a configuration shouldn't fail here")
+	}
+
+	err = builder.AddTestImageConfiguration(0, getTestInitializerCore(), getTestCheckerCore())
+	if err == nil {
+		t.Fatal("Expected an error here!")
+	}
 }
+
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkBuilder("test", nil, nil)
-	_ = builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	err := builder.AddTestImageConfiguration(0, getTestInitializerCore(), getTestCheckerCore())
+	if err != nil {
+		t.Fatal("Adding a configuration shouldn't fail here")
+	}
 	network := builder.Build()
 
 	assert.Equal(t, 1, len(network.configurations))
 
-	_ = builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	err = builder.AddTestImageConfiguration(1, getTestInitializerCore(), getTestCheckerCore())
+	if err != nil {
+		t.Fatal("Adding a configuration shouldn't fail here")
+	}
 
 	assert.Equal(t, 1, len(network.configurations))
 }

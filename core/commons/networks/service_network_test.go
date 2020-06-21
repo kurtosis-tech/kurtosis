@@ -61,15 +61,19 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 }
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
+	configId := 0
 	builder := NewServiceNetworkBuilder("test", nil, nil)
-	configId := builder.AddTestImageConfiguration(getTestInitializerCore(), getTestCheckerCore())
+	err := builder.AddTestImageConfiguration(configId, getTestInitializerCore(), getTestCheckerCore())
+	if err != nil {
+		t.Fatal("Adding a configuration shouldn't fail")
+	}
 	network := builder.Build()
 
 	dependencies := map[int]bool{
 		0: true,
 	}
 
-	_, err := network.AddService(configId, 0, dependencies)
+	_, err = network.AddService(configId, 0, dependencies)
 	if err == nil {
 		t.Fatal("Expected error when declaring a dependency on a service ID that doesn't exist")
 	}
