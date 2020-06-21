@@ -70,10 +70,5 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	for configurationId, config := range builder.configurations {
 		configurationsCopy[configurationId] = config
 	}
-
-	return &ServiceNetwork{
-		freeIpTracker:  builder.freeIpTracker,
-		serviceNodes:   make(map[int]ServiceNode),
-		configurations: configurationsCopy,
-	}
+	return NewServiceNetwork(builder.freeIpTracker, builder.dockerManager, make(map[int]ServiceNode), configurationsCopy)
 }

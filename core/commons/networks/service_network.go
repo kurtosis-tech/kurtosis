@@ -27,6 +27,16 @@ type ServiceNetwork struct {
 	configurations map[int]serviceConfig
 }
 
+func NewServiceNetwork(
+			freeIpTracker *FreeIpAddrTracker,
+			dockerManager *docker.DockerManager,
+			serviceNodes map[int]ServiceNode,
+			configurations map[int]serviceConfig) *ServiceNetwork {
+	return &ServiceNetwork{freeIpTracker: freeIpTracker, dockerManager: dockerManager, serviceNodes: serviceNodes, configurations: configurations}
+}
+
+
+
 func (network *ServiceNetwork) GetSize() int {
 	return len(network.serviceNodes)
 }
