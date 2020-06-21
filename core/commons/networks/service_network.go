@@ -62,11 +62,11 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	// with our internal data structure
 	dependencyServices := make([]services.Service, 0, len(dependencies))
 	for dependencyId, _ := range dependencies  {
-		dependency, found := network.serviceNodes[dependencyId]
+		dependencyNode, found := network.serviceNodes[dependencyId]
 		if !found {
 			return nil, stacktrace.NewError("Declared a dependency on %v but no service with this ID has been registered", dependencyId)
 		}
-		dependencyServices = append(dependencyServices, dependency)
+		dependencyServices = append(dependencyServices, dependencyNode.Service)
 	}
 
 	staticIp, err := network.freeIpTracker.GetFreeIpAddr()
