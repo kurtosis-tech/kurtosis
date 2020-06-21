@@ -92,7 +92,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil
 	}
 
-	builder := networks.NewServiceNetworkBuilder(testName, dockerManager, freeIpTracker)
+	builder := networks.NewServiceNetworkBuilder(controller.testImageName, dockerManager, freeIpTracker)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
 		return stacktrace.Propagate(err, "Could not configure test network"), nil
 	}
