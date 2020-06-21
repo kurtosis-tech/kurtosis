@@ -21,16 +21,29 @@ type ServiceNetworkBuilder struct {
 
 	// Factories that will be used to construct the nodes
 	configurations map[int]serviceConfig
+
+	// Name of volume that will be mounted on each new service
+	testVolume string
+
+	// Location where the test volume is mounted on the controller
+	testVolumeControllerDirpath string
 }
 
 // The test image is the Docker image of the service being tested
-func NewServiceNetworkBuilder(testImage string, dockerManager *docker.DockerManager, freeIpTracker *FreeIpAddrTracker) *ServiceNetworkBuilder {
+func NewServiceNetworkBuilder(
+			testImage string,
+			dockerManager *docker.DockerManager,
+			freeIpTracker *FreeIpAddrTracker,
+			testVolume string,
+			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
 	configurations := make(map[int]serviceConfig)
 	return &ServiceNetworkBuilder{
-		testImage: 		testImage,
-		dockerManager: dockerManager,
-		freeIpTracker: freeIpTracker,
-		configurations: 	 configurations,
+		testImage:                   testImage,
+		dockerManager:               dockerManager,
+		freeIpTracker:               freeIpTracker,
+		configurations:              configurations,
+		testVolume:                  testVolume,
+		testVolumeControllerDirpath: testVolumeContrllerDirpath,
 	}
 }
 
@@ -70,5 +83,11 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	for configurationId, config := range builder.configurations {
 		configurationsCopy[configurationId] = config
 	}
-	return NewServiceNetwork(builder.freeIpTracker, builder.dockerManager, make(map[int]ServiceNode), configurationsCopy)
+	return NewServiceNetwork(
+		builder.freeIpTracker,
+		builder.dockerManager,
+		make(map[int]ServiceNode),
+		configurationsCopy,
+		builder.testVolume,
+		builder.testVolumeControllerDirpath)
 }

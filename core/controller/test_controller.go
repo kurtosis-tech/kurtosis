@@ -14,9 +14,13 @@ import (
 const (
 	// How long to wait before force-killing a container
 	CONTAINER_STOP_TIMEOUT = 30 * time.Second
+
+	TEST_VOLUME_MOUNTPOINT = "/shared"
 )
 
 type TestController struct {
+	testVolumeName string
+	testVolumeFilepath string
 	subnetMask string
 	gatewayIp string
 	testControllerIp string
@@ -27,6 +31,8 @@ type TestController struct {
 /*
 Creates a new TestController with the given properties
 Args:
+	testVolumeName: The name of the volume where test data should be stored, which will have been mountd on the controller by the initializer and should be mounted on service nodes
+	testVolumeFilepath: The filepath where the test volume will have been mounted on the controller by the initializer
 	subnetMask: Mask of the network that the TestController is living in, and from which it should dole out IPs to the testnet containers
 	gatewayIp: The IP of the gateway that's running the Docker network that the TestController and the containers run in
 	testControllerIp: The IP address of the controller itself
@@ -34,12 +40,16 @@ Args:
 	testImageName: The Docker image representing the version of the node that is being tested
  */
 func NewTestController(
+			testVolumeName string,
+			testVolumeFilepath string,
 			subnetMask string,
 			gatewayIp string,
 			testControllerIp string,
 			testSuite testsuite.TestSuite,
 			testImageName string) *TestController {
 	return &TestController{
+		testVolumeName: testVolumeName,
+		testVolumeFilepath: testVolumeFilepath,
 		subnetMask:       subnetMask,
 		gatewayIp:        gatewayIp,
 		testControllerIp: testControllerIp,
@@ -92,7 +102,12 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil
 	}
 
-	builder := networks.NewServiceNetworkBuilder(controller.testImageName, dockerManager, freeIpTracker)
+	builder := networks.NewServiceNetworkBuilder(
+			controller.testImageName,
+			dockerManager,
+			freeIpTracker,
+			controller.testVolumeName,
+			controller.testVolumeFilepath)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
 		return stacktrace.Propagate(err, "Could not configure test network"), nil
 	}

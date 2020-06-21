@@ -16,21 +16,25 @@ func (t TestInitializerCore) GetUsedPorts() map[int]bool {
 	return make(map[int]bool)
 }
 
-func (t TestInitializerCore) GetStartCommand(publicIpAddr string, dependencies []services.Service) ([]string, error) {
-	return make([]string, 0), nil
-}
-
 func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {
 	return TestService{}
 }
 
 
-func (t TestInitializerCore) GetFilepathsToMount() map[string]bool {
+func (t TestInitializerCore) GetFilesToMount() map[string]bool {
 	return make(map[string]bool)
 }
 
 func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]*os.File, dependencies []services.Service) error {
 	return nil
+}
+
+func (t TestInitializerCore) GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []services.Service) ([]string, error) {
+	return make([]string, 0), nil
+}
+
+func (t TestInitializerCore) GetTestVolumeMountpoint() string {
+	return "/foo/bar"
 }
 
 func getTestInitializerCore() services.ServiceInitializerCore {
@@ -52,7 +56,7 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 
 // ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
-	builder := NewServiceNetworkBuilder("test", nil, nil)
+	builder := NewServiceNetworkBuilder("test", nil, nil, "test", "/foo/bar")
 	network := builder.Build()
 	_, err := network.AddService(0, 0, make(map[int]bool))
 	if err == nil {
@@ -62,7 +66,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	configId := 0
-	builder := NewServiceNetworkBuilder("test", nil, nil)
+	builder := NewServiceNetworkBuilder("test", nil, nil, "test", "/foo/bar")
 	err := builder.AddTestImageConfiguration(configId, getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail")

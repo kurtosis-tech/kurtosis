@@ -34,16 +34,20 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTAINER_LOG_INFO_MOUNTED_FILEPATH = "/data/service/container-log"
+	CONTROLLER_LOG_FILENAME = "controller.log"
+
+	TEST_VOLUME_MOUNTPOINT = "/shared"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
-	TEST_NAME_BASH_ARG = "TEST_NAME"
-	SUBNET_MASK_ARG = "SUBNET_MASK"
-	GATEWAY_IP_ARG = "GATEWAY_IP"
-	LOG_FILEPATH_ARG = "LOG_FILEPATH"
-	LOG_LEVEL_ARG = "LOG_LEVEL"
-	TEST_IMAGE_NAME_ARG = "TEST_IMAGE_NAME"
-	TEST_CONTROLLER_IP_ARG = "TEST_CONTROLLER_IP"
+	TEST_VOLUME_ARG            = "TEST_VOLUME"
+	TEST_NAME_BASH_ARG         = "TEST_NAME"
+	SUBNET_MASK_ARG            = "SUBNET_MASK"
+	GATEWAY_IP_ARG             = "GATEWAY_IP"
+	LOG_FILEPATH_ARG           = "LOG_FILEPATH"
+	LOG_LEVEL_ARG              = "LOG_LEVEL"
+	TEST_IMAGE_NAME_ARG        = "TEST_IMAGE_NAME"
+	TEST_CONTROLLER_IP_ARG     = "TEST_CONTROLLER_IP"
+	TEST_VOLUME_MOUNTPOINT_ARG = "TEST_VOLUME_MOUNTPOINT"
 
 	SUCCESS_EXIT_CODE = 0
 )
@@ -105,7 +109,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
-	// TODO break everything inside this for loop into its own function for readability
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
@@ -226,22 +229,23 @@ func runControllerContainer(
 		testServiceImageName string,
 		testName string,
 		executionUuid uuid.UUID) (bool, error){
-	testControllerLogFilename := fmt.Sprintf("%v-%v-%s", testName, executionUuid.String(), "logs")
-	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
+	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
+	volumeFilepath, err := manager.CreateVolume(volumeName)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
+		return false, stacktrace.Propagate(err, "Error creating Docker volumeFilepath to share amongst test nodes")
 	}
-	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
-	containerLogInfoMountpoint := CONTAINER_LOG_INFO_MOUNTED_FILEPATH
+	controllerLogMountedFilepath := fmt.Sprintf("%v/%v", TEST_VOLUME_MOUNTPOINT, CONTROLLER_LOG_FILENAME)
 	envVariables := map[string]string{
-		TEST_NAME_BASH_ARG:  testName,
-		SUBNET_MASK_ARG:     DEFAULT_SUBNET_MASK,
-		GATEWAY_IP_ARG:      gatewayIp,
-		LOG_FILEPATH_ARG:    containerLogInfoMountpoint,
-		LOG_LEVEL_ARG:       logLevel,
-		TEST_IMAGE_NAME_ARG: testServiceImageName,
-		TEST_CONTROLLER_IP_ARG: controllerIpAddr,
+		TEST_NAME_BASH_ARG:         testName,
+		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
+		GATEWAY_IP_ARG:             gatewayIp,
+		LOG_FILEPATH_ARG:           controllerLogMountedFilepath,
+		LOG_LEVEL_ARG:              logLevel,
+		TEST_IMAGE_NAME_ARG:        testServiceImageName,
+		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
+		TEST_VOLUME_ARG:            volumeName,
+		TEST_VOLUME_MOUNTPOINT_ARG: TEST_VOLUME_MOUNTPOINT,
 	}
 
 	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
@@ -255,7 +259,9 @@ func runControllerContainer(
 		map[string]string{
 			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
 			"/var/run/docker.sock": "/var/run/docker.sock",
-			logTmpFile.Name():         containerLogInfoMountpoint,
+		},
+		map[string]string{
+			volumeName: TEST_VOLUME_MOUNTPOINT,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
@@ -270,14 +276,15 @@ func runControllerContainer(
 	}
 
 	logrus.Info("Controller container exited successfully")
-	logTmpFile.Close()
-	buf, err := ioutil.ReadFile(logTmpFile.Name())
+	controllerLogHostFilepath := fmt.Sprintf("%v/%v", volumeFilepath, CONTROLLER_LOG_FILENAME)
+	buf, err := ioutil.ReadFile(controllerLogHostFilepath)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
 	}
 	logrus.Infof("Printing Controller logs:")
 	logrus.Info(string(buf))
 
+	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
 

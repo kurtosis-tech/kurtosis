@@ -25,16 +25,28 @@ type ServiceNetwork struct {
 	serviceNodes map[int]ServiceNode
 
 	configurations map[int]serviceConfig
+
+	testVolume string
+
+	testVolumeControllerDirpath string
 }
 
 func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
 			serviceNodes map[int]ServiceNode,
-			configurations map[int]serviceConfig) *ServiceNetwork {
-	return &ServiceNetwork{freeIpTracker: freeIpTracker, dockerManager: dockerManager, serviceNodes: serviceNodes, configurations: configurations}
+			configurations map[int]serviceConfig,
+			testVolume string,
+			testVolumeControllerDirpath string) *ServiceNetwork {
+	return &ServiceNetwork{
+		freeIpTracker: freeIpTracker,
+		dockerManager: dockerManager,
+		serviceNodes: serviceNodes,
+		configurations: configurations,
+		testVolume: testVolume,
+		testVolumeControllerDirpath: testVolumeControllerDirpath,
+	}
 }
-
 
 
 func (network *ServiceNetwork) GetSize() int {
@@ -75,7 +87,13 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	}
 
 	initializer := services.NewServiceInitializer(config.initializerCore)
-	service, containerId, err := initializer.CreateService(config.dockerImage, staticIp, network.dockerManager, dependencyServices)
+	service, containerId, err := initializer.CreateService(
+			network.testVolume,
+			network.testVolumeControllerDirpath,
+			config.dockerImage,
+			staticIp,
+			network.dockerManager,
+			dependencyServices)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating service %v from configuration %v", serviceId, configurationId)
 	}
