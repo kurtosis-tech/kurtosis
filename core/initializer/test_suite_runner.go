@@ -251,6 +251,8 @@ func runControllerContainer(
 		nil, // Use the default image CMD (which is parameterized)
 		envVariables,
 		map[string]string{
+			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
+			"/var/run/docker.sock": "/var/run/docker.sock",
 			logTmpFile.Name():         containerLogInfoMountpoint,
 		})
 	if err != nil {
