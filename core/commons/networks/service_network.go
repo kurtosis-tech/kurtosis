@@ -75,6 +75,15 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	return availabilityChecker, nil
 }
 
+func (network *ServiceNetwork) GetService(serviceId int) (ServiceNode, error) {
+	node, found := network.serviceNodes[serviceId]
+	if !found {
+		return ServiceNode{}, stacktrace.NewError("No service with ID %v exists in the network", serviceId)
+	}
+
+	return node, nil
+}
+
 /*
 Stops the container with the given service ID, and stops tracking it in the network
  */
