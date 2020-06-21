@@ -39,7 +39,7 @@ const (
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_NAME_BASH_ARG = "TEST_NAME"
 	SUBNET_MASK_ARG = "SUBNET_MASK"
-	GATEWAY_IP_ARG = "GATEWAY_IP_ARG"
+	GATEWAY_IP_ARG = "GATEWAY_IP"
 	LOG_FILEPATH_ARG = "LOG_FILEPATH"
 	LOG_LEVEL_ARG = "LOG_LEVEL"
 	TEST_IMAGE_NAME_ARG = "TEST_IMAGE_NAME"
