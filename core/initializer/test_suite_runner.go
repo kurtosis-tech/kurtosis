@@ -34,7 +34,7 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTROLLER_LOG_FILENAME = "controller.log"
+	CONTROLLER_LOG_MOUNT_FILEPATH = "/controller.log"
 
 	TEST_VOLUME_MOUNTPOINT = "/shared"
 
@@ -230,17 +230,27 @@ func runControllerContainer(
 		testName string,
 		executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
-	volumeFilepath, err := manager.CreateVolume(volumeName)
+	_, err := manager.CreateVolume(volumeName)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Error creating Docker volumeFilepath to share amongst test nodes")
+		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
 
-	controllerLogMountedFilepath := fmt.Sprintf("%v/%v", TEST_VOLUME_MOUNTPOINT, CONTROLLER_LOG_FILENAME)
+
+	logFilepath := fmt.Sprintf("/tmp/%v-%v-controller-logs", executionUuid.String(), testName)
+	/*
+	logFp, err := ioutil.TempFile("", fmt.Sprintf("%v-%v", executionUuid, testName))
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Couldn't create tempfile for controller logs")
+	}
+	logFp.Close()
+	*
+	 */
+
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
 		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
 		GATEWAY_IP_ARG:             gatewayIp,
-		LOG_FILEPATH_ARG:           controllerLogMountedFilepath,
+		LOG_FILEPATH_ARG:           logFilepath,
 		LOG_LEVEL_ARG:              logLevel,
 		TEST_IMAGE_NAME_ARG:        testServiceImageName,
 		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
@@ -259,6 +269,7 @@ func runControllerContainer(
 		map[string]string{
 			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
 			"/var/run/docker.sock": "/var/run/docker.sock",
+			logFilepath: CONTROLLER_LOG_MOUNT_FILEPATH,
 		},
 		map[string]string{
 			volumeName: TEST_VOLUME_MOUNTPOINT,
@@ -276,8 +287,7 @@ func runControllerContainer(
 	}
 
 	logrus.Info("Controller container exited successfully")
-	controllerLogHostFilepath := fmt.Sprintf("%v/%v", volumeFilepath, CONTROLLER_LOG_FILENAME)
-	buf, err := ioutil.ReadFile(controllerLogHostFilepath)
+	buf, err := ioutil.ReadFile(logFilepath)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
 	}
