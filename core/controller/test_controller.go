@@ -96,10 +96,10 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) {
 	defer func() {
 		if recoverResult := recover(); recoverResult != nil {
-			logrus.Trace("Caught panic while running test")
+			logrus.Tracef("Caught panic while running test: %v", recoverResult)
 			resultErr = recoverResult.(error)
 		}
 	}()
 	test.Run(untypedNetwork, testsuite.TestContext{})
-	return nil
+	return
 }
