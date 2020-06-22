@@ -52,9 +52,9 @@ func (initializer ServiceInitializer) CreateService(
 	for fileId, _ := range requestedFiles {
 		filename := uuid.Generate().String()
 		hostFilepath := filepath.Join(controllerServiceDirpath, filename)
-		fp, err := os.Open(hostFilepath)
+		fp, err := os.Create(hostFilepath)
 		if err != nil {
-			return nil, "", stacktrace.Propagate(err, "Could not open new file for requested file ID '%v'", fileId)
+			return nil, "", stacktrace.Propagate(err, "Could not create new file for requested file ID '%v'", fileId)
 		}
 		defer fp.Close()
 		osFiles[fileId] = fp
