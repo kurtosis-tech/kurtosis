@@ -96,6 +96,7 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) {
 	defer func() {
 		if recoverResult := recover(); recoverResult != nil {
+			logrus.Trace("Caught panic while running test")
 			resultErr = recoverResult.(error)
 		}
 	}()
