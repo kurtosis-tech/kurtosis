@@ -94,12 +94,12 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 
 // Little helper function meant to be run inside a goroutine that runs the test
 func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) {
-	defer func() {
+	defer func(resultErr *error) {
 		if recoverResult := recover(); recoverResult != nil {
 			logrus.Tracef("Caught panic while running test: %v", recoverResult)
-			resultErr = recoverResult.(error)
+			*resultErr = recoverResult.(error)
 		}
-	}()
+	}(&resultErr)
 	test.Run(untypedNetwork, testsuite.TestContext{})
 	return
 }
