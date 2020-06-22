@@ -235,22 +235,19 @@ func runControllerContainer(
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
 
-
-	logFilepath := fmt.Sprintf("/tmp/%v-%v-controller-logs", executionUuid.String(), testName)
-	/*
-	logFp, err := ioutil.TempFile("", fmt.Sprintf("%v-%v", executionUuid, testName))
+	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
+	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Couldn't create tempfile for controller logs")
+		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
-	logFp.Close()
-	*
-	 */
+	logTmpFile.Close()
+	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
 	envVariables := map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
 		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
 		GATEWAY_IP_ARG:             gatewayIp,
-		LOG_FILEPATH_ARG:           logFilepath,
+		LOG_FILEPATH_ARG:           logTmpFile.Name(),
 		LOG_LEVEL_ARG:              logLevel,
 		TEST_IMAGE_NAME_ARG:        testServiceImageName,
 		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
@@ -269,7 +266,7 @@ func runControllerContainer(
 		map[string]string{
 			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
 			"/var/run/docker.sock": "/var/run/docker.sock",
-			logFilepath: CONTROLLER_LOG_MOUNT_FILEPATH,
+			logTmpFile.Name(): CONTROLLER_LOG_MOUNT_FILEPATH,
 		},
 		map[string]string{
 			volumeName: TEST_VOLUME_MOUNTPOINT,
@@ -287,7 +284,7 @@ func runControllerContainer(
 	}
 
 	logrus.Info("Controller container exited successfully")
-	buf, err := ioutil.ReadFile(logFilepath)
+	buf, err := ioutil.ReadFile(logTmpFile.Name())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
 	}
