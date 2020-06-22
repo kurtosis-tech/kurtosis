@@ -34,7 +34,7 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTROLLER_LOG_MOUNT_FILEPATH = "/controller.log"
+	CONTROLLER_LOG_MOUNT_FILEPATH = "/test-controller.log"
 
 	TEST_VOLUME_MOUNTPOINT = "/shared"
 
@@ -247,7 +247,7 @@ func runControllerContainer(
 		TEST_NAME_BASH_ARG:         testName,
 		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
 		GATEWAY_IP_ARG:             gatewayIp,
-		LOG_FILEPATH_ARG:           logTmpFile.Name(),
+		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
 		LOG_LEVEL_ARG:              logLevel,
 		TEST_IMAGE_NAME_ARG:        testServiceImageName,
 		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
