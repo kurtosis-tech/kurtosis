@@ -4,6 +4,7 @@
 * Explicitly declare which IP will be the gateway IP in managed subnets
 * Refactored the big `for` loop inside `TestSuiteRunner.RunTests` into a separate helper function
 * Use `defer` to stop the testnet after it's created, so we stop it even in the event of unanticipated panics
+* Fix very nasty bug with tests passing when they shouldn't
 
 # 0.3.1
 * explicitly specify service IDs in network configurations
