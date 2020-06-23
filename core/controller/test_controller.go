@@ -66,9 +66,7 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 	testResultChan := make(chan error)
 
 	go func() {
-		testResult := runTest(test, untypedNetwork)
-		logrus.Tracef("Got result from runTest method: %v", testResult)
-		testResultChan <- testResult
+		testResultChan <- runTest(test, untypedNetwork)
 	}()
 
 	// Time out the test so a poorly-written test doesn't run forever
@@ -77,10 +75,10 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 	var resultErr error
 	select {
 	case resultErr = <- testResultChan:
-		logrus.Tracef("Got result from test: %v", resultErr)
+		logrus.Tracef("Test returned result before timeout: %v", resultErr)
 		timedOut = false
 	case <- time.After(testTimeout):
-		logrus.Tracef("No result from test after %v", testTimeout)
+		logrus.Tracef("Hit timeout %v before getting a result from the test", testTimeout)
 		timedOut = true
 	}
 
@@ -91,7 +89,7 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 	}
 
 	if resultErr != nil {
-		return stacktrace.Propagate(err, "An error occurred when running the test")
+		return stacktrace.Propagate(resultErr, "An error occurred when running the test")
 	}
 
 	// Should we return a TestSuiteResults object that provides detailed info about each test?
