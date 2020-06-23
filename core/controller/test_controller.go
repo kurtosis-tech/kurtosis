@@ -66,7 +66,9 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 	testResultChan := make(chan error)
 
 	go func() {
-		testResultChan <- runTest(test, untypedNetwork)
+		testResult := runTest(test, untypedNetwork)
+		logrus.Tracef("Got result from runTest method: %v", testResult)
+		testResultChan <- testResult
 	}()
 
 	// Time out the test so a poorly-written test doesn't run forever
@@ -75,10 +77,14 @@ func (controller TestController) RunTest(testName string, networkInfoFilepath st
 	var resultErr error
 	select {
 	case resultErr = <- testResultChan:
+		logrus.Tracef("Got result from test: %v", resultErr)
 		timedOut = false
 	case <- time.After(testTimeout):
+		logrus.Tracef("No result from test after %v", testTimeout)
 		timedOut = true
 	}
+
+	logrus.Tracef("After running test w/timeout: resultErr: %v, timedOut: %v", resultErr, timedOut)
 
 	if timedOut {
 		return stacktrace.NewError("Timed out after %v waiting for test to complete", testTimeout)
@@ -102,6 +108,6 @@ func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) 
 		}
 	}()
 	test.Run(untypedNetwork, testsuite.TestContext{})
-	logrus.Debugf("Test result: %v", resultErr)
+	logrus.Tracef("Test completed successfully")
 	return
 }
