@@ -160,10 +160,14 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	var testResultErr error
 	select {
 	case testResultErr = <- testResultChan:
+		logrus.Tracef("Test returned result before timeout: %v", testResultErr)
 		timedOut = false
 	case <- time.After(testTimeout):
+		logrus.Tracef("Hit timeout %v before getting a result from the test", testTimeout)
 		timedOut = true
 	}
+
+	logrus.Tracef("After running test w/timeout: resultErr: %v, timedOut: %v", testResultErr, timedOut)
 
 	if timedOut {
 		return nil, stacktrace.NewError("Timed out after %v waiting for test to complete", testTimeout)
@@ -180,11 +184,14 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 
 // Little helper function meant to be run inside a goroutine that runs the test
 func runTest(test testsuite.Test, untypedNetwork interface{}) (resultErr error) {
+	// See https://medium.com/@hussachai/error-handling-in-go-a-quick-opinionated-guide-9199dd7c7f76 for details
 	defer func() {
 		if recoverResult := recover(); recoverResult != nil {
+			logrus.Tracef("Caught panic while running test: %v", recoverResult)
 			resultErr = recoverResult.(error)
 		}
 	}()
 	test.Run(untypedNetwork, testsuite.TestContext{})
-	return nil
+	logrus.Tracef("Test completed successfully")
+	return
 }
