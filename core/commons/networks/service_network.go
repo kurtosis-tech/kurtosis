@@ -53,9 +53,17 @@ func (network *ServiceNetwork) GetSize() int {
 	return len(network.serviceNodes)
 }
 
-// Adds a service to the graph, with the specified dependencies (with the map used only as a set - the values are ignored)
-// Returns an AvailabilityChecker for checking when the service is actually availabile
-// If no dependencies should be specified, the dependencies map should be empty (not nil)
+/*
+Adds a service to the graph that depends on the services with the given IDs
+Args:
+	configurationId: The ID of the service configuration to use for creating the service
+	serviceId: The ID to give the node in the network
+	dependencies: A "set" of service IDs that the node-to-create depends on - i.e., whose information the node-to-create
+		needs to start up. If the node-to-create doesn't depend on any other services, the dependencies map should be
+		empty (not nil).
+Return:
+	An AvailabilityChecker for checking when the service is actually available
+ */
 func (network *ServiceNetwork) AddService(configurationId int, serviceId int, dependencies map[int]bool) (*services.ServiceAvailabilityChecker, error) {
 	config, found := network.configurations[configurationId]
 	if !found {

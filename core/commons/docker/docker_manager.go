@@ -235,9 +235,12 @@ Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON
 mapped to the host ports.
 
 Args:
-	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
-	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted at container startup
-	volumeMounts: mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup
+	usedPorts: A "set" of ports that the container will listen on (and which need to be mapped to host ports)
+	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted at container startup (used when
+		sharing data between the host filesystem - in our case, the test initializer - and a Docker container)
+	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
+		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
+		read from a Docker volume - you need to be inside a Docker container to do so.
  */
 func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 	bindsList := make([]string, 0, len(bindMounts))
