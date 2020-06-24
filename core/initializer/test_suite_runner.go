@@ -243,18 +243,7 @@ func runControllerContainer(
 	logTmpFile.Close()
 	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
-	envVariables := map[string]string{
-		TEST_NAME_BASH_ARG:         testName,
-		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
-		GATEWAY_IP_ARG:             gatewayIp,
-		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
-		LOG_LEVEL_ARG:              logLevel,
-		TEST_IMAGE_NAME_ARG:        testServiceImageName,
-		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
-		TEST_VOLUME_ARG:            volumeName,
-		TEST_VOLUME_MOUNTPOINT_ARG: TEST_VOLUME_MOUNTPOINT,
-	}
-
+	envVariables := generateTestControllerEnvVariables(gatewayIp, controllerIpAddr, testName, logLevel, testServiceImageName, volumeName)
 	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
@@ -293,5 +282,39 @@ func runControllerContainer(
 
 	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil
+}
+
+/*
+NOTE: This is a separate function because it provides a nice documentation reference point, where we can say to users,
+"to see the latest special environment variables that will be passed to the test controller, see this function". Do not
+put anything else in this function!!!
+
+Args:
+	testName: The name of the test that the test controller should run
+	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
+	logLevel: A string representing the controller's loglevel (NOTE: this should be interpretable by the controller; the
+		initializer will not know what to do with this!)
+	testServiceImageName: The name of the Docker image of the service that we're testing
+	testVolumeName: The name of the Docker volume that has been created for this particular test execution, and that the
+		test controller can share with the services that it spins up to read and write data to them
+*/
+func generateTestControllerEnvVariables(
+			gatewayIp string,
+			controllerIpAddr string,
+			testName string,
+			logLevel string,
+			testServiceImageName string,
+			testVolumeName string) map[string]string {
+	return map[string]string{
+		TEST_NAME_BASH_ARG:         testName,
+		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
+		GATEWAY_IP_ARG:             gatewayIp,
+		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
+		LOG_LEVEL_ARG:              logLevel,
+		TEST_IMAGE_NAME_ARG:        testServiceImageName,
+		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
+		TEST_VOLUME_ARG:            testVolumeName,
+		TEST_VOLUME_MOUNTPOINT_ARG: TEST_VOLUME_MOUNTPOINT,
+	}
 }
 
