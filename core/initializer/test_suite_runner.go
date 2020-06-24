@@ -2,7 +2,6 @@ package initializer
 
 import (
 	"context"
-	"encoding/gob"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -13,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"sort"
-	"time"
 )
 
 type TestResult string
@@ -36,17 +34,20 @@ type TestSuiteRunner struct {
 const (
 	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
 
-	CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH = "/data/network/network-info"
-	CONTAINER_LOG_INFO_MOUNTED_FILEPATH = "/data/service/container-log"
+	CONTROLLER_LOG_MOUNT_FILEPATH = "/test-controller.log"
+
+	TEST_VOLUME_MOUNTPOINT = "/shared"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
-	TEST_NAME_BASH_ARG = "TEST_NAME"
-	NETWORK_FILEPATH_ARG = "NETWORK_DATA_FILEPATH"
-	LOG_FILEPATH_ARG = "LOG_FILEPATH"
-	LOG_LEVEL_ARG = "LOG_LEVEL"
-
-	// How long to wait before force-killing a container
-	CONTAINER_STOP_TIMEOUT = 30 * time.Second
+	TEST_VOLUME_ARG            = "TEST_VOLUME"
+	TEST_NAME_BASH_ARG         = "TEST_NAME"
+	SUBNET_MASK_ARG            = "SUBNET_MASK"
+	GATEWAY_IP_ARG             = "GATEWAY_IP"
+	LOG_FILEPATH_ARG           = "LOG_FILEPATH"
+	LOG_LEVEL_ARG              = "LOG_LEVEL"
+	TEST_IMAGE_NAME_ARG        = "TEST_IMAGE_NAME"
+	TEST_CONTROLLER_IP_ARG     = "TEST_CONTROLLER_IP"
+	TEST_VOLUME_MOUNTPOINT_ARG = "TEST_VOLUME_MOUNTPOINT"
 
 	SUCCESS_EXIT_CODE = 0
 )
@@ -108,7 +109,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
-	// TODO break everything inside this for loop into its own function for readability
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
 	for testName, test := range testsToRun {
@@ -164,19 +164,9 @@ func runTest(
 			testServiceImageName string,
 			testName string,
 			test testsuite.Test) (bool, error) {
-	networkLoader, err := test.GetNetworkLoader()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get network loader")
-	}
 
-	builder := networks.NewServiceNetworkConfigBuilder()
-	if err := networkLoader.ConfigureNetwork(builder); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred while configuring the network")
-	}
-	testNetworkCfg := builder.Build()
-
-	logrus.Infof("Creating network for test...")
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK)
+	logrus.Infof("Creating Docker network for test...")
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK, []string{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP addr tracker")
 	}
@@ -189,20 +179,21 @@ func runTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
-	serviceNetwork, err := testNetworkCfg.CreateNetwork(testServiceImageName, publicIpProvider, dockerManager)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Error occurred creating testnet")
-	}
-	// Make sure we  make a best-effort attempt to stop the network we created no matter what happens
-	defer stopNetwork(dockerManager, serviceNetwork, CONTAINER_STOP_TIMEOUT)
-	logrus.Info("Network created successfully")
+	// TODO When we have one-network-per-testnet, defer a deletion of the Docker network
+	logrus.Info("Docker network created successfully")
 
+	logrus.Info("Running test controller...")
+	controllerIp, err := publicIpProvider.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.NewError("An error occurred getting an IP for the test controller")
+	}
 	testPassed, err := runControllerContainer(
 		dockerManager,
-		serviceNetwork,
+		gatewayIp,
+		controllerIp,
 		testControllerImageName,
 		testControllerLogLevel,
-		publicIpProvider,
+		testServiceImageName,
 		testName,
 		executionInstanceId)
 	if err != nil {
@@ -231,64 +222,43 @@ Returns:
  */
 func runControllerContainer(
 		manager *docker.DockerManager,
-		rawServiceNetwork *networks.RawServiceNetwork,
-		dockerImage string,
+		gatewayIp string,
+		controllerIpAddr string,
+		controllerImageName string,
 		logLevel string,
-		ipProvider *networks.FreeIpAddrTracker,
+		testServiceImageName string,
 		testName string,
 		executionUuid uuid.UUID) (bool, error){
-	logrus.Info("Launching controller container...")
-
-	// Using tempfiles, is there a risk that for a verrrry long-running E2E test suite the filesystem cleans up the tempfile
-	//  out from underneath the test??
-	testNetworkInfoFilename := fmt.Sprintf("%v-%v", testName, executionUuid.String())
-	networkInfoTmpFile, err := ioutil.TempFile("", testNetworkInfoFilename)
+	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
+	_, err := manager.CreateVolume(volumeName)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not create tempfile to store network info for passing to test controller")
+		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
 
-	logrus.Debugf("Temp filepath to write network file to: %v", networkInfoTmpFile.Name())
-	logrus.Debugf("Raw service network contents: %v", rawServiceNetwork)
-
-	encoder := gob.NewEncoder(networkInfoTmpFile)
-	err = encoder.Encode(rawServiceNetwork)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not write service network state to file")
-	}
-	// Apparently, per https://www.joeshaw.org/dont-defer-close-on-writable-files/ , file.Close() can return errors too,
-	//  but because this is a networkInfoTmpFile we don't fuss about checking them
-	defer networkInfoTmpFile.Close()
-
-	testControllerLogFilename := fmt.Sprintf("%v-%v-%s", testName, executionUuid.String(), "logs")
+	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
 	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
+	logTmpFile.Close()
 	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
-	containerNetworkInfoMountpoint := CONTAINER_NETWORK_INFO_MOUNTED_FILEPATH
-	containerLogInfoMountpoint := CONTAINER_LOG_INFO_MOUNTED_FILEPATH
-	envVariables := map[string]string{
-		TEST_NAME_BASH_ARG: testName,
-		NETWORK_FILEPATH_ARG: containerNetworkInfoMountpoint,
-		LOG_FILEPATH_ARG: containerLogInfoMountpoint,
-		LOG_LEVEL_ARG: logLevel,
-	}
-
-	ipAddr, err := ipProvider.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Could not get free IP address to assign the test controller")
-	}
+	envVariables := generateTestControllerEnvVariables(gatewayIp, controllerIpAddr, testName, logLevel, testServiceImageName, volumeName)
+	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
-		dockerImage,
-		ipAddr,
+		controllerImageName,
+		controllerIpAddr,
 		make(map[int]bool),
 		nil, // Use the default image CMD (which is parameterized)
 		envVariables,
 		map[string]string{
-			networkInfoTmpFile.Name(): containerNetworkInfoMountpoint,
-			logTmpFile.Name():         containerLogInfoMountpoint,
+			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
+			"/var/run/docker.sock": "/var/run/docker.sock",
+			logTmpFile.Name(): CONTROLLER_LOG_MOUNT_FILEPATH,
+		},
+		map[string]string{
+			volumeName: TEST_VOLUME_MOUNTPOINT,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
@@ -303,7 +273,6 @@ func runControllerContainer(
 	}
 
 	logrus.Info("Controller container exited successfully")
-	logTmpFile.Close()
 	buf, err := ioutil.ReadFile(logTmpFile.Name())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
@@ -311,23 +280,41 @@ func runControllerContainer(
 	logrus.Infof("Printing Controller logs:")
 	logrus.Info(string(buf))
 
+	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil
 }
 
 /*
-Makes a best-effort attempt to stop the containers in the given network, waiting for the given timeout.
-It is safe to pass in nil to the networkToStop
- */
-func stopNetwork(manager *docker.DockerManager, networkToStop *networks.RawServiceNetwork, stopTimeout time.Duration) {
-	logrus.Info("Stopping service container network...")
-	for _, containerId := range networkToStop.ContainerIds {
-		logrus.Debugf("Stopping container with ID '%v'", containerId)
-		err := manager.StopContainer(containerId, &stopTimeout)
-		if err != nil {
-			logrus.Errorf("An error occurred stopping container ID '%v'; proceeding to stop other containers:", containerId)
-			logrus.Error(err)
-		}
-		logrus.Debugf("Container with ID '%v' successfully stopped", containerId)
+NOTE: This is a separate function because it provides a nice documentation reference point, where we can say to users,
+"to see the latest special environment variables that will be passed to the test controller, see this function". Do not
+put anything else in this function!!!
+
+Args:
+	testName: The name of the test that the test controller should run
+	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
+	logLevel: A string representing the controller's loglevel (NOTE: this should be interpretable by the controller; the
+		initializer will not know what to do with this!)
+	testServiceImageName: The name of the Docker image of the service that we're testing
+	testVolumeName: The name of the Docker volume that has been created for this particular test execution, and that the
+		test controller can share with the services that it spins up to read and write data to them
+*/
+func generateTestControllerEnvVariables(
+			gatewayIp string,
+			controllerIpAddr string,
+			testName string,
+			logLevel string,
+			testServiceImageName string,
+			testVolumeName string) map[string]string {
+	return map[string]string{
+		TEST_NAME_BASH_ARG:         testName,
+		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
+		GATEWAY_IP_ARG:             gatewayIp,
+		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
+		LOG_LEVEL_ARG:              logLevel,
+		TEST_IMAGE_NAME_ARG:        testServiceImageName,
+		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
+		TEST_VOLUME_ARG:            testVolumeName,
+		TEST_VOLUME_MOUNTPOINT_ARG: TEST_VOLUME_MOUNTPOINT,
 	}
-	logrus.Info("Finished stopping service container network")
 }
+

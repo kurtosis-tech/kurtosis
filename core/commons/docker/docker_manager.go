@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
@@ -58,10 +59,6 @@ func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) 
 	return resp.ID, nil
 }
 
-// TODO we use bind mounts rather than volumes right now because they're wayyyyyy simpler, but it was a gigantic pain to
-//  figure out how to create a volume because the API sucks so going to leave this here in case we use volumes in the future
-//   ~ 2020-05-30
-/*
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
@@ -75,7 +72,6 @@ func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string,
 	// TODO this still isn't tested yet; this might not be the right call
 	return volume.Mountpoint, nil
 }
- */
 
 
 /*
@@ -95,7 +91,8 @@ func (manager DockerManager) CreateAndStartContainer(
 	usedPorts map[int]bool,
 	startCmdArgs []string,
 	envVariables map[string]string,
-	bindMounts map[string]string) (containerIpAddr string, containerId string, err error) {
+	bindMounts map[string]string,
+	volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
@@ -122,7 +119,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts, volumeMounts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -238,38 +235,29 @@ Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON
 mapped to the host ports.
 
 Args:
-	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
-	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted at container startup
+	usedPorts: A "set" of ports that the container will listen on (and which need to be mapped to host ports)
+	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted at container startup (used when
+		sharing data between the host filesystem - in our case, the test initializer - and a Docker container)
+	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
+		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
+		read from a Docker volume - you need to be inside a Docker container to do so.
  */
-func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string) (hostConfig *container.HostConfig, err error) {
-
-	// TODO we don't use volumes right now because binds are wayyyyyy simpler, but the Docker volume API was a
-	//   gigantic pain to figure out so I'm going to leave this here for now in case we do use them in the future
-	//   ~ 2020-05-30
-	/*
-	mountsList := make([]mount.Mount, 0, len(volumeMounts))
-	for volumeName, containerMountpoint := range volumeMounts {
-		mount := mount.Mount{
-			Type:          mount.TypeVolume,
-			Source:        volumeName,
-			Target:        containerMountpoint,
-			// TODO change this if we ever have the containers write their logs to file
-			ReadOnly:      true,
-		}
-		mountsList = append(mountsList, mount)
-	}
-	 */
-
+func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
 		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
 	}
+	for volumeName, containerFilepath := range volumeMounts {
+		// Yes, it's SUPER confusing that "volumes" need to be put into the "binds" section because there's
+		//  a separate thing called a "bind mount".... blame the Docker API
+		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
+	}
+
+	logrus.Debugf("Binds: %v", bindsList)
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		NetworkMode: container.NetworkMode("default"),
-		// TODO see note above about volumes
-		// Mounts: mountsList,
 	}
 	return containerHostConfigPtr, nil
 }
