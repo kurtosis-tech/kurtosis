@@ -20,5 +20,5 @@ func TestFatalOnAssertion(t *testing.T) {
 			t.Fatal("The code did not panic when it should")
 		}
 	}()
-	TestContext{}.AssertTrue(false)
+	TestContext{}.AssertTrue(false, stacktrace.NewError("Failed assertion"))
 }

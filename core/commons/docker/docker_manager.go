@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
@@ -18,34 +19,22 @@ import (
 )
 
 const (
-	LOCAL_HOST_IP = "127.0.0.1"
 	DOCKER_NETWORK_NAME ="kurtosis-bridge"
 )
 
 type DockerManager struct {
 	dockerCtx           context.Context
 	dockerClient        *client.Client
-	freeHostPortTracker *FreeHostPortTracker
 }
 
-func NewDockerManager(
-	dockerCtx context.Context,
-	dockerClient *client.Client,
-	hostPortRangeStart int,
-	hostPortRangeEnd int) (dockerManager *DockerManager, err error) {
-
-	freeHostPortTracker, err := NewFreeHostPortTracker(LOCAL_HOST_IP, hostPortRangeStart, hostPortRangeEnd)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get a free port.")
-	}
+func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
-		freeHostPortTracker: freeHostPortTracker,
 	}, nil
 }
 
-func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) (id string, err error)  {
 	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
@@ -56,6 +45,7 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
+		Gateway: gatewayIP,
 	}}
 	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
 		Driver: "bridge",
@@ -69,10 +59,6 @@ func (manager DockerManager) CreateNetwork(subnetMask string) (id string, err er
 	return resp.ID, nil
 }
 
-// TODO we use bind mounts rather than volumes right now because they're wayyyyyy simpler, but it was a gigantic pain to
-//  figure out how to create a volume because the API sucks so going to leave this here in case we use volumes in the future
-//   ~ 2020-05-30
-/*
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
@@ -86,7 +72,6 @@ func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string,
 	// TODO this still isn't tested yet; this might not be the right call
 	return volume.Mountpoint, nil
 }
- */
 
 
 /*
@@ -106,7 +91,8 @@ func (manager DockerManager) CreateAndStartContainer(
 	usedPorts map[int]bool,
 	startCmdArgs []string,
 	envVariables map[string]string,
-	bindMounts map[string]string) (containerIpAddr string, containerId string, err error) {
+	bindMounts map[string]string,
+	volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
@@ -133,7 +119,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(usedPorts, bindMounts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts, volumeMounts)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -181,23 +167,6 @@ func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, er
 		err = nil
 	}
 	return
-}
-
-
-func (manager DockerManager) getFreePort() (freePort *nat.Port, err error) {
-	freePortInt, err := manager.freeHostPortTracker.GetFreePort()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
-	port, err := nat.NewPort("tcp", strconv.Itoa(freePortInt))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "")
-	}
-	return &port, nil
-}
-
-func (manager DockerManager) getLocalHostIp() string {
-	return LOCAL_HOST_IP
 }
 
 func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvailable bool, err error) {
@@ -266,58 +235,29 @@ Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON
 mapped to the host ports.
 
 Args:
-	usedPorts: a "set" of ports that the container will listen on (and which need to be mapped to host ports)
-	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted at container startup
+	usedPorts: A "set" of ports that the container will listen on (and which need to be mapped to host ports)
+	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted at container startup (used when
+		sharing data between the host filesystem - in our case, the test initializer - and a Docker container)
+	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
+		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
+		read from a Docker volume - you need to be inside a Docker container to do so.
  */
-func (manager *DockerManager) getContainerHostConfig(usedPorts map[int]bool, bindMounts map[string]string) (hostConfig *container.HostConfig, err error) {
-	portMap := nat.PortMap{}
-	for port, _ := range usedPorts {
-		portObj, err := nat.NewPort("tcp", strconv.Itoa(port))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not create port object fro port '%v'", port)
-		}
-
-		freeHostPort, err := manager.getFreePort()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not get a free host port!")
-		}
-
-		portMap[portObj] = []nat.PortBinding{
-			{
-				HostIP: manager.getLocalHostIp(),
-				HostPort: freeHostPort.Port(),
-			},
-		}
-	}
-
-	// TODO we don't use volumes right now because binds are wayyyyyy simpler, but the Docker volume API was a
-	//   gigantic pain to figure out so I'm going to leave this here for now in case we do use them in the future
-	//   ~ 2020-05-30
-	/*
-	mountsList := make([]mount.Mount, 0, len(volumeMounts))
-	for volumeName, containerMountpoint := range volumeMounts {
-		mount := mount.Mount{
-			Type:          mount.TypeVolume,
-			Source:        volumeName,
-			Target:        containerMountpoint,
-			// TODO change this if we ever pull data from the containers
-			ReadOnly:      true,
-		}
-		mountsList = append(mountsList, mount)
-	}
-	 */
-
+func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
 		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
 	}
+	for volumeName, containerFilepath := range volumeMounts {
+		// Yes, it's SUPER confusing that "volumes" need to be put into the "binds" section because there's
+		//  a separate thing called a "bind mount".... blame the Docker API
+		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
+	}
+
+	logrus.Debugf("Binds: %v", bindsList)
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		PortBindings: portMap,
 		NetworkMode: container.NetworkMode("default"),
-		// TODO see note above about volumes
-		// Mounts: mountsList,
 	}
 	return containerHostConfigPtr, nil
 }

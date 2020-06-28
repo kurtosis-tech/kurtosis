@@ -12,19 +12,29 @@ const (
 
 type ServiceAvailabilityChecker struct {
 	core ServiceAvailabilityCheckerCore
+	toCheck Service
+	dependencies []Service
 }
 
-func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore) *ServiceAvailabilityChecker {
-	return &ServiceAvailabilityChecker{core: core}
+func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
+	// Defensive copy
+	dependenciesCopy := make([]Service, 0, len(dependencies))
+	copy(dependenciesCopy, dependencies)
+
+	return &ServiceAvailabilityChecker{
+		core: core,
+		toCheck: toCheck,
+		dependencies: dependenciesCopy,
+	}
 }
 
-// Waits for the given service to start up by making requests (configured by the core) to the service until the service
+// Waits for the linked service to start up by making requests (configured by the core) to the service until the service
 //  is reported as up or the timeout is reached
-func (checker ServiceAvailabilityChecker) WaitForStartup(toCheck Service, dependencies []Service) error {
+func (checker ServiceAvailabilityChecker) WaitForStartup() error {
 	startupTimeout := checker.core.GetTimeout()
 	pollStartTime := time.Now()
 	for time.Since(pollStartTime) < startupTimeout {
-		if checker.core.IsServiceUp(toCheck, dependencies) {
+		if checker.core.IsServiceUp(checker.toCheck, checker.dependencies) {
 			return nil
 		}
 		logrus.Tracef("Service is not yet available; sleeping for %v before retrying...", TIME_BETWEEN_STARTUP_POLLS)
