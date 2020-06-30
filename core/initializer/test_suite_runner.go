@@ -166,6 +166,7 @@ func runTest(
 			test testsuite.Test) (bool, error) {
 
 	logrus.Infof("Creating Docker network for test...")
+	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
 	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK, []string{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP addr tracker")
@@ -174,13 +175,12 @@ func runTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	// TODO TODO TODO Support creating one network per testnet
-	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK, gatewayIp)
+	_, err = dockerManager.CreateNetwork(networkName, DEFAULT_SUBNET_MASK, gatewayIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
-	// TODO When we have one-network-per-testnet, defer a deletion of the Docker network
-	logrus.Info("Docker network created successfully")
+	// TODO Defer a deletion of the Docker network
+	logrus.Infof("Docker network %v created successfully", networkName)
 
 	logrus.Info("Running test controller...")
 	controllerIp, err := publicIpProvider.GetFreeIpAddr()
@@ -189,6 +189,7 @@ func runTest(
 	}
 	testPassed, err := runControllerContainer(
 		dockerManager,
+		networkName,
 		gatewayIp,
 		controllerIp,
 		testControllerImageName,
@@ -200,7 +201,7 @@ func runTest(
 		return false, stacktrace.Propagate(err, "An error occurred while running the test")
 	}
 	return testPassed, nil
-	// TODO after printing logs, delete each container
+	// TODO after printing logs, delete each container???
 }
 
 
@@ -222,6 +223,7 @@ Returns:
  */
 func runControllerContainer(
 		manager *docker.DockerManager,
+		networkName string,
 		gatewayIp string,
 		controllerIpAddr string,
 		controllerImageName string,
@@ -248,6 +250,7 @@ func runControllerContainer(
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		controllerImageName,
+		networkName,
 		controllerIpAddr,
 		make(map[int]bool),
 		nil, // Use the default image CMD (which is parameterized)

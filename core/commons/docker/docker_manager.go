@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	DOCKER_NETWORK_NAME ="kurtosis-bridge"
+	DOCKER_NETWORK_DRIVER = "bridge"
 )
 
 type DockerManager struct {
@@ -34,8 +34,19 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (d
 	}, nil
 }
 
-func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) (id string, err error)  {
-	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+/*
+Creates a Docker network with the given parameters
+
+Args:
+	name: The name to give the new Docker network
+	subnetMask: The subnet mask of allowed IPs for the Docker network
+	gatewayIP: The IP to give the network gateway
+
+Returns:
+	id: The Docker-managed ID of the network
+ */
+func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatewayIP string) (id string, err error)  {
+	networkId, ok, err := manager.getNetworkId(name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
 	}
@@ -47,17 +58,19 @@ func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) 
 		Subnet: subnetMask,
 		Gateway: gatewayIP,
 	}}
-	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
-		Driver: "bridge",
+	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
+		Driver: DOCKER_NETWORK_DRIVER,
 		IPAM: &network.IPAM{
 			Config: ipamConfig,
 		},
 	})
 	if err != nil {
-		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", DOCKER_NETWORK_NAME, subnetMask)
+		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
 	return resp.ID, nil
 }
+
+// TODO Add DeleteNetwork call to remove a network we've created
 
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
@@ -87,6 +100,7 @@ Args:
  */
 func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
+	networkName string,
 	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string,
@@ -107,7 +121,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 
 	// TODO replace with custom per-test networks
-	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+	_, networkExistsLocally, err := manager.getNetworkId(networkName)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
 	}
@@ -130,7 +144,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	containerId = resp.ID
 
-	err = manager.connectToNetwork(DOCKER_NETWORK_NAME, containerId, staticIp)
+	err = manager.connectToNetwork(networkName, containerId, staticIp)
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
