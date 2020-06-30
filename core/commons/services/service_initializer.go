@@ -13,11 +13,13 @@ import (
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
 	core ServiceInitializerCore
+	networkName string
 }
 
-func NewServiceInitializer(core ServiceInitializerCore) *ServiceInitializer {
+func NewServiceInitializer(core ServiceInitializerCore, networkName string) *ServiceInitializer {
 	return &ServiceInitializer{
 		core: core,
+		networkName: networkName,
 	}
 }
 
@@ -25,8 +27,12 @@ func NewServiceInitializer(core ServiceInitializerCore) *ServiceInitializer {
 /*
 Creates a service with the given parameters
 Args:
-	testVolumeHostDirpath: The path to the directory of the test volume on the code running CreateService, which will be mounted on the service
-	testVolumeMountDirpath: The path to the directory where the test volume will be mounted on the Service's Docker image
+	testVolumeName: The name of the test volume to mount on the node
+	testVolumeControllerDirpath: The path to the directory where the test volume is mounted on the controller Docker image
+	dockerImage: The name of the Docker image that the new service will be started with
+	staticIp: The IP the new service will be given
+	manager: The DockerManager used to launch the container running the service
+	dependencies: The services that the service-to-be-started depends on
  */
 func (initializer ServiceInitializer) CreateService(
 			testVolumeName string,
@@ -74,8 +80,8 @@ func (initializer ServiceInitializer) CreateService(
 	//   the testing code knowing about the specifics of the image (like where the binary is located). However, this relies
 	//   on the service images being parameterized with environment variables.
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
-
 			dockerImage,
+			initializer.networkName,
 			staticIp,
 			usedPorts,
 			startCmdArgs,
