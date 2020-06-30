@@ -1,3 +1,6 @@
+# TBD
+* Create a new Docker network per test, to pave the way for parallel tests
+
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings
 * Make tests declare a timeout and mark them as failed if they don't complete in that time

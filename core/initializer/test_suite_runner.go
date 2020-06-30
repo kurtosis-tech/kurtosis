@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -11,6 +12,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"math"
+	"net"
 	"sort"
 )
 
@@ -32,7 +35,14 @@ type TestSuiteRunner struct {
 }
 
 const (
-	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+	// Each Docker network created will have 2^this_num free IP addresses available
+	NETWORK_WIDTH_BITS = 8
+
+	// This is the IP address that the first Docker subnet will be doled out from, with subsequent Docker networks doled out with
+	//  increasing IPs corresponding to the NETWORK_WIDTH_BITS
+	SUBNET_START_ADDR = "172.23.0.0"
+
+	BITS_IN_IP4_ADDR = 32
 
 	CONTROLLER_LOG_MOUNT_FILEPATH = "/test-controller.log"
 
@@ -106,16 +116,31 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		testsToRun[testName] = test
 	}
 
+	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
+	if subnetStartIp == nil {
+		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
+	}
+	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
 
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
+	testIndex := 0
 	for testName, test := range testsToRun {
 		logrus.Infof("---------------------------------- %v --------------------------------", testName)
+		// Pick the next free available subnet IP, considering all the tests we've started previously
+		subnetIpInt := binary.BigEndian.Uint32(subnetStartIp) + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
+		subnetIp := make(net.IP, 4)
+		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
+		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
+
+		logrus.Debugf("Running test %v with subnet CIDR %v..", testName, subnetCidrStr)
+
 		testPassed, err := runTest(
 			dockerManager,
+			subnetCidrStr,
 			runner.testControllerImageName,
 			runner.testControllerLogLevel,
 			executionInstanceId,
@@ -123,6 +148,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 			testName,
 			test)
 		testResults[testName] = logTestResult(testName, err, testPassed)
+		testIndex++
 	}
 
 	return testResults, nil
@@ -159,6 +185,7 @@ func logTestResult(testName string, err error, testPassed bool) TestResult {
 
 func runTest(
 			dockerManager *docker.DockerManager,
+			subnetMask string,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			executionInstanceId uuid.UUID,
@@ -168,7 +195,7 @@ func runTest(
 
 	logrus.Infof("Creating Docker network for test...")
 	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK, []string{})
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(subnetMask, []string{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP addr tracker")
 	}
@@ -176,7 +203,7 @@ func runTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	_, err = dockerManager.CreateNetwork(networkName, DEFAULT_SUBNET_MASK, gatewayIp)
+	_, err = dockerManager.CreateNetwork(networkName, subnetMask, gatewayIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
@@ -191,6 +218,7 @@ func runTest(
 	testPassed, err := runControllerContainer(
 		dockerManager,
 		networkName,
+		subnetMask,
 		gatewayIp,
 		controllerIp,
 		testControllerImageName,
@@ -212,11 +240,17 @@ Runs the controller container against the given test network.
 
 Args:
 	manager: the Docker manager, used for starting container & waiting for it to finish
-	rawServiceNetwork: the network to run against
-	dockerImage: the Docker image of the controller that will be started
-	ipProvider: IP provider to give the controller container its address
-	testName: name of test to run
-	executionUuid: UUID tying together all the tests in this run of the test suite
+	networkName: The name of the Docker network that the controller container will run in
+	subnetMask: The CIDR representation of the network that the Docker network that the controller container is running in
+	gatewayIp: The IP of the gateway on the Docker network that the controller is running in
+	controllerIpAddr: The IP address that should be used for the container that the controller is running in
+	controllerImageName: The name of the Docker image that should be used to run the controller container
+	logLevel: A string representing the log level that the controller should use (will be passed as-is to the controller;
+		should be semantically meaningful to the given controller image)
+	testServiceImageName: The name of the Docker image that's being tested, and will be used for spinning up "test" nodes
+		on the controller
+	testName: Name of the test to tell the controller to run
+	executionUuid: A UUID representing this specific execution of the test suite
 
 Returns:
 	bool: true if the test succeeded, false if not
@@ -225,6 +259,7 @@ Returns:
 func runControllerContainer(
 		manager *docker.DockerManager,
 		networkName string,
+		subnetMask string,
 		gatewayIp string,
 		controllerIpAddr string,
 		controllerImageName string,
@@ -248,6 +283,7 @@ func runControllerContainer(
 
 	envVariables := generateTestControllerEnvVariables(
 		networkName,
+		subnetMask,
 		gatewayIp,
 		controllerIpAddr,
 		testName,
@@ -302,6 +338,7 @@ put anything else in this function!!!
 
 Args:
 	networkName: The name of the Docker network that the test controller is running in, and which all services should be started in
+	subnetMask: The subnet mask used to create the Docker network that the test controller, and all services it starts, are running in
 	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
 	controllerIpAddr: The IP address of the container running the test controller
 	testName: The name of the test that the test controller should run
@@ -313,6 +350,7 @@ Args:
 */
 func generateTestControllerEnvVariables(
 			networkName string,
+			subnetMask string,
 			gatewayIp string,
 			controllerIpAddr string,
 			testName string,
@@ -321,8 +359,8 @@ func generateTestControllerEnvVariables(
 			testVolumeName string) map[string]string {
 	return map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
-		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
-		NETWORK_NAME_ARG:			networkName,
+		SUBNET_MASK_ARG:            subnetMask,
+		NETWORK_NAME_ARG:           networkName,
 		GATEWAY_IP_ARG:             gatewayIp,
 		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
 		LOG_LEVEL_ARG:              logLevel,
