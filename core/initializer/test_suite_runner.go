@@ -41,6 +41,7 @@ const (
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_VOLUME_ARG            = "TEST_VOLUME"
 	TEST_NAME_BASH_ARG         = "TEST_NAME"
+	NETWORK_NAME_ARG		   = "NETWORK_NAME"
 	SUBNET_MASK_ARG            = "SUBNET_MASK"
 	GATEWAY_IP_ARG             = "GATEWAY_IP"
 	LOG_FILEPATH_ARG           = "LOG_FILEPATH"
@@ -245,7 +246,14 @@ func runControllerContainer(
 	logTmpFile.Close()
 	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
-	envVariables := generateTestControllerEnvVariables(gatewayIp, controllerIpAddr, testName, logLevel, testServiceImageName, volumeName)
+	envVariables := generateTestControllerEnvVariables(
+		networkName,
+		gatewayIp,
+		controllerIpAddr,
+		testName,
+		logLevel,
+		testServiceImageName,
+		volumeName)
 	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
@@ -293,8 +301,10 @@ NOTE: This is a separate function because it provides a nice documentation refer
 put anything else in this function!!!
 
 Args:
-	testName: The name of the test that the test controller should run
+	networkName: The name of the Docker network that the test controller is running in, and which all services should be started in
 	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
+	controllerIpAddr: The IP address of the container running the test controller
+	testName: The name of the test that the test controller should run
 	logLevel: A string representing the controller's loglevel (NOTE: this should be interpretable by the controller; the
 		initializer will not know what to do with this!)
 	testServiceImageName: The name of the Docker image of the service that we're testing
@@ -302,6 +312,7 @@ Args:
 		test controller can share with the services that it spins up to read and write data to them
 */
 func generateTestControllerEnvVariables(
+			networkName string,
 			gatewayIp string,
 			controllerIpAddr string,
 			testName string,
@@ -311,6 +322,7 @@ func generateTestControllerEnvVariables(
 	return map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
 		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
+		NETWORK_NAME_ARG:			networkName,
 		GATEWAY_IP_ARG:             gatewayIp,
 		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
 		LOG_LEVEL_ARG:              logLevel,
