@@ -103,18 +103,24 @@ Args:
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
  */
-func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
+func (manager DockerManager) CreateVolume(volumeName string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
 	}
 
-	volume, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
+	/*
+	We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
+	use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
+	think would be the path of the volume on the local machine) isn't useful either becuase Docker itself runs inside a VM
+	so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
+	to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
+	 */
+	_, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Could not create Docker volume for test controller")
+		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
 
-	// TODO this still isn't tested yet; this might not be the right call
-	return volume.Mountpoint, nil
+	return nil
 }
 
 
