@@ -1,3 +1,6 @@
+# TBD
+* Remove return value of `DockerManager.CreateVolume`, which was utterly useless
+
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings
 * Make tests declare a timeout and mark them as failed if they don't complete in that time
