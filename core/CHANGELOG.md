@@ -1,5 +1,6 @@
 # TBD
 * Create & tear down a new Docker network per test, to pave the way for parallel tests
+* Move FreeIpAddrTracker a little closer to handling IPv6
 
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings

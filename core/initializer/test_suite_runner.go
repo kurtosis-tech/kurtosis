@@ -116,12 +116,22 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		testsToRun[testName] = test
 	}
 
+	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
+
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
 	if subnetStartIp == nil {
 		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
 	}
-	logrus.Tracef("Subnet start IP: %v", subnetStartIp.String())
-	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
+
+	// The IP can be either 4 bytes or 16 bytes long; we need to handle both
+	//  else we'll get a silent 0 value for the int!
+	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
+	var subnetStartIpInt uint32
+	if len(subnetStartIp) == 16 {
+		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp[12:16])
+	} else {
+		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp)
+	}
 
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
@@ -132,11 +142,9 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	for testName, test := range testsToRun {
 		logrus.Infof("---------------------------------- %v --------------------------------", testName)
 		// Pick the next free available subnet IP, considering all the tests we've started previously
-		subnetIpInt := binary.BigEndian.Uint32(subnetStartIp) + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
-		logrus.Tracef("subnetIpInt: %v", subnetIpInt)
+		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
 		subnetIp := make(net.IP, 4)
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
-		logrus.Tracef("Subnet IP bytes after PutUint32: %v", subnetIp)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
 		logrus.Debugf("Running test %v with subnet CIDR %v..", testName, subnetCidrStr)
