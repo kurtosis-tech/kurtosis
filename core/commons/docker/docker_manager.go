@@ -59,18 +59,20 @@ func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) 
 	return resp.ID, nil
 }
 
-func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
+/*
+Creates a volume with the given name
+ */
+func (manager DockerManager) CreateVolume(volumeName string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
 	}
 
-	volume, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
+	_, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Could not create Docker volume for test controller")
+		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
 
-	// TODO this still isn't tested yet; this might not be the right call
-	return volume.Mountpoint, nil
+	return nil
 }
 
 

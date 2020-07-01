@@ -230,8 +230,7 @@ func runControllerContainer(
 		testName string,
 		executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
-	_, err := manager.CreateVolume(volumeName)
-	if err != nil {
+	if err := manager.CreateVolume(volumeName); err != nil {
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
 
