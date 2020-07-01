@@ -1,5 +1,5 @@
 # TBD
-* Create a new Docker network per test, to pave the way for parallel tests
+* Create & tear down a new Docker network per test, to pave the way for parallel tests
 
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings

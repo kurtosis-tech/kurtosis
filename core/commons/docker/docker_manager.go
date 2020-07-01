@@ -34,8 +34,12 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (d
 	}, nil
 }
 
+// TODO make this throw an error if a network with the same name already exists (because it might have different configs
+//  than what we want, e.g. a different subnet)
+// TODO Make this function return the networkId - this would save a TON of hassle, because everywhere else in Docker needs
+//  the network ID and we're passing around the name so we have to do a bunch of Docker lookups every time we want the ID
 /*
-Creates a Docker network with the given parameters
+Creates a Docker network with the given parameters, doing nothing if a network with that name already exists
 
 Args:
 	name: The name to give the new Docker network
@@ -70,7 +74,27 @@ func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatew
 	return resp.ID, nil
 }
 
-// TODO Add DeleteNetwork call to remove a network we've created
+// TODO Change this to be removing a network by ID
+/*
+Removes the Docker network with the given name
+
+Args:
+	networkName: Name of Docker network to remove
+ */
+func (manager DockerManager) RemoveNetwork(networkName string) error {
+	networkId, exists, err := manager.getNetworkId(networkName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the network ID for network %v", networkName)
+	}
+	if !exists {
+		// No network with that name exists, so nothing to do
+		return nil
+	}
+	if err := manager.dockerClient.NetworkRemove(manager.dockerCtx, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the Docker network with name %v and ID %v", networkName, networkId)
+	}
+	return nil
+}
 
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
@@ -120,7 +144,6 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	// TODO replace with custom per-test networks
 	_, networkExistsLocally, err := manager.getNetworkId(networkName)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
@@ -137,7 +160,6 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	// TODO probably use a UUID for the network name (and maybe include test name too)
 	resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)

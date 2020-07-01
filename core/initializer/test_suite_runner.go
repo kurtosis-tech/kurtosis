@@ -207,7 +207,7 @@ func runTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
-	// TODO Defer a deletion of the Docker network
+	defer removeNetworkDeferredFunc(dockerManager, networkName)
 	logrus.Infof("Docker network %v created successfully", networkName)
 
 	logrus.Info("Running test controller...")
@@ -329,6 +329,21 @@ func runControllerContainer(
 
 	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil
+}
+
+/*
+Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
+as a deferred function.
+ */
+func removeNetworkDeferredFunc(dockerManager *docker.DockerManager, networkName string) {
+	logrus.Infof("Attempting to remove Docker network with name %v...", networkName)
+	err := dockerManager.RemoveNetwork(networkName)
+	if err != nil {
+		logrus.Error("An error occurred removing Docker network with name %v:")
+		logrus.Error(err.Error())
+	} else {
+		logrus.Infof("Docker network %v successfully removed", networkName)
+	}
 }
 
 /*
