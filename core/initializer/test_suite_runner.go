@@ -120,6 +120,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 	if subnetStartIp == nil {
 		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
 	}
+	logrus.Tracef("Subnet start IP: %v", subnetStartIp.String())
 	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
 
 	executionInstanceId := uuid.Generate()
@@ -132,8 +133,10 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		logrus.Infof("---------------------------------- %v --------------------------------", testName)
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := binary.BigEndian.Uint32(subnetStartIp) + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
+		logrus.Tracef("subnetIpInt: %v", subnetIpInt)
 		subnetIp := make(net.IP, 4)
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
+		logrus.Tracef("Subnet IP bytes after PutUint32: %v", subnetIp)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
 		logrus.Debugf("Running test %v with subnet CIDR %v..", testName, subnetCidrStr)
@@ -339,7 +342,7 @@ func removeNetworkDeferredFunc(dockerManager *docker.DockerManager, networkName 
 	logrus.Infof("Attempting to remove Docker network with name %v...", networkName)
 	err := dockerManager.RemoveNetwork(networkName)
 	if err != nil {
-		logrus.Error("An error occurred removing Docker network with name %v:")
+		logrus.Errorf("An error occurred removing Docker network with name %v:", networkName)
 		logrus.Error(err.Error())
 	} else {
 		logrus.Infof("Docker network %v successfully removed", networkName)
