@@ -96,6 +96,13 @@ func (manager DockerManager) RemoveNetwork(networkName string) error {
 	return nil
 }
 
+/*
+Creates a Docker volume identified by the given name.
+
+Args:
+	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
+		even give volumes IDs - this name is all there is)
+ */
 func (manager DockerManager) CreateVolume(volumeName string) (pathOnHost string, err error) {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
