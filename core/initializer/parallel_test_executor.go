@@ -62,7 +62,7 @@ func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]Paralle
 
 	testOutputChan := make(chan ParallelTestOutput)
 
-	logrus.Info("Launching %v tests with %v parallelism...", len(tests), executor.parallelism)
+	logrus.Infof("Launching %v tests with %v parallelism...", len(tests), executor.parallelism)
 	executor.disableSystemLogAndRunTestThreads(testParamsChan, testOutputChan)
 	logrus.Info("All tests exited")
 
