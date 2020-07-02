@@ -128,6 +128,10 @@ func runControllerContainer(
 
 	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
 	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
+
+	// TODO Debugging
+	fmt.Println(logTmpFile.Name())
+
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}

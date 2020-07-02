@@ -137,8 +137,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 			return false, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
 		}
 		// We're responsible for cleaning up our own tempfiles
-		// TODO Debugging
-		// defer os.Remove(tempFp.Name())
+		logrus.Tracef("Temp logfile: %v", tempFp.Name()) // TODO DEBUGGING
+		// defer os.Remove(tempFp.Name()) // TODO DEBUGGING
 		defer tempFp.Close()
 
 		testParams[testName] = ParallelTestParams{
