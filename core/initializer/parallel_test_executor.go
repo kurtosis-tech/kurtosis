@@ -124,7 +124,7 @@ func (executor ParallelTestExecutor) runTestWorker(
 			testContext,
 			executor.dockerClient,
 			testParams.subnetMask,
-			executor.testServiceImageName,
+			executor.testControllerImageName,
 			executor.testControllerLogLevel,
 			executor.testServiceImageName,
 			testParams.testName)
