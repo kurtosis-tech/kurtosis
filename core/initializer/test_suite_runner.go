@@ -137,7 +137,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 			return false, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
 		}
 		// We're responsible for cleaning up our own tempfiles
-		defer os.Remove(tempFp.Name())
+		// TODO Debugging
+		// defer os.Remove(tempFp.Name())
 		defer tempFp.Close()
 
 		testParams[testName] = ParallelTestParams{
@@ -176,7 +177,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		logFp := output.LogFp
 
 		logrus.Infof("---------------------------------- %v --------------------------------", name)
-		_, err := io.Copy(os.Stdout, logFp)
+		bytesWritten, err := io.Copy(os.Stdout, logFp)
+		logrus.Tracef("Wrote %v bytes to STDOUT from test logfile", bytesWritten)
 		if err != nil {
 			logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
 			logrus.Error(err)
