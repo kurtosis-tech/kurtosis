@@ -77,13 +77,13 @@ func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]Paralle
 
 func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
 	/*
-    Because each test needs to have its logs written to an independent file to avoid getting test logs all mixed up, we need to make
+    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
     a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we make the systemwide logger throw
-	a panic for this function call only
+	a panic during just this function call.
 	*/
-	// TODO turn off systemwide logging with a writer that throws a panic on write
-	// TODO defer turning systemwide logging back on
+	logrus.SetOutput(PanickingLogWriter{})
+	defer logrus.SetOutput(os.Stdout)
 
 	var waitGroup sync.WaitGroup
 	for i := 0; i < executor.parallelism; i++ {
