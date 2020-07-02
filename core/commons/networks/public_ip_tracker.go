@@ -3,10 +3,12 @@ package networks
 import (
 	"encoding/binary"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 )
 
 type FreeIpAddrTracker struct {
+	log *logrus.Logger
 	subnet *net.IPNet
 	takenIps map[string]bool
 }
@@ -15,7 +17,7 @@ type FreeIpAddrTracker struct {
 Creates a new tracker that will dole out free IP addresses from the given subnet, making sure not to dole out any IPs
 from the list of already-taken IPs
  */
-func NewFreeIpAddrTracker(subnetMask string, alreadyTakenIps []string) (ipAddrTracker *FreeIpAddrTracker, err error) {
+func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps []string) (ipAddrTracker *FreeIpAddrTracker, err error) {
 	_, ipv4Net, err := net.ParseCIDR(subnetMask)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse subnet %s as CIDR.", subnetMask)
@@ -27,6 +29,7 @@ func NewFreeIpAddrTracker(subnetMask string, alreadyTakenIps []string) (ipAddrTr
 	}
 
 	ipAddrTracker = &FreeIpAddrTracker{
+		log: log,
 		subnet: ipv4Net,
 		takenIps: takenIps,
 	}

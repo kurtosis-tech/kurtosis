@@ -23,12 +23,20 @@ const (
 )
 
 type DockerManager struct {
+	// WARNING: This log should be used for all log statements - NOT the system-wide logger!!!
+	log *logrus.Logger
+
+	// TODO Remove this and create a new Context per Docker function call!!! See
+	//  https://golang.org/pkg/context/ and
+	//  https://blog.golang.org/context
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 }
 
-func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
+// TODO take in a logger!!
+func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
+		log: log,
 		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 	}, nil
@@ -269,7 +277,7 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 }
 
 func (manager DockerManager) pullImage(imageName string) (err error) {
-	logrus.Infof("Pulling image %s...", imageName)
+	manager.log.Infof("Pulling image %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
@@ -302,7 +310,7 @@ func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]strin
 		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
 	}
 
-	logrus.Debugf("Binds: %v", bindsList)
+	manager.log.Debugf("Binds: %v", bindsList)
 
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
