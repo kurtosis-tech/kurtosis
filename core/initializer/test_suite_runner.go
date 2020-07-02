@@ -124,6 +124,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 
 	testIndex := 0
 	testParams := make(map[string]ParallelTestParams)
+	testLogFps := make(map[string]*os.File)
 	for testName, _ := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
@@ -136,10 +137,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		if err != nil {
 			return false, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
 		}
-		// We're responsible for cleaning up our own tempfiles
+		testLogFps[testName] = tempFp
 		logrus.Tracef("Temp logfile: %v", tempFp.Name()) // TODO DEBUGGING
-		// defer os.Remove(tempFp.Name()) // TODO DEBUGGING
-		defer tempFp.Close()
 
 		testParams[testName] = ParallelTestParams{
 			testName:            testName,
@@ -171,18 +170,30 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 	allTestResults := make(map[string]testResult)
 	sort.Strings(testNamesToRun)
 	for _, name := range testNamesToRun {
+		logrus.Infof("---------------------------------- %v --------------------------------", name)
+
 		output := testOutputs[name]
 		passed := output.Passed
 		executionErr := output.ExecutionErr
 		logFp := output.LogFp
 
-		logrus.Infof("---------------------------------- %v --------------------------------", name)
-		bytesWritten, err := io.Copy(os.Stdout, logFp)
-		logrus.Tracef("Wrote %v bytes to STDOUT from test logfile", bytesWritten)
+		// Close our log FP now that we're done writing, to switch to read mode
+		logFp.Close()
+		readLogFp, err := os.Open(logFp.Name())
 		if err != nil {
-			logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
+			logrus.Error("An error occurred opening the log file of test %v for reading; logs for this test are unavailable", name)
 			logrus.Error(err)
+		} else {
+			bytesWritten, err := io.Copy(os.Stdout, readLogFp)
+			logrus.Tracef("Wrote %v bytes to STDOUT from test logfile", bytesWritten)
+			if err != nil {
+				logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
+				logrus.Error(err)
+			}
 		}
+		readLogFp.Close()
+		// TODO DEBUGGING
+		// os.Remove(logFp.Name()) // We're responsible for cleaning up the temp file we created
 
 		result := logTestResult(name, executionErr, passed)
 		allTestResults[name] = result
