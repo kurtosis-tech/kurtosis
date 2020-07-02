@@ -6,7 +6,7 @@ import (
 )
 
 func TestDisallowingSameIds(t *testing.T) {
-	builder := NewServiceNetworkBuilder("test", nil, nil, "test", "/foo/bar")
+	builder := NewServiceNetworkBuilder("test", nil, "test-network", nil, "test", "/foo/bar")
 	err := builder.AddTestImageConfiguration(0, getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail here")
@@ -19,7 +19,7 @@ func TestDisallowingSameIds(t *testing.T) {
 }
 
 func TestDefensiveCopies(t *testing.T) {
-	builder := NewServiceNetworkBuilder("test", nil, nil, "test", "/foo/bar")
+	builder := NewServiceNetworkBuilder("test", nil, "test-network", nil, "test", "/foo/bar")
 	err := builder.AddTestImageConfiguration(0, getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail here")

@@ -17,6 +17,8 @@ type ServiceNetworkBuilder struct {
 
 	dockerManager *docker.DockerManager
 
+	dockerNetworkName string
+
 	freeIpTracker *FreeIpAddrTracker
 
 	// Factories that will be used to construct the nodes
@@ -33,6 +35,7 @@ type ServiceNetworkBuilder struct {
 func NewServiceNetworkBuilder(
 			testImage string,
 			dockerManager *docker.DockerManager,
+			dockerNetworkName string,
 			freeIpTracker *FreeIpAddrTracker,
 			testVolume string,
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
@@ -40,6 +43,7 @@ func NewServiceNetworkBuilder(
 	return &ServiceNetworkBuilder{
 		testImage:                   testImage,
 		dockerManager:               dockerManager,
+		dockerNetworkName:           dockerNetworkName,
 		freeIpTracker:               freeIpTracker,
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -86,6 +90,7 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	return NewServiceNetwork(
 		builder.freeIpTracker,
 		builder.dockerManager,
+		builder.dockerNetworkName,
 		make(map[int]ServiceNode),
 		configurationsCopy,
 		builder.testVolume,

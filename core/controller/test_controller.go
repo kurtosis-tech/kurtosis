@@ -14,13 +14,12 @@ import (
 const (
 	// How long to wait before force-killing a container
 	CONTAINER_STOP_TIMEOUT = 30 * time.Second
-
-	TEST_VOLUME_MOUNTPOINT = "/shared"
 )
 
 type TestController struct {
 	testVolumeName string
 	testVolumeFilepath string
+	networkName string
 	subnetMask string
 	gatewayIp string
 	testControllerIp string
@@ -33,6 +32,7 @@ Creates a new TestController with the given properties
 Args:
 	testVolumeName: The name of the volume where test data should be stored, which will have been mountd on the controller by the initializer and should be mounted on service nodes
 	testVolumeFilepath: The filepath where the test volume will have been mounted on the controller by the initializer
+	networkName: The name of the Docker network that the test controller is running in and which all services should be started in
 	subnetMask: Mask of the network that the TestController is living in, and from which it should dole out IPs to the testnet containers
 	gatewayIp: The IP of the gateway that's running the Docker network that the TestController and the containers run in
 	testControllerIp: The IP address of the controller itself
@@ -42,6 +42,7 @@ Args:
 func NewTestController(
 			testVolumeName string,
 			testVolumeFilepath string,
+			networkName string,
 			subnetMask string,
 			gatewayIp string,
 			testControllerIp string,
@@ -50,6 +51,7 @@ func NewTestController(
 	return &TestController{
 		testVolumeName: testVolumeName,
 		testVolumeFilepath: testVolumeFilepath,
+		networkName:      networkName,
 		subnetMask:       subnetMask,
 		gatewayIp:        gatewayIp,
 		testControllerIp: testControllerIp,
@@ -95,7 +97,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	}
 	logrus.Info("Connected to Docker environment")
 
-	logrus.Info("Configuring test network...")
+	logrus.Infof("Configuring test network in Docker network %v...", controller.networkName)
 	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
 	freeIpTracker, err := networks.NewFreeIpAddrTracker(controller.subnetMask, alreadyTakenIps)
 	if err != nil {
@@ -105,11 +107,12 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	builder := networks.NewServiceNetworkBuilder(
 			controller.testImageName,
 			dockerManager,
+			controller.networkName,
 			freeIpTracker,
 			controller.testVolumeName,
 			controller.testVolumeFilepath)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
-		return stacktrace.Propagate(err, "Could not configure test network"), nil
+		return stacktrace.Propagate(err, "Could not configure test network in Docker network %v", controller.networkName), nil
 	}
 	network := builder.Build()
 	defer func() {

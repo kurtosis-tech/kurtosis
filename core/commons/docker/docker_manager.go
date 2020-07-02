@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	DOCKER_NETWORK_NAME ="kurtosis-bridge"
+	DOCKER_NETWORK_DRIVER = "bridge"
 )
 
 type DockerManager struct {
@@ -34,8 +34,23 @@ func NewDockerManager(dockerCtx context.Context, dockerClient *client.Client) (d
 	}, nil
 }
 
-func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) (id string, err error)  {
-	networkId, ok, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+// TODO make this throw an error if a network with the same name already exists (because it might have different configs
+//  than what we want, e.g. a different subnet)
+// TODO Make this function return the networkId - this would save a TON of hassle, because everywhere else in Docker needs
+//  the network ID and we're passing around the name so we have to do a bunch of Docker lookups every time we want the ID
+/*
+Creates a Docker network with the given parameters, doing nothing if a network with that name already exists
+
+Args:
+	name: The name to give the new Docker network
+	subnetMask: The subnet mask of allowed IPs for the Docker network
+	gatewayIP: The IP to give the network gateway
+
+Returns:
+	id: The Docker-managed ID of the network
+ */
+func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatewayIP string) (id string, err error)  {
+	networkId, ok, err := manager.getNetworkId(name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
 	}
@@ -47,26 +62,59 @@ func (manager DockerManager) CreateNetwork(subnetMask string, gatewayIP string) 
 		Subnet: subnetMask,
 		Gateway: gatewayIP,
 	}}
-	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, DOCKER_NETWORK_NAME, types.NetworkCreate{
-		Driver: "bridge",
+	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
+		Driver: DOCKER_NETWORK_DRIVER,
 		IPAM: &network.IPAM{
 			Config: ipamConfig,
 		},
 	})
 	if err != nil {
-		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", DOCKER_NETWORK_NAME, subnetMask)
+		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
 	return resp.ID, nil
 }
 
+// TODO Change this to be removing a network by ID
 /*
-Creates a volume with the given name
+Removes the Docker network with the given name
+
+Args:
+	networkName: Name of Docker network to remove
+ */
+func (manager DockerManager) RemoveNetwork(networkName string) error {
+	networkId, exists, err := manager.getNetworkId(networkName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the network ID for network %v", networkName)
+	}
+	if !exists {
+		// No network with that name exists, so nothing to do
+		return nil
+	}
+	if err := manager.dockerClient.NetworkRemove(manager.dockerCtx, networkId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the Docker network with name %v and ID %v", networkName, networkId)
+	}
+	return nil
+}
+
+/*
+Creates a Docker volume identified by the given name.
+
+Args:
+	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
+		even give volumes IDs - this name is all there is)
  */
 func (manager DockerManager) CreateVolume(volumeName string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
 	}
 
+	/*
+	We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
+	use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
+	think would be the path of the volume on the local machine) isn't useful either becuase Docker itself runs inside a VM
+	so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
+	to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
+	 */
 	_, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
@@ -89,6 +137,7 @@ Args:
  */
 func (manager DockerManager) CreateAndStartContainer(
 	dockerImage string,
+	networkName string,
 	staticIp string,
 	usedPorts map[int]bool,
 	startCmdArgs []string,
@@ -108,8 +157,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	// TODO replace with custom per-test networks
-	_, networkExistsLocally, err := manager.getNetworkId(DOCKER_NETWORK_NAME)
+	_, networkExistsLocally, err := manager.getNetworkId(networkName)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
 	}
@@ -125,14 +173,13 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	// TODO probably use a UUID for the network name (and maybe include test name too)
 	resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}
 	containerId = resp.ID
 
-	err = manager.connectToNetwork(DOCKER_NETWORK_NAME, containerId, staticIp)
+	err = manager.connectToNetwork(networkName, containerId, staticIp)
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}

@@ -2,6 +2,7 @@ package initializer
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -11,6 +12,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"math"
+	"net"
 	"sort"
 )
 
@@ -32,7 +35,14 @@ type TestSuiteRunner struct {
 }
 
 const (
-	DEFAULT_SUBNET_MASK = "172.23.0.0/16"
+	// Each Docker network created will have 2^this_num free IP addresses available
+	NETWORK_WIDTH_BITS = 8
+
+	// This is the IP address that the first Docker subnet will be doled out from, with subsequent Docker networks doled out with
+	//  increasing IPs corresponding to the NETWORK_WIDTH_BITS
+	SUBNET_START_ADDR = "172.23.0.0"
+
+	BITS_IN_IP4_ADDR = 32
 
 	CONTROLLER_LOG_MOUNT_FILEPATH = "/test-controller.log"
 
@@ -41,6 +51,7 @@ const (
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	TEST_VOLUME_ARG            = "TEST_VOLUME"
 	TEST_NAME_BASH_ARG         = "TEST_NAME"
+	NETWORK_NAME_ARG		   = "NETWORK_NAME"
 	SUBNET_MASK_ARG            = "SUBNET_MASK"
 	GATEWAY_IP_ARG             = "GATEWAY_IP"
 	LOG_FILEPATH_ARG           = "LOG_FILEPATH"
@@ -105,16 +116,42 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 		testsToRun[testName] = test
 	}
 
+	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
+
+	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
+	if subnetStartIp == nil {
+		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
+	}
+
+	// The IP can be either 4 bytes or 16 bytes long; we need to handle both
+	//  else we'll get a silent 0 value for the int!
+	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
+	var subnetStartIpInt uint32
+	if len(subnetStartIp) == 16 {
+		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp[12:16])
+	} else {
+		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp)
+	}
 
 	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
 
 	// TODO implement parallelism
 	testResults := make(map[string]TestResult)
+	testIndex := 0
 	for testName, test := range testsToRun {
 		logrus.Infof("---------------------------------- %v --------------------------------", testName)
+		// Pick the next free available subnet IP, considering all the tests we've started previously
+		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
+		subnetIp := make(net.IP, 4)
+		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
+		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
+
+		logrus.Debugf("Running test %v with subnet CIDR %v..", testName, subnetCidrStr)
+
 		testPassed, err := runTest(
 			dockerManager,
+			subnetCidrStr,
 			runner.testControllerImageName,
 			runner.testControllerLogLevel,
 			executionInstanceId,
@@ -122,6 +159,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string) (map[string]Test
 			testName,
 			test)
 		testResults[testName] = logTestResult(testName, err, testPassed)
+		testIndex++
 	}
 
 	return testResults, nil
@@ -158,6 +196,7 @@ func logTestResult(testName string, err error, testPassed bool) TestResult {
 
 func runTest(
 			dockerManager *docker.DockerManager,
+			subnetMask string,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			executionInstanceId uuid.UUID,
@@ -166,7 +205,8 @@ func runTest(
 			test testsuite.Test) (bool, error) {
 
 	logrus.Infof("Creating Docker network for test...")
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(DEFAULT_SUBNET_MASK, []string{})
+	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(subnetMask, []string{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP addr tracker")
 	}
@@ -174,13 +214,12 @@ func runTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	// TODO TODO TODO Support creating one network per testnet
-	_, err = dockerManager.CreateNetwork(DEFAULT_SUBNET_MASK, gatewayIp)
+	_, err = dockerManager.CreateNetwork(networkName, subnetMask, gatewayIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
-	// TODO When we have one-network-per-testnet, defer a deletion of the Docker network
-	logrus.Info("Docker network created successfully")
+	defer removeNetworkDeferredFunc(dockerManager, networkName)
+	logrus.Infof("Docker network %v created successfully", networkName)
 
 	logrus.Info("Running test controller...")
 	controllerIp, err := publicIpProvider.GetFreeIpAddr()
@@ -189,6 +228,8 @@ func runTest(
 	}
 	testPassed, err := runControllerContainer(
 		dockerManager,
+		networkName,
+		subnetMask,
 		gatewayIp,
 		controllerIp,
 		testControllerImageName,
@@ -200,7 +241,7 @@ func runTest(
 		return false, stacktrace.Propagate(err, "An error occurred while running the test")
 	}
 	return testPassed, nil
-	// TODO after printing logs, delete each container
+	// TODO after printing logs, delete each container???
 }
 
 
@@ -210,11 +251,17 @@ Runs the controller container against the given test network.
 
 Args:
 	manager: the Docker manager, used for starting container & waiting for it to finish
-	rawServiceNetwork: the network to run against
-	dockerImage: the Docker image of the controller that will be started
-	ipProvider: IP provider to give the controller container its address
-	testName: name of test to run
-	executionUuid: UUID tying together all the tests in this run of the test suite
+	networkName: The name of the Docker network that the controller container will run in
+	subnetMask: The CIDR representation of the network that the Docker network that the controller container is running in
+	gatewayIp: The IP of the gateway on the Docker network that the controller is running in
+	controllerIpAddr: The IP address that should be used for the container that the controller is running in
+	controllerImageName: The name of the Docker image that should be used to run the controller container
+	logLevel: A string representing the log level that the controller should use (will be passed as-is to the controller;
+		should be semantically meaningful to the given controller image)
+	testServiceImageName: The name of the Docker image that's being tested, and will be used for spinning up "test" nodes
+		on the controller
+	testName: Name of the test to tell the controller to run
+	executionUuid: A UUID representing this specific execution of the test suite
 
 Returns:
 	bool: true if the test succeeded, false if not
@@ -222,6 +269,8 @@ Returns:
  */
 func runControllerContainer(
 		manager *docker.DockerManager,
+		networkName string,
+		subnetMask string,
 		gatewayIp string,
 		controllerIpAddr string,
 		controllerImageName string,
@@ -242,11 +291,20 @@ func runControllerContainer(
 	logTmpFile.Close()
 	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
-	envVariables := generateTestControllerEnvVariables(gatewayIp, controllerIpAddr, testName, logLevel, testServiceImageName, volumeName)
+	envVariables := generateTestControllerEnvVariables(
+		networkName,
+		subnetMask,
+		gatewayIp,
+		controllerIpAddr,
+		testName,
+		logLevel,
+		testServiceImageName,
+		volumeName)
 	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		controllerImageName,
+		networkName,
 		controllerIpAddr,
 		make(map[int]bool),
 		nil, // Use the default image CMD (which is parameterized)
@@ -284,13 +342,31 @@ func runControllerContainer(
 }
 
 /*
+Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
+as a deferred function.
+ */
+func removeNetworkDeferredFunc(dockerManager *docker.DockerManager, networkName string) {
+	logrus.Infof("Attempting to remove Docker network with name %v...", networkName)
+	err := dockerManager.RemoveNetwork(networkName)
+	if err != nil {
+		logrus.Errorf("An error occurred removing Docker network with name %v:", networkName)
+		logrus.Error(err.Error())
+	} else {
+		logrus.Infof("Docker network %v successfully removed", networkName)
+	}
+}
+
+/*
 NOTE: This is a separate function because it provides a nice documentation reference point, where we can say to users,
 "to see the latest special environment variables that will be passed to the test controller, see this function". Do not
 put anything else in this function!!!
 
 Args:
-	testName: The name of the test that the test controller should run
+	networkName: The name of the Docker network that the test controller is running in, and which all services should be started in
+	subnetMask: The subnet mask used to create the Docker network that the test controller, and all services it starts, are running in
 	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
+	controllerIpAddr: The IP address of the container running the test controller
+	testName: The name of the test that the test controller should run
 	logLevel: A string representing the controller's loglevel (NOTE: this should be interpretable by the controller; the
 		initializer will not know what to do with this!)
 	testServiceImageName: The name of the Docker image of the service that we're testing
@@ -298,6 +374,8 @@ Args:
 		test controller can share with the services that it spins up to read and write data to them
 */
 func generateTestControllerEnvVariables(
+			networkName string,
+			subnetMask string,
 			gatewayIp string,
 			controllerIpAddr string,
 			testName string,
@@ -306,7 +384,8 @@ func generateTestControllerEnvVariables(
 			testVolumeName string) map[string]string {
 	return map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
-		SUBNET_MASK_ARG:            DEFAULT_SUBNET_MASK,
+		SUBNET_MASK_ARG:            subnetMask,
+		NETWORK_NAME_ARG:           networkName,
 		GATEWAY_IP_ARG:             gatewayIp,
 		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
 		LOG_LEVEL_ARG:              logLevel,
