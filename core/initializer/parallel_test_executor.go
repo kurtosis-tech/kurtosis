@@ -54,13 +54,16 @@ func NewParallelTestExecutor(
 }
 
 func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
-	testParamsChan := make(chan ParallelTestParams)
+	// These need to be buffered else sending to the channel will be blocking
+	testParamsChan := make(chan ParallelTestParams, len(tests))
+	testOutputChan := make(chan ParallelTestOutput, len(tests))
+
+	logrus.Info("Loading test params into work queue...")
 	for _, testParams := range tests {
 		testParamsChan <- testParams
 	}
 	close(testParamsChan)
-
-	testOutputChan := make(chan ParallelTestOutput)
+	logrus.Info("All test params loaded into work queue")
 
 	logrus.Infof("Launching %v tests with %v parallelism...", len(tests), executor.parallelism)
 	executor.disableSystemLogAndRunTestThreads(testParamsChan, testOutputChan)
