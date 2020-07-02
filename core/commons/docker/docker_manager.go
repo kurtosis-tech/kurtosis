@@ -18,6 +18,18 @@ import (
 	"time"
 )
 
+/*
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
+This manager is used on a per-test basis. Because tests can run in parallel but we need to pretty-print
+each test's logs in a single block, we need to have a seprate logger per test. As such, this class takes in a
+logrus.Logger, and *all log messages should be sent through this logger rather than the systemwide logger!!!*
+
+No logrus.Info, logrus.Debug, etc. calls should happen in this file - only manager.log.Info, manager.log.Debug, etc.!
+
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+ */
+
 const (
 	DOCKER_NETWORK_DRIVER = "bridge"
 )

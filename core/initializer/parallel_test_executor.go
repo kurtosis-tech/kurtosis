@@ -18,7 +18,8 @@ type ParallelTestParams struct {
 	subnetMask string
 	executionInstanceId uuid.UUID
 }
-type TestOutput struct {
+
+type ParallelTestOutput struct {
 	Name		 string
 	ExecutionErr error    // Indicates whether an error occurred during the execution of the test that prevented it from running
 	Passed       bool     // Indicates whether the test passed or failed (undefined if the test had a setup error)
@@ -52,37 +53,46 @@ func NewParallelTestExecutor(
 	}
 }
 
-
-
-func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]ParallelTestParams) map[string]TestOutput {
-
+func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	testParamsChan := make(chan ParallelTestParams)
 	for _, testParams := range tests {
 		testParamsChan <- testParams
 	}
 	close(testParamsChan)
 
-	logrus.Info("Launching %v tests with %v parallelism...", len(tests), executor.parallelism)
-	var waitGroup sync.WaitGroup
-	testOutputChan := make(chan TestOutput)
-	for i := 0; i < executor.parallelism; i++ {
-		waitGroup.Add(1)
-		go executor.runTestWorker(&waitGroup, testParamsChan, testOutputChan)
-	}
-	logrus.Info("All worker threads started successfully")
+	testOutputChan := make(chan ParallelTestOutput)
 
-	// TODO add a timeout which the total execution must not exceed
-	logrus.Info("Waiting for tests to finish...")
-	waitGroup.Wait()
-	logrus.Info("All worker threads exited")
+	logrus.Info("Launching %v tests with %v parallelism...", len(tests), executor.parallelism)
+	executor.disableSystemLogAndRunTestThreads(testParamsChan, testOutputChan)
+	logrus.Info("All tests exited")
 
 	// Collect all results
-	result := make(map[string]TestOutput)
+	result := make(map[string]ParallelTestOutput)
 	for i := 0; i < len(tests); i++ {
 		output := <-testOutputChan
 		result[output.Name] = output
 	}
 	return result
+}
+
+func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
+	/*
+    Because each test needs to have its logs written to an independent file to avoid getting test logs all mixed up, we need to make
+    sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
+    a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we make the systemwide logger throw
+	a panic for this function call only
+	*/
+	// TODO turn off systemwide logging with a writer that throws a panic on write
+	// TODO defer turning systemwide logging back on
+
+	var waitGroup sync.WaitGroup
+	for i := 0; i < executor.parallelism; i++ {
+		waitGroup.Add(1)
+		go executor.runTestWorker(&waitGroup, testParamsChan, testOutputChan)
+	}
+
+	// TODO add a timeout which the total execution must not exceed
+	waitGroup.Wait()
 }
 
 /*
@@ -92,7 +102,7 @@ push the result to the test results channel
 func (executor ParallelTestExecutor) runTestWorker(
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
-			testOutputChan chan TestOutput) {
+			testOutputChan chan ParallelTestOutput) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -116,7 +126,7 @@ func (executor ParallelTestExecutor) runTestWorker(
 			executor.testServiceImageName,
 			testParams.testName)
 
-		result := TestOutput{
+		result := ParallelTestOutput{
 			Name:         testParams.testName,
 			ExecutionErr: executionErr,
 			Passed:       passed,
