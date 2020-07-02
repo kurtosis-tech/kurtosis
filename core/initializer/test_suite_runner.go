@@ -181,7 +181,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		logFp.Close()
 		readLogFp, err := os.Open(logFp.Name())
 		if err != nil {
-			logrus.Error("An error occurred opening the log file of test %v for reading; logs for this test are unavailable", name)
+			logrus.Error("An error occurred opening the test's logfile for reading; logs for this test are unavailable")
 			logrus.Error(err)
 		} else {
 			bytesWritten, err := io.Copy(os.Stdout, readLogFp)
