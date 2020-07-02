@@ -61,15 +61,16 @@ func (executor LoggedTestExecutor) RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating docker network for testnet")
 	}
-	defer removeNetworkDeferredFunc(dockerManager, networkName)
+	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkName)
 	executor.log.Infof("Docker network %v created successfully", networkName)
 
-	logrus.Info("Running test controller...")
+	executor.log.Info("Running test controller...")
 	controllerIp, err := publicIpProvider.GetFreeIpAddr()
 	if err != nil {
 		return false, stacktrace.NewError("An error occurred getting an IP for the test controller")
 	}
 	testPassed, err := runControllerContainer(
+		executor.log,
 		dockerManager,
 		networkName,
 		subnetMask,
@@ -109,16 +110,17 @@ Returns:
 	error: if any error occurred during the execution of the controller (independent of the test itself)
 */
 func runControllerContainer(
-	manager *docker.DockerManager,
-	networkName string,
-	subnetMask string,
-	gatewayIp string,
-	controllerIpAddr string,
-	controllerImageName string,
-	logLevel string,
-	testServiceImageName string,
-	testName string,
-	executionUuid uuid.UUID) (bool, error){
+			log *logrus.Logger,
+			manager *docker.DockerManager,
+			networkName string,
+			subnetMask string,
+			gatewayIp string,
+			controllerIpAddr string,
+			controllerImageName string,
+			logLevel string,
+			testServiceImageName string,
+			testName string,
+			executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
 	if err := manager.CreateVolume(volumeName); err != nil {
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
@@ -130,7 +132,7 @@ func runControllerContainer(
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
 	logTmpFile.Close()
-	logrus.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
+	log.Debugf("Temp filepath to write log file to: %v", logTmpFile.Name())
 
 	envVariables := generateTestControllerEnvVariables(
 		networkName,
@@ -141,7 +143,7 @@ func runControllerContainer(
 		logLevel,
 		testServiceImageName,
 		volumeName)
-	logrus.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
+	log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		controllerImageName,
@@ -161,22 +163,22 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
 	}
-	logrus.Infof("Controller container started successfully with id %s", controllerContainerId)
+	log.Infof("Controller container started successfully with id %s", controllerContainerId)
 
-	logrus.Info("Waiting for controller container to exit...")
+	log.Info("Waiting for controller container to exit...")
 	// TODO add a timeout here if the test doesn't complete successfully
 	exitCode, err := manager.WaitForExit(controllerContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
 
-	logrus.Info("Controller container exited successfully")
+	log.Info("Controller container exited successfully")
 	buf, err := ioutil.ReadFile(logTmpFile.Name())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
 	}
-	logrus.Infof("Printing Controller logs:")
-	logrus.Info(string(buf))
+	log.Infof("Printing Controller logs:")
+	log.Info(string(buf))
 
 	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil
@@ -186,14 +188,14 @@ func runControllerContainer(
 Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
 as a deferred function.
 */
-func removeNetworkDeferredFunc(dockerManager *docker.DockerManager, networkName string) {
-	logrus.Infof("Attempting to remove Docker network with name %v...", networkName)
+func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkName string) {
+	log.Infof("Attempting to remove Docker network with name %v...", networkName)
 	err := dockerManager.RemoveNetwork(networkName)
 	if err != nil {
-		logrus.Errorf("An error occurred removing Docker network with name %v:", networkName)
-		logrus.Error(err.Error())
+		log.Errorf("An error occurred removing Docker network with name %v:", networkName)
+		log.Error(err.Error())
 	} else {
-		logrus.Infof("Docker network %v successfully removed", networkName)
+		log.Infof("Docker network %v successfully removed", networkName)
 	}
 }
 
@@ -215,14 +217,14 @@ Args:
 		test controller can share with the services that it spins up to read and write data to them
 */
 func generateTestControllerEnvVariables(
-	networkName string,
-	subnetMask string,
-	gatewayIp string,
-	controllerIpAddr string,
-	testName string,
-	logLevel string,
-	testServiceImageName string,
-	testVolumeName string) map[string]string {
+			networkName string,
+			subnetMask string,
+			gatewayIp string,
+			controllerIpAddr string,
+			testName string,
+			logLevel string,
+			testServiceImageName string,
+			testVolumeName string) map[string]string {
 	return map[string]string{
 		TEST_NAME_BASH_ARG:         testName,
 		SUBNET_MASK_ARG:            subnetMask,

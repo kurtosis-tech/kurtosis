@@ -91,7 +91,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment."), nil
 	}
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
+	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerCtx, dockerClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager"), nil
 	}
@@ -99,7 +99,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 
 	logrus.Infof("Configuring test network in Docker network %v...", controller.networkName)
 	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
-	freeIpTracker, err := networks.NewFreeIpAddrTracker(controller.subnetMask, alreadyTakenIps)
+	freeIpTracker, err := networks.NewFreeIpAddrTracker(logrus.StandardLogger(), controller.subnetMask, alreadyTakenIps)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil
 	}

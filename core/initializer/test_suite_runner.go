@@ -1,28 +1,27 @@
 package initializer
 
 import (
-	"context"
 	"encoding/binary"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"math"
 	"net"
+	"os"
 	"sort"
 )
 
-type TestResult string
-// "enum" for TestResult
+type testResult string
+// "enum" for testResult
 const (
-	PASSED TestResult = "PASSED"
-	FAILED TestResult = "FAILED"
-	ERRORED TestResult = "ERRORED"   // Indicates an error during setup that prevented the test from running
+	PASSED  testResult = "PASSED"
+	FAILED  testResult = "FAILED"
+	ERRORED testResult = "ERRORED" // Indicates an error during setup that prevented the test from running
 )
 
 type TestSuiteRunner struct {
@@ -83,20 +82,7 @@ func NewTestSuiteRunner(
 /*
 Runs the tests with the given names. If no tests are specifically defined, all tests are run.
  */
-func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int) (map[string]TestResult, error) {
-	// Initialize default environment context.
-	dockerCtx := context.Background()
-	// Initialize a Docker client
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
-	}
-
-	dockerManager, err := docker.NewDockerManager(dockerCtx, dockerClient)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error in initializing Docker Manager.")
-	}
-
+func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int) (allTestsPassed bool, executionErr error) {
 	allTests := runner.testSuite.GetTests()
 
 	// If the user doesn't specify any test names to run, run all of them
@@ -112,7 +98,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 	for _, testName := range testNamesToRun {
 		test, found := allTests[testName]
 		if !found {
-			return nil, stacktrace.NewError("No test registered with name '%v'", testName)
+			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
 		testsToRun[testName] = test
 	}
@@ -121,7 +107,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
 	if subnetStartIp == nil {
-		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
+		return false, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
 	}
 
 	// The IP can be either 4 bytes or 16 bytes long; we need to handle both
@@ -134,51 +120,89 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp)
 	}
 
+	executionInstanceId := uuid.Generate()
+
+	testIndex := 0
 	testParams := make(map[string]ParallelTestParams)
-
-	// TODO spin up new parallel test executor and run tests in parallel
-
-	// TODO iterate over test results in sorted order and print the results
-	sort.Strings(testNamesToRun)
-
-	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
-
-	return testResults, nil
-}
-
-// ======================== Private helper functions =====================================
-func runTestsInParallel(dockerManager *docker.DockerManager, testSet map[string]testsuite.Test) error {
-	testResults := make(map[string]TestResult)
-	for testName, test := range testsToRun {
-		logrus.Infof("---------------------------------- %v --------------------------------", testName)
+	for testName, _ := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
-		subnetIpInt := executor.subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
+		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
 		subnetIp := make(net.IP, 4)
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
-		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), executor.subnetMaskBits)
+		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
+		tempFilename := fmt.Sprintf("%v-%v", executionInstanceId, testName)
+		tempFp, err := ioutil.TempFile("", tempFilename)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
+		}
+		// We're responsible for cleaning up our own tempfiles
+		defer os.Remove(tempFp.Name())
+		defer tempFp.Close()
 
-		testPassed, err := runTest(
-			dockerManager,
-			subnetCidrStr,
-			runner.testControllerImageName,
-			runner.testControllerLogLevel,
-			executionInstanceId,
-			runner.testServiceImageName,
-			testName,
-			test)
-		testResults[testName] = logTestResult(testName, err, testPassed)
+		testParams[testName] = ParallelTestParams{
+			testName:            testName,
+			logFp:               tempFp,
+			subnetMask:          subnetCidrStr,
+			executionInstanceId: executionInstanceId,
+		}
 		testIndex++
 	}
+
+	// Initialize a Docker client
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return false, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+	}
+
+
+	testExecutor := NewParallelTestExecutor(
+		executionInstanceId,
+		dockerClient,
+		runner.testControllerImageName,
+		runner.testControllerLogLevel,
+		runner.testServiceImageName,
+		parallelism)
+
+	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
+	testOutputs := testExecutor.RunTestsInParallel(testParams)
+
+	allTestResults := make(map[string]testResult)
+	sort.Strings(testNamesToRun)
+	for _, name := range testNamesToRun {
+		output := testOutputs[name]
+		passed := output.Passed
+		executionErr := output.ExecutionErr
+		logFp := output.LogFp
+
+		logrus.Infof("---------------------------------- %v --------------------------------", name)
+		_, err := io.Copy(os.Stdout, logFp)
+		if err != nil {
+			logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
+			logrus.Error(err)
+		}
+
+		result := logTestResult(name, executionErr, passed)
+		allTestResults[name] = result
+	}
+
+	logrus.Info("================================== TEST RESULTS ================================")
+	allTestsPassed = true
+	for testName, result := range allTestResults {
+		logrus.Infof("- %v: %v", testName, result)
+		allTestsPassed = allTestsPassed && result == PASSED
+	}
+
+	return allTestsPassed, nil
 }
 
 /*
 Handles determining the proper test status and logging it.
-Returns the TestResult for convenience.
+Returns the testResult for convenience.
 */
-func logTestResult(testName string, err error, testPassed bool) TestResult {
-	var result TestResult
-	if err != nil {
+func logTestResult(testName string, executionErr error, testPassed bool) testResult {
+	var result testResult
+	if executionErr != nil {
 		result = ERRORED
 	} else {
 		if testPassed {
@@ -191,7 +215,7 @@ func logTestResult(testName string, err error, testPassed bool) TestResult {
 	switch result {
 	case ERRORED:
 		logrus.Warnf("Test %v %v", testName, result)
-		logrus.Warnf("Error reason: %v", err)
+		logrus.Warnf("Error reason: %v", executionErr)
 	case PASSED:
 		logrus.Infof("Test %v %v", testName, result)
 	case FAILED:
