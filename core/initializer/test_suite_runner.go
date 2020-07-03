@@ -110,7 +110,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
 	testOutputs := testExecutor.RunInParallel(testParams)
 
-	logrus.Info("Printing results for %v tests...", len(testsToRun))
+	logrus.Infof("Printing results for %v tests...", len(testsToRun))
 	allTestsPassed = processTestOutputs(testsToRun, testOutputs)
 	return allTestsPassed, nil
 }
