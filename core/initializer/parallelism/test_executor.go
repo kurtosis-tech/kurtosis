@@ -148,14 +148,14 @@ func runControllerContainer(
 			testName string,
 			executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
-	logrus.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
+	log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
 	if err := manager.CreateVolume(volumeName); err != nil {
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
-	logrus.Debugf("Docker volume %v created successfully", volumeName)
+	log.Debugf("Docker volume %v created successfully", volumeName)
 
 	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
-	logrus.Debugf("Creating temporary file with name %v to store controller logs...", testControllerLogFilename)
+	log.Debugf("Creating temporary file with name %v to store controller logs...", testControllerLogFilename)
 	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
