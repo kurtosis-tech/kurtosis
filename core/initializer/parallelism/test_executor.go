@@ -203,13 +203,13 @@ func runControllerContainer(
 	log.Info("Controller container exited successfully")
 
 	// We open a new fp for reading because our original FP is only for writing
-	log.Infof("- - - - - - - - - - - Controller Logs - - - - - - - - - - - - - -")
+	log.Info("- - - - - - - - - - - - - - - - - - - CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
 	logReadFp, err := os.Open(logTmpFile.Name())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to open controller log file for reading")
 	}
 	io.Copy(log.Out, logReadFp)
-	log.Infof("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+	log.Info("- - - - - - - - - - - - - - - - - - END CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
 	logReadFp.Close()
 	os.Remove(logTmpFile.Name()) // We're responsible for removing the tempfile we created
 
