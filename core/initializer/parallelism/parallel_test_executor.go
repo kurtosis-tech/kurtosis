@@ -1,4 +1,4 @@
-package initializer
+package parallelism
 
 // TODO TODO TODO Combine this entire file into test_suite_runner????
 
@@ -13,16 +13,16 @@ import (
 
 // ================= Test params & result ============================
 type ParallelTestParams struct {
-	testName string
-	logFp *os.File
-	subnetMask string
-	executionInstanceId uuid.UUID
+	TestName            string
+	LogFp               *os.File
+	SubnetMask          string
+	ExecutionInstanceId uuid.UUID
 }
 
 type ParallelTestOutput struct {
-	Name		 string
+	TestName     string
 	ExecutionErr error    // Indicates whether an error occurred during the execution of the test that prevented it from running
-	Passed       bool     // Indicates whether the test passed or failed (undefined if the test had a setup error)
+	TestPassed   bool     // Indicates whether the test passed or failed (undefined if the test had a setup error)
 	LogFp        *os.File // Where the logs for this test got written to
 }
 
@@ -36,6 +36,16 @@ type ParallelTestExecutor struct {
 	parallelism int
 }
 
+/*
+Creates a new ParallelTestExecutor which will run tests in parallel using the given parameters.
+
+Args:
+	executionId: The UUID uniquely identifying this execution of the tests
+	dockerClient: The handle to manipulating the Docker environment
+	testControllerImageName: The name of the Docker image that will be used to run the test controller
+	testServiceImageName: The name of the Docker image of the version of the service being tested
+	parallelism: The number of tests to run concurrently
+ */
 func NewParallelTestExecutor(
 			executionId uuid.UUID,
 			dockerClient *client.Client,
@@ -73,7 +83,7 @@ func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]Paralle
 	result := make(map[string]ParallelTestOutput)
 	for i := 0; i < len(tests); i++ {
 		output := <-testOutputChan
-		result[output.Name] = output
+		result[output.TestName] = output
 	}
 	return result
 }
@@ -85,7 +95,7 @@ func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParam
     a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we make the systemwide logger throw
 	a panic during just this function call.
 	*/
-	logrus.SetOutput(PanickingLogWriter{})
+	logrus.SetOutput(panickingLogWriter{})
 	defer logrus.SetOutput(os.Stdout)
 
 	var waitGroup sync.WaitGroup
@@ -113,29 +123,29 @@ func (executor ParallelTestExecutor) runTestWorker(
 		// Create a separate logger just for this test that writes to the given file
 		log := logrus.New()
 		log.SetLevel(logrus.GetLevel())
-		log.SetOutput(testParams.logFp)
+		log.SetOutput(testParams.LogFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
 
-		loggedExecutor := NewLoggedTestExecutor(log)
+		loggedExecutor := newLoggedTestExecutor(log)
 
 		// TODO create a new context for the test itself probably, so we can cancel it if it's running too long!
 		testContext := context.Background()
 
-		passed, executionErr := loggedExecutor.RunTest(
+		passed, executionErr := loggedExecutor.runTest(
 			executor.executionId,
 			testContext,
 			executor.dockerClient,
-			testParams.subnetMask,
+			testParams.SubnetMask,
 			executor.testControllerImageName,
 			executor.testControllerLogLevel,
 			executor.testServiceImageName,
-			testParams.testName)
+			testParams.TestName)
 
 		result := ParallelTestOutput{
-			Name:         testParams.testName,
+			TestName:     testParams.TestName,
 			ExecutionErr: executionErr,
-			Passed:       passed,
-			LogFp:        testParams.logFp,
+			TestPassed:   passed,
+			LogFp:        testParams.LogFp,
 		}
 		testOutputChan <- result
 	}

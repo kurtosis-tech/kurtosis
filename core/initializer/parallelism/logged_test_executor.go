@@ -1,4 +1,4 @@
-package initializer
+package parallelism
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/initializer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -15,18 +16,18 @@ import (
 )
 
 /*
-WARNING WARNING WARNING WARNING WARNING WARNING
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 No logging to the system-level logger is allowed in this file!!! Everything should use the specific
 logger passed in at construction time!!
-WARNING WARNING WARNING WARNING WARNING WARNING
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
 
-type LoggedTestExecutor struct {
+type loggedTestExecutor struct {
 	log *logrus.Logger
 }
 
-func NewLoggedTestExecutor(log *logrus.Logger) *LoggedTestExecutor {
-	return &LoggedTestExecutor{log: log}
+func newLoggedTestExecutor(log *logrus.Logger) *loggedTestExecutor {
+	return &loggedTestExecutor{log: log}
 }
 
 /*
@@ -34,7 +35,7 @@ Returns:
 	error: An error if an error occurred *while setting up or running the test* (independent from whether the test itself passed)
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
  */
-func (executor LoggedTestExecutor) RunTest(
+func (executor loggedTestExecutor) runTest(
 		executionInstanceId uuid.UUID,
 		testContext context.Context,
 		dockerClient *client.Client,
@@ -43,12 +44,13 @@ func (executor LoggedTestExecutor) RunTest(
 		testControllerLogLevel string,
 		testServiceImageName string,
 		testName string) (bool, error) {
+	executor.log.Info("Creating Docker client from environment settings...")
 	dockerManager, err := docker.NewDockerManager(executor.log, testContext, dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
+	executor.log.Info("Docker client created successfully")
 
-	// TODO go through all the child function calls and make sure that we're not logging to system-wide Docker logger!
 	executor.log.Infof("Creating Docker network for test with subnet mask %v...", subnetMask)
 	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
 	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, subnetMask, []string{})
@@ -94,6 +96,7 @@ func (executor LoggedTestExecutor) RunTest(
 Runs the controller container against the given test network.
 
 Args:
+	log: The test-specific logger to write log messages to
 	manager: the Docker manager, used for starting container & waiting for it to finish
 	networkName: The name of the Docker network that the controller container will run in
 	subnetMask: The CIDR representation of the network that the Docker network that the controller container is running in
@@ -157,10 +160,10 @@ func runControllerContainer(
 		map[string]string{
 			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
 			"/var/run/docker.sock": "/var/run/docker.sock",
-			logTmpFile.Name(): CONTROLLER_LOG_MOUNT_FILEPATH,
+			logTmpFile.Name():      initializer.CONTROLLER_LOG_MOUNT_FILEPATH,
 		},
 		map[string]string{
-			volumeName: TEST_VOLUME_MOUNTPOINT,
+			volumeName: initializer.TEST_VOLUME_MOUNTPOINT,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
@@ -188,7 +191,7 @@ func runControllerContainer(
 	os.Remove(logTmpFile.Name()) // We're responsible for removing the tempfile
 
 	// TODO Clean up the volumeFilepath we created!
-	return exitCode == SUCCESS_EXIT_CODE, nil
+	return exitCode == initializer.SUCCESS_EXIT_CODE, nil
 }
 
 /*
@@ -233,15 +236,15 @@ func generateTestControllerEnvVariables(
 			testServiceImageName string,
 			testVolumeName string) map[string]string {
 	return map[string]string{
-		TEST_NAME_BASH_ARG:         testName,
-		SUBNET_MASK_ARG:            subnetMask,
-		NETWORK_NAME_ARG:           networkName,
-		GATEWAY_IP_ARG:             gatewayIp,
-		LOG_FILEPATH_ARG:           CONTROLLER_LOG_MOUNT_FILEPATH,
-		LOG_LEVEL_ARG:              logLevel,
-		TEST_IMAGE_NAME_ARG:        testServiceImageName,
-		TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
-		TEST_VOLUME_ARG:            testVolumeName,
-		TEST_VOLUME_MOUNTPOINT_ARG: TEST_VOLUME_MOUNTPOINT,
+		initializer.TEST_NAME_BASH_ARG:         testName,
+		initializer.SUBNET_MASK_ARG:            subnetMask,
+		initializer.NETWORK_NAME_ARG:           networkName,
+		initializer.GATEWAY_IP_ARG:             gatewayIp,
+		initializer.LOG_FILEPATH_ARG:           initializer.CONTROLLER_LOG_MOUNT_FILEPATH,
+		initializer.LOG_LEVEL_ARG:              logLevel,
+		initializer.TEST_IMAGE_NAME_ARG:        testServiceImageName,
+		initializer.TEST_CONTROLLER_IP_ARG:     controllerIpAddr,
+		initializer.TEST_VOLUME_ARG:            testVolumeName,
+		initializer.TEST_VOLUME_MOUNTPOINT_ARG: initializer.TEST_VOLUME_MOUNTPOINT,
 	}
 }

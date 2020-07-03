@@ -36,6 +36,7 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 	return ipAddrTracker, nil
 }
 
+// TODO Return IP objects (which are easily convertable to strings) rather than strings themselves
 // TODO rework this entire function to handle IPv6 as well (currently breaks on IPv6)
 func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err error){
 	// convert IPNet struct mask and address to uint32

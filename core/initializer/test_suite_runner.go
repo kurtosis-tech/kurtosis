@@ -6,6 +6,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/initializer/parallelism"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -16,14 +17,15 @@ import (
 	"sort"
 )
 
+// =============================== "enum" for test result =========================================
 type testResult string
-// "enum" for testResult
 const (
 	PASSED  testResult = "PASSED"
 	FAILED  testResult = "FAILED"
 	ERRORED testResult = "ERRORED" // Indicates an error during setup that prevented the test from running
 )
 
+// =============================== Test Suite Runner =========================================
 type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
 	testServiceImageName    string
@@ -79,10 +81,11 @@ func NewTestSuiteRunner(
 	}
 }
 
+// TODO Change the argument of this to be a "set" of tests, so we don't have to deal with duplication here??
 /*
-Runs the tests with the given names. If no tests are specifically defined, all tests are run.
+Runs the tests with the given names and prints the results to STDOUT. If no tests are specifically defined, all tests are run.
  */
-func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int) (allTestsPassed bool, executionErr error) {
+func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism int) (allTestsPassed bool, executionErr error) {
 	allTests := runner.testSuite.GetTests()
 
 	// If the user doesn't specify any test names to run, run all of them
@@ -94,20 +97,55 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 	}
 
 	// Validate all the requested tests exist
-	testsToRun := make(map[string]testsuite.Test)
+	testsToRun := make(map[string]bool)
 	for _, testName := range testNamesToRun {
-		test, found := allTests[testName]
-		if !found {
+		if _, found := allTests[testName]; !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
-		testsToRun[testName] = test
+		testsToRun[testName] = true
 	}
+
+	executionInstanceId := uuid.Generate()
+	testParams, err := buildTestParams(executionInstanceId, testsToRun)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
+	}
+
+	// Initialize a Docker client
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return false, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+	}
+
+	testExecutor := parallelism.NewParallelTestExecutor(
+		executionInstanceId,
+		dockerClient,
+		runner.testControllerImageName,
+		runner.testControllerLogLevel,
+		runner.testServiceImageName,
+		testParallelism)
+
+	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
+	testOutputs := testExecutor.RunTestsInParallel(testParams)
+
+	logrus.Info("Printing results for %v tests...", len(testsToRun))
+	allTestsPassed = processTestOutputs(testsToRun, testOutputs)
+	return allTestsPassed, nil
+}
+
+/*
+Helper function to build, from the set of tests to run, the map of test params that we'll pass to the ParallelTestExecutor
+
+Args:
+	testsToRun: A "set" of test names to run in parallel
+ */
+func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]bool) (map[string]parallelism.ParallelTestParams, error) {
 
 	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
 	if subnetStartIp == nil {
-		return false, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
+		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
 	}
 
 	// The IP can be either 4 bytes or 16 bytes long; we need to handle both
@@ -120,11 +158,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp)
 	}
 
-	executionInstanceId := uuid.Generate()
-
 	testIndex := 0
-	testParams := make(map[string]ParallelTestParams)
-	testLogFps := make(map[string]*os.File)
+	testParams := make(map[string]parallelism.ParallelTestParams)
 	for testName, _ := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
@@ -135,45 +170,45 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		tempFilename := fmt.Sprintf("%v-%v", executionInstanceId, testName)
 		tempFp, err := ioutil.TempFile("", tempFilename)
 		if err != nil {
-			return false, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
+			return nil, stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
 		}
-		testLogFps[testName] = tempFp
-		logrus.Tracef("Temp logfile: %v", tempFp.Name()) // TODO DEBUGGING
+		logrus.Tracef("Temp file to write logs for test %v to: %v", testName, tempFp.Name())
 
-		testParams[testName] = ParallelTestParams{
-			testName:            testName,
-			logFp:               tempFp,
-			subnetMask:          subnetCidrStr,
-			executionInstanceId: executionInstanceId,
+		testParams[testName] = parallelism.ParallelTestParams{
+			TestName:            testName,
+			LogFp:               tempFp,
+			SubnetMask:          subnetCidrStr,
+			ExecutionInstanceId: executionInstanceId,
 		}
 		testIndex++
 	}
+	return testParams, nil
+}
 
-	// Initialize a Docker client
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return false, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
+/*
+Helper function to process the ParallelTestExecutor's output to print the necessary information to STDOUT
+
+Args:
+	testsToRun: A "set" of tests that were run
+	testOutputs: The output of the
+
+Returns:
+	True if all tests passed, false otherwise
+ */
+func processTestOutputs(testsToRun map[string]bool, testOutputs map[string]parallelism.ParallelTestOutput) bool {
+	// We want normalized output between runs of the tests suite so we sort the tests by name
+	testPrintOrder := []string{}
+	for testName, _ := range testsToRun {
+		testPrintOrder = append(testPrintOrder, testName)
 	}
-
-
-	testExecutor := NewParallelTestExecutor(
-		executionInstanceId,
-		dockerClient,
-		runner.testControllerImageName,
-		runner.testControllerLogLevel,
-		runner.testServiceImageName,
-		parallelism)
-
-	logrus.Infof("Running %v tests with execution ID: %v", len(testsToRun), executionInstanceId.String())
-	testOutputs := testExecutor.RunTestsInParallel(testParams)
+	sort.Strings(testPrintOrder)
 
 	allTestResults := make(map[string]testResult)
-	sort.Strings(testNamesToRun)
-	for _, name := range testNamesToRun {
+	for _, name := range testPrintOrder {
 		logrus.Infof("---------------------------------- %v --------------------------------", name)
 
 		output := testOutputs[name]
-		passed := output.Passed
+		passed := output.TestPassed
 		executionErr := output.ExecutionErr
 		logFp := output.LogFp
 
@@ -199,13 +234,13 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 	}
 
 	logrus.Info("================================== TEST RESULTS ================================")
-	allTestsPassed = true
+	allTestsPassed := true
 	for testName, result := range allTestResults {
 		logrus.Infof("- %v: %v", testName, result)
 		allTestsPassed = allTestsPassed && result == PASSED
 	}
 
-	return allTestsPassed, nil
+	return allTestsPassed
 }
 
 /*

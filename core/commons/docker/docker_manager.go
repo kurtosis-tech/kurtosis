@@ -41,11 +41,11 @@ type DockerManager struct {
 	// TODO Remove this and create a new Context per Docker function call!!! See
 	//  https://golang.org/pkg/context/ and
 	//  https://blog.golang.org/context
+	//  This would be especially useful for doing timeouts!!
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 }
 
-// TODO take in a logger!!
 func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
 		log: log,
@@ -54,8 +54,6 @@ func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClien
 	}, nil
 }
 
-// TODO make this throw an error if a network with the same name already exists (because it might have different configs
-//  than what we want, e.g. a different subnet)
 // TODO Make this function return the networkId - this would save a TON of hassle, because everywhere else in Docker needs
 //  the network ID and we're passing around the name so we have to do a bunch of Docker lookups every time we want the ID
 /*
@@ -70,13 +68,14 @@ Returns:
 	id: The Docker-managed ID of the network
  */
 func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatewayIP string) (id string, err error)  {
-	networkId, ok, err := manager.getNetworkId(name)
+	_, found, err := manager.getNetworkId(name)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to check for network existence.")
+		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
-	// Network already exists - return existing id.
-	if ok {
-		return networkId, nil
+	if found {
+		// We throw an error if the network already exists because we don't know what settings that network was created
+		//  with - likely a completely different subnetMask and gatewayIP
+		return "", stacktrace.NewError("Network with name %v cannot be created because it already exists", name)
 	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
@@ -156,33 +155,33 @@ Args:
 	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
  */
 func (manager DockerManager) CreateAndStartContainer(
-	dockerImage string,
-	networkName string,
-	staticIp string,
-	usedPorts map[int]bool,
-	startCmdArgs []string,
-	envVariables map[string]string,
-	bindMounts map[string]string,
-	volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
+			dockerImage string,
+			networkName string,
+			staticIp string,
+			usedPorts map[int]bool,
+			startCmdArgs []string,
+			envVariables map[string]string,
+			bindMounts map[string]string,
+			volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Failed to check for image availability.")
+		return "", "", stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
 
 	if !imageExistsLocally {
 		err = manager.pullImage(dockerImage)
 		if err != nil {
-			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image.")
+			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
 	}
 
 	_, networkExistsLocally, err := manager.getNetworkId(networkName)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Failed to check for network availability.")
+		return "", "", stacktrace.Propagate(err, "An error occurred checking for the existence of network %v", networkName)
 	}
 	if !networkExistsLocally {
-		return "", "", stacktrace.NewError("Kurtosis Docker network was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.")
+		return "", "", stacktrace.NewError("Kurtosis Docker network %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkName)
 	}
 
 	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
@@ -220,6 +219,7 @@ func (manager DockerManager) StopContainer(containerId string, timeout *time.Dur
 	return nil
 }
 
+// TODO Take in a Context, which would allow us to time this out easily!!
 /*
 Blocks until the given container exits.
  */
@@ -253,7 +253,7 @@ func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvaila
 	return len(images) > 0, nil
 }
 
-func (manager DockerManager) getNetworkId(networkName string) (networkId string, ok bool, err error) {
+func (manager DockerManager) getNetworkId(networkName string) (networkId string, found bool, err error) {
 	referenceArg := filters.Arg("name", networkName)
 	filters := filters.NewArgs(referenceArg)
 	networks, err := manager.dockerClient.NetworkList(
