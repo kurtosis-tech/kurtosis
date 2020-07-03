@@ -67,7 +67,7 @@ func NewTestSuiteRunner(
 /*
 Runs the tests with the given names and prints the results to STDOUT. If no tests are specifically defined, all tests are run.
  */
-func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism int) (allTestsPassed bool, executionErr error) {
+func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism uint) (allTestsPassed bool, executionErr error) {
 	allTests := runner.testSuite.GetTests()
 
 	// If the user doesn't specify any test names to run, run all of them

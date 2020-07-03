@@ -33,7 +33,7 @@ type TestExecutorParallelizer struct {
 	testControllerImageName string
 	testControllerLogLevel string
 	testServiceImageName string
-	parallelism int
+	parallelism uint
 }
 
 /*
@@ -52,7 +52,7 @@ func NewTestExecutorParallelizer(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testServiceImageName string,
-			parallelism int) *TestExecutorParallelizer {
+			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
 		executionId: executionId,
 		dockerClient: dockerClient,
@@ -100,7 +100,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testP
 	defer logrus.SetOutput(currentSystemOut)
 
 	var waitGroup sync.WaitGroup
-	for i := 0; i < executor.parallelism; i++ {
+	for i := uint(0); i < executor.parallelism; i++ {
 		waitGroup.Add(1)
 		go executor.runTestWorker(&waitGroup, testParamsChan, testOutputChan)
 	}
