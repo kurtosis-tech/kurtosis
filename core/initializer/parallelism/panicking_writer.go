@@ -8,7 +8,7 @@ logrus.Info rather than specificLogger.Info) they'll get a loud error
 type panickingLogWriter struct {}
 
 func (writer panickingLogWriter) Write(p []byte) (n int, err error) {
-	panic("The system-level logger was called in a spot where a test-specific logger should have been called; this is a code bug that needs to be corrected!")
+	panic("The system-level logger was used in a spot where a test-specific logger should have been used instead; this is a code bug that needs to be corrected!")
 }
 
 

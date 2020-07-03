@@ -44,24 +44,6 @@ const (
 	SUBNET_START_ADDR = "172.23.0.0"
 
 	BITS_IN_IP4_ADDR = 32
-
-	CONTROLLER_LOG_MOUNT_FILEPATH = "/test-controller.log"
-
-	TEST_VOLUME_MOUNTPOINT = "/shared"
-
-	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
-	TEST_VOLUME_ARG            = "TEST_VOLUME"
-	TEST_NAME_BASH_ARG         = "TEST_NAME"
-	NETWORK_NAME_ARG		   = "NETWORK_NAME"
-	SUBNET_MASK_ARG            = "SUBNET_MASK"
-	GATEWAY_IP_ARG             = "GATEWAY_IP"
-	LOG_FILEPATH_ARG           = "LOG_FILEPATH"
-	LOG_LEVEL_ARG              = "LOG_LEVEL"
-	TEST_IMAGE_NAME_ARG        = "TEST_IMAGE_NAME"
-	TEST_CONTROLLER_IP_ARG     = "TEST_CONTROLLER_IP"
-	TEST_VOLUME_MOUNTPOINT_ARG = "TEST_VOLUME_MOUNTPOINT"
-
-	SUCCESS_EXIT_CODE = 0
 )
 
 
@@ -117,7 +99,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		return false, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	testExecutor := parallelism.NewParallelTestExecutor(
+	testExecutor := parallelism.NewTestExecutorParallelizer(
 		executionInstanceId,
 		dockerClient,
 		runner.testControllerImageName,
@@ -126,7 +108,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		testParallelism)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
-	testOutputs := testExecutor.RunTestsInParallel(testParams)
+	testOutputs := testExecutor.RunInParallel(testParams)
 
 	logrus.Info("Printing results for %v tests...", len(testsToRun))
 	allTestsPassed = processTestOutputs(testsToRun, testOutputs)
@@ -134,7 +116,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 }
 
 /*
-Helper function to build, from the set of tests to run, the map of test params that we'll pass to the ParallelTestExecutor
+Helper function to build, from the set of tests to run, the map of test params that we'll pass to the TestExecutorParallelizer
 
 Args:
 	testsToRun: A "set" of test names to run in parallel
@@ -186,7 +168,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]bool) 
 }
 
 /*
-Helper function to process the ParallelTestExecutor's output to print the necessary information to STDOUT
+Helper function to process the TestExecutorParallelizer's output to print the necessary information to STDOUT
 
 Args:
 	testsToRun: A "set" of tests that were run
@@ -217,13 +199,13 @@ func processTestOutputs(testsToRun map[string]bool, testOutputs map[string]paral
 		readLogFp, err := os.Open(logFp.Name())
 		if err != nil {
 			logrus.Error("An error occurred opening the test's logfile for reading; logs for this test are unavailable")
-			fmt.Println(err) // Logrus will remove newlines so we don't log this
+			fmt.Fprintln(logrus.StandardLogger().Out, err) // Logrus will escape newlines so we don't actually log this
 		} else {
-			bytesWritten, err := io.Copy(os.Stdout, readLogFp)
+			bytesWritten, err := io.Copy(logrus.StandardLogger().Out, readLogFp)
 			logrus.Tracef("Wrote %v bytes to STDOUT from test logfile", bytesWritten)
 			if err != nil {
 				logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
-				fmt.Println(err) // Logrus will remove newlines, so we don't log this
+				fmt.Fprintln(logrus.StandardLogger().Out, err) // Logrus will escape newlines so we don't actually log this
 			}
 		}
 		readLogFp.Close()

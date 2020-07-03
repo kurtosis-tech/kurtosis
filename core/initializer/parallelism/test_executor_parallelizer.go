@@ -27,7 +27,7 @@ type ParallelTestOutput struct {
 }
 
 // ================= Parallel executor ============================
-type ParallelTestExecutor struct {
+type TestExecutorParallelizer struct {
 	executionId uuid.UUID
 	dockerClient *client.Client
 	testControllerImageName string
@@ -37,7 +37,7 @@ type ParallelTestExecutor struct {
 }
 
 /*
-Creates a new ParallelTestExecutor which will run tests in parallel using the given parameters.
+Creates a new TestExecutorParallelizer which will run tests in parallel using the given parameters.
 
 Args:
 	executionId: The UUID uniquely identifying this execution of the tests
@@ -46,14 +46,14 @@ Args:
 	testServiceImageName: The name of the Docker image of the version of the service being tested
 	parallelism: The number of tests to run concurrently
  */
-func NewParallelTestExecutor(
+func NewTestExecutorParallelizer(
 			executionId uuid.UUID,
 			dockerClient *client.Client,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testServiceImageName string,
-			parallelism int) *ParallelTestExecutor {
-	return &ParallelTestExecutor{
+			parallelism int) *TestExecutorParallelizer {
+	return &TestExecutorParallelizer{
 		executionId: executionId,
 		dockerClient: dockerClient,
 		testControllerImageName: testControllerImageName,
@@ -63,7 +63,7 @@ func NewParallelTestExecutor(
 	}
 }
 
-func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
+func (executor TestExecutorParallelizer) RunInParallel(tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(tests))
 	testOutputChan := make(chan ParallelTestOutput, len(tests))
@@ -88,15 +88,16 @@ func (executor ParallelTestExecutor) RunTestsInParallel(tests map[string]Paralle
 	return result
 }
 
-func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
+func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
 	/*
     Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
     a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we make the systemwide logger throw
 	a panic during just this function call.
 	*/
+	currentSystemOut := logrus.StandardLogger().Out
 	logrus.SetOutput(panickingLogWriter{})
-	defer logrus.SetOutput(os.Stdout)
+	defer logrus.SetOutput(currentSystemOut)
 
 	var waitGroup sync.WaitGroup
 	for i := 0; i < executor.parallelism; i++ {
@@ -112,7 +113,7 @@ func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParam
 A function, designed to be run inside a goroutine, that will pull from the given test params channel, execute a test, and
 push the result to the test results channel
  */
-func (executor ParallelTestExecutor) runTestWorker(
+func (executor TestExecutorParallelizer) runTestWorker(
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
 			testOutputChan chan ParallelTestOutput) {
@@ -126,7 +127,7 @@ func (executor ParallelTestExecutor) runTestWorker(
 		log.SetOutput(testParams.LogFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
 
-		loggedExecutor := newLoggedTestExecutor(log)
+		loggedExecutor := newTestExecutor(log)
 
 		// TODO create a new context for the test itself probably, so we can cancel it if it's running too long!
 		testContext := context.Background()

@@ -149,7 +149,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
 			serviceId,
 			nodeInfo.ContainerId)
-		fmt.Println(err)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
 	}
 	logrus.Debugf("Successfully removed service ID %v", serviceId)
 	return nil

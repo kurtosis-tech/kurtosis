@@ -35,7 +35,7 @@ const (
 )
 
 type DockerManager struct {
-	// WARNING: This log should be used for all log statements - NOT the system-wide logger!!!
+	// WARNING: This log should be used for all log statements - the system-wide logger should NOT be used!
 	log *logrus.Logger
 
 	// TODO Remove this and create a new Context per Docker function call!!! See

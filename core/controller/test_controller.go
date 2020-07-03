@@ -121,7 +121,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 		err := network.RemoveAll(CONTAINER_STOP_TIMEOUT)
 		if err != nil {
 			logrus.Error("An error occurred stopping the network")
-			fmt.Println(err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		} else {
 			logrus.Info("Successfully stopped the test network")
 		}
