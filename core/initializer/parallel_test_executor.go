@@ -88,6 +88,8 @@ func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParam
 	logrus.SetOutput(PanickingLogWriter{})
 	defer logrus.SetOutput(os.Stdout)
 
+	logrus.Error("This should fail")
+
 	var waitGroup sync.WaitGroup
 	for i := 0; i < executor.parallelism; i++ {
 		waitGroup.Add(1)
@@ -112,8 +114,10 @@ func (executor ParallelTestExecutor) runTestWorker(
 	for testParams := range testParamsChan {
 		// Create a separate logger just for this test that writes to the given file
 		log := logrus.New()
-		log.Level = logrus.GetLevel()
-		log.Out = testParams.logFp
+		log.SetLevel(logrus.GetLevel())
+		log.SetOutput(testParams.logFp)
+		log.SetFormatter(logrus.StandardLogger().Formatter)
+
 		loggedExecutor := NewLoggedTestExecutor(log)
 
 		// TODO create a new context for the test itself probably, so we can cancel it if it's running too long!
