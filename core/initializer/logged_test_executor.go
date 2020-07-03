@@ -9,7 +9,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
+	"os"
 )
 
 /*
@@ -128,10 +130,6 @@ func runControllerContainer(
 
 	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
 	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
-
-	// TODO Debugging
-	fmt.Println(logTmpFile.Name())
-
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
@@ -175,14 +173,17 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
-
 	log.Info("Controller container exited successfully")
-	buf, err := ioutil.ReadFile(logTmpFile.Name())
-	if err != nil {
-		return false, stacktrace.Propagate(err, "Failed to read log file from controller.")
-	}
+
+	// We open a new fp for reading because our original FP is only for writing
 	log.Infof("Printing Controller logs:")
-	log.Info(string(buf))
+	logReadFp, err := os.Open(logTmpFile.Name())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to open controller log file for reading")
+	}
+	io.Copy(log.Out, logReadFp)
+	logReadFp.Close()
+	os.Remove(logTmpFile.Name()) // We're responsible for removing the tempfile
 
 	// TODO Clean up the volumeFilepath we created!
 	return exitCode == SUCCESS_EXIT_CODE, nil

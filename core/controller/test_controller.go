@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
@@ -120,7 +121,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 		err := network.RemoveAll(CONTAINER_STOP_TIMEOUT)
 		if err != nil {
 			logrus.Error("An error occurred stopping the network")
-			logrus.Error(err)
+			fmt.Println(err)
 		} else {
 			logrus.Info("Successfully stopped the test network")
 		}

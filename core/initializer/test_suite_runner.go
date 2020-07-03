@@ -182,13 +182,13 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 		readLogFp, err := os.Open(logFp.Name())
 		if err != nil {
 			logrus.Error("An error occurred opening the test's logfile for reading; logs for this test are unavailable")
-			logrus.Error(err)
+			fmt.Println(err) // Logrus will remove newlines so we don't log this
 		} else {
 			bytesWritten, err := io.Copy(os.Stdout, readLogFp)
 			logrus.Tracef("Wrote %v bytes to STDOUT from test logfile", bytesWritten)
 			if err != nil {
 				logrus.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
-				logrus.Error(err)
+				fmt.Println(err) // Logrus will remove newlines, so we don't log this
 			}
 		}
 		readLogFp.Close()
