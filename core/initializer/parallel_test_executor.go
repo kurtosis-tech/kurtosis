@@ -88,8 +88,6 @@ func (executor ParallelTestExecutor) disableSystemLogAndRunTestThreads(testParam
 	logrus.SetOutput(PanickingLogWriter{})
 	defer logrus.SetOutput(os.Stdout)
 
-	logrus.Error("This should fail")
-
 	var waitGroup sync.WaitGroup
 	for i := 0; i < executor.parallelism; i++ {
 		waitGroup.Add(1)
