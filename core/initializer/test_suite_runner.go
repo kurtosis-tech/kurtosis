@@ -192,8 +192,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, parallelism int)
 			}
 		}
 		readLogFp.Close()
-		// TODO DEBUGGING
-		// os.Remove(logFp.Name()) // We're responsible for cleaning up the temp file we created
+		os.Remove(logFp.Name()) // We're responsible for cleaning up the temp file we created
 
 		result := logTestResult(name, executionErr, passed)
 		allTestResults[name] = result
