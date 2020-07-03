@@ -243,12 +243,12 @@ func logTestResult(testName string, executionErr error, testPassed bool) testRes
 
 	switch result {
 	case ERRORED:
-		logrus.Warnf("Test %v %v", testName, result)
-		logrus.Warnf("Error reason: %v", executionErr)
+		logrus.Errorf("Test %v %v", testName, result)
+		logrus.Errorf("Error reason: %v", executionErr)
 	case PASSED:
 		logrus.Infof("Test %v %v", testName, result)
 	case FAILED:
-		logrus.Warnf("Test %v %v", testName, result)
+		logrus.Errorf("Test %v %v", testName, result)
 	}
 	return result
 }
