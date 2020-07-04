@@ -217,7 +217,8 @@ func processTestOutputs(testsToRun map[string]bool, testOutputs map[string]paral
 
 	logrus.Info("================================== TEST RESULTS ================================")
 	allTestsPassed := true
-	for testName, result := range allTestResults {
+	for _, testName := range testPrintOrder {
+		result := allTestResults[testName]
 		logrus.Infof("- %v: %v", testName, result)
 		allTestsPassed = allTestsPassed && result == PASSED
 	}
