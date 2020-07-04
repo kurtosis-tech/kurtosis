@@ -4,6 +4,7 @@
 * Move FreeIpAddrTracker a little closer to handling IPv6
 * Run tests in parallel!
 * Print errors directly, rather than rendering them through logrus, to preserve newlines
+* Fixed bug where the `TEST RESULTS` section was displaying in nondeterministic order
 
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings
