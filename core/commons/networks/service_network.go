@@ -1,6 +1,7 @@
 package networks
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
@@ -148,7 +149,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
 			serviceId,
 			nodeInfo.ContainerId)
-		logrus.Error(err)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
 	}
 	logrus.Debugf("Successfully removed service ID %v", serviceId)
 	return nil
