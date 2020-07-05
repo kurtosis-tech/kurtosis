@@ -50,7 +50,7 @@ More concretely, you'll need at least:
 ### Controller
 1. A `main.go` for the controller that constructs an instance of `TestController` for running a given test
 1. A Docker image that runs the controller's `main.go`, which will be launched by the initializer
-    * NOTE: the initializer will set several environment variables in the controller image's shell environment that the controller Docker image should use. For the most up-to-date information about what those environment variables are, see the `generateTestControllerEnvVariables` function [here](https://github.com/kurtosis-tech/kurtosis/blob/develop/initializer/test_suite_runner.go).
+    * NOTE: the initializer will set several environment variables in the controller image's shell environment that the controller Docker image should use. For the most up-to-date information about what those environment variables are, see the `generateTestControllerEnvVariables` function [here](https://github.com/kurtosis-tech/kurtosis/blob/develop/initializer/parallelism/test_executor.go).
 
 Some implementation tips:
 * We recommend structuring your code into the same `commons`, `initializer`, and `controller` packages listed above.

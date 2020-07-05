@@ -1,3 +1,14 @@
+# TBD
+
+# 0.5.0
+* Remove return value of `DockerManager.CreateVolume`, which was utterly useless
+* Create & tear down a new Docker network per test, to pave the way for parallel tests
+* Move FreeIpAddrTracker a little closer to handling IPv6
+* Run tests in parallel!
+* Print errors directly, rather than rendering them through logrus, to preserve newlines
+* Fixed bug where the `TEST RESULTS` section was displaying in nondeterministic order
+* Switch to using `nat.Port` object to represent ports to allow for non-TCP ports
+
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings
 * Make tests declare a timeout and mark them as failed if they don't complete in that time

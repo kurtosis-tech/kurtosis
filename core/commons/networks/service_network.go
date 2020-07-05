@@ -1,6 +1,7 @@
 package networks
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
@@ -22,6 +23,8 @@ type ServiceNetwork struct {
 
 	dockerManager *docker.DockerManager
 
+	dockerNetworkName string
+
 	serviceNodes map[int]ServiceNode
 
 	configurations map[int]serviceConfig
@@ -34,16 +37,18 @@ type ServiceNetwork struct {
 func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
+			dockerNetworkName string,
 			serviceNodes map[int]ServiceNode,
 			configurations map[int]serviceConfig,
 			testVolume string,
 			testVolumeControllerDirpath string) *ServiceNetwork {
 	return &ServiceNetwork{
-		freeIpTracker: freeIpTracker,
-		dockerManager: dockerManager,
-		serviceNodes: serviceNodes,
-		configurations: configurations,
-		testVolume: testVolume,
+		freeIpTracker:               freeIpTracker,
+		dockerManager:               dockerManager,
+		dockerNetworkName:           dockerNetworkName,
+		serviceNodes:                serviceNodes,
+		configurations:              configurations,
+		testVolume:                  testVolume,
 		testVolumeControllerDirpath: testVolumeControllerDirpath,
 	}
 }
@@ -94,7 +99,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 	}
 
-	initializer := services.NewServiceInitializer(config.initializerCore)
+	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName)
 	service, containerId, err := initializer.CreateService(
 			network.testVolume,
 			network.testVolumeControllerDirpath,
@@ -144,7 +149,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
 			serviceId,
 			nodeInfo.ContainerId)
-		logrus.Error(err)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
 	}
 	logrus.Debugf("Successfully removed service ID %v", serviceId)
 	return nil
