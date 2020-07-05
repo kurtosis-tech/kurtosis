@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
@@ -178,7 +179,7 @@ func runControllerContainer(
 		controllerImageName,
 		networkName,
 		controllerIpAddr,
-		make(map[int]bool),
+		make(map[nat.Port]bool),
 		nil, // The controller image's CMD should be parameterized, so we don't specify a start command here
 		envVariables,
 		map[string]string{
