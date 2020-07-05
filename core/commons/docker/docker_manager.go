@@ -14,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"strconv"
 	"time"
 )
 
@@ -158,7 +157,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage string,
 			networkName string,
 			staticIp string,
-			usedPorts map[int]bool,
+			usedPorts map[nat.Port]bool,
 			startCmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
@@ -334,16 +333,12 @@ func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]strin
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
-			usedPorts map[int]bool,
+			usedPorts map[nat.Port]bool,
 			startCmdArgs []string,
 			envVariables map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
-		otherPort, err := nat.NewPort("tcp", strconv.Itoa(port))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Could not parse port int.")
-		}
-		portSet[otherPort] = struct{}{}
+		portSet[port] = struct{}{}
 	}
 
 	envVariablesSlice := make([]string, 0, len(envVariables))
@@ -354,7 +349,6 @@ func (manager *DockerManager) getContainerCfg(
 	nodeConfigPtr := &container.Config{
 		Tty: false,
 		Image: dockerImage,
-		// TODO allow modifying of protocol at some point
 		ExposedPorts: portSet,
 		Cmd: startCmdArgs,
 		Env: envVariablesSlice,

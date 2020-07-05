@@ -1,6 +1,7 @@
 package networks
 
 import (
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"os"
 	"testing"
@@ -12,8 +13,8 @@ type TestService struct {}
 
 // ======================== Test Initializer Core ========================
 type TestInitializerCore struct {}
-func (t TestInitializerCore) GetUsedPorts() map[int]bool {
-	return make(map[int]bool)
+func (t TestInitializerCore) GetUsedPorts() map[nat.Port]bool {
+	return make(map[nat.Port]bool)
 }
 
 func (t TestInitializerCore) GetServiceFromIp(ipAddr string) services.Service {

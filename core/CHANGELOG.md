@@ -5,6 +5,7 @@
 * Run tests in parallel!
 * Print errors directly, rather than rendering them through logrus, to preserve newlines
 * Fixed bug where the `TEST RESULTS` section was displaying in nondeterministic order
+* Switch to using `nat.Port` object to represent ports to allow for non-TCP ports
 
 # 0.4.0
 * remove freeHostPortTracker and all host-container port mappings
