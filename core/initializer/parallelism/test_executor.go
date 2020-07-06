@@ -110,7 +110,6 @@ func (executor testExecutor) runTest(
 	executor.log.Info("The test controller ran and exited successfully")
 
 	return testPassed, nil
-	// TODO after printing logs, delete each container???
 }
 
 /*
@@ -213,7 +212,6 @@ func runControllerContainer(
 	logReadFp.Close()
 	os.Remove(logTmpFile.Name()) // We're responsible for removing the tempfile we created
 
-	// TODO Clean up the volume we created!
 	return exitCode == containerSuccessExitCode, nil
 }
 

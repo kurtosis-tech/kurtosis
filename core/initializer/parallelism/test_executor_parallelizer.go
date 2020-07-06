@@ -1,7 +1,5 @@
 package parallelism
 
-// TODO TODO TODO Combine this entire file into test_suite_runner????
-
 import (
 	"context"
 	"github.com/docker/distribution/uuid"
