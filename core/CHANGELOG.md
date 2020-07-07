@@ -1,4 +1,5 @@
 # TBD
+* Clarified the README with additional information about what happens during Kurtosis exit, normal and abnormal, and how to clean up leftover resources
 
 # 0.5.0
 * Remove return value of `DockerManager.CreateVolume`, which was utterly useless
