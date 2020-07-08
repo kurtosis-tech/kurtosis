@@ -128,7 +128,7 @@ func (executor testExecutor) runTestGoroutine(
 	executor.log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := docker.NewDockerManager(executor.log, context, dockerClient)
+	dockerManager, err := docker.NewDockerManager(executor.log, dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
@@ -144,7 +144,7 @@ func (executor testExecutor) runTestGoroutine(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	_, err = dockerManager.CreateNetwork(networkName, subnetMask, gatewayIp)
+	_, err = dockerManager.CreateNetwork(context, networkName, subnetMask, gatewayIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
 	}
@@ -157,6 +157,7 @@ func (executor testExecutor) runTestGoroutine(
 		return false, stacktrace.NewError("An error occurred getting an IP for the test controller")
 	}
 	testPassed, err := runControllerContainer(
+		context,
 		executor.log,
 		dockerManager,
 		networkName,
@@ -199,6 +200,7 @@ Returns:
 	error: if any error occurred during the execution of the controller (independent of the test itself)
 */
 func runControllerContainer(
+			context context.Context,
 			log *logrus.Logger,
 			manager *docker.DockerManager,
 			networkName string,
@@ -212,7 +214,7 @@ func runControllerContainer(
 			executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
 	log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
-	if err := manager.CreateVolume(volumeName); err != nil {
+	if err := manager.CreateVolume(context, volumeName); err != nil {
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
 	log.Debugf("Docker volume %v created successfully", volumeName)
@@ -237,28 +239,33 @@ func runControllerContainer(
 		volumeName)
 	log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
+	bindMounts := map[string]string{
+		// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
+		"/var/run/docker.sock": "/var/run/docker.sock",
+		logTmpFile.Name():      controllerLogMountFilepath,
+	}
+
+	volumeMounts := map[string]string{
+		volumeName: testVolumeMountpoint,
+	}
+
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
+		context,
 		controllerImageName,
 		networkName,
 		controllerIpAddr,
 		make(map[nat.Port]bool),
 		nil, // The controller image's CMD should be parameterized, so we don't specify a start command here
 		envVariables,
-		map[string]string{
-			// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
-			"/var/run/docker.sock": "/var/run/docker.sock",
-			logTmpFile.Name():      controllerLogMountFilepath,
-		},
-		map[string]string{
-			volumeName: testVolumeMountpoint,
-		})
+		bindMounts,
+		volumeMounts)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
 	}
 	log.Infof("Controller container started successfully with id %s", controllerContainerId)
 
 	log.Info("Waiting for controller container to exit...")
-	exitCode, err := manager.WaitForExit(controllerContainerId)
+	exitCode, err := manager.WaitForExit(context, controllerContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
