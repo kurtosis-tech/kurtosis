@@ -79,12 +79,13 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 	}
 
 	// Validate all the requested tests exist
-	testsToRun := make(map[string]bool)
+	testsToRun := make(map[string]testsuite.Test)
 	for _, testName := range testNamesToRun {
-		if _, found := allTests[testName]; !found {
+		test, found := allTests[testName]
+		if !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
-		testsToRun[testName] = true
+		testsToRun[testName] = test
 	}
 
 	executionInstanceId := uuid.Generate()
@@ -121,7 +122,7 @@ Helper function to build, from the set of tests to run, the map of test params t
 Args:
 	testsToRun: A "set" of test names to run in parallel
  */
-func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]bool) (map[string]parallelism.ParallelTestParams, error) {
+func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsuite.Test) (map[string]parallelism.ParallelTestParams, error) {
 
 	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
 
@@ -142,7 +143,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]bool) 
 
 	testIndex := 0
 	testParams := make(map[string]parallelism.ParallelTestParams)
-	for testName, _ := range testsToRun {
+	for testName, test := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
 		subnetIp := make(net.IP, 4)
@@ -156,12 +157,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]bool) 
 		}
 		logrus.Tracef("Temp file to write logs for test %v to: %v", testName, tempFp.Name())
 
-		testParams[testName] = parallelism.ParallelTestParams{
-			TestName:            testName,
-			LogFp:               tempFp,
-			SubnetMask:          subnetCidrStr,
-			ExecutionInstanceId: executionInstanceId,
-		}
+		testParams[testName] = *parallelism.NewParallelTestParams(testName, test, tempFp, subnetCidrStr, executionInstanceId)
 		testIndex++
 	}
 	return testParams, nil
@@ -177,7 +173,7 @@ Args:
 Returns:
 	True if all tests passed, false otherwise
  */
-func processTestOutputs(testsToRun map[string]bool, testOutputs map[string]parallelism.ParallelTestOutput) bool {
+func processTestOutputs(testsToRun map[string]testsuite.Test, testOutputs map[string]parallelism.ParallelTestOutput) bool {
 	// We want normalized output between runs of the tests suite so we sort the tests by name
 	testPrintOrder := []string{}
 	for testName, _ := range testsToRun {

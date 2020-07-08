@@ -4,17 +4,24 @@ import (
 	"context"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
+	"time"
 )
 
 // ================= Test params & result ============================
 type ParallelTestParams struct {
 	TestName            string
+	Test 				testsuite.Test
 	LogFp               *os.File
 	SubnetMask          string
 	ExecutionInstanceId uuid.UUID
+}
+
+func NewParallelTestParams(testName string, test testsuite.Test, logFp *os.File, subnetMask string, executionInstanceId uuid.UUID) *ParallelTestParams {
+	return &ParallelTestParams{TestName: testName, Test: test, LogFp: logFp, SubnetMask: subnetMask, ExecutionInstanceId: executionInstanceId}
 }
 
 type ParallelTestOutput struct {
@@ -25,6 +32,13 @@ type ParallelTestOutput struct {
 }
 
 // ================= Parallel executor ============================
+const (
+	// The extra amount of time on top of its declared timeout that a test will get to do its setup
+	// TODO Make this parameterized
+	// TODO Debugging - make this 5min!
+	testTimeoutSetupBuffer = 1 * time.Minute
+)
+
 type TestExecutorParallelizer struct {
 	executionId uuid.UUID
 	dockerClient *client.Client
@@ -102,8 +116,6 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testP
 		waitGroup.Add(1)
 		go executor.runTestWorker(&waitGroup, testParamsChan, testOutputChan)
 	}
-
-	// TODO add a timeout which the total execution must not exceed
 	waitGroup.Wait()
 }
 
@@ -119,33 +131,40 @@ func (executor TestExecutorParallelizer) runTestWorker(
 	defer waitGroup.Done()
 
 	for testParams := range testParamsChan {
-		// Create a separate logger just for this test that writes to the given file
-		log := logrus.New()
-		log.SetLevel(logrus.GetLevel())
-		log.SetOutput(testParams.LogFp)
-		log.SetFormatter(logrus.StandardLogger().Formatter)
-
-		loggedExecutor := newTestExecutor(log)
-
-		// TODO create a new context for the test itself probably, so we can cancel it if it's running too long!
-		testContext := context.Background()
-
-		passed, executionErr := loggedExecutor.runTest(
-			executor.executionId,
-			testContext,
-			executor.dockerClient,
-			testParams.SubnetMask,
-			executor.testControllerImageName,
-			executor.testControllerLogLevel,
-			executor.testServiceImageName,
-			testParams.TestName)
-
-		result := ParallelTestOutput{
-			TestName:     testParams.TestName,
-			ExecutionErr: executionErr,
-			TestPassed:   passed,
-			LogFp:        testParams.LogFp,
-		}
+		result := executor.runTestWithTotalTimeout(testParams)
 		testOutputChan <- result
+	}
+}
+
+/*
+This helper function will run a test with a total timeout, cancelling it if it
+ */
+func (executor TestExecutorParallelizer) runTestWithTotalTimeout(testParams ParallelTestParams) ParallelTestOutput {
+	maxTimeout := testParams.Test.GetTimeout() + testTimeoutSetupBuffer
+	testContext, cancel := context.WithTimeout(context.Background(), maxTimeout)
+	defer cancel()
+
+	// Create a separate logger just for this test that writes to the given file
+	log := logrus.New()
+	log.SetLevel(logrus.GetLevel())
+	log.SetOutput(testParams.LogFp)
+	log.SetFormatter(logrus.StandardLogger().Formatter)
+	loggedExecutor := newTestExecutor(log)
+
+	passed, executionErr := loggedExecutor.runTest(
+		testContext,
+		executor.executionId,
+		executor.dockerClient,
+		testParams.SubnetMask,
+		executor.testControllerImageName,
+		executor.testControllerLogLevel,
+		executor.testServiceImageName,
+		testParams.TestName)
+
+	return ParallelTestOutput{
+		TestName:     testParams.TestName,
+		ExecutionErr: executionErr,
+		TestPassed:   passed,
+		LogFp:        testParams.LogFp,
 	}
 }

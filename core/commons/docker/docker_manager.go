@@ -37,10 +37,7 @@ type DockerManager struct {
 	// WARNING: This log should be used for all log statements - the system-wide logger should NOT be used!
 	log *logrus.Logger
 
-	// TODO Remove this and create a new Context per Docker function call!!! See
-	//  https://golang.org/pkg/context/ and
-	//  https://blog.golang.org/context
-	//  This would be especially useful for doing timeouts!!
+	// This is the Context that the DockerManager is running inside - if it's cancelled, this Docker manager will stop working
 	dockerCtx           context.Context
 	dockerClient        *client.Client
 }

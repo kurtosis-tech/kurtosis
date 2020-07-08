@@ -1,4 +1,5 @@
 # TBD
+* Switch DockerManager to take in Contexts in its function call, rather than using one struct-global context
 
 # 0.5.0
 * Remove return value of `DockerManager.CreateVolume`, which was utterly useless

@@ -56,8 +56,8 @@ Returns:
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
  */
 func (executor testExecutor) runTest(
+		context context.Context,
 		executionInstanceId uuid.UUID,
-		testContext context.Context,
 		dockerClient *client.Client,
 		subnetMask string,
 		testControllerImageName string,
@@ -65,7 +65,9 @@ func (executor testExecutor) runTest(
 		testServiceImageName string,
 		testName string) (bool, error) {
 	executor.log.Info("Creating Docker manager from environment settings...")
-	dockerManager, err := docker.NewDockerManager(executor.log, testContext, dockerClient)
+	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
+	//  only need to cancel this context once
+	dockerManager, err := docker.NewDockerManager(executor.log, context, dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
@@ -195,7 +197,6 @@ func runControllerContainer(
 	log.Infof("Controller container started successfully with id %s", controllerContainerId)
 
 	log.Info("Waiting for controller container to exit...")
-	// TODO add a timeout here if the test doesn't complete successfully
 	exitCode, err := manager.WaitForExit(controllerContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
