@@ -1,7 +1,6 @@
 package parallelism
 
 import (
-	"context"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
@@ -32,13 +31,6 @@ type ParallelTestOutput struct {
 }
 
 // ================= Parallel executor ============================
-const (
-	// The extra amount of time on top of its declared timeout that a test will get to do its setup
-	// TODO Make this parameterized
-	// TODO Debugging - make this 5min!
-	testTimeoutSetupBuffer = 1 * time.Minute
-)
-
 type TestExecutorParallelizer struct {
 	executionId uuid.UUID
 	dockerClient *client.Client
@@ -46,6 +38,7 @@ type TestExecutorParallelizer struct {
 	testControllerLogLevel string
 	testServiceImageName string
 	parallelism uint
+	additionalTestTimeoutBuffer time.Duration
 }
 
 /*
@@ -57,6 +50,7 @@ Args:
 	testControllerImageName: The name of the Docker image that will be used to run the test controller
 	testServiceImageName: The name of the Docker image of the version of the service being tested
 	parallelism: The number of tests to run concurrently
+	additionalTestTimeoutBuffer: The amount of additional timeout given to each test for setup, on top of the test-declared timeout
  */
 func NewTestExecutorParallelizer(
 			executionId uuid.UUID,
@@ -64,7 +58,8 @@ func NewTestExecutorParallelizer(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testServiceImageName string,
-			parallelism uint) *TestExecutorParallelizer {
+			parallelism uint,
+			additionalTestTimeoutBuffer time.Duration) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
 		executionId: executionId,
 		dockerClient: dockerClient,
@@ -72,6 +67,7 @@ func NewTestExecutorParallelizer(
 		testControllerLogLevel: testControllerLogLevel,
 		testServiceImageName: testServiceImageName,
 		parallelism: parallelism,
+		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 	}
 }
 
@@ -114,7 +110,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testP
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {
 		waitGroup.Add(1)
-		go executor.runTestWorker(&waitGroup, testParamsChan, testOutputChan)
+		go executor.runTestWorkerGoroutine(&waitGroup, testParamsChan, testOutputChan)
 	}
 	waitGroup.Wait()
 }
@@ -123,7 +119,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testP
 A function, designed to be run inside a goroutine, that will pull from the given test params channel, execute a test, and
 push the result to the test results channel
  */
-func (executor TestExecutorParallelizer) runTestWorker(
+func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
 			testOutputChan chan ParallelTestOutput) {
@@ -140,26 +136,22 @@ func (executor TestExecutorParallelizer) runTestWorker(
 This helper function will run a test with a total timeout, cancelling it if it
  */
 func (executor TestExecutorParallelizer) runTestWithTotalTimeout(testParams ParallelTestParams) ParallelTestOutput {
-	maxTimeout := testParams.Test.GetTimeout() + testTimeoutSetupBuffer
-	testContext, cancel := context.WithTimeout(context.Background(), maxTimeout)
-	defer cancel()
-
 	// Create a separate logger just for this test that writes to the given file
 	log := logrus.New()
 	log.SetLevel(logrus.GetLevel())
 	log.SetOutput(testParams.LogFp)
 	log.SetFormatter(logrus.StandardLogger().Formatter)
-	loggedExecutor := newTestExecutor(log)
+	testExecutor := newTestExecutor(log, executor.additionalTestTimeoutBuffer)
 
-	passed, executionErr := loggedExecutor.runTest(
-		testContext,
+	passed, executionErr := testExecutor.runTest(
 		executor.executionId,
 		executor.dockerClient,
 		testParams.SubnetMask,
 		executor.testControllerImageName,
 		executor.testControllerLogLevel,
 		executor.testServiceImageName,
-		testParams.TestName)
+		testParams.TestName,
+		testParams.Test)
 
 	return ParallelTestOutput{
 		TestName:     testParams.TestName,

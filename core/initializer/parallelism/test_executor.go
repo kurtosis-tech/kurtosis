@@ -8,11 +8,13 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 /*
@@ -42,20 +44,79 @@ const (
 	testVolumeMountpointArg = "TEST_VOLUME_MOUNTPOINT"
 )
 
-type testExecutor struct {
-	log *logrus.Logger
+type testResult struct {
+	testPassed bool
+	setupErr error
 }
 
-func newTestExecutor(log *logrus.Logger) *testExecutor {
-	return &testExecutor{log: log}
+type testExecutor struct {
+	log *logrus.Logger
+	additionalTestTimeoutBuffer time.Duration
+}
+
+func newTestExecutor(log *logrus.Logger, additionalTestTimeoutBuffer time.Duration) *testExecutor {
+	return &testExecutor{
+		log: log,
+		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
+	}
+}
+
+// TODO Just make all these params struct params - passing them through each to function is tedious and error-prone because
+//  we have a lot of string params and it's easy to get them mixed up
+func (executor testExecutor) runTest(
+		executionInstanceId uuid.UUID,
+		dockerClient *client.Client,
+		subnetMask string,
+		testControllerImageName string,
+		testControllerLogLevel string,
+		testServiceImageName string,
+		testName string,
+		test testsuite.Test) (bool, error) {
+	// We don't know what's going to happen with the setup, test execution, etc. so we have a total timeout on top of the test timeout
+	testResultChan := make(chan testResult)
+	totalTimeout := test.GetTimeout() + executor.additionalTestTimeoutBuffer
+
+	context, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	go func() {
+		testPassed, setupErr := executor.runTestGoroutine(
+			context,
+			executionInstanceId,
+			dockerClient,
+			subnetMask,
+			testControllerImageName,
+			testControllerLogLevel,
+			testServiceImageName,
+			testName)
+		testResultChan <- testResult{
+			testPassed: testPassed,
+			setupErr:   setupErr,
+		}
+	}()
+
+	var timedOut bool
+	var testExecutionResult testResult
+	select {
+	case testExecutionResult = <- testResultChan:
+		timedOut = false
+	case <- time.After(totalTimeout):
+		timedOut = true
+	}
+
+	if timedOut {
+		cancelFunc()
+		return false, stacktrace.NewError("Test hit upper bound of allowed setup & execution time: %v", totalTimeout)
+	}
+
+	return testExecutionResult.testPassed, testExecutionResult.setupErr
 }
 
 /*
 Returns:
 	error: An error if an error occurred *while setting up or running the test* (independent from whether the test itself passed)
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
- */
-func (executor testExecutor) runTest(
+*/
+func (executor testExecutor) runTestGoroutine(
 		context context.Context,
 		executionInstanceId uuid.UUID,
 		dockerClient *client.Client,

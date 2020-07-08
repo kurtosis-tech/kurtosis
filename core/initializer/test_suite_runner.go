@@ -15,6 +15,7 @@ import (
 	"net"
 	"os"
 	"sort"
+	"time"
 )
 
 // =============================== "enum" for test result =========================================
@@ -33,6 +34,9 @@ type TestSuiteRunner struct {
 
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
+
+	// The additional time, on top of the per-test timeout, that's given to tests for setup & teardown
+	additionalTestTimeoutBuffer time.Duration
 }
 
 const (
@@ -54,12 +58,14 @@ func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
 			testServiceImageName string,
 			testControllerImageName string,
-			testControllerLogLevel string) *TestSuiteRunner {
+			testControllerLogLevel string,
+			additionalTestTimeoutBuffer time.Duration) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
 		testControllerLogLevel: testControllerLogLevel,
+		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 	}
 }
 
@@ -106,7 +112,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
 		runner.testServiceImageName,
-		testParallelism)
+		testParallelism,
+		runner.additionalTestTimeoutBuffer)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
 	testOutputs := testExecutor.RunInParallel(testParams)
