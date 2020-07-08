@@ -37,11 +37,21 @@ type DockerManager struct {
 	// WARNING: This log should be used for all log statements - the system-wide logger should NOT be used!
 	log *logrus.Logger
 
-	// This is the Context that the DockerManager is running inside - if it's cancelled, this Docker manager will stop working
+	// This is the Context that all requests made via this DockerManager will use
+	// If this Context is cancelled, we expect the DockerManager to be unusable
 	dockerCtx           context.Context
+
 	dockerClient        *client.Client
 }
 
+/*
+Creates a new manager for manipulating the Docker engine using the given client
+
+Args:
+	log: The logger that this Docker manager should use
+	dockerCtx: The context that the manager will run all requests with (if this is cancelled, we expected the manager to be unusable)
+	dockerClient: The Docker client that will be used when modifying the Docker engine
+ */
 func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
 		log: log,
