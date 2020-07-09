@@ -289,6 +289,8 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 
 func (manager DockerManager) pullImage(imageName string) (err error) {
 	manager.log.Infof("Pulling image %s...", imageName)
+	manager.log.Debugf("Image name is: %s...", imageName)
+	manager.log.Infof("Image name is: %s...", imageName)
 	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
