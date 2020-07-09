@@ -92,7 +92,7 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	logrus.Info("All test params loaded into work queue")
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(tests), executor.parallelism)
-	executor.disableSystemLogAndRunTestThreads(testParamsChan, testOutputChan)
+	executor.disableSystemLogAndRunTestThreads(interceptor, testParamsChan, testOutputChan)
 	logrus.Info("All tests exited")
 
 	// Collect all results
@@ -104,15 +104,15 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	return result
 }
 
-func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
+func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(interceptor *ErroneousSystemLogCaptureWriter, testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
 	/*
     Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
-    a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we make the systemwide logger throw
-	a panic during just this function call.
+    a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we capture any systemwide logger usages
+	during this function so we can show them later.
 	*/
 	currentSystemOut := logrus.StandardLogger().Out
-	logrus.SetOutput(ErroneousSystemLogCaptureWriter{})
+	logrus.SetOutput(interceptor)
 	defer logrus.SetOutput(currentSystemOut)
 
 	var waitGroup sync.WaitGroup

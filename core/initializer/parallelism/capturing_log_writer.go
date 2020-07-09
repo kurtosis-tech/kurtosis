@@ -30,6 +30,8 @@ func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 	}
 }
 
+
+
 func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
 	stacktraceBytes := getStacktraceBytes()
 	logInfo := ErroneousSystemLogInfo{
