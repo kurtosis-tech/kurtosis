@@ -28,12 +28,13 @@ type ParallelTestOutput struct {
 
 // ================= Parallel executor ============================
 type TestExecutorParallelizer struct {
-	executionId uuid.UUID
-	dockerClient *client.Client
+	executionId             uuid.UUID
+	dockerClient            *client.Client
 	testControllerImageName string
-	testControllerLogLevel string
-	testServiceImageName string
-	parallelism uint
+	testControllerLogLevel  string
+	testServiceImageName    string
+	testControllerEnvVars   map[string]string
+	parallelism             uint
 }
 
 /*
@@ -52,14 +53,16 @@ func NewTestExecutorParallelizer(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testServiceImageName string,
+			testControllerEnvVars map[string]string,
 			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
-		executionId: executionId,
-		dockerClient: dockerClient,
+		executionId:             executionId,
+		dockerClient:            dockerClient,
 		testControllerImageName: testControllerImageName,
-		testControllerLogLevel: testControllerLogLevel,
-		testServiceImageName: testServiceImageName,
-		parallelism: parallelism,
+		testControllerLogLevel:  testControllerLogLevel,
+		testServiceImageName:    testServiceImageName,
+		testControllerEnvVars:   testControllerEnvVars,
+		parallelism:             parallelism,
 	}
 }
 
@@ -140,6 +143,7 @@ func (executor TestExecutorParallelizer) runTestWorker(
 			executor.testControllerImageName,
 			executor.testControllerLogLevel,
 			executor.testServiceImageName,
+			executor.testControllerEnvVars,
 			testParams.TestName)
 
 		result := ParallelTestOutput{

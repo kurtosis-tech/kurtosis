@@ -63,6 +63,7 @@ func (executor testExecutor) runTest(
 		testControllerImageName string,
 		testControllerLogLevel string,
 		testServiceImageName string,
+		testControllerEnvVars map[string]string,
 		testName string) (bool, error) {
 	executor.log.Info("Creating Docker manager from environment settings...")
 	dockerManager, err := docker.NewDockerManager(executor.log, testContext, dockerClient)
@@ -103,6 +104,7 @@ func (executor testExecutor) runTest(
 		testControllerImageName,
 		testControllerLogLevel,
 		testServiceImageName,
+		testControllerEnvVars,
 		testName,
 		executionInstanceId)
 	if err != nil {
@@ -146,6 +148,7 @@ func runControllerContainer(
 			controllerImageName string,
 			logLevel string,
 			testServiceImageName string,
+			testControllerEnvVars map[string]string,
 			testName string,
 			executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
@@ -172,7 +175,8 @@ func runControllerContainer(
 		testName,
 		logLevel,
 		testServiceImageName,
-		volumeName)
+		volumeName,
+		testControllerEnvVars)
 	log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
@@ -258,8 +262,9 @@ func generateTestControllerEnvVariables(
 			testName string,
 			logLevel string,
 			testServiceImageName string,
-			testVolumeName string) map[string]string {
-	return map[string]string{
+			testVolumeName string,
+			envVars map[string]string) map[string]string {
+	standardVars := map[string]string{
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
 		networkNameArg:          networkName,
@@ -271,4 +276,8 @@ func generateTestControllerEnvVariables(
 		testVolumeArg:           testVolumeName,
 		testVolumeMountpointArg: testVolumeMountpoint,
 	}
+	for key, val := range(envVars) {
+		standardVars[key] = val
+	}
+	return standardVars
 }
