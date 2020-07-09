@@ -115,6 +115,7 @@ func (manager DockerManager) RemoveNetwork(networkName string) error {
 		// No network with that name exists, so nothing to do
 		return nil
 	}
+	// TODO we can't use the DockerManager context here because if it hits the hard timeout then we still need to tear down the network!!
 	if err := manager.dockerClient.NetworkRemove(manager.dockerCtx, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with name %v and ID %v", networkName, networkId)
 	}

@@ -42,6 +42,10 @@ const (
 	testImageNameArg        = "TEST_IMAGE_NAME"
 	testControllerIpArg     = "TEST_CONTROLLER_IP"
 	testVolumeMountpointArg = "TEST_VOLUME_MOUNTPOINT"
+
+	// After we hard-timeout a test, how long we'll give the test to clean itself up (namely the Docker network)
+	//  before we call it lost and continue on
+	networkTeardownGraceTime = 10 * time.Second
 )
 
 type testResult struct {
@@ -104,7 +108,19 @@ func (executor testExecutor) runTest(
 	}
 
 	if timedOut {
+		executor.log.Tracef("Test hit hard timeout of %v and is being cancelled to give it the chance to exit gracefully...", totalTimeout)
 		cancelFunc()
+
+		// We've now cancelled the context so a worker that's not completely stopped *should* exit gracefully
+		select {
+		case testExecutionResult = <- testResultChan:
+			executor.log.Info("Test exited gracefully after cancelling with the following error (printed only for information):")
+			fmt.Fprintln(executor.log.Out, testExecutionResult.setupErr)
+		case <- time.After(networkTeardownGraceTime):
+			executor.log.Warnf(
+				"Test didn't exit gracefully after cancellation even after waiting an additional %v; the test goroutine is being called lost",
+				networkTeardownGraceTime)
+		}
 		return false, stacktrace.NewError("Test hit upper bound of allowed setup & execution time: %v", totalTimeout)
 	}
 
