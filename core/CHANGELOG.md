@@ -1,5 +1,6 @@
 # TBD
-* Switch DockerManager to take in Contexts in its function call, rather than using one struct-global context
+* Add a test-execution-global timeout, so that a hang during setup won't block Kurtosis indefinitely
+* Switch the `panickingLogWriter` for a log writer that merely captures system-level log events during parallel test execution, because it turns out the Docker client uses logrus and will call system-level logging events too
 
 # 0.5.0
 * Remove return value of `DockerManager.CreateVolume`, which was utterly useless

@@ -116,10 +116,35 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		runner.additionalTestTimeoutBuffer)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
-	testOutputs := testExecutor.RunInParallel(testParams)
+	interceptor := parallelism.NewErroneousSystemLogCaptureWriter()
+	testOutputs := testExecutor.RunInParallel(interceptor, testParams)
 
 	logrus.Infof("Printing results for %v tests...", len(testsToRun))
 	allTestsPassed = processTestOutputs(testsToRun, testOutputs)
+
+	// If there was any erroneous system-level logging, loudly display that to the user
+	capturedErroneousMessages := interceptor.GetCapturedMessages()
+	if len(capturedErroneousMessages) > 0 {
+		logrus.Error("")
+		logrus.Error("There were log messages printed to the system-level logger during parallel test execution!")
+		logrus.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
+		logrus.Error(" attributed to any specific test. This means either:")
+		logrus.Error("   1) there's a bug in Kurtosis, and a system-level logger call was used when a test-specific logger")
+		logrus.Error("       should have been (likely)")
+		logrus.Error("   2) third-party code called logrus independently, and there's nothing we can do (unlikely, but possible)")
+		logrus.Error("")
+		logrus.Error("The log message(s) attempted, and the stacktrace(s) of origination, are as follows in the order they were logged:")
+
+		for i, messageInfo := range capturedErroneousMessages {
+			logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
+			logrus.Error("Message:")
+			logrus.StandardLogger().Out.Write(messageInfo.Message)
+			logrus.Error("")
+			logrus.Error("Stacktrace:")
+			logrus.StandardLogger().Out.Write(messageInfo.Stacktrace)
+		}
+	}
+
 	return allTestsPassed, nil
 }
 

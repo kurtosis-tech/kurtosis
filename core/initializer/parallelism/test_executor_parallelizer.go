@@ -71,7 +71,15 @@ func NewTestExecutorParallelizer(
 	}
 }
 
-func (executor TestExecutorParallelizer) RunInParallel(tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
+/*
+Runs the given tests in parallel
+
+Args:
+	interceptor: A system-level log capturer that will store log messages which get logged to the system-level logger
+		when they really should be logged to the per-test logger
+	tests: Map of tests to run
+ */
+func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(tests))
 	testOutputChan := make(chan ParallelTestOutput, len(tests))
@@ -104,7 +112,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(testP
 	a panic during just this function call.
 	*/
 	currentSystemOut := logrus.StandardLogger().Out
-	logrus.SetOutput(panickingLogWriter{})
+	logrus.SetOutput(ErroneousSystemLogCaptureWriter{})
 	defer logrus.SetOutput(currentSystemOut)
 
 	var waitGroup sync.WaitGroup
