@@ -45,7 +45,10 @@ const (
 
 	// After we hard-timeout a test, how long we'll give the test to clean itself up (namely the Docker network)
 	//  before we call it lost and continue on
-	networkTeardownGraceTime = 10 * time.Second
+	networkTeardownGraceTime = 60 * time.Second
+
+	// When we're tearing down a network that still has running containers, the maximum time we'll wait for each container to stop
+	networkTeardownContainerStopTimeout = 10 * time.Second
 )
 
 type testResult struct {
@@ -307,10 +310,10 @@ as a deferred function.
 */
 func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkName string) {
 	log.Infof("Attempting to remove Docker network with name %v...", networkName)
-	err := dockerManager.RemoveNetwork(context.Background(), networkName)
-	if err != nil {
+	if err := dockerManager.RemoveNetwork(context.Background(), networkName, networkTeardownContainerStopTimeout); err != nil {
 		log.Errorf("An error occurred removing Docker network with name %v:", networkName)
 		log.Error(err.Error())
+		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
 		log.Infof("Docker network %v successfully removed", networkName)
 	}
