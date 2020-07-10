@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
@@ -27,6 +28,7 @@ func NewServiceInitializer(core ServiceInitializerCore, networkName string) *Ser
 /*
 Creates a service with the given parameters
 Args:
+	context: Context that the creation of the service is running in
 	testVolumeName: The name of the test volume to mount on the node
 	testVolumeControllerDirpath: The path to the directory where the test volume is mounted on the controller Docker image
 	dockerImage: The name of the Docker image that the new service will be started with
@@ -35,6 +37,7 @@ Args:
 	dependencies: The services that the service-to-be-started depends on
  */
 func (initializer ServiceInitializer) CreateService(
+			context context.Context,
 			testVolumeName string,
 			testVolumeControllerDirpath string,
 			dockerImage string,
@@ -77,6 +80,7 @@ func (initializer ServiceInitializer) CreateService(
 	}
 
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
+			context,
 			dockerImage,
 			initializer.networkName,
 			staticIp,

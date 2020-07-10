@@ -1,6 +1,7 @@
 package networks
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
@@ -101,6 +102,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 
 	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName)
 	service, containerId, err := initializer.CreateService(
+			context.Background(),
 			network.testVolume,
 			network.testVolumeControllerDirpath,
 			config.dockerImage,
@@ -143,7 +145,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 	delete(network.serviceNodes, serviceId)
 
 	// Make a best-effort attempt to stop the container
-	err := network.dockerManager.StopContainer(nodeInfo.ContainerId, &containerStopTimeout)
+	err := network.dockerManager.StopContainer(context.Background(), nodeInfo.ContainerId, &containerStopTimeout)
 	if err != nil {
 		logrus.Errorf(
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",
