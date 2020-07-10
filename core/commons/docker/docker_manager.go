@@ -95,13 +95,15 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 
 // TODO Change this to be removing a network by ID
 /*
-Removes the Docker network with the given name
+Removes the Docker network with the given name, attempting to stop all containers connected to the network first (because
+ othewise, the remove call will fail)
 
 Args:
 	context: The Context that this request is running in (useful for cancellation)
 	networkName: Name of Docker network to remove
+	containerStopTimeout: How long to wait for containers to stop
  */
-func (manager DockerManager) RemoveNetwork(context context.Context, networkName string) error {
+func (manager DockerManager) RemoveNetwork(context context.Context, networkName string, containerStopTimeout time.Duration) error {
 	networkId, exists, err := manager.getNetworkId(networkName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the network ID for network %v", networkName)
@@ -110,6 +112,18 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkName 
 		// No network with that name exists, so nothing to do
 		return nil
 	}
+
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get network information for network %v with ID %v", networkName, networkId)
+	}
+
+	for containerId, _ := range inspectResponse.Containers {
+		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
+		}
+	}
+
 	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with name %v and ID %v", networkName, networkId)
 	}
