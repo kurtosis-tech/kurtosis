@@ -12,17 +12,19 @@ const (
 )
 
 type ServiceAvailabilityChecker struct {
+	context context.Context // We bend the Go rules and store this context we don't want the user to need to think about it when writing their tests
 	core ServiceAvailabilityCheckerCore
 	toCheck Service
 	dependencies []Service
 }
 
-func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
+func NewServiceAvailabilityChecker(context context.Context, core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
 	// Defensive copy
 	dependenciesCopy := make([]Service, 0, len(dependencies))
 	copy(dependenciesCopy, dependencies)
 
 	return &ServiceAvailabilityChecker{
+		context: context,
 		core: core,
 		toCheck: toCheck,
 		dependencies: dependenciesCopy,
@@ -31,10 +33,10 @@ func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck 
 
 // Waits for the linked service to start up by making requests (configured by the core) to the service until the service
 //  is reported as up or the timeout is reached
-func (checker ServiceAvailabilityChecker) WaitForStartup(waitContext context.Context) error {
+func (checker ServiceAvailabilityChecker) WaitForStartup() error {
 	startupTimeout := checker.core.GetTimeout()
 
-	timeoutContext, cancel := context.WithTimeout(waitContext, startupTimeout)
+	timeoutContext, cancel := context.WithTimeout(checker.context, startupTimeout)
 	defer cancel()
 
 	for timeoutContext.Err() == nil {

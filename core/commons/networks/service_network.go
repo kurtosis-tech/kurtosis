@@ -71,6 +71,9 @@ Return:
 	An AvailabilityChecker for checking when the service is actually available
  */
 func (network *ServiceNetwork) AddService(configurationId int, serviceId int, dependencies map[int]bool) (*services.ServiceAvailabilityChecker, error) {
+	// Maybe one day we'll make this flow from somewhere up above (e.g. make the entire network live inside a single context)
+	parentCtx := context.Background()
+
 	config, found := network.configurations[configurationId]
 	if !found {
 		return nil, stacktrace.NewError("No service configuration with ID '%v' has been registered", configurationId)
@@ -102,7 +105,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 
 	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName)
 	service, containerId, err := initializer.CreateService(
-			context.Background(),
+			parentCtx,
 			network.testVolume,
 			network.testVolumeControllerDirpath,
 			config.dockerImage,
@@ -119,7 +122,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		ContainerId: containerId,
 	}
 
-	availabilityChecker := services.NewServiceAvailabilityChecker(config.availabilityCheckerCore, service, dependencyServices)
+	availabilityChecker := services.NewServiceAvailabilityChecker(parentCtx, config.availabilityCheckerCore, service, dependencyServices)
 	return availabilityChecker, nil
 }
 

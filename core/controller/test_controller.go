@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
@@ -85,8 +84,6 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	}
 
 	logrus.Info("Connecting to Docker environment...")
-	// Initialize default environment context.
-	parentCtx := context.Background()
 	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -139,7 +136,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	logrus.Info("Waiting for test network to become available...")
 	for serviceId, availabilityChecker := range availabilityCheckers {
 		logrus.Debugf("Waiting for service %v to become available...", serviceId)
-		if err := availabilityChecker.WaitForStartup(parentCtx); err != nil {
+		if err := availabilityChecker.WaitForStartup(); err != nil {
 			return stacktrace.Propagate(err, "An error occurred waiting for service with ID %v to start up", serviceId), nil
 		}
 		logrus.Debugf("Service %v is available", serviceId)
