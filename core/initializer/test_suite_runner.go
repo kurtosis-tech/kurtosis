@@ -140,10 +140,10 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		for i, messageInfo := range capturedErroneousMessages {
 			logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
 			logrus.Error("Message:")
-			logrus.StandardLogger().Out.Write(messageInfo.Message)
+			fmt.Fprintln(logrus.StandardLogger().Out, messageInfo.Message)
 			logrus.Error("")
 			logrus.Error("Stacktrace:")
-			logrus.StandardLogger().Out.Write(messageInfo.Stacktrace)
+			fmt.Fprintln(logrus.StandardLogger().Out, messageInfo.Message)
 		}
 	}
 

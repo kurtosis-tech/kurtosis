@@ -2,7 +2,7 @@
 * Add a test-execution-global timeout, so that a hang during setup won't block Kurtosis indefinitely
 * Switch the `panickingLogWriter` for a log writer that merely captures system-level log events during parallel test execution, because it turns out the Docker client uses logrus and will call system-level logging events too
 * `DockerManager` no longer stores a Context, and instead takes it in for each of its functions (per Go's recommendation)
-* When removing the network as a last saving throw, try to stop containers attached to the network (otherwise removing the network will guaranteed fail)
+* To enable the test timeout use case, try to stop all containers attached to a network before removing it (otherwise removing the network will guaranteed fail)
 
 # 0.5.0
 * Remove return value of `DockerManager.CreateVolume`, which was utterly useless
