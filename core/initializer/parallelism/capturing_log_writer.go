@@ -36,7 +36,7 @@ func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
 	fmt.Println("ERRONEOUS LOG DATA: " + string(data))
 
-	dataCopy := make([]byte, 0, len(data))
+	dataCopy := make([]byte, len(data))
 	copy(dataCopy, data)
 	stacktraceBytes := getStacktraceBytes()
 	logInfo := ErroneousSystemLogInfo{
