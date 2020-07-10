@@ -1,6 +1,7 @@
 package parallelism
 
 import (
+	"fmt"
 	"runtime"
 )
 
@@ -33,12 +34,15 @@ func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 
 
 func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
+	fmt.Println("ERRONEOUS LOG DATA: " + string(data))
+
+	dataCopy := make([]byte, 0, len(data))
+	copy(dataCopy, data)
 	stacktraceBytes := getStacktraceBytes()
 	logInfo := ErroneousSystemLogInfo{
-		Message:       data,
+		Message:       dataCopy,
 		Stacktrace: stacktraceBytes,
 	}
-
 	writer.logMessages = append(writer.logMessages, logInfo)
 	return len(data), nil
 }
