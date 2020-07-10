@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -30,15 +31,26 @@ func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck 
 
 // Waits for the linked service to start up by making requests (configured by the core) to the service until the service
 //  is reported as up or the timeout is reached
-func (checker ServiceAvailabilityChecker) WaitForStartup() error {
+func (checker ServiceAvailabilityChecker) WaitForStartup(waitContext context.Context) error {
 	startupTimeout := checker.core.GetTimeout()
-	pollStartTime := time.Now()
-	for time.Since(pollStartTime) < startupTimeout {
+
+	timeoutContext, cancel := context.WithTimeout(waitContext, startupTimeout)
+	defer cancel()
+
+	for timeoutContext.Err() == nil {
 		if checker.core.IsServiceUp(checker.toCheck, checker.dependencies) {
 			return nil
 		}
 		logrus.Tracef("Service is not yet available; sleeping for %v before retrying...", TIME_BETWEEN_STARTUP_POLLS)
 		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
 	}
-	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start", startupTimeout)
+
+	contextErr := timeoutContext.Err()
+	if (contextErr == context.Canceled) {
+		return stacktrace.Propagate(contextErr, "Context was cancelled while waiting for service to startFailed to Hit timeout (%v) while waiting for service to start", startupTimeout)
+	} else if (contextErr == context.DeadlineExceeded) {
+		return stacktrace.Propagate(contextErr, "Hit timeout (%v) while waiting for service to start", startupTimeout)
+	} else {
+		return stacktrace.Propagate(contextErr, "Hit an unknown context error while waiting for service to start")
+	}
 }

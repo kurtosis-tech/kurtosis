@@ -86,13 +86,13 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 
 	logrus.Info("Connecting to Docker environment...")
 	// Initialize default environment context.
-	dockerCtx := context.Background()
+	parentCtx := context.Background()
 	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment."), nil
 	}
-	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerCtx, dockerClient)
+	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), parentCtx, dockerClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager"), nil
 	}
@@ -139,7 +139,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	logrus.Info("Waiting for test network to become available...")
 	for serviceId, availabilityChecker := range availabilityCheckers {
 		logrus.Debugf("Waiting for service %v to become available...", serviceId)
-		if err := availabilityChecker.WaitForStartup(); err != nil {
+		if err := availabilityChecker.WaitForStartup(parentCtx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred waiting for service with ID %v to start up", serviceId), nil
 		}
 		logrus.Debugf("Service %v is available", serviceId)
