@@ -117,6 +117,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(inter
 
 	// TODO Debugging
 	logrus.Info("This should fail!")
+	logrus.Info("This too should fail!")
 
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {

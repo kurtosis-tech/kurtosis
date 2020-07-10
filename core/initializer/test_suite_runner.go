@@ -263,29 +263,35 @@ func logTestResult(testName string, executionErr error, testPassed bool) testRes
 	return result
 }
 
+/*
+Helper function to print a big warning if there was logging to the system-level logging when there should only have been
+ logging to the test-specific logger
+ */
 func logErroneousSystemLogging(capturedErroneousMessages []parallelism.ErroneousSystemLogInfo) {
-	if len(capturedErroneousMessages) > 0 {
-		logrus.Error("")
-		logrus.Error("================================== ERRONEOUS LOGS ================================")
-		logrus.Error("There were log messages printed to the system-level logger during parallel test execution!")
-		logrus.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
-		logrus.Error(" attributed to any specific test. This is:")
-		logrus.Error("   1) A bug in Kurtosis, and a system-level logger call was used when a test-specific logger")
-		logrus.Error("       should have been used (likely)")
-		logrus.Error("   2) Third-party code calling logrus independently, and there's nothing we can do (unlikely, but possible)")
-		logrus.Error("")
-		logrus.Error("The log message(s) attempted, and the stacktrace(s) of origination, are as follows in the order they were logged:")
-		logrus.Error("")
+	if len(capturedErroneousMessages) == 0 {
+		return
+	}
 
-		for i, messageInfo := range capturedErroneousMessages {
-			logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
-			logrus.Error("Message:")
-			logrus.StandardLogger().Out.Write(messageInfo.Message)
-			logrus.StandardLogger().Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it
-			logrus.Error("")
-			logrus.Error("Stacktrace:")
-			logrus.StandardLogger().Out.Write(messageInfo.Stacktrace)
-			logrus.StandardLogger().Out.Write([]byte("\n")) // The stacktrace likely won't end with a newline so we add it
-		}
+	logrus.Error("")
+	logrus.Error("================================== ERRONEOUS LOGS ================================")
+	logrus.Error("There were log messages printed to the system-level logger during parallel test execution!")
+	logrus.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
+	logrus.Error(" attributed to any specific test. This is:")
+	logrus.Error("   1) A bug in Kurtosis, and a system-level logger call was used when a test-specific logger")
+	logrus.Error("       should have been used (likely)")
+	logrus.Error("   2) Third-party code calling logrus independently, and there's nothing we can do (unlikely, but possible)")
+	logrus.Error("")
+	logrus.Error("The log message(s) attempted, and the stacktrace(s) of origination, are as follows in the order they were logged:")
+	logrus.Error("")
+
+	for i, messageInfo := range capturedErroneousMessages {
+		logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
+		logrus.Error("Message:")
+		logrus.StandardLogger().Out.Write(messageInfo.Message)
+		logrus.StandardLogger().Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it
+		logrus.Error("")
+		logrus.Error("Stacktrace:")
+		logrus.StandardLogger().Out.Write(messageInfo.Stacktrace)
+		logrus.StandardLogger().Out.Write([]byte("\n")) // The stacktrace likely won't end with a newline so we add it
 	}
 }
