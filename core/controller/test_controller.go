@@ -92,7 +92,7 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment."), nil
 	}
-	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), parentCtx, dockerClient)
+	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager"), nil
 	}

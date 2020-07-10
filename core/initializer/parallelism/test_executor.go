@@ -307,7 +307,7 @@ as a deferred function.
 */
 func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkName string) {
 	log.Infof("Attempting to remove Docker network with name %v...", networkName)
-	err := dockerManager.RemoveNetwork(networkName)
+	err := dockerManager.RemoveNetwork(context.Background(), networkName)
 	if err != nil {
 		log.Errorf("An error occurred removing Docker network with name %v:", networkName)
 		log.Error(err.Error())
