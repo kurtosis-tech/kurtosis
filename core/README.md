@@ -57,5 +57,45 @@ Some implementation tips:
 * Make an interface representing the calls that every single node on your network can receive (e.g. `ElasticsearchService`), and create sub-interfaces for more specific calls (e.g. `ElasticsearchMasterService`)
 * Both network-creating and network-loading functions are intentionally centralized in the `TestNetworkLoader` interface so that constant IDs can be defined for each node and used in both network creation & loading
 
+### Notes
+While running, Kurtosis will create the following, per test:
+* A new Docker network for the test
+* A new Docker volume to pass files relevant to the test in
+* Several containers related to the test
+
+**If Kurtosis is killed abnormally (e.g. SIGKILL or SIGQUIT), the user will need to remove the Docker network and stop the running containers!** The specifics will depend on what Docker containers you start, but can be done using something like the following examples:
+
+Find & remove Kurtosis Docker networks:
+```
+docker network ls  # See which Docker networks are left around - will be in the format of UUID-TESTNAME
+docker network rm some_id_1 some_id_2 ...
+```
+
+**If the network isn't removed, you'll get IP conflict errors from Docker on next Kurtosis run!**
+
+Stop running containers:
+```
+docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
+docker stop $(docker ps -a --quiet --filter ancestor="IMAGENAME" --format="{{.ID}}")
+```
+
+
+If Kurtosis is allowed to finish normally, the Docker network will be deleted and the containers stopped. **However, even with normal exit, Kurtosis will not delete the Docker containers or volume it created.** This is intentional, so that a dev writing Kurtosis tests can examine the containers and volume that Kurtosis spins up for additional information. It is therefore recommended that the user periodically clear out their old containers, volumes, and images; this can be done with something like the following examples:
+
+Stopping & removing containers:
+```
+docker rm $(docker stop $(docker ps -a -q --filter ancestor="IMAGENAME" --format="{{.ID}}"))
+```
+
+Remove all volumes associated with a given test:
+```
+docker volume rm $(docker volume ls | grep "TESTNAME" | awk '{print $1}')
+```
+
+Remove unused images:
+```
+docker image rm $(docker images --quiet --filter "dangling=true")
+```
+
 ## Examples
 See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation
