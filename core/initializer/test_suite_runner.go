@@ -198,7 +198,7 @@ func processTestOutputs(testsToRun map[string]testsuite.Test, testOutputs map[st
 
 	allTestResults := make(map[string]testResult)
 	for _, name := range testPrintOrder {
-		logrus.Infof("---------------------------------- %v --------------------------------", name)
+		printBanner(name, false)
 
 		output := testOutputs[name]
 		passed := output.TestPassed
@@ -226,7 +226,7 @@ func processTestOutputs(testsToRun map[string]testsuite.Test, testOutputs map[st
 		allTestResults[name] = result
 	}
 
-	logrus.Info("================================== TEST RESULTS ================================")
+	printBanner("All Test Results", false)
 	allTestsPassed := true
 	for _, testName := range testPrintOrder {
 		result := allTestResults[testName]
@@ -265,6 +265,22 @@ func logTestResult(testName string, executionErr error, testPassed bool) testRes
 	return result
 }
 
+func printBanner(contents string, isError bool) {
+	bannerString := "=========================================================================="
+	contentString := fmt.Sprintf("                              %v", contents)
+	if !isError {
+		logrus.Info("")
+		logrus.Info(bannerString)
+		logrus.Info(contentString)
+		logrus.Info(bannerString)
+	} else {
+		logrus.Error("")
+		logrus.Error(bannerString)
+		logrus.Error(contentString)
+		logrus.Error(bannerString)
+	}
+}
+
 /*
 Helper function to print a big warning if there was logging to the system-level logging when there should only have been
  logging to the test-specific logger
@@ -274,8 +290,7 @@ func logErroneousSystemLogging(capturedErroneousMessages []parallelism.Erroneous
 		return
 	}
 
-	logrus.Error("")
-	logrus.Error("================================== ERRONEOUS LOGS ================================")
+	printBanner("Erroneous Logs", true)
 	logrus.Error("There were log messages printed to the system-level logger during parallel test execution!")
 	logrus.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
 	logrus.Error(" attributed to any specific test. This is:")
