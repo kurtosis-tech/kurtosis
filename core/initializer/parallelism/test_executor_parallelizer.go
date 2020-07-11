@@ -115,10 +115,6 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(inter
 	logrus.SetOutput(interceptor)
 	defer logrus.SetOutput(currentSystemOut)
 
-	// TODO Debugging
-	logrus.Info("This should fail!")
-	logrus.Info("This too should fail!")
-
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {
 		waitGroup.Add(1)
