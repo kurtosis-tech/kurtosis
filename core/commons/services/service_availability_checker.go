@@ -12,7 +12,9 @@ const (
 )
 
 type ServiceAvailabilityChecker struct {
-	context context.Context // We bend the Go rules and store this context we don't want the user to need to think about it when writing their tests
+	// We bend the Go rules and store a context in a struct because we don't want the user to need to think about contexts
+	// when writing their tests
+	context context.Context
 	core ServiceAvailabilityCheckerCore
 	toCheck Service
 	dependencies []Service

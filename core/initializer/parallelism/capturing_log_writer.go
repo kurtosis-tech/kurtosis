@@ -15,10 +15,11 @@ we expect the developer to write to test-specific loggers rather than the system
 however, so we need a way to:
 
 1) loudly remind them in case they slip up and use the system-level logger but
-2) not crash the program, because code we don't control (like the Docker client) use logrus too (we tried panicking on
-  system-level log write, but that didn't work because the Docker client uses logrus too)
+2) not crash the program, because code we don't own can use the system logger (we tried panicking on
+  system-level log write, but that didn't work because the Docker client writes to the system-level log)
 
-So, we have this special writer which doesn't actually write to STDOUT but captures the input for later retrieval.
+Thus, we have this special writer that we plug in which doesn't actually write to STDOUT but captures the input for
+ later logging in the form of a really loud error message.
  */
 type ErroneousSystemLogCaptureWriter struct {
 	logMessages []ErroneousSystemLogInfo
@@ -30,8 +31,10 @@ func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 	}
 }
 
-
-
+/*
+This write function will capture a) the message that was intended for logging and b) the stacktrace at time of logging
+ to make it easy for a developer to see where they're accidentally using the system-level log.
+ */
 func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
 	dataCopy := make([]byte, len(data))
 	copy(dataCopy, data)

@@ -43,21 +43,33 @@ const (
 	testControllerIpArg     = "TEST_CONTROLLER_IP"
 	testVolumeMountpointArg = "TEST_VOLUME_MOUNTPOINT"
 
-	// After we hard-timeout a test, how long we'll give the test to clean itself up (namely the Docker network)
+	// After we hard-timeout a test, how long we'll give the test to clean itself up (namely the Docker network & containers)
 	//  before we call it lost and continue on
 	networkTeardownGraceTime = 60 * time.Second
 
-	// When we're tearing down a network that still has running containers, the maximum time we'll wait for each container to stop
+	// When we're tearing down a network after a test (either after normal exit or test timeout), this is the maximum
+	//  time we'll wait for each container to stop
 	networkTeardownContainerStopTimeout = 10 * time.Second
 )
 
+// Because a test is run in its own goroutine to allow us to time it out, we need to pass the results back
+//  via a channel. Tihs struct is what's passed over the chanel.
 type testResult struct {
-	testPassed bool
-	setupErr error
+	// Whether the test passed or not (undefined if an error occurred that prevented us from retrieving test results)
+	testPassed   bool
+
+	// If not nil, the error that prevented us from retrieving the test result
+	executionErr error
 }
 
+// Executor responsible for running a test, with timeout, cleaning up after the test as needed
 type testExecutor struct {
 	log *logrus.Logger
+
+	// Tests already declare timeouts, but that timeout only represents time spent running the actual test
+	// This value represents how much time *on top of* the test timeout we'll give to the test goroutine for it to do
+	//  do test setup and finalization (and if this total timeout is exceeded, we'll try to shut down everything in
+	//  the test - the controller, the containers in the network, the Docker network itself, etc.)
 	additionalTestTimeoutBuffer time.Duration
 }
 
@@ -70,6 +82,11 @@ func newTestExecutor(log *logrus.Logger, additionalTestTimeoutBuffer time.Durati
 
 // TODO Just make all these params struct params - passing them through each to function is tedious and error-prone because
 //  we have a lot of string params and it's easy to get them mixed up
+/*
+Returns:
+	bool: A boolean indicating if the test passed (will be undefined if the test result couldn't be retrieved for any reason)
+	error: If not nil, represents the error hit while running the test that prevented the retrieval of the test result
+ */
 func (executor testExecutor) runTest(
 		executionInstanceId uuid.UUID,
 		dockerClient *client.Client,
@@ -79,12 +96,17 @@ func (executor testExecutor) runTest(
 		testServiceImageName string,
 		testName string,
 		test testsuite.Test) (bool, error) {
-	// We don't know what's going to happen with the setup, test execution, etc. so we have a total timeout on top of the test timeout
 	testResultChan := make(chan testResult)
+
+	// When this is breached, we'll try to tear down everything
 	totalTimeout := test.GetTimeout() + executor.additionalTestTimeoutBuffer
 
 	context, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
+
+	// We run the test in a separate goroutine because we don't know if the test will even respect the context we pass in -
+	//  we hope so, but (because this runs user-written code) we can't trust it so we give ourselves the option to move
+	//  on if the test, e.g., infinite-loops
 	go func() {
 		testPassed, setupErr := executor.runTestGoroutine(
 			context,
@@ -96,8 +118,8 @@ func (executor testExecutor) runTest(
 			testServiceImageName,
 			testName)
 		testResultChan <- testResult{
-			testPassed: testPassed,
-			setupErr:   setupErr,
+			testPassed:   testPassed,
+			executionErr: setupErr,
 		}
 	}()
 
@@ -111,28 +133,28 @@ func (executor testExecutor) runTest(
 	}
 
 	if timedOut {
-		executor.log.Tracef("Test hit hard timeout of %v and is being cancelled to give it the chance to exit gracefully...", totalTimeout)
+		executor.log.Tracef("Hit hard test timeout of %v; the context is being cancelled to give it the chance to exit gracefully...", totalTimeout)
 		cancelFunc()
 
-		// We've now cancelled the context so a worker that's not completely stopped *should* exit gracefully
+		// We've now cancelled the context so the test goroutine *should* exit gracefully soon
 		select {
 		case testExecutionResult = <- testResultChan:
-			executor.log.Info("Test exited gracefully after cancelling with the following error (printed only for information):")
-			fmt.Fprintln(executor.log.Out, testExecutionResult.setupErr)
+			executor.log.Info("Test goroutine exited gracefully after context cancellation")
 		case <- time.After(networkTeardownGraceTime):
 			executor.log.Warnf(
-				"Test didn't exit gracefully after cancellation even after waiting an additional %v; the test goroutine is being called lost",
-				networkTeardownGraceTime)
+				"Test goroutine didn't exit gracefully after context cancellation even after a grace period of %v; the test goroutine is being called lost",
+				networkTeardownGraceTime,
+			)
 		}
-		return false, stacktrace.NewError("Test hit upper bound of allowed setup & execution time: %v", totalTimeout)
+		return false, stacktrace.NewError("Test hit hard timeout, %v", totalTimeout)
+	} else {
+		return testExecutionResult.testPassed, testExecutionResult.executionErr
 	}
-
-	return testExecutionResult.testPassed, testExecutionResult.setupErr
 }
 
 /*
 Returns:
-	error: An error if an error occurred *while setting up or running the test* (independent from whether the test itself passed)
+	error: If an error occurred that prevented us from running the test & retrieving the results (independent from whether the test itself passed)
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
 */
 func (executor testExecutor) runTestGoroutine(
@@ -196,6 +218,7 @@ func (executor testExecutor) runTestGoroutine(
 	return testPassed, nil
 }
 
+// TODO Move many of these args to the struct itself to simplify the params of this function
 /*
 Helper function to run the controller container against the given test network.
 
@@ -310,6 +333,8 @@ as a deferred function.
 */
 func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkName string) {
 	log.Infof("Attempting to remove Docker network with name %v...", networkName)
+	// We use the background context here because we want to try and tear down the network even if the context the test was running in
+	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
 	if err := dockerManager.RemoveNetwork(context.Background(), networkName, networkTeardownContainerStopTimeout); err != nil {
 		log.Errorf("An error occurred removing Docker network with name %v:", networkName)
 		log.Error(err.Error())

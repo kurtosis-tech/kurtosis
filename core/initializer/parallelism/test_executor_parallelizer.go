@@ -75,29 +75,29 @@ func NewTestExecutorParallelizer(
 Runs the given tests in parallel
 
 Args:
-	interceptor: A system-level log capturer that will store log messages which get logged to the system-level logger
-		when they really should be logged to the per-test logger
-	tests: Map of tests to run
+	interceptor: A capturer for logs that are erroneously written to the system-level log during parallel test execution (since all
+		logs should be written to the test-specific logs during parallel test execution)
+	tests:
  */
-func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, tests map[string]ParallelTestParams) map[string]ParallelTestOutput {
+func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, allTestParams map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	// These need to be buffered else sending to the channel will be blocking
-	testParamsChan := make(chan ParallelTestParams, len(tests))
-	testOutputChan := make(chan ParallelTestOutput, len(tests))
+	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
+	testOutputChan := make(chan ParallelTestOutput, len(allTestParams))
 
 	logrus.Info("Loading test params into work queue...")
-	for _, testParams := range tests {
+	for _, testParams := range allTestParams {
 		testParamsChan <- testParams
 	}
-	close(testParamsChan)
+	close(testParamsChan) // We close the channel so that when all params are consumed, the worker threads won't block on waiting for more params
 	logrus.Info("All test params loaded into work queue")
 
-	logrus.Infof("Launching %v tests with parallelism %v...", len(tests), executor.parallelism)
+	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
 	executor.disableSystemLogAndRunTestThreads(interceptor, testParamsChan, testOutputChan)
 	logrus.Info("All tests exited")
 
 	// Collect all results
 	result := make(map[string]ParallelTestOutput)
-	for i := 0; i < len(tests); i++ {
+	for i := 0; i < len(allTestParams); i++ {
 		output := <-testOutputChan
 		result[output.TestName] = output
 	}
@@ -124,7 +124,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(inter
 }
 
 /*
-A function, designed to be run inside a goroutine, that will pull from the given test params channel, execute a test, and
+A function, designed to be run inside a worker thread, that will pull test params from the given test params channel, execute the test, and
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
@@ -135,36 +135,29 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 	defer waitGroup.Done()
 
 	for testParams := range testParamsChan {
-		result := executor.runTestWithTotalTimeout(testParams)
-		testOutputChan <- result
-	}
-}
+		// Create a separate logger just for this test that writes to the given file
+		log := logrus.New()
+		log.SetLevel(logrus.GetLevel())
+		log.SetOutput(testParams.LogFp)
+		log.SetFormatter(logrus.StandardLogger().Formatter)
+		testExecutor := newTestExecutor(log, executor.additionalTestTimeoutBuffer)
 
-/*
-This helper function will run a test with a total timeout, cancelling it if it
- */
-func (executor TestExecutorParallelizer) runTestWithTotalTimeout(testParams ParallelTestParams) ParallelTestOutput {
-	// Create a separate logger just for this test that writes to the given file
-	log := logrus.New()
-	log.SetLevel(logrus.GetLevel())
-	log.SetOutput(testParams.LogFp)
-	log.SetFormatter(logrus.StandardLogger().Formatter)
-	testExecutor := newTestExecutor(log, executor.additionalTestTimeoutBuffer)
+		passed, executionErr := testExecutor.runTest(
+			executor.executionId,
+			executor.dockerClient,
+			testParams.SubnetMask,
+			executor.testControllerImageName,
+			executor.testControllerLogLevel,
+			executor.testServiceImageName,
+			testParams.TestName,
+			testParams.Test)
 
-	passed, executionErr := testExecutor.runTest(
-		executor.executionId,
-		executor.dockerClient,
-		testParams.SubnetMask,
-		executor.testControllerImageName,
-		executor.testControllerLogLevel,
-		executor.testServiceImageName,
-		testParams.TestName,
-		testParams.Test)
-
-	return ParallelTestOutput{
-		TestName:     testParams.TestName,
-		ExecutionErr: executionErr,
-		TestPassed:   passed,
-		LogFp:        testParams.LogFp,
+		testOutput := ParallelTestOutput{
+			TestName:     testParams.TestName,
+			ExecutionErr: executionErr,
+			TestPassed:   passed,
+			LogFp:        testParams.LogFp,
+		}
+		testOutputChan <- testOutput
 	}
 }

@@ -139,6 +139,10 @@ func (network *ServiceNetwork) GetService(serviceId int) (ServiceNode, error) {
 Stops the container with the given service ID, and stops tracking it in the network
  */
 func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout time.Duration) error {
+	// Maybe one day we'll store this on the ServiceNetwork itself, to represent the test context that the ServiceNetwork
+	//  was created in
+	parentCtx := context.Background()
+
 	nodeInfo, found := network.serviceNodes[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID %v found", serviceId)
@@ -148,7 +152,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 	delete(network.serviceNodes, serviceId)
 
 	// Make a best-effort attempt to stop the container
-	err := network.dockerManager.StopContainer(context.Background(), nodeInfo.ContainerId, &containerStopTimeout)
+	err := network.dockerManager.StopContainer(parentCtx, nodeInfo.ContainerId, &containerStopTimeout)
 	if err != nil {
 		logrus.Errorf(
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",

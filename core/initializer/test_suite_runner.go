@@ -35,7 +35,7 @@ type TestSuiteRunner struct {
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
 
-	// The additional time, on top of the per-test timeout, that's given to tests for setup & teardown
+	// The additional time, on top of the declared per-test timeout, that's given to tests for setup & teardown
 	additionalTestTimeoutBuffer time.Duration
 }
 
@@ -122,7 +122,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 	logrus.Infof("Printing results for %v tests...", len(testsToRun))
 	allTestsPassed = processTestOutputs(testsToRun, testOutputs)
 
-	// If there was any erroneous system-level logging, loudly display that to the user
+	// If there was any erroneous system-level logging during parallel test execution, loudly display that to the user
 	capturedErroneousMessages := interceptor.GetCapturedMessages()
 	logErroneousSystemLogging(capturedErroneousMessages)
 
