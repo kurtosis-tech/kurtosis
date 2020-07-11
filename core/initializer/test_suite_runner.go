@@ -59,6 +59,8 @@ func NewTestSuiteRunner(
 			testServiceImageName string,
 			testControllerImageName string,
 			testControllerLogLevel string,
+			// TODO Move this extra setup/teardown timeout buffer to be something test-specific (since it will depend on
+			//  the network the test is spinning up)
 			additionalTestTimeoutBuffer time.Duration) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
