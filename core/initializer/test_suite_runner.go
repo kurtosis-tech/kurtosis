@@ -266,7 +266,7 @@ func logTestResult(testName string, executionErr error, testPassed bool) testRes
 }
 
 func printBanner(contents string, isError bool) {
-	bannerString := "=========================================================================="
+	bannerString := "=================================================================================================="
 	contentString := fmt.Sprintf("                              %v", contents)
 	if !isError {
 		logrus.Info("")
