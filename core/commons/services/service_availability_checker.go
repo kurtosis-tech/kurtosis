@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -11,17 +12,21 @@ const (
 )
 
 type ServiceAvailabilityChecker struct {
+	// We bend the Go rules and store a context in a struct because we don't want the user to need to think about contexts
+	// when writing their tests
+	context context.Context
 	core ServiceAvailabilityCheckerCore
 	toCheck Service
 	dependencies []Service
 }
 
-func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
+func NewServiceAvailabilityChecker(context context.Context, core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
 	// Defensive copy
 	dependenciesCopy := make([]Service, 0, len(dependencies))
 	copy(dependenciesCopy, dependencies)
 
 	return &ServiceAvailabilityChecker{
+		context: context,
 		core: core,
 		toCheck: toCheck,
 		dependencies: dependenciesCopy,
@@ -32,13 +37,24 @@ func NewServiceAvailabilityChecker(core ServiceAvailabilityCheckerCore, toCheck 
 //  is reported as up or the timeout is reached
 func (checker ServiceAvailabilityChecker) WaitForStartup() error {
 	startupTimeout := checker.core.GetTimeout()
-	pollStartTime := time.Now()
-	for time.Since(pollStartTime) < startupTimeout {
+
+	timeoutContext, cancel := context.WithTimeout(checker.context, startupTimeout)
+	defer cancel()
+
+	for timeoutContext.Err() == nil {
 		if checker.core.IsServiceUp(checker.toCheck, checker.dependencies) {
 			return nil
 		}
 		logrus.Tracef("Service is not yet available; sleeping for %v before retrying...", TIME_BETWEEN_STARTUP_POLLS)
 		time.Sleep(TIME_BETWEEN_STARTUP_POLLS)
 	}
-	return stacktrace.NewError("Hit timeout (%v) while waiting for service to start", startupTimeout)
+
+	contextErr := timeoutContext.Err()
+	if (contextErr == context.Canceled) {
+		return stacktrace.Propagate(contextErr, "Context was cancelled while waiting for service to startFailed to Hit timeout (%v) while waiting for service to start", startupTimeout)
+	} else if (contextErr == context.DeadlineExceeded) {
+		return stacktrace.Propagate(contextErr, "Hit timeout (%v) while waiting for service to start", startupTimeout)
+	} else {
+		return stacktrace.Propagate(contextErr, "Hit an unknown context error while waiting for service to start")
+	}
 }

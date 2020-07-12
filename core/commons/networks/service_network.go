@@ -1,6 +1,7 @@
 package networks
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
@@ -70,6 +71,9 @@ Return:
 	An AvailabilityChecker for checking when the service is actually available
  */
 func (network *ServiceNetwork) AddService(configurationId int, serviceId int, dependencies map[int]bool) (*services.ServiceAvailabilityChecker, error) {
+	// Maybe one day we'll make this flow from somewhere up above (e.g. make the entire network live inside a single context)
+	parentCtx := context.Background()
+
 	config, found := network.configurations[configurationId]
 	if !found {
 		return nil, stacktrace.NewError("No service configuration with ID '%v' has been registered", configurationId)
@@ -101,6 +105,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 
 	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName)
 	service, containerId, err := initializer.CreateService(
+			parentCtx,
 			network.testVolume,
 			network.testVolumeControllerDirpath,
 			config.dockerImage,
@@ -117,7 +122,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 		ContainerId: containerId,
 	}
 
-	availabilityChecker := services.NewServiceAvailabilityChecker(config.availabilityCheckerCore, service, dependencyServices)
+	availabilityChecker := services.NewServiceAvailabilityChecker(parentCtx, config.availabilityCheckerCore, service, dependencyServices)
 	return availabilityChecker, nil
 }
 
@@ -134,6 +139,10 @@ func (network *ServiceNetwork) GetService(serviceId int) (ServiceNode, error) {
 Stops the container with the given service ID, and stops tracking it in the network
  */
 func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout time.Duration) error {
+	// Maybe one day we'll store this on the ServiceNetwork itself, to represent the test context that the ServiceNetwork
+	//  was created in
+	parentCtx := context.Background()
+
 	nodeInfo, found := network.serviceNodes[serviceId]
 	if !found {
 		return stacktrace.NewError("No service with ID %v found", serviceId)
@@ -143,7 +152,7 @@ func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout
 	delete(network.serviceNodes, serviceId)
 
 	// Make a best-effort attempt to stop the container
-	err := network.dockerManager.StopContainer(nodeInfo.ContainerId, &containerStopTimeout)
+	err := network.dockerManager.StopContainer(parentCtx, nodeInfo.ContainerId, &containerStopTimeout)
 	if err != nil {
 		logrus.Errorf(
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",

@@ -36,19 +36,19 @@ const (
 type DockerManager struct {
 	// WARNING: This log should be used for all log statements - the system-wide logger should NOT be used!
 	log *logrus.Logger
-
-	// TODO Remove this and create a new Context per Docker function call!!! See
-	//  https://golang.org/pkg/context/ and
-	//  https://blog.golang.org/context
-	//  This would be especially useful for doing timeouts!!
-	dockerCtx           context.Context
 	dockerClient        *client.Client
 }
 
-func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
+/*
+   Creates a new manager for manipulating the Docker engine using the given client
+
+   Args:
+	log: The logger that this Docker manager should use
+	dockerClient: The Docker client that will be used when modifying the Docker engine
+*/
+func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
 		log: log,
-		dockerCtx:           dockerCtx,
 		dockerClient:        dockerClient,
 	}, nil
 }
@@ -59,6 +59,7 @@ func NewDockerManager(log *logrus.Logger, dockerCtx context.Context, dockerClien
 Creates a Docker network with the given parameters, doing nothing if a network with that name already exists
 
 Args:
+	context: The Context that this request is running in (useful for cancellation)
 	name: The name to give the new Docker network
 	subnetMask: The subnet mask of allowed IPs for the Docker network
 	gatewayIP: The IP to give the network gateway
@@ -66,7 +67,7 @@ Args:
 Returns:
 	id: The Docker-managed ID of the network
  */
-func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatewayIP string) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP string) (id string, err error)  {
 	_, found, err := manager.getNetworkId(name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -80,7 +81,7 @@ func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatew
 		Subnet: subnetMask,
 		Gateway: gatewayIP,
 	}}
-	resp, err := manager.dockerClient.NetworkCreate(manager.dockerCtx, name, types.NetworkCreate{
+	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
 		Driver: DOCKER_NETWORK_DRIVER,
 		IPAM: &network.IPAM{
 			Config: ipamConfig,
@@ -94,12 +95,15 @@ func (manager DockerManager) CreateNetwork(name string, subnetMask string, gatew
 
 // TODO Change this to be removing a network by ID
 /*
-Removes the Docker network with the given name
+Removes the Docker network with the given name, attempting to stop all containers connected to the network first (because
+ othewise, the remove call will fail)
 
 Args:
+	context: The Context that this request is running in (useful for cancellation)
 	networkName: Name of Docker network to remove
+	containerStopTimeout: How long to wait for containers to stop
  */
-func (manager DockerManager) RemoveNetwork(networkName string) error {
+func (manager DockerManager) RemoveNetwork(context context.Context, networkName string, containerStopTimeout time.Duration) error {
 	networkId, exists, err := manager.getNetworkId(networkName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the network ID for network %v", networkName)
@@ -108,7 +112,19 @@ func (manager DockerManager) RemoveNetwork(networkName string) error {
 		// No network with that name exists, so nothing to do
 		return nil
 	}
-	if err := manager.dockerClient.NetworkRemove(manager.dockerCtx, networkId); err != nil {
+
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get network information for network %v with ID %v", networkName, networkId)
+	}
+
+	for containerId, _ := range inspectResponse.Containers {
+		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
+		}
+	}
+
+	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with name %v and ID %v", networkName, networkId)
 	}
 	return nil
@@ -118,10 +134,11 @@ func (manager DockerManager) RemoveNetwork(networkName string) error {
 Creates a Docker volume identified by the given name.
 
 Args:
+	context: The Context that this request is running in (useful for cancellation)
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
  */
-func (manager DockerManager) CreateVolume(volumeName string) error {
+func (manager DockerManager) CreateVolume(context context.Context, volumeName string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
 	}
@@ -133,7 +150,7 @@ func (manager DockerManager) CreateVolume(volumeName string) error {
 	so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
 	to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
 	 */
-	_, err := manager.dockerClient.VolumeCreate(manager.dockerCtx, volumeConfig)
+	_, err := manager.dockerClient.VolumeCreate(context, volumeConfig)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not create Docker volume for test controller")
 	}
@@ -146,6 +163,7 @@ func (manager DockerManager) CreateVolume(volumeName string) error {
 Creates a Docker container with the given args and starts it.
 
 Args:
+	context: The Context that this request is running in (useful for cancellation)
 	dockerImage: image to start
 	attachStdOutErr: whether the container's STDOUT and STDERR should be attached to the caller's
 	staticIp: IP the container will be assigned
@@ -154,6 +172,7 @@ Args:
 	bindMounts: mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
  */
 func (manager DockerManager) CreateAndStartContainer(
+			context context.Context,
 			dockerImage string,
 			networkName string,
 			staticIp string,
@@ -169,7 +188,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 
 	if !imageExistsLocally {
-		err = manager.pullImage(dockerImage)
+		err = manager.pullImage(context, dockerImage)
 		if err != nil {
 			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
@@ -191,7 +210,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	resp, err := manager.dockerClient.ContainerCreate(manager.dockerCtx, containerConfigPtr, containerHostConfigPtr, nil, "")
+	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, "")
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}
@@ -201,7 +220,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
-	if err := manager.dockerClient.ContainerStart(manager.dockerCtx, containerId, types.ContainerStartOptions{}); err != nil {
+	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
 	return staticIp, containerId, nil
@@ -210,8 +229,8 @@ func (manager DockerManager) CreateAndStartContainer(
 /*
 Stops the container with the given container ID, waiting for the provided timeout before forcefully terminating the container
  */
-func (manager DockerManager) StopContainer(containerId string, timeout *time.Duration) error {
-	err := manager.dockerClient.ContainerStop(manager.dockerCtx, containerId, timeout)
+func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout *time.Duration) error {
+	err := manager.dockerClient.ContainerStop(context, containerId, timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
 	}
@@ -220,10 +239,10 @@ func (manager DockerManager) StopContainer(containerId string, timeout *time.Dur
 
 // TODO Take in a Context, which would allow us to time this out easily!!
 /*
-Blocks until the given container exits.
+Blocks until the given container exits or the context is cancelled.
  */
-func (manager DockerManager) WaitForExit(containerId string) (exitCode int64, err error) {
-	statusChannel, errChannel := manager.dockerClient.ContainerWait(manager.dockerCtx, containerId, container.WaitConditionNotRunning)
+func (manager DockerManager) WaitForExit(context context.Context, containerId string) (exitCode int64, err error) {
+	statusChannel, errChannel := manager.dockerClient.ContainerWait(context, containerId, container.WaitConditionNotRunning)
 
 	// Blocks until one of the channels returns
 	select {
@@ -287,9 +306,9 @@ func (manager DockerManager) connectToNetwork(networkName string, containerId st
 	return nil
 }
 
-func (manager DockerManager) pullImage(imageName string) (err error) {
+func (manager DockerManager) pullImage(context context.Context, imageName string) (err error) {
 	manager.log.Infof("Pulling image %s...", imageName)
-	out, err := manager.dockerClient.ImagePull(manager.dockerCtx, imageName, types.ImagePullOptions{})
+	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}

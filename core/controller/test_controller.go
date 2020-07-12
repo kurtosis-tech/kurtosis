@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
@@ -85,14 +84,12 @@ func (controller TestController) RunTest(testName string) (setupErr error, testE
 	}
 
 	logrus.Info("Connecting to Docker environment...")
-	// Initialize default environment context.
-	dockerCtx := context.Background()
 	// Initialize a Docker client
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err,"Failed to initialize Docker client from environment."), nil
 	}
-	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerCtx, dockerClient)
+	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when constructing the Docker manager"), nil
 	}

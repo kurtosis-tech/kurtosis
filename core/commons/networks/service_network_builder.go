@@ -51,6 +51,7 @@ func NewServiceNetworkBuilder(
 	}
 }
 
+// TODO Combine this method and AddTestImageConfiguration into one (the user should just pick which image they want to use)
 // Adds a service configuration to the network that will run a static Docker image
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
