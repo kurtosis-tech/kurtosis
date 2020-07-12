@@ -26,12 +26,13 @@ type ParallelTestOutput struct {
 
 // ================= Parallel executor ============================
 type TestExecutorParallelizer struct {
-	executionId uuid.UUID
-	dockerClient *client.Client
+	executionId             uuid.UUID
+	dockerClient            *client.Client
 	testControllerImageName string
-	testControllerLogLevel string
-	testServiceImageName string
-	parallelism uint
+	testControllerLogLevel  string
+	testServiceImageName    string
+	testControllerEnvVars   map[string]string
+	parallelism             uint
 }
 
 /*
@@ -42,6 +43,7 @@ Args:
 	dockerClient: The handle to manipulating the Docker environment
 	testControllerImageName: The name of the Docker image that will be used to run the test controller
 	testServiceImageName: The name of the Docker image of the version of the service being tested
+	testControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 	parallelism: The number of tests to run concurrently
  */
 func NewTestExecutorParallelizer(
@@ -50,14 +52,16 @@ func NewTestExecutorParallelizer(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testServiceImageName string,
+			testControllerEnvVars map[string]string,
 			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
-		executionId: executionId,
-		dockerClient: dockerClient,
+		executionId:             executionId,
+		dockerClient:            dockerClient,
 		testControllerImageName: testControllerImageName,
-		testControllerLogLevel: testControllerLogLevel,
-		testServiceImageName: testServiceImageName,
-		parallelism: parallelism,
+		testControllerLogLevel:  testControllerLogLevel,
+		testServiceImageName:    testServiceImageName,
+		testControllerEnvVars:   testControllerEnvVars,
+		parallelism:             parallelism,
 	}
 }
 
@@ -138,6 +142,7 @@ func (executor TestExecutorParallelizer) runTestWorker(
 			executor.testControllerImageName,
 			executor.testControllerLogLevel,
 			executor.testServiceImageName,
+			executor.testControllerEnvVars,
 			testParams.TestName)
 
 		result := ParallelTestOutput{

@@ -30,6 +30,7 @@ type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
 	testServiceImageName    string
 	testControllerImageName string
+	testControllerEnvVars   map[string]string
 
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
@@ -54,12 +55,14 @@ func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
 			testServiceImageName string,
 			testControllerImageName string,
-			testControllerLogLevel string) *TestSuiteRunner {
+			testControllerLogLevel string,
+			testControllerEnvVars map[string]string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
-		testControllerLogLevel: testControllerLogLevel,
+		testControllerLogLevel:  testControllerLogLevel,
+		testControllerEnvVars:   testControllerEnvVars,
 	}
 }
 
@@ -105,6 +108,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
 		runner.testServiceImageName,
+		runner.testControllerEnvVars,
 		testParallelism)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
