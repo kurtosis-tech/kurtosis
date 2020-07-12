@@ -9,6 +9,7 @@ type Test interface {
 
 	GetNetworkLoader() (TestNetworkLoader, error)
 
+
 	// The runtime after which the test will be killed and an error message reported
 	GetTimeout() time.Duration
 }
