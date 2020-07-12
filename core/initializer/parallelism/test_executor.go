@@ -167,7 +167,7 @@ func runControllerContainer(
 	logTmpFile.Close()
 	log.Debugf("Successfully created temporary file to store controller logs at path %v", logTmpFile.Name())
 
-	envVariables := generateTestControllerEnvVariables(
+	envVariables, err := generateTestControllerEnvVariables(
 		networkName,
 		subnetMask,
 		gatewayIp,
@@ -177,6 +177,9 @@ func runControllerContainer(
 		testServiceImageName,
 		volumeName,
 		testControllerEnvVars)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to map test controller environment variables.")
+	}
 	log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
@@ -263,7 +266,7 @@ func generateTestControllerEnvVariables(
 			logLevel string,
 			testServiceImageName string,
 			testVolumeName string,
-			envVars map[string]string) map[string]string {
+			envVars map[string]string) (map[string]string, error) {
 	standardVars := map[string]string{
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
@@ -277,7 +280,12 @@ func generateTestControllerEnvVariables(
 		testVolumeMountpointArg: testVolumeMountpoint,
 	}
 	for key, val := range envVars {
+		if _, ok := standardVars[key]; ok {
+			return nil, stacktrace.NewError(
+				"Tried to manually add environment variable %s to the test controller container, but it is already being used by Kurtosis.",
+				key)
+		}
 		standardVars[key] = val
 	}
-	return standardVars
+	return standardVars, nil
 }
