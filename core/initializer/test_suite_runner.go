@@ -30,6 +30,7 @@ type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
 	testServiceImageName    string
 	testControllerImageName string
+	testControllerEnvVars   map[string]string
 
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
@@ -68,6 +69,7 @@ func NewTestSuiteRunner(
 			testServiceImageName string,
 			testControllerImageName string,
 			testControllerLogLevel string,
+			testControllerEnvVars map[string]string,
 			// TODO Move this extra setup/teardown timeout buffer to be something test-specific (since it will depend on
 			//  the network the test is spinning up)
 			additionalTestTimeoutBuffer time.Duration,
@@ -76,7 +78,8 @@ func NewTestSuiteRunner(
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
-		testControllerLogLevel: testControllerLogLevel,
+		testControllerLogLevel:  testControllerLogLevel,
+		testControllerEnvVars:   testControllerEnvVars,
 		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 		networkWidthBits: networkWidthBits,
 	}
@@ -125,6 +128,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
 		runner.testServiceImageName,
+		runner.testControllerEnvVars,
 		testParallelism,
 		runner.additionalTestTimeoutBuffer)
 
