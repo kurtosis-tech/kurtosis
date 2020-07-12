@@ -276,7 +276,7 @@ func generateTestControllerEnvVariables(
 		testVolumeArg:           testVolumeName,
 		testVolumeMountpointArg: testVolumeMountpoint,
 	}
-	for key, val := range(envVars) {
+	for key, val := range envVars {
 		standardVars[key] = val
 	}
 	return standardVars
