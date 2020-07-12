@@ -1,5 +1,4 @@
 package initializer
-
 import (
 	"encoding/binary"
 	"fmt"
@@ -37,12 +36,11 @@ type TestSuiteRunner struct {
 
 	// The additional time, on top of the declared per-test timeout, that's given to tests for setup & teardown
 	additionalTestTimeoutBuffer time.Duration
+
+	networkWidthBits uint32
 }
 
 const (
-	// Each Docker network created will have 2^this_num free IP addresses available
-	NETWORK_WIDTH_BITS = 8
-
 	// This is the IP address that the first Docker subnet will be doled out from, with subsequent Docker networks doled out with
 	//  increasing IPs corresponding to the NETWORK_WIDTH_BITS
 	SUBNET_START_ADDR = "172.23.0.0"
@@ -53,6 +51,17 @@ const (
 
 /*
 Creates a new TestSuiteRunner with the following arguments
+
+Args:
+	testSuite: The test suite containing all registered tests
+	testServiceImageName: The name of the Docker image being tested
+	testControllerImageName: The name of the Docker image of the test controller that will run the test
+	testControllerLogLevel: The string representing the loglevel of the controller (the test suite runner won't be able
+		to parse this, so this should be meaningful to the controller image)
+	additionalTestTimeoutBuffer: The time given to each test for setup & teardown *on top of* the already-declared test
+		test timeout
+	networkWidthBits: Each test will get a Docker network with a number of available IP addresses = 2^network_width_bits.
+		This parameter should be set so that all testb
  */
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
@@ -61,13 +70,15 @@ func NewTestSuiteRunner(
 			testControllerLogLevel string,
 			// TODO Move this extra setup/teardown timeout buffer to be something test-specific (since it will depend on
 			//  the network the test is spinning up)
-			additionalTestTimeoutBuffer time.Duration) *TestSuiteRunner {
+			additionalTestTimeoutBuffer time.Duration,
+			networkWidthBits uint32) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
 		testControllerLogLevel: testControllerLogLevel,
 		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
+		networkWidthBits: networkWidthBits,
 	}
 }
 
@@ -97,7 +108,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism 
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(executionInstanceId, testsToRun)
+	testParams, err := buildTestParams(executionInstanceId, testsToRun, runner.networkWidthBits)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -137,9 +148,8 @@ Helper function to build, from the set of tests to run, the map of test params t
 Args:
 	testsToRun: A "set" of test names to run in parallel
  */
-func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsuite.Test) (map[string]parallelism.ParallelTestParams, error) {
-
-	subnetMaskBits := BITS_IN_IP4_ADDR - NETWORK_WIDTH_BITS
+func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsuite.Test, networkWidthBits uint32) (map[string]parallelism.ParallelTestParams, error) {
+	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
 	if subnetStartIp == nil {
@@ -160,7 +170,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsu
 	testParams := make(map[string]parallelism.ParallelTestParams)
 	for testName, test := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
-		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, NETWORK_WIDTH_BITS))
+		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, float64(networkWidthBits)))
 		subnetIp := make(net.IP, 4)
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
