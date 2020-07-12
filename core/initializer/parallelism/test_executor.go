@@ -256,6 +256,7 @@ Args:
 	testServiceImageName: The name of the Docker image of the service that we're testing
 	testVolumeName: The name of the Docker volume that has been created for this particular test execution, and that the
 		test controller can share with the services that it spins up to read and write data to them
+	envVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 */
 func generateTestControllerEnvVariables(
 			networkName string,

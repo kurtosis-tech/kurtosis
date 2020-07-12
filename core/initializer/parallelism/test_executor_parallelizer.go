@@ -45,6 +45,7 @@ Args:
 	dockerClient: The handle to manipulating the Docker environment
 	testControllerImageName: The name of the Docker image that will be used to run the test controller
 	testServiceImageName: The name of the Docker image of the version of the service being tested
+	testControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 	parallelism: The number of tests to run concurrently
  */
 func NewTestExecutorParallelizer(
