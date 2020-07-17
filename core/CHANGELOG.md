@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.0
 * Clarified the README with additional information about what happens during Kurtosis exit, normal and abnormal, and how to clean up leftover resources
 * Add a test-execution-global timeout, so that a hang during setup won't block Kurtosis indefinitely
 * Switch the `panickingLogWriter` for a log writer that merely captures system-level log events during parallel test execution, because it turns out the Docker client uses logrus and will call system-level logging events too
