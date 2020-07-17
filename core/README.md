@@ -1,29 +1,37 @@
 # Kurtosis
-Kurtosis is a library framework for end-to-end testing distributed systems in Docker.
+Kurtosis is a framework for writing end-to-end test suites for distributed systems using Docker.
 
 ## Architecture
-The Kurtosis architecture has three components:
+The Kurtosis architecture has four components:
 
-1. An **initializer**, which is responsible for spinning up the node networks required by the tests
-2. The **network**, composed of nodes running in Docker with user-defined parameters
-3. The **controller**, a Docker image running the code that actually makes requests to the network to run the tests
+1. The **test network**, composed of Docker containers running the services necessary for a given test
+1. The **test suite**, the package of tests that can be run
+1. The **initializer**, which is the entrypoint to the application and responsible for running the tests in the test suite
+1. The **controller**, the Docker container responsible for orchestrating the execution of a single test (including spinning up the test network)
 
 The control flow goes:
 
 1. The initializer launches and looks at what tests need to be run
-2. For each test:
-    1. The initializer spins up the Docker images of the network that the test requires
-    2. The initializer spins up a Docker image of the controller, passing to the controller the test name and network IP information
-    3. The controller waits for the network to become available (all nodes respond to their user-defined liveness requests)
-    4. The controller runs the desired test while the initializer waits for it to complete
-    5. The controller returns the result and exits
-    6. The initializer tears down the test network
-4. After all tests are run, the initializer returns the results of the tests
+1. For each test, with the desired amount of parallelism:
+    1. The initializer launches a controller Docker container
+    1. The controller spins up a network of whichever Docker images the test requires
+    1. The controller waits for the network to become available
+    1. The controller runs the desired test
+    1. After the test finishes, the controller tears down the network of test-specific containers
+    1. The controller returns the result to the initializer and exits
+1. The initializer waits for all tests to complete and returns the results
 
 ## Getting Started
+To run tests with Kurtosis, you'll need to define custom components for producing each of the four Kurtosis components. At a high level, this means writing:
+
+1. A test network definition that declares set of Docker images that a test will use
+1. A test suite package of tests for your application
+1. A CLI that calls down to Kurtosis' initializer code
+1. A Docker image that runs a CLI that calls down to Kurtosis' controller code
+
 At a high level, you'll need the following to start writing tests:
 
-1. One or more network definitions, to tell the initializer what shape of network to spin up
+1. One or more network definitions, to tell the controller what shape of service network you'll need for your tests
 2. One or more tests that consume those networks, make calls to the networks, and fail if necessary
 3. A `main.go` file that runs the controller code
 4. A `main.go` file that runs the initializer
