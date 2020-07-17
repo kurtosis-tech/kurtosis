@@ -1,4 +1,5 @@
 # TBD
+* Allow developers to configure how wide their test networks will be
 
 # 0.6.0
 * Clarified the README with additional information about what happens during Kurtosis exit, normal and abnormal, and how to clean up leftover resources
@@ -7,7 +8,6 @@
 * `DockerManager` no longer stores a Context, and instead takes it in for each of its functions (per Go's recommendation)
 * To enable the test timeout use case, try to stop all containers attached to a network before removing it (otherwise removing the network will guaranteed fail)
 * Normalize banners in output and make them bigger
-* Allow developers to configure how wide their test networks will be
 
 # 0.5.0
 * Remove return value of `DockerManager.CreateVolume`, which was utterly useless
