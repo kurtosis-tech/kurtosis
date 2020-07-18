@@ -29,7 +29,15 @@ To run tests with Kurtosis, you'll need to define custom components for producin
 1. A CLI that calls down to Kurtosis' initializer code
 1. A Docker image that runs a CLI that calls down to Kurtosis' controller code
 
-More specifically, you'll need:
+More specifically, for each of the components you'll need:
+
+### Test Network Definition
+* For each of the services in your test networks, you'll need interfaces representing the interactions possible on the services in your network, e.g.:
+    ```
+    type MyService interface {
+        GetRpcPort() 
+
+
 
 1. One or more implementations of the 
 At a high level, you'll need the following to start writing tests:
