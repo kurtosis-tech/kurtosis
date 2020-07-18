@@ -1,5 +1,6 @@
 # TBD
 * Allow developers to configure how wide their test networks will be
+* Remove `ServiceSocket`, which is an Ava-specific notion
 
 # 0.6.0
 * Clarified the README with additional information about what happens during Kurtosis exit, normal and abnormal, and how to clean up leftover resources
