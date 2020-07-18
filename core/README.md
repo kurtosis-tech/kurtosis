@@ -24,11 +24,14 @@ The control flow goes:
 ## Getting Started
 To run tests with Kurtosis, you'll need to define custom components for producing each of the four Kurtosis components. At a high level, this means writing:
 
-1. A test network definition that declares set of Docker images that a test will use
+1. A test network definition that declares the set of Docker images that a test will use
 1. A test suite package of tests for your application
 1. A CLI that calls down to Kurtosis' initializer code
 1. A Docker image that runs a CLI that calls down to Kurtosis' controller code
 
+More specifically, you'll need:
+
+1. One or more implementations of the 
 At a high level, you'll need the following to start writing tests:
 
 1. One or more network definitions, to tell the controller what shape of service network you'll need for your tests
