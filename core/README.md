@@ -1,7 +1,16 @@
-# Kurtosis
+Kurtosis
+========
 Kurtosis is a framework for writing end-to-end test suites for distributed systems using Docker.
 
-## Architecture
+* [Architecture](#architecture)
+* [Tutorial](#tutorial)
+* [Examples](#examples)
+* [Notes](#notes)
+    * [Abnormal Exit](#abnormal-exit)
+    * [Container, Volume, &amp; Image Tidying](#container-volume--image-tidying)
+
+Architecture
+------------
 The Kurtosis architecture has four components:
 
 1. The **test network**, composed of Docker containers running the services necessary for a given test
@@ -21,13 +30,16 @@ The control flow goes:
     1. The controller returns the result to the initializer and exits
 1. The initializer waits for all tests to complete and returns the results
 
-## Tutorial
+Tutorial
+--------
 See [the tutorial](./TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
 
-## Examples
+Examples
+--------
 See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation.
 
-## Notes
+Notes
+-----
 ### Abnormal Exit
 While running, Kurtosis will create the following, per test:
 * A new Docker network for the test
