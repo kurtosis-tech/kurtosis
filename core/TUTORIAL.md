@@ -1,15 +1,17 @@
 # Kurtosis Implementation Tutorial
 To run tests with Kurtosis, we'll need to define custom components for producing each of the four Kurtosis components. At a high level, this means writing:
 
-1. A **network** definition that defines a cluster of services that a test will use
-1. A **test suite** packaging all the tests for your application
+1. At least one **network** definition that our tests can use to declare the type of network they want to run against
+1. A **test suite** with at least one test inside
 1. A **controller** Docker image that runs code wrapping Kurtosis' controller library
 1. An **initializer** CLI that wraps Kurtosis' initializer library
 
 In the below tutorial we'll show how to implement each of these components from scratch!
 
 ## The Test Network
-A test always runs against a network of services being tested, and we'll first need to tell Kurtosis what that network should look like. Networks are composed of services, so our firs step is defining what a "service" looks like. 
+A test always runs against a network of services being tested, and each test will declare the type of network it wants to run against. We're  and we'll need to tell Kurtosis what that network should look like for the test we'll write in this tutorial. 
+
+Networks are composed of services, so our first step is defining what a "service" looks like. 
 
 In this example, we'll suppose that our network is composed of REST microservices running in Docker images, all communicating with each other. We'll start by defining an interface that represents the functions a test can call on a service node, which is accomplished by implementing the [Service](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/services/service.go) marker interface like so:
 
@@ -53,8 +55,9 @@ const (
 
 type MyServiceInitializerCore struct {
     // This is a parameter specific to our service
+    MyServiceLogLevel string
+
     // We could put more service-specific parameters here if needed
-    MyServiceParam1 string
 }
 
 func (core MyServiceInitializerCore) GetUsedPorts() map[nat.Port]bool {
@@ -83,7 +86,7 @@ func (core MyServiceInitializerCore) GetTestVolumeMountpoint() string {
 
 func (core MyServiceInitializerCore) GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []Service) ([]string, error) {
     // Use our specific knowledge of the Docker image to craft the command the Docker image will run with
-    // This is where we'll use any service-specific params from above, including MyServiceParam1
+    // This is where we'll use any service-specific params from above, including MyServiceLogLevel
 }
 ```
 
@@ -120,8 +123,8 @@ type ThreeNodeNetwork struct {
     networks.Network
 
     BootNode MyService
-    ChildNode1 MyService
-    ChildNode2 MyService
+    DependentNode1 MyService
+    DependentNode2 MyService
 }
 ```
 
@@ -136,17 +139,17 @@ const (
     configId = 0
 
     bootNodeServiceId = 0
-    childNode1ServiceId = 1
-    childNode2ServiceId = 2
+    dependentNode1ServiceId = 1
+    dependentNode2ServiceId = 2
 )
 
 type ThreeNodeNetworkLoader struct {
     DockerImage string
-    MyServiceParam1 string
+    MyServiceLogLevel string
 }
 
 func (loader ThreeNodeNetworkLoader) ConfigureNetwork(builder *networks.ServiceNetworkBuilder) error {
-    initializerCore := MyServiceInitializerCore{MyServiceParam1: loader.MyServiceParam1}
+    initializerCore := MyServiceInitializerCore{MyServiceLogLevel: loader.MyServiceLogLevel}
     checkerCore := MyServiceAvailabilityCheckerCore{}
 
     // TODO when we simplify configuration-defining, change this name to match
@@ -162,12 +165,12 @@ func (loader ThreeNodeNetworkLoader) InitializeNetwork(network *ServiceNetwork) 
     // ... error-checking omitted ...
     result[bootNodeServiceId] = bootChecker
 
-    // Define child nodes that depend on the boot node (Go doesn't have a set type, so a map[int]bool is used instead)
+    // Define dependent nodes that depend on the boot node (Go doesn't have a set type, so a map[int]bool is used instead)
     // NOTE: Error-checking has been omitted
-    childNode1Checker, err := network.AddService(configId, childNode1ServiceId, map[int]bool{bootNodeServiceId: true})
-    result[childNode1ServiceId] = childNode1Checker
-    childNode2Checker, err := network.AddService(configId, childNode2ServiceId, map[int]bool{bootNodeServiceId: true})
-    result[childNode2ServiceId] = childNode2Checker
+    dependentNode1Checker, err := network.AddService(configId, dependentNode1ServiceId, map[int]bool{bootNodeServiceId: true})
+    result[dependentNode1ServiceId] = dependentNode1Checker
+    dependentNode2Checker, err := network.AddService(configId, dependentNode2ServiceId, map[int]bool{bootNodeServiceId: true})
+    result[dependentNode2ServiceId] = dependentNode2Checker
 
     return result, nil
 }
@@ -175,18 +178,18 @@ func (loader ThreeNodeNetworkLoader) InitializeNetwork(network *ServiceNetwork) 
 func (loader ThreeNodeNetworkLoader) WrapNetwork(network *ServiceNetwork) (Network, error) {
     // By moving the low-level ServiceNetwork calls here, we remove the need for a test to know how to do this
     bootNodeService := network.GetService(bootNodeServiceId).Service.(MyService)
-    childNode1Service := network.GetService(childNode1Service).Service.(MyService)
-    childNode2Service := network.GetService(childNode2Service).Service.(MyService)
+    dependentNode1Service := network.GetService(dependentNode1Service).Service.(MyService)
+    dependentNode2Service := network.GetService(dependentNode2Service).Service.(MyService)
 
     return ThreeNodeNetwork{
         BootNode: bootNodeService,
-        ChildNode1: childNode1Service,
-        ChildNode2: childNode2Service,
+        DependentNode1: dependentNode1Service,
+        DependentNode2: dependentNode2Service,
     }
 }
 ```
 
-Here, we can see service dependencies being declared: we have a boot node that doesn't depend on other nodes (and so receives an empty dependency set), and two children node who depend on the boot node (and so declare a dependency set of the boot node service ID). 
+Here, we can see service dependencies being declared: we have a boot node that doesn't depend on other nodes (and so receives an empty dependency set), and two dependent nodes who depend on the boot node (and so declare a dependency set of the boot node service ID). 
 
 The heavy lifting is finally done - we've declared a service with the appropriate initializer and availability checker cores, a network composed of that service, and a loader to wrap the low-level Kurtosis representation with a simpler, test-friendly version. Now we can write some tests!
 
@@ -197,7 +200,7 @@ A test suite is simply a package of tests, and a test is just a definition of th
 ```go
 type ThreeNodeNetworkTest1 struct {
     DockerImage string
-    MyServiceParam1 string
+    MyServiceLogLevel string
 }
 
 func (test ThreeNodeNetworkTest1) Run(network networks.Network, context TestContext) {
@@ -213,7 +216,7 @@ func (test ThreeNodeNetworkTest1) Run(network networks.Network, context TestCont
 }
 
 func (test ThreeNodeNetworkTest1) GetNetworkLoader() (networks.NetworkLoader, error) {
-    return ThreeNodeNetworkLoader{DockerImage: test.DockerImage, MyServiceParam1: test.MyServiceParam1}
+    return ThreeNodeNetworkLoader{DockerImage: test.DockerImage, MyServiceLogLevel: test.MyServiceLogLevel}
 }
 
 func (test ThreeNodeNetworkTest1) GetTimeout() time.Duration {
@@ -235,7 +238,7 @@ func (suite MyTestSuite) GetTests() map[string]Test {
     return map[string]Test {
         "threeNodeNetworkTest1": ThreeNodeNetworkTest1{
             DockerImage: suite.DockerImage,
-            MyServiceParam1: "some-value",
+            MyServiceLogLevel: "info",
         },
     }
 }
@@ -363,6 +366,6 @@ We now have a basic E2E testing suite using Kurtosis!
 ## Final Notes
 The example above is intended to give you a basic understanding of the moving parts in Kurtosis. Some features that Kurtosis includes which weren't covered here:
 * Adding & removing services dynamically from the network during a test
-* Passing custom values from the initializer CLI, to the test suite, down to the individual tests (e.g. if `MyServiceParam1` that had been parameterized in the test suite, rather than hardcoded to `some-value`)
+* Passing custom values from the initializer CLI, to the test suite, down to the individual tests (e.g. if `MyServiceLogLevel` that had been parameterized in the test suite, rather than hardcoded to `info`)
 
 For a more detailed example, take a look at [the first Kurtosis implementation for Ava labs](https://github.com/kurtosis-tech/ava-e2e-tests).

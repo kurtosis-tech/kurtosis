@@ -13,9 +13,9 @@ Architecture
 ------------
 The Kurtosis architecture has four components:
 
-1. The **test network**, composed of Docker containers running the services necessary for a given test
+1. The **test networks**, which are the networks (one network per test) of service containers that are spun up for tests to run against
 1. The **test suite**, which contains the package of tests that can be run
-1. The **controller**, the Docker container responsible for orchestrating the execution of a single test (including spinning up & tearing down the test network)
+1. The **controller**, which is the Docker image that will be used to launch a container (one per test) responsible for orchestrating the execution of a single test
 1. The **initializer**, which is the entrypoint to the testing application for CI
 
 The control flow goes:
