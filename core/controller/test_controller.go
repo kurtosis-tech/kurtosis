@@ -25,6 +25,7 @@ type TestController struct {
 	testControllerIp string
 	testSuite testsuite.TestSuite
 	testImageName string
+	testName string
 }
 
 /*
@@ -38,6 +39,7 @@ Args:
 	testControllerIp: The IP address of the controller itself
 	testSuite: A pre-defined set of tests that the user will choose to run a single test from
 	testImageName: The Docker image representing the version of the node that is being tested
+	testName: The name of the test to run in the test suite
  */
 func NewTestController(
 			testVolumeName string,
@@ -47,7 +49,8 @@ func NewTestController(
 			gatewayIp string,
 			testControllerIp string,
 			testSuite testsuite.TestSuite,
-			testImageName string) *TestController {
+			testImageName string,
+			testName string) *TestController {
 	return &TestController{
 		testVolumeName: testVolumeName,
 		testVolumeFilepath: testVolumeFilepath,
@@ -57,25 +60,23 @@ func NewTestController(
 		testControllerIp: testControllerIp,
 		testSuite:        testSuite,
 		testImageName:    testImageName,
+		testName:		  testName,
 	}
 }
 
 /*
-Creates a new TestController that will run one of the tests from the test suite given at construction time
-Args:
-	testName: Name of test to run
-	testImageName: Name of the Docker image representing a node being tested
+Runs the test that the controller is configured to run.
 
 Returns:
 	setupErr: Indicates an error setting up the test that prevented the test from running
 	testErr: Indicates an error in the test itself, indicating a test failure
  */
-func (controller TestController) RunTest(testName string) (setupErr error, testErr error) {
+func (controller TestController) RunTest() (setupErr error, testErr error) {
 	tests := controller.testSuite.GetTests()
 	logrus.Debugf("Test configs: %v", tests)
-	test, found := tests[testName]
+	test, found := tests[controller.testName]
 	if !found {
-		return stacktrace.NewError("Nonexistent test: %v", testName), nil
+		return stacktrace.NewError("Nonexistent test: %v", controller.testName), nil
 	}
 
 	networkLoader, err := test.GetNetworkLoader()
