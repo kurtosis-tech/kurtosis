@@ -1,4 +1,5 @@
 # TBD
+* Add a step-by-step tutorial for writing a Kurtosis implementation!
 
 # 0.6.0
 * Clarified the README with additional information about what happens during Kurtosis exit, normal and abnormal, and how to clean up leftover resources

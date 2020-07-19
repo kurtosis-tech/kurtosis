@@ -1,15 +1,15 @@
-# Tutorial
-To run tests with Kurtosis, you'll need to define custom components for producing each of the four Kurtosis components. At a high level, this means writing:
+# Kurtosis Implementation Tutorial
+To run tests with Kurtosis, we'll need to define custom components for producing each of the four Kurtosis components. At a high level, this means writing:
 
 1. A test network definition that defines a network of services that a test will use
 1. A test suite packaging all the tests for your application
 1. A Docker image that runs code wrapping Kurtosis' controller code
 1. A CLI that wraps Kurtosis' initializer code
 
-More specifically, these are all the bits you'll need to implement in tutorial form:
+In the below tutorial we'll show how to implement each of these components from scratch!
 
-### The Test Network
-A test runs against a network of services that you're testing, and we'll need to tell Kurtosis what that network should look like. Networks are composed of services, so we'll first need to tell Kurtosis what a "service" looks like. 
+## The Test Network
+A test runs against a network of services that you're testing, and we'll first need to tell Kurtosis what that network should look like. Networks are composed of services, so we'll first need to tell Kurtosis what a "service" looks like. 
 
 In this example, we'll suppose that our network is composed of REST microservices running in Docker images, all communicating with each other, so we'll start by defining an interface that represents the functions a test can call on a node in our network. This is easily accomplished by implementing the [Service](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/services/service.go) marker interface like so:
 
@@ -183,12 +183,13 @@ Here, we can see service dependencies in use: we have a boot node that depends o
 The heavy lifting is finally done - we've declared a service with the appropriate initializer and availability checker cores, a network composed of that service, and a loader to wrap the low-level Kurtosis representation with a simpler, test-friendly version. Let's start writing some tests!
 
 
-### The Test Suite
+## The Test Suite
 A test suite is simply a package of tests, and a test is just a definition of the required test network and a chunk of logic that validates against it. To write a test we'll need to implement the [Test](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/testsuite/test.go) interface like so:
 
 ```go
 type ThreeNodeNetworkTest1 struct {
     DockerImage string
+    MyServiceParam1 string
 }
 
 func (test ThreeNodeNetworkTest1) Run(network networks.Network, context TestContext) {
@@ -204,7 +205,7 @@ func (test ThreeNodeNetworkTest1) Run(network networks.Network, context TestCont
 }
 
 func (test ThreeNodeNetworkTest1) GetNetworkLoader() (networks.NetworkLoader, error) {
-    return ThreeNodeNetworkLoader{DockerImage: test.DockerImage, MyServiceParam1: "some-test-specific-value"}
+    return ThreeNodeNetworkLoader{DockerImage: test.DockerImage, MyServiceParam1: test.MyServiceParam1}
 }
 
 func (test ThreeNodeNetworkTest1) GetTimeout() time.Duration {
@@ -226,6 +227,7 @@ func (suite MyTestSuite) GetTests() map[string]Test {
     return map[string]Test {
         "threeNodeNetworkTest1": ThreeNodeNetworkTest1{
             DockerImage: suite.DockerImage,
+            MyServiceParam1: "some-value",
         },
     }
 }
@@ -233,7 +235,7 @@ func (suite MyTestSuite) GetTests() map[string]Test {
 
 We're almost there - we just need to use our test suite!
 
-### The Controller
+## The Controller
 To orchestrate all the steps required to run a single test, we need to provide Kurtosis a controller Docker image that will run code that instantiates our test suite, passes it to an instance of Kurtosis' [TestController](https://github.com/kurtosis-tech/kurtosis/blob/develop/controller/test_controller.go), and calls the `RunTest` function to run the test. This means that we need to write a main function that performs the steps above, and a Dockerfile that will generate an image to run our main function.
 
 When we look at what we need to write in our main function, we discover that we already have our test suite but creating a new instance of a `TestController` requires many arguments that we won't know how to provide. Fortunately, the Kurtosis initializer will pass our controller Docker container these values via Docker environment variables. The complete list of the environment variables that our image will receive is defined in the `generateTestControllerEnvVariables` function inside [TestExecutor](https://github.com/kurtosis-tech/kurtosis/blob/develop/initializer/parallelism/test_executor.go), so we'll need to make sure that we receive them in our Dockerfile:
@@ -291,7 +293,7 @@ func main() {
 
 Once we build the Docker image, we'll have an image we can use with the initializer to run our test suite!
 
-### The Initializer
+## The Initializer
 We of course want to run our test suite via CI, which means we need a concrete entrypoint that our CI system can call to run the suite. We'll therefore need to build a main function to actually run our suite. Kurtosis makes this very simple - just write a main function that creates an instance of our test suite, plug it into an instance of [TestSuiteRunner](https://github.com/kurtosis-tech/kurtosis/blob/develop/initializer/test_suite_runner.go) along with the controller image to run, and have the CLI return an exit code corresponding to test results:
 
 ```go
@@ -335,8 +337,9 @@ func main() {
 }
 ```
 
-And with this last bit, we're ready to run our test suite! Compiling and running our main function will 
+And with this last bit, we're ready to run our test suite! Compiling and running our main function will run the `ThreeNodeNetworkTest1` test, which will launch our controller image, which will initialize a network of three `MyService` nodes and pass the `ThreeNodeNetwork` wrapper to our test where our test-specific logic will get run. After the test returns or times out, the controller will tear down the network and return an exit code to our initializer, which will in turn report it to CI. We now have a basic E2E testing suite using Kurtosis!
 
-
-
-TODO things ommitted: modifying the network dynamically during a test
+## Final Notes
+The example above is intended to give you a basic understanding of the moving parts in Kurtosis. Some features that Kurtosis includes which weren't covered here:
+* Adding & removing services dynamically from the network during a test
+* Passing custom values from the initializer CLI, to the test suite, down to the individual tests (e.g. if `MyServiceParam1` that had been parameterized in the test suite, rather than hardcoded to `some-value`)
