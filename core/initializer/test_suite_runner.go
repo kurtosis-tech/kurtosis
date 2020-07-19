@@ -85,24 +85,27 @@ func NewTestSuiteRunner(
 	}
 }
 
-// TODO Change the argument of this to be a "set" of tests, so we don't have to deal with duplication here??
 /*
 Runs the tests with the given names and prints the results to STDOUT. If no tests are specifically defined, all tests are run.
+
+Args:
+	testNamesToRun: A "set" of test names to run
+	testParallelism: How many tests to run in parallel
  */
-func (runner TestSuiteRunner) RunTests(testNamesToRun []string, testParallelism uint) (allTestsPassed bool, executionErr error) {
+func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParallelism uint) (allTestsPassed bool, executionErr error) {
 	allTests := runner.testSuite.GetTests()
 
 	// If the user doesn't specify any test names to run, run all of them
 	if len(testNamesToRun) == 0 {
-		testNamesToRun = make([]string, 0, len(runner.testSuite.GetTests()))
+		testNamesToRun = map[string]bool{}
 		for testName, _ := range allTests {
-			testNamesToRun = append(testNamesToRun, testName)
+			testNamesToRun[testName] = true
 		}
 	}
 
 	// Validate all the requested tests exist
 	testsToRun := make(map[string]testsuite.Test)
-	for _, testName := range testNamesToRun {
+	for testName, _ := range testNamesToRun {
 		test, found := allTests[testName]
 		if !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
