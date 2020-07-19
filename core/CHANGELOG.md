@@ -1,4 +1,7 @@
 # TBD
+* Allow developers to configure how wide their test networks will be
+* Make `TestSuiteRunner.RunTests` take in a set of tests (rather than a list) to more accurately reflect what's happening
+* Remove `ServiceSocket`, which is an Ava-specific notion
 * Add a step-by-step tutorial for writing a Kurtosis implementation!
 
 # 0.6.0
