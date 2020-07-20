@@ -26,7 +26,7 @@ type NetworkLoader interface {
 	 */
 	InitializeNetwork(network *ServiceNetwork) (map[int]services.ServiceAvailabilityChecker, error)
 
-	// TODO When Go has generics, make the input and output types parameterized
+	// GENERICS TOOD: When Go has generics, make the input and output types parameterized
 	// Wraps the network with a user-custom object representing the network, so the user can expose
 	//  whatever methods they please so writing tests is as simple as possible
 	WrapNetwork(network *ServiceNetwork) (Network, error)

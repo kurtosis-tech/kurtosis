@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// TODO When Go has generics, parameterize this to be <N, S extends N> where S is the
+// GENERICS TOOD: When Go has generics, parameterize this to be <N, S extends N> where S is the
 //  specific service interface and N represents the interface that every node on the network has
 
 /*
@@ -15,7 +15,7 @@ type ServiceInitializerCore interface {
 	// Gets the "set" of ports that the Docker container will listen on
 	GetUsedPorts() map[nat.Port]bool
 
-	// TODO When Go has generics, make this return type to be S
+	// GENERICS TOOD: When Go has generics, make this return type to be S
 	/*
 	Uses the IP address of the Docker container running the service to create an implementation of the interface the developer
 	has created to represent their service.
@@ -60,7 +60,7 @@ type ServiceInitializerCore interface {
 	 */
 	GetTestVolumeMountpoint() string
 
-	// TODO when Go gets generics, make the type of 'dependencies' to be []N
+	// GENERICS TOOD: when Go gets generics, make the type of 'dependencies' to be []N
 	// If Go had generics, dependencies should be of type []T
 	/*
 	Uses the given arguments to build the command that the Docker container running this service will be launched with.

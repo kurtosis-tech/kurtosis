@@ -237,7 +237,6 @@ func (manager DockerManager) StopContainer(context context.Context, containerId 
 	return nil
 }
 
-// TODO Take in a Context, which would allow us to time this out easily!!
 /*
 Blocks until the given container exits or the context is cancelled.
  */
