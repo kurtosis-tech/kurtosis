@@ -152,8 +152,7 @@ func (loader ThreeNodeNetworkLoader) ConfigureNetwork(builder *networks.ServiceN
     initializerCore := MyServiceInitializerCore{MyServiceLogLevel: loader.MyServiceLogLevel}
     checkerCore := MyServiceAvailabilityCheckerCore{}
 
-    // TODO when we simplify configuration-defining, change this name to match
-    builder.AddStaticImageConfiguration(configId, loader.DockerImage, initializerCore, checkerCore)
+    builder.AddConfiguration(configId, loader.DockerImage, initializerCore, checkerCore)
     return nil
 }
 
@@ -261,12 +260,13 @@ CMD ./controller \
     --docker-network=${NETWORK_NAME} \
     --gateway-ip=${GATEWAY_IP} \
     --log-level=${LOG_LEVEL} \
-    # TODO refactor this when the service-config-definition cleanup happens
-    --docker-image-name=${TEST_IMAGE_NAME} \
+    --service-image-name=${SERVICE_IMAGE_NAME} \
     --test-controller-ip=${TEST_CONTROLLER_IP} \
     --test-volume=${TEST_VOLUME} \
     --test-volume-mountpoint=${TEST_VOLUME_MOUNTPOINT} &> ${LOG_FILEPATH}
 ```
+
+Note that `SERVICE_IMAGE_NAME` is actually a custom variable that we defined! Kurtosis allows users to define custom Docker variables which will get passed to the controller so that custom information necessary to the test can be passed across; we'll see this variable get set later.
 
 We'll then need to pipe these values to our main function to create our `TestController` and return an exit code appropriate to the test result:
 
@@ -276,7 +276,7 @@ func main() {
     subnetMaskArg := flag.String("subnet-mask", "", "The name of the subnet the controller will run in")
     // ... etc....
 
-    testSuite := MyTestSuite{DockerImage: *dockerImageNameArg}
+    testSuite := MyTestSuite{DockerImage: *serviceImageNameArg}
     controller := controller.NewTestController(
         *testVolumeArg,
         *testVolumeMountpointArg,
@@ -285,7 +285,7 @@ func main() {
         *gatewayIpArg,
         *testControllerIpArg,
         testSuite,
-        *testImageNameArg)
+        *testNameArg)
 
     setupErr, testErr := controller.RunTest(*testNameArg)
     if setupErr != nil {
@@ -326,9 +326,11 @@ func main() {
     testSuite := MyTestSuite{DockerImage: *serviceImageNameArg}
     testSuiteRunner := NewTestSuiteRunner(
         testSuite,
-        *serviceImageNameArg,   // TODO remove this redundant declaration with the service-config-simplification refactor
         *controllerImagNameArg,
-        map[string]string{},   // TODO provide an example with custom environment variables
+        map[string]string{
+            // Here we set the service image Docker environment variable that the controller consumes!
+            "SERVICE_IMAGE_NAME": *serviceImageNameArg,
+        },
         additionalTestTimeoutBuffer,
         networkWidthBits)
 

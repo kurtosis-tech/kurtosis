@@ -28,7 +28,6 @@ const (
 // =============================== Test Suite Runner =========================================
 type TestSuiteRunner struct {
 	testSuite               testsuite.TestSuite
-	testServiceImageName    string
 	testControllerImageName string
 	testControllerEnvVars   map[string]string
 
@@ -55,7 +54,6 @@ Creates a new TestSuiteRunner with the following arguments
 
 Args:
 	testSuite: The test suite containing all registered tests
-	testServiceImageName: The name of the Docker image being tested
 	testControllerImageName: The name of the Docker image of the test controller that will run the test
 	testControllerLogLevel: The string representing the loglevel of the controller (the test suite runner won't be able
 		to parse this, so this should be meaningful to the controller image)
@@ -66,7 +64,6 @@ Args:
  */
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
-			testServiceImageName string,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testControllerEnvVars map[string]string,
@@ -76,7 +73,6 @@ func NewTestSuiteRunner(
 			networkWidthBits uint32) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
-		testServiceImageName:    testServiceImageName,
 		testControllerImageName: testControllerImageName,
 		testControllerLogLevel:  testControllerLogLevel,
 		testControllerEnvVars:   testControllerEnvVars,
@@ -130,7 +126,6 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		dockerClient,
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
-		runner.testServiceImageName,
 		runner.testControllerEnvVars,
 		testParallelism,
 		runner.additionalTestTimeoutBuffer)

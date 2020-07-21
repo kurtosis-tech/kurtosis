@@ -24,7 +24,6 @@ type TestController struct {
 	gatewayIp string
 	testControllerIp string
 	testSuite testsuite.TestSuite
-	testImageName string
 	testName string
 }
 
@@ -38,7 +37,6 @@ Args:
 	gatewayIp: The IP of the gateway that's running the Docker network that the TestController and the containers run in
 	testControllerIp: The IP address of the controller itself
 	testSuite: A pre-defined set of tests that the user will choose to run a single test from
-	testImageName: The Docker image representing the version of the node that is being tested
 	testName: The name of the test to run in the test suite
  */
 func NewTestController(
@@ -49,7 +47,6 @@ func NewTestController(
 			gatewayIp string,
 			testControllerIp string,
 			testSuite testsuite.TestSuite,
-			testImageName string,
 			testName string) *TestController {
 	return &TestController{
 		testVolumeName: testVolumeName,
@@ -59,7 +56,6 @@ func NewTestController(
 		gatewayIp:        gatewayIp,
 		testControllerIp: testControllerIp,
 		testSuite:        testSuite,
-		testImageName:    testImageName,
 		testName:		  testName,
 	}
 }
@@ -104,7 +100,6 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 	}
 
 	builder := networks.NewServiceNetworkBuilder(
-			controller.testImageName,
 			dockerManager,
 			controller.networkName,
 			freeIpTracker,
