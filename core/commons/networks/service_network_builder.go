@@ -13,8 +13,6 @@ type serviceConfig struct {
 }
 
 type ServiceNetworkBuilder struct {
-	testImage string
-
 	dockerManager *docker.DockerManager
 
 	dockerNetworkName string
@@ -31,9 +29,7 @@ type ServiceNetworkBuilder struct {
 	testVolumeControllerDirpath string
 }
 
-// The test image is the Docker image of the service being tested
 func NewServiceNetworkBuilder(
-			testImage string,
 			dockerManager *docker.DockerManager,
 			dockerNetworkName string,
 			freeIpTracker *FreeIpAddrTracker,
@@ -41,7 +37,6 @@ func NewServiceNetworkBuilder(
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
 	configurations := make(map[int]serviceConfig)
 	return &ServiceNetworkBuilder{
-		testImage:                   testImage,
 		dockerManager:               dockerManager,
 		dockerNetworkName:           dockerNetworkName,
 		freeIpTracker:               freeIpTracker,
@@ -51,10 +46,9 @@ func NewServiceNetworkBuilder(
 	}
 }
 
-// TODO Combine this method and AddTestImageConfiguration into one (the user should just pick which image they want to use)
 // Adds a service configuration to the network that will run a static Docker image
 // This configuration can be referenced later with AddService
-func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
+func (builder *ServiceNetworkBuilder) AddConfiguration(
 			configurationId int,
 			dockerImage string,
 			initializerCore services.ServiceInitializerCore,
@@ -70,15 +64,6 @@ func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
 	}
 	builder.configurations[configurationId] = serviceConfig
 	return nil
-}
-
-// Adds a service configuration to the network that will run the Docker image being tested
-// This configuration can be referenced later with AddService
-func (builder *ServiceNetworkBuilder) AddTestImageConfiguration(
-			configurationId int,
-			initializerCore services.ServiceInitializerCore,
-			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
-	return builder.AddStaticImageConfiguration(configurationId, builder.testImage, initializerCore, availabilityCheckerCore)
 }
 
 func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {

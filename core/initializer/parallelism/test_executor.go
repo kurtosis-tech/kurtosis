@@ -39,7 +39,6 @@ const (
 	gatewayIpArg            = "GATEWAY_IP"
 	logFilepathArg          = "LOG_FILEPATH"
 	logLevelArg             = "LOG_LEVEL"
-	testImageNameArg        = "TEST_IMAGE_NAME"
 	testControllerIpArg     = "TEST_CONTROLLER_IP"
 	testVolumeMountpointArg = "TEST_VOLUME_MOUNTPOINT"
 
@@ -93,8 +92,7 @@ func (executor testExecutor) runTest(
 		subnetMask string,
 		testControllerImageName string,
 		testControllerLogLevel string,
-		testServiceImageName string,
-		testControllerEnvVars map[string]string,
+		customTestControllerEnvVars map[string]string,
 		testName string,
 		test testsuite.Test) (bool, error) {
 	testResultChan := make(chan testResult)
@@ -116,8 +114,7 @@ func (executor testExecutor) runTest(
 			subnetMask,
 			testControllerImageName,
 			testControllerLogLevel,
-			testServiceImageName,
-			testControllerEnvVars,
+			customTestControllerEnvVars,
 			testName)
 		testResultChan <- testResult{
 			testPassed:   testPassed,
@@ -166,8 +163,7 @@ func (executor testExecutor) runTestGoroutine(
 		subnetMask string,
 		testControllerImageName string,
 		testControllerLogLevel string,
-		testServiceImageName string,
-		testControllerEnvVars map[string]string,
+		customTestControllerEnvVars map[string]string,
 		testName string) (bool, error) {
 	executor.log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
@@ -210,8 +206,7 @@ func (executor testExecutor) runTestGoroutine(
 		controllerIp,
 		testControllerImageName,
 		testControllerLogLevel,
-		testServiceImageName,
-		testControllerEnvVars,
+		customTestControllerEnvVars,
 		testName,
 		executionInstanceId)
 	if err != nil {
@@ -238,6 +233,7 @@ Args:
 		should be semantically meaningful to the given controller image)
 	testServiceImageName: The name of the Docker image that's being tested, and will be used for spinning up "test" nodes
 		on the controller
+	customTestControllerEnvVars: Custom user-defined environment variables that will be passed to the test controller
 	testName: Name of the test to tell the controller to run
 	executionUuid: A UUID representing this specific execution of the test suite
 
@@ -255,8 +251,7 @@ func runControllerContainer(
 			controllerIpAddr string,
 			controllerImageName string,
 			logLevel string,
-			testServiceImageName string,
-			testControllerEnvVars map[string]string,
+			customTestControllerEnvVars map[string]string,
 			testName string,
 			executionUuid uuid.UUID) (bool, error){
 	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
@@ -282,9 +277,8 @@ func runControllerContainer(
 		controllerIpAddr,
 		testName,
 		logLevel,
-		testServiceImageName,
 		volumeName,
-		testControllerEnvVars)
+		customTestControllerEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to map test controller environment variables.")
 	}
@@ -366,10 +360,9 @@ Args:
 	testName: The name of the test that the test controller should run
 	logLevel: A string representing the controller's loglevel (NOTE: this should be interpretable by the controller; the
 		initializer will not know what to do with this!)
-	testServiceImageName: The name of the Docker image of the service that we're testing
 	testVolumeName: The name of the Docker volume that has been created for this particular test execution, and that the
 		test controller can share with the services that it spins up to read and write data to them
-	envVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
+	customEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 */
 func generateTestControllerEnvVariables(
 			networkName string,
@@ -378,9 +371,8 @@ func generateTestControllerEnvVariables(
 			controllerIpAddr string,
 			testName string,
 			logLevel string,
-			testServiceImageName string,
 			testVolumeName string,
-			envVars map[string]string) (map[string]string, error) {
+			customEnvVars map[string]string) (map[string]string, error) {
 	standardVars := map[string]string{
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
@@ -388,15 +380,14 @@ func generateTestControllerEnvVariables(
 		gatewayIpArg:            gatewayIp,
 		logFilepathArg:          controllerLogMountFilepath,
 		logLevelArg:             logLevel,
-		testImageNameArg:        testServiceImageName,
 		testControllerIpArg:     controllerIpAddr,
 		testVolumeArg:           testVolumeName,
 		testVolumeMountpointArg: testVolumeMountpoint,
 	}
-	for key, val := range envVars {
+	for key, val := range customEnvVars {
 		if _, ok := standardVars[key]; ok {
 			return nil, stacktrace.NewError(
-				"Tried to manually add environment variable %s to the test controller container, but it is already being used by Kurtosis.",
+				"Tried to manually add custom environment variable %s to the test controller container, but it is already being used by Kurtosis.",
 				key)
 		}
 		standardVars[key] = val

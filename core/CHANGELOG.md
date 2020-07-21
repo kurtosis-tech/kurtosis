@@ -1,4 +1,5 @@
 # TBD
+* Simplify service config definition to a single method
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be

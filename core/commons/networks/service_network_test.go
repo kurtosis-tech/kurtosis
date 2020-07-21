@@ -57,7 +57,7 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 
 // ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
-	builder := NewServiceNetworkBuilder("test", nil, "test-network", nil, "test", "/foo/bar")
+	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
 	network := builder.Build()
 	_, err := network.AddService(0, 0, make(map[int]bool))
 	if err == nil {
@@ -67,8 +67,8 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	configId := 0
-	builder := NewServiceNetworkBuilder("test", nil, "test-network", nil, "test", "/foo/bar")
-	err := builder.AddTestImageConfiguration(configId, getTestInitializerCore(), getTestCheckerCore())
+	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
+	err := builder.AddConfiguration(configId, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail")
 	}
