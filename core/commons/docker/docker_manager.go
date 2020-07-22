@@ -55,6 +55,7 @@ func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerMa
 
 // TODO Make this function return the networkId - this would save a TON of hassle, because everywhere else in Docker needs
 //  the network ID and we're passing around the name so we have to do a bunch of Docker lookups every time we want the ID
+// And pass that ID around everywhere
 /*
 Creates a Docker network with the given parameters, doing nothing if a network with that name already exists
 
