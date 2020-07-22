@@ -1,5 +1,3 @@
-set -eox
-
 # If the build is a not a travis pull request build, then its testing the merge and there is no diff
 if ! ${TRAVIS_PULL_REQUEST}; then
   exit 0
@@ -13,4 +11,3 @@ else
   return_code=0
 fi
 exit "${return_code}"
-
