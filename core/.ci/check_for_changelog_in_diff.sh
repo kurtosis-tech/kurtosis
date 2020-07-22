@@ -1,3 +1,5 @@
+set -eox
+
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
 # If current branch and travis branch are the same, we're running the "branch" check and it should pass.
