@@ -1,9 +1,7 @@
 set -eox
 
-current_branch=$(git rev-parse --abbrev-ref HEAD)
-
 # If current branch and travis branch are the same, we're running the "branch" check and it should pass.
-if [[ "${current_branch}" == "${TRAVIS_BRANCH}" ]]; then
+if ! ${TRAVIS_PULL_REQUEST}; then
   exit 0
 fi
 
