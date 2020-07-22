@@ -1,6 +1,6 @@
 set -eox
 
-# If current branch and travis branch are the same, we're running the "branch" check and it should pass.
+# If the build is a not a travis pull request build, then its testing the merge and there is no diff
 if ! ${TRAVIS_PULL_REQUEST}; then
   exit 0
 fi
