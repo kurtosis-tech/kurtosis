@@ -59,14 +59,14 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 func TestDisallowingNonexistentConfigs(t *testing.T) {
 	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
 	network := builder.Build()
-	_, err := network.AddService(0, 0, make(map[int]bool))
+	_, err := network.AddService(0, 0, make(map[ServiceID]bool))
 	if err == nil {
 		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
 	}
 }
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
-	configId := 0
+	var configId ConfigurationID = 0
 	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
 	err := builder.AddConfiguration(configId, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
@@ -74,7 +74,7 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 	}
 	network := builder.Build()
 
-	dependencies := map[int]bool{
+	dependencies := map[ServiceID]bool{
 		0: true,
 	}
 
