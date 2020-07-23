@@ -1,5 +1,6 @@
 # TBD
 * Simplify service config definition to a single method
+* Made TestExecutor take in the long list of test params as constructor arguments, rather than in the runTest() method, to simplify the code
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be
