@@ -234,20 +234,11 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 Helper function to run the controller container against the given test network.
 
 Args:
-	log: The test-specific logger to write log messages to
+	context: The context in which the test is being run, such that the test should be cancelled if the context is cancelled
 	manager: the Docker manager, used for starting container & waiting for it to finish
 	networkName: The name of the Docker network that the controller container will run in
-	subnetMask: The CIDR representation of the network that the Docker network that the controller container is running in
 	gatewayIp: The IP of the gateway on the Docker network that the controller is running in
 	controllerIpAddr: The IP address that should be used for the container that the controller is running in
-	controllerImageName: The name of the Docker image that should be used to run the controller container
-	logLevel: A string representing the log level that the controller should use (will be passed as-is to the controller;
-		should be semantically meaningful to the given controller image)
-	testServiceImageName: The name of the Docker image that's being tested, and will be used for spinning up "test" nodes
-		on the controller
-	customTestControllerEnvVars: Custom user-defined environment variables that will be passed to the test controller
-	testName: Name of the test to tell the controller to run
-	executionUuid: A UUID representing this specific execution of the test suite
 
 Returns:
 	bool: true if the test succeeded, false if not
