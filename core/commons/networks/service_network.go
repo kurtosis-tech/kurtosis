@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+type ServiceID int
+
 type ServiceNode struct {
 	IpAddr string
 
@@ -26,9 +28,9 @@ type ServiceNetwork struct {
 
 	dockerNetworkName string
 
-	serviceNodes map[int]ServiceNode
+	serviceNodes map[ServiceID]ServiceNode
 
-	configurations map[int]serviceConfig
+	configurations map[ConfigurationID]serviceConfig
 
 	testVolume string
 
@@ -39,8 +41,8 @@ func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
 			dockerNetworkName string,
-			serviceNodes map[int]ServiceNode,
-			configurations map[int]serviceConfig,
+			serviceNodes map[ServiceID]ServiceNode,
+			configurations map[ConfigurationID]serviceConfig,
 			testVolume string,
 			testVolumeControllerDirpath string) *ServiceNetwork {
 	return &ServiceNetwork{
@@ -70,7 +72,7 @@ Args:
 Return:
 	An AvailabilityChecker for checking when the service is actually available
  */
-func (network *ServiceNetwork) AddService(configurationId int, serviceId int, dependencies map[int]bool) (*services.ServiceAvailabilityChecker, error) {
+func (network *ServiceNetwork) AddService(configurationId ConfigurationID, serviceId ServiceID, dependencies map[ServiceID]bool) (*services.ServiceAvailabilityChecker, error) {
 	// Maybe one day we'll make this flow from somewhere up above (e.g. make the entire network live inside a single context)
 	parentCtx := context.Background()
 
@@ -126,7 +128,7 @@ func (network *ServiceNetwork) AddService(configurationId int, serviceId int, de
 	return availabilityChecker, nil
 }
 
-func (network *ServiceNetwork) GetService(serviceId int) (ServiceNode, error) {
+func (network *ServiceNetwork) GetService(serviceId ServiceID) (ServiceNode, error) {
 	node, found := network.serviceNodes[serviceId]
 	if !found {
 		return ServiceNode{}, stacktrace.NewError("No service with ID %v exists in the network", serviceId)
@@ -138,7 +140,7 @@ func (network *ServiceNetwork) GetService(serviceId int) (ServiceNode, error) {
 /*
 Stops the container with the given service ID, and stops tracking it in the network
  */
-func (network *ServiceNetwork) RemoveService(serviceId int, containerStopTimeout time.Duration) error {
+func (network *ServiceNetwork) RemoveService(serviceId ServiceID, containerStopTimeout time.Duration) error {
 	// Maybe one day we'll store this on the ServiceNetwork itself, to represent the test context that the ServiceNetwork
 	//  was created in
 	parentCtx := context.Background()
