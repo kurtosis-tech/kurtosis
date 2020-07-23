@@ -141,9 +141,9 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 		log.SetLevel(logrus.GetLevel())
 		log.SetOutput(testParams.LogFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
-		testExecutor := newTestExecutor(log, executor.additionalTestTimeoutBuffer)
-
-		passed, executionErr := testExecutor.runTest(
+		testExecutor := newTestExecutor(
+			log,
+			executor.additionalTestTimeoutBuffer,
 			executor.executionId,
 			executor.dockerClient,
 			testParams.SubnetMask,
@@ -152,6 +152,8 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.customTestControllerEnvVars,
 			testParams.TestName,
 			testParams.Test)
+
+		passed, executionErr := testExecutor.runTest()
 
 		testOutput := ParallelTestOutput{
 			TestName:     testParams.TestName,

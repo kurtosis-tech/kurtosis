@@ -63,6 +63,7 @@ type testResult struct {
 
 // Executor responsible for running a test, with timeout, cleaning up after the test as needed
 type testExecutor struct {
+	// The logger to which all log statements must be sent
 	log *logrus.Logger
 
 	// Tests already declare timeouts, but that timeout only represents time spent running the actual test
@@ -70,35 +71,69 @@ type testExecutor struct {
 	//  do test setup and finalization (and if this total timeout is exceeded, we'll try to shut down everything in
 	//  the test - the controller, the containers in the network, the Docker network itself, etc.)
 	additionalTestTimeoutBuffer time.Duration
+
+	// The execution UUID that the test is running with
+	executionInstanceId uuid.UUID
+
+	// The Docker client to execute Docker actions with
+	dockerClient *client.Client
+
+	// The mask of the subnet that the test should run in
+	subnetMask string
+
+	// The name of the Docker image of the test controller to run
+	testControllerImageName string
+
+	// The log level string to pass to the test controller (should be meaningful to the controller image)
+	testControllerLogLevel string
+
+	// Mapping of user-defined custom environment variables that will also be passed to the controller image
+	customTestControllerEnvVars map[string]string
+
+	// Name of the test being run
+	testName string
+
+	// The actual test object to run
+	test testsuite.Test
 }
 
-func newTestExecutor(log *logrus.Logger, additionalTestTimeoutBuffer time.Duration) *testExecutor {
+// Technically all these params could be passed to the runTest method, but it's much easier to just create this once given
+//  TestExecutors don't get reused
+func newTestExecutor(
+			log *logrus.Logger,
+			additionalTestTimeoutBuffer time.Duration,
+			executionInstanceId uuid.UUID,
+			dockerClient *client.Client,
+			subnetMask string,
+			testControllerImageName string,
+			testControllerLogLevel string,
+			customTestControllerEnvVars map[string]string,
+			testName string,
+			test testsuite.Test) *testExecutor {
 	return &testExecutor{
-		log: log,
+		log:                         log,
 		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
+		executionInstanceId:         executionInstanceId,
+		dockerClient:                dockerClient,
+		subnetMask:                  subnetMask,
+		testControllerImageName:     testControllerImageName,
+		testControllerLogLevel:      testControllerLogLevel,
+		customTestControllerEnvVars: customTestControllerEnvVars,
+		testName:                    testName,
+		test:                        test,
 	}
 }
 
-// TODO Just make all these params struct params - passing them through each to function is tedious and error-prone because
-//  we have a lot of string params and it's easy to get them mixed up
 /*
 Returns:
 	bool: A boolean indicating if the test passed (will be undefined if the test result couldn't be retrieved for any reason)
 	error: If not nil, represents the error hit while running the test that prevented the retrieval of the test result
  */
-func (executor testExecutor) runTest(
-		executionInstanceId uuid.UUID,
-		dockerClient *client.Client,
-		subnetMask string,
-		testControllerImageName string,
-		testControllerLogLevel string,
-		customTestControllerEnvVars map[string]string,
-		testName string,
-		test testsuite.Test) (bool, error) {
+func (executor testExecutor) runTest() (bool, error) {
 	testResultChan := make(chan testResult)
 
 	// When this is breached, we'll try to tear down everything
-	totalTimeout := test.GetTimeout() + executor.additionalTestTimeoutBuffer
+	totalTimeout := executor.test.GetTimeout() + executor.additionalTestTimeoutBuffer
 
 	context, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
@@ -107,15 +142,7 @@ func (executor testExecutor) runTest(
 	//  we hope so, but (because this runs user-written code) we can't trust it so we give ourselves the option to move
 	//  on if the test, e.g., infinite-loops
 	go func() {
-		testPassed, setupErr := executor.runTestGoroutine(
-			context,
-			executionInstanceId,
-			dockerClient,
-			subnetMask,
-			testControllerImageName,
-			testControllerLogLevel,
-			customTestControllerEnvVars,
-			testName)
+		testPassed, setupErr := executor.runTestGoroutine(context)
 		testResultChan <- testResult{
 			testPassed:   testPassed,
 			executionErr: setupErr,
@@ -156,27 +183,19 @@ Returns:
 	error: If an error occurred that prevented us from running the test & retrieving the results (independent from whether the test itself passed)
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
 */
-func (executor testExecutor) runTestGoroutine(
-		context context.Context,
-		executionInstanceId uuid.UUID,
-		dockerClient *client.Client,
-		subnetMask string,
-		testControllerImageName string,
-		testControllerLogLevel string,
-		customTestControllerEnvVars map[string]string,
-		testName string) (bool, error) {
+func (executor testExecutor) runTestGoroutine(context context.Context) (bool, error) {
 	executor.log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := docker.NewDockerManager(executor.log, dockerClient)
+	dockerManager, err := docker.NewDockerManager(executor.log, executor.dockerClient)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
+		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", executor.testName)
 	}
 	executor.log.Info("Docker manager created successfully")
 
-	executor.log.Infof("Creating Docker network for test with subnet mask %v...", subnetMask)
-	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, subnetMask, []string{})
+	executor.log.Infof("Creating Docker network for test with subnet mask %v...", executor.subnetMask)
+	networkName := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, executor.subnetMask, []string{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP address tracker")
 	}
@@ -184,9 +203,9 @@ func (executor testExecutor) runTestGoroutine(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	_, err = dockerManager.CreateNetwork(context, networkName, subnetMask, gatewayIp)
+	_, err = dockerManager.CreateNetwork(context, networkName, executor.subnetMask, gatewayIp)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
+		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, executor.testName)
 	}
 	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkName)
 	executor.log.Infof("Docker network %v created successfully", networkName)
@@ -196,19 +215,12 @@ func (executor testExecutor) runTestGoroutine(
 	if err != nil {
 		return false, stacktrace.NewError("An error occurred getting an IP for the test controller")
 	}
-	testPassed, err := runControllerContainer(
+	testPassed, err := executor.runControllerContainer(
 		context,
-		executor.log,
 		dockerManager,
 		networkName,
-		subnetMask,
 		gatewayIp,
-		controllerIp,
-		testControllerImageName,
-		testControllerLogLevel,
-		customTestControllerEnvVars,
-		testName,
-		executionInstanceId)
+		controllerIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred while running the test, independent of test success")
 	}
@@ -222,67 +234,53 @@ func (executor testExecutor) runTestGoroutine(
 Helper function to run the controller container against the given test network.
 
 Args:
-	log: The test-specific logger to write log messages to
+	context: The context in which the test is being run, such that the test should be cancelled if the context is cancelled
 	manager: the Docker manager, used for starting container & waiting for it to finish
 	networkName: The name of the Docker network that the controller container will run in
-	subnetMask: The CIDR representation of the network that the Docker network that the controller container is running in
 	gatewayIp: The IP of the gateway on the Docker network that the controller is running in
 	controllerIpAddr: The IP address that should be used for the container that the controller is running in
-	controllerImageName: The name of the Docker image that should be used to run the controller container
-	logLevel: A string representing the log level that the controller should use (will be passed as-is to the controller;
-		should be semantically meaningful to the given controller image)
-	testServiceImageName: The name of the Docker image that's being tested, and will be used for spinning up "test" nodes
-		on the controller
-	customTestControllerEnvVars: Custom user-defined environment variables that will be passed to the test controller
-	testName: Name of the test to tell the controller to run
-	executionUuid: A UUID representing this specific execution of the test suite
 
 Returns:
 	bool: true if the test succeeded, false if not
 	error: if any error occurred during the execution of the controller (independent of the test itself)
 */
-func runControllerContainer(
+func (executor testExecutor) runControllerContainer(
 			context context.Context,
-			log *logrus.Logger,
 			manager *docker.DockerManager,
 			networkName string,
-			subnetMask string,
 			gatewayIp string,
-			controllerIpAddr string,
-			controllerImageName string,
-			logLevel string,
-			customTestControllerEnvVars map[string]string,
-			testName string,
-			executionUuid uuid.UUID) (bool, error){
-	volumeName := fmt.Sprintf("%v-%v", executionUuid.String(), testName)
-	log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
+			controllerIpAddr string) (bool, error){
+	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
+
+	volumeName := uniqueTestIdentifier
+	executor.log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
 	if err := manager.CreateVolume(context, volumeName); err != nil {
 		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
 	}
-	log.Debugf("Docker volume %v created successfully", volumeName)
+	executor.log.Debugf("Docker volume %v created successfully", volumeName)
 
-	testControllerLogFilename := fmt.Sprintf("%v-%v-controller-logs", executionUuid.String(), executionUuid.String())
-	log.Debugf("Creating temporary file with name %v to store controller logs...", testControllerLogFilename)
+	testControllerLogFilename := fmt.Sprintf("%v-controller-logs", uniqueTestIdentifier)
+	executor.log.Debugf("Creating temporary file with name %v to store controller logs...", testControllerLogFilename)
 	logTmpFile, err := ioutil.TempFile("", testControllerLogFilename)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create tempfile to store log info for passing to test controller")
 	}
 	logTmpFile.Close()
-	log.Debugf("Successfully created temporary file to store controller logs at path %v", logTmpFile.Name())
+	executor.log.Debugf("Successfully created temporary file to store controller logs at path %v", logTmpFile.Name())
 
 	envVariables, err := generateTestControllerEnvVariables(
 		networkName,
-		subnetMask,
+		executor.subnetMask,
 		gatewayIp,
 		controllerIpAddr,
-		testName,
-		logLevel,
+		executor.testName,
+		executor.testControllerLogLevel,
 		volumeName,
-		customTestControllerEnvVars)
+		executor.customTestControllerEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to map test controller environment variables.")
 	}
-	log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
+	executor.log.Debugf("Environment variables that are being passed to the controller: %v", envVariables)
 
 	bindMounts := map[string]string{
 		// Because the test controller will need to spin up new images, we need to bind-mount the host Docker engine into the test controller
@@ -296,7 +294,7 @@ func runControllerContainer(
 
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
-		controllerImageName,
+		executor.testControllerImageName,
 		networkName,
 		controllerIpAddr,
 		make(map[nat.Port]bool),
@@ -307,28 +305,31 @@ func runControllerContainer(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to run test controller container")
 	}
-	log.Infof("Controller container started successfully with id %s", controllerContainerId)
+	executor.log.Infof("Controller container started successfully with id %s", controllerContainerId)
 
-	log.Info("Waiting for controller container to exit...")
+	executor.log.Info("Waiting for controller container to exit...")
 	exitCode, err := manager.WaitForExit(context, controllerContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed when waiting for controller to exit")
 	}
-	log.Info("Controller container exited successfully")
+	executor.log.Info("Controller container exited successfully")
 
 	// We open a new fp for reading because our original FP is only for writing
-	log.Info("- - - - - - - - - - - - - - - - - - - CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
+	executor.log.Info("- - - - - - - - - - - - - - - - - - - CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
 	logReadFp, err := os.Open(logTmpFile.Name())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to open controller log file for reading")
 	}
-	io.Copy(log.Out, logReadFp)
-	log.Info("- - - - - - - - - - - - - - - - - - END CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
+	io.Copy(executor.log.Out, logReadFp)
+	executor.log.Info("- - - - - - - - - - - - - - - - - - END CONTROLLER LOGS - - - - - - - - - - - - - - - - - -")
 	logReadFp.Close()
 	os.Remove(logTmpFile.Name()) // We're responsible for removing the tempfile we created
 
 	return exitCode == containerSuccessExitCode, nil
 }
+
+
+// =========================== "STATIC" HELPER FUNCTIONS =========================================
 
 /*
 Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
