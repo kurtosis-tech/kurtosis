@@ -133,7 +133,7 @@ func (executor testExecutor) runTest() (bool, error) {
 	testResultChan := make(chan testResult)
 
 	// When this is breached, we'll try to tear down everything
-	totalTimeout := executor.test.GetTimeout() + executor.additionalTestTimeoutBuffer
+	totalTimeout := executor.test.GetExecutionTimeout() + executor.additionalTestTimeoutBuffer
 
 	context, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
