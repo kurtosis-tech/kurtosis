@@ -66,12 +66,6 @@ type testExecutor struct {
 	// The logger to which all log statements must be sent
 	log *logrus.Logger
 
-	// Tests already declare timeouts, but that timeout only represents time spent running the actual test
-	// This value represents how much time *on top of* the test timeout we'll give to the test goroutine for it to do
-	//  do test setup and finalization (and if this total timeout is exceeded, we'll try to shut down everything in
-	//  the test - the controller, the containers in the network, the Docker network itself, etc.)
-	additionalTestTimeoutBuffer time.Duration
-
 	// The execution UUID that the test is running with
 	executionInstanceId uuid.UUID
 
@@ -101,7 +95,6 @@ type testExecutor struct {
 //  TestExecutors don't get reused
 func newTestExecutor(
 			log *logrus.Logger,
-			additionalTestTimeoutBuffer time.Duration,
 			executionInstanceId uuid.UUID,
 			dockerClient *client.Client,
 			subnetMask string,
@@ -112,7 +105,6 @@ func newTestExecutor(
 			test testsuite.Test) *testExecutor {
 	return &testExecutor{
 		log:                         log,
-		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 		executionInstanceId:         executionInstanceId,
 		dockerClient:                dockerClient,
 		subnetMask:                  subnetMask,
@@ -133,7 +125,7 @@ func (executor testExecutor) runTest() (bool, error) {
 	testResultChan := make(chan testResult)
 
 	// When this is breached, we'll try to tear down everything
-	totalTimeout := executor.test.GetExecutionTimeout() + executor.additionalTestTimeoutBuffer
+	totalTimeout := executor.test.GetExecutionTimeout() + executor.test.GetSetupBuffer()
 
 	context, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
@@ -229,7 +221,6 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 	return testPassed, nil
 }
 
-// TODO Move many of these args to the struct itself to simplify the params of this function
 /*
 Helper function to run the controller container against the given test network.
 
