@@ -24,7 +24,7 @@ type NetworkLoader interface {
 	Returns:
 		A map of serviceId -> availability checkers where the network is considered available when all checkers return
 	 */
-	InitializeNetwork(network *ServiceNetwork) (map[int]services.ServiceAvailabilityChecker, error)
+	InitializeNetwork(network *ServiceNetwork) (map[ServiceID]services.ServiceAvailabilityChecker, error)
 
 	// GENERICS TOOD: When Go has generics, make the input and output types parameterized
 	// Wraps the network with a user-custom object representing the network, so the user can expose

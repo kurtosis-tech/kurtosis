@@ -12,6 +12,8 @@ type serviceConfig struct {
 	initializerCore services.ServiceInitializerCore
 }
 
+type ConfigurationID int
+
 type ServiceNetworkBuilder struct {
 	dockerManager *docker.DockerManager
 
@@ -20,7 +22,7 @@ type ServiceNetworkBuilder struct {
 	freeIpTracker *FreeIpAddrTracker
 
 	// Factories that will be used to construct the nodes
-	configurations map[int]serviceConfig
+	configurations map[ConfigurationID]serviceConfig
 
 	// Name of volume that will be mounted on each new service
 	testVolume string
@@ -35,7 +37,7 @@ func NewServiceNetworkBuilder(
 			freeIpTracker *FreeIpAddrTracker,
 			testVolume string,
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
-	configurations := make(map[int]serviceConfig)
+	configurations := make(map[ConfigurationID]serviceConfig)
 	return &ServiceNetworkBuilder{
 		dockerManager:               dockerManager,
 		dockerNetworkName:           dockerNetworkName,
@@ -49,7 +51,7 @@ func NewServiceNetworkBuilder(
 // Adds a service configuration to the network that will run a static Docker image
 // This configuration can be referenced later with AddService
 func (builder *ServiceNetworkBuilder) AddConfiguration(
-			configurationId int,
+			configurationId ConfigurationID,
 			dockerImage string,
 			initializerCore services.ServiceInitializerCore,
 			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
@@ -69,7 +71,7 @@ func (builder *ServiceNetworkBuilder) AddConfiguration(
 func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	// Defensive copy, so user calling functions on the builder after building won't affect the
 	// state of the object we already built
-	configurationsCopy := make(map[int]serviceConfig)
+	configurationsCopy := make(map[ConfigurationID]serviceConfig)
 	for configurationId, config := range builder.configurations {
 		configurationsCopy[configurationId] = config
 	}
@@ -77,7 +79,7 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 		builder.freeIpTracker,
 		builder.dockerManager,
 		builder.dockerNetworkName,
-		make(map[int]ServiceNode),
+		make(map[ServiceID]ServiceNode),
 		configurationsCopy,
 		builder.testVolume,
 		builder.testVolumeControllerDirpath)

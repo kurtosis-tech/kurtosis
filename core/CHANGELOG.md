@@ -1,5 +1,8 @@
 # TBD
 * Simplify service config definition to a single method
+* Add a CI check to make sure changelog is updated each commit
+* Use custom types for service and configuration IDs, so that the user doesn't have a ton of `int`s flying around
+* Made TestExecutor take in the long list of test params as constructor arguments, rather than in the runTest() method, to simplify the code
 * Passing networks by id instead of name
 
 # 0.7.0
