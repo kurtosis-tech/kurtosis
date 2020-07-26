@@ -1,6 +1,6 @@
 Kurtosis
 ========
-Kurtosis is a framework for writing end-to-end test suites for distributed systems using Docker.
+Kurtosis is a framework on top of Docker for writing test suites for any networked system - be it blockchain, distributed datastore, or otherwise. It handles all the gruntwork of setup, test execution, and teardown so you don't have to.
 
 * [Architecture](#architecture)
 * [Tutorial](#tutorial)
@@ -9,8 +9,14 @@ Kurtosis is a framework for writing end-to-end test suites for distributed syste
     * [Abnormal Exit](#abnormal-exit)
     * [Container, Volume, &amp; Image Tidying](#container-volume--image-tidying)
 
-Architecture
-------------
+Getting Started
+---------------
+Kurtosis is a testing framework, meaning you'll need to build an _implementation_ of Kurtosis to construct your suite of tests.
+
+### Docker
+Kurtosis runs on top of Docker, so you'll want to be familiar with [what Docker is and how it works](https://docs.docker.com/get-started/overview/). Because Kurtosis will be launching multiple containers to run against, you'll also want to know [how to view logs for a container](https://docs.docker.com/config/containers/logging/).
+
+### Architecture
 The Kurtosis architecture has four components:
 
 1. The **test networks**, which are the networks (one network per test) of service containers that are spun up for tests to run against
@@ -30,9 +36,10 @@ The control flow goes:
     1. The controller returns the result to the initializer and exits
 1. The initializer waits for all tests to complete and returns the results
 
-Tutorial
---------
-See [the tutorial](./TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+After Kurtosis has run, 
+
+### Building An Implementation
+See [the tutorial](./docs/TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
 
 Examples
 --------
