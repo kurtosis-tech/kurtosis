@@ -6,7 +6,7 @@ To run tests with Kurtosis, we'll need to define custom components for producing
 1. A **controller** Docker image that runs code wrapping Kurtosis' controller library
 1. An **initializer** CLI that wraps Kurtosis' initializer library
 
-In the below tutorial we'll show how to implement each of these components from scratch!
+In the below tutorial we'll show how to implement each of these components from scratch.
 
 ## The Test Network
 A test always runs against a network of services being tested, and each test will declare the type of network it wants to run against. We're  and we'll need to tell Kurtosis what that network should look like for the test we'll write in this tutorial. 
@@ -43,7 +43,7 @@ func (s MyServiceImpl) GetHttpRestSocket() ServiceSocket {
 
 Our tests now have a nice interface for interacting with a service, and we cleanly represent the reality that the service is backed by a Docker container with an IP address, listening on a port.
 
-Next, we need to give Kurtosis the details on how to actually start a Docker container running one of our services. Kurtosis makes this easy - we only need to fill out the [ServiceInitializerCore](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/services/service_initializer_core.go) interface. This interface is well-documented, so we'll use the documentation to write a service initializer core for our service like so:
+Next, we need to give Kurtosis the details on how to actually start a Docker container running one of our services; we do this by implementing the [ServiceInitializerCore](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/services/service_initializer_core.go) interface. This interface is well-documented, so we'll use the documentation to write a service initializer core for our service like so:
 
 ```go
 const (
@@ -90,7 +90,7 @@ func (core MyServiceInitializerCore) GetStartCommand(mountedFileFilepaths map[st
 }
 ```
 
-Note the service "dependencies" that show up above. Kurtosis knows that some services will depend on others, and gives the developer the option to modify a service's files and start command based on other existing services in the network. We'll see how to declare these dependencies later.
+Note the service "dependencies" that show up above. Kurtosis knows that some services will depend on others, and gives the developer the option to modify a service's files and start command based on other preexisting services in the network. We'll see how to declare these dependencies later.
 
 Since a Docker container being up doesn't mean that the service inside is available and since we don't want to run a test against a network of services that are still starting up, the last piece we need for our service is a way to tell Kurtosis when the service is actually available for use. We'll therefore implement the [ServiceAvailabilityCheckerCore](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/services/service_availability_checker_core.go) interface like so:
 
@@ -116,6 +116,8 @@ func (core MyServiceAvailabilityCheckerCore) GetTimeout() time.Duration {
 }
 ```
 
+The `IsServiceUp` method will be used to inform Kurtosis about when a particular service instance is actually available to ensure tests aren't run before the whole test network is available. During network setup, Kurtosis will continually call the `IsServiceUp` method until either it returns true or the timeout defined by `GetTimeout` is reached. Note that the service's dependencies are given as arguments to `IsServiceUp` but aren't used here - Kurtosis passes in a service's dependencies as an argument in case our service's availability is contingent on the state of its dependencies, but this won't be used in most distributed systems where nodes simply won't report themselves available until they successfully connect to their dependencies.
+
 We're all set up to use this service in a network now... but of course, we still need to define what that network looks like. Kurtosis has a [ServiceNetwork](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/networks/service_network.go) object that represents the underlying state of the test network, but interacting with it is often too low-level for writing clean tests. To make writing tests as simple as possible, Kurtosis lets the developer define an arbitrary network struct that wraps the low-level network representation; this struct will then be passed to the tests. The developer can define this higher-level network wrapper object any way they please, but in our example we'll imagine that our tests all use a three-node network. Thus, our wrapper struct looks like so:
 
 ```go
@@ -136,11 +138,11 @@ Using this information and the documentation on `TestNetworkLoader`, we can now 
 
 ```go
 const (
-    configId = 0
+    configId ConfigurationID = 0
 
-    bootNodeServiceId = 0
-    dependentNode1ServiceId = 1
-    dependentNode2ServiceId = 2
+    bootNodeServiceId ServiceID = 0
+    dependentNode1ServiceId ServiceID = 1
+    dependentNode2ServiceId ServiceID = 2
 )
 
 type ThreeNodeNetworkLoader struct {
@@ -156,19 +158,19 @@ func (loader ThreeNodeNetworkLoader) ConfigureNetwork(builder *networks.ServiceN
     return nil
 }
 
-func (loader ThreeNodeNetworkLoader) InitializeNetwork(network *ServiceNetwork) (map[int]services.ServiceAvailabilityChecker, error) {
-    result := map[int]services.ServiceAvailabilityChecker{}
+func (loader ThreeNodeNetworkLoader) InitializeNetwork(network *ServiceNetwork) (map[ServiceID]services.ServiceAvailabilityChecker, error) {
+    result := map[ServiceID]services.ServiceAvailabilityChecker{}
 
     // Create the boot node using the configuration we defined earlier
-    bootChecker, err := network.AddService(configId, bootNodeServiceId, map[int]bool{})
+    bootChecker, err := network.AddService(configId, bootNodeServiceId, map[ServiceID]bool{})
     // ... error-checking omitted ...
     result[bootNodeServiceId] = bootChecker
 
-    // Define dependent nodes that depend on the boot node (Go doesn't have a set type, so a map[int]bool is used instead)
+    // Define dependent nodes that depend on the boot node (Go doesn't have a set type, so a map[ServiceID]bool is used instead)
     // NOTE: Error-checking has been omitted
-    dependentNode1Checker, err := network.AddService(configId, dependentNode1ServiceId, map[int]bool{bootNodeServiceId: true})
+    dependentNode1Checker, err := network.AddService(configId, dependentNode1ServiceId, map[ServiceID]bool{bootNodeServiceId: true})
     result[dependentNode1ServiceId] = dependentNode1Checker
-    dependentNode2Checker, err := network.AddService(configId, dependentNode2ServiceId, map[int]bool{bootNodeServiceId: true})
+    dependentNode2Checker, err := network.AddService(configId, dependentNode2ServiceId, map[ServiceID]bool{bootNodeServiceId: true})
     result[dependentNode2ServiceId] = dependentNode2Checker
 
     return result, nil

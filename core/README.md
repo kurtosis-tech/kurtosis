@@ -11,10 +11,9 @@ Kurtosis is a framework on top of Docker for writing test suites for any network
 
 Getting Started
 ---------------
-Kurtosis is a testing framework, meaning you'll need to build an _implementation_ of Kurtosis to construct your suite of tests.
-
-### Docker
-Kurtosis runs on top of Docker, so you'll want to be familiar with [what Docker is and how it works](https://docs.docker.com/get-started/overview/). Because Kurtosis will be launching multiple containers to run against, you'll also want to know [how to view logs for a container](https://docs.docker.com/config/containers/logging/).
+Kurtosis is a testing framework atop Docker, meaning you'll need to build a Docker image of the service(s) you want to test, and a Golang implementation of several Kurtosis interfaces to construct your test suite. If you've never used:
+* Go, we recommend the [official Golang installation & quickstart guide](https://golang.org/doc/install) along with [JetBrains' excellent GoLand IDE](https://www.jetbrains.com/go/)
+* Docker, we recommend [the official Docker "Get Started" guide](https://docs.docker.com/get-started/), coupled with [the docs explaining how to view container logs](https://docs.docker.com/config/containers/logging/) (which you'll be doing a lot)
 
 ### Architecture
 The Kurtosis architecture has four components:
@@ -39,7 +38,10 @@ The control flow goes:
 After Kurtosis has run, 
 
 ### Building An Implementation
-See [the tutorial](./docs/TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+See [the "Getting Started" tutorial](./tutorial/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+
+### Debugging Failed Tests
+See [the "Debugging Failed Tests" tutorial](./tutorial/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
 
 Examples
 --------
