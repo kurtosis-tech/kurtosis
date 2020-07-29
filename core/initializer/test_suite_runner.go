@@ -1,4 +1,5 @@
 package initializer
+
 import (
 	"encoding/binary"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 	"net"
 	"os"
 	"sort"
-	"time"
 )
 
 // =============================== "enum" for test result =========================================
@@ -33,9 +33,6 @@ type TestSuiteRunner struct {
 
 	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
 	testControllerLogLevel	string
-
-	// The additional time, on top of the declared per-test timeout, that's given to tests for setup & teardown
-	additionalTestTimeoutBuffer time.Duration
 
 	networkWidthBits uint32
 }
@@ -57,8 +54,6 @@ Args:
 	testControllerImageName: The name of the Docker image of the test controller that will run the test
 	testControllerLogLevel: The string representing the loglevel of the controller (the test suite runner won't be able
 		to parse this, so this should be meaningful to the controller image)
-	additionalTestTimeoutBuffer: The time given to each test for setup & teardown *on top of* the already-declared test
-		test timeout
 	networkWidthBits: Each test will get a Docker network with a number of available IP addresses = 2^network_width_bits.
 		This parameter should be set so that all testb
  */
@@ -67,16 +62,12 @@ func NewTestSuiteRunner(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testControllerEnvVars map[string]string,
-			// TODO Move this extra setup/teardown timeout buffer to be something test-specific (since it will depend on
-			//  the network the test is spinning up)
-			additionalTestTimeoutBuffer time.Duration,
 			networkWidthBits uint32) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		testSuite:               testSuite,
 		testControllerImageName: testControllerImageName,
 		testControllerLogLevel:  testControllerLogLevel,
 		testControllerEnvVars:   testControllerEnvVars,
-		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 		networkWidthBits: networkWidthBits,
 	}
 }
@@ -127,8 +118,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
 		runner.testControllerEnvVars,
-		testParallelism,
-		runner.additionalTestTimeoutBuffer)
+		testParallelism)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
 	interceptor := parallelism.NewErroneousSystemLogCaptureWriter()

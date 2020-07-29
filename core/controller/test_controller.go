@@ -152,7 +152,7 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 	}()
 
 	// Time out the test so a poorly-written test doesn't run forever
-	testTimeout := test.GetTimeout()
+	testTimeout := test.GetExecutionTimeout()
 	var timedOut bool
 	var testResultErr error
 	select {
