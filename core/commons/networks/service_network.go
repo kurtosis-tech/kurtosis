@@ -57,8 +57,8 @@ type ServiceNetwork struct {
 	// The Docker manager used for interacting with the Docker engine during test network manipulation
 	dockerManager *docker.DockerManager
 
-	// The name of the Docker network that this test network is running on
-	dockerNetworkName string
+	// The ID of the Docker network that this test network is running on
+	dockerNetworkId string
 
 	// A mapping of service ID -> information about a node
 	serviceNodes map[ServiceID]ServiceNode
@@ -90,14 +90,14 @@ Args:
 func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
-			dockerNetworkName string,
+			dockerNetworkId string,
 			configurations map[ConfigurationID]serviceConfig,
 			testVolume string,
 			testVolumeControllerDirpath string) *ServiceNetwork {
 	return &ServiceNetwork{
 		freeIpTracker:               freeIpTracker,
 		dockerManager:               dockerManager,
-		dockerNetworkName:           dockerNetworkName,
+		dockerNetworkId:             dockerNetworkId,
 		serviceNodes:                make(map[ServiceID]ServiceNode),
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -156,7 +156,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 	}
 
-	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName, network.testVolumeControllerDirpath)
+	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId, network.testVolumeControllerDirpath)
 	service, containerId, err := initializer.CreateService(
 			parentCtx,
 			network.testVolume,

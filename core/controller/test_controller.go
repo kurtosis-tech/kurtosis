@@ -28,8 +28,8 @@ type TestController struct {
 	// The location on the controller image where the test volume will have been mounted by the Kurtosis initializer
 	testVolumeFilepath string
 
-	// The name of the Docker network that the controller container is running inside
-	networkName string
+	// The ID of the Docker network that the controller container is running inside
+	networkId string
 
 	// The subnet mask of the Docker network that the controller container is running inside
 	subnetMask string
@@ -56,7 +56,7 @@ Args:
 	testVolumeName: The name of the Docker volume where test data should be stored, which will have been mounted on
 		the controller by the initializer and should be mounted on service nodes
 	testVolumeFilepath: The filepath where the test volume will have been mounted on the controller container by the initializer
-	networkName: The name of the Docker network that the controller container is running in and which all
+	networkId: The ID of the Docker network that the controller container is running in and which all
 		services should be started in
 	subnetMask: Mask of the network that the controller container is running in, and from which it should dole out
 		IPs to the testnet containers
@@ -69,21 +69,21 @@ Args:
 func NewTestController(
 			testVolumeName string,
 			testVolumeFilepath string,
-			networkName string,
+			networkId string,
 			subnetMask string,
 			gatewayIp string,
 			testControllerIp string,
 			testSuite testsuite.TestSuite,
 			testName string) *TestController {
 	return &TestController{
-		testVolumeName: testVolumeName,
+		testVolumeName:     testVolumeName,
 		testVolumeFilepath: testVolumeFilepath,
-		networkName:      networkName,
-		subnetMask:       subnetMask,
-		gatewayIp:        gatewayIp,
-		testControllerIp: testControllerIp,
-		testSuite:        testSuite,
-		testName:		  testName,
+		networkId:          networkId,
+		subnetMask:         subnetMask,
+		gatewayIp:          gatewayIp,
+		testControllerIp:   testControllerIp,
+		testSuite:          testSuite,
+		testName:           testName,
 	}
 }
 
@@ -119,7 +119,7 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 	}
 	logrus.Info("Connected to Docker environment")
 
-	logrus.Infof("Configuring test network in Docker network %v...", controller.networkName)
+	logrus.Infof("Configuring test network in Docker network %v...", controller.networkId)
 	alreadyTakenIps := map[string]bool{
 		controller.gatewayIp: true,
 		controller.testControllerIp: true,
@@ -131,12 +131,12 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 
 	builder := networks.NewServiceNetworkBuilder(
 			dockerManager,
-			controller.networkName,
+			controller.networkId,
 			freeIpTracker,
 			controller.testVolumeName,
 			controller.testVolumeFilepath)
 	if err := networkLoader.ConfigureNetwork(builder); err != nil {
-		return stacktrace.Propagate(err, "Could not configure test network in Docker network %v", controller.networkName), nil
+		return stacktrace.Propagate(err, "Could not configure test network in Docker network %v", controller.networkId), nil
 	}
 	network := builder.Build()
 	defer func() {

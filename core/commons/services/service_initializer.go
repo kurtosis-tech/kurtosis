@@ -18,8 +18,8 @@ type ServiceInitializer struct {
 	// The user-defined instructions for how to initialize their service
 	core ServiceInitializerCore
 
-	// The name of the Docker network that the new service should be added to
-	networkName string
+	// The ID of the Docker network that the new service should be added to
+	networkId string
 
 	// The path to the directory where the test volume is mounted on the CONTROLLER Docker image. We need to know this
 	// 	because this is where this initializer will create the files required by the service being initialized.
@@ -34,10 +34,10 @@ Args:
 	networkName: The name of the Docker network that the service will be added to
 	testVolumeControllerDirpath: The dirpath where the test Docker volume is mounted on the test controller Docker container
  */
-func NewServiceInitializer(core ServiceInitializerCore, networkName string, testVolumeControllerDirpath string) *ServiceInitializer {
+func NewServiceInitializer(core ServiceInitializerCore, networkId string, testVolumeControllerDirpath string) *ServiceInitializer {
 	return &ServiceInitializer{
 		core: core,
-		networkName: networkName,
+		networkId: networkId,
 		testVolumeControllerDirpath: testVolumeControllerDirpath,
 	}
 }
@@ -104,7 +104,7 @@ func (initializer ServiceInitializer) CreateService(
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
 			context,
 			dockerImage,
-			initializer.networkName,
+			initializer.networkId,
 			staticIp,
 			usedPorts,
 			startCmdArgs,

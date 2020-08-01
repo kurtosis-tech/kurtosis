@@ -16,8 +16,8 @@ type ServiceNetworkBuilder struct {
 	// The Docker manager that will be used for manipulating the Docker engine during the test
 	dockerManager *docker.DockerManager
 
-	// The name of the Docker network that the test network runs in
-	dockerNetworkName string
+	// The ID of the Docker network that the test network runs in
+	dockerNetworkId string
 
 	// IP address tracker for doling out IPs to new services in the test network
 	freeIpTracker *FreeIpAddrTracker
@@ -45,14 +45,14 @@ Args:
  */
 func NewServiceNetworkBuilder(
 			dockerManager *docker.DockerManager,
-			dockerNetworkName string,
+			dockerNetworkId string,
 			freeIpTracker *FreeIpAddrTracker,
 			testVolume string,
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
 	configurations := make(map[ConfigurationID]serviceConfig)
 	return &ServiceNetworkBuilder{
 		dockerManager:               dockerManager,
-		dockerNetworkName:           dockerNetworkName,
+		dockerNetworkId:             dockerNetworkId,
 		freeIpTracker:               freeIpTracker,
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -101,7 +101,7 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	return NewServiceNetwork(
 		builder.freeIpTracker,
 		builder.dockerManager,
-		builder.dockerNetworkName,
+		builder.dockerNetworkId,
 		configurationsCopy,
 		builder.testVolume,
 		builder.testVolumeControllerDirpath)

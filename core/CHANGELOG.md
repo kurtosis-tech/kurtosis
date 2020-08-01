@@ -8,6 +8,7 @@
 * Added a "Debugging failed tests" tutorial
 * Bugfix for broken CI checks that don't verify CHANGELOG is actually modified
 * Pass network ID instead of network name to the controller
+* Renaming many parameters and variables to represent network IDs instead of names
 * Documenting every single public function & struct for future developers
 
 # 0.7.0
