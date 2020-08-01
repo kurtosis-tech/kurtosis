@@ -4,6 +4,7 @@
 * Use custom types for service and configuration IDs, so that the user doesn't have a ton of `int`s flying around
 * Made TestExecutor take in the long list of test params as constructor arguments, rather than in the runTest() method, to simplify the code
 * Make setup/teardown buffer configurable on a per-test basis with `GetSetupBuffer` method
+* Added a "Debugging failed tests" tutorial
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be
