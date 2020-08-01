@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"time"
 )
@@ -239,8 +240,8 @@ func (executor testExecutor) runControllerContainer(
 			context context.Context,
 			manager *docker.DockerManager,
 			networkName string,
-			gatewayIp string,
-			controllerIpAddr string) (bool, error){
+			gatewayIp net.IP,
+			controllerIpAddr net.IP) (bool, error){
 	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
 
 	volumeName := uniqueTestIdentifier
@@ -359,8 +360,8 @@ Args:
 func generateTestControllerEnvVariables(
 			networkName string,
 			subnetMask string,
-			gatewayIp string,
-			controllerIpAddr string,
+			gatewayIp net.IP,
+			controllerIpAddr net.IP,
 			testName string,
 			logLevel string,
 			testVolumeName string,
@@ -369,10 +370,10 @@ func generateTestControllerEnvVariables(
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
 		networkNameArg:          networkName,
-		gatewayIpArg:            gatewayIp,
+		gatewayIpArg:            gatewayIp.String(),
 		logFilepathArg:          controllerLogMountFilepath,
 		logLevelArg:             logLevel,
-		testControllerIpArg:     controllerIpAddr,
+		testControllerIpArg:     controllerIpAddr.String(),
 		testVolumeArg:           testVolumeName,
 		testVolumeMountpointArg: testVolumeMountpoint,
 	}

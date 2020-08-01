@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"net"
 	"time"
 )
 
@@ -65,7 +66,7 @@ Args:
 Returns:
 	id: The Docker-managed ID of the network
  */
-func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP string) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP) (id string, err error)  {
 	found, err := manager.networkExists(name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -77,7 +78,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
-		Gateway: gatewayIP,
+		Gateway: gatewayIP.String(),
 	}}
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
 		Driver: DOCKER_NETWORK_DRIVER,
