@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/docker/go-connections/nat"
+	"net"
 	"os"
 )
 
@@ -72,7 +73,7 @@ type ServiceInitializerCore interface {
 		publicIpAddr: The IP address of the Docker image running the service
 		dependencies: The services that this service depends on (for use in case the command line to the service changes based on dependencies)
 	 */
-	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []Service) ([]string, error)
+	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr net.IP, dependencies []Service) ([]string, error)
 
 }
 

@@ -38,7 +38,7 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 
 // TODO Return IP objects (which are easily convertable to strings) rather than strings themselves
 // TODO rework this entire function to handle IPv6 as well (currently breaks on IPv6)
-func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err error){
+func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
 	// convert IPNet struct mask and address to uint32
 	// network is BigEndian
 	mask := binary.BigEndian.Uint32(networkManager.subnet.Mask)
@@ -67,8 +67,8 @@ func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err erro
 		ipStr := ip.String()
 		if !networkManager.takenIps[ipStr] {
 			networkManager.takenIps[ipStr] = true
-			return ipStr, nil
+			return ip, nil
 		}
 	}
-	return "", stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
+	return nil, stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
 }
