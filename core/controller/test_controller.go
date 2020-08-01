@@ -93,7 +93,10 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 	logrus.Info("Connected to Docker environment")
 
 	logrus.Infof("Configuring test network in Docker network %v...", controller.networkName)
-	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
+	alreadyTakenIps := map[string]bool{
+		controller.gatewayIp: true,
+		controller.testControllerIp: true,
+	}
 	freeIpTracker, err := networks.NewFreeIpAddrTracker(logrus.StandardLogger(), controller.subnetMask, alreadyTakenIps)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil

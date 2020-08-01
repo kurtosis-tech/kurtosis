@@ -187,7 +187,7 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 
 	executor.log.Infof("Creating Docker network for test with subnet mask %v...", executor.subnetMask)
 	networkName := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, executor.subnetMask, []string{})
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, executor.subnetMask, map[string]bool{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP address tracker")
 	}

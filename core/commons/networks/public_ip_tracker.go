@@ -7,6 +7,10 @@ import (
 	"net"
 )
 
+/*
+Object which is intialized from a subnet and doles out IPs from the subnet, tracking which IPs are currently in use and
+	making sure not to return any IPs that are in use.
+ */
 type FreeIpAddrTracker struct {
 	log *logrus.Logger
 	subnet *net.IPNet
@@ -14,17 +18,23 @@ type FreeIpAddrTracker struct {
 }
 
 /*
-Creates a new tracker that will dole out free IP addresses from the given subnet, making sure not to dole out any IPs
+Creates a new IP tracker from the given parameters.
+
+Args:
+	log: The logger that log messages will be written to.
+	subnetMask: The mask of the subnet that the IP tracker should dole IPs from.
+	alreadyTakenIps: A set of IPs that should be marked as taken from initialization.
 from the list of already-taken IPs
  */
-func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps []string) (ipAddrTracker *FreeIpAddrTracker, err error) {
+func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps map[string]bool) (ipAddrTracker *FreeIpAddrTracker, err error) {
 	_, ipv4Net, err := net.ParseCIDR(subnetMask)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse subnet %s as CIDR.", subnetMask)
 	}
-	takenIps := map[string]bool{}
 
-	for _, ipAddr := range alreadyTakenIps {
+	// Defensive copy
+	takenIps := map[string]bool{}
+	for ipAddr, _ := range alreadyTakenIps {
 		takenIps[ipAddr] = true
 	}
 
@@ -38,6 +48,13 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 
 // TODO Return IP objects (which are easily convertable to strings) rather than strings themselves
 // TODO rework this entire function to handle IPv6 as well (currently breaks on IPv6)
+/*
+Gets a free IP address from the subnet that the IP tracker was initializd with.
+
+Returns:
+	An IP from the subnet the tracker was initialized with that won't collide with any previously-given IP. The
+		actual IP returned is undefined.
+ */
 func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err error){
 	// convert IPNet struct mask and address to uint32
 	// network is BigEndian

@@ -30,21 +30,28 @@ WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
  */
 
 const (
+	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
+	//  at some point in the future
 	DOCKER_NETWORK_DRIVER = "bridge"
 )
 
+/*
+A handle to interacting with the Docker environment running a test.
+ */
 type DockerManager struct {
-	// WARNING: This log should be used for all log statements - the system-wide logger should NOT be used!
-	log *logrus.Logger
+	// The logger that all log messages will be written to
+	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
+
+	// The underlying Docker client that will be used to modify the Docker environment
 	dockerClient        *client.Client
 }
 
 /*
-   Creates a new manager for manipulating the Docker engine using the given client
+Creates a new Docker manager for manipulating the Docker engine using the given client.
 
-   Args:
-	log: The logger that this Docker manager should use
-	dockerClient: The Docker client that will be used when modifying the Docker engine
+Args:
+	log: The logger that this Docker manager will write all its log messages to.
+	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
 	return &DockerManager{
@@ -56,12 +63,12 @@ func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerMa
 // TODO Make this function return the networkId - this would save a TON of hassle, because everywhere else in Docker needs
 //  the network ID and we're passing around the name so we have to do a bunch of Docker lookups every time we want the ID
 /*
-Creates a Docker network with the given parameters, doing nothing if a network with that name already exists
+Creates a new Docker network with the given parameters; does nothing if a network with the given name already exists.
 
 Args:
 	context: The Context that this request is running in (useful for cancellation)
 	name: The name to give the new Docker network
-	subnetMask: The subnet mask of allowed IPs for the Docker network
+	subnetMask: The subnet mask defining allowed IPs for the Docker network
 	gatewayIP: The IP to give the network gateway
 
 Returns:

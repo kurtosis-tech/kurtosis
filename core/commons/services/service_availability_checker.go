@@ -11,15 +11,40 @@ const (
 	TIME_BETWEEN_STARTUP_POLLS = 1 * time.Second
 )
 
+/*
+Contains the logic wrapping a ServiceAvailabilityCheckerCore, which is used to make requests against a service and verify
+	if it's actually available (because a Docker container running doesn't necessarily mean that the service is running).
+	We have the notion of a user-defined "core" because the criteria for a service being available will depend on the
+	developer's service.
+ */
 type ServiceAvailabilityChecker struct {
-	// We bend the Go rules and store a context in a struct because we don't want the user to need to think about contexts
-	// when writing their tests
+	/*
+	The context that the availability checker is running in, which will be used for cancelling/timing out.
+
+	NOTE: We bend the Go rules and store a context in a struct because we don't want the user to need to think about contexts
+		when writing their tests
+	 */
 	context context.Context
+
+	// The developer-defined criteria for determining if their custom service is available
 	core ServiceAvailabilityCheckerCore
+
+	// The service that will be checked for availability
 	toCheck Service
+
+	// The dependencies that the service-to-check depends on (just in case it's useful)
 	dependencies []Service
 }
 
+/*
+Creates a new availability checker using the given core.
+
+Args:
+	context: The context that availability-checking will happen in, which can be used to check availability checking
+	core: The user-defined criteria for whether their custom service is up
+	toCheck: The service to check
+	dependencies: The dependencies of the service being checked
+ */
 func NewServiceAvailabilityChecker(context context.Context, core ServiceAvailabilityCheckerCore, toCheck Service, dependencies []Service) *ServiceAvailabilityChecker {
 	// Defensive copy
 	dependenciesCopy := make([]Service, 0, len(dependencies))
@@ -33,8 +58,10 @@ func NewServiceAvailabilityChecker(context context.Context, core ServiceAvailabi
 	}
 }
 
-// Waits for the linked service to start up by making requests (configured by the core) to the service until the service
-//  is reported as up or the timeout is reached
+/*
+Waits for the service that was passed in at construction time to start up by making requests to the service until
+	the availability checker core's criteria are met or the timeout is reached.
+ */
 func (checker ServiceAvailabilityChecker) WaitForStartup() error {
 	startupTimeout := checker.core.GetTimeout()
 
