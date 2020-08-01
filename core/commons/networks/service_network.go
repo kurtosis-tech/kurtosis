@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type ServiceID int
+type ServiceID string
 
 type ServiceNode struct {
 	IpAddr string
