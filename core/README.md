@@ -36,10 +36,10 @@ The control flow goes:
 1. The initializer waits for all tests to complete and returns the results
 
 ### Building An Implementation
-See [the "Getting Started" tutorial](./tutorial/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
 
 ### Debugging Failed Tests
-See [the "Debugging Failed Tests" tutorial](./tutorial/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
+See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
 
 Examples
 --------
