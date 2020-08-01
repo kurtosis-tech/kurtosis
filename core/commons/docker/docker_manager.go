@@ -97,14 +97,14 @@ Removes the Docker network with the given id, attempting to stop all containers 
 
 Args:
 	context: The Context that this request is running in (useful for cancellation)
-	networkName: Name of Docker network to remove
+	networkId: ID of Docker network to remove
 	containerStopTimeout: How long to wait for containers to stop
  */
 func (manager DockerManager) RemoveNetwork(context context.Context, networkId string, containerStopTimeout time.Duration) error {
 
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get network information for network %v", networkId)
+		return stacktrace.Propagate(err, "Failed to get network information for network with ID %v", networkId)
 	}
 
 	for containerId, _ := range inspectResponse.Containers {
@@ -185,10 +185,10 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	networkExistsLocally, err := manager.networkExists(networkId)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred checking for the existence of network %v", networkId)
+		return "", "", stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
 	}
 	if !networkExistsLocally {
-		return "", "", stacktrace.NewError("Kurtosis Docker network %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
+		return "", "", stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
 	}
 
 	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
@@ -285,7 +285,7 @@ func (manager DockerManager) connectToNetwork(networkId string, containerId stri
 			IPAddress: staticIpAddr,
 		})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to connect container %s to network %s.", containerId, networkId)
+		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
 	}
 	return nil
 }

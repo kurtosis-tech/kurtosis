@@ -340,11 +340,11 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerM
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
 	if err := dockerManager.RemoveNetwork(context.Background(), networkId, networkTeardownContainerStopTimeout); err != nil {
-		log.Errorf("An error occurred removing Docker network with name %v:", networkId)
+		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
-		log.Infof("Docker network %v successfully removed", networkId)
+		log.Infof("Docker network with ID %v successfully removed", networkId)
 	}
 }
 
