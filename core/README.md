@@ -38,8 +38,15 @@ Examples
 --------
 See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation.
 
-Notes
------
+Developer Notes
+---------------
+### Docker-in-Docker & MacOS Users
+**High-level:** If you're using MacOS, make sure that your Docker engine's `Resources > File Sharing` preferences are set to allow `/var/folders`
+**Details:** The Kurtosis controller is a Docker image that needs to access the Docker engine it's running in to create other Docker images. This is done via creating "sibling" containers, as detailed in the "Solution" section at the bottom of [this blog post](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/). However, this requires your Docker engine's communication socket to be bind-mounted inside the controller container. Kurtosis will do this for you, but you'll need to give Docker permission for the Docker socket (which lives at `/var/run/docker.sock`) to be bind-mounted inside the controller container.
+
+### Parallelism
+Kurtosis offers the ability to run tests in parallel to reduce total test suite runtime. You should never set parallelism higher than the number of cores on your machine or else you'll actually slow down your tests as your machine is doing unnecessary context-switching; depending on your test timeouts, this could cause spurious test failures.
+
 ### Abnormal Exit
 While running, Kurtosis will create the following, per test:
 * A new Docker network for the test
