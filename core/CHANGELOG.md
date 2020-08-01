@@ -6,6 +6,7 @@
 * Make setup/teardown buffer configurable on a per-test basis with `GetSetupBuffer` method
 * Passing networks by id instead of name inside docker manager
 * Added a "Debugging failed tests" tutorial
+* Bugfix for broken CI checks that don't verify CHANGELOG is actually modified
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be
