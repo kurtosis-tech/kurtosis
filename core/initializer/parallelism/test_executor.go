@@ -35,7 +35,7 @@ const (
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	testVolumeArg           = "TEST_VOLUME"
 	testNameArg             = "TEST_NAME"
-	networkNameArg          = "NETWORK_NAME"
+	networkIdArg            = "NETWORK_ID"
 	subnetMaskArg           = "SUBNET_MASK"
 	gatewayIpArg            = "GATEWAY_IP"
 	logFilepathArg          = "LOG_FILEPATH"
@@ -211,7 +211,7 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 	testPassed, err := executor.runControllerContainer(
 		context,
 		dockerManager,
-		networkName,
+		networkId,
 		gatewayIp,
 		controllerIp)
 	if err != nil {
@@ -239,7 +239,7 @@ Returns:
 func (executor testExecutor) runControllerContainer(
 			context context.Context,
 			manager *docker.DockerManager,
-			networkName string,
+			networkId string,
 			gatewayIp net.IP,
 			controllerIpAddr net.IP) (bool, error){
 	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
@@ -261,7 +261,7 @@ func (executor testExecutor) runControllerContainer(
 	executor.log.Debugf("Successfully created temporary file to store controller logs at path %v", logTmpFile.Name())
 
 	envVariables, err := generateTestControllerEnvVariables(
-		networkName,
+		networkId,
 		executor.subnetMask,
 		gatewayIp,
 		controllerIpAddr,
@@ -287,7 +287,7 @@ func (executor testExecutor) runControllerContainer(
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
 		executor.testControllerImageName,
-		networkName,
+		networkId,
 		controllerIpAddr,
 		make(map[nat.Port]bool),
 		nil, // The controller image's CMD should be parameterized, so we don't specify a start command here
@@ -358,7 +358,7 @@ Args:
 	customEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 */
 func generateTestControllerEnvVariables(
-			networkName string,
+			networkId string,
 			subnetMask string,
 			gatewayIp net.IP,
 			controllerIpAddr net.IP,
@@ -369,7 +369,7 @@ func generateTestControllerEnvVariables(
 	standardVars := map[string]string{
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
-		networkNameArg:          networkName,
+		networkIdArg:            networkId,
 		gatewayIpArg:            gatewayIp.String(),
 		logFilepathArg:          controllerLogMountFilepath,
 		logLevelArg:             logLevel,
