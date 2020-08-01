@@ -13,14 +13,14 @@ import (
 
 // This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
 type ServiceInitializer struct {
-	core ServiceInitializerCore
-	networkName string
+	core      ServiceInitializerCore
+	networkId string
 }
 
 func NewServiceInitializer(core ServiceInitializerCore, networkName string) *ServiceInitializer {
 	return &ServiceInitializer{
-		core: core,
-		networkName: networkName,
+		core:      core,
+		networkId: networkName,
 	}
 }
 
@@ -82,7 +82,7 @@ func (initializer ServiceInitializer) CreateService(
 	ipAddr, containerId, err := manager.CreateAndStartContainer(
 			context,
 			dockerImage,
-			initializer.networkName,
+			initializer.networkId,
 			staticIp,
 			usedPorts,
 			startCmdArgs,
