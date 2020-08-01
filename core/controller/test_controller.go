@@ -42,7 +42,7 @@ Args:
 func NewTestController(
 			testVolumeName string,
 			testVolumeFilepath string,
-			networkName string,
+			networkId string,
 			subnetMask string,
 			gatewayIp string,
 			testControllerIp string,
@@ -51,7 +51,7 @@ func NewTestController(
 	return &TestController{
 		testVolumeName:     testVolumeName,
 		testVolumeFilepath: testVolumeFilepath,
-		networkId:          networkName,
+		networkId:          networkId,
 		subnetMask:         subnetMask,
 		gatewayIp:          gatewayIp,
 		testControllerIp:   testControllerIp,

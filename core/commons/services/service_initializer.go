@@ -17,10 +17,10 @@ type ServiceInitializer struct {
 	networkId string
 }
 
-func NewServiceInitializer(core ServiceInitializerCore, networkName string) *ServiceInitializer {
+func NewServiceInitializer(core ServiceInitializerCore, networkId string) *ServiceInitializer {
 	return &ServiceInitializer{
 		core:      core,
-		networkId: networkName,
+		networkId: networkId,
 	}
 }
 
