@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	testServiceName = "test-service"
+	testNetworkName = "test-network"
+)
 
 type TestService struct {}
 
@@ -58,9 +62,9 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 
 // ======================== Tests ========================
 func TestDisallowingNonexistentConfigs(t *testing.T) {
-	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
+	builder := NewServiceNetworkBuilder(nil, testNetworkName, nil, "test", "/foo/bar")
 	network := builder.Build()
-	_, err := network.AddService(0, 0, make(map[ServiceID]bool))
+	_, err := network.AddService(0, testServiceName, make(map[ServiceID]bool))
 	if err == nil {
 		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
 	}
@@ -68,7 +72,7 @@ func TestDisallowingNonexistentConfigs(t *testing.T) {
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
 	var configId ConfigurationID = 0
-	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
+	builder := NewServiceNetworkBuilder(nil, testNetworkName, nil, "test", "/foo/bar")
 	err := builder.AddConfiguration(configId, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail")
@@ -76,10 +80,10 @@ func TestDisallowingNonexistentDependencies(t *testing.T) {
 	network := builder.Build()
 
 	dependencies := map[ServiceID]bool{
-		0: true,
+		testServiceName: true,
 	}
 
-	_, err = network.AddService(configId, 0, dependencies)
+	_, err = network.AddService(configId, testServiceName, dependencies)
 	if err == nil {
 		t.Fatal("Expected error when declaring a dependency on a service ID that doesn't exist")
 	}

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-type ServiceID int
+type ServiceID string
 
 type ServiceNode struct {
 	IpAddr net.IP
@@ -83,7 +83,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 	}
 
 	if _, exists := network.serviceNodes[serviceId]; exists {
-		return nil, stacktrace.NewError("Service ID %d already exists in the network", serviceId)
+		return nil, stacktrace.NewError("Service ID %s already exists in the network", serviceId)
 	}
 
 	if dependencies == nil {
@@ -103,7 +103,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 
 	staticIp, err := network.freeIpTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %s", serviceId)
 	}
 
 	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId)
