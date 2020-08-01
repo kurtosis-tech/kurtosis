@@ -1,6 +1,6 @@
 Kurtosis
 ========
-Kurtosis is a framework for writing end-to-end test suites for distributed systems using Docker.
+Kurtosis is a framework on top of Docker for writing test suites for any networked system - be it blockchain, distributed datastore, or otherwise. It handles all the gruntwork of setup, test execution, and teardown so you don't have to.
 
 * [Architecture](#architecture)
 * [Tutorial](#tutorial)
@@ -9,8 +9,13 @@ Kurtosis is a framework for writing end-to-end test suites for distributed syste
     * [Abnormal Exit](#abnormal-exit)
     * [Container, Volume, &amp; Image Tidying](#container-volume--image-tidying)
 
-Architecture
-------------
+Getting Started
+---------------
+Kurtosis is a testing framework atop Docker, meaning you'll need to build a Docker image of the service(s) you want to test, and a Golang implementation of several Kurtosis interfaces to construct your test suite. If you've never used:
+* Go, we recommend the [official Golang installation & quickstart guide](https://golang.org/doc/install) along with [JetBrains' excellent GoLand IDE](https://www.jetbrains.com/go/)
+* Docker, we recommend [the official Docker "Get Started" guide](https://docs.docker.com/get-started/), coupled with [the docs explaining how to view container logs](https://docs.docker.com/config/containers/logging/) (which you'll be doing a lot)
+
+### Architecture
 The Kurtosis architecture has four components:
 
 1. The **test networks**, which are the networks (one network per test) of service containers that are spun up for tests to run against
@@ -30,9 +35,11 @@ The control flow goes:
     1. The controller returns the result to the initializer and exits
 1. The initializer waits for all tests to complete and returns the results
 
-Tutorial
---------
-See [the tutorial](./TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+### Building An Implementation
+See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+
+### Debugging Failed Tests
+See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
 
 Examples
 --------

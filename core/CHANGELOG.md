@@ -4,7 +4,11 @@
 * Use custom types for service and configuration IDs, so that the user doesn't have a ton of `int`s flying around
 * Made TestExecutor take in the long list of test params as constructor arguments, rather than in the runTest() method, to simplify the code
 * Make setup/teardown buffer configurable on a per-test basis with `GetSetupBuffer` method
-* Documenting every single function & struct for future developers
+* Passing networks by id instead of name inside docker manager
+* Added a "Debugging failed tests" tutorial
+* Bugfix for broken CI checks that don't verify CHANGELOG is actually modified
+* Pass network ID instead of network name to the controller
+* Documenting every single public function & struct for future developers
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be

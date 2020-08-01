@@ -40,7 +40,7 @@ const (
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
 	testVolumeArg           = "TEST_VOLUME"
 	testNameArg             = "TEST_NAME"
-	networkNameArg          = "NETWORK_NAME"
+	networkIdArg            = "NETWORK_ID"
 	subnetMaskArg           = "SUBNET_MASK"
 	gatewayIpArg            = "GATEWAY_IP"
 	logFilepathArg          = "LOG_FILEPATH"
@@ -228,12 +228,12 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the gateway IP")
 	}
-	_, err = dockerManager.CreateNetwork(context, networkName, executor.subnetMask, gatewayIp)
+	networkId, err := dockerManager.CreateNetwork(context, networkName, executor.subnetMask, gatewayIp)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, executor.testName)
 	}
-	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkName)
-	executor.log.Infof("Docker network %v created successfully", networkName)
+	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkId)
+	executor.log.Infof("Docker network %v created successfully", networkId)
 
 	executor.log.Info("Running test controller...")
 	controllerIp, err := publicIpProvider.GetFreeIpAddr()
@@ -243,7 +243,7 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 	testPassed, err := executor.runControllerContainer(
 		context,
 		dockerManager,
-		networkName,
+		networkId,
 		gatewayIp,
 		controllerIp)
 	if err != nil {
@@ -271,7 +271,7 @@ Returns:
 func (executor testExecutor) runControllerContainer(
 			context context.Context,
 			manager *docker.DockerManager,
-			networkName string,
+			networkId string,
 			gatewayIp string,
 			controllerIpAddr string) (bool, error){
 	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
@@ -293,7 +293,7 @@ func (executor testExecutor) runControllerContainer(
 	executor.log.Debugf("Successfully created temporary file to store controller logs at path %v", logTmpFile.Name())
 
 	envVariables, err := generateTestControllerEnvVariables(
-		networkName,
+		networkId,
 		executor.subnetMask,
 		gatewayIp,
 		controllerIpAddr,
@@ -319,7 +319,7 @@ func (executor testExecutor) runControllerContainer(
 	_, controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
 		executor.testControllerImageName,
-		networkName,
+		networkId,
 		controllerIpAddr,
 		make(map[nat.Port]bool),
 		nil, // The controller image's CMD should be parameterized, so we don't specify a start command here
@@ -359,16 +359,16 @@ func (executor testExecutor) runControllerContainer(
 Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
 as a deferred function.
 */
-func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkName string) {
-	log.Infof("Attempting to remove Docker network with name %v...", networkName)
+func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkId string) {
+	log.Infof("Attempting to remove Docker network with id %v...", networkId)
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
-	if err := dockerManager.RemoveNetwork(context.Background(), networkName, networkTeardownContainerStopTimeout); err != nil {
-		log.Errorf("An error occurred removing Docker network with name %v:", networkName)
+	if err := dockerManager.RemoveNetwork(context.Background(), networkId, networkTeardownContainerStopTimeout); err != nil {
+		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
-		log.Infof("Docker network %v successfully removed", networkName)
+		log.Infof("Docker network with ID %v successfully removed", networkId)
 	}
 }
 
@@ -390,7 +390,7 @@ Args:
 	customEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
 */
 func generateTestControllerEnvVariables(
-			networkName string,
+			networkId string,
 			subnetMask string,
 			gatewayIp string,
 			controllerIpAddr string,
@@ -401,7 +401,7 @@ func generateTestControllerEnvVariables(
 	standardVars := map[string]string{
 		testNameArg:             testName,
 		subnetMaskArg:           subnetMask,
-		networkNameArg:          networkName,
+		networkIdArg:            networkId,
 		gatewayIpArg:            gatewayIp,
 		logFilepathArg:          controllerLogMountFilepath,
 		logLevelArg:             logLevel,
