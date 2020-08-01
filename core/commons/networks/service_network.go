@@ -27,7 +27,7 @@ type ServiceNetwork struct {
 
 	dockerManager *docker.DockerManager
 
-	dockerNetworkName string
+	dockerNetworkId string
 
 	serviceNodes map[ServiceID]ServiceNode
 
@@ -41,7 +41,7 @@ type ServiceNetwork struct {
 func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
-			dockerNetworkName string,
+			dockerNetworkId string,
 			serviceNodes map[ServiceID]ServiceNode,
 			configurations map[ConfigurationID]serviceConfig,
 			testVolume string,
@@ -49,7 +49,7 @@ func NewServiceNetwork(
 	return &ServiceNetwork{
 		freeIpTracker:               freeIpTracker,
 		dockerManager:               dockerManager,
-		dockerNetworkName:           dockerNetworkName,
+		dockerNetworkId:             dockerNetworkId,
 		serviceNodes:                serviceNodes,
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -106,7 +106,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
 	}
 
-	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkName)
+	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId)
 	service, containerId, err := initializer.CreateService(
 			parentCtx,
 			network.testVolume,

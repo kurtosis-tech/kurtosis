@@ -17,7 +17,7 @@ type ConfigurationID int
 type ServiceNetworkBuilder struct {
 	dockerManager *docker.DockerManager
 
-	dockerNetworkName string
+	dockerNetworkId string
 
 	freeIpTracker *FreeIpAddrTracker
 
@@ -33,14 +33,14 @@ type ServiceNetworkBuilder struct {
 
 func NewServiceNetworkBuilder(
 			dockerManager *docker.DockerManager,
-			dockerNetworkName string,
+			dockerNetworkId string,
 			freeIpTracker *FreeIpAddrTracker,
 			testVolume string,
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
 	configurations := make(map[ConfigurationID]serviceConfig)
 	return &ServiceNetworkBuilder{
 		dockerManager:               dockerManager,
-		dockerNetworkName:           dockerNetworkName,
+		dockerNetworkId:             dockerNetworkId,
 		freeIpTracker:               freeIpTracker,
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -78,7 +78,7 @@ func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	return NewServiceNetwork(
 		builder.freeIpTracker,
 		builder.dockerManager,
-		builder.dockerNetworkName,
+		builder.dockerNetworkId,
 		make(map[ServiceID]ServiceNode),
 		configurationsCopy,
 		builder.testVolume,

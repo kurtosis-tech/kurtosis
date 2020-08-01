@@ -228,7 +228,7 @@ Helper function to run the controller container against the given test network.
 Args:
 	context: The context in which the test is being run, such that the test should be cancelled if the context is cancelled
 	manager: the Docker manager, used for starting container & waiting for it to finish
-	networkName: The name of the Docker network that the controller container will run in
+	networkId: The id of the Docker network that the controller container will run in
 	gatewayIp: The IP of the gateway on the Docker network that the controller is running in
 	controllerIpAddr: The IP address that should be used for the container that the controller is running in
 
@@ -346,7 +346,7 @@ NOTE: This is a separate function because it provides a nice documentation refer
 put anything else in this function!!!
 
 Args:
-	networkName: The name of the Docker network that the test controller is running in, and which all services should be started in
+	networkId: The id of the Docker network that the test controller is running in, and which all services should be started in
 	subnetMask: The subnet mask used to create the Docker network that the test controller, and all services it starts, are running in
 	gatewayIp: The IP of the gateway of the Docker network that the test controller will run inside
 	controllerIpAddr: The IP address of the container running the test controller
