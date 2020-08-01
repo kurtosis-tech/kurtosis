@@ -3,6 +3,7 @@ package networks
 import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/services"
+	"net"
 	"os"
 	"testing"
 	"time"
@@ -34,7 +35,7 @@ func (t TestInitializerCore) InitializeMountedFiles(filepathsToMount map[string]
 	return nil
 }
 
-func (t TestInitializerCore) GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []services.Service) ([]string, error) {
+func (t TestInitializerCore) GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr net.IP, dependencies []services.Service) ([]string, error) {
 	return make([]string, 0), nil
 }
 

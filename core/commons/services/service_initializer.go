@@ -6,6 +6,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"net"
 	"os"
 	"path/filepath"
 )
@@ -41,7 +42,7 @@ func (initializer ServiceInitializer) CreateService(
 			testVolumeName string,
 			testVolumeControllerDirpath string,
 			dockerImage string,
-			staticIp string,
+			staticIp net.IP,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
 	initializerCore := initializer.core
@@ -92,9 +93,9 @@ func (initializer ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return initializer.core.GetServiceFromIp(ipAddr), containerId, nil
+	return initializer.core.GetServiceFromIp(ipAddr.String()), containerId, nil
 }
 
-func (initializer ServiceInitializer) LoadService(ipAddr string) Service {
-	return initializer.core.GetServiceFromIp(ipAddr)
+func (initializer ServiceInitializer) LoadService(ipAddr net.IP) Service {
+	return initializer.core.GetServiceFromIp(ipAddr.String())
 }

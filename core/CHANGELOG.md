@@ -8,6 +8,7 @@
 * Added a "Debugging failed tests" tutorial
 * Bugfix for broken CI checks that don't verify CHANGELOG is actually modified
 * Pass network ID instead of network name to the controller
+* Switching FreeIpAddrTracker to pass net.IP objects instead of strings
 * Renaming many parameters and variables to represent network IDs instead of names
 * Change networks.ServiceID to strings instead of int
 

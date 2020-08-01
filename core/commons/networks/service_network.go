@@ -7,13 +7,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"time"
 )
 
 type ServiceID string
 
 type ServiceNode struct {
-	IpAddr string
+	IpAddr net.IP
 
 	// If Go had generics, we'd make this object genericized and use that as the return type here
 	Service services.Service
