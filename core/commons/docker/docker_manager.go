@@ -88,7 +88,6 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	if err != nil {
 		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
 	}
-	manager.log.Infof("Created docker network with name %v and got response %+v", name, resp)
 	return resp.ID, nil
 }
 
