@@ -165,53 +165,53 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			networkId string,
-			staticIp string,
+			staticIp net.IP,
 			usedPorts map[nat.Port]bool,
 			startCmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
-			volumeMounts map[string]string) (containerIpAddr string, containerId string, err error) {
+			volumeMounts map[string]string) (containerIpAddr net.IP, containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
+		return nil, "", stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
 
 	if !imageExistsLocally {
 		err = manager.pullImage(context, dockerImage)
 		if err != nil {
-			return "", "", stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
+			return nil, "", stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
 	}
 
 	networkExistsLocally, err := manager.networkExists(networkId)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
+		return nil, "", stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
 	}
 	if !networkExistsLocally {
-		return "", "", stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
+		return nil, "", stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
 	}
 
 	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Failed to configure container from service.")
+		return nil, "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts, volumeMounts)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
+		return nil, "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
 	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, "")
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
+		return nil, "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}
 	containerId = resp.ID
 
 	err = manager.connectToNetwork(networkId, containerId, staticIp)
 	if err != nil {
-		return "","", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
+		return nil,"", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
-		return "", "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
+		return nil, "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
 	return staticIp, containerId, nil
 }
@@ -277,13 +277,13 @@ func (manager DockerManager) networkExists(networkId string) (found bool, err er
 	return true, nil
 }
 
-func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr string) (err error) {
+func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr net.IP) (err error) {
 	err = manager.dockerClient.NetworkConnect(
 		context.Background(),
 		networkId,
 		containerId,
 		&network.EndpointSettings{
-			IPAddress: staticIpAddr,
+			IPAddress: staticIpAddr.String(),
 		})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
