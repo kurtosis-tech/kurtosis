@@ -35,8 +35,6 @@ The control flow goes:
     1. The controller returns the result to the initializer and exits
 1. The initializer waits for all tests to complete and returns the results
 
-After Kurtosis has run, 
-
 ### Building An Implementation
 See [the "Getting Started" tutorial](./tutorial/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
 
