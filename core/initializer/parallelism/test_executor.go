@@ -316,7 +316,7 @@ func (executor testExecutor) runControllerContainer(
 		volumeName: testVolumeMountpoint,
 	}
 
-	_, controllerContainerId, err := manager.CreateAndStartContainer(
+	controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
 		executor.testControllerImageName,
 		networkId,

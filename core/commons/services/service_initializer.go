@@ -101,7 +101,7 @@ func (initializer ServiceInitializer) CreateService(
 		testVolumeName: initializerCore.GetTestVolumeMountpoint(),
 	}
 
-	ipAddr, containerId, err := manager.CreateAndStartContainer(
+	containerId, err := manager.CreateAndStartContainer(
 			context,
 			dockerImage,
 			initializer.networkId,
@@ -114,7 +114,7 @@ func (initializer ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return initializer.core.GetServiceFromIp(ipAddr), containerId, nil
+	return initializer.core.GetServiceFromIp(staticIp), containerId, nil
 }
 
 /*
