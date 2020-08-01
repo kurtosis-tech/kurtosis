@@ -1,4 +1,5 @@
 package parallelism
+
 import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -6,7 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"sync"
-	"time"
 )
 
 // ================= Test params & result ============================
@@ -37,7 +37,6 @@ type TestExecutorParallelizer struct {
 	testControllerLogLevel      string
 	customTestControllerEnvVars map[string]string
 	parallelism                 uint
-	additionalTestTimeoutBuffer time.Duration
 }
 
 /*
@@ -51,7 +50,6 @@ Args:
 	customTestControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
 		passed via Docker environment variables to the test controller
 	parallelism: The number of tests to run concurrently
-	additionalTestTimeoutBuffer: The amount of additional timeout given to each test for setup, on top of the test-declared timeout
  */
 func NewTestExecutorParallelizer(
 			executionId uuid.UUID,
@@ -59,8 +57,7 @@ func NewTestExecutorParallelizer(
 			testControllerImageName string,
 			testControllerLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			parallelism uint,
-			additionalTestTimeoutBuffer time.Duration) *TestExecutorParallelizer {
+			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
 		executionId:                 executionId,
 		dockerClient:                dockerClient,
@@ -68,7 +65,6 @@ func NewTestExecutorParallelizer(
 		testControllerLogLevel:      testControllerLogLevel,
 		customTestControllerEnvVars: customTestControllerEnvVars,
 		parallelism:                 parallelism,
-		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
 	}
 }
 
@@ -143,7 +139,6 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 		log.SetFormatter(logrus.StandardLogger().Formatter)
 		testExecutor := newTestExecutor(
 			log,
-			executor.additionalTestTimeoutBuffer,
 			executor.executionId,
 			executor.dockerClient,
 			testParams.SubnetMask,

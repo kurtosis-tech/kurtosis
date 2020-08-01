@@ -220,10 +220,13 @@ func (test ThreeNodeNetworkTest1) GetNetworkLoader() (networks.NetworkLoader, er
     return ThreeNodeNetworkLoader{DockerImage: test.DockerImage, MyServiceLogLevel: test.MyServiceLogLevel}
 }
 
-func (test ThreeNodeNetworkTest1) GetTimeout() time.Duration {
+func (test ThreeNodeNetworkTest1) GetExecutionTimeout() time.Duration {
     return 30 * time.Second
 }
 
+func (test ThreeNodeNetworkTest1) GetSetupBuffer() time.Duration {
+    return 60 * time.Second
+}
 ```
 
 Note that test failures are logged using the [TestContext](https://github.com/kurtosis-tech/kurtosis/blob/develop/commons/testsuite/test_context.go) object, in a manner similar to Go's inbuilt `testing.T` object.
