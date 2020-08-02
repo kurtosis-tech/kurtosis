@@ -1,44 +1,33 @@
 package parallelism
+
 import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
 	"github.com/sirupsen/logrus"
-	"os"
 	"sync"
-	"time"
 )
 
-// ================= Test params & result ============================
-type ParallelTestParams struct {
-	TestName            string
-	Test 				testsuite.Test
-	LogFp               *os.File
-	SubnetMask          string
-	ExecutionInstanceId uuid.UUID
-}
-
-func NewParallelTestParams(testName string, test testsuite.Test, logFp *os.File, subnetMask string, executionInstanceId uuid.UUID) *ParallelTestParams {
-	return &ParallelTestParams{TestName: testName, Test: test, LogFp: logFp, SubnetMask: subnetMask, ExecutionInstanceId: executionInstanceId}
-}
-
-type ParallelTestOutput struct {
-	TestName     string
-	ExecutionErr error    // Indicates whether an error occurred during the execution of the test that prevented it from running
-	TestPassed   bool     // Indicates whether the test passed or failed (undefined if the test had a setup error)
-	LogFp        *os.File // Where the logs for this test got written to
-}
-
-// ================= Parallel executor ============================
+/*
+Executor that will coordinate the execution of multiple tests in parallel
+ */
 type TestExecutorParallelizer struct {
-	executionId             uuid.UUID
-	dockerClient            *client.Client
-	testControllerImageName string
-	testControllerLogLevel  string
-	testServiceImageName    string
-	testControllerEnvVars   map[string]string
-	parallelism             uint
-	additionalTestTimeoutBuffer time.Duration
+	// The ID of the test suite execution to which all the individual test executions belong
+	executionId                 uuid.UUID
+
+	// Docker client which will be used for manipulating the Docker environment when running a test
+	dockerClient                *client.Client
+
+	// Name of the Docker image of the test controller that will be used to orchestrate each test
+	testControllerImageName     string
+
+	// A string, meaningful only to the controller image, which tells it what log level it should run at
+	testControllerLogLevel      string
+
+	// A ke-value map of custom Docker environment variables that will be passed as-is to the controller container during startup
+	customTestControllerEnvVars map[string]string
+
+	// The number of tests to run in parallel
+	parallelism                 uint
 }
 
 /*
@@ -48,29 +37,25 @@ Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
 	testControllerImageName: The name of the Docker image that will be used to run the test controller
-	testServiceImageName: The name of the Docker image of the version of the service being tested
-	testControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be set for test controller
+	testControllerLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
+	customTestControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
+		passed via Docker environment variables to the test controller
 	parallelism: The number of tests to run concurrently
-	additionalTestTimeoutBuffer: The amount of additional timeout given to each test for setup, on top of the test-declared timeout
  */
 func NewTestExecutorParallelizer(
 			executionId uuid.UUID,
 			dockerClient *client.Client,
 			testControllerImageName string,
 			testControllerLogLevel string,
-			testServiceImageName string,
-			testControllerEnvVars map[string]string,
-			parallelism uint,
-			additionalTestTimeoutBuffer time.Duration) *TestExecutorParallelizer {
+			customTestControllerEnvVars map[string]string,
+			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
-		executionId:             executionId,
-		dockerClient:            dockerClient,
-		testControllerImageName: testControllerImageName,
-		testControllerLogLevel:  testControllerLogLevel,
-		testServiceImageName:    testServiceImageName,
-		testControllerEnvVars:   testControllerEnvVars,
-		parallelism:             parallelism,
-		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
+		executionId:                 executionId,
+		dockerClient:                dockerClient,
+		testControllerImageName:     testControllerImageName,
+		testControllerLogLevel:      testControllerLogLevel,
+		customTestControllerEnvVars: customTestControllerEnvVars,
+		parallelism:                 parallelism,
 	}
 }
 
@@ -79,8 +64,11 @@ Runs the given tests in parallel
 
 Args:
 	interceptor: A capturer for logs that are erroneously written to the system-level log during parallel test execution (since all
-		logs should be written to the test-specific logs during parallel test execution)
-	tests:
+		logs should be written to the test-specific logs during parallel test execution to avoid test logs getting jumbled)
+	allTestParams: A mapping of test_name -> parameters for running the test
+
+Returns:
+	A mapping of test_name -> test output info
  */
 func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, allTestParams map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	// These need to be buffered else sending to the channel will be blocking
@@ -143,18 +131,18 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 		log.SetLevel(logrus.GetLevel())
 		log.SetOutput(testParams.LogFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
-		testExecutor := newTestExecutor(log, executor.additionalTestTimeoutBuffer)
-
-		passed, executionErr := testExecutor.runTest(
+		testExecutor := newTestExecutor(
+			log,
 			executor.executionId,
 			executor.dockerClient,
 			testParams.SubnetMask,
 			executor.testControllerImageName,
 			executor.testControllerLogLevel,
-			executor.testServiceImageName,
-			executor.testControllerEnvVars,
+			executor.customTestControllerEnvVars,
 			testParams.TestName,
 			testParams.Test)
+
+		passed, executionErr := testExecutor.runTest()
 
 		testOutput := ParallelTestOutput{
 			TestName:     testParams.TestName,

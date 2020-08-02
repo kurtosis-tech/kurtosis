@@ -1,6 +1,9 @@
 package testsuite
 
+/*
+An interface which the user implements to register their tests.
+ */
 type TestSuite interface {
-	// Intended to be implemented by the user to register whatever tests they please
+	// Get all the tests in the test suite; this is where users will "register" their tests
 	GetTests() map[string]Test
 }

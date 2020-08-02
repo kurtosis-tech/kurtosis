@@ -1,6 +1,6 @@
 Kurtosis
 ========
-Kurtosis is a framework for writing end-to-end test suites for distributed systems using Docker.
+Kurtosis is a framework on top of Docker for writing test suites for any networked system - be it blockchain, distributed datastore, or otherwise. It handles all the gruntwork of setup, test execution, and teardown so you don't have to.
 
 * [Architecture](#architecture)
 * [Tutorial](#tutorial)
@@ -9,8 +9,13 @@ Kurtosis is a framework for writing end-to-end test suites for distributed syste
     * [Abnormal Exit](#abnormal-exit)
     * [Container, Volume, &amp; Image Tidying](#container-volume--image-tidying)
 
-Architecture
-------------
+Getting Started
+---------------
+Kurtosis is a testing framework atop Docker, meaning you'll need to build a Docker image of the service(s) you want to test, and a Golang implementation of several Kurtosis interfaces to construct your test suite. If you've never used:
+* Go, we recommend the [official Golang installation & quickstart guide](https://golang.org/doc/install) along with [JetBrains' excellent GoLand IDE](https://www.jetbrains.com/go/)
+* Docker, we recommend [the official Docker "Get Started" guide](https://docs.docker.com/get-started/), coupled with [the docs explaining how to view container logs](https://docs.docker.com/config/containers/logging/) (which you'll be doing a lot)
+
+### Architecture
 The Kurtosis architecture has four components:
 
 1. The **test networks**, which are the networks (one network per test) of service containers that are spun up for tests to run against
@@ -30,16 +35,25 @@ The control flow goes:
     1. The controller returns the result to the initializer and exits
 1. The initializer waits for all tests to complete and returns the results
 
-Tutorial
---------
-See [the tutorial](./TUTORIAL.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+### Building An Implementation
+See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
+
+### Debugging Failed Tests
+See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
 
 Examples
 --------
 See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation.
 
-Notes
------
+Developer Notes
+---------------
+### Docker-in-Docker & MacOS Users
+**High-level:** If you're using MacOS, make sure that your Docker engine's `Resources > File Sharing` preferences are set to allow `/var/folders`
+**Details:** The Kurtosis controller is a Docker image that needs to access the Docker engine it's running in to create other Docker images. This is done via creating "sibling" containers, as detailed in the "Solution" section at the bottom of [this blog post](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/). However, this requires your Docker engine's communication socket to be bind-mounted inside the controller container. Kurtosis will do this for you, but you'll need to give Docker permission for the Docker socket (which lives at `/var/run/docker.sock`) to be bind-mounted inside the controller container.
+
+### Parallelism
+Kurtosis offers the ability to run tests in parallel to reduce total test suite runtime. You should never set parallelism higher than the number of cores on your machine or else you'll actually slow down your tests as your machine is doing unnecessary context-switching; depending on your test timeouts, this could cause spurious test failures.
+
 ### Abnormal Exit
 While running, Kurtosis will create the following, per test:
 * A new Docker network for the test

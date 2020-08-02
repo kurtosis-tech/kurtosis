@@ -1,4 +1,5 @@
 package initializer
+
 import (
 	"encoding/binary"
 	"fmt"
@@ -14,7 +15,6 @@ import (
 	"net"
 	"os"
 	"sort"
-	"time"
 )
 
 // =============================== "enum" for test result =========================================
@@ -26,21 +26,6 @@ const (
 )
 
 // =============================== Test Suite Runner =========================================
-type TestSuiteRunner struct {
-	testSuite               testsuite.TestSuite
-	testServiceImageName    string
-	testControllerImageName string
-	testControllerEnvVars   map[string]string
-
-	// The test controller image-specific string representing the log level, that will be passed as-is to the test controller
-	testControllerLogLevel	string
-
-	// The additional time, on top of the declared per-test timeout, that's given to tests for setup & teardown
-	additionalTestTimeoutBuffer time.Duration
-
-	networkWidthBits uint32
-}
-
 const (
 	// This is the IP address that the first Docker subnet will be doled out from, with subsequent Docker networks doled out with
 	//  increasing IPs corresponding to the NETWORK_WIDTH_BITS
@@ -49,39 +34,52 @@ const (
 	BITS_IN_IP4_ADDR = 32
 )
 
+/*
+An executor to run one or more tests from a given test suite
+ */
+type TestSuiteRunner struct {
+	// The test suite to run tests from
+	testSuite               testsuite.TestSuite
+
+	// The name of the Docker image that should be used to run the test controller container
+	testControllerImageName string
+
+	// Key-value mapping that will be passed as-is to the test controller container on startup in the form of Docker
+	// 	environment variables
+	customTestControllerEnvVars map[string]string
+
+	// A string, meaningful only to the test controller, that represents the log level that the controller container should
+	//	run with
+	testControllerLogLevel	string
+
+	// The number of bits in a test network's subnet mask, such that 2 ^ this_value will be the maximum number of allowed
+	//  services in any given test network
+	networkWidthBits uint32
+}
 
 /*
-Creates a new TestSuiteRunner with the following arguments
+Creates a new TestSuiteRunner with the given parameters.
 
 Args:
-	testSuite: The test suite containing all registered tests
-	testServiceImageName: The name of the Docker image being tested
-	testControllerImageName: The name of the Docker image of the test controller that will run the test
+	testSuite: The test suite containing all the user's registered tests
+	testControllerImageName: The name of the Docker image of the test controller that will orchestrate test execution
 	testControllerLogLevel: The string representing the loglevel of the controller (the test suite runner won't be able
 		to parse this, so this should be meaningful to the controller image)
-	additionalTestTimeoutBuffer: The time given to each test for setup & teardown *on top of* the already-declared test
-		test timeout
 	networkWidthBits: Each test will get a Docker network with a number of available IP addresses = 2^network_width_bits.
-		This parameter should be set so that all testb
+		This parameter should be set high enough so that each test can fit all the services they want.
  */
 func NewTestSuiteRunner(
 			testSuite testsuite.TestSuite,
-			testServiceImageName string,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			testControllerEnvVars map[string]string,
-			// TODO Move this extra setup/teardown timeout buffer to be something test-specific (since it will depend on
-			//  the network the test is spinning up)
-			additionalTestTimeoutBuffer time.Duration,
 			networkWidthBits uint32) *TestSuiteRunner {
 	return &TestSuiteRunner{
-		testSuite:               testSuite,
-		testServiceImageName:    testServiceImageName,
-		testControllerImageName: testControllerImageName,
-		testControllerLogLevel:  testControllerLogLevel,
-		testControllerEnvVars:   testControllerEnvVars,
-		additionalTestTimeoutBuffer: additionalTestTimeoutBuffer,
-		networkWidthBits: networkWidthBits,
+		testSuite:                   testSuite,
+		testControllerImageName:     testControllerImageName,
+		testControllerLogLevel:      testControllerLogLevel,
+		customTestControllerEnvVars: testControllerEnvVars,
+		networkWidthBits:            networkWidthBits,
 	}
 }
 
@@ -91,6 +89,11 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 Args:
 	testNamesToRun: A "set" of test names to run
 	testParallelism: How many tests to run in parallel
+
+Returns:
+	allTestsPassed: True if all tests passed, false otherwise
+	executionErr: An error that will be non-nil if an error occurred that prevented the test from running and/or the result
+		being retrieved. If this is non-nil, the allTestsPassed value is undefined!
  */
 func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParallelism uint) (allTestsPassed bool, executionErr error) {
 	allTests := runner.testSuite.GetTests()
@@ -130,10 +133,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		dockerClient,
 		runner.testControllerImageName,
 		runner.testControllerLogLevel,
-		runner.testServiceImageName,
-		runner.testControllerEnvVars,
-		testParallelism,
-		runner.additionalTestTimeoutBuffer)
+		runner.customTestControllerEnvVars,
+		testParallelism)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testsToRun), executionInstanceId.String())
 	interceptor := parallelism.NewErroneousSystemLogCaptureWriter()

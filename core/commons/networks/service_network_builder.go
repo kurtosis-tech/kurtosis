@@ -6,44 +6,53 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-type serviceConfig struct {
-	dockerImage string
-	availabilityCheckerCore services.ServiceAvailabilityCheckerCore
-	initializerCore services.ServiceInitializerCore
-}
+// Identifier used for service configurations
+type ConfigurationID int
 
+/*
+A builder for configuring & constructing a test ServiceNetwork.
+ */
 type ServiceNetworkBuilder struct {
-	testImage string
-
+	// The Docker manager that will be used for manipulating the Docker engine during the test
 	dockerManager *docker.DockerManager
 
-	dockerNetworkName string
+	// The ID of the Docker network that the test network runs in
+	dockerNetworkId string
 
+	// IP address tracker for doling out IPs to new services in the test network
 	freeIpTracker *FreeIpAddrTracker
 
-	// Factories that will be used to construct the nodes
-	configurations map[int]serviceConfig
+	// Mapping of configuration ID -> factories used to construct new nodes
+	configurations map[ConfigurationID]serviceConfig
 
-	// Name of volume that will be mounted on each new service
+	// Name of the Docker volume that will be mounted on each new service
 	testVolume string
 
-	// Location where the test volume is mounted on the controller
+	// Directory path where the test Docker volume is mounted on the controller
 	testVolumeControllerDirpath string
 }
 
-// The test image is the Docker image of the service being tested
+/*
+Creates a new builder for configuring a ServiceNetwork.
+
+Args:
+	dockerManager: Docker manager that will be used to manipulate the Docker engine when adding services
+	dockerNetworkName: Name of the Docker network that the test network is running in
+	freeIpTracker: IP tracker for doling out IPs to new services that will be added to the network
+	testVolume: Name of the Docker volume mounted on the controller, that will be mounted on every service
+	testVolumeControllerDirpath: The dirpath where the test volume is mounted on the controller (which is where this code
+		will be executing)
+ */
 func NewServiceNetworkBuilder(
-			testImage string,
 			dockerManager *docker.DockerManager,
-			dockerNetworkName string,
+			dockerNetworkId string,
 			freeIpTracker *FreeIpAddrTracker,
 			testVolume string,
 			testVolumeContrllerDirpath string) *ServiceNetworkBuilder {
-	configurations := make(map[int]serviceConfig)
+	configurations := make(map[ConfigurationID]serviceConfig)
 	return &ServiceNetworkBuilder{
-		testImage:                   testImage,
 		dockerManager:               dockerManager,
-		dockerNetworkName:           dockerNetworkName,
+		dockerNetworkId:             dockerNetworkId,
 		freeIpTracker:               freeIpTracker,
 		configurations:              configurations,
 		testVolume:                  testVolume,
@@ -51,11 +60,18 @@ func NewServiceNetworkBuilder(
 	}
 }
 
-// TODO Combine this method and AddTestImageConfiguration into one (the user should just pick which image they want to use)
-// Adds a service configuration to the network that will run a static Docker image
-// This configuration can be referenced later with AddService
-func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
-			configurationId int,
+/*
+Defines a new service configuration to the network that can later be used to launch Docker containers
+
+Args:
+	configurationId: The ID by which this configuration will be referenced later
+	dockerImage: The Docker image that containers launched with this configuration will run with
+	initializerCore: The user-defined logic for how to launch the Docker container
+	availabilityCheckerCore: The user-defined logic for how to report services launched with this configuration
+		as available
+ */
+func (builder *ServiceNetworkBuilder) AddConfiguration(
+			configurationId ConfigurationID,
 			dockerImage string,
 			initializerCore services.ServiceInitializerCore,
 			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
@@ -72,27 +88,20 @@ func (builder *ServiceNetworkBuilder) AddStaticImageConfiguration(
 	return nil
 }
 
-// Adds a service configuration to the network that will run the Docker image being tested
-// This configuration can be referenced later with AddService
-func (builder *ServiceNetworkBuilder) AddTestImageConfiguration(
-			configurationId int,
-			initializerCore services.ServiceInitializerCore,
-			availabilityCheckerCore services.ServiceAvailabilityCheckerCore) error {
-	return builder.AddStaticImageConfiguration(configurationId, builder.testImage, initializerCore, availabilityCheckerCore)
-}
-
+/*
+Constructs a ServiceNetwork with the configurations that were defined for this builder
+ */
 func (builder ServiceNetworkBuilder) Build() *ServiceNetwork {
 	// Defensive copy, so user calling functions on the builder after building won't affect the
 	// state of the object we already built
-	configurationsCopy := make(map[int]serviceConfig)
+	configurationsCopy := make(map[ConfigurationID]serviceConfig)
 	for configurationId, config := range builder.configurations {
 		configurationsCopy[configurationId] = config
 	}
 	return NewServiceNetwork(
 		builder.freeIpTracker,
 		builder.dockerManager,
-		builder.dockerNetworkName,
-		make(map[int]ServiceNode),
+		builder.dockerNetworkId,
 		configurationsCopy,
 		builder.testVolume,
 		builder.testVolumeControllerDirpath)

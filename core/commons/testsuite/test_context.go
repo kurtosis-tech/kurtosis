@@ -1,7 +1,8 @@
 package testsuite
 
-// An object that will be passed in to every test, which the user can use to manipulate the results of the test
-// NOTE: This object's methods rely on panicking on error because we want to completely abort whatever the test is doing
+/*
+An object that will be passed in to every test, which the user can use to manipulate the results of the test
+ */
 type TestContext struct {}
 
 /*
@@ -13,7 +14,7 @@ func (context TestContext) Fatal(err error) {
 }
 
 /*
-Asserts true, and if the condition isn't met then fails the test and returns the given error
+Asserts that the given condition is true, and if not then fails the test and returns the given error
  */
 func (context TestContext) AssertTrue(condition bool, err error) {
 	if (!condition) {

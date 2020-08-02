@@ -10,8 +10,8 @@ wrappers around it.
  */
 type NetworkLoader interface {
 	/*
-	Hook for the user to set the service configurations that they're going to use, both in `InitializeNetwork` and in
-	the test itself.
+	Hook for the user to set the service configurations that will be available for use in the network produced by this
+		class, both for `InitializeNetwork` and in the test itself.
 	 */
 	ConfigureNetwork(builder *ServiceNetworkBuilder) error
 
@@ -19,15 +19,18 @@ type NetworkLoader interface {
 	Hook for the user to initialize the network to whatever initial state they'd like to have when the test starts.
 
 	Args:
-		network: The network that the user should call AddService on
+		network: The network that the user should call AddService on to add nodes to the network.
 
 	Returns:
-		A map of serviceId -> availability checkers where the network is considered available when all checkers return
+		A map of serviceId -> availability checkers. The network will be considered available when all checkers return
+			successful.
 	 */
-	InitializeNetwork(network *ServiceNetwork) (map[int]services.ServiceAvailabilityChecker, error)
+	InitializeNetwork(network *ServiceNetwork) (map[ServiceID]services.ServiceAvailabilityChecker, error)
 
-	// TODO When Go has generics, make the input and output types parameterized
-	// Wraps the network with a user-custom object representing the network, so the user can expose
-	//  whatever methods they please so writing tests is as simple as possible
+	// GENERICS TOOD: When Go has generics, make the input and output types parameterized
+	/*
+	Gives the developer the opportunity to wrap the ServiceNetwork with a custom struct of their own creation, so that
+		the developer can add custom test-specific methods so that writing tests is as simple as possible.
+	 */
 	WrapNetwork(network *ServiceNetwork) (Network, error)
 }

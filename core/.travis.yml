@@ -7,4 +7,5 @@ services:
   - docker
 
 script:
+  - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
   - scripts/build.sh

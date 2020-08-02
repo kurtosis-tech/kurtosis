@@ -2,20 +2,20 @@ package services
 
 import (
 	"github.com/docker/go-connections/nat"
+	"net"
 	"os"
 )
 
-// TODO When Go has generics, parameterize this to be <N, S extends N> where S is the
+// GENERICS TOOD: When Go has generics, parameterize this to be <N, S extends N> where S is the
 //  specific service interface and N represents the interface that every node on the network has
-
 /*
-Tells Kurtosis how to create a Docker container representing a service in the test network.
+Tells Kurtosis how to create a Docker container representing a user-defined service in the test network.
  */
 type ServiceInitializerCore interface {
-	// Gets the "set" of ports that the Docker container will listen on
+	// Gets the "set" of ports that the Docker container running the service will listen on
 	GetUsedPorts() map[nat.Port]bool
 
-	// TODO When Go has generics, make this return type to be S
+	// GENERICS TOOD: When Go has generics, make this return type be parameterized
 	/*
 	Uses the IP address of the Docker container running the service to create an implementation of the interface the developer
 	has created to represent their service.
@@ -23,6 +23,9 @@ type ServiceInitializerCore interface {
 	NOTE: Because Go doesn't have generics, we can't properly parameterize the return type to be the actual service interface
 	that the developer has created; nonetheless, the developer should return an implementation of their interface (which itself
 	should extend Service).
+
+	Args:
+		ipAddr: The IP address of the Docker container running the service
 	*/
 	GetServiceFromIp(ipAddr string) Service
 
@@ -35,6 +38,10 @@ type ServiceInitializerCore interface {
 
 	NOTE: The keys that the developer returns here are ONLY used for developer identification purposes; the actual
 	filenames and filepaths of the file are implementation details handled by Kurtosis!
+
+	Returns:
+		A "set" of user-defined key strings identifying the files that the service will need, which is how files will be
+			identified in `InitializeMountedFiles` and `GetStartCommand`
 	*/
 	GetFilesToMount() map[string]bool
 
@@ -60,7 +67,7 @@ type ServiceInitializerCore interface {
 	 */
 	GetTestVolumeMountpoint() string
 
-	// TODO when Go gets generics, make the type of 'dependencies' to be []N
+	// GENERICS TOOD: when Go gets generics, make the type of 'dependencies' to be []N
 	// If Go had generics, dependencies should be of type []T
 	/*
 	Uses the given arguments to build the command that the Docker container running this service will be launched with.
@@ -71,8 +78,12 @@ type ServiceInitializerCore interface {
 			file has been mounted. The files will have already been initialized via the `InitializeMountedFiles` function.
 		publicIpAddr: The IP address of the Docker image running the service
 		dependencies: The services that this service depends on (for use in case the command line to the service changes based on dependencies)
+
+	Returns:
+		The command fragments which will be used to construct the run command which will be used to launch the Docker container
+			running the service
 	 */
-	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []Service) ([]string, error)
+	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr net.IP, dependencies []Service) ([]string, error)
 
 }
 

@@ -6,49 +6,72 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"net"
 	"os"
 	"path/filepath"
 )
 
-
-// This implicitly is a Docker container-backed service initializer, but we could abstract to other backends if we wanted later
+/*
+A struct that wraps a user-defined ServiceInitializerCore, which will instruct the initializer how to launch a new instance
+	of the user's service.
+ */
 type ServiceInitializer struct {
+	// The user-defined instructions for how to initialize their service
 	core ServiceInitializerCore
-	networkName string
+
+	// The ID of the Docker network that the new service should be added to
+	networkId string
+
+	// The path to the directory where the test volume is mounted on the CONTROLLER Docker image. We need to know this
+	// 	because this is where this initializer will create the files required by the service being initialized.
+	testVolumeControllerDirpath string
 }
 
-func NewServiceInitializer(core ServiceInitializerCore, networkName string) *ServiceInitializer {
+/*
+Creates a new service initializer that will initialize services using the user-defined core.
+
+Args:
+	core: The user-defined logic for instantiating their particular service
+	networkName: The name of the Docker network that the service will be added to
+	testVolumeControllerDirpath: The dirpath where the test Docker volume is mounted on the test controller Docker container
+ */
+func NewServiceInitializer(core ServiceInitializerCore, networkId string, testVolumeControllerDirpath string) *ServiceInitializer {
 	return &ServiceInitializer{
 		core: core,
-		networkName: networkName,
+		networkId: networkId,
+		testVolumeControllerDirpath: testVolumeControllerDirpath,
 	}
 }
 
 // If Go had generics, this would be genericized so that the arg type = return type
 /*
 Creates a service with the given parameters
+
 Args:
-	context: Context that the creation of the service is running in
-	testVolumeName: The name of the test volume to mount on the node
-	testVolumeControllerDirpath: The path to the directory where the test volume is mounted on the controller Docker image
+	context: Context that the creation of the service is running in (used for cancellation)
+	testVolumeName: The name of the test Docker volume that will be mounted on the Docker container running the service
 	dockerImage: The name of the Docker image that the new service will be started with
 	staticIp: The IP the new service will be given
 	manager: The DockerManager used to launch the container running the service
 	dependencies: The services that the service-to-be-started depends on
+
+Returns:
+	Service: The interface which should be used to access the newly-created service (which, because Go doesn't have generics,
+		will need to be casted to the appropriate type)
+	string: The ID of the Docker container the service is running in
  */
 func (initializer ServiceInitializer) CreateService(
 			context context.Context,
 			testVolumeName string,
-			testVolumeControllerDirpath string,
 			dockerImage string,
-			staticIp string,
+			staticIp net.IP,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
 	initializerCore := initializer.core
 	usedPorts := initializerCore.GetUsedPorts()
 
 	serviceDirname := fmt.Sprintf("service-%v", uuid.Generate().String())
-	controllerServiceDirpath := filepath.Join(testVolumeControllerDirpath, serviceDirname)
+	controllerServiceDirpath := filepath.Join(initializer.testVolumeControllerDirpath, serviceDirname)
 	err := os.Mkdir(controllerServiceDirpath, os.ModeDir)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred creating the new service's directory in the volume at filepath '%v'", controllerServiceDirpath)
@@ -79,10 +102,10 @@ func (initializer ServiceInitializer) CreateService(
 		testVolumeName: initializerCore.GetTestVolumeMountpoint(),
 	}
 
-	ipAddr, containerId, err := manager.CreateAndStartContainer(
+	containerId, err := manager.CreateAndStartContainer(
 			context,
 			dockerImage,
-			initializer.networkName,
+			initializer.networkId,
 			staticIp,
 			usedPorts,
 			startCmdArgs,
@@ -92,9 +115,13 @@ func (initializer ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return initializer.core.GetServiceFromIp(ipAddr), containerId, nil
+	return initializer.core.GetServiceFromIp(staticIp.String()), containerId, nil
 }
 
-func (initializer ServiceInitializer) LoadService(ipAddr string) Service {
-	return initializer.core.GetServiceFromIp(ipAddr)
+/*
+Calls down to the initializer core to get an instance of the user-defined interface that is used for interacting with
+	the user's service. The core will do the instantiation of the actual interface implementation.
+ */
+func (initializer ServiceInitializer) GetServiceFromIp(ipAddr net.IP) Service {
+	return initializer.core.GetServiceFromIp(ipAddr.String())
 }
