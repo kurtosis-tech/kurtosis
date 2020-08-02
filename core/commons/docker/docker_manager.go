@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"net"
 	"time"
 )
 
@@ -72,7 +73,7 @@ Args:
 Returns:
 	id: The Docker-managed ID of the network
  */
-func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP string) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP) (id string, err error)  {
 	found, err := manager.networkExists(name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -84,7 +85,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	}
 	ipamConfig := []network.IPAMConfig{{
 		Subnet: subnetMask,
-		Gateway: gatewayIP,
+		Gateway: gatewayIP.String(),
 	}}
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
 		Driver: DOCKER_NETWORK_DRIVER,
@@ -176,7 +177,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			networkId string,
-			staticIp string,
+			staticIp net.IP,
 			usedPorts map[nat.Port]bool,
 			startCmdArgs []string,
 			envVariables map[string]string,
@@ -306,13 +307,13 @@ func (manager DockerManager) networkExists(networkId string) (found bool, err er
 	return true, nil
 }
 
-func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr string) (err error) {
+func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr net.IP) (err error) {
 	err = manager.dockerClient.NetworkConnect(
 		context.Background(),
 		networkId,
 		containerId,
 		&network.EndpointSettings{
-			IPAddress: staticIpAddr,
+			IPAddress: staticIpAddr.String(),
 		})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)

@@ -7,20 +7,21 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/services"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"time"
 )
 
 /*
 The identifier used for services with the network.
  */
-type ServiceID int
+type ServiceID string
 
 /*
 A package object containing the details that the ServiceNetwork is tracking about a node.
  */
 type ServiceNode struct {
 	// The node's IP address within the test's Docker network
-	IpAddr string
+	IpAddr net.IP
 
 	// The user-defined interface for interacting with the node.
 	// NOTE: this will need to be casted to the appropriate interface becaus Go doesn't yet have generics!
@@ -133,7 +134,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 	}
 
 	if _, exists := network.serviceNodes[serviceId]; exists {
-		return nil, stacktrace.NewError("Service ID %d already exists in the network", serviceId)
+		return nil, stacktrace.NewError("Service ID %s already exists in the network", serviceId)
 	}
 
 	if dependencies == nil {
@@ -153,7 +154,7 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 
 	staticIp, err := network.freeIpTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %d", serviceId)
+		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %s", serviceId)
 	}
 
 	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId, network.testVolumeControllerDirpath)

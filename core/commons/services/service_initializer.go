@@ -6,6 +6,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/palantir/stacktrace"
+	"net"
 	"os"
 	"path/filepath"
 )
@@ -63,7 +64,7 @@ func (initializer ServiceInitializer) CreateService(
 			context context.Context,
 			testVolumeName string,
 			dockerImage string,
-			staticIp string,
+			staticIp net.IP,
 			manager *docker.DockerManager,
 			dependencies []Service) (Service, string, error) {
 	initializerCore := initializer.core
@@ -114,13 +115,13 @@ func (initializer ServiceInitializer) CreateService(
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "Could not start docker service for image %v", dockerImage)
 	}
-	return initializer.core.GetServiceFromIp(staticIp), containerId, nil
+	return initializer.core.GetServiceFromIp(staticIp.String()), containerId, nil
 }
 
 /*
 Calls down to the initializer core to get an instance of the user-defined interface that is used for interacting with
 	the user's service. The core will do the instantiation of the actual interface implementation.
  */
-func (initializer ServiceInitializer) GetServiceFromIp(ipAddr string) Service {
-	return initializer.core.GetServiceFromIp(ipAddr)
+func (initializer ServiceInitializer) GetServiceFromIp(ipAddr net.IP) Service {
+	return initializer.core.GetServiceFromIp(ipAddr.String())
 }

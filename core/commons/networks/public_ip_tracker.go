@@ -55,7 +55,7 @@ Returns:
 	An IP from the subnet the tracker was initialized with that won't collide with any previously-given IP. The
 		actual IP returned is undefined.
  */
-func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err error){
+func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
 	// convert IPNet struct mask and address to uint32
 	// network is BigEndian
 	mask := binary.BigEndian.Uint32(networkManager.subnet.Mask)
@@ -84,8 +84,8 @@ func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr string, err erro
 		ipStr := ip.String()
 		if !networkManager.takenIps[ipStr] {
 			networkManager.takenIps[ipStr] = true
-			return ipStr, nil
+			return ip, nil
 		}
 	}
-	return "", stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
+	return nil, stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
 }

@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/docker/go-connections/nat"
+	"net"
 	"os"
 )
 
@@ -82,7 +83,7 @@ type ServiceInitializerCore interface {
 		The command fragments which will be used to construct the run command which will be used to launch the Docker container
 			running the service
 	 */
-	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr string, dependencies []Service) ([]string, error)
+	GetStartCommand(mountedFileFilepaths map[string]string, publicIpAddr net.IP, dependencies []Service) ([]string, error)
 
 }
 
