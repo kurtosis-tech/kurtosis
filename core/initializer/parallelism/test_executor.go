@@ -19,17 +19,23 @@ import (
 )
 
 /*
-WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-No logging to the system-level logger is allowed in this file!!! Everything should use the specific
-logger passed in at construction time!!
-WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+No logging to the system-level logger is allowed in this file!!! Everything should use the specific logger passed
+	in at construction time, which allows us to capture per-test log messages so they don't all get jumbled together!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  */
 
 const (
 	containerSuccessExitCode = 0
 
+	// TODO Make this configurable based on the controller image the user defines!
 	controllerLogMountFilepath = "/test-controller.log"
 
+	// TODO Make this configurable based on the controller image the user defines!
 	testVolumeMountpoint = "/shared"
 
 	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
@@ -52,8 +58,10 @@ const (
 	networkTeardownContainerStopTimeout = 10 * time.Second
 )
 
-// Because a test is run in its own goroutine to allow us to time it out, we need to pass the results back
-//  via a channel. Tihs struct is what's passed over the chanel.
+/*
+Because a test is run in its own goroutine to allow us to time it out, we need to pass the results back
+	via a channel. This struct is what's passed over the channel.
+ */
 type testResult struct {
 	// Whether the test passed or not (undefined if an error occurred that prevented us from retrieving test results)
 	testPassed   bool
@@ -62,7 +70,9 @@ type testResult struct {
 	executionErr error
 }
 
-// Executor responsible for running a test, with timeout, cleaning up after the test as needed
+/*
+Executor responsible for running a test with timeout, cleaning up after the test as needed.
+ */
 type testExecutor struct {
 	// The logger to which all log statements must be sent
 	log *logrus.Logger
@@ -92,8 +102,24 @@ type testExecutor struct {
 	test testsuite.Test
 }
 
-// Technically all these params could be passed to the runTest method, but it's much easier to just create this once given
-//  TestExecutors don't get reused
+/*
+Creates a new test executor with the given params, ready to execute a single test. Technically all these params
+	could be passed to the runTest method, but it's much simpler to do these at a per-instance level since executors
+	don't get reused.
+
+Args:
+	log: he logger to which all logging events during test execution will be sent
+	executionInstanceId: The UUID representing an execution of the user's test suite, to which this test execution belongs
+	dockerClient: The Docker client to use to manipulate the Docker engine
+	subnetMask: The subnet mask of the Docker network that has been spun up for this test
+	testControllerImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
+	testControllerLogLevel: A string representing the log level that the test controller should set for itself; this string
+		should be meaningful to the user-defined controller code
+	customTestControllerEnvVars: A key-value mapping of custom Docker environment variables that will be passed to the
+		controller image (as a method for the user to pass their own custom params between initializer and controller)
+	testName: The name of the test the executor should execute
+	test: The logic of the test being executed
+ */
 func newTestExecutor(
 			log *logrus.Logger,
 			executionInstanceId uuid.UUID,
@@ -118,6 +144,9 @@ func newTestExecutor(
 }
 
 /*
+Runs the test that was configured at time of construction in a separate goroutine, and set a timeout that - if breached -
+	will trigger the hard teardown of the test network.
+
 Returns:
 	bool: A boolean indicating if the test passed (will be undefined if the test result couldn't be retrieved for any reason)
 	error: If not nil, represents the error hit while running the test that prevented the retrieval of the test result
@@ -171,7 +200,11 @@ func (executor testExecutor) runTest() (bool, error) {
 	}
 }
 
+
+// =========================== INSTANCE HELPER FUNCTIONS =========================================
 /*
+A helper function for running the actual test logic, intended to be run inside a goroutine.
+
 Returns:
 	error: If an error occurred that prevented us from running the test & retrieving the results (independent from whether the test itself passed)
 	bool: A boolean indicating whether the test passed (undefined if an error occurred running the test)
@@ -188,7 +221,7 @@ func (executor testExecutor) runTestGoroutine(context context.Context) (bool, er
 
 	executor.log.Infof("Creating Docker network for test with subnet mask %v...", executor.subnetMask)
 	networkName := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
-	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, executor.subnetMask, []string{})
+	publicIpProvider, err := networks.NewFreeIpAddrTracker(executor.log, executor.subnetMask, map[string]bool{})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Could not create the free IP address tracker")
 	}
@@ -284,7 +317,7 @@ func (executor testExecutor) runControllerContainer(
 		volumeName: testVolumeMountpoint,
 	}
 
-	_, controllerContainerId, err := manager.CreateAndStartContainer(
+	controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
 		executor.testControllerImageName,
 		networkId,

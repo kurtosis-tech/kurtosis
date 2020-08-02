@@ -11,38 +11,87 @@ import (
 	"time"
 )
 
+/*
+The identifier used for services with the network.
+ */
 type ServiceID string
 
+/*
+A package object containing the details that the ServiceNetwork is tracking about a node.
+ */
 type ServiceNode struct {
+	// The node's IP address within the test's Docker network
 	IpAddr net.IP
 
-	// If Go had generics, we'd make this object genericized and use that as the return type here
+	// The user-defined interface for interacting with the node.
+	// NOTE: this will need to be casted to the appropriate interface becaus Go doesn't yet have generics!
 	Service services.Service
 
+	// The Docker container ID of the container running the node
 	ContainerId string
 }
 
+/*
+A package object containing the details of a particular service configuration, to give Kurtosis the implementation-specific
+	details about how to interact with user-defined services.
+ */
+type serviceConfig struct {
+	// The Docker image that will be used to launch nodes
+	dockerImage string
+
+	// The implementation that will be used for launching a Docker image of a node using this configuration
+	initializerCore services.ServiceInitializerCore
+
+	// The implementation that will be used for determining whether a node launched using this configuration is available
+	availabilityCheckerCore services.ServiceAvailabilityCheckerCore
+}
+
+
+/*
+A struct representing a network of services that will be used for a single test (commonly called the "test network"). This
+	struct is the low-level access point for modifying the test network.
+ */
 type ServiceNetwork struct {
+	// The tracker used for doling out new IPs within the subnet being used for this particular test network
 	freeIpTracker *FreeIpAddrTracker
 
+	// The Docker manager used for interacting with the Docker engine during test network manipulation
 	dockerManager *docker.DockerManager
 
+	// The ID of the Docker network that this test network is running on
 	dockerNetworkId string
 
+	// A mapping of service ID -> information about a node
 	serviceNodes map[ServiceID]ServiceNode
 
+	// A mapping of configuration ID -> configuration details
 	configurations map[ConfigurationID]serviceConfig
 
+	// The name of the Docker volume that will be mounted on:
+	// 	a) every single Docker image launched on this network
+	//  b) the test controller running logic against this test network
 	testVolume string
 
+	// The dirpath where the test volume is mounted on the controller (which is where this code will be running in)
 	testVolumeControllerDirpath string
 }
 
+/*
+Creates a new ServiceNetwork object with the given parameters.
+
+Args:
+	freeIpTracker: The IP tracker that will be used to provide IPs for new nodes added to the network.
+	dockerManager: The Docker manager that will be used for manipulating the Docker engine during test network modification.
+	dockerNetworkName: The name of the Docker network this test network is running on.
+	configurations: The configurations that are available for spinning up new nodes in the network.
+	testVolume: The name of the Docker volume that will be mounted on all the nodes in the network.
+	testVolumeControllerDirpath: The dirpath that the test Docker volume is mounted on in the controller image (which will
+		be running all the code here).
+ */
 func NewServiceNetwork(
 			freeIpTracker *FreeIpAddrTracker,
 			dockerManager *docker.DockerManager,
 			dockerNetworkId string,
-			serviceNodes map[ServiceID]ServiceNode,
 			configurations map[ConfigurationID]serviceConfig,
 			testVolume string,
 			testVolumeControllerDirpath string) *ServiceNetwork {
@@ -50,28 +99,30 @@ func NewServiceNetwork(
 		freeIpTracker:               freeIpTracker,
 		dockerManager:               dockerManager,
 		dockerNetworkId:             dockerNetworkId,
-		serviceNodes:                serviceNodes,
+		serviceNodes:                make(map[ServiceID]ServiceNode),
 		configurations:              configurations,
 		testVolume:                  testVolume,
 		testVolumeControllerDirpath: testVolumeControllerDirpath,
 	}
 }
 
-
+// Gets the number of nodes in the network
 func (network *ServiceNetwork) GetSize() int {
 	return len(network.serviceNodes)
 }
 
 /*
-Adds a service to the graph that depends on the services with the given IDs
+Adds a service to the network with the given service ID, created using the given configuration ID.
+
 Args:
-	configurationId: The ID of the service configuration to use for creating the service
-	serviceId: The ID to give the node in the network
-	dependencies: A "set" of service IDs that the node-to-create depends on - i.e., whose information the node-to-create
+	configurationId: The ID of the service configuration to use for creating the service.
+	serviceId: The service ID that will be used to identify this node in the network.
+	dependencies: A "set" of service IDs that the node being created will depend on - i.e., whose information the node-to-create
 		needs to start up. If the node-to-create doesn't depend on any other services, the dependencies map should be
 		empty (not nil).
+
 Return:
-	An AvailabilityChecker for checking when the service is actually available
+	An AvailabilityChecker for checking when the new service is available and ready for use.
  */
 func (network *ServiceNetwork) AddService(configurationId ConfigurationID, serviceId ServiceID, dependencies map[ServiceID]bool) (*services.ServiceAvailabilityChecker, error) {
 	// Maybe one day we'll make this flow from somewhere up above (e.g. make the entire network live inside a single context)
@@ -106,11 +157,10 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 		return nil, stacktrace.Propagate(err, "Failed to allocate static IP for service %s", serviceId)
 	}
 
-	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId)
+	initializer := services.NewServiceInitializer(config.initializerCore, network.dockerNetworkId, network.testVolumeControllerDirpath)
 	service, containerId, err := initializer.CreateService(
 			parentCtx,
 			network.testVolume,
-			network.testVolumeControllerDirpath,
 			config.dockerImage,
 			staticIp,
 			network.dockerManager,
@@ -129,6 +179,9 @@ func (network *ServiceNetwork) AddService(configurationId ConfigurationID, servi
 	return availabilityChecker, nil
 }
 
+/*
+Gets the node information for the service with the given service ID.
+ */
 func (network *ServiceNetwork) GetService(serviceId ServiceID) (ServiceNode, error) {
 	node, found := network.serviceNodes[serviceId]
 	if !found {
@@ -139,7 +192,7 @@ func (network *ServiceNetwork) GetService(serviceId ServiceID) (ServiceNode, err
 }
 
 /*
-Stops the container with the given service ID, and stops tracking it in the network
+Stops the container with the given service ID, and removes it from the network.
  */
 func (network *ServiceNetwork) RemoveService(serviceId ServiceID, containerStopTimeout time.Duration) error {
 	// Maybe one day we'll store this on the ServiceNetwork itself, to represent the test context that the ServiceNetwork
@@ -168,7 +221,9 @@ func (network *ServiceNetwork) RemoveService(serviceId ServiceID, containerStopT
 }
 
 /*
-Makes a best-effort attempt to remove all the containers in the network, waiting for the given timeout.
+Makes a best-effort attempt to remove all the containers in the network, waiting for the given timeout and returning
+	an error if the timeout is reached.
+
 Args:
 	containerStopTimeout: How long to wait for each container to stop before force-killing it
 */

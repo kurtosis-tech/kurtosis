@@ -16,26 +16,53 @@ const (
 	CONTAINER_STOP_TIMEOUT = 30 * time.Second
 )
 
+/*
+The user is responsible for providing a Docker image that runs a CLI which in turn does test setup and execution. The user
+	will need to define their own CLI class because they might need custom parameters, but this struct will do all the
+	heavy lifting of test setup and execution.
+ */
 type TestController struct {
-	testVolumeName     string
+	// The name of the test Docker volume that will have already been mounted on the controller image by the Kurtosis initializer
+	testVolumeName string
+
+	// The location on the controller image where the test volume will have been mounted by the Kurtosis initializer
 	testVolumeFilepath string
-	networkId          string
-	subnetMask         string
-	gatewayIp          string
-	testControllerIp   string
-	testSuite          testsuite.TestSuite
-	testName           string
+
+	// The ID of the Docker network that the controller container is running inside
+	networkId string
+
+	// The subnet mask of the Docker network that the controller container is running inside
+	subnetMask string
+
+	// The gateway IP of the Docker network that the controller container is running inside
+	gatewayIp string
+
+	// The IP address of the Docker container running the controller code itself (this code)
+	testControllerIp string
+
+	// The user-defined test suite containing all the user's tests
+	testSuite testsuite.TestSuite
+
+	// The name of the specific test this controller is responsible for running (since there's a 1:1 mapping between controller
+	// 	and test to execute
+	testName string
 }
 
 /*
-Creates a new TestController with the given properties
+Creates a new TestController with the given properties. All of these parameters should be passed from the Kurtosis initializer
+	to the user's CLI in the form of Docker environment variables.
+
 Args:
-	testVolumeName: The name of the volume where test data should be stored, which will have been mountd on the controller by the initializer and should be mounted on service nodes
-	testVolumeFilepath: The filepath where the test volume will have been mounted on the controller by the initializer
-	networkId: The name of the Docker network that the test controller is running in and which all services should be started in
-	subnetMask: Mask of the network that the TestController is living in, and from which it should dole out IPs to the testnet containers
-	gatewayIp: The IP of the gateway that's running the Docker network that the TestController and the containers run in
-	testControllerIp: The IP address of the controller itself
+	testVolumeName: The name of the Docker volume where test data should be stored, which will have been mounted on
+		the controller by the initializer and should be mounted on service nodes
+	testVolumeFilepath: The filepath where the test volume will have been mounted on the controller container by the initializer
+	networkId: The ID of the Docker network that the controller container is running in and which all
+		services should be started in
+	subnetMask: Mask of the network that the controller container is running in, and from which it should dole out
+		IPs to the testnet containers
+	gatewayIp: The IP of the gateway that's running the Docker network that the controller container is running in, and
+		which test network services will be started in
+	testControllerIp: The IP address of the controller container itself
 	testSuite: A pre-defined set of tests that the user will choose to run a single test from
 	testName: The name of the test to run in the test suite
  */
@@ -61,7 +88,7 @@ func NewTestController(
 }
 
 /*
-Runs the test that the controller is configured to run.
+Runs the single test from the test suite that the controller is configured to run.
 
 Returns:
 	setupErr: Indicates an error setting up the test that prevented the test from running
@@ -93,7 +120,10 @@ func (controller TestController) RunTest() (setupErr error, testErr error) {
 	logrus.Info("Connected to Docker environment")
 
 	logrus.Infof("Configuring test network in Docker network %v...", controller.networkId)
-	alreadyTakenIps := []string{controller.gatewayIp, controller.testControllerIp}
+	alreadyTakenIps := map[string]bool{
+		controller.gatewayIp: true,
+		controller.testControllerIp: true,
+	}
 	freeIpTracker, err := networks.NewFreeIpAddrTracker(logrus.StandardLogger(), controller.subnetMask, alreadyTakenIps)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker"), nil

@@ -4,6 +4,9 @@ import (
 	"runtime"
 )
 
+/*
+Package struct encapsulating information about where an erroneous system logger event came from
+ */
 type ErroneousSystemLogInfo struct {
 	Message    []byte
 	Stacktrace []byte
@@ -25,6 +28,9 @@ type ErroneousSystemLogCaptureWriter struct {
 	logMessages []ErroneousSystemLogInfo
 }
 
+/*
+Creates a new writer for capturing erroneous system log events
+ */
 func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 	return &ErroneousSystemLogCaptureWriter{
 		logMessages: []ErroneousSystemLogInfo{},
@@ -32,8 +38,10 @@ func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
 }
 
 /*
-This write function will capture a) the message that was intended for logging and b) the stacktrace at time of logging
- to make it easy for a developer to see where they're accidentally using the system-level log.
+This write function (which comes from the Writer interface) will capture:
+		a) the message that was intended for logging and
+		b) the stacktrace at time of logging
+	to make it easy for a developer to see where they're accidentally using the system-level log.
  */
 func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
 	dataCopy := make([]byte, len(data))
@@ -47,12 +55,19 @@ func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err er
 	return len(data), nil
 }
 
+/*
+Retrieves the errenous system-level logger messages that were captured
+ */
 func (writer *ErroneousSystemLogCaptureWriter) GetCapturedMessages() []ErroneousSystemLogInfo {
 	return writer.logMessages
 }
 
+/*
+This code is almost an exact copy-paste from the stdlib's debug.PrintStack, because we need to have
+	a buffer big enough to capture the stack trace... but we don't know in advance how big the stack trace
+	will be.
+ */
 func getStacktraceBytes() []byte {
-	// This code is almost exactly from debug.PrintStack
 	buf := make([]byte, 1024)
 	for {
 		n := runtime.Stack(buf, false)

@@ -11,6 +11,7 @@
 * Switching FreeIpAddrTracker to pass net.IP objects instead of strings
 * Renaming many parameters and variables to represent network IDs instead of names
 * Change networks.ServiceID to strings instead of int
+* Documenting every single public function & struct for future developers
 
 # 0.7.0
 * Allow developers to configure how wide their test networks will be
