@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.0
 * Simplify service config definition to a single method
 * Add a CI check to make sure changelog is updated each commit
 * Use custom types for service and configuration IDs, so that the user doesn't have a ton of `int`s flying around
