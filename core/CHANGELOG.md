@@ -1,4 +1,5 @@
 # TBD
+* Gracefully clean up tests when SIGINT, SIGQUIT, or SIGTERM are received
 
 # 0.8.0
 * Simplify service config definition to a single method
