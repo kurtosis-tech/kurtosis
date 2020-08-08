@@ -84,8 +84,7 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	// Asynchronously handle non-kill by cancelling context.
 	go func() {
 		sig := <-sigs
-		fmt.Printf("Received signal %v, cleaning up...", sig)
-		logrus.Infof("Received signal %v, cleaning up threads.", sig)
+		fmt.Printf("\nReceived signal %v, cleaning up and exiting gracefully...", sig)
 		cancelFunc()
 	}()
 
