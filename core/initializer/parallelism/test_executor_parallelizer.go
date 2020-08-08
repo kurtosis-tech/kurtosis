@@ -78,10 +78,10 @@ Returns:
 func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, allTestParams map[string]ParallelTestParams) map[string]ParallelTestOutput {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
-	// Set up listener for ctrl-C so we handle it gracefully
+	// Set up listener for exit signals so we handle it nicely
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	// Asynchronously handle non-kill by cancelling context.
+	// Asynchronously handle graceful exit signals by cancelling context.
 	go func() {
 		sig := <-sigs
 		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...", sig)
