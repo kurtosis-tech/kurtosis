@@ -1,10 +1,14 @@
 package parallelism
 
 import (
+	"context"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 /*
@@ -71,6 +75,18 @@ Returns:
 	A mapping of test_name -> test output info
  */
 func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSystemLogCaptureWriter, allTestParams map[string]ParallelTestParams) map[string]ParallelTestOutput {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	// Set up listener for ctrl-C so we handle it gracefully
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	// Asynchronously handle SIGINT and SIGTERM by cancelling context.
+	go func() {
+		sig := <-sigs
+		logrus.Infof("Received signal %v, cleaning up threads.", sig)
+		cancelFunc()
+	}()
+
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
 	testOutputChan := make(chan ParallelTestOutput, len(allTestParams))
@@ -83,7 +99,7 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	logrus.Info("All test params loaded into work queue")
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
-	executor.disableSystemLogAndRunTestThreads(interceptor, testParamsChan, testOutputChan)
+	executor.disableSystemLogAndRunTestThreads(&ctx, interceptor, testParamsChan, testOutputChan)
 	logrus.Info("All tests exited")
 
 	// Collect all results
@@ -95,7 +111,10 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	return result
 }
 
-func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(interceptor *ErroneousSystemLogCaptureWriter, testParamsChan chan ParallelTestParams, testOutputChan chan ParallelTestOutput) {
+func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads( parentContext *context.Context,
+																			interceptor *ErroneousSystemLogCaptureWriter,
+																			testParamsChan chan ParallelTestParams,
+																			testOutputChan chan ParallelTestOutput) {
 	/*
     Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
@@ -109,7 +128,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(inter
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {
 		waitGroup.Add(1)
-		go executor.runTestWorkerGoroutine(&waitGroup, testParamsChan, testOutputChan)
+		go executor.runTestWorkerGoroutine(parentContext, &waitGroup, testParamsChan, testOutputChan)
 	}
 	waitGroup.Wait()
 }
@@ -119,6 +138,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
+			parentContext *context.Context,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
 			testOutputChan chan ParallelTestOutput) {
@@ -142,7 +162,7 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			testParams.TestName,
 			testParams.Test)
 
-		passed, executionErr := testExecutor.runTest()
+		passed, executionErr := testExecutor.runTest(parentContext)
 
 		testOutput := ParallelTestOutput{
 			TestName:     testParams.TestName,

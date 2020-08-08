@@ -151,13 +151,13 @@ Returns:
 	bool: A boolean indicating if the test passed (will be undefined if the test result couldn't be retrieved for any reason)
 	error: If not nil, represents the error hit while running the test that prevented the retrieval of the test result
  */
-func (executor testExecutor) runTest() (bool, error) {
+func (executor testExecutor) runTest(ctx *context.Context) (bool, error) {
 	testResultChan := make(chan testResult)
 
 	// When this is breached, we'll try to tear down everything
 	totalTimeout := executor.test.GetExecutionTimeout() + executor.test.GetSetupBuffer()
 
-	context, cancelFunc := context.WithCancel(context.Background())
+	context, cancelFunc := context.WithCancel(*ctx)
 	defer cancelFunc()
 
 	// We run the test in a separate goroutine because we don't know if the test will even respect the context we pass in -
