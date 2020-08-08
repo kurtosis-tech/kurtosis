@@ -2,6 +2,7 @@ package parallelism
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
@@ -79,10 +80,11 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	defer cancelFunc()
 	// Set up listener for ctrl-C so we handle it gracefully
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	// Asynchronously handle SIGINT and SIGTERM by cancelling context.
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGSTOP)
+	// Asynchronously handle non-kill by cancelling context.
 	go func() {
 		sig := <-sigs
+		fmt.Printf("Received signal %v, cleaning up...", sig)
 		logrus.Infof("Received signal %v, cleaning up threads.", sig)
 		cancelFunc()
 	}()
