@@ -80,11 +80,11 @@ func (executor TestExecutorParallelizer) RunInParallel(interceptor *ErroneousSys
 	defer cancelFunc()
 	// Set up listener for ctrl-C so we handle it gracefully
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGSTOP)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Asynchronously handle non-kill by cancelling context.
 	go func() {
 		sig := <-sigs
-		fmt.Printf("\nReceived signal %v, cleaning up and exiting gracefully...", sig)
+		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...", sig)
 		cancelFunc()
 	}()
 
