@@ -5,14 +5,19 @@ import (
 	"testing"
 )
 
+const (
+	testConfigurationId0 = "test-configuration-0"
+	testConfigurationId1 = "test-configuration-1"
+)
+
 func TestDisallowingSameIds(t *testing.T) {
 	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
-	err := builder.AddConfiguration(0, "test", getTestInitializerCore(), getTestCheckerCore())
+	err := builder.AddConfiguration(testConfigurationId0, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail here")
 	}
 
-	err = builder.AddConfiguration(0, "test", getTestInitializerCore(), getTestCheckerCore())
+	err = builder.AddConfiguration(testConfigurationId0, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err == nil {
 		t.Fatal("Expected an error here!")
 	}
@@ -20,7 +25,7 @@ func TestDisallowingSameIds(t *testing.T) {
 
 func TestDefensiveCopies(t *testing.T) {
 	builder := NewServiceNetworkBuilder(nil, "test-network", nil, "test", "/foo/bar")
-	err := builder.AddConfiguration(0, "test", getTestInitializerCore(), getTestCheckerCore())
+	err := builder.AddConfiguration(testConfigurationId0, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail here")
 	}
@@ -28,7 +33,7 @@ func TestDefensiveCopies(t *testing.T) {
 
 	assert.Equal(t, 1, len(network.configurations))
 
-	err = builder.AddConfiguration(1, "test", getTestInitializerCore(), getTestCheckerCore())
+	err = builder.AddConfiguration(testConfigurationId1, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {
 		t.Fatal("Adding a configuration shouldn't fail here")
 	}
