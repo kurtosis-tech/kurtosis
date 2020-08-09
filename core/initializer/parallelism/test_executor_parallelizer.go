@@ -92,7 +92,7 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 		sig, ok := <-sigs
 		// signal channel was closed with no syscall signal
 		if !ok { return }
-		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...", sig)
+		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...\n", sig)
 		cancelFunc()
 	}()
 	// These need to be buffered else sending to the channel will be blocking
