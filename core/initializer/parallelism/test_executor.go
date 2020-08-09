@@ -108,7 +108,7 @@ Creates a new test executor with the given params, ready to execute a single tes
 	don't get reused.
 
 Args:
-	log: he logger to which all logging events during test execution will be sent
+	log: the logger to which all logging events during test execution will be sent
 	executionInstanceId: The UUID representing an execution of the user's test suite, to which this test execution belongs
 	dockerClient: The Docker client to use to manipulate the Docker engine
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
@@ -147,17 +147,20 @@ func newTestExecutor(
 Runs the test that was configured at time of construction in a separate goroutine, and set a timeout that - if breached -
 	will trigger the hard teardown of the test network.
 
+Args:
+	ctx: the context of the calling function, used to handle graceful shutdowns
+
 Returns:
 	bool: A boolean indicating if the test passed (will be undefined if the test result couldn't be retrieved for any reason)
 	error: If not nil, represents the error hit while running the test that prevented the retrieval of the test result
  */
-func (executor testExecutor) runTest() (bool, error) {
+func (executor testExecutor) runTest(ctx *context.Context) (bool, error) {
 	testResultChan := make(chan testResult)
 
 	// When this is breached, we'll try to tear down everything
 	totalTimeout := executor.test.GetExecutionTimeout() + executor.test.GetSetupBuffer()
 
-	context, cancelFunc := context.WithCancel(context.Background())
+	context, cancelFunc := context.WithCancel(*ctx)
 	defer cancelFunc()
 
 	// We run the test in a separate goroutine because we don't know if the test will even respect the context we pass in -
@@ -204,6 +207,9 @@ func (executor testExecutor) runTest() (bool, error) {
 // =========================== INSTANCE HELPER FUNCTIONS =========================================
 /*
 A helper function for running the actual test logic, intended to be run inside a goroutine.
+
+Args:
+	ctx: the context of the calling function, used to handle graceful shutdowns
 
 Returns:
 	error: If an error occurred that prevented us from running the test & retrieving the results (independent from whether the test itself passed)

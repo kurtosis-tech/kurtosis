@@ -1,6 +1,7 @@
 # TBD
 * Change ConfigurationID to be a string
 * Print test output as the tests finish, rather than waiting for all tests to finish to do so
+* Gracefully clean up tests when SIGINT, SIGQUIT, or SIGTERM are received
 
 # 0.8.0
 * Simplify service config definition to a single method
