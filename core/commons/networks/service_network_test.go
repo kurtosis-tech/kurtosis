@@ -12,6 +12,7 @@ import (
 const (
 	testServiceName = "test-service"
 	testNetworkName = "test-network"
+	testConfiguration = "test-configuration"
 )
 
 type TestService struct {}
@@ -64,14 +65,14 @@ func getTestCheckerCore() services.ServiceAvailabilityCheckerCore {
 func TestDisallowingNonexistentConfigs(t *testing.T) {
 	builder := NewServiceNetworkBuilder(nil, testNetworkName, nil, "test", "/foo/bar")
 	network := builder.Build()
-	_, err := network.AddService(0, testServiceName, make(map[ServiceID]bool))
+	_, err := network.AddService(testConfiguration, testServiceName, make(map[ServiceID]bool))
 	if err == nil {
 		t.Fatal("Expected error when declaring a service with a configuration that doesn't exist")
 	}
 }
 
 func TestDisallowingNonexistentDependencies(t *testing.T) {
-	var configId ConfigurationID = 0
+	var configId ConfigurationID = testConfiguration
 	builder := NewServiceNetworkBuilder(nil, testNetworkName, nil, "test", "/foo/bar")
 	err := builder.AddConfiguration(configId, "test", getTestInitializerCore(), getTestCheckerCore())
 	if err != nil {

@@ -1,4 +1,5 @@
 # TBD
+* Change ConfigurationID to be a string
 
 # 0.8.0
 * Simplify service config definition to a single method

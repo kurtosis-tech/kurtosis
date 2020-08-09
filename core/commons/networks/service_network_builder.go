@@ -7,7 +7,7 @@ import (
 )
 
 // Identifier used for service configurations
-type ConfigurationID int
+type ConfigurationID string
 
 /*
 A builder for configuring & constructing a test ServiceNetwork.
