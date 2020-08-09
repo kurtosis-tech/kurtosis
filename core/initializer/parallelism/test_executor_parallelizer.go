@@ -85,10 +85,13 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
 	sigs := make(chan os.Signal, 1)
+	defer close(sigs)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Asynchronously handle graceful exit signals by cancelling context.
 	go func() {
-		sig := <-sigs
+		sig, ok := <-sigs
+		// signal channel was closed with no syscall signal
+		if !ok { return }
 		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...", sig)
 		cancelFunc()
 	}()
