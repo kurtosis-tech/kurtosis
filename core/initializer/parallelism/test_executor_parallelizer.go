@@ -87,7 +87,7 @@ func (executor TestExecutorParallelizer) RunInParallel(allTestParams map[string]
 	close(testParamsChan) // We close the channel so that when all params are consumed, the worker threads won't block on waiting for more params
 	logrus.Info("All test params loaded into work queue")
 
-	outputManager := newParallelTestExecutionOutputManager()
+	outputManager := newParallelTestOutputManager()
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
 	executor.disableSystemLogAndRunTestThreads(outputManager, testParamsChan)
@@ -98,7 +98,7 @@ func (executor TestExecutorParallelizer) RunInParallel(allTestParams map[string]
 }
 
 func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
-		outputManager *ParallelTestExecutionOutputManager,
+		outputManager *ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams) {
 	/*
     Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
@@ -122,7 +122,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
-			outputManager *ParallelTestExecutionOutputManager,
+			outputManager *ParallelTestOutputManager,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams) {
 	// IMPORTANT: make sure that we mark a thread as done!

@@ -8,7 +8,6 @@ import (
 	"sync"
 )
 
-
 // =============================== "enum" for test result =========================================
 type testStatus string
 const (
@@ -46,7 +45,7 @@ A SINGLE-USE struct for managing the output of tests during parallel execution, 
 
 NOTE: ONLY the logTestOutput method is thread-safe!!
  */
-type ParallelTestExecutionOutputManager struct {
+type ParallelTestOutputManager struct {
 	// Capture writer that will store any erroneous system logs during (all test logs should be printed through the
 	//  test-specific logger)
 	interceptor             *erroneousSystemLogCaptureWriter
@@ -69,9 +68,11 @@ type ParallelTestExecutionOutputManager struct {
 	testOutputs  		   map[string]parallelTestOutput
 }
 
-// TODO DOCS
-func newParallelTestExecutionOutputManager() *ParallelTestExecutionOutputManager {
-	return &ParallelTestExecutionOutputManager{
+/*
+Creates a new output manager to handle the display of parallel test results.
+ */
+func newParallelTestOutputManager() *ParallelTestOutputManager {
+	return &ParallelTestOutputManager{
 		interceptor:             newErroneousSystemLogCaptureWriter(),
 		writerBeforeManagement:  nil,
 		isInterceptingStdLogger: false,
@@ -85,7 +86,7 @@ func newParallelTestExecutionOutputManager() *ParallelTestExecutionOutputManager
 Thread-safe method to log test output, to provide parallel tests a way to print their log messages in real time as
 	they finish.
  */
-func (manager *ParallelTestExecutionOutputManager) logTestOutput(
+func (manager *ParallelTestOutputManager) logTestOutput(
 			testName string,
 			executionErr error,
 			testPassed bool,
@@ -136,7 +137,7 @@ func (manager *ParallelTestExecutionOutputManager) logTestOutput(
 Starts intercepting any system-level logging, capturing it in the interceptor provided at construction time rather than
 	displaying it in the moment.
  */
-func (manager *ParallelTestExecutionOutputManager) startInterceptingStdLogger() {
+func (manager *ParallelTestOutputManager) startInterceptingStdLogger() {
 	manager.loggingMutex.Lock()
 	defer manager.loggingMutex.Unlock()
 
@@ -161,7 +162,7 @@ func (manager *ParallelTestExecutionOutputManager) startInterceptingStdLogger() 
 /*
 Stops intercepting system-level logging
  */
-func (manager *ParallelTestExecutionOutputManager) stopInterceptingStdLogger() {
+func (manager *ParallelTestOutputManager) stopInterceptingStdLogger() {
 	manager.loggingMutex.Lock()
 	manager.loggingMutex.Unlock()
 
@@ -178,7 +179,7 @@ Prints a summary of:
 1) the status of all the tests that have been logged to the logger so far
 2) any erroneous log messages that were captured while the standard logger was being intercepted
  */
-func (manager *ParallelTestExecutionOutputManager) printSummary() {
+func (manager *ParallelTestOutputManager) printSummary() {
 	manager.loggingMutex.Lock()
 	manager.loggingMutex.Unlock()
 
@@ -217,7 +218,7 @@ func (manager *ParallelTestExecutionOutputManager) printSummary() {
 /*
 Returns true if all tests captured so far have passed, false otherwise
  */
-func (manager *ParallelTestExecutionOutputManager) getAllTestsPassed() bool {
+func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
 	manager.loggingMutex.Lock()
 	defer manager.loggingMutex.Unlock()
 
