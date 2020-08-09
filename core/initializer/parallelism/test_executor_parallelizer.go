@@ -71,8 +71,6 @@ Runs the given tests in parallel, printing:
 2) a summary of all tests once all tests have finished
 
 Args:
-	interceptor: A capturer for logs that are erroneously written to the system-level log during parallel test execution (since all
-		logs should be written to the test-specific logs during parallel test execution to avoid test logs getting jumbled)
 	allTestParams: A mapping of test_name -> parameters for running the test
 
 Returns:
@@ -110,8 +108,6 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
 	*/
 	outputManager.startInterceptingStdLogger()
 	defer outputManager.stopInterceptingStdLogger()
-
-	logrus.Info("THIS SHOULD TRIGGER ERRONEOUS LOGGER")
 
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {

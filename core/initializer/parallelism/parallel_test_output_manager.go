@@ -54,9 +54,9 @@ type ParallelTestOutputManager struct {
 	// Whether log messages written to logrus standard out are being intercepted or not
 	isInterceptingStdLogger bool
 
-	// Mutex gating access to the logger, to ensure that tests trying to log at the same time don't get their messages
-	//  jumbled
-	loggingMutex           *sync.Mutex
+	// Mutex gating access to the internal state and the logger, to ensure that tests trying to log at the same time
+	//  don't get their messages jumbled
+	mutex *sync.Mutex
 
 	// During management, the the system-level logs - e.g. logrus.Info, logrus.Debug, etc. - will get disabled. However,
 	//  we need to log test output in realtime so we still need to log to the same output source. Thus, we
@@ -76,7 +76,7 @@ func newParallelTestOutputManager() *ParallelTestOutputManager {
 		interceptor:             newErroneousSystemLogCaptureWriter(),
 		writerBeforeManagement:  nil,
 		isInterceptingStdLogger: false,
-		loggingMutex:            &sync.Mutex{},
+		mutex:                   &sync.Mutex{},
 		sideChannelLogger:       nil,
 		testOutputs:             make(map[string]parallelTestOutput),
 	}
@@ -91,8 +91,8 @@ func (manager *ParallelTestOutputManager) logTestOutput(
 			executionErr error,
 			testPassed bool,
 			testLogs io.Reader) {
-	manager.loggingMutex.Lock()
-	defer manager.loggingMutex.Unlock()
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	if _, found := manager.testOutputs[testName]; found {
 		// We hijack whatever the actual test output was to ensure that the user gets notification of the test failing
@@ -134,12 +134,11 @@ func (manager *ParallelTestOutputManager) logTestOutput(
 }
 
 /*
-Starts intercepting any system-level logging, capturing it in the interceptor provided at construction time rather than
-	displaying it in the moment.
+Starts intercepting any system-level logging for later display, rather than sending straight to STDOUT
  */
 func (manager *ParallelTestOutputManager) startInterceptingStdLogger() {
-	manager.loggingMutex.Lock()
-	defer manager.loggingMutex.Unlock()
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	if manager.isInterceptingStdLogger {
 		return
@@ -163,8 +162,8 @@ func (manager *ParallelTestOutputManager) startInterceptingStdLogger() {
 Stops intercepting system-level logging
  */
 func (manager *ParallelTestOutputManager) stopInterceptingStdLogger() {
-	manager.loggingMutex.Lock()
-	manager.loggingMutex.Unlock()
+	manager.mutex.Lock()
+	manager.mutex.Unlock()
 
 	if !manager.isInterceptingStdLogger {
 		return
@@ -180,8 +179,8 @@ Prints a summary of:
 2) any erroneous log messages that were captured while the standard logger was being intercepted
  */
 func (manager *ParallelTestOutputManager) printSummary() {
-	manager.loggingMutex.Lock()
-	manager.loggingMutex.Unlock()
+	manager.mutex.Lock()
+	manager.mutex.Unlock()
 
 	// We sort tests by name because we want normalized output between runs of the suite
 	testPrintOrder := []string{}
@@ -219,8 +218,8 @@ func (manager *ParallelTestOutputManager) printSummary() {
 Returns true if all tests captured so far have passed, false otherwise
  */
 func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
-	manager.loggingMutex.Lock()
-	defer manager.loggingMutex.Unlock()
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	allTestsPassed := false
 	for _, output := range manager.testOutputs {
@@ -233,7 +232,7 @@ func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
 // ================================== Private helper messages ==========================================
 func printBanner(log *logrus.Logger, contents string, isError bool) {
 	bannerString := "=================================================================================================="
-	contentString := fmt.Sprintf("                              %v", contents)
+	contentString := fmt.Sprintf("                                     %v", contents)
 	if !isError {
 		log.Info("")
 		log.Info(bannerString)
