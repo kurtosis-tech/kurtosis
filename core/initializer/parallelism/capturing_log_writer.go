@@ -2,14 +2,15 @@ package parallelism
 
 import (
 	"runtime"
+	"sync"
 )
 
 /*
 Package struct encapsulating information about where an erroneous system logger event came from
  */
-type ErroneousSystemLogInfo struct {
-	Message    []byte
-	Stacktrace []byte
+type erroneousSystemLogInfo struct {
+	message    []byte
+	stacktrace []byte
 }
 
 /*
@@ -23,17 +24,21 @@ however, so we need a way to:
 
 Thus, we have this special writer that we plug in which doesn't actually write to STDOUT but captures the input for
  later logging in the form of a really loud error message.
+
+NOTE: This is thread-safe!
  */
-type ErroneousSystemLogCaptureWriter struct {
-	logMessages []ErroneousSystemLogInfo
+type erroneousSystemLogCaptureWriter struct {
+	logMessages []erroneousSystemLogInfo
+	mutex *sync.Mutex
 }
 
 /*
 Creates a new writer for capturing erroneous system log events
  */
-func NewErroneousSystemLogCaptureWriter() *ErroneousSystemLogCaptureWriter {
-	return &ErroneousSystemLogCaptureWriter{
-		logMessages: []ErroneousSystemLogInfo{},
+func newErroneousSystemLogCaptureWriter() *erroneousSystemLogCaptureWriter {
+	return &erroneousSystemLogCaptureWriter{
+		logMessages: []erroneousSystemLogInfo{},
+		mutex: &sync.Mutex{},
 	}
 }
 
@@ -43,23 +48,34 @@ This write function (which comes from the Writer interface) will capture:
 		b) the stacktrace at time of logging
 	to make it easy for a developer to see where they're accidentally using the system-level log.
  */
-func (writer *ErroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
+func (writer *erroneousSystemLogCaptureWriter) Write(data []byte) (n int, err error) {
+	writer.mutex.Lock()
+	defer writer.mutex.Unlock()
+
 	dataCopy := make([]byte, len(data))
 	copy(dataCopy, data)
 	stacktraceBytes := getStacktraceBytes()
-	logInfo := ErroneousSystemLogInfo{
-		Message:       dataCopy,
-		Stacktrace: stacktraceBytes,
+	logInfo := erroneousSystemLogInfo{
+		message:    dataCopy,
+		stacktrace: stacktraceBytes,
 	}
 	writer.logMessages = append(writer.logMessages, logInfo)
 	return len(data), nil
 }
 
 /*
-Retrieves the errenous system-level logger messages that were captured
+Retrieves the erroneous system-level logger messages that were captured
  */
-func (writer *ErroneousSystemLogCaptureWriter) GetCapturedMessages() []ErroneousSystemLogInfo {
-	return writer.logMessages
+func (writer *erroneousSystemLogCaptureWriter) getCapturedMessages() []erroneousSystemLogInfo {
+	writer.mutex.Lock()
+	defer writer.mutex.Unlock()
+
+	// Defensive copy
+	result := []erroneousSystemLogInfo{}
+	for _, logInfo := range writer.logMessages {
+		result = append(result, logInfo)
+	}
+	return result
 }
 
 /*
