@@ -66,7 +66,9 @@ func NewTestExecutorParallelizer(
 }
 
 /*
-Runs the given tests in parallel
+Runs the given tests in parallel, printing:
+1) the output of tests as they finish
+2) a summary of all tests once all tests have finished
 
 Args:
 	interceptor: A capturer for logs that are erroneously written to the system-level log during parallel test execution (since all
@@ -76,7 +78,7 @@ Args:
 Returns:
 	True if all tests passed, false otherwise
  */
-func (executor TestExecutorParallelizer) RunInParallel(allTestParams map[string]ParallelTestParams) bool {
+func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestParams map[string]ParallelTestParams) bool {
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
 
@@ -108,6 +110,8 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
 	*/
 	outputManager.startInterceptingStdLogger()
 	defer outputManager.stopInterceptingStdLogger()
+
+	logrus.Info("THIS SHOULD TRIGGER ERRONEOUS LOGGER")
 
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {
