@@ -64,13 +64,18 @@ func (writer *erroneousSystemLogCaptureWriter) Write(data []byte) (n int, err er
 }
 
 /*
-Retrieves the errenous system-level logger messages that were captured
+Retrieves the erroneous system-level logger messages that were captured
  */
 func (writer *erroneousSystemLogCaptureWriter) getCapturedMessages() []erroneousSystemLogInfo {
 	writer.mutex.Lock()
 	defer writer.mutex.Unlock()
 
-	return writer.logMessages
+	// Defensive copy
+	result := []erroneousSystemLogInfo{}
+	for _, logInfo := range writer.logMessages {
+		result = append(result, logInfo)
+	}
+	return result
 }
 
 /*
