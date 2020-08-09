@@ -3,7 +3,6 @@ package parallelism
 import (
 	"github.com/docker/distribution/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
-	"os"
 )
 
 /*
@@ -16,9 +15,6 @@ type ParallelTestParams struct {
 	// Logic of the test to run
 	Test 				testsuite.Test
 
-	// FP of the file where the test's log should be written to
-	LogFp               *os.File
-
 	// Subnet mask that should be used for the Docker network that the test controller & network will run in
 	SubnetMask          string
 
@@ -26,6 +22,6 @@ type ParallelTestParams struct {
 	ExecutionInstanceId uuid.UUID
 }
 
-func NewParallelTestParams(testName string, test testsuite.Test, logFp *os.File, subnetMask string, executionInstanceId uuid.UUID) *ParallelTestParams {
-	return &ParallelTestParams{TestName: testName, Test: test, LogFp: logFp, SubnetMask: subnetMask, ExecutionInstanceId: executionInstanceId}
+func NewParallelTestParams(testName string, test testsuite.Test, subnetMask string, executionInstanceId uuid.UUID) *ParallelTestParams {
+	return &ParallelTestParams{TestName: testName, Test: test, SubnetMask: subnetMask, ExecutionInstanceId: executionInstanceId}
 }
