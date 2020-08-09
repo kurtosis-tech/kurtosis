@@ -1,4 +1,5 @@
 # TBD
+* Change ConfigurationID to be a string
 * Gracefully clean up tests when SIGINT, SIGQUIT, or SIGTERM are received
 
 # 0.8.0
