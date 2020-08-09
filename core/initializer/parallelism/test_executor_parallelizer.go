@@ -1,6 +1,7 @@
 package parallelism
 
 import (
+	"context"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -9,8 +10,10 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 /*
@@ -76,7 +79,22 @@ Args:
 Returns:
 	True if all tests passed, false otherwise
  */
+
 func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestParams map[string]ParallelTestParams) bool {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	// Set up listener for exit signals so we handle it nicely
+	sigs := make(chan os.Signal, 1)
+	defer close(sigs)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	// Asynchronously handle graceful exit signals by cancelling context.
+	go func() {
+		sig, ok := <-sigs
+		// signal channel was closed with no syscall signal
+		if !ok { return }
+		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...\n", sig)
+		cancelFunc()
+	}()
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
 
@@ -90,14 +108,18 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 	outputManager := newParallelTestOutputManager()
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
-	executor.disableSystemLogAndRunTestThreads(outputManager, testParamsChan)
+
+	executor.disableSystemLogAndRunTestThreads(&ctx, outputManager, testParamsChan)
+
 	logrus.Info("All tests exited")
 
 	outputManager.printSummary()
 	return outputManager.getAllTestsPassed()
 }
 
+
 func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
+		parentContext *context.Context,
 		outputManager *ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams) {
 	/*
@@ -112,7 +134,7 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < executor.parallelism; i++ {
 		waitGroup.Add(1)
-		go executor.runTestWorkerGoroutine(outputManager, &waitGroup, testParamsChan)
+		go executor.runTestWorkerGoroutine(parentContext, outputManager, &waitGroup, testParamsChan)
 	}
 	waitGroup.Wait()
 }
@@ -122,6 +144,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
+			parentContext *context.Context,
 			outputManager *ParallelTestOutputManager,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams) {
@@ -158,7 +181,8 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			testName,
 			testParams.Test)
 
-		passed, executionErr := testExecutor.runTest()
+
+		passed, executionErr := testExecutor.runTest(parentContext)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 
 		// Create a new FP to read the logfile from the start
