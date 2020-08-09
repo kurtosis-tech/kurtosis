@@ -221,7 +221,7 @@ func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	allTestsPassed := false
+	allTestsPassed := true
 	for _, output := range manager.testOutputs {
 		testHadNoIssues := PASSED == getTestStatusFromResult(output.executionErr, output.testPassed)
 		allTestsPassed = allTestsPassed && testHadNoIssues
