@@ -12,7 +12,12 @@ If this still doesn't resolve the issue, you'll want to investigate the logs of 
 
 Overlapping IP address ranges
 -----------------------------
-TODO
+When Docker errors saying that subnet IP address ranges conflict, this usually means that Kurtosis is trying to create the per-test subnets but is colliding with an existing network that was left over from a previous invocation of the test suite. Kurtosis will clean up the Docker networks it creates under normal circumstances, but abnormal exits (e.g. SIGKILL) will leave the Docker networks hanging around. To fix this error, remove the offending networks like so:
+
+```
+docker network ls
+docker network rm <ID of offending network>
+```
 
 Timeout while waiting for a service to start
 --------------------------------------------
@@ -28,8 +33,8 @@ then the timeout Kurtosis is timing out while waiting for a node in a network to
 
 Test execution timeout
 ----------------------
-TODO
+Each test has a timeout by which its execution must complete. This is specifically for the logic inside each test's `Run` method, and does NOT include the network setup required to even launch the test. If the test's execution is being hit, it means that the test execution is not completing within the allowed deadline; the fix is to discover why the test is hitting the timeout (it may be a useful indicator of a problem) and, if no problems are found, increase the timeout in the test's `GetExecutionTimeout` method.
 
 Hard test timeout
 -----------------
-TODO
+In addition to the test execution timeout and in order to prevent any test from hanging forever, the entire test - including network setup, test execution, and network teardown - are subject to an additional hard timeout. This timeout is equal to the test execution timeout (configured in `GetExecutionTimeout`) plus the setup buffer (configured in `GetSetupBuffer`). If your test is hitting the hard test timeout but NOT the execution timeout, it likely means that some element of network setup is taking longer than expected. The initializers and availability checkers for your services should be examined for problems as a first step, and if no issues are found then the last fix should be increasing the setup buffer.
