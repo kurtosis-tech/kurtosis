@@ -43,6 +43,9 @@ See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-
 ### Debugging Failed Tests
 See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
 
+### Kurtosis & Docker
+See [the "Kurtosis With Docker" tutorial](./tutorials/kurtosis-with-docker.md) for a deeper dive into how Kurtosis interacts with the Docker engine.
+
 Examples
 --------
 See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation.
