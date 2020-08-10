@@ -1,3 +1,6 @@
+# TBD
+* Add a tutorial explaining what Kurtosis does at the Docker level
+
 # 0.9.0
 * Change ConfigurationID to be a string
 * Print test output as the tests finish, rather than waiting for all tests to finish to do so
