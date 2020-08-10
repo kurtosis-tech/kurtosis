@@ -1,4 +1,10 @@
-# TBD
+# 0.9.0
+* Change ConfigurationID to be a string
+* Print test output as the tests finish, rather than waiting for all tests to finish to do so
+* Gracefully clean up tests when SIGINT, SIGQUIT, or SIGTERM are received
+* Tiny bugfix in printing test output as tests finish
+
+# 0.8.0
 * Simplify service config definition to a single method
 * Add a CI check to make sure changelog is updated each commit
 * Use custom types for service and configuration IDs, so that the user doesn't have a ton of `int`s flying around
