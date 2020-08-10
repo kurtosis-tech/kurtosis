@@ -4,7 +4,7 @@ Kurtosis uses Docker for its ability to run tests in a lightweight, reproducible
 
 Prerequisites
 -------------
-* [Getting Started](getting-started.md)
+* [Getting Started](./getting-started.md)
 
 Tutorial
 --------
@@ -27,3 +27,5 @@ Kurtosis' workflow looks as follows, with interactions with the Docker engine **
     1. **The initializer, who has been waiting for the test controller container to finish, receives the controller exit code**
     1. The initializer prints the controller's logs from the test volume
     1. **The initializer tears down the Docker network that the test network was running in**
+1. The initializer prints a summary of all test statuses
+1. If any test failed, the initializer exits with a non-zero exit code
