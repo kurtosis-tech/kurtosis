@@ -11,6 +11,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/gorilla/mux v1.7.4 // indirect
+	github.com/gorilla/rpc v1.2.0 // indirect
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
