@@ -1,5 +1,6 @@
 # TBD
 * Add a tutorial explaining what Kurtosis does at the Docker level
+* Kill TODOs in "Debugging Failed Tests" tutorial
 
 # 0.9.0
 * Change ConfigurationID to be a string
