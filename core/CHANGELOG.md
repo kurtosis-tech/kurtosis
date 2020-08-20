@@ -1,5 +1,6 @@
 # TBD
 * Add a tutorial explaining what Kurtosis does at the Docker level
+* Build a Docker container containing the Kurtosis API 
 
 # 0.9.0
 * Change ConfigurationID to be a string
