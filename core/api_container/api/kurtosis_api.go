@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -33,6 +34,7 @@ func NewKurtosisAPI(
 
 func (api *KurtosisAPI) StartService(httpReq *http.Request, args *StartServiceArgs, result *StartServiceResponse) error {
 	// TODO Add a UUID for the request so we can trace it through???
+	logrus.Trace("Received request: %v", *httpReq)
 
 	usedPorts := map[nat.Port]bool{}
 	for _, portStr := range args.UsedPorts {
