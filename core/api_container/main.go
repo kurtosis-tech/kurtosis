@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
@@ -12,9 +13,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -24,6 +26,11 @@ func main() {
 		FullTimestamp: true,
 	})
 
+	testSuiteContainerIdArg := flag.String(
+		"test-suite-container-id",
+		"",
+		"ID of the Docker container running the test suite",
+	)
 
 	networkIdArg := flag.String(
 		"network-id",
@@ -65,48 +72,78 @@ func main() {
 	}
 	logrus.SetLevel(*logLevelPtr)
 
-	err := initializeAndRun(
+	// A value on this channel indicates that a test was registered and it either completed or timed out, and the
+	//  bool value will be "true" if the test execution ended before timeout and "false" if the timeout was hit
+	testExecutionEndedBeforeTimeoutChan := make(chan bool)
+
+	server, err := createServer(
+		testExecutionEndedBeforeTimeoutChan,
+		*testSuiteContainerIdArg,
 		*networkIdArg,
 		*subnetMaskArg,
 		*gatewayIpArg,
 		*containerIpArg)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Error("Failed to create a server with the following error:")
+		fmt.Fprint(logrus.StandardLogger().Out, err)
 		os.Exit(1)
-	} else {
-		os.Exit(0)
 	}
+
+	go func(){
+		server.ListenAndServe()
+	}()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	var exitCode int
+	select {
+	case <- signalChan:
+		exitCode = 0
+	case testExecutionEndedBeforeTimeout := <- testExecutionEndedBeforeTimeoutChan:
+		if testExecutionEndedBeforeTimeout {
+			exitCode = 0
+		} else {
+			exitCode = 1
+		}
+	}
+	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
+	//  the server hangs forever trying to shutdown
+	server.Shutdown(context.Background())
+	os.Exit(exitCode)
 }
 
-/*
-Args:
-	networkId: The network ID of the Docker network that the API container is running inside
-	networkSubnetMask: The subnet mask of the Docker network that the API container is running inside
-	gatewayIp: The IP of the gateway inside the Docker network the API container is running in
- */
-func initializeAndRun(networkId string, networkSubnetMask string, gatewayIp string, apiContainerIp string) error {
+func createServer(
+		testExecutionEndedBeforeTimeoutChan chan bool,
+		testSuiteContainerId string,
+		networkId string,
+		networkSubnetMask string,
+		gatewayIp string,
+		apiContainerIp string) (*http.Server, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
+		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
 	}
 
 	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
 	freeIpAddrTracker, err := networks.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkSubnetMask,
 		map[string]bool{
-			gatewayIp: true,
+			gatewayIp:      true,
 			apiContainerIp: true,
 		})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
 	kurtosisApi := api.NewKurtosisAPI(
+		testSuiteContainerId,
+		testExecutionEndedBeforeTimeoutChan,
 		dockerManager,
 		networkId,
 		freeIpAddrTracker,
@@ -114,13 +151,14 @@ func initializeAndRun(networkId string, networkSubnetMask string, gatewayIp stri
 
 	logrus.Info("Launching server...")
 
-	server := rpc.NewServer()
+	httpHandler := rpc.NewServer()
 	jsonCodec := json2.NewCodec()
-	server.RegisterCodec(jsonCodec, "application/json")
-	server.RegisterService(kurtosisApi, "")
+	httpHandler.RegisterCodec(jsonCodec, "application/json")
+	httpHandler.RegisterService(kurtosisApi, "")
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: httpHandler,
+	}
 
-	http.Handle("/jsonrpc", server)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
-	return nil
+	return server, nil
 }

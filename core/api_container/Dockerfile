@@ -22,6 +22,7 @@ COPY --from=builder /build/kurtosis-api-server .
 # Note that this CANNOT be an execution list else the variables won't be expanded
 # See: https://stackoverflow.com/questions/40454470/how-can-i-use-a-variable-inside-a-dockerfile-cmd
 CMD set -euo pipefail && ./kurtosis-api-server \
+    --test-suite-container-id=${TEST_SUITE_CONTAINER_ID} \
     --network-id=${NETWORK_ID} \
     --subnet-mask=${SUBNET_MASK} \
     --gateway-ip=${GATEWAY_IP} \
