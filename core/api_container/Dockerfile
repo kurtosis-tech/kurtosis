@@ -19,12 +19,12 @@ WORKDIR /run
 # Copy the code into the container
 COPY --from=builder /build/kurtosis-api-server .
 
-# Note that this CANNOT be an execution list else the variables won't be expanded
-# See: https://stackoverflow.com/questions/40454470/how-can-i-use-a-variable-inside-a-dockerfile-cmd
-CMD set -euo pipefail && ./kurtosis-api-server \
-    --test-suite-container-id=${TEST_SUITE_CONTAINER_ID} \
-    --network-id=${NETWORK_ID} \
-    --subnet-mask=${SUBNET_MASK} \
-    --gateway-ip=${GATEWAY_IP} \
-    --container-ip=${CONTAINER_IP} \
-    --log-level=${LOG_LEVEL} 2>&1 | tee ${LOG_FILEPATH}
+# NOTE:
+#  1) this is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
+#  2) we call "sh" as the first command so that variable expansion will still happen
+CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
+        --test-suite-container-id=${TEST_SUITE_CONTAINER_ID} \
+        --network-id=${NETWORK_ID} \
+        --subnet-mask=${SUBNET_MASK} \
+        --gateway-ip=${GATEWAY_IP} \
+        --log-level=${LOG_LEVEL}"]

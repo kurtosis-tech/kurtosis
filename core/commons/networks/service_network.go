@@ -208,7 +208,7 @@ func (network *ServiceNetwork) RemoveService(serviceId ServiceID, containerStopT
 	delete(network.serviceNodes, serviceId)
 
 	// Make a best-effort attempt to stop the container
-	err := network.dockerManager.StopContainer(parentCtx, nodeInfo.ContainerId, &containerStopTimeout)
+	err := network.dockerManager.StopContainer(parentCtx, nodeInfo.ContainerId, containerStopTimeout)
 	if err != nil {
 		logrus.Errorf(
 			"The following error occurred stopping service ID %v with container ID %v; proceeding to stop other containers:",

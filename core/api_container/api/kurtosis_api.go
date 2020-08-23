@@ -2,8 +2,8 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
@@ -15,11 +15,13 @@ import (
 )
 
 const (
+	// TODO Move this somewhere else?
+	KurtosisAPIContainerPort = 7443
+
+
 	// How long we'll wait when making a best-effort attempt to stop a container
 	containerStopTimeout = 15 * time.Second
 )
-
-type ServiceID string
 
 type KurtosisAPI struct {
 	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
@@ -32,10 +34,6 @@ type KurtosisAPI struct {
 	dockerNetworkId string
 
 	freeIpAddrTracker *networks.FreeIpAddrTracker
-
-	// TODO Maybe make these strings, so user can declare the desired ID and make for easier debugging?
-	// Tracker so we can start/stop containers as the user requests
-	serviceContainers map[ServiceID]string
 
 	// A value will be pushed to this channel iff a test execution has been registered with the API container and the
 	//  execution either completes successfully (as indicated by the testsuite container exiting) or hits the timeout
@@ -65,7 +63,6 @@ func NewKurtosisAPI(
 		freeIpAddrTracker:          freeIpAddrTracker,
 		suiteTestNames:             nil,
 		mutex:                      &sync.Mutex{},
-		serviceContainers: map[ServiceID]string{},
 	}
 }
 
@@ -77,9 +74,9 @@ func (api *KurtosisAPI) AddService(httpReq *http.Request, args *AddServiceArgs, 
 	logrus.Tracef("Received request: %v", *httpReq)
 
 	usedPorts := map[nat.Port]bool{}
-	for _, portStr := range args.UsedPorts {
-		// TODO validation that the port is legit
-		castedPort := nat.Port(portStr)
+	for _, portInt := range args.UsedPorts {
+		// TODO add ability to have non-TCP ports
+		castedPort := nat.Port(fmt.Sprintf("%v/tcp", portInt))
 		usedPorts[castedPort] = true
 	}
 
@@ -105,7 +102,6 @@ func (api *KurtosisAPI) AddService(httpReq *http.Request, args *AddServiceArgs, 
 		replacedEnvVars[key] = replacedValue
 	}
 
-	serviceId := ServiceID(uuid.New().String())
 	containerId, err := api.dockerManager.CreateAndStartContainer(
 		httpReq.Context(),
 		args.ImageName,
@@ -120,10 +116,10 @@ func (api *KurtosisAPI) AddService(httpReq *http.Request, args *AddServiceArgs, 
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Docker container for the new service")
 	}
-	api.serviceContainers[serviceId] = containerId
 
 	// TODO Debug log message saying we started successfully
 	result.IPAddress = freeIp.String()
+	result.ContainerID = containerId
 
 	return nil
 }
@@ -132,22 +128,15 @@ func (api *KurtosisAPI) AddService(httpReq *http.Request, args *AddServiceArgs, 
 Removes the service with the given service ID from the network
  */
 func (api *KurtosisAPI) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
-	serviceIdStr := args.ServiceID
-	serviceId := ServiceID(serviceIdStr)
-	containerId, found := api.serviceContainers[serviceId]
-	if !found {
-		return stacktrace.NewError("No service with ID %v found", serviceId)
-	}
-
-	logrus.Debugf("Removing service ID %v...", serviceId)
+	containerId := args.ContainerID
+	logrus.Debugf("Removing container ID %v...", containerId)
 
 	// Make a best-effort attempt to stop the container
 	err := api.dockerManager.StopContainer(httpReq.Context(), containerId, containerStopTimeout)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceId)
+		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", containerId)
 	}
-	delete(api.serviceContainers, serviceId)
-	logrus.Debugf("Successfully removed service ID %v", serviceId)
+	logrus.Debugf("Successfully removed service with container ID %v", containerId)
 
 	return nil
 }

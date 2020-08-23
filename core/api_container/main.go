@@ -19,6 +19,9 @@ import (
 	"syscall"
 )
 
+const (
+)
+
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -61,6 +64,9 @@ func main() {
 		"info",
 		fmt.Sprintf("Log level to use for the API container (%v)", logging.GetAcceptableStrings()),
 	)
+
+	// TODO add a flag to write output to both STDOUT and a file using io.MultiWriter
+
 	flag.Parse()
 
 	logLevelPtr := logging.LevelFromString(*logLevelArg)
@@ -74,7 +80,7 @@ func main() {
 
 	// A value on this channel indicates that a test was registered and it either completed or timed out, and the
 	//  bool value will be "true" if the test execution ended before timeout and "false" if the timeout was hit
-	testExecutionEndedBeforeTimeoutChan := make(chan bool)
+	testExecutionEndedBeforeTimeoutChan := make(chan bool, 1)
 
 	server, err := createServer(
 		testExecutionEndedBeforeTimeoutChan,
@@ -93,23 +99,32 @@ func main() {
 		server.ListenAndServe()
 	}()
 
+	// Docker will send SIGTERM to end the process, and we need to catch it to stop gracefully
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
+	logrus.Info("Waiting for stop signal or test completion...")
 	var exitCode int
 	select {
-	case <- signalChan:
+	case signal := <- signalChan:
+		logrus.Info("Received signal %v; server will shut down", signal)
 		exitCode = 0
 	case testExecutionEndedBeforeTimeout := <- testExecutionEndedBeforeTimeoutChan:
 		if testExecutionEndedBeforeTimeout {
+			logrus.Info("Test execution ended before timeout as expected")
 			exitCode = 0
 		} else {
+			logrus.Error("Test execution hit timeout")
 			exitCode = 1
 		}
 	}
+
 	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
 	//  the server hangs forever trying to shutdown
+	logrus.Info("Shutting down JSON RPC server...")
 	server.Shutdown(context.Background())
+	logrus.Info("JSON RPC server shut down")
+
 	os.Exit(exitCode)
 }
 
@@ -156,7 +171,7 @@ func createServer(
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
 	httpHandler.RegisterService(kurtosisApi, "")
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%v", api.KurtosisAPIContainerPort),
 		Handler: httpHandler,
 	}
 
