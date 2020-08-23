@@ -3,14 +3,23 @@ package api
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
+
+const (
+	// How long we'll wait when making a best-effort attempt to stop a container
+	containerStopTimeout = 15 * time.Second
+)
+
+type ServiceID string
 
 type KurtosisAPI struct {
 	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
@@ -19,8 +28,14 @@ type KurtosisAPI struct {
 	testSuiteContainerId string
 
 	dockerManager *docker.DockerManager
+
 	dockerNetworkId string
+
 	freeIpAddrTracker *networks.FreeIpAddrTracker
+
+	// TODO Maybe make these strings, so user can declare the desired ID and make for easier debugging?
+	// Tracker so we can start/stop containers as the user requests
+	serviceContainers map[ServiceID]string
 
 	// A value will be pushed to this channel iff a test execution has been registered with the API container and the
 	//  execution either completes successfully (as indicated by the testsuite container exiting) or hits the timeout
@@ -50,10 +65,14 @@ func NewKurtosisAPI(
 		freeIpAddrTracker:          freeIpAddrTracker,
 		suiteTestNames:             nil,
 		mutex:                      &sync.Mutex{},
+		serviceContainers: map[ServiceID]string{},
 	}
 }
 
-func (api *KurtosisAPI) StartService(httpReq *http.Request, args *StartServiceArgs, result *StartServiceResponse) error {
+/*
+Adds a service with the given parameters to the network
+ */
+func (api *KurtosisAPI) AddService(httpReq *http.Request, args *AddServiceArgs, result *AddServiceResponse) error {
 	// TODO Add a UUID for the request so we can trace it through???
 	logrus.Tracef("Received request: %v", *httpReq)
 
@@ -72,20 +91,36 @@ func (api *KurtosisAPI) StartService(httpReq *http.Request, args *StartServiceAr
 
 	// TODO Debug log message saying what we're going to do
 
-	_, err = api.dockerManager.CreateAndStartContainer(
+	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
+	//  IP
+	ipPlaceholderStr := args.IPPlaceholder
+	replacedStartCmd := []string{}
+	for _, cmdFragment := range args.StartCmd {
+		replacedCmdFragment := strings.ReplaceAll(cmdFragment, ipPlaceholderStr, freeIp.String())
+		replacedStartCmd = append(replacedStartCmd, replacedCmdFragment)
+	}
+	replacedEnvVars := map[string]string{}
+	for key, value := range args.DockerEnvironmentVars {
+		replacedValue := strings.ReplaceAll(value, ipPlaceholderStr, freeIp.String())
+		replacedEnvVars[key] = replacedValue
+	}
+
+	serviceId := ServiceID(uuid.New().String())
+	containerId, err := api.dockerManager.CreateAndStartContainer(
 		httpReq.Context(),
 		args.ImageName,
 		api.dockerNetworkId,
 		freeIp,
 		usedPorts,
-		args.StartCmd,
-		args.DockerEnvironmentVars,
+		replacedStartCmd,
+		replacedEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		map[string]string{}, // TODO mount the test volume!
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Docker container for the new service")
 	}
+	api.serviceContainers[serviceId] = containerId
 
 	// TODO Debug log message saying we started successfully
 	result.IPAddress = freeIp.String()
@@ -93,39 +128,26 @@ func (api *KurtosisAPI) StartService(httpReq *http.Request, args *StartServiceAr
 	return nil
 }
 
-// Registers a test suite container with the API container, and throws an error if a test suite container has already
-//  been registered
-func (api *KurtosisAPI) RegisterTestSuite(httpReq *http.Request, args *RegisterTestSuiteArgs, result *struct{}) error {
-	api.mutex.Lock()
-	defer api.mutex.Unlock()
-
-	if api.suiteTestNames != nil {
-		return stacktrace.NewError("A test suite is already registered to this API container")
+/*
+Removes the service with the given service ID from the network
+ */
+func (api *KurtosisAPI) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
+	serviceIdStr := args.ServiceID
+	serviceId := ServiceID(serviceIdStr)
+	containerId, found := api.serviceContainers[serviceId]
+	if !found {
+		return stacktrace.NewError("No service with ID %v found", serviceId)
 	}
 
-	testNames := args.TestNames
-	testNamesCopy := make([]string, len(testNames))
-	copy(testNamesCopy, testNames)
+	logrus.Debugf("Removing service ID %v...", serviceId)
 
-	api.suiteTestNames = testNamesCopy
-
-	return nil
-}
-
-// Returns the names of the tests with the test suite registered with the API container, or an error if no test suite
-//  has been registered yet
-func (api *KurtosisAPI) ListTests(httpReq *http.Request, args *struct{}, result *ListTestsResponse) error {
-	api.mutex.Lock()
-	defer api.mutex.Unlock()
-
-	if api.suiteTestNames == nil {
-		return stacktrace.NewError("No test suite has been registered with this API container")
+	// Make a best-effort attempt to stop the container
+	err := api.dockerManager.StopContainer(httpReq.Context(), containerId, containerStopTimeout)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceId)
 	}
-
-	testNames := api.suiteTestNames
-	testNamesCopy := make([]string, len(testNames))
-	copy(testNamesCopy, testNames)
-	result.Tests = testNamesCopy
+	delete(api.serviceContainers, serviceId)
+	logrus.Debugf("Successfully removed service ID %v", serviceId)
 
 	return nil
 }
@@ -144,6 +166,8 @@ func (api *KurtosisAPI) RegisterTestExecution(httpReq *http.Request, args *Regis
 	return nil
 }
 
+
+// ============================ Private helper functions ==============================================================
 /*
 Waits for either a) the testsuite container to exit or b) the given timeout to be reached, and pushes a corresponding
 	boolean value to the given channel based on which condition was hit

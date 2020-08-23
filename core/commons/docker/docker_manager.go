@@ -236,8 +236,8 @@ Args:
 	containerId: ID of Docker container to stop
 	timeout: How long to wait for container stoppage before throwing an errorj
  */
-func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout *time.Duration) error {
-	err := manager.dockerClient.ContainerStop(context, containerId, timeout)
+func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
+	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
 	}
