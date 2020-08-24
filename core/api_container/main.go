@@ -53,10 +53,16 @@ func main() {
 		"IP address of the gateway address on the Docker network that the test controller is running in",
 	)
 
-	containerIpArg := flag.String(
-		"container-ip",
+	apiContainerIpAddrArg := flag.String(
+		"api-container-ip",
 		"",
 		"IP address of the Docker container running the API container",
+	)
+
+	testSuiteContainerIpAddrArg := flag.String(
+		"test-suite-container-ip",
+		"",
+		"IP address of the Docker container running the test suite container",
 	)
 
 	logLevelArg := flag.String(
@@ -88,7 +94,8 @@ func main() {
 		*networkIdArg,
 		*subnetMaskArg,
 		*gatewayIpArg,
-		*containerIpArg)
+		*apiContainerIpAddrArg,
+		*testSuiteContainerIpAddrArg)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -135,7 +142,8 @@ func createServer(
 		networkId string,
 		networkSubnetMask string,
 		gatewayIp string,
-		apiContainerIp string) (*http.Server, error) {
+		apiContainerIp string,
+		testSuiteContainerIp string) (*http.Server, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
@@ -152,6 +160,7 @@ func createServer(
 		map[string]bool{
 			gatewayIp:      true,
 			apiContainerIp: true,
+			testSuiteContainerIp: true,
 		})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")

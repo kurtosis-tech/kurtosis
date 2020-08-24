@@ -92,7 +92,10 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		// TODO give more identifying container details in the log message
 		return stacktrace.Propagate(err, "Could not get a free IP to assign the new container")
 	}
+	logrus.Debugf("Giving new service the following IP: %v", freeIp.String())
 
+	// TODO Add unit test to make sure the replacement actually happens as expected! (probably by extracting this
+	//  into a helper method that can easily be tested)
 	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
 	//  IP
 	ipPlaceholderStr := args.IPPlaceholder
@@ -122,7 +125,6 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		return stacktrace.Propagate(err, "An error occurred starting the Docker container for the new service")
 	}
 
-	// TODO Debug log message saying we started successfully
 	result.IPAddress = freeIp.String()
 	result.ContainerID = containerId
 

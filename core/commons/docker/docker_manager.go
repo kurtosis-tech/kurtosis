@@ -218,8 +218,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	containerId = resp.ID
 
-	err = manager.connectToNetwork(networkId, containerId, staticIp)
-	if err != nil {
+	if err := manager.connectToNetwork(networkId, containerId, staticIp); err != nil {
 		return "", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 	}
 	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
@@ -14,13 +15,21 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
 const (
+	successExitCode = 0
+	failureExitCode = 1
+
 	testNamesFilepath = "/shared/test-names-filepath"
 	kurtosisApiStopContainerTimeout = 30 * time.Second
 	dockerSocket = "/var/run/docker.sock"
+	testNameArgSeparator = ","
+
+	// TODO Parameterize this!!
+	testVolumeMountLocation = "/shared"
 
 	// Test suite environment variables
 	testNamesFilepathEnvVar    = "TEST_NAMES_FILEPATH"
@@ -35,11 +44,13 @@ const (
 	gatewayIpEnvVar            = "GATEWAY_IP"
 	logLevelEnvVar             = "LOG_LEVEL"
 	apiLogFilepathEnvVar       = "LOG_FILEPATH"
+	apiContainerIpAddrEnvVar   = "API_CONTAINER_IP"
+	testSuiteContainerIpAddrEnvVar   = "TEST_SUITE_CONTAINER_IP"
 
 
 	// TODO parameterize
 	kurtosisApiImage        = "kurtosistech/kurtosis-core_api"
-	bridgeNetworkId         = "b453ce4bac01"
+	bridgeNetworkId         = "2f3bc0c4e810"
 	bridgeNetworkSubnetMask = "172.17.0.0/16"
 	bridgeNetworkGatewayIp  = "172.17.0.1"
 )
@@ -49,18 +60,24 @@ func main() {
 		"test-suite-image",
 		"",
 		"The name of the Docker image of the test suite that will be run")
+	testNamesArg := flag.String(
+		"test-names",
+		"",
+		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+	)
+	// TODO add a "list tests" flag
 	flag.Parse()
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("An error occurred creating the Docker client: %v", err)
-		os.Exit(1)
+		os.Exit(failureExitCode)
 	}
 
 	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		logrus.Errorf("An error occurred creating the Docker manager: %v", err)
-		os.Exit(1)
+		os.Exit(failureExitCode)
 	}
 
 	freeIpAddrTracker, err := networks.NewFreeIpAddrTracker(
@@ -74,36 +91,43 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO actually use tests
-	_, err = getTests(*testSuiteImageArg, dockerManager, freeIpAddrTracker)
+	testNamesToRun, err := getTestNamesToRun(*testNamesArg, *testSuiteImageArg, dockerManager, freeIpAddrTracker)
 	if err != nil {
-		logrus.Errorf("An error occurred getting the names of the tests in the test suite: %v", err)
-		os.Exit(1)
-	}
-
-	// TODO parameterize test name
-	testPassed, err := runTest(*testSuiteImageArg, dockerManager, freeIpAddrTracker, "FOO")
-	if err != nil {
-		logrus.Errorf("An error occurred that prevented retrieving test pass/fail status:")
+		logrus.Errorf("An error occurred when validating the list of tests to run:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(1)
+		os.Exit(failureExitCode)
 	}
 
-	if !testPassed {
-		// TODO insert test name
-		logrus.Error("The test failed")
-		os.Exit(1)
-	} else {
-		// TODO insert test name
-		logrus.Info("The test passed")
-		os.Exit(0)
+	executionId := uuid.New()
+
+	// TODO Parallelize these bitches
+	allTestsPassed := true
+	for testName, _ := range testNamesToRun {
+		testPassed, err := runSingleTest(executionId, *testSuiteImageArg, dockerManager, freeIpAddrTracker, testName)
+		if err != nil {
+			logrus.Errorf("An error occurred that prevented retrieving test pass/fail status for test '%v':", testName)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			testPassed = false
+		}
+		allTestsPassed = allTestsPassed && testPassed
 	}
+
+	var exitCode int
+	if allTestsPassed {
+		exitCode = successExitCode
+	} else {
+		exitCode = failureExitCode
+	}
+	os.Exit(exitCode)
 }
 
 /*
 Spins up a testsuite container in test-listing mode and reads the tests that it spits out
  */
-func getTests(testSuiteImage string, dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker) (map[string]bool, error) {
+func getAllTestNames(
+			testSuiteImage string,
+			dockerManager *docker.DockerManager,
+			freeIpAddrTracker *networks.FreeIpAddrTracker) (map[string]bool, error) {
 	// Create the tempfile that the testsuite image will write test names to
 	tempFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {
@@ -163,11 +187,59 @@ func getTests(testSuiteImage string, dockerManager *docker.DockerManager, freeIp
 	return testNames, nil
 }
 
-// TODO make output status  more meaningful
-/*
-Runs the given test by spinning up test suite & Kurtosis API containers
- */
-func runTest(testSuiteImage string, dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker, test string) (bool, error){
+func getTestNamesToRun(
+			testsToRunStr string,
+			testSuiteImage string,
+			dockerManager *docker.DockerManager,
+			freeIpAddrTracker *networks.FreeIpAddrTracker) (map[string]bool, error) {
+	// Split user-input string into actual candidate test names
+	testNamesArgStr := strings.TrimSpace(testsToRunStr)
+	testNamesToRun := map[string]bool{}
+	if len(testNamesArgStr) > 0 {
+		testNamesList := strings.Split(testNamesArgStr, testNameArgSeparator)
+		for _, name := range testNamesList {
+			testNamesToRun[name] = true
+		}
+	}
+
+	allTestNames, err := getAllTestNames(testSuiteImage, dockerManager, freeIpAddrTracker)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the names of the tests in the test suite")
+	}
+
+	// If the user doesn't specify any test names to run, do all of them
+	if len(testNamesToRun) == 0 {
+		testNamesToRun = map[string]bool{}
+		for testName, _ := range allTestNames {
+			testNamesToRun[testName] = true
+		}
+	}
+
+	// Validate all the requested tests exist
+	for testName, _ := range testNamesToRun {
+		if _, found := allTestNames[testName]; !found {
+			return nil, stacktrace.NewError("No test registered with name '%v'", testName)
+		}
+	}
+	return testNamesToRun, nil
+}
+
+
+func runSingleTest(
+		executionId uuid.UUID,
+		testSuiteImage string,
+		dockerManager *docker.DockerManager,
+		freeIpAddrTracker *networks.FreeIpAddrTracker,
+		testName string) (bool, error){
+	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executionId.String(), testName)
+
+	volumeName := uniqueTestIdentifier
+	logrus.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
+	if err := dockerManager.CreateVolume(context.Background(), volumeName); err != nil {
+		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes")
+	}
+	logrus.Debugf("Docker volume %v created successfully", volumeName)
+
 	// TODO segregate these into their own subnet
 	kurtosisApiIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
@@ -188,13 +260,14 @@ func runTest(testSuiteImage string, dockerManager *docker.DockerManager, freeIpA
 		nil,
 		map[string]string{
 			testNamesFilepathEnvVar: "", // We leave this blank because we want test execution, not listing
-			testEnvVar:          test,                  // We leave this blank to signify that we want test listing, not test execution
+			testEnvVar:          testName,                  // We leave this blank to signify that we want test listing, not test execution
 			kurtosisApiIpEnvVar: kurtosisApiIp.String(), // Because we're doing test listing, this can be blank
-			// TODO pipe this to a proper volume location
-			testSuiteLogFilepathEnvVar: "/tmp/log.txt",
+			testSuiteLogFilepathEnvVar: testVolumeMountLocation + "/test.log",
 		},
 		map[string]string{},
-		map[string]string{})
+		map[string]string{
+			volumeName: testVolumeMountLocation,
+		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
 	}
@@ -213,17 +286,22 @@ func runTest(testSuiteImage string, dockerManager *docker.DockerManager, freeIpA
 		nil,
 		map[string]string{
 			testSuiteContainerIdEnvVar: testRunningContainerId,
+			// TODO Change all of these
 			networkIdEnvVar:            bridgeNetworkId,
 			subnetMaskEnvVar: bridgeNetworkSubnetMask,
 			gatewayIpEnvVar: bridgeNetworkGatewayIp,
-			// TODO change this
-			logLevelEnvVar:             "trace",
-			apiLogFilepathEnvVar: "/tmp/logfile",
+			// TODO make this parameterizable
+			logLevelEnvVar: "trace",
+			apiLogFilepathEnvVar: testVolumeMountLocation + "/api.log",
+			apiContainerIpAddrEnvVar: kurtosisApiIp.String(),
+			testSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
 		},
 		map[string]string{
 			dockerSocket: dockerSocket,
 		},
-		map[string]string{})
+		map[string]string{
+			volumeName: testVolumeMountLocation,
+		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
 	}
