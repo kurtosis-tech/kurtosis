@@ -131,7 +131,7 @@ func getTests(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.F
 		context.Background(),
 		testListingContainerId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests: %v")
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")

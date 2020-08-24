@@ -107,7 +107,7 @@ func main() {
 	var exitCode int
 	select {
 	case signal := <- signalChan:
-		logrus.Info("Received signal %v; server will shut down", signal)
+		logrus.Infof("Received signal %v; server will shut down", signal)
 		exitCode = 0
 	case testExecutionEndedBeforeTimeout := <- testExecutionEndedBeforeTimeoutChan:
 		if testExecutionEndedBeforeTimeout {
