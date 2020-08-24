@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -37,14 +38,19 @@ const (
 
 
 	// TODO parameterize
-	kurtosisApiImage        = "kurtosis-api"
-	exampleGoImage          = "example-kurtosis-go"
+	kurtosisApiImage        = "kurtosistech/kurtosis-core_api"
 	bridgeNetworkId         = "b453ce4bac01"
 	bridgeNetworkSubnetMask = "172.17.0.0/16"
 	bridgeNetworkGatewayIp  = "172.17.0.1"
 )
 
 func main() {
+	testSuiteImageArg := flag.String(
+		"test-suite-image",
+		"",
+		"The name of the Docker image of the test suite that will be run")
+	flag.Parse()
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("An error occurred creating the Docker client: %v", err)
@@ -69,22 +75,27 @@ func main() {
 	}
 
 	// TODO actually use tests
-	_, err = getTests(dockerManager, freeIpAddrTracker)
+	_, err = getTests(*testSuiteImageArg, dockerManager, freeIpAddrTracker)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the names of the tests in the test suite: %v", err)
 		os.Exit(1)
 	}
 
 	// TODO parameterize test name
-	testPassed, err := runTest(dockerManager, freeIpAddrTracker, "FOO")
+	testPassed, err := runTest(*testSuiteImageArg, dockerManager, freeIpAddrTracker, "FOO")
 	if err != nil {
-		logrus.Errorf("The test errored")
+		logrus.Errorf("An error occurred that prevented retrieving test pass/fail status:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		os.Exit(1)
 	}
 
 	if !testPassed {
+		// TODO insert test name
+		logrus.Error("The test failed")
 		os.Exit(1)
 	} else {
+		// TODO insert test name
+		logrus.Info("The test passed")
 		os.Exit(0)
 	}
 }
@@ -92,7 +103,7 @@ func main() {
 /*
 Spins up a testsuite container in test-listing mode and reads the tests that it spits out
  */
-func getTests(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker) (map[string]bool, error) {
+func getTests(testSuiteImage string, dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker) (map[string]bool, error) {
 	// Create the tempfile that the testsuite image will write test names to
 	tempFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {
@@ -107,8 +118,8 @@ func getTests(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.F
 
 	testListingContainerId, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
+		testSuiteImage,
 		// TODO parameterize these
-		exampleGoImage,
 		bridgeNetworkId,
 		testListingContainerIp,
 		map[nat.Port]bool{},
@@ -131,7 +142,7 @@ func getTests(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.F
 		context.Background(),
 		testListingContainerId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests: %v")
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
@@ -156,7 +167,7 @@ func getTests(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.F
 /*
 Runs the given test by spinning up test suite & Kurtosis API containers
  */
-func runTest(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker, test string) (bool, error){
+func runTest(testSuiteImage string, dockerManager *docker.DockerManager, freeIpAddrTracker *networks.FreeIpAddrTracker, test string) (bool, error){
 	// TODO segregate these into their own subnet
 	kurtosisApiIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
@@ -169,8 +180,8 @@ func runTest(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.Fr
 
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
-		// TODO parameterize these
-		exampleGoImage,
+		testSuiteImage,
+		// TODO parameterize network stuff
 		bridgeNetworkId,
 		testRunningContainerIp,
 		map[nat.Port]bool{},
@@ -217,25 +228,33 @@ func runTest(dockerManager *docker.DockerManager, freeIpAddrTracker *networks.Fr
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
 	}
 
+	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
+	// TODO add a timeout waiting for Kurtosis API container to stop???
+	kurtosisApiExitCode, err := dockerManager.WaitForExit(
+		context.Background(),
+		kurtosisApiContainerId)
+	if err != nil {
+		logrus.Errorf("An error occurred waiting for the exit of the Kurtosis API container: %v", err)
+	}
+
+	if kurtosisApiExitCode != 0 {
+		// TODO change this with tearing down the entire network
+		// The testsuite container didn't stop within the tiemout; make a best-effort attempt to stop the testsuite container
+		if err := dockerManager.StopContainer(context.Background(), testRunningContainerId, 30 * time.Second); err != nil {
+			logrus.Error("An error occurred during our best-effort attempt at stopping the testsuite container which exceeded its test timeout:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+		}
+		return false, stacktrace.NewError("The testsuite container didn't stop within the hard test timeout")
+	}
+
+	// Test stopped within the timeout; examine the testsuite container for actual test result
 	testRunningExitCode, err := dockerManager.WaitForExit(
 		context.Background(),
 		testRunningContainerId)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to run the test")
+		return false, stacktrace.Propagate(
+			err,
+			"The testsuite container running the test stopped within the timeout, but an error occurred retrieving the exit code")
 	}
-	testPassed := testRunningExitCode == 0
-
-	logrus.Info("Stopping Kurtosis API container...")
-	if err := dockerManager.StopContainer(context.Background(), kurtosisApiContainerId, kurtosisApiStopContainerTimeout); err != nil {
-		logrus.Errorf("An error occurred stopping the Kurtosis API container: %v", err)
-	} else {
-		// TODO rejigger this when we have proper test registration
-		_, err := dockerManager.WaitForExit(
-			context.Background(),
-			kurtosisApiContainerId)
-		if err != nil {
-			logrus.Errorf("An error occurred waiting for the exit of the Kurtosis API container: %v", err)
-		}
-	}
-	return testPassed, nil
+	return testRunningExitCode == 0, nil
 }
