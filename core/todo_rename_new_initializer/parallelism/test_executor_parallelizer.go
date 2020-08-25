@@ -181,6 +181,7 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.executionId,
 			executor.dockerClient,
 			testParams.SubnetMask,
+			executor.kurtosisApiImageName,
 			executor.testSuiteImageName,
 			executor.testSuiteLogLevel,
 			executor.customTestSuiteEnvVars,
