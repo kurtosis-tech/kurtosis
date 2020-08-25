@@ -6,9 +6,13 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
-	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
+	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -32,22 +36,9 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
 const (
 	containerSuccessExitCode = 0
 
-	// TODO Make this configurable based on the controller image the user defines!
-	controllerLogMountFilepath = "/test-controller.log"
-
-	// TODO Make this configurable based on the controller image the user defines!
-	testVolumeMountpoint = "/shared"
-
-	// These are an "API" of sorts - environment variables that are agreed to be set in the test controller's Docker environment
-	testVolumeArg           = "TEST_VOLUME"
-	testNameArg             = "TEST_NAME"
-	networkIdArg            = "NETWORK_ID"
-	subnetMaskArg           = "SUBNET_MASK"
-	gatewayIpArg            = "GATEWAY_IP"
-	logFilepathArg          = "LOG_FILEPATH"
-	logLevelArg             = "LOG_LEVEL"
-	testControllerIpArg     = "TEST_CONTROLLER_IP"
-	testVolumeMountpointArg = "TEST_VOLUME_MOUNTPOINT"
+	testVolumeMountDirpath = "/test-volume" // TODO parameterize this!!
+	bindMountsDirpath = "/bind-mounts"  // TODO Parameterize this!!
+	testSuiteLogFilepath        = bindMountsDirpath + "/test-listing.log"
 
 	// After we hard-timeout a test, how long we'll give the test to clean itself up (namely the Docker network & containers)
 	//  before we call it lost and continue on
@@ -56,6 +47,8 @@ const (
 	// When we're tearing down a network after a test (either after normal exit or test timeout), this is the maximum
 	//  time we'll wait for each container to stop
 	networkTeardownContainerStopTimeout = 10 * time.Second
+
+	dockerSocket = "/var/run/docker.sock"
 )
 
 /*
@@ -86,20 +79,21 @@ type testExecutor struct {
 	// The mask of the subnet that the test should run in
 	subnetMask string
 
-	// The name of the Docker image of the test controller to run
-	testControllerImageName string
+	// The name of the Docker image of the Kurtosis API container to run
+	kurtosisApiImageName string
 
-	// The log level string to pass to the test controller (should be meaningful to the controller image)
-	testControllerLogLevel string
+	// The name of the Docker image of the test suite to run
+	testSuiteImageName string
 
-	// Mapping of user-defined custom environment variables that will also be passed to the controller image
-	customTestControllerEnvVars map[string]string
+	// The log level string to pass to the test suite (should be meaningful to the test suite image)
+	testSuiteLogLevel string
+
+	// TODO Use these, by validating that they don't collide with existing environment vars!!!
+	// Mapping of user-defined custom environment variables that will also be passed to the test suite contianer on start
+	customTestSuiteEnvVars map[string]string
 
 	// Name of the test being run
 	testName string
-
-	// The actual test object to run
-	test testsuite.Test
 }
 
 /*
@@ -112,10 +106,10 @@ Args:
 	executionInstanceId: The UUID representing an execution of the user's test suite, to which this test execution belongs
 	dockerClient: The Docker client to use to manipulate the Docker engine
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
-	testControllerImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
-	testControllerLogLevel: A string representing the log level that the test controller should set for itself; this string
+	testSuiteImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
+	testSuiteLogLevel: A string representing the log level that the test controller should set for itself; this string
 		should be meaningful to the user-defined controller code
-	customTestControllerEnvVars: A key-value mapping of custom Docker environment variables that will be passed to the
+	customTestSuiteEnvVars: A key-value mapping of custom Docker environment variables that will be passed to the
 		controller image (as a method for the user to pass their own custom params between initializer and controller)
 	testName: The name of the test the executor should execute
 	test: The logic of the test being executed
@@ -125,23 +119,206 @@ func newTestExecutor(
 			executionInstanceId uuid.UUID,
 			dockerClient *client.Client,
 			subnetMask string,
+			kurtoisApiImageName string,
 			testControllerImageName string,
 			testControllerLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			testName string,
-			test testsuite.Test) *testExecutor {
+			testName string) *testExecutor {
 	return &testExecutor{
-		log:                         log,
-		executionInstanceId:         executionInstanceId,
-		dockerClient:                dockerClient,
-		subnetMask:                  subnetMask,
-		testControllerImageName:     testControllerImageName,
-		testControllerLogLevel:      testControllerLogLevel,
-		customTestControllerEnvVars: customTestControllerEnvVars,
-		testName:                    testName,
-		test:                        test,
+		log:                    log,
+		executionInstanceId:    executionInstanceId,
+		dockerClient:           dockerClient,
+		subnetMask:             subnetMask,
+		kurtosisApiImageName: kurtoisApiImageName,
+		testSuiteImageName:     testControllerImageName,
+		testSuiteLogLevel:      testControllerLogLevel,
+		customTestSuiteEnvVars: customTestControllerEnvVars,
+		testName:               testName,
 	}
 }
+
+
+/*
+Runs a single test with the given name
+*/
+func (executor testExecutor) runSingleTest(ctx *context.Context) (bool, error) {
+	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
+
+	executor.log.Info("Creating Docker manager from environment settings...")
+	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
+	//  only need to cancel this context once
+	dockerManager, err := docker.NewDockerManager(executor.log, executor.dockerClient)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", executor.testName)
+	}
+	executor.log.Info("Docker manager created successfully")
+
+	volumeName := uniqueTestIdentifier
+	executor.log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
+	if err := dockerManager.CreateVolume(ctx, volumeName); err != nil {
+		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes for test %v", executor.testName)
+	}
+	executor.log.Debugf("Docker volume %v created successfully", volumeName)
+
+	executor.log.Infof("Creating Docker network for test with subnet mask %v...", executor.subnetMask)
+	freeIpAddrTracker, err := networks.NewFreeIpAddrTracker(
+		executor.log,
+		executor.subnetMask,
+		map[string]bool{})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker for test %v", executor.testName)
+	}
+	gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for the gateway for test %v", executor.testName)
+	}
+	networkName := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
+	// TODO different context for parallelization?
+	networkId, err := dockerManager.CreateNetwork(context.Background(), networkName, executor.subnetMask, gatewayIp)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, executor.testName)
+	}
+	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkId)
+	executor.log.Infof("Docker network %v created successfully", networkId)
+
+	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
+	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
+	//  container which will only be started after the testsuite container
+	kurtosisApiIp, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
+	}
+	testRunningContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
+	}
+
+	executor.log.Debugf(
+		"Test suite container IP: %v; kurtosis API container IP: %v",
+		testRunningContainerIp.String(),
+		kurtosisApiIp.String())
+
+	// TODO When we have the initializer run in a Docker container, transition to using Docker volumes to store logs
+	containerLogFp, err := ioutil.TempFile("", "test-execution.log")
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the temporary file for holding the " +
+			"logs of the test suite container running the test")
+	}
+	containerLogFp.Close()
+
+	executor.log.Infof("Creating test suite container that will run the test...")
+	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
+		context.Background(),
+		executor.testSuiteImageName,
+		networkId,
+		testRunningContainerIp,
+		map[nat.Port]bool{},
+		nil,
+		map[string]string{
+			test_suite_env_vars.TestNamesFilepathEnvVar:    "",                     // We leave this blank because we want test execution, not listing
+			test_suite_env_vars.TestEnvVar:                 executor.testName,               // We leave this blank to signify that we want test listing, not test execution
+			test_suite_env_vars.KurtosisApiIpEnvVar:        kurtosisApiIp.String(), // Because we're doing test listing, this can be blank
+			test_suite_env_vars.TestSuiteLogFilepathEnvVar: testSuiteLogFilepath,
+		},
+		map[string]string{
+			containerLogFp.Name(): testSuiteLogFilepath,
+		},
+		map[string]string{
+			volumeName: testVolumeMountDirpath,
+		})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
+	}
+	executor.log.Info("Successfully created test suite container to run the test")
+
+	executor.log.Info("Creating Kurtosis API container...")
+	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api.KurtosisAPIContainerPort))
+	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
+		context.Background(),
+		executor.kurtosisApiImageName,
+		networkId,
+		kurtosisApiIp,
+		map[nat.Port]bool{
+			kurtosisApiPort: true,
+		},
+		nil,
+		map[string]string{
+			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
+			api_container_env_vars.NetworkIdEnvVar: networkId,
+			api_container_env_vars.SubnetMaskEnvVar: executor.subnetMask,
+			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
+			// TODO make this parameterizable
+			api_container_env_vars.LogLevelEnvVar:                 "trace",
+			// NOTE: We set this to some random file inside the volume because we don't expect it to be read
+			api_container_env_vars.ApiLogFilepathEnvVar:           testVolumeMountDirpath + "/api.log",
+			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
+			api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
+		},
+		map[string]string{
+			dockerSocket: dockerSocket,
+		},
+		map[string]string{
+			volumeName: testVolumeMountDirpath,
+		})
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
+	}
+	executor.log.Infof("Successfully created Kurtosis API container")
+
+	// TODO add a timeout waiting for Kurtosis API container to stop???
+	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
+	executor.log.Info("Waiting for Kurtosis API container to exit...")
+	kurtosisApiExitCode, err := dockerManager.WaitForExit(
+		context.Background(),
+		kurtosisApiContainerId)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
+	}
+
+	var testStatusRetrievalError error
+	switch kurtosisApiExitCode {
+	case exit_codes.TestCompletedInTimeoutExitCode:
+		testStatusRetrievalError = nil
+		// TODO this is in a really crappy spot; move it
+		banner_printer.PrintContainerLogsWithBanners(testRunningContainerDescription, containerLogFp.Name())
+	case exit_codes.OutOfOrderTestStatusExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
+			"test execution status update; this is a Kurtosis code bug")
+	case exit_codes.TestHitTimeoutExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The test failed to complete within the hard test " +
+			"timeout (test_execution_timeout + setup_buffer)")
+	case exit_codes.NoTestSuiteRegisteredExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
+			"Kurtosis API container; this is a bug with the test suite")
+		// TODO this is in a really crappy spot; move it
+		banner_printer.PrintContainerLogsWithBanners(testRunningContainerDescription, containerLogFp.Name())
+	case exit_codes.ShutdownSignalExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
+			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
+	default:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
+			"exit code %v; this is a code bug in Kurtosis indicating that the new exit code needs to be mapped " +
+			"for the initializer", kurtosisApiExitCode)
+	}
+	if testStatusRetrievalError != nil {
+		executor.log.Error("An error occurred that prevented retrieval of the test completion status")
+		return false, testStatusRetrievalError
+	}
+	executor.log.Info("The test suite container running the test exited within the hard test timeout")
+
+	// The test suite container will already have stopped, so now we get the exit code
+	testSuiteExitCode, err := dockerManager.WaitForExit(
+		context.Background(),
+		testRunningContainerId)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
+	}
+	return testSuiteExitCode == 0, nil
+}
+
+
+
+
 
 /*
 Runs the test that was configured at time of construction in a separate goroutine, and set a timeout that - if breached -
@@ -305,9 +482,9 @@ func (executor testExecutor) runControllerContainer(
 		gatewayIp,
 		controllerIpAddr,
 		executor.testName,
-		executor.testControllerLogLevel,
+		executor.testSuiteLogLevel,
 		volumeName,
-		executor.customTestControllerEnvVars)
+		executor.customTestSuiteEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to map test controller environment variables.")
 	}
@@ -325,7 +502,7 @@ func (executor testExecutor) runControllerContainer(
 
 	controllerContainerId, err := manager.CreateAndStartContainer(
 		context,
-		executor.testControllerImageName,
+		executor.testSuiteImageName,
 		networkId,
 		controllerIpAddr,
 		make(map[nat.Port]bool),

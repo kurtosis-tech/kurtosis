@@ -4,11 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/google/uuid"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/test_suite_runner"
-	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
@@ -43,26 +39,30 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	if err != nil {
-		logrus.Errorf("An error occurred creating the Docker manager: %v", err)
-		os.Exit(failureExitCode)
+	// Split user-input string into actual candidate test names
+	testNamesArgStr := strings.TrimSpace(*testNamesArg)
+	testNamesToRun := map[string]bool{}
+	if len(testNamesArgStr) > 0 {
+		testNamesList := strings.Split(testNamesArgStr, testNameArgSeparator)
+		for _, name := range testNamesList {
+			testNamesToRun[name] = true
+		}
 	}
 
-	testNamesToRun, err := getTestNamesToRun(*testNamesArg, *testSuiteImageArg, dockerManager)
-	if err != nil {
-		logrus.Errorf("An error occurred when validating the list of tests to run:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
-	}
-
-	executionId := uuid.New()
-
-	allTestsPassed, err := test_suite_runner.RunTests(
-		executionId,
+	testSuiteRunner := test_suite_runner.NewTestSuiteRunner(
+		dockerClient,
 		*testSuiteImageArg,
-		dockerManager,
-		testNamesToRun)
+		// TODO parameterize this
+		"kurtosistech/kurtosis-core_api",
+		// TODO parameterize this
+		"trace",
+		// TODO parameterize this
+		map[string]string{})
+
+	allTestsPassed, err := testSuiteRunner.RunTests(
+		testNamesToRun,
+		// TODO parameterize this
+		4)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -77,48 +77,3 @@ func main() {
 	}
 	os.Exit(exitCode)
 }
-
-
-
-/*
-Helper function to translate the user-provided string that we receive from the CLI about which tests to run to a "set"
-	of the test names to run, validating that all the test names are valid.
- */
-func getTestNamesToRun(
-			testsToRunStr string,
-			testSuiteImage string,
-			dockerManager *docker.DockerManager) (map[string]bool, error) {
-	// Split user-input string into actual candidate test names
-	testNamesArgStr := strings.TrimSpace(testsToRunStr)
-	testNamesToRun := map[string]bool{}
-	if len(testNamesArgStr) > 0 {
-		testNamesList := strings.Split(testNamesArgStr, testNameArgSeparator)
-		for _, name := range testNamesList {
-			testNamesToRun[name] = true
-		}
-	}
-
-	allTestNames, err := test_suite_metadata_acquirer.GetAllTestNamesInSuite(testSuiteImage, dockerManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the names of the tests in the test suite")
-	}
-
-	// If the user doesn't specify any test names to run, do all of them
-	if len(testNamesToRun) == 0 {
-		testNamesToRun = map[string]bool{}
-		for testName := range allTestNames {
-			testNamesToRun[testName] = true
-		}
-	}
-
-	// Validate all the requested tests exist
-	for testName := range testNamesToRun {
-		if _, found := allTestNames[testName]; !found {
-			return nil, stacktrace.NewError("No test registered with name '%v'", testName)
-		}
-	}
-	return testNamesToRun, nil
-}
-
-
-

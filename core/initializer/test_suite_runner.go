@@ -116,7 +116,7 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		return false, stacktrace.Propagate(err,"Failed to initialize Docker client from environment.")
 	}
 
-	testExecutor := parallelism.NewTestExecutorParallelizer(
+	testExecutor := old_parallelism.NewTestExecutorParallelizer(
 		executionInstanceId,
 		dockerClient,
 		runner.testControllerImageName,
@@ -135,7 +135,7 @@ Helper function to build, from the set of tests to run, the map of test params t
 Args:
 	testsToRun: A "set" of test names to run in parallel
  */
-func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsuite.Test, networkWidthBits uint32) (map[string]parallelism.ParallelTestParams, error) {
+func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsuite.Test, networkWidthBits uint32) (map[string]old_parallelism.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
@@ -154,7 +154,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsu
 	}
 
 	testIndex := 0
-	testParams := make(map[string]parallelism.ParallelTestParams)
+	testParams := make(map[string]old_parallelism.ParallelTestParams)
 	for testName, test := range testsToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, float64(networkWidthBits)))
@@ -162,7 +162,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testsToRun map[string]testsu
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
-		testParams[testName] = *parallelism.NewParallelTestParams(testName, test, subnetCidrStr, executionInstanceId)
+		testParams[testName] = *old_parallelism.NewParallelTestParams(testName, test, subnetCidrStr, executionInstanceId)
 		testIndex++
 	}
 	return testParams, nil

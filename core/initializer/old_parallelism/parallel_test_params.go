@@ -1,4 +1,4 @@
-package parallelism
+package old_parallelism
 
 import (
 	"github.com/docker/distribution/uuid"
