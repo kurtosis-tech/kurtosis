@@ -17,9 +17,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
+	// If no test suite registers a test execution in this time, the API container will shut itself down of its own accord
+	idleShutdownTimeout = 15 * time.Second
 )
 
 func main() {
@@ -113,7 +116,9 @@ func main() {
 	logrus.Info("Waiting for stop signal or test completion...")
 	var exitCode int
 	select {
-	// TODO add a shutdown case here of "no test was registered within <timeout>"
+	case <- time.After(idleShutdownTimeout):
+		logrus.Errorf("No test suite registered itself after waiting %v; this likely means the test suite has a fatal error", idleShutdownTimeout)
+		exitCode = 1
 	case signal := <- signalChan:
 		logrus.Infof("Received signal %v; server will shut down", signal)
 		exitCode = 0
