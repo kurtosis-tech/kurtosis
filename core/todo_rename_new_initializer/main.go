@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"math"
 	"net"
@@ -42,11 +43,8 @@ const (
 	//  before hard-killing it
 	networkTeardownContainerStopTimeout = 30 * time.Second
 
-	// TODO Parameterize this! (will require getting information from testsuite)
-	defaultNetworkWidthBits = 8
-
-	// TODO Parameterize this!!
-	testVolumeMountLocation = "/shared"
+	testListingContainerDescription = "Test-Listing Container"
+	testRunningContainerDescription = "Test-Running Container"
 
 	// Test suite environment variables
 	testNamesFilepathEnvVar    = "TEST_NAMES_FILEPATH"
@@ -64,11 +62,16 @@ const (
 	apiContainerIpAddrEnvVar   = "API_CONTAINER_IP"
 	testSuiteContainerIpAddrEnvVar   = "TEST_SUITE_CONTAINER_IP"
 
+	// TODO Parameterize this! (will require getting information from testsuite)
+	defaultNetworkWidthBits = 8
+
+	testVolumeMountDirpath = "/test-volume" // TODO parameterize this!!
+	bindMountsDirpath = "/bind-mounts"
+
+	testSuiteLogFilepath        = bindMountsDirpath + "/test-listing.log"
 
 	// TODO parameterize
 	kurtosisApiImage        = "kurtosistech/kurtosis-core_api"
-	bridgeNetworkSubnetMask = "172.17.0.0/16"
-	bridgeNetworkGatewayIp  = "172.17.0.1"
 )
 
 func main() {
@@ -152,21 +155,32 @@ func main() {
 }
 
 /*
-Spins up a testsuite container in test-listing mode and reads the tests that it spits out
+Spins up a testsuite container in test-listing mode and returns the "set" of tests that it spits out
  */
-func getAllTestNames(
+func getAllTestNamesInSuite(
 			testSuiteImage string,
 			dockerManager *docker.DockerManager) (map[string]bool, error) {
 	// Create the tempfile that the testsuite image will write test names to
-	tempFp, err := ioutil.TempFile("", "test-names")
+	testNamesFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to write test names to")
 	}
-	tempFp.Close()
+	testNamesFp.Close()
+
+	containerLogFp, err := ioutil.TempFile("", "test-listing.log")
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to store the " +
+			"test suite container logs")
+	}
+	containerLogFp.Close()
+	defer os.Remove(containerLogFp.Name())
 
 	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(context.Background(), bridgeNetworkName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred gettings the network IDs matching the '%v' network", bridgeNetworkName)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the network IDs matching the '%v' network",
+			bridgeNetworkName)
 	}
 	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
 		return nil, stacktrace.NewError(
@@ -188,10 +202,11 @@ func getAllTestNames(
 			testNamesFilepathEnvVar: testNamesFilepath,
 			testEnvVar:              "", // We leave this blank to signify that we want test listing, not test execution
 			kurtosisApiIpEnvVar:     "", // Because we're doing test listing, this can be blank
-			testSuiteLogFilepathEnvVar: "/tmp/log.txt",
+			testSuiteLogFilepathEnvVar: testSuiteLogFilepath,
 		},
 		map[string]string{
-			tempFp.Name(): testNamesFilepath,
+			testNamesFp.Name():    testNamesFilepath,
+			containerLogFp.Name(): testSuiteLogFilepath,
 		},
 		map[string]string{})
 	if err != nil {
@@ -202,13 +217,15 @@ func getAllTestNames(
 		context.Background(),
 		testListingContainerId)
 	if err != nil {
+		printContainerLogs(testListingContainerDescription, containerLogFp.Name())
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
+		printContainerLogs(testListingContainerDescription, containerLogFp.Name())
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
 
-	tempFpReader, err := os.Open(tempFp.Name())
+	tempFpReader, err := os.Open(testNamesFp.Name())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred opening the temp filename containing test names for reading")
 	}
@@ -223,6 +240,33 @@ func getAllTestNames(
 	return testNames, nil
 }
 
+/*
+Little helper function to print the file with banners indicating the name of the test suite container
+
+Args:
+	containerDescription: Short, human-readable description of the container whose logs are being printed
+	logFilepath: Filepath of the file containing the container's logs
+ */
+func printContainerLogs(containerDescription string, logFilepath string) {
+	containerDescUppercase := strings.ToUpper(containerDescription)
+	logrus.Info("- - - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
+	fp, err := os.Open(logFilepath)
+	if err != nil {
+		logrus.Errorf("Could not print the test suite container's logs due to the following error when opening the file:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+	}
+	defer fp.Close()
+	if _, err := io.Copy(logrus.StandardLogger().Out, fp); err != nil {
+		logrus.Errorf("Could not print the test suite container's logs due to the following error when copying logfile contents:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+	}
+	logrus.Info("- - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
+}
+
+/*
+Helper function to translate the user-provided string that we receive from the CLI about which tests to run to a "set"
+	of the test names to run, validating that all the test names are valid.
+ */
 func getTestNamesToRun(
 			testsToRunStr string,
 			testSuiteImage string,
@@ -237,7 +281,7 @@ func getTestNamesToRun(
 		}
 	}
 
-	allTestNames, err := getAllTestNames(testSuiteImage, dockerManager)
+	allTestNames, err := getAllTestNamesInSuite(testSuiteImage, dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the names of the tests in the test suite")
 	}
@@ -259,7 +303,9 @@ func getTestNamesToRun(
 	return testNamesToRun, nil
 }
 
-
+/*
+Runs a single test with the given name
+ */
 func runSingleTest(
 		executionId uuid.UUID,
 		testSuiteImage string,
@@ -321,6 +367,14 @@ func runSingleTest(
 		testRunningContainerIp.String(),
 		kurtosisApiIp.String())
 
+	// TODO When we have the initializer run in a Docker container, transition to using Docker volumes to store logs
+	containerLogFp, err := ioutil.TempFile("", "test-execution.log")
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the temporary file for holding the " +
+			"logs of the test suite container running the test")
+	}
+	containerLogFp.Close()
+
 	logrus.Infof("Creating test suite container that will run the test...")
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
@@ -331,14 +385,16 @@ func runSingleTest(
 		map[nat.Port]bool{},
 		nil,
 		map[string]string{
-			testNamesFilepathEnvVar: "", // We leave this blank because we want test execution, not listing
-			testEnvVar:          testName,                  // We leave this blank to signify that we want test listing, not test execution
-			kurtosisApiIpEnvVar: kurtosisApiIp.String(), // Because we're doing test listing, this can be blank
-			testSuiteLogFilepathEnvVar: testVolumeMountLocation + "/test.log",
+			testNamesFilepathEnvVar:    "", // We leave this blank because we want test execution, not listing
+			testEnvVar:                 testName,                  // We leave this blank to signify that we want test listing, not test execution
+			kurtosisApiIpEnvVar:        kurtosisApiIp.String(), // Because we're doing test listing, this can be blank
+			testSuiteLogFilepathEnvVar: testSuiteLogFilepath,
 		},
-		map[string]string{},
 		map[string]string{
-			volumeName: testVolumeMountLocation,
+			containerLogFp.Name(): testSuiteLogFilepath,
+		},
+		map[string]string{
+			volumeName: testVolumeMountDirpath,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
@@ -364,16 +420,17 @@ func runSingleTest(
 			subnetMaskEnvVar: subnetMask,
 			gatewayIpEnvVar: gatewayIp.String(),
 			// TODO make this parameterizable
-			logLevelEnvVar: "trace",
-			apiLogFilepathEnvVar: testVolumeMountLocation + "/api.log",
-			apiContainerIpAddrEnvVar: kurtosisApiIp.String(),
+			logLevelEnvVar:                 "trace",
+			// NOTE: We set this to some random file inside the volume because we don't expect it to be read
+			apiLogFilepathEnvVar:           testVolumeMountDirpath + "/api.log",
+			apiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
 			testSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
 		},
 		map[string]string{
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			volumeName: testVolumeMountLocation,
+			volumeName: testVolumeMountDirpath,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
@@ -394,6 +451,8 @@ func runSingleTest(
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
+		// TODO this is in a really crappy spot; move it
+		printContainerLogs(testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -403,6 +462,8 @@ func runSingleTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
+		// TODO this is in a really crappy spot; move it
+		printContainerLogs(testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.ShutdownSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
@@ -427,6 +488,9 @@ func runSingleTest(
 	return testSuiteExitCode == 0, nil
 }
 
+/*
+Translates the subnet start address into a uint32 representing the IP address
+ */
 func getSubnetStartIpInt() (uint32, error) {
 	subnetStartIp := net.ParseIP(subnetStartAddr)
 	if subnetStartIp == nil {
@@ -445,6 +509,9 @@ func getSubnetStartIpInt() (uint32, error) {
 	return subnetStartIpInt, nil
 }
 
+/*
+Gets the subnet mask that Docker should use for a given test, with each network offset by testIndex * networkWidthBits
+ */
 func getTestSubnetMask(subnetStartIpInt uint32, networkWidthBits uint32, testIndex int) (string, error) {
 	subnetMaskBits := betsInIPv4Addr - networkWidthBits
 
