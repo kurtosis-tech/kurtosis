@@ -243,13 +243,13 @@ func getTestNamesToRun(
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
-		for testName, _ := range allTestNames {
+		for testName := range allTestNames {
 			testNamesToRun[testName] = true
 		}
 	}
 
 	// Validate all the requested tests exist
-	for testName, _ := range testNamesToRun {
+	for testName := range testNamesToRun {
 		if _, found := allTestNames[testName]; !found {
 			return nil, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
@@ -300,12 +300,16 @@ func runSingleTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
-	logrus.Debugf("Kurtosis API container IP: %v", kurtosisApiIp.String())
 	testRunningContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
 	}
-	logrus.Debugf("Test suite container IP: %v", testRunningContainerIp.String())
+	logrus.Debugf(
+		"Test suite container IP: %v; kurtosis API container IP: %v",
+		testRunningContainerIp.String(),
+		kurtosisApiIp.String())
+
+	//
 
 	logrus.Infof("Creating test suite container that will run the test...")
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
