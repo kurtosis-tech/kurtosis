@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
@@ -27,7 +28,6 @@ const (
 	failureExitCode = 1
 
 	testNamesFilepath = "/shared/test-names-filepath"
-	kurtosisApiStopContainerTimeout = 30 * time.Second
 	dockerSocket = "/var/run/docker.sock"
 	testNameArgSeparator = ","
 
@@ -120,23 +120,25 @@ func main() {
 	allTestsPassed := true
 	testIndex := 0
 	for testName, _ := range testNamesToRun {
-		// TODO pull netwokrwidthbits from the testsuite
-		subnetMask, err := getTestSubnetMask(subnetStartIpInt, defaultNetworkWidthBits, testIndex)
-		if err != nil {
-			logrus.Errorf("An error occurred getting subnet mask for test '%v':", testName)
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			allTestsPassed = false
-			continue
-		}
-
-		testPassed, err := runSingleTest(executionId, *testSuiteImageArg, dockerManager, testName, subnetMask)
-		if err != nil {
+		testPassed, testExecutionErr := runSingleTest(
+			executionId,
+			*testSuiteImageArg,
+			dockerManager,
+			testName,
+			subnetStartIpInt,
+			testIndex)
+		if testExecutionErr != nil {
 			logrus.Errorf("An error occurred that prevented retrieving test pass/fail status for test '%v':", testName)
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			allTestsPassed = false
-			continue
+			fmt.Fprintln(logrus.StandardLogger().Out, testExecutionErr)
+			logrus.Errorf("%v: ERRORED", testName)
+		} else {
+			if testPassed {
+				logrus.Infof("%v: PASSED", testName)
+			} else {
+				logrus.Errorf("%v: FAILED", testName)
+			}
 		}
-		allTestsPassed = allTestsPassed && testPassed
+		allTestsPassed = allTestsPassed && (testExecutionErr == nil && testPassed)
 		testIndex++
 	}
 
@@ -263,7 +265,15 @@ func runSingleTest(
 		testSuiteImage string,
 		dockerManager *docker.DockerManager,
 		testName string,
-		subnetMask string) (bool, error){
+		subnetStartIpInt uint32,
+		testIndex int) (bool, error){
+
+	// TODO pull netwokrwidthbits from the testsuite
+	subnetMask, err := getTestSubnetMask(subnetStartIpInt, defaultNetworkWidthBits, testIndex)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting subnet mask for test '%v':", testName)
+	}
+
 	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executionId.String(), testName)
 
 	volumeName := uniqueTestIdentifier
@@ -294,6 +304,7 @@ func runSingleTest(
 	defer removeNetworkDeferredFunc(dockerManager, networkId)
 	logrus.Infof("Docker network %v created successfully", networkId)
 
+	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
 	//  container which will only be started after the testsuite container
 	kurtosisApiIp, err := freeIpAddrTracker.GetFreeIpAddr()
@@ -304,12 +315,11 @@ func runSingleTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
 	}
+
 	logrus.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
 		testRunningContainerIp.String(),
 		kurtosisApiIp.String())
-
-	//
 
 	logrus.Infof("Creating test suite container that will run the test...")
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
@@ -351,8 +361,8 @@ func runSingleTest(
 			testSuiteContainerIdEnvVar: testRunningContainerId,
 			// TODO Change all of these
 			networkIdEnvVar: networkId,
-			subnetMaskEnvVar: bridgeNetworkSubnetMask,
-			gatewayIpEnvVar: bridgeNetworkGatewayIp,
+			subnetMaskEnvVar: subnetMask,
+			gatewayIpEnvVar: gatewayIp.String(),
 			// TODO make this parameterizable
 			logLevelEnvVar: "trace",
 			apiLogFilepathEnvVar: testVolumeMountLocation + "/api.log",
@@ -377,33 +387,44 @@ func runSingleTest(
 		context.Background(),
 		kurtosisApiContainerId)
 	if err != nil {
-		logrus.Errorf("An error occurred waiting for the exit of the Kurtosis API container: %v", err)
+		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
 	}
 
-	if kurtosisApiExitCode != 0 {
-		// TODO change this with tearing down the entire network
-		// The testsuite container didn't stop within the tiemout; make a best-effort attempt to stop the testsuite container
-		logrus.Info("Kurtosis API container exited with an error, indicating the test either didn't register or the test didn't " +
-			"finish in the timeout; trying to stop the test suite container...")
-		if err := dockerManager.StopContainer(context.Background(), testRunningContainerId, 30 * time.Second); err != nil {
-			logrus.Error("An error occurred during our best-effort attempt at stopping the testsuite container which exceeded its test timeout:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-		}
-		logrus.Info("Test suite container stopped successfully")
-		return false, stacktrace.NewError("The testsuite container either didn't register itself or didn't stop within the hard test timeout")
+	var testStatusRetrievalError error
+	switch kurtosisApiExitCode {
+	case exit_codes.TestCompletedInTimeoutExitCode:
+		testStatusRetrievalError = nil
+	case exit_codes.OutOfOrderTestStatusExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
+			"test execution status update; this is a Kurtosis code bug")
+	case exit_codes.TestHitTimeoutExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The test failed to complete within the hard test " +
+			"timeout (test_execution_timeout + setup_buffer)")
+	case exit_codes.NoTestSuiteRegisteredExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
+			"Kurtosis API container; this is a bug with the test suite")
+	case exit_codes.ShutdownSignalExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
+			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
+	default:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
+			"exit code %v; this is a code bug in Kurtosis indicating that the new exit code needs to be mapped " +
+			"for the initializer", kurtosisApiExitCode)
 	}
-	logrus.Info("Kurtosis API container exited without errors, indicating that the test finished before the timeout")
+	if testStatusRetrievalError != nil {
+		logrus.Error("An error occurred that prevented retrieval of the test completion status")
+		return false, testStatusRetrievalError
+	}
+	logrus.Info("The test suite container running the test exited within the hard test timeout")
 
-	// The test suite container will already be stopped, but we want the exit code
-	testRunningExitCode, err := dockerManager.WaitForExit(
+	// The test suite container will already have stopped, so now we get the exit code
+	testSuiteExitCode, err := dockerManager.WaitForExit(
 		context.Background(),
 		testRunningContainerId)
 	if err != nil {
-		return false, stacktrace.Propagate(
-			err,
-			"The testsuite container running the test stopped within the timeout, but an error occurred retrieving the exit code")
+		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
 	}
-	return testRunningExitCode == 0, nil
+	return testSuiteExitCode == 0, nil
 }
 
 func getSubnetStartIpInt() (uint32, error) {

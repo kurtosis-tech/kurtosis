@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/logging"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
@@ -87,12 +89,11 @@ func main() {
 	}
 	logrus.SetLevel(*logLevelPtr)
 
-	// A value on this channel indicates that a test was registered and it either completed or timed out, and the
-	//  bool value will be "true" if the test execution ended before timeout and "false" if the timeout was hit
-	testExecutionEndedBeforeTimeoutChan := make(chan bool, 1)
+	// A value on this channel indicates a change in the test execution status
+	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)
 
 	server, err := createServer(
-		testExecutionEndedBeforeTimeoutChan,
+		testExecutionStatusChan,
 		*testSuiteContainerIdArg,
 		*networkIdArg,
 		*subnetMaskArg,
@@ -114,23 +115,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	logrus.Info("Waiting for stop signal or test completion...")
-	var exitCode int
-	select {
-	case <- time.After(idleShutdownTimeout):
-		logrus.Errorf("No test suite registered itself after waiting %v; this likely means the test suite has a fatal error", idleShutdownTimeout)
-		exitCode = 1
-	case signal := <- signalChan:
-		logrus.Infof("Received signal %v; server will shut down", signal)
-		exitCode = 0
-	case testExecutionEndedBeforeTimeout := <- testExecutionEndedBeforeTimeoutChan:
-		if testExecutionEndedBeforeTimeout {
-			logrus.Info("Test execution ended before timeout as expected")
-			exitCode = 0
-		} else {
-			logrus.Error("Test execution hit timeout")
-			exitCode = 1
-		}
-	}
+	exitCode := waitUntilExitCondition(testExecutionStatusChan, signalChan)
 
 	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
 	//  the server hangs forever trying to shutdown
@@ -142,7 +127,7 @@ func main() {
 }
 
 func createServer(
-		testExecutionEndedBeforeTimeoutChan chan bool,
+		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
 		networkId string,
 		networkSubnetMask string,
@@ -173,7 +158,7 @@ func createServer(
 
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
-		testExecutionEndedBeforeTimeoutChan,
+		testExecutionStatusChan,
 		dockerManager,
 		networkId,
 		freeIpAddrTracker,
@@ -193,4 +178,47 @@ func createServer(
 	}
 
 	return server, nil
+}
+
+func waitUntilExitCondition(testExecutionStatusChan chan test_execution_status.TestExecutionStatus, signalChan chan os.Signal) int {
+	// If no test suite registers within our idle timeout, shut the container down
+	select {
+	case receivedStatus := <-testExecutionStatusChan:
+		if receivedStatus != test_execution_status.Running {
+			logrus.Errorf(
+				"Received out-of-order test execution status update; got %v when we were expecting %v",
+				receivedStatus,
+				test_execution_status.Running)
+			return exit_codes.OutOfOrderTestStatusExitCode
+		}
+	case <-time.After(idleShutdownTimeout):
+		logrus.Errorf("No test suite registered itself after waiting %v; this likely means the test suite had a fatal error", idleShutdownTimeout)
+		return exit_codes.NoTestSuiteRegisteredExitCode
+	case signal := <-signalChan:
+		logrus.Infof("Received signal %v while awaiting test registration; server will shut down", signal)
+		return exit_codes.ShutdownSignalExitCode
+	}
+	logrus.Info("Received notification that a test was registered; proceeding to await test completion...")
+
+	select {
+	case receivedStatus := <-testExecutionStatusChan:
+		if !(receivedStatus == test_execution_status.HitTimeout || receivedStatus == test_execution_status.CompletedBeforeTimeout) {
+			logrus.Errorf(
+				"Received out-of-order test execution status update; got %v when we were expecting %v or %v",
+				receivedStatus,
+				test_execution_status.HitTimeout,
+				test_execution_status.CompletedBeforeTimeout)
+			return exit_codes.OutOfOrderTestStatusExitCode
+		}
+		if receivedStatus == test_execution_status.HitTimeout {
+			logrus.Error("Test execution hit timeout before test completion")
+			return exit_codes.TestHitTimeoutExitCode
+		}
+	case signal := <-signalChan:
+		logrus.Infof("Received signal %v while awaiting test completion; server will shut down", signal)
+		return exit_codes.ShutdownSignalExitCode
+	}
+
+	logrus.Info("Test completed before reaching the timeout")
+	return exit_codes.TestCompletedInTimeoutExitCode
 }

@@ -328,12 +328,22 @@ func (manager DockerManager) getNetworksByFilter(filterKey string, filterValue s
 }
 
 func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr net.IP) (err error) {
+	logrus.Tracef(
+		"Connecting container ID %v to network ID %v using static IP %v",
+		containerId,
+		networkId,
+		staticIpAddr.String())
+
+	ipamConfig := &network.EndpointIPAMConfig{
+		IPv4Address:  staticIpAddr.String(),
+	}
+
 	err = manager.dockerClient.NetworkConnect(
 		context.Background(),
 		networkId,
 		containerId,
 		&network.EndpointSettings{
-			IPAddress: staticIpAddr.String(),
+			IPAMConfig: ipamConfig,
 		})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)

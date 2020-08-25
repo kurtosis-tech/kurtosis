@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
 	"github.com/palantir/stacktrace"
@@ -40,10 +41,9 @@ type KurtosisService struct {
 
 	freeIpAddrTracker *networks.FreeIpAddrTracker
 
-	// A value will be pushed to this channel iff a test execution has been registered with the API container and the
-	//  execution either completes successfully (as indicated by the testsuite container exiting) or hits the timeout
-	//  that was registered with the API container
-	testEndedBeforeTimeoutChan chan bool
+	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
+	//  registering that execution has started, or the timeout has been hit, etc.
+	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
 
 	// The names of the tests inside the suite; will be nil if no test suite has been registered yet
 	suiteTestNames []string
@@ -56,18 +56,18 @@ type KurtosisService struct {
 
 func NewKurtosisService(
 		testSuiteContainerId string,
-		testEndedBeforeTimeoutChan chan bool,
+		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *docker.DockerManager,
 		dockerNetworkId string,
 		freeIpAddrTracker *networks.FreeIpAddrTracker) *KurtosisService {
 	return &KurtosisService{
-		testSuiteContainerId:       testSuiteContainerId,
-		testEndedBeforeTimeoutChan: testEndedBeforeTimeoutChan,
-		dockerManager:              dockerManager,
-		dockerNetworkId:            dockerNetworkId,
-		freeIpAddrTracker:          freeIpAddrTracker,
-		suiteTestNames:             nil,
-		mutex:                      &sync.Mutex{},
+		testSuiteContainerId:    testSuiteContainerId,
+		testExecutionStatusChan: testExecutionStatusChan,
+		dockerManager:           dockerManager,
+		dockerNetworkId:         dockerNetworkId,
+		freeIpAddrTracker:       freeIpAddrTracker,
+		suiteTestNames:          nil,
+		mutex:                   &sync.Mutex{},
 	}
 }
 
@@ -158,16 +158,16 @@ func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, arg
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
 
-	testTimeoutSeconds := args.TestTimeoutSeconds
-	logrus.Infof("Received request to register a test execution with timeout of %v seconds...", testTimeoutSeconds)
-
-
+	logrus.Infof("Received request to register a test execution with timeout of %v seconds...", args.TestTimeoutSeconds)
 	if service.testExecutionRegistered {
 		return stacktrace.NewError("A test execution is already registered with the API container")
 	}
+
+	service.testExecutionStatusChan <- test_execution_status.Running
 	service.testExecutionRegistered = true
+
 	logrus.Info("Launching thread to await test completion or timeout...")
-	go awaitTestCompletionOrTimeout(service.dockerManager, service.testSuiteContainerId, testTimeoutSeconds, service.testEndedBeforeTimeoutChan)
+	go awaitTestCompletionOrTimeout(service.dockerManager, service.testSuiteContainerId, args.TestTimeoutSeconds, service.testExecutionStatusChan)
 	logrus.Info("Launched thread to await test completion or timeout")
 	return nil
 }
@@ -178,7 +178,11 @@ func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, arg
 Waits for either a) the testsuite container to exit or b) the given timeout to be reached, and pushes a corresponding
 	boolean value to the given channel based on which condition was hit
  */
-func awaitTestCompletionOrTimeout(dockerManager *docker.DockerManager, testSuiteContainerId string, timeoutSeconds int, testEndedBeforeTimeoutChan chan bool) {
+func awaitTestCompletionOrTimeout(
+			dockerManager *docker.DockerManager,
+			testSuiteContainerId string,
+			timeoutSeconds int,
+			testExecutionStatusChan chan test_execution_status.TestExecutionStatus) {
 	logrus.Debugf("[%v] Thread started", completionTimeoutPrefix)
 
 	context, cancelFunc := context.WithCancel(context.Background())
@@ -197,13 +201,13 @@ func awaitTestCompletionOrTimeout(dockerManager *docker.DockerManager, testSuite
 	case <- testSuiteContainerExitedChan:
 		// Triggered when the channel is closed, which is our signal that the testsuite container exited
 		logrus.Debugf("[%v] Received signal that test suite container exited", completionTimeoutPrefix)
-		testEndedBeforeTimeoutChan <- true
+		testExecutionStatusChan <- test_execution_status.CompletedBeforeTimeout
 	case <- time.After(timeout):
 		logrus.Debugf("[%v] Hit test timeout (%v) before test suite container exited", completionTimeoutPrefix, timeout)
-		testEndedBeforeTimeoutChan <- false
+		testExecutionStatusChan <- test_execution_status.HitTimeout
 		cancelFunc() // We hit the timeout, so tell the container-awaiting thread to hara-kiri
 	}
-	close(testEndedBeforeTimeoutChan)
+	close(testExecutionStatusChan)
 	logrus.Debugf("[%v] Thread is exiting", completionTimeoutPrefix)
 }
 
