@@ -27,4 +27,6 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
         --network-id=${NETWORK_ID} \
         --subnet-mask=${SUBNET_MASK} \
         --gateway-ip=${GATEWAY_IP} \
+        --api-container-ip=${API_CONTAINER_IP} \
+        --test-suite-container-ip=${TEST_SUITE_CONTAINER_IP} \
         --log-level=${LOG_LEVEL}"]

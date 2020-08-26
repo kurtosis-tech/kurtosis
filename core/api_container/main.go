@@ -8,6 +8,8 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/logging"
 	"github.com/kurtosis-tech/kurtosis/commons/docker"
 	"github.com/kurtosis-tech/kurtosis/commons/networks"
@@ -17,9 +19,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
+	// If no test suite registers a test execution in this time, the API container will shut itself down of its own accord
+	idleShutdownTimeout = 15 * time.Second
 )
 
 func main() {
@@ -53,10 +58,16 @@ func main() {
 		"IP address of the gateway address on the Docker network that the test controller is running in",
 	)
 
-	containerIpArg := flag.String(
-		"container-ip",
+	apiContainerIpAddrArg := flag.String(
+		"api-container-ip",
 		"",
 		"IP address of the Docker container running the API container",
+	)
+
+	testSuiteContainerIpAddrArg := flag.String(
+		"test-suite-container-ip",
+		"",
+		"IP address of the Docker container running the test suite container",
 	)
 
 	logLevelArg := flag.String(
@@ -78,17 +89,17 @@ func main() {
 	}
 	logrus.SetLevel(*logLevelPtr)
 
-	// A value on this channel indicates that a test was registered and it either completed or timed out, and the
-	//  bool value will be "true" if the test execution ended before timeout and "false" if the timeout was hit
-	testExecutionEndedBeforeTimeoutChan := make(chan bool, 1)
+	// A value on this channel indicates a change in the test execution status
+	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)
 
 	server, err := createServer(
-		testExecutionEndedBeforeTimeoutChan,
+		testExecutionStatusChan,
 		*testSuiteContainerIdArg,
 		*networkIdArg,
 		*subnetMaskArg,
 		*gatewayIpArg,
-		*containerIpArg)
+		*apiContainerIpAddrArg,
+		*testSuiteContainerIpAddrArg)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -104,21 +115,7 @@ func main() {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	logrus.Info("Waiting for stop signal or test completion...")
-	var exitCode int
-	select {
-	// TODO add a shutdown case here of "no test was registered within <timeout>"
-	case signal := <- signalChan:
-		logrus.Infof("Received signal %v; server will shut down", signal)
-		exitCode = 0
-	case testExecutionEndedBeforeTimeout := <- testExecutionEndedBeforeTimeoutChan:
-		if testExecutionEndedBeforeTimeout {
-			logrus.Info("Test execution ended before timeout as expected")
-			exitCode = 0
-		} else {
-			logrus.Error("Test execution hit timeout")
-			exitCode = 1
-		}
-	}
+	exitCode := waitUntilExitCondition(testExecutionStatusChan, signalChan)
 
 	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
 	//  the server hangs forever trying to shutdown
@@ -130,12 +127,13 @@ func main() {
 }
 
 func createServer(
-		testExecutionEndedBeforeTimeoutChan chan bool,
+		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
 		networkId string,
 		networkSubnetMask string,
 		gatewayIp string,
-		apiContainerIp string) (*http.Server, error) {
+		apiContainerIp string,
+		testSuiteContainerIp string) (*http.Server, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
@@ -152,6 +150,7 @@ func createServer(
 		map[string]bool{
 			gatewayIp:      true,
 			apiContainerIp: true,
+			testSuiteContainerIp: true,
 		})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
@@ -159,7 +158,7 @@ func createServer(
 
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
-		testExecutionEndedBeforeTimeoutChan,
+		testExecutionStatusChan,
 		dockerManager,
 		networkId,
 		freeIpAddrTracker,
@@ -179,4 +178,47 @@ func createServer(
 	}
 
 	return server, nil
+}
+
+func waitUntilExitCondition(testExecutionStatusChan chan test_execution_status.TestExecutionStatus, signalChan chan os.Signal) int {
+	// If no test suite registers within our idle timeout, shut the container down
+	select {
+	case receivedStatus := <-testExecutionStatusChan:
+		if receivedStatus != test_execution_status.Running {
+			logrus.Errorf(
+				"Received out-of-order test execution status update; got %v when we were expecting %v",
+				receivedStatus,
+				test_execution_status.Running)
+			return exit_codes.OutOfOrderTestStatusExitCode
+		}
+	case <-time.After(idleShutdownTimeout):
+		logrus.Errorf("No test suite registered itself after waiting %v; this likely means the test suite had a fatal error", idleShutdownTimeout)
+		return exit_codes.NoTestSuiteRegisteredExitCode
+	case signal := <-signalChan:
+		logrus.Infof("Received signal %v while awaiting test registration; server will shut down", signal)
+		return exit_codes.ShutdownSignalExitCode
+	}
+	logrus.Info("Received notification that a test was registered; proceeding to await test completion...")
+
+	select {
+	case receivedStatus := <-testExecutionStatusChan:
+		if !(receivedStatus == test_execution_status.HitTimeout || receivedStatus == test_execution_status.CompletedBeforeTimeout) {
+			logrus.Errorf(
+				"Received out-of-order test execution status update; got %v when we were expecting %v or %v",
+				receivedStatus,
+				test_execution_status.HitTimeout,
+				test_execution_status.CompletedBeforeTimeout)
+			return exit_codes.OutOfOrderTestStatusExitCode
+		}
+		if receivedStatus == test_execution_status.HitTimeout {
+			logrus.Error("Test execution hit timeout before test completion")
+			return exit_codes.TestHitTimeoutExitCode
+		}
+	case signal := <-signalChan:
+		logrus.Infof("Received signal %v while awaiting test completion; server will shut down", signal)
+		return exit_codes.ShutdownSignalExitCode
+	}
+
+	logrus.Info("Test completed before reaching the timeout")
+	return exit_codes.TestCompletedInTimeoutExitCode
 }
