@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
+	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/parallelism"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
@@ -88,7 +88,7 @@ Returns:
 		being retrieved. If this is non-nil, the allTestsPassed value is undefined!
  */
 func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParallelism uint) (allTestsPassed bool, executionErr error) {
-	stdoutDockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), runner.dockerClient)
+	stdoutDockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), runner.dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}

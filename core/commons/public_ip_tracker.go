@@ -1,4 +1,4 @@
-package networks
+package commons
 
 import (
 	"encoding/binary"

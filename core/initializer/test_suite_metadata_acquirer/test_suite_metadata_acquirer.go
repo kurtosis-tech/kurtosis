@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
+	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
@@ -26,7 +26,7 @@ Spins up a testsuite container in test-listing mode and returns the "set" of tes
 */
 func GetAllTestNamesInSuite(
 		testSuiteImage string,
-		dockerManager *docker.DockerManager) (map[string]bool, error) {
+		dockerManager *commons.DockerManager) (map[string]bool, error) {
 	// Create the tempfile that the testsuite image will write test names to
 	testNamesFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {

@@ -9,8 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
@@ -146,7 +145,7 @@ func (executor testExecutor) runTest(ctx *context.Context) (bool, error) {
 	executor.log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := docker.NewDockerManager(executor.log, executor.dockerClient)
+	dockerManager, err := commons.NewDockerManager(executor.log, executor.dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", executor.testName)
 	}
@@ -160,7 +159,7 @@ func (executor testExecutor) runTest(ctx *context.Context) (bool, error) {
 	executor.log.Debugf("Docker volume %v created successfully", volumeName)
 
 	executor.log.Infof("Creating Docker network for test with subnet mask %v...", executor.subnetMask)
-	freeIpAddrTracker, err := networks.NewFreeIpAddrTracker(
+	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		executor.log,
 		executor.subnetMask,
 		map[string]bool{})
@@ -325,7 +324,7 @@ func (executor testExecutor) runTest(ctx *context.Context) (bool, error) {
 Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
 as a deferred function.
 */
-func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker.DockerManager, networkId string) {
+func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.DockerManager, networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!

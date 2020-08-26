@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -35,11 +34,11 @@ type KurtosisService struct {
 	//  exactly once
 	testSuiteContainerId string
 
-	dockerManager *docker.DockerManager
+	dockerManager *commons.DockerManager
 
 	dockerNetworkId string
 
-	freeIpAddrTracker *networks.FreeIpAddrTracker
+	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
@@ -57,9 +56,9 @@ type KurtosisService struct {
 func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
-		dockerManager *docker.DockerManager,
+		dockerManager *commons.DockerManager,
 		dockerNetworkId string,
-		freeIpAddrTracker *networks.FreeIpAddrTracker) *KurtosisService {
+		freeIpAddrTracker *commons.FreeIpAddrTracker) *KurtosisService {
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
@@ -179,7 +178,7 @@ Waits for either a) the testsuite container to exit or b) the given timeout to b
 	boolean value to the given channel based on which condition was hit
  */
 func awaitTestCompletionOrTimeout(
-			dockerManager *docker.DockerManager,
+			dockerManager *commons.DockerManager,
 			testSuiteContainerId string,
 			timeoutSeconds int,
 			testExecutionStatusChan chan test_execution_status.TestExecutionStatus) {
@@ -216,7 +215,7 @@ Waits for the container to exit until the context is cancelled
  */
 func awaitTestSuiteContainerExit(
 		context context.Context,
-		dockerManager *docker.DockerManager,
+		dockerManager *commons.DockerManager,
 		testSuiteContainerId string,
 		testSuiteContainerExitedChan chan struct{}) {
 	logrus.Debugf("[%v] Thread started", completionPrefix)

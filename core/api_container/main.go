@@ -11,8 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/logging"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/commons/networks"
+	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -139,12 +138,12 @@ func createServer(
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
 	}
 
-	dockerManager, err := docker.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	freeIpAddrTracker, err := networks.NewFreeIpAddrTracker(
+	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkSubnetMask,
 		map[string]bool{
