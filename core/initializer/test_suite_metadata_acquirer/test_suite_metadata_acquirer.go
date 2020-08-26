@@ -27,6 +27,8 @@ Spins up a testsuite container in test-listing mode and returns the "set" of tes
 func GetAllTestNamesInSuite(
 		testSuiteImage string,
 		dockerManager *commons.DockerManager) (map[string]bool, error) {
+	parentContext := context.Background()
+
 	// Create the tempfile that the testsuite image will write test names to
 	testNamesFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {
@@ -42,7 +44,7 @@ func GetAllTestNamesInSuite(
 	containerLogFp.Close()
 	defer os.Remove(containerLogFp.Name())
 
-	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(context.Background(), bridgeNetworkName)
+	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(parentContext, bridgeNetworkName)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -58,7 +60,7 @@ func GetAllTestNamesInSuite(
 	bridgeNetworkId := bridgeNetworkIds[0]
 
 	testListingContainerId, err := dockerManager.CreateAndStartContainer(
-		context.Background(),
+		parentContext,
 		testSuiteImage,
 		// TODO parameterize these
 		bridgeNetworkId,
@@ -81,7 +83,7 @@ func GetAllTestNamesInSuite(
 	}
 
 	testListingExitCode, err := dockerManager.WaitForExit(
-		context.Background(),
+		parentContext,
 		testListingContainerId)
 	if err != nil {
 		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
