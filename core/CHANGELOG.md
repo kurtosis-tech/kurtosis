@@ -3,6 +3,7 @@
 * Kill TODOs in "Debugging Failed Tests" tutorial
 * Build a v0 of Docker container containing the Kurtosis API 
 * Add registration endpoint to the API container
+* Fix bugs with registration endpoint in API container
 
 # 0.9.0
 * Change ConfigurationID to be a string

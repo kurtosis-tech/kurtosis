@@ -106,6 +106,7 @@ func main() {
 	logrus.Info("Waiting for stop signal or test completion...")
 	var exitCode int
 	select {
+	// TODO add a shutdown case here of "no test was registered within <timeout>"
 	case signal := <- signalChan:
 		logrus.Infof("Received signal %v; server will shut down", signal)
 		exitCode = 0
@@ -156,7 +157,7 @@ func createServer(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
-	kurtosisApi := api.NewKurtosisAPI(
+	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
 		testExecutionEndedBeforeTimeoutChan,
 		dockerManager,
@@ -166,10 +167,12 @@ func createServer(
 
 	logrus.Info("Launching server...")
 
+	// TODO register a WithBeforefunc that adds a requestID to the request, so that each method's logging can use it
+	// TODO register an AfterFunc that will log errors as they leave the server
 	httpHandler := rpc.NewServer()
 	jsonCodec := json2.NewCodec()
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
-	httpHandler.RegisterService(kurtosisApi, "")
+	httpHandler.RegisterService(kurtosisService, "")
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%v", api.KurtosisAPIContainerPort),
 		Handler: httpHandler,
