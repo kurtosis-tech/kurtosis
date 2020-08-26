@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/test_suite_runner"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
