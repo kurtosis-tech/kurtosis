@@ -328,7 +328,7 @@ func (manager DockerManager) getNetworksByFilter(filterKey string, filterValue s
 }
 
 func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr net.IP) (err error) {
-	logrus.Tracef(
+	manager.log.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
 		networkId,

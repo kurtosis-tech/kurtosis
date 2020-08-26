@@ -239,7 +239,7 @@ func runSingleTest(
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(testRunningContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -250,7 +250,7 @@ func runSingleTest(
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(testRunningContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.ShutdownSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
