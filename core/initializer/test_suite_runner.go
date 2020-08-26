@@ -6,7 +6,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/testsuite"
-	"github.com/kurtosis-tech/kurtosis/initializer/parallelism"
+	"github.com/kurtosis-tech/kurtosis/initializer/old_parallelism"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
