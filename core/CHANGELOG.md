@@ -5,6 +5,7 @@
 * Add registration endpoint to the API container
 * Fix bugs with registration endpoint in API container
 * Upgrade new initializer to actually run a test suite!
+* Print rudimentary version of testsuite container logs
 
 # 0.9.0
 * Change ConfigurationID to be a string
