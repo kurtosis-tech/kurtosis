@@ -6,6 +6,7 @@
 * Fix bugs with registration endpoint in API container
 * Upgrade new initializer to actually run a test suite!
 * Print rudimentary version of testsuite container logs
+* Refactor the new intializer's `main` method, which had become 550 lines long, into separate classes
 
 # 0.9.0
 * Change ConfigurationID to be a string
