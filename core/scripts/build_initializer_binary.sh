@@ -14,7 +14,7 @@ echo "Running unit tests..."
 go test "${root_dirpath}"/...
 
 echo "Building..."
-if go build -o "${binary_output_filepath}" "${root_dirpath}/todo_rename_new_initializer/main.go"; then
+if go build -o "${binary_output_filepath}" "${root_dirpath}/initializer/main.go"; then
         echo "Build Successful"
         echo "Built initializer binary at ${binary_output_filepath}"
         echo "Run '${binary_output_filepath} --help' for usage."

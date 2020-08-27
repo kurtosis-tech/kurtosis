@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/commons/docker"
-	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/todo_rename_new_initializer/test_suite_env_vars"
+	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 )
@@ -25,7 +26,7 @@ Spins up a testsuite container in test-listing mode and returns the "set" of tes
 */
 func GetAllTestNamesInSuite(
 		testSuiteImage string,
-		dockerManager *docker.DockerManager) (map[string]bool, error) {
+		dockerManager *commons.DockerManager) (map[string]bool, error) {
 	// Create the tempfile that the testsuite image will write test names to
 	testNamesFp, err := ioutil.TempFile("", "test-names")
 	if err != nil {
@@ -83,11 +84,11 @@ func GetAllTestNamesInSuite(
 		context.Background(),
 		testListingContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(testListingContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(testListingContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
 

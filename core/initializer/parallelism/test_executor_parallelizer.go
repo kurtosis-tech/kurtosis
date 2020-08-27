@@ -26,14 +26,17 @@ type TestExecutorParallelizer struct {
 	// Docker client which will be used for manipulating the Docker environment when running a test
 	dockerClient                *client.Client
 
-	// Name of the Docker image of the test controller that will be used to orchestrate each test
-	testControllerImageName     string
+	// Name of the Docker image that will run the Kurtosis API container
+	kurtosisApiImageName string
 
-	// A string, meaningful only to the controller image, which tells it what log level it should run at
-	testControllerLogLevel      string
+	// Name of the Docker image of the test suite that will run each test
+	testSuiteImageName string
 
-	// A ke-value map of custom Docker environment variables that will be passed as-is to the controller container during startup
-	customTestControllerEnvVars map[string]string
+	// A string, meaningful only to the test suite image, which tells it what log level it should run at
+	testSuiteLogLevel string
+
+	// A key-value map of custom Docker environment variables that will be passed as-is to the test suite container during startup
+	customTestSuiteEnvVars map[string]string
 
 	// The number of tests to run in parallel
 	parallelism                 uint
@@ -45,26 +48,29 @@ Creates a new TestExecutorParallelizer which will run tests in parallel using th
 Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
-	testControllerImageName: The name of the Docker image that will be used to run the test controller
-	testControllerLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
-	customTestControllerEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
+	kurtosisApiImageName: The name of the Docker image that will run the Kurtosis API container
+	testSuiteImageName: The name of the Docker image that will be used to run the test controller
+	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
+	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
 		passed via Docker environment variables to the test controller
 	parallelism: The number of tests to run concurrently
  */
 func NewTestExecutorParallelizer(
 			executionId uuid.UUID,
 			dockerClient *client.Client,
-			testControllerImageName string,
-			testControllerLogLevel string,
+			kurtosisApiImageName string,
+			testSuiteImageName string,
+			testSuiteLogLevel string,
 			customTestControllerEnvVars map[string]string,
 			parallelism uint) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
-		executionId:                 executionId,
-		dockerClient:                dockerClient,
-		testControllerImageName:     testControllerImageName,
-		testControllerLogLevel:      testControllerLogLevel,
-		customTestControllerEnvVars: customTestControllerEnvVars,
-		parallelism:                 parallelism,
+		executionId:            executionId,
+		dockerClient:           dockerClient,
+		kurtosisApiImageName: kurtosisApiImageName,
+		testSuiteImageName:     testSuiteImageName,
+		testSuiteLogLevel:      testSuiteLogLevel,
+		customTestSuiteEnvVars: customTestControllerEnvVars,
+		parallelism:            parallelism,
 	}
 }
 
@@ -175,11 +181,11 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.executionId,
 			executor.dockerClient,
 			testParams.SubnetMask,
-			executor.testControllerImageName,
-			executor.testControllerLogLevel,
-			executor.customTestControllerEnvVars,
-			testName,
-			testParams.Test)
+			executor.kurtosisApiImageName,
+			executor.testSuiteImageName,
+			executor.testSuiteLogLevel,
+			executor.customTestSuiteEnvVars,
+			testName)
 
 
 		passed, executionErr := testExecutor.runTest(parentContext)
