@@ -9,6 +9,7 @@
 * Refactor the new intializer's `main` method, which had become 550 lines long, into separate classes
 * Run tests in parallel
 * Add copyright headers
+* Clean up some bugs in DockerManager where `context.Background` was getting used where it shouldn't
 
 # 0.9.0
 * Change ConfigurationID to be a string

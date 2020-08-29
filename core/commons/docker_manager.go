@@ -79,11 +79,11 @@ Returns:
 	id: The Docker-managed ID of the network
  */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP) (id string, err error)  {
-	networks, err := manager.getNetworksByFilter("name", name)
+	networkIds, err := manager.GetNetworkIdsByName(context, name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
-	if len(networks) != 0 {
+	if len(networkIds) != 0 {
 		// We throw an error if the network already exists because we don't know what settings that network was created
 		//  with - likely a completely different subnetMask and gatewayIP
 		return "", stacktrace.NewError("Network with name %v cannot be created because one or more networks with that name already exist", name)
@@ -108,7 +108,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 Returns the Docker network IDs of the networks matching the given name (if any).
  */
 func (manager DockerManager) GetNetworkIdsByName(context context.Context, name string) ([]string, error) {
-	networks, err := manager.getNetworksByFilter("name", name)
+	networks, err := manager.getNetworksByFilter(context, "name", name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
@@ -206,7 +206,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			bindMounts map[string]string,
 			volumeMounts map[string]string) (containerId string, err error) {
 
-	imageExistsLocally, err := manager.isImageAvailableLocally(dockerImage)
+	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
@@ -218,7 +218,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	networks, err := manager.getNetworksByFilter("id", networkId)
+	networks, err := manager.getNetworksByFilter(context, "id", networkId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
 	}
@@ -245,7 +245,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	// TODO remove this by making the testsuite test-listing container live in its own subnet
 	// The bridge network will handle its own IPs, so we provide the user the ability to skip providing an IP
 	if staticIp != nil {
-		if err := manager.connectToNetwork(networkId, containerId, staticIp); err != nil {
+		if err := manager.connectToNetwork(context, networkId, containerId, staticIp); err != nil {
 			return "", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
@@ -303,11 +303,11 @@ func (manager DockerManager) WaitForExit(context context.Context, containerId st
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
 // =================================================================================================================
-func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvailable bool, err error) {
+func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (isAvailable bool, err error) {
 	referenceArg := filters.Arg("reference", imageName)
 	filters := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
-		context.Background(),
+		ctx,
 		types.ImageListOptions{
 			All: true,
 			Filters: filters,
@@ -318,11 +318,11 @@ func (manager DockerManager) isImageAvailableLocally(imageName string) (isAvaila
 	return len(images) > 0, nil
 }
 
-func (manager DockerManager) getNetworksByFilter(filterKey string, filterValue string) ([]types.NetworkResource, error) {
+func (manager DockerManager) getNetworksByFilter(ctx context.Context, filterKey string, filterValue string) ([]types.NetworkResource, error) {
 	referenceArg := filters.Arg(filterKey, filterValue)
 	filters := filters.NewArgs(referenceArg)
 	networks, err := manager.dockerClient.NetworkList(
-		context.Background(),
+		ctx,
 		types.NetworkListOptions{
 			Filters: filters,
 		})
@@ -332,7 +332,7 @@ func (manager DockerManager) getNetworksByFilter(filterKey string, filterValue s
 	return networks, nil
 }
 
-func (manager DockerManager) connectToNetwork(networkId string, containerId string, staticIpAddr net.IP) (err error) {
+func (manager DockerManager) connectToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP) (err error) {
 	manager.log.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
@@ -344,7 +344,7 @@ func (manager DockerManager) connectToNetwork(networkId string, containerId stri
 	}
 
 	err = manager.dockerClient.NetworkConnect(
-		context.Background(),
+		ctx,
 		networkId,
 		containerId,
 		&network.EndpointSettings{
