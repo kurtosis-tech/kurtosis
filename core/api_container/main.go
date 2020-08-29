@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/logging"
@@ -178,6 +179,7 @@ func createServer(
 		dockerManager,
 		networkId,
 		freeIpAddrTracker,
+		testVolumeName,
 	)
 
 	logrus.Info("Launching server...")
@@ -189,7 +191,7 @@ func createServer(
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
 	httpHandler.RegisterService(kurtosisService, "")
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", api.KurtosisAPIContainerPort),
+		Addr:    fmt.Sprintf(":%v", api_container_docker_consts2.ContainerPort),
 		Handler: httpHandler,
 	}
 

@@ -6,42 +6,44 @@
 package test_suite_metadata_acquirer
 
 import (
-	"bufio"
 	"context"
+	"encoding/json"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_mount_locations"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 const (
 	bridgeNetworkName = "bridge"
 	testListingContainerDescription = "Test-Listing Container"
-	bindMountsDirpath = "/bind-mounts"
-	testNamesFilepath = bindMountsDirpath + "/test-names-filepath.txt"
-	logFilepath = bindMountsDirpath + "/test-listing.log"
+	testSuiteMetadataFilename = "test-suite-metadata.json"
+	logFilename = "test-listing.log"
 )
 
 /*
 Spins up a testsuite container in test-listing mode and returns the "set" of tests that it spits out
 */
-func GetAllTestNamesInSuite(
+func GetTestSuiteMetadata(
 		testSuiteImage string,
-		dockerManager *commons.DockerManager) (map[string]bool, error) {
+		dockerManager *commons.DockerManager) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	// Create the tempfile that the testsuite image will write test names to
-	testNamesFp, err := ioutil.TempFile("", "test-names")
+	testSuiteMetadataFp, err := ioutil.TempFile("", testSuiteMetadataFilename)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to write test names to")
+		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to write test suite " +
+			"metadata to")
 	}
-	testNamesFp.Close()
+	testSuiteMetadataFp.Close()
 
-	containerLogFp, err := ioutil.TempFile("", "test-listing.log")
+	containerLogFp, err := ioutil.TempFile("", logFilename)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to store the " +
 			"test suite container logs")
@@ -64,6 +66,8 @@ func GetAllTestNamesInSuite(
 	}
 	bridgeNetworkId := bridgeNetworkIds[0]
 
+	testSuiteMetadataFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, testSuiteMetadataFilename)
+	logFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, logFilename)
 	testListingContainerId, err := dockerManager.CreateAndStartContainer(
 		parentContext,
 		testSuiteImage,
@@ -73,14 +77,14 @@ func GetAllTestNamesInSuite(
 		map[nat.Port]bool{},
 		nil,
 		map[string]string{
-			test_suite_env_vars.TestNamesFilepathEnvVar:    testNamesFilepath,
+			test_suite_env_vars.MetadataFilepathEnvVar:     testSuiteMetadataFilepath,
 			test_suite_env_vars.TestEnvVar:                 "", // We leave this blank to signify that we want test listing, not test execution
 			test_suite_env_vars.KurtosisApiIpEnvVar:        "", // Because we're doing test listing, this can be blank
 			test_suite_env_vars.TestSuiteLogFilepathEnvVar: logFilepath,
 		},
 		map[string]string{
-			testNamesFp.Name():    testNamesFilepath,
-			containerLogFp.Name(): logFilepath,
+			testSuiteMetadataFp.Name(): testSuiteMetadataFilepath,
+			containerLogFp.Name():      logFilepath,
 		},
 		map[string]string{})
 	if err != nil {
@@ -99,17 +103,19 @@ func GetAllTestNamesInSuite(
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
 
-	tempFpReader, err := os.Open(testNamesFp.Name())
+	testSuiteMetadataReaderFp, err := os.Open(testSuiteMetadataFp.Name())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening the temp filename containing test names for reading")
+		return nil, stacktrace.Propagate(err, "An error occurred opening the temp filename containing test suite metadata for reading")
 	}
-	defer tempFpReader.Close()
-	scanner := bufio.NewScanner(tempFpReader)
+	defer testSuiteMetadataReaderFp.Close()
 
-	testNames := map[string]bool{}
-	for scanner.Scan() {
-		testNames[scanner.Text()] = true
+	jsonBytes, err := ioutil.ReadAll(testSuiteMetadataReaderFp)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred reading the test suite metadata JSON string from file")
 	}
 
-	return testNames, nil
+	var suiteMetadata TestSuiteMetadata
+	json.Unmarshal(jsonBytes, &suiteMetadata)
+
+	return &suiteMetadata, nil
 }

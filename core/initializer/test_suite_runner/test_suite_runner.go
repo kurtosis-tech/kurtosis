@@ -98,28 +98,28 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		return false, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	allTestNames, err := test_suite_metadata_acquirer.GetAllTestNamesInSuite(runner.testSuiteImage, stdoutDockerManager)
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(runner.testSuiteImage, stdoutDockerManager)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting the names of the tests in the test suite")
+		return false, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
 
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
-		for testName := range allTestNames {
+		for testName := range suiteMetadata.TestNames {
 			testNamesToRun[testName] = true
 		}
 	}
 
 	// Validate all the requested tests exist
 	for testName := range testNamesToRun {
-		if _, found := allTestNames[testName]; !found {
+		if _, found := suiteMetadata.TestNames[testName]; !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(executionInstanceId, testNamesToRun, networkWidthBits)
+	testParams, err := buildTestParams(executionInstanceId, testNamesToRun, suiteMetadata.NetworkWidthBits)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
