@@ -242,8 +242,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	containerId = resp.ID
 
-	// TODO remove this by making the testsuite test-listing container live in its own subnet
-	// The bridge network will handle its own IPs, so we provide the user the ability to skip providing an IP
+	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
 		if err := manager.connectToNetwork(context, networkId, containerId, staticIp); err != nil {
 			return "", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)

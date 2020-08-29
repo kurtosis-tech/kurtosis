@@ -10,6 +10,8 @@
 * Run tests in parallel
 * Add copyright headers
 * Clean up some bugs in DockerManager where `context.Background` was getting used where it shouldn't
+* Added test to make sure the IP placeholder string replacement happens as expected
+* Actually mount the test volume at the location the user requests in the `AddService` Kurtosis API endpoint
 
 # 0.9.0
 * Change ConfigurationID to be a string
