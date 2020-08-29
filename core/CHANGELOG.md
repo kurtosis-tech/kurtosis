@@ -8,6 +8,7 @@
 * Print rudimentary version of testsuite container logs
 * Refactor the new intializer's `main` method, which had become 550 lines long, into separate classes
 * Run tests in parallel
+* Add copyright headers
 
 # 0.9.0
 * Change ConfigurationID to be a string
