@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -20,9 +21,9 @@ import (
 )
 
 const (
-	// TODO Move this somewhere else?
+	// The port that the API container will listen on (hardcoded, because it runs in a Docker container so no real
+	//  reason to make configurable)
 	KurtosisAPIContainerPort = 7443
-
 
 	// How long we'll wait when making a best-effort attempt to stop a container
 	containerStopTimeout = 15 * time.Second
@@ -49,6 +50,9 @@ type KurtosisService struct {
 	//  registering that execution has started, or the timeout has been hit, etc.
 	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
 
+	// The name of the Docker volume for this test that will be mounted on all services
+	testVolumeName string
+
 	// The names of the tests inside the suite; will be nil if no test suite has been registered yet
 	suiteTestNames []string
 
@@ -63,13 +67,15 @@ func NewKurtosisService(
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *commons.DockerManager,
 		dockerNetworkId string,
-		freeIpAddrTracker *commons.FreeIpAddrTracker) *KurtosisService {
+		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		testVolumeName string) *KurtosisService {
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
 		dockerManager:           dockerManager,
 		dockerNetworkId:         dockerNetworkId,
 		freeIpAddrTracker:       freeIpAddrTracker,
+		testVolumeName: testVolumeName,
 		suiteTestNames:          nil,
 		mutex:                   &sync.Mutex{},
 	}
@@ -93,26 +99,20 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 
 	freeIp, err := service.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		// TODO give more identifying container details in the log message
-		return stacktrace.Propagate(err, "Could not get a free IP to assign the new container")
+		return stacktrace.Propagate(
+			err,
+			"An error occurred when getting an IP to give the container running the new service with Docker image '%v'",
+			args.ImageName)
 	}
 	logrus.Debugf("Giving new service the following IP: %v", freeIp.String())
 
-	// TODO Add unit test to make sure the replacement actually happens as expected! (probably by extracting this
-	//  into a helper method that can easily be tested)
 	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
 	//  IP
-	ipPlaceholderStr := args.IPPlaceholder
-	replacedStartCmd := []string{}
-	for _, cmdFragment := range args.StartCmd {
-		replacedCmdFragment := strings.ReplaceAll(cmdFragment, ipPlaceholderStr, freeIp.String())
-		replacedStartCmd = append(replacedStartCmd, replacedCmdFragment)
-	}
-	replacedEnvVars := map[string]string{}
-	for key, value := range args.DockerEnvironmentVars {
-		replacedValue := strings.ReplaceAll(value, ipPlaceholderStr, freeIp.String())
-		replacedEnvVars[key] = replacedValue
-	}
+	replacedStartCmd, replacedEnvVars := replaceIpPlaceholderForDockerParams(
+		args.IPPlaceholder,
+		freeIp,
+		args.StartCmd,
+		args.DockerEnvironmentVars)
 
 	containerId, err := service.dockerManager.CreateAndStartContainer(
 		httpReq.Context(),
@@ -123,7 +123,9 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		replacedStartCmd,
 		replacedEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
-		map[string]string{}, // TODO mount the test volume!
+		map[string]string{
+			service.testVolumeName: args.TestVolumeMountFilepath,
+		},
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Docker container for the new service")
@@ -238,4 +240,27 @@ func awaitTestSuiteContainerExit(
 	//  after the timeout, this won't do anything because nobody will be monitoring the other end of the channel
 	close(testSuiteContainerExitedChan)
 	logrus.Debugf("[%v] Thread is exiting", completionPrefix)
+}
+
+/*
+Small helper function to replace the IP placeholder with the real IP string in the start command and Docker environment
+	variables.
+ */
+func replaceIpPlaceholderForDockerParams(
+		ipPlaceholder string,
+		realIp net.IP,
+		startCmd []string,
+		envVars map[string]string) ([]string, map[string]string) {
+	ipPlaceholderStr := ipPlaceholder
+	replacedStartCmd := []string{}
+	for _, cmdFragment := range startCmd {
+		replacedCmdFragment := strings.ReplaceAll(cmdFragment, ipPlaceholderStr, realIp.String())
+		replacedStartCmd = append(replacedStartCmd, replacedCmdFragment)
+	}
+	replacedEnvVars := map[string]string{}
+	for key, value := range envVars {
+		replacedValue := strings.ReplaceAll(value, ipPlaceholderStr, realIp.String())
+		replacedEnvVars[key] = replacedValue
+	}
+	return replacedStartCmd, replacedEnvVars
 }

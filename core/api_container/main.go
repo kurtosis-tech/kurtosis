@@ -27,6 +27,7 @@ import (
 )
 
 const (
+
 	// If no test suite registers a test execution in this time, the API container will shut itself down of its own accord
 	idleShutdownTimeout = 15 * time.Second
 )
@@ -38,11 +39,6 @@ func main() {
 		FullTimestamp: true,
 	})
 
-	testSuiteContainerIdArg := flag.String(
-		"test-suite-container-id",
-		"",
-		"ID of the Docker container running the test suite",
-	)
 
 	networkIdArg := flag.String(
 		"network-id",
@@ -62,16 +58,30 @@ func main() {
 		"IP address of the gateway address on the Docker network that the test controller is running in",
 	)
 
-	apiContainerIpAddrArg := flag.String(
-		"api-container-ip",
+	testVolumeNameArg := flag.String(
+		"test-volume",
 		"",
-		"IP address of the Docker container running the API container",
+		"Name of the test volume that should be mounted on every new service",
 	)
 
+	testSuiteContainerIdArg := flag.String(
+		"test-suite-container-id",
+		"",
+		"ID of the Docker container running the test suite",
+	)
+
+	// It seems weird that we require this given that the test suite container doesn't run a server, but it's only so
+	//  that our free IP address tracker knows not to dole out the test suite container's IP address
 	testSuiteContainerIpAddrArg := flag.String(
 		"test-suite-container-ip",
 		"",
 		"IP address of the Docker container running the test suite container",
+	)
+
+	apiContainerIpAddrArg := flag.String(
+		"api-container-ip",
+		"",
+		"IP address of the Docker container running the API container",
 	)
 
 	logLevelArg := flag.String(
@@ -103,7 +113,8 @@ func main() {
 		*subnetMaskArg,
 		*gatewayIpArg,
 		*apiContainerIpAddrArg,
-		*testSuiteContainerIpAddrArg)
+		*testSuiteContainerIpAddrArg,
+		*testVolumeNameArg)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -137,7 +148,8 @@ func createServer(
 		networkSubnetMask string,
 		gatewayIp string,
 		apiContainerIp string,
-		testSuiteContainerIp string) (*http.Server, error) {
+		testSuiteContainerIp string,
+		testVolumeName string) (*http.Server, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
