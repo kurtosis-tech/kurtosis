@@ -151,6 +151,17 @@ func createServer(
 		apiContainerIp string,
 		testSuiteContainerIp string,
 		testVolumeName string) (*http.Server, error) {
+	logrus.Debugf(
+		"Creating a server with test suite container ID '%v', network ID '%v', network subnet mask '%v', " +
+			"gateway IP '%v', API container IP '%v', test suite container IP '%v', and test volume name '%v'",
+		testSuiteContainerId,
+		networkId,
+		networkSubnetMask,
+		gatewayIp,
+		apiContainerIp,
+		testSuiteContainerIp,
+		testVolumeName)
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")

@@ -192,7 +192,6 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.customTestSuiteEnvVars,
 			testName)
 
-
 		passed, executionErr := testExecutor.runTest(parentContext)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 

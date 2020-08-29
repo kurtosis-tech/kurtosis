@@ -109,7 +109,6 @@ Args:
 	customTestSuiteEnvVars: A key-value mapping of custom Docker environment variables that will be passed to the
 		controller image (as a method for the user to pass their own custom params between initializer and controller)
 	testName: The name of the test the executor should execute
-	test: The logic of the test being executed
  */
 func newTestExecutor(
 			log *logrus.Logger,
@@ -122,6 +121,7 @@ func newTestExecutor(
 			customTestControllerEnvVars map[string]string,
 			testName string) *testExecutor {
 	return &testExecutor{
+		// TODO sort alphabetically
 		log:                             log,
 		executionInstanceId:             executionInstanceId,
 		dockerClient:                    dockerClient,
@@ -243,15 +243,16 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 		},
 		nil,
 		map[string]string{
-			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
-			api_container_env_vars.NetworkIdEnvVar: networkId,
-			api_container_env_vars.SubnetMaskEnvVar: executor.subnetMask,
+			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
+			api_container_env_vars.ApiLogFilepathEnvVar:           api_container_docker_consts.LogMountFilepath,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
 			// TODO make this parameterizable
 			api_container_env_vars.LogLevelEnvVar:                 "trace",
-			api_container_env_vars.ApiLogFilepathEnvVar:           api_container_docker_consts.LogMountFilepath,
-			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
+			api_container_env_vars.NetworkIdEnvVar: networkId,
+			api_container_env_vars.SubnetMaskEnvVar: executor.subnetMask,
+			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
 			api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
+			api_container_env_vars.TestVolumeName: volumeName,
 		},
 		map[string]string{
 			dockerSocket: dockerSocket,
