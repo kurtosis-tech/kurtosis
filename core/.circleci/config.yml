@@ -14,8 +14,11 @@ jobs:
       # - image: circleci/postgres:9.4
       
     steps:
-      - checkout
+      # Necessary to bind-mount /var/run/docker.sock inside the Docker container that's running our build
+      # See: https://support.circleci.com/hc/en-us/articles/115015849028-Docker-Daemon-Not-Available
+      - setup_remote_docker
 
+      - checkout
 
       # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
       #- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
