@@ -35,17 +35,21 @@ func main() {
 	)
 	kurtosisLogLevelArg := flag.String(
 		"kurtosis-log-level",
-		logrus_log_levels.Info,
-		fmt.Sprintf("Log level to use for Kurtosis itself (%v)", logrus_log_levels.GetAcceptableStrings())
+		"debug",
+		fmt.Sprintf("Log level to use for Kurtosis itself (%v)", logrus_log_levels.AcceptableLogLevels),
+	)
+	testSuiteLogLevelArg := flag.String(
+		"test-suite-log-level",
+		"debug",
+		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
 
 	// TODO add a "list tests" flag
 	flag.Parse()
 
-	// TODO make this configurable
-	kurtosisLevel, err := logrus_log_levels.LevelFromString(*kurtosisLogLevelArg)
+	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred setting the Kurtosis log level: %v", err)
+		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
 		os.Exit(1)
 	}
 	logrus.SetLevel(kurtosisLevel)
@@ -71,8 +75,7 @@ func main() {
 		*testSuiteImageArg,
 		// TODO parameterize this
 		"kurtosistech/kurtosis-core_api",
-		// TODO parameterize this
-		"trace",
+		*testSuiteLogLevelArg,
 		// TODO parameterize this
 		map[string]string{},
 		*kurtosisLogLevelArg)

@@ -77,15 +77,15 @@ func NewTestSuiteRunner(
 			testSuiteImage string,
 			kurtosisApiImage string,
 			testSuiteLogLevel string,
-			testControllerEnvVars map[string]string,
+			customTestSuiteEnvVars map[string]string,
 			apiContainerLogLevel string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		dockerClient:           dockerClient,
 		testSuiteImage:         testSuiteImage,
 		kurtosisApiImage:       kurtosisApiImage,
 		testSuiteLogLevel:      testSuiteLogLevel,
-		customTestSuiteEnvVars: testControllerEnvVars,
-		apiContainerLogLevel: apiContainerLogLevel,
+		customTestSuiteEnvVars: customTestSuiteEnvVars,
+		apiContainerLogLevel:   apiContainerLogLevel,
 	}
 }
 
@@ -107,7 +107,11 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		return false, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(runner.testSuiteImage, stdoutDockerManager)
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
+		runner.testSuiteImage,
+		stdoutDockerManager,
+		runner.testSuiteLogLevel,
+		runner.customTestSuiteEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
