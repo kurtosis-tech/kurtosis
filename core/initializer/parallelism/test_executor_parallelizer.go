@@ -45,6 +45,9 @@ type TestExecutorParallelizer struct {
 
 	// The number of tests to run in parallel
 	parallelism                 uint
+
+	// The string representing the log level that the API container should run with
+	apiContainerLogLevel string
 }
 
 /*
@@ -67,7 +70,8 @@ func NewTestExecutorParallelizer(
 			testSuiteImageName string,
 			testSuiteLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			parallelism uint) *TestExecutorParallelizer {
+			parallelism uint,
+			apiContainerLogLevel string) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
 		executionId:            executionId,
 		dockerClient:           dockerClient,
@@ -76,6 +80,7 @@ func NewTestExecutorParallelizer(
 		testSuiteLogLevel:      testSuiteLogLevel,
 		customTestSuiteEnvVars: customTestControllerEnvVars,
 		parallelism:            parallelism,
+		apiContainerLogLevel: apiContainerLogLevel,
 	}
 }
 
@@ -190,7 +195,8 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.testSuiteImageName,
 			executor.testSuiteLogLevel,
 			executor.customTestSuiteEnvVars,
-			testName)
+			testName,
+			executor.apiContainerLogLevel)
 
 		passed, executionErr := testExecutor.runTest(parentContext)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer

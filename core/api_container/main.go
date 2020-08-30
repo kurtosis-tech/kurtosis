@@ -16,8 +16,8 @@ import (
 	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/logging"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -88,21 +88,16 @@ func main() {
 	logLevelArg := flag.String(
 		"log-level",
 		"info",
-		fmt.Sprintf("Log level to use for the API container (%v)", logging.GetAcceptableStrings()),
+		fmt.Sprintf("Log level to use for the API container (%v)", logrus_log_levels.AcceptableLogLevels),
 	)
-
-	// TODO add a flag to write output to both STDOUT and a file using io.MultiWriter
-
 	flag.Parse()
 
-	logLevelPtr := logging.LevelFromString(*logLevelArg)
-	if logLevelPtr == nil {
-		// It's a little goofy that we're logging an error before we've set the loglevel, but we do so at the highest
-		//  level so that whatever the default the user should see it
-		logrus.Fatalf("Invalid initializer log level %v", *logLevelArg)
+	logLevel, err := logrus.ParseLevel(*logLevelArg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred parsing the log level string: %v\n", err)
 		os.Exit(1)
 	}
-	logrus.SetLevel(*logLevelPtr)
+	logrus.SetLevel(logLevel)
 
 	// A value on this channel indicates a change in the test execution status
 	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)

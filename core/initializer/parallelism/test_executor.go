@@ -91,6 +91,9 @@ type testExecutor struct {
 
 	// Name of the test being run
 	testName string
+
+	// The string representing the log level that the API container should run with
+	apiContainerLogLevel string
 }
 
 /*
@@ -119,7 +122,8 @@ func newTestExecutor(
 			testSuiteImageName string,
 			testSuiteLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			testName string) *testExecutor {
+			testName string,
+			apiContainerLogLevel string) *testExecutor {
 	return &testExecutor{
 		// TODO sort alphabetically
 		log:                             log,
@@ -131,6 +135,7 @@ func newTestExecutor(
 		testSuiteLogLevel:               testSuiteLogLevel,
 		customTestSuiteEnvVars:          customTestControllerEnvVars,
 		testName:                        testName,
+		apiContainerLogLevel: apiContainerLogLevel,
 	}
 }
 
@@ -172,6 +177,10 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 	networkName := fmt.Sprintf("%v-%v", executor.executionInstanceId.String(), executor.testName)
 	networkId, err := dockerManager.CreateNetwork(ctx, networkName, executor.subnetMask, gatewayIp)
 	if err != nil {
+		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
+		//  that the Context was cancelled as expected, but *the Docker engine will still create the networks!!! We'll
+		//  need to parse the log message for the string "context canceled" and, if found, do another search for
+		//  networks with our network name and delete them
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, executor.testName)
 	}
 	defer removeNetworkDeferredFunc(executor.log, dockerManager, networkId)
@@ -206,6 +215,7 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 		executor.testName,
 		kurtosisApiIp.String(),
 		testSuiteLogFilepath,
+		executor.testSuiteLogLevel,
 		executor.customTestSuiteEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred generating the map of test suite environment variables")
@@ -246,8 +256,7 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
 			api_container_env_vars.ApiLogFilepathEnvVar:           api_container_docker_consts.LogMountFilepath,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
-			// TODO make this parameterizable
-			api_container_env_vars.LogLevelEnvVar:                 "trace",
+			api_container_env_vars.LogLevelEnvVar: executor.apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: executor.subnetMask,
 			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
@@ -341,14 +350,15 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.Docker
 func generateTestSuiteEnvVars(
 			testName string,
 			kurtosisApiIp string,
-			testSuiteLogFilepath string,
+			logFilepath string,
+			logLevel string,
 			customEnvVars map[string]string) (map[string]string, error) {
-	// TODO add log level!
 	standardVars := map[string]string{
-		test_suite_env_vars.MetadataFilepathEnvVar:     "", // We leave this blank because we want test execution, not listing
-		test_suite_env_vars.TestEnvVar:                 testName,
-		test_suite_env_vars.KurtosisApiIpEnvVar:        kurtosisApiIp,
-		test_suite_env_vars.TestSuiteLogFilepathEnvVar: testSuiteLogFilepath,
+		test_suite_env_vars.MetadataFilepathEnvVar: "", // We leave this blank because we want test execution, not listing
+		test_suite_env_vars.TestEnvVar:             testName,
+		test_suite_env_vars.KurtosisApiIpEnvVar:    kurtosisApiIp,
+		test_suite_env_vars.LogFilepathEnvVar:      logFilepath,
+		test_suite_env_vars.LogLevelEnvVar:         logLevel,
 	}
 	for key, val := range customEnvVars {
 		if _, ok := standardVars[key]; ok {

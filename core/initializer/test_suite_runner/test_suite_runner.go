@@ -35,6 +35,8 @@ const (
 An executor to run one or more tests from a given test suite
  */
 type TestSuiteRunner struct {
+	// TODO sort these properties alphabetically
+
 	// Docker client to use for interacting with the Docker engine
 	dockerClient *client.Client
 
@@ -51,6 +53,9 @@ type TestSuiteRunner struct {
 	// A string, meaningful only to the test controller, that represents the log level that the controller container should
 	//	run with
 	testSuiteLogLevel string
+
+	// The log level the Kurtosis API container should use
+	apiContainerLogLevel string
 }
 
 /*
@@ -64,19 +69,23 @@ Args:
 		to parse this, so this should be meaningful to the test suite image)
 	networkWidthBits: Each test will get a Docker network with a number of available IP addresses = 2^network_width_bits.
 		This parameter should be set high enough so that each test can fit all the services they want.
+	apiContainerLogLevel: The log level the Kurtosis API container should use
  */
 func NewTestSuiteRunner(
+			// TODO sort these alphabetically
 			dockerClient *client.Client,
 			testSuiteImage string,
 			kurtosisApiImage string,
 			testSuiteLogLevel string,
-			testControllerEnvVars map[string]string) *TestSuiteRunner {
+			customTestSuiteEnvVars map[string]string,
+			apiContainerLogLevel string) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		dockerClient:           dockerClient,
 		testSuiteImage:         testSuiteImage,
 		kurtosisApiImage:       kurtosisApiImage,
 		testSuiteLogLevel:      testSuiteLogLevel,
-		customTestSuiteEnvVars: testControllerEnvVars,
+		customTestSuiteEnvVars: customTestSuiteEnvVars,
+		apiContainerLogLevel:   apiContainerLogLevel,
 	}
 }
 
@@ -98,7 +107,11 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		return false, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(runner.testSuiteImage, stdoutDockerManager)
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
+		runner.testSuiteImage,
+		stdoutDockerManager,
+		runner.testSuiteLogLevel,
+		runner.customTestSuiteEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
@@ -137,7 +150,8 @@ func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParal
 		runner.testSuiteImage,
 		runner.testSuiteLogLevel,
 		runner.customTestSuiteEnvVars,
-		testParallelism)
+		testParallelism,
+		runner.apiContainerLogLevel)
 
 	logrus.Infof("Running %v tests with execution ID %v...", len(testNamesToRun), executionInstanceId.String())
 	allTestsPassed = testExecutor.RunInParallelAndPrintResults(testParams)

@@ -32,7 +32,9 @@ Spins up a testsuite container in test-listing mode and returns the "set" of tes
 */
 func GetTestSuiteMetadata(
 		testSuiteImage string,
-		dockerManager *commons.DockerManager) (*TestSuiteMetadata, error) {
+		dockerManager *commons.DockerManager,
+		testSuiteLogLevel string,
+		customEnvVars map[string]string) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	// Create the tempfile that the testsuite image will write test names to
@@ -68,20 +70,25 @@ func GetTestSuiteMetadata(
 
 	testSuiteMetadataFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, testSuiteMetadataFilename)
 	logFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, logFilename)
+	envVars, err := test_suite_env_vars.GenerateTestSuiteEnvVars(
+		testSuiteMetadataFilepath,
+		"", // We leave the test name blank to signify that we want test listing, not test execution
+		"", // Because we're doing test listing, not test execution, the Kurtosis API IP can be blank
+		logFilepath,
+		testSuiteLogLevel,
+		customEnvVars)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating the Docker environment variables for the test suite")
+	}
+
 	testListingContainerId, err := dockerManager.CreateAndStartContainer(
 		parentContext,
 		testSuiteImage,
-		// TODO parameterize these
 		bridgeNetworkId,
 		nil,  // Nil because the bridge network will assign IPs on its own; we don't need to (and won't know what IPs are already used)
 		map[nat.Port]bool{},
-		nil,
-		map[string]string{
-			test_suite_env_vars.MetadataFilepathEnvVar:     testSuiteMetadataFilepath,
-			test_suite_env_vars.TestEnvVar:                 "", // We leave this blank to signify that we want test listing, not test execution
-			test_suite_env_vars.KurtosisApiIpEnvVar:        "", // Because we're doing test listing, this can be blank
-			test_suite_env_vars.TestSuiteLogFilepathEnvVar: logFilepath,
-		},
+		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
+		envVars,
 		map[string]string{
 			testSuiteMetadataFp.Name(): testSuiteMetadataFilepath,
 			containerLogFp.Name():      logFilepath,
