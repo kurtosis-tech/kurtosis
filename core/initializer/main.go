@@ -21,6 +21,8 @@ const (
 	failureExitCode = 1
 
 	testNameArgSeparator = ","
+
+	defaultKurtosisApiImage =
 )
 
 func main() {
@@ -43,6 +45,11 @@ func main() {
 		"debug",
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
+
+	kurtosisApiImageArg := flag.String(
+		"kurtosis-api-image",
+		defaultKurtosisApiImage,
+		"The Docker image that will be used to run the Kurtosis API container")
 
 	// TODO add a "list tests" flag
 	flag.Parse()
@@ -73,8 +80,7 @@ func main() {
 	testSuiteRunner := test_suite_runner.NewTestSuiteRunner(
 		dockerClient,
 		*testSuiteImageArg,
-		// TODO parameterize this
-		"kurtosistech/kurtosis-core_api",
+		*kurtosisApiImageArg,
 		*testSuiteLogLevelArg,
 		// TODO parameterize this
 		map[string]string{},
