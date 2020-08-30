@@ -13,6 +13,9 @@ jobs:
         # - go/load-cache
         # - go/mod-download
         # - go/save-cache
+      - ls
+      - pwd
+      - go version
 
       # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
       #- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
