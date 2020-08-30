@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
+	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/logging"
@@ -150,6 +151,17 @@ func createServer(
 		apiContainerIp string,
 		testSuiteContainerIp string,
 		testVolumeName string) (*http.Server, error) {
+	logrus.Debugf(
+		"Creating a server with test suite container ID '%v', network ID '%v', network subnet mask '%v', " +
+			"gateway IP '%v', API container IP '%v', test suite container IP '%v', and test volume name '%v'",
+		testSuiteContainerId,
+		networkId,
+		networkSubnetMask,
+		gatewayIp,
+		apiContainerIp,
+		testSuiteContainerIp,
+		testVolumeName)
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
@@ -178,6 +190,7 @@ func createServer(
 		dockerManager,
 		networkId,
 		freeIpAddrTracker,
+		testVolumeName,
 	)
 
 	logrus.Info("Launching server...")
@@ -189,7 +202,7 @@ func createServer(
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
 	httpHandler.RegisterService(kurtosisService, "")
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", api.KurtosisAPIContainerPort),
+		Addr:    fmt.Sprintf(":%v", api_container_docker_consts2.ContainerPort),
 		Handler: httpHandler,
 	}
 

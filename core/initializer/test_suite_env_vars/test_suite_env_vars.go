@@ -11,7 +11,7 @@ A package to contain the contract of Docker environment variables that will be p
  */
 
 const (
-	TestNamesFilepathEnvVar    = "TEST_NAMES_FILEPATH"
+	MetadataFilepathEnvVar     = "METADATA_FILEPATH"
 	TestEnvVar                 = "TEST"
 	KurtosisApiIpEnvVar        = "KURTOSIS_API_IP"
 	TestSuiteLogFilepathEnvVar = "LOG_FILEPATH"

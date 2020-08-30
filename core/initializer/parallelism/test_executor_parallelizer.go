@@ -120,7 +120,7 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
 
-	executor.disableSystemLogAndRunTestThreads(&ctx, outputManager, testParamsChan)
+	executor.disableSystemLogAndRunTestThreads(ctx, outputManager, testParamsChan)
 
 	logrus.Info("All tests exited")
 
@@ -130,7 +130,7 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 
 
 func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
-		parentContext *context.Context,
+		parentContext context.Context,
 		outputManager *ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams) {
 	/*
@@ -155,7 +155,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
-			parentContext *context.Context,
+			parentContext context.Context,
 			outputManager *ParallelTestOutputManager,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams) {
@@ -191,7 +191,6 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.testSuiteLogLevel,
 			executor.customTestSuiteEnvVars,
 			testName)
-
 
 		passed, executionErr := testExecutor.runTest(parentContext)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
