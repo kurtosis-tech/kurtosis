@@ -15,6 +15,7 @@
 * Pass extra information back from the testsuite container to the initializer (e.g. where to mount the test volume on the test suite container)
 * Remove some unnecessary `context.Context` pointer-passing
 * Made log levels of Kurtosis & test suite independently configurable
+* Switch to using CircleCI for builds
 
 # 0.9.0
 * Change ConfigurationID to be a string

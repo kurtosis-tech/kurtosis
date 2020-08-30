@@ -1,0 +1,15 @@
+version: 2.1
+jobs:
+  build:
+    environment:
+      CIRCLE_BASE_REVISION: "<< pipeline.git.base_revision >>"
+    machine:
+      image: ubuntu-1604:202007-01
+      # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
+      # docker_layer_caching: true
+    steps:
+      - checkout
+
+      # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
+      - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
+      - run: scripts/full_build_and_run.sh
