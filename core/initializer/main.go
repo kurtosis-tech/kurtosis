@@ -6,6 +6,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
@@ -57,13 +58,19 @@ func main() {
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
 
+	customEnvVarsJsonArg := flag.String(
+		"custom-env-vars-json",
+		"{}",
+		"JSON containing key-value mappings of custom environment variables that will be set in " +
+			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
+
 	// TODO add a "list tests" flag
 	flag.Parse()
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
-		os.Exit(1)
+		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(kurtosisLevel)
 
@@ -83,13 +90,19 @@ func main() {
 		}
 	}
 
+	// Parse environment variables
+	var customEnvVars map[string]string
+	if err := json.Unmarshal([]byte(*customEnvVarsJsonArg), &customEnvVars); err != nil {
+		logrus.Errorf("An error occurred parsing the custom environment variables JSON: %v", err)
+		os.Exit(failureExitCode)
+	}
+
 	testSuiteRunner := test_suite_runner.NewTestSuiteRunner(
 		dockerClient,
 		*testSuiteImageArg,
 		*kurtosisApiImageArg,
 		*testSuiteLogLevelArg,
-		// TODO parameterize this
-		map[string]string{},
+		customEnvVars,
 		*kurtosisLogLevelArg)
 
 	parallelismUint := uint(*parallelismArg)

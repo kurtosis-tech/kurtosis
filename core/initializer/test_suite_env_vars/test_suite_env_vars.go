@@ -42,9 +42,10 @@ func GenerateTestSuiteEnvVars(
 	for key, val := range customEnvVars {
 		if _, ok := standardVars[key]; ok {
 			return nil, stacktrace.NewError(
-				"Tried to manually add custom environment variable %s to the test controller container, but it is " +
+				"Custom test suite environment variable binding %s=%s requested, but is not allowed because key is " +
 					"already being used by Kurtosis.",
-				key)
+				key,
+				val)
 		}
 		standardVars[key] = val
 	}
