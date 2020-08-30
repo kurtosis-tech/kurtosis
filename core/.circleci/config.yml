@@ -8,15 +8,11 @@ jobs:
   build:
     machine:
       image: ubuntu-1604:202007-01
+      # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
+      # docker_layer_caching: true
     steps:
       - checkout
-        # - go/load-cache
-        # - go/mod-download
-        # - go/save-cache
-      - run: ls
-      - run: pwd
-      - run: go version
 
       # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
-      #- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
+      - if [ "$CIRCLE_PULL_REQUEST" != "" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
       - run: scripts/full_build_and_run.sh
