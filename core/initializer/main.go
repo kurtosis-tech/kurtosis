@@ -11,9 +11,11 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -32,6 +34,13 @@ func main() {
 		"test-suite-image",
 		"",
 		"The name of the Docker image of the test suite that will be run")
+
+	doListArg := flag.Bool(
+		"list",
+		false,
+		"Rather than running the tests, lists the tests available to run",
+	)
+
 	testNamesArg := flag.String(
 		"test-names",
 		"",
@@ -63,8 +72,6 @@ func main() {
 		"{}",
 		"JSON containing key-value mappings of custom environment variables that will be set in " +
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
-
-	// TODO add a "list tests" flag
 	flag.Parse()
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
@@ -80,6 +87,39 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+	// Parse environment variables
+	var customEnvVars map[string]string
+	if err := json.Unmarshal([]byte(*customEnvVarsJsonArg), &customEnvVars); err != nil {
+		logrus.Errorf("An error occurred parsing the custom environment variables JSON: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
+		*testSuiteImageArg,
+		dockerClient,
+		*testSuiteLogLevelArg,
+		customEnvVars)
+	if err != nil {
+		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	if *doListArg {
+		testNames := []string{}
+		for name := range suiteMetadata.TestNames {
+			testNames = append(testNames, name)
+		}
+		sort.Strings(testNames)
+
+		fmt.Println("\nTests in test suite:")
+		for _, name := range testNames {
+			// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
+			fmt.Println("- " + name)
+		}
+		os.Exit(successExitCode)
+	}
+
+
 	// Split user-input string into actual candidate test names
 	testNamesArgStr := strings.TrimSpace(*testNamesArg)
 	testNamesToRun := map[string]bool{}
@@ -90,20 +130,14 @@ func main() {
 		}
 	}
 
-	// Parse environment variables
-	var customEnvVars map[string]string
-	if err := json.Unmarshal([]byte(*customEnvVarsJsonArg), &customEnvVars); err != nil {
-		logrus.Errorf("An error occurred parsing the custom environment variables JSON: %v", err)
-		os.Exit(failureExitCode)
-	}
-
 	testSuiteRunner := test_suite_runner.NewTestSuiteRunner(
 		dockerClient,
 		*testSuiteImageArg,
 		*kurtosisApiImageArg,
 		*testSuiteLogLevelArg,
 		customEnvVars,
-		*kurtosisLogLevelArg)
+		*kurtosisLogLevelArg,
+		*suiteMetadata)
 
 	parallelismUint := uint(*parallelismArg)
 	allTestsPassed, err := testSuiteRunner.RunTests(

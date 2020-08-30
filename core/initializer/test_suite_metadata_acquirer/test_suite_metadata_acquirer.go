@@ -8,6 +8,7 @@ package test_suite_metadata_acquirer
 import (
 	"context"
 	"encoding/json"
+	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -32,10 +33,15 @@ Spins up a testsuite container in test-listing mode and returns the "set" of tes
 */
 func GetTestSuiteMetadata(
 		testSuiteImage string,
-		dockerManager *commons.DockerManager,
+		dockerClient *client.Client,
 		testSuiteLogLevel string,
 		customEnvVars map[string]string) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
+
+	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+	}
 
 	// Create the tempfile that the testsuite image will write test names to
 	testSuiteMetadataFp, err := ioutil.TempFile("", testSuiteMetadataFilename)
