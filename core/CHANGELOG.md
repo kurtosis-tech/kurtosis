@@ -12,6 +12,9 @@
 * Clean up some bugs in DockerManager where `context.Background` was getting used where it shouldn't
 * Added test to make sure the IP placeholder string replacement happens as expected
 * Actually mount the test volume at the location the user requests in the `AddService` Kurtosis API endpoint
+* Pass extra information back from the testsuite container to the initializer (e.g. where to mount the test volume on the test suite container)
+* Remove some unnecessary `context.Context` pointer-passing
+* Made log levels of Kurtosis & test suite independently configurable
 
 # 0.9.0
 * Change ConfigurationID to be a string

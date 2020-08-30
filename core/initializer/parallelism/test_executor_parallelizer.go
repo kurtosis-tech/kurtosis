@@ -45,6 +45,9 @@ type TestExecutorParallelizer struct {
 
 	// The number of tests to run in parallel
 	parallelism                 uint
+
+	// The string representing the log level that the API container should run with
+	apiContainerLogLevel string
 }
 
 /*
@@ -67,7 +70,8 @@ func NewTestExecutorParallelizer(
 			testSuiteImageName string,
 			testSuiteLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			parallelism uint) *TestExecutorParallelizer {
+			parallelism uint,
+			apiContainerLogLevel string) *TestExecutorParallelizer {
 	return &TestExecutorParallelizer{
 		executionId:            executionId,
 		dockerClient:           dockerClient,
@@ -76,6 +80,7 @@ func NewTestExecutorParallelizer(
 		testSuiteLogLevel:      testSuiteLogLevel,
 		customTestSuiteEnvVars: customTestControllerEnvVars,
 		parallelism:            parallelism,
+		apiContainerLogLevel: apiContainerLogLevel,
 	}
 }
 
@@ -120,7 +125,7 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
 
-	executor.disableSystemLogAndRunTestThreads(&ctx, outputManager, testParamsChan)
+	executor.disableSystemLogAndRunTestThreads(ctx, outputManager, testParamsChan)
 
 	logrus.Info("All tests exited")
 
@@ -130,7 +135,7 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 
 
 func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
-		parentContext *context.Context,
+		parentContext context.Context,
 		outputManager *ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams) {
 	/*
@@ -155,7 +160,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
-			parentContext *context.Context,
+			parentContext context.Context,
 			outputManager *ParallelTestOutputManager,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams) {
@@ -190,8 +195,8 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			executor.testSuiteImageName,
 			executor.testSuiteLogLevel,
 			executor.customTestSuiteEnvVars,
-			testName)
-
+			testName,
+			executor.apiContainerLogLevel)
 
 		passed, executionErr := testExecutor.runTest(parentContext)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer

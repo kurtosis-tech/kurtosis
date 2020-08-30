@@ -98,3 +98,22 @@ Remove unused images:
 ```
 docker image rm $(docker images --quiet --filter "dangling=true")
 ```
+
+Test Suite Container Contract
+-----------------------------
+Must take in at least the environment variables defined in `test_suite_env_vars.go` (TODO link to the file), and can optionally take in custom environment variables
+
+Only one of `METADATA_FILEPATH` or `TEST` will be set at a time
+
+When the `METADATA_FILEPATH` environment variable is set, the container must write JSON file with the following structure to the filepath specified by the variable:
+```json
+{
+    "testNames": {
+        "test1": true,
+        "test2": true
+    },
+    "networkWidthBits": 8
+}
+```
+where `testNames` is a "set" of tests in the suite and `networkWidthBits` is the number of bits in the network mask of each test network that will be created.
+

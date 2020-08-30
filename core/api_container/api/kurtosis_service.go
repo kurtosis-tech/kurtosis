@@ -21,9 +21,6 @@ import (
 )
 
 const (
-	// The port that the API container will listen on (hardcoded, because it runs in a Docker container so no real
-	//  reason to make configurable)
-	KurtosisAPIContainerPort = 7443
 
 	// How long we'll wait when making a best-effort attempt to stop a container
 	containerStopTimeout = 15 * time.Second
