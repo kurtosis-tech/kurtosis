@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.15
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -17,9 +17,12 @@ jobs:
     #### expecting it in the form of
     ####   /go/src/github.com/circleci/go-tool
     ####   /go/src/bitbucket.org/circleci/go-tool
-    working_directory: /go/src/github.com/kurtosis-tech/kurtosis-core
+    working_directory: /kurtosis-core
     steps:
       - checkout
+
+
+      # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
       #- if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then bash .ci/check_for_changelog_in_diff.sh; fi
       - run: pwd
       - run: ls
