@@ -22,7 +22,7 @@ const (
 
 	testNameArgSeparator = ","
 
-	defaultKurtosisApiImage =
+	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
 )
 
 func main() {
