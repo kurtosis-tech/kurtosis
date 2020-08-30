@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -32,11 +33,22 @@ func main() {
 		"",
 		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
 	)
+	kurtosisLogLevelArg := flag.String(
+		"kurtosis-log-level",
+		logrus_log_levels.Info,
+		fmt.Sprintf("Log level to use for Kurtosis itself (%v)", logrus_log_levels.GetAcceptableStrings())
+	)
+
 	// TODO add a "list tests" flag
 	flag.Parse()
 
 	// TODO make this configurable
-	logrus.SetLevel(logrus.TraceLevel)
+	kurtosisLevel, err := logrus_log_levels.LevelFromString(*kurtosisLogLevelArg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred setting the Kurtosis log level: %v", err)
+		os.Exit(1)
+	}
+	logrus.SetLevel(kurtosisLevel)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -62,7 +74,8 @@ func main() {
 		// TODO parameterize this
 		"trace",
 		// TODO parameterize this
-		map[string]string{})
+		map[string]string{},
+		*kurtosisLogLevelArg)
 
 	allTestsPassed, err := testSuiteRunner.RunTests(
 		testNamesToRun,

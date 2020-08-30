@@ -91,6 +91,9 @@ type testExecutor struct {
 
 	// Name of the test being run
 	testName string
+
+	// The string representing the log level that the API container should run with
+	apiContainerLogLevel string
 }
 
 /*
@@ -119,7 +122,8 @@ func newTestExecutor(
 			testSuiteImageName string,
 			testSuiteLogLevel string,
 			customTestControllerEnvVars map[string]string,
-			testName string) *testExecutor {
+			testName string,
+			apiContainerLogLevel string) *testExecutor {
 	return &testExecutor{
 		// TODO sort alphabetically
 		log:                             log,
@@ -131,6 +135,7 @@ func newTestExecutor(
 		testSuiteLogLevel:               testSuiteLogLevel,
 		customTestSuiteEnvVars:          customTestControllerEnvVars,
 		testName:                        testName,
+		apiContainerLogLevel: apiContainerLogLevel,
 	}
 }
 
@@ -246,8 +251,7 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
 			api_container_env_vars.ApiLogFilepathEnvVar:           api_container_docker_consts.LogMountFilepath,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
-			// TODO make this parameterizable
-			api_container_env_vars.LogLevelEnvVar:                 "trace",
+			api_container_env_vars.LogLevelEnvVar: executor.apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: executor.subnetMask,
 			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
