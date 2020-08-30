@@ -85,7 +85,6 @@ type testExecutor struct {
 	// The log level string to pass to the test suite (should be meaningful to the test suite image)
 	testSuiteLogLevel string
 
-	// TODO Use these, by validating that they don't collide with existing environment vars!!!
 	// Mapping of user-defined custom environment variables that will also be passed to the test suite contianer on start
 	customTestSuiteEnvVars map[string]string
 
