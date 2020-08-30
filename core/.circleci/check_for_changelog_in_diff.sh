@@ -7,11 +7,6 @@ if [ -z "${base_revision}" ]; then
     exit 1
 fi
 
-
-# TODO debugging
-echo "${base_revision}"
-git diff --name-only ${base_revision}...HEAD
-
 if ! git diff --name-only ${base_revision}...HEAD | grep CHANGELOG.md; then
     echo "PR has no CHANGELOG entry. Please update the CHANGELOG!"
     return_code=1

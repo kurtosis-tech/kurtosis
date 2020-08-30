@@ -17,6 +17,7 @@
 * Made log levels of Kurtosis & test suite independently configurable
 * Switch to using CircleCI for builds
 * Made the API image & parallelism configurable
+* Remove TODO in run.sh about parameterizing binary name
 
 # 0.9.0
 * Change ConfigurationID to be a string
