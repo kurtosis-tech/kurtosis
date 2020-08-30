@@ -16,7 +16,7 @@
 * Remove some unnecessary `context.Context` pointer-passing
 * Made log levels of Kurtosis & test suite independently configurable
 * Switch to using CircleCI for builds
-* Made the API image configurable
+* Made the API image & parallelism configurable
 
 # 0.9.0
 * Change ConfigurationID to be a string
