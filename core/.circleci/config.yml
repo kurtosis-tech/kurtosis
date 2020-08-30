@@ -6,9 +6,8 @@ orbs:
   go: circleci/go@1.3.1
 jobs:
   build:
-    executor:
-      name: go/default
-      tag: '1.15'
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       # Necessary to bind-mount /var/run/docker.sock inside the Docker container that's running our build
       # See: https://support.circleci.com/hc/en-us/articles/115015849028-Docker-Daemon-Not-Available
