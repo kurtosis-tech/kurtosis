@@ -1,5 +1,5 @@
 return_code=1
-if ! git diff --name-only HEAD.."${TRAVIS_BRANCH}" | grep CHANGELOG.md; then
+if ! git diff --name-only HEAD.."${CIRCLE_BRANCH}" | grep CHANGELOG.md; then
   echo "PR has no CHANGELOG entry. Please update the CHANGELOG!"
   return_code=1
 else
