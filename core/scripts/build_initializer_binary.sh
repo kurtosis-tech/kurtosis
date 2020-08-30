@@ -3,12 +3,12 @@
 set -euo pipefail
 
 BUILD_DIR="build"
-MAIN_BINARY_OUTPUT_FILE="kurtosis-core"
+DEFAULT_BINARY_FILENAME="kurtosis-core"
 
 script_dirpath=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 root_dirpath=$(dirname "${script_dirpath}")
 
-binary_output_filepath="${root_dirpath}/${BUILD_DIR}/${MAIN_BINARY_OUTPUT_FILE}"
+binary_output_filepath="${root_dirpath}/${BUILD_DIR}/${DEFAULT_BINARY_FILENAME}"
 
 echo "Running unit tests..."
 go test "${root_dirpath}"/...
