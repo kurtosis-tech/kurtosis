@@ -18,6 +18,7 @@
 * Switch to using CircleCI for builds
 * Made the API image & parallelism configurable
 * Remove TODO in run.sh about parameterizing binary name
+* Allow configurable, custom Docker environment variables that will be passed as-is to the test suite
 
 # 0.9.0
 * Change ConfigurationID to be a string

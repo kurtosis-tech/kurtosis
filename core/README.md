@@ -101,7 +101,7 @@ docker image rm $(docker images --quiet --filter "dangling=true")
 
 Test Suite Container Contract
 -----------------------------
-Must take in at least the environment variables defined in `test_suite_env_vars.go` (TODO link to the file), and can optionally take in custom environment variables
+Must take in at least [these environment variables](https://github.com/kurtosis-tech/kurtosis-core/blob/develop/initializer/test_suite_env_vars/test_suite_env_vars.go ), and can optionally take in custom environment variables (which will be set via the `--custom-env-vars-json` flag)
 
 Only one of `METADATA_FILEPATH` or `TEST` will be set at a time
 

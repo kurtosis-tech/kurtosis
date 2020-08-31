@@ -85,7 +85,6 @@ type testExecutor struct {
 	// The log level string to pass to the test suite (should be meaningful to the test suite image)
 	testSuiteLogLevel string
 
-	// TODO Use these, by validating that they don't collide with existing environment vars!!!
 	// Mapping of user-defined custom environment variables that will also be passed to the test suite contianer on start
 	customTestSuiteEnvVars map[string]string
 
@@ -290,6 +289,8 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
+		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
+		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
 		banner_printer.PrintContainerLogsWithBanners(executor.log, testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.OutOfOrderTestStatusExitCode:
@@ -301,6 +302,8 @@ func (executor testExecutor) runTest(ctx context.Context) (bool, error) {
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
+		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
+		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
 		banner_printer.PrintContainerLogsWithBanners(executor.log, testRunningContainerDescription, containerLogFp.Name())
 	case exit_codes.ShutdownSignalExitCode:

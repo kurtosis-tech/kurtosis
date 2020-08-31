@@ -211,6 +211,8 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 			defer readingTempFp.Close()
 			testOutputReader = readingTempFp
 		}
+		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
+		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		outputManager.logTestOutput(testName, executionErr, passed, testOutputReader)
 	}
 }

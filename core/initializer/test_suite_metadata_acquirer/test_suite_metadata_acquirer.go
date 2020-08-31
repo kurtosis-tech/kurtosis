@@ -106,6 +106,8 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
+		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
+		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
