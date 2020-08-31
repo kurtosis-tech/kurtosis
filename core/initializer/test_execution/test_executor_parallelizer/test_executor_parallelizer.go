@@ -3,13 +3,14 @@
  * All Rights Reserved.
  */
 
-package parallelism
+package test_executor_parallelizer
 
 import (
 	"context"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -22,81 +23,35 @@ import (
 )
 
 /*
-Executor that will coordinate the execution of multiple tests in parallel
- */
-type TestExecutorParallelizer struct {
-	// The ID of the test suite execution to which all the individual test executions belong
-	executionId                 uuid.UUID
-
-	// Docker client which will be used for manipulating the Docker environment when running a test
-	dockerClient                *client.Client
-
-	// Name of the Docker image that will run the Kurtosis API container
-	kurtosisApiImageName string
-
-	// Name of the Docker image of the test suite that will run each test
-	testSuiteImageName string
-
-	// A string, meaningful only to the test suite image, which tells it what log level it should run at
-	testSuiteLogLevel string
-
-	// A key-value map of custom Docker environment variables that will be passed as-is to the test suite container during startup
-	customTestSuiteEnvVars map[string]string
-
-	// The number of tests to run in parallel
-	parallelism                 uint
-
-	// The string representing the log level that the API container should run with
-	apiContainerLogLevel string
-}
-
-/*
-Creates a new TestExecutorParallelizer which will run tests in parallel using the given parameters.
-
-Args:
-	executionId: The UUID uniquely identifying this execution of the tests
-	dockerClient: The handle to manipulating the Docker environment
-	kurtosisApiImageName: The name of the Docker image that will run the Kurtosis API container
-	testSuiteImageName: The name of the Docker image that will be used to run the test controller
-	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
-	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
-		passed via Docker environment variables to the test controller
-	parallelism: The number of tests to run concurrently
- */
-func NewTestExecutorParallelizer(
-			executionId uuid.UUID,
-			dockerClient *client.Client,
-			kurtosisApiImageName string,
-			testSuiteImageName string,
-			testSuiteLogLevel string,
-			customTestControllerEnvVars map[string]string,
-			parallelism uint,
-			apiContainerLogLevel string) *TestExecutorParallelizer {
-	return &TestExecutorParallelizer{
-		executionId:            executionId,
-		dockerClient:           dockerClient,
-		kurtosisApiImageName: kurtosisApiImageName,
-		testSuiteImageName:     testSuiteImageName,
-		testSuiteLogLevel:      testSuiteLogLevel,
-		customTestSuiteEnvVars: customTestControllerEnvVars,
-		parallelism:            parallelism,
-		apiContainerLogLevel: apiContainerLogLevel,
-	}
-}
-
-/*
 Runs the given tests in parallel, printing:
 1) the output of tests as they finish
 2) a summary of all tests once all tests have finished
 
 Args:
+	executionId: The UUID uniquely identifying this execution of the tests
+	dockerClient: The handle to manipulating the Docker environment
+	parallelism: The number of tests to run concurrently
 	allTestParams: A mapping of test_name -> parameters for running the test
+	kurtosisApiImageName: The name of the Docker image that will run the Kurtosis API container
+	apiContainerLogLevel: The log level to use for the Kurtosis API container
+	testSuiteImageName: The name of the Docker image that will be used to run the test controller
+	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
+	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
+		passed via Docker environment variables to the test controller
 
 Returns:
 	True if all tests passed, false otherwise
  */
-
-func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestParams map[string]ParallelTestParams) bool {
+func RunInParallelAndPrintResults(
+		executionId uuid.UUID,
+		dockerClient *client.Client,
+		parallelism uint,
+		allTestParams map[string]ParallelTestParams,
+		kurtosisApiImageName string,
+		apiContainerLogLevel string,
+		testSuiteImageName string,
+		testSuiteLogLevel string,
+		customTestSuiteEnvVars map[string]string) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -123,9 +78,20 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 
 	outputManager := newParallelTestOutputManager()
 
-	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), executor.parallelism)
+	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 
-	executor.disableSystemLogAndRunTestThreads(ctx, outputManager, testParamsChan)
+	disableSystemLogAndRunTestThreads(
+		executionId,
+		ctx,
+		outputManager,
+		testParamsChan,
+		parallelism,
+		dockerClient,
+		kurtosisApiImageName,
+		apiContainerLogLevel,
+		testSuiteImageName,
+		testSuiteLogLevel,
+		customTestSuiteEnvVars)
 
 	logrus.Info("All tests exited")
 
@@ -134,12 +100,20 @@ func (executor TestExecutorParallelizer) RunInParallelAndPrintResults(allTestPar
 }
 
 
-func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
+func disableSystemLogAndRunTestThreads(
+		executionId uuid.UUID,
 		parentContext context.Context,
 		outputManager *ParallelTestOutputManager,
-		testParamsChan chan ParallelTestParams) {
-	/*
-    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
+		testParamsChan chan ParallelTestParams,
+		parallelism uint,
+		dockerClient *client.Client,
+		kurtosisApiImageName string,
+		apiContainerLogLevel string,
+		testSuiteImageName string,
+		testSuiteLogLevel string,
+		customTestSuiteEnvVars map[string]string) {
+		/*
+		    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
     a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we capture any systemwide logger usages
 	during this function so we can show them later.
@@ -148,9 +122,20 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
 	defer outputManager.stopInterceptingStdLogger()
 
 	var waitGroup sync.WaitGroup
-	for i := uint(0); i < executor.parallelism; i++ {
+	for i := uint(0); i < parallelism; i++ {
 		waitGroup.Add(1)
-		go executor.runTestWorkerGoroutine(parentContext, outputManager, &waitGroup, testParamsChan)
+		go runTestWorkerGoroutine(
+			executionId,
+			parentContext,
+			&waitGroup,
+			testParamsChan,
+			outputManager,
+			dockerClient,
+			kurtosisApiImageName,
+			apiContainerLogLevel,
+			testSuiteImageName,
+			testSuiteLogLevel,
+			customTestSuiteEnvVars)
 	}
 	waitGroup.Wait()
 }
@@ -159,18 +144,25 @@ func (executor TestExecutorParallelizer) disableSystemLogAndRunTestThreads(
 A function, designed to be run inside a worker thread, that will pull test params from the given test params channel, execute the test, and
 push the result to the test results channel
  */
-func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
+func runTestWorkerGoroutine(
+			executionId uuid.UUID,
 			parentContext context.Context,
-			outputManager *ParallelTestOutputManager,
 			waitGroup *sync.WaitGroup,
-			testParamsChan chan ParallelTestParams) {
+			testParamsChan chan ParallelTestParams,
+			outputManager *ParallelTestOutputManager,
+			dockerClient *client.Client,
+			kurtosisApiImageName string,
+			apiContainerLogLevel string,
+			testSuiteImageName string,
+			testSuiteLogLevel string,
+			customTestSuiteEnvVars map[string]string) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
 
-		tempFilename := fmt.Sprintf("%v-%v", executor.executionId, testName)
+		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
 		writingTempFp, err := ioutil.TempFile("", tempFilename)
 		if err != nil {
 			emptyOutputReader := &strings.Reader{}
@@ -186,19 +178,18 @@ func (executor TestExecutorParallelizer) runTestWorkerGoroutine(
 		log.SetOutput(writingTempFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
 
-		testExecutor := newTestExecutor(
+		passed, executionErr := test_executor.RunTest(
+			executionId,
+			parentContext,
 			log,
-			executor.executionId,
-			executor.dockerClient,
+			dockerClient,
 			testParams.SubnetMask,
-			executor.kurtosisApiImageName,
-			executor.testSuiteImageName,
-			executor.testSuiteLogLevel,
-			executor.customTestSuiteEnvVars,
-			testName,
-			executor.apiContainerLogLevel)
-
-		passed, executionErr := testExecutor.runTest(parentContext)
+			kurtosisApiImageName,
+			apiContainerLogLevel,
+			testSuiteImageName,
+			testSuiteLogLevel,
+			customTestSuiteEnvVars,
+			testName)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 
 		// Create a new FP to read the logfile from the start

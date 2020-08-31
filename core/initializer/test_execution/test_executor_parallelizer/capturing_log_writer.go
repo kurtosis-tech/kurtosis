@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package parallelism
+package test_executor_parallelizer
 
 import (
 	"runtime"
