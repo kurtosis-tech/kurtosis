@@ -19,6 +19,7 @@
 * Made the API image & parallelism configurable
 * Remove TODO in run.sh about parameterizing binary name
 * Allow configurable, custom Docker environment variables that will be passed as-is to the test suite
+* Added `--list` arg to print test names in test suite
 
 # 0.9.0
 * Change ConfigurationID to be a string

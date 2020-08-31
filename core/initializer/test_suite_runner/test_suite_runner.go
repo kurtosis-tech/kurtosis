@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/parallelism"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
@@ -26,9 +25,6 @@ const (
 	SUBNET_START_ADDR = "172.23.0.0"
 
 	BITS_IN_IP4_ADDR = 32
-
-	// TODO Pull this from the testsuite image!
-	networkWidthBits = 8
 )
 
 /*
@@ -56,6 +52,9 @@ type TestSuiteRunner struct {
 
 	// The log level the Kurtosis API container should use
 	apiContainerLogLevel string
+
+	// Metadata about the test suite - names of tests inside, network width bits, etc.
+	testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata
 }
 
 /*
@@ -70,6 +69,7 @@ Args:
 	networkWidthBits: Each test will get a Docker network with a number of available IP addresses = 2^network_width_bits.
 		This parameter should be set high enough so that each test can fit all the services they want.
 	apiContainerLogLevel: The log level the Kurtosis API container should use
+	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
  */
 func NewTestSuiteRunner(
 			// TODO sort these alphabetically
@@ -78,7 +78,8 @@ func NewTestSuiteRunner(
 			kurtosisApiImage string,
 			testSuiteLogLevel string,
 			customTestSuiteEnvVars map[string]string,
-			apiContainerLogLevel string) *TestSuiteRunner {
+			apiContainerLogLevel string,
+			testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) *TestSuiteRunner {
 	return &TestSuiteRunner{
 		dockerClient:           dockerClient,
 		testSuiteImage:         testSuiteImage,
@@ -86,6 +87,7 @@ func NewTestSuiteRunner(
 		testSuiteLogLevel:      testSuiteLogLevel,
 		customTestSuiteEnvVars: customTestSuiteEnvVars,
 		apiContainerLogLevel:   apiContainerLogLevel,
+		testSuiteMetadata: testSuiteMetadata,
 	}
 }
 
@@ -102,37 +104,23 @@ Returns:
 		being retrieved. If this is non-nil, the allTestsPassed value is undefined!
  */
 func (runner TestSuiteRunner) RunTests(testNamesToRun map[string]bool, testParallelism uint) (allTestsPassed bool, executionErr error) {
-	stdoutDockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), runner.dockerClient)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
-	}
-
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		runner.testSuiteImage,
-		stdoutDockerManager,
-		runner.testSuiteLogLevel,
-		runner.customTestSuiteEnvVars)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
-	}
-
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
-		for testName := range suiteMetadata.TestNames {
+		for testName := range runner.testSuiteMetadata.TestNames {
 			testNamesToRun[testName] = true
 		}
 	}
 
 	// Validate all the requested tests exist
 	for testName := range testNamesToRun {
-		if _, found := suiteMetadata.TestNames[testName]; !found {
+		if _, found := runner.testSuiteMetadata.TestNames[testName]; !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(executionInstanceId, testNamesToRun, suiteMetadata.NetworkWidthBits)
+	testParams, err := buildTestParams(executionInstanceId, testNamesToRun, runner.testSuiteMetadata.NetworkWidthBits)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
