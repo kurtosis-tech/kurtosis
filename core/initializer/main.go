@@ -130,19 +130,17 @@ func main() {
 		}
 	}
 
-	testSuiteRunner := test_suite_runner.NewTestSuiteRunner(
-		dockerClient,
-		*testSuiteImageArg,
-		*kurtosisApiImageArg,
-		*testSuiteLogLevelArg,
-		customEnvVars,
-		*kurtosisLogLevelArg,
-		*suiteMetadata)
-
 	parallelismUint := uint(*parallelismArg)
-	allTestsPassed, err := testSuiteRunner.RunTests(
+	allTestsPassed, err := test_suite_runner.RunTests(
+		dockerClient,
+		*suiteMetadata,
 		testNamesToRun,
-		parallelismUint)
+		parallelismUint,
+		*kurtosisApiImageArg,
+		*kurtosisLogLevelArg,
+		*testSuiteImageArg,
+		*testSuiteLogLevelArg,
+		customEnvVars)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
