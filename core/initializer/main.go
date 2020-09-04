@@ -82,13 +82,19 @@ func main() {
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
 	flag.Parse()
 
-	if !access_controller.AuthenticateLicense(*licenseArg) {
+	authenticated, err := access_controller.AuthenticateLicense(*licenseArg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred while authenticating the Kurtosis license: %v\n", err)
+	} else if !authenticated {
 		fmt.Printf("Please enter a valid Kurtosis license. To register for a license, visit %s", licenseWebUrl)
-		os.Exit(successExitCode)
+		os.Exit(failureExitCode)
 	}
-	if !access_controller.AuthorizeLicense(*licenseArg) {
+	authorized, err := access_controller.AuthorizeLicense(*licenseArg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred while authorizing the Kurtosis license: %v\n", err)
+	} else if !authorized {
 		fmt.Printf("Your license has expired. To purchase an extended license, visit %s", licenseWebUrl)
-		os.Exit(successExitCode)
+		os.Exit(failureExitCode)
 	}
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)

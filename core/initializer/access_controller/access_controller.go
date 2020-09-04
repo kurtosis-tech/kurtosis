@@ -5,26 +5,30 @@
 
 package access_controller
 
+import "github.com/palantir/stacktrace"
+
 const (
 	freeTrialLicense = "free-trial"
 	expiredTrialLicense = "expired-trial"
 	paidLicense = "paid-license"
 )
 
-func AuthenticateLicense(license string) bool {
+func AuthenticateLicense(license string) (bool, error) {
 	switch license {
 	case freeTrialLicense, paidLicense, expiredTrialLicense:
-		return true
+		return true, nil
 	default:
-		return false
+		return false, nil
 	}
 }
 
-func AuthorizeLicense(license string) bool {
+func AuthorizeLicense(license string) (bool, error) {
 	switch license {
 	case freeTrialLicense, paidLicense:
-		return true
+		return true, nil
 	case expiredTrialLicense:
-		return false
+		return false, nil
+	default:
+		return false, stacktrace.NewError("Failed to authorize license.")
 	}
 }
