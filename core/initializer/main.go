@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
@@ -28,8 +27,6 @@ const (
 
 	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
 	defaultParallelism = 4
-
-	licenseWebUrl = "https://kurtosistech.com/register"
 )
 
 func main() {
@@ -70,34 +67,12 @@ func main() {
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
 
-	licenseArg := flag.String(
-		"license",
-		"",
-		fmt.Sprintf("Kurtosis license key. To register for a license, visit %s", licenseWebUrl))
-
 	customEnvVarsJsonArg := flag.String(
 		"custom-env-vars-json",
 		"{}",
 		"JSON containing key-value mappings of custom environment variables that will be set in " +
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
 	flag.Parse()
-
-	authenticated, err := access_controller.AuthenticateLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authenticating the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authenticated {
-		fmt.Printf("Please enter a valid Kurtosis license. To register for a license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	authorized, err := access_controller.AuthorizeLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authorizing the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authorized {
-		fmt.Printf("Your license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
