@@ -15,10 +15,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -94,6 +92,8 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		dockerClient,
+		suiteExecutionVolume,
+		suiteExecutionVolumeMountDirpath,
 		kurtosisApiImageName,
 		apiContainerLogLevel,
 		testSuiteImageName,
@@ -114,6 +114,8 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeMountDirpath string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
 		testSuiteImageName string,
@@ -138,6 +140,8 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
+			suiteExecutionVolume,
+			suiteExecutionVolumeMountDirpath,
 			kurtosisApiImageName,
 			apiContainerLogLevel,
 			testSuiteImageName,
@@ -174,19 +178,11 @@ func runTestWorkerGoroutine(
 		// The path, relative to the root of the suite execution volume, where the file IO for this test should be stored
 		testExecutionRelativeDirpath := testName
 
-		testDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, testExecutionRelativeDirpath)
-		if err := os.Mkdir(testDirpathOnInitializer, os.ModeDir); err != nil {
-			emptyOutputReader := &strings.Reader{}
-			executionErr := stacktrace.Propagate(err, "An error occurred creating the directory for storing file IO for test: %v", testName)
-			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
-			continue
-		}
-
-		logFilepathOnInitializer := path.Join(testDirpathOnInitializer, testExecutionLogFilename)
-		writingTempFp, err := os.Create(logFilepathOnInitializer)
+		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
+		writingTempFp, err := ioutil.TempFile("", tempFilename)
 		if err != nil {
 			emptyOutputReader := &strings.Reader{}
-			executionErr := stacktrace.Propagate(err, "An error occurred creating a file to contain logs of test %v", testName)
+			executionErr := stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
 			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
 			continue
 		}
@@ -204,6 +200,7 @@ func runTestWorkerGoroutine(
 			log,
 			dockerClient,
 			suiteExecutionVolume,
+			suiteExecutionVolumeMountDirpath,
 			testExecutionRelativeDirpath,
 			testParams.SubnetMask,
 			kurtosisApiImageName,
@@ -216,7 +213,7 @@ func runTestWorkerGoroutine(
 
 		// Create a new FP to read the logfile from the start
 		var testOutputReader io.Reader
-		readingTempFp, err := os.Open(logFilepathOnInitializer)
+		readingTempFp, err := os.Open(writingTempFp.Name())
 		if err != nil {
 			errorMsg := fmt.Sprintf("An error occurred opening the test's logfile for reading; logs for this test are unavailable:\n%s", err)
 			testOutputReader = strings.NewReader(errorMsg)

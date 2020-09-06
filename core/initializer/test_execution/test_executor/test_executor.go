@@ -17,14 +17,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_mount_locations"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 

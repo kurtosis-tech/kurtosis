@@ -34,5 +34,4 @@ CMD ["sh", "-c",
             --subnet-mask=${SUBNET_MASK} \
             --test-suite-container-id=${TEST_SUITE_CONTAINER_ID} \
             --test-suite-container-ip=${TEST_SUITE_CONTAINER_IP} \
-            --test-volume=${TEST_VOLUME}"
-]
+            --test-volume=${TEST_VOLUME}"]

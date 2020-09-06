@@ -1,12 +1,4 @@
-ARG _BINARY_NAME="kurtosis-initializer"
-
-ENV DO_LIST="false"
-ENV TEST_NAMES=""
-ENV KURTOSIS_LOG_LEVEL="debug"
-ENV TEST_SUITE_LOG_LEVEL="debug"
-ENV KURTOSIS_API_IMAGE="kurtosistech/kurtosis-core_api:latest"
-ENV PARALLELISM="4"
-ENV CUSTOM_ENV_VARS_JSON="{}"
+# ARG _BINARY_NAME="kurtosis-initializer"
 
 # ============= Build Stage ======================
 FROM golang:1.15-alpine AS builder
@@ -20,10 +12,20 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o ${_BINARY_NAME}-initializer initializer/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.go
+# RUN CGO_ENABLED=0 GOOS=linux go build -o ${_BINARY_NAME} initializer/main.go
 
 # ============= Execution Stage ================
 FROM docker:stable AS execution
+
+ENV DO_LIST="false"
+ENV TEST_NAMES=""
+ENV KURTOSIS_LOG_LEVEL="debug"
+ENV TEST_SUITE_LOG_LEVEL="debug"
+ENV KURTOSIS_API_IMAGE="kurtosistech/kurtosis-core_api:latest"
+ENV PARALLELISM="4"
+ENV CUSTOM_ENV_VARS_JSON="{}"
+
 WORKDIR /run
 
 # Copy the code into the container
@@ -42,5 +44,4 @@ CMD ["sh", "-c", \
             --parallelism=${PARALLELISM} \
             --test-names=${TEST_NAMES} \
             --test-suite-image=${TEST_SUITE_IMAGE} \
-            --test-suite-log-level=${TEST_SUITE_LOG_LEVEL}"
-]
+            --test-suite-log-level=${TEST_SUITE_LOG_LEVEL}"]
