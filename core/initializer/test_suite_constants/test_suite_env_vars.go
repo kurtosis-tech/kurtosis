@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_suite_env_vars
+package test_suite_constants
 
 import "github.com/palantir/stacktrace"
 
@@ -16,8 +16,9 @@ const (
 	MetadataFilepathEnvVar = "METADATA_FILEPATH"
 	TestEnvVar             = "TEST"
 	KurtosisApiIpEnvVar    = "KURTOSIS_API_IP"
+	ServicesDirpathEnvVar  = "SERVICES_DIRPATH"
 	LogFilepathEnvVar      = "LOG_FILEPATH"
-	LogLevelEnvVar = "LOG_LEVEL"
+	LogLevelEnvVar         = "LOG_LEVEL"
 )
 
 /*
@@ -29,6 +30,7 @@ func GenerateTestSuiteEnvVars(
 		metadataFilepathEnvVar string,
 		testName string,
 		kurtosisApiIp string,
+		servicesDirpath string,
 		logFilepath string,
 		logLevel string,
 		customEnvVars map[string]string) (map[string]string, error) {
@@ -36,6 +38,7 @@ func GenerateTestSuiteEnvVars(
 		MetadataFilepathEnvVar: metadataFilepathEnvVar,
 		TestEnvVar:             testName,
 		KurtosisApiIpEnvVar:    kurtosisApiIp,
+		ServicesDirpathEnvVar:  servicesDirpath,
 		LogFilepathEnvVar:      logFilepath,
 		LogLevelEnvVar:         logLevel,
 	}

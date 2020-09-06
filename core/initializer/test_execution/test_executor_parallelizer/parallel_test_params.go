@@ -5,10 +5,6 @@
 
 package test_executor_parallelizer
 
-import (
-	"github.com/docker/distribution/uuid"
-)
-
 /*
 Package struct containing the parameters for running a test
 */
@@ -18,15 +14,11 @@ type ParallelTestParams struct {
 
 	// Subnet mask that should be used for the Docker network that the test controller & network will run in
 	SubnetMask          string
-
-	// UUID representing an a single execution of one or more tests from the test suite, to which this test execution belongs
-	ExecutionInstanceId uuid.UUID
 }
 
-func NewParallelTestParams(testName string, subnetMask string, executionInstanceId uuid.UUID) *ParallelTestParams {
+func NewParallelTestParams(testName string, subnetMask string) *ParallelTestParams {
 	return &ParallelTestParams{
 		TestName: testName,
 		SubnetMask: subnetMask,
-		ExecutionInstanceId: executionInstanceId,
 	}
 }

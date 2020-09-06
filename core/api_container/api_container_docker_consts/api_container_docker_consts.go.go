@@ -10,10 +10,6 @@ const (
 	//  reason to make configurable)
 	ContainerPort = 7443
 
-	// The location on the API container image where the API container will write its logs to (and which will be bound-
-	//  mounted so the initializer can read it)
-	LogMountFilepath = "/bind-mounts/api.log"
-
-	// The location where the test volume will be mounted on the API container
-	TestVolumeDirpath = "/volume-mounts/test-volume"
+	// The location where the suite execution Docker volume will be mounted on the API container
+	SuiteExecutionVolumeMountDirpath = "/suite-execution"
 )
