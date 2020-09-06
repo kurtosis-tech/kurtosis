@@ -1,17 +1,62 @@
 version: 2.1
-jobs:
-  build:
-    environment:
-      CIRCLE_BASE_REVISION: "<< pipeline.git.base_revision >>"
+
+executors:
+  ubuntu_vm:
     machine:
       image: ubuntu-1604:202007-01
       # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
       # docker_layer_caching: true
+
+# NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
+#  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
+#  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
+#  images), so we run everything inside a single job.
+# See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
+jobs:
+  validate_pr:
+    executor: ubuntu_vm
+    steps:
+      # Frustratingly, CircleCI doesn't have a pipeline value indicating pull requests so we can't use a "when" condition to make sure we don't even run this
+      #  job since the "when" condition is evaluated at configuration time and the environment variables like CIRCLE_PULL_REQUEST are only injected at runtime
+      #  after spinning up the VM (meaning for all non-PR commits, we're going to waste time spinning up the VM only to abort)
+      - run: |
+          if [ -z "$CIRCLE_PULL_REQUEST"]; then
+              circleci step halt
+          fi
+      - checkout
+      - run: "bash .circleci/check_for_changelog_in_diff.sh << pipeline.git.base_revision >> ${CIRCLE_BRANCH}"
+
+      # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
+      - run: scripts/full_build_and_run.sh --parallelism=2
+
+  push_docker_images:
+    executor: ubuntu_vm
     steps:
       - checkout
+      - run: scripts/build_images.sh
+      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+
+      # TODO change the image names to be parameterized - it's hardcoded right now
+      - run: "docker push kurtosistech/kurtosis-core_api:<< pipeline.git.branch >>"
+      - run: "docker push kurtosistech/kurtosis-core_initializer:<< pipeline.git.branch >>"
 
       # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
       - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
 
-      # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/full_build_and_run.sh --parallelism=2
+workflows:
+  pr_validation:
+    when:
+      not:
+        or: 
+        - equal: [ "develop", "<< pipeline.git.branch >>" ]
+        - equal: [ "master", "<< pipeline.git.branch >>" ]
+    jobs:
+      - validate_pr
+
+  push_stable_images:
+    when:
+      or:
+        - equal: [ "develop", "<< pipeline.git.branch >>" ]
+        - equal: [ "master", "<< pipeline.git.branch >>" ]
+    jobs:
+      - push_docker_images
