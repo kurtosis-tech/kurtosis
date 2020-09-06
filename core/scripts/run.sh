@@ -3,7 +3,7 @@ script_dirpath="$(cd "$(dirname "${0}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
 INITIALIZER_IMAGE="kurtosistech/kurtosis-core_initializer"
-GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example"
+GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
 
 go_suite_execution_volume="suite-execution_go-example-suite_$(date +%s)"
 
