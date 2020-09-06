@@ -98,6 +98,7 @@ func main() {
 		fmt.Printf("Your license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
 	}
+	os.Exit(successExitCode)
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
