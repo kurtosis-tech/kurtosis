@@ -85,6 +85,7 @@ func main() {
 	authenticated, err := access_controller.AuthenticateLicense(*licenseArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred while authenticating the Kurtosis license: %v\n", err)
+		os.Exit(failureExitCode)
 	} else if !authenticated {
 		fmt.Printf("Please enter a valid Kurtosis license. To register for a license, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
@@ -92,6 +93,7 @@ func main() {
 	authorized, err := access_controller.AuthorizeLicense(*licenseArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred while authorizing the Kurtosis license: %v\n", err)
+		os.Exit(failureExitCode)
 	} else if !authorized {
 		fmt.Printf("Your license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
