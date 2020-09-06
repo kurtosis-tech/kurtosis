@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -177,6 +178,13 @@ func runTestWorkerGoroutine(
 
 		// The path, relative to the root of the suite execution volume, where the file IO for this test should be stored
 		testExecutionRelativeDirpath := testName
+		testExecutionDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, testExecutionRelativeDirpath)
+		if err := os.Mkdir(testExecutionDirpathOnInitializer, os.ModeDir); err != nil {
+			emptyOutputReader := &strings.Reader{}
+			executionErr := stacktrace.Propagate(err, "An error occurred creating the directory to contain file IO of test %v", testName)
+			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
+			continue
+		}
 
 		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
 		writingTempFp, err := ioutil.TempFile("", tempFilename)

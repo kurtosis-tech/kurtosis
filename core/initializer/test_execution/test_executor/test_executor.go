@@ -76,7 +76,9 @@ Args:
 	suiteExecutionVolumeDirpathOnInitializer: The dirpath, ON THE INITIALIZER CONTAINER, where the suite execution
 		Docker volume is mounted
 	testExecutionRelativeDirpath: The dirpath, relative to the root of the the suite execution volume, where file IO
-		for this particular test should happen
+		for this particular test should happen.
+
+		NOTE: This directory must already exist!
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
 	kurtosisApiImageName: The name of the Docker image that will be used to run the Kurtosis API container
 	testSuiteImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
@@ -165,11 +167,8 @@ func RunTest(
 			"Could not create a directory inside the test execution directory, '%v', for storing services file IO",
 			testExecutionRelativeDirpath)
 	}
-	servicesDirpathOnSuiteContainer := path.Join(
-		test_suite_constants.SuiteExecutionVolumeMountpoint,
-		testExecutionRelativeDirpath,
-		servicesDirname)
 
+	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
 	suiteLogFilepathOnSuiteContainer := path.Join(
 		test_suite_constants.SuiteExecutionVolumeMountpoint,
 		testExecutionRelativeDirpath,
@@ -178,7 +177,7 @@ func RunTest(
 		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
 		kurtosisApiIp.String(),
-		servicesDirpathOnSuiteContainer,
+		servicesRelativeDirpath,
 		suiteLogFilepathOnSuiteContainer,
 		testSuiteLogLevel,
 		customTestSuiteEnvVars)

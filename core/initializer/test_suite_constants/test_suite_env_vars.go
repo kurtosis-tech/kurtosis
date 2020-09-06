@@ -13,12 +13,12 @@ A package to contain the contract of Docker environment variables that will be p
  */
 
 const (
-	MetadataFilepathEnvVar = "METADATA_FILEPATH"
-	TestEnvVar             = "TEST"
-	KurtosisApiIpEnvVar    = "KURTOSIS_API_IP"
-	ServicesDirpathEnvVar  = "SERVICES_DIRPATH"
-	LogFilepathEnvVar      = "LOG_FILEPATH"
-	LogLevelEnvVar         = "LOG_LEVEL"
+	MetadataFilepathEnvVar        = "METADATA_FILEPATH"
+	TestEnvVar                    = "TEST"
+	KurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
+	ServicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
+	LogFilepathEnvVar             = "LOG_FILEPATH"
+	LogLevelEnvVar                = "LOG_LEVEL"
 )
 
 /*
@@ -30,17 +30,17 @@ func GenerateTestSuiteEnvVars(
 		metadataFilepathEnvVar string,
 		testName string,
 		kurtosisApiIp string,
-		servicesDirpath string,
+		servicesRelativeDirpath string,
 		logFilepath string,
 		logLevel string,
 		customEnvVars map[string]string) (map[string]string, error) {
 	standardVars := map[string]string{
-		MetadataFilepathEnvVar: metadataFilepathEnvVar,
-		TestEnvVar:             testName,
-		KurtosisApiIpEnvVar:    kurtosisApiIp,
-		ServicesDirpathEnvVar:  servicesDirpath,
-		LogFilepathEnvVar:      logFilepath,
-		LogLevelEnvVar:         logLevel,
+		MetadataFilepathEnvVar:        metadataFilepathEnvVar,
+		TestEnvVar:                    testName,
+		KurtosisApiIpEnvVar:           kurtosisApiIp,
+		ServicesRelativeDirpathEnvVar: servicesRelativeDirpath,
+		LogFilepathEnvVar:             logFilepath,
+		LogLevelEnvVar:                logLevel,
 	}
 	for key, val := range customEnvVars {
 		if _, ok := standardVars[key]; ok {

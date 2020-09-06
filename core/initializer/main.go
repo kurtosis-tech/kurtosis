@@ -29,10 +29,17 @@ const (
 	defaultParallelism = 4
 
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
-	suiteExecutionMountDirpath = "/suite-execution"
+	// A user MUST mount a volume here
+	suiteExecutionVolumeMountDirpath = "/suite-execution"
 )
 
 func main() {
+	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors:   true,
+		FullTimestamp: true,
+	})
+
 	testSuiteImageArg := flag.String(
 		"test-suite-image",
 		"",
@@ -105,7 +112,7 @@ func main() {
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		*testSuiteImageArg,
 		*suiteExecutionVolumeArg,
-		suiteExecutionMountDirpath,
+		suiteExecutionVolumeMountDirpath,
 		dockerClient,
 		*testSuiteLogLevelArg,
 		customEnvVars)
@@ -144,6 +151,7 @@ func main() {
 	allTestsPassed, err := test_suite_runner.RunTests(
 		dockerClient,
 		*suiteExecutionVolumeArg,
+		suiteExecutionVolumeMountDirpath,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,

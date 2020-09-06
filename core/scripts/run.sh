@@ -2,9 +2,19 @@ set -euo pipefail
 script_dirpath="$(cd "$(dirname "${0}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-GO_EXAMPLE_SUITE="kurtosistech/kurtosis-go-example"
+INITIALIZER_IMAGE="kurtosistech/kurtosis-core_initializer"
+GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example"
 
-# TODO TODO TODO
+go_suite_execution_volume="suite-execution_go-example-suite_$(date +%s)"
 
-# The Go suite is designed to take in the nginxdemo/hello image - we only pass it in here as a demonstration of custom environment variables
-"${root_dirpath}/build/kurtosis-core" "--test-suite-image=${GO_EXAMPLE_SUITE}" '--custom-env-vars-json={"GO_EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' ${*}
+docker volume create "${go_suite_execution_volume}"
+
+# TODO feed in Go example suite image
+docker run \
+    --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
+    --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
+    --env 'CUSTOM_ENV_VARS_JSON={"GO_EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
+    --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
+    --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
+    ${*:-} \
+    "${INITIALIZER_IMAGE}"
