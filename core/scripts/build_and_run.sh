@@ -44,8 +44,8 @@ docker_tag="$(echo "${git_branch}" | sed 's,[/:],_,g')"
 
 root_dirpath="$(dirname "${script_dirpath}")"
 
-initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}/${docker_tag}"
-api_image="${DOCKER_ORG}/${API_REPO}/${docker_tag}"
+initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
+api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
