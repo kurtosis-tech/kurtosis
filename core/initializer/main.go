@@ -70,11 +70,6 @@ func main() {
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
 
-	licenseArg := flag.String(
-		"license",
-		"",
-		fmt.Sprintf("Kurtosis license key. To register for a license, visit %s", licenseWebUrl))
-
 	customEnvVarsJsonArg := flag.String(
 		"custom-env-vars-json",
 		"{}",
@@ -82,30 +77,21 @@ func main() {
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
 	flag.Parse()
 
-	authenticated, err := access_controller.AuthenticateLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authenticating the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authenticated {
-		fmt.Printf("Please enter a valid Kurtosis license. To register for a license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	authorized, err := access_controller.AuthorizeLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authorizing the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authorized {
-		fmt.Printf("Your license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	os.Exit(successExitCode)
-
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
 		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(kurtosisLevel)
+
+	authenticated, err := access_controller.Authenticate()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred while attempting to authenticate user: %v\n", err)
+		os.Exit(failureExitCode)
+	} else if !authenticated {
+		fmt.Printf("Please log in to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
+		os.Exit(failureExitCode)
+	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
