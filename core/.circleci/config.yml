@@ -30,13 +30,13 @@ jobs:
       - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/full_build_and_run.sh --env PARALLELISM=2
+      - run: scripts/build_and_run.sh -d "--env PARALLELISM=2"
 
   push_docker_images:
     executor: ubuntu_vm
     steps:
       - checkout
-      - run: scripts/build_images.sh
+      - run: scripts/build_and_run.sh -b
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
       # TODO change the image names to be parameterized - it's hardcoded right now
