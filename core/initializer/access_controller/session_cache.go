@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	// By default, the kurtosis storage directory will be created in the user's home directory.
 	kurtosisStorageDirectory = ".kurtosis"
 	kurtosisTokenStorageFileName = "access_token"
 )
