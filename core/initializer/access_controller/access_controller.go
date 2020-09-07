@@ -15,13 +15,14 @@ const (
 )
 
 /*
-	Verifies that the license is a credential for a registered user,
-	Returns true if the license associated with the user has ever
-	been registered in Kurtosis, even if that user has no permissions.
+	If ciLicense is non-empty, bypasses authentication TODO TODO TODO implement CI machine to machine auth.
+	If ciLicense is empty, run a user and device-based authentication flow, prompting the user to login.
+	Returns authenticated to indicate if the user exists in the system.
+	Returns authorized if the user is authorized to run Kurtosis.
  */
 func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized bool, err error) {
 	if len(ciLicense) > 0 {
-		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows
+		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
 		return true, true, nil
 	}
 	tokenResponse, alreadyAuthenticated, err := loadToken()

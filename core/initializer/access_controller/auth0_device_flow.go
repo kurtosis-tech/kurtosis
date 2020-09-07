@@ -42,6 +42,12 @@ type TokenResponse struct {
 	TokenType string `json:"token_type"`
 }
 
+/*
+	Prompts the user to click on a URL in which they will input their credentials.
+	They will also need to confirm that this device is the one they are logging in on and confirming.
+	Auth0 is polled until it confirms that the user has successfully logged in and confirmed their device.
+ */
+
 func authorizeUserDevice() (*TokenResponse, error) {
 	var deviceCodeResponse = new(DeviceCodeResponse)
 	url := auth0UrlBase + auth0DeviceAuthPath
@@ -62,8 +68,41 @@ func authorizeUserDevice() (*TokenResponse, error) {
 	return tokenResponse, nil
 }
 
+
+// ========================== HELPER FUNCTIONS ============================
+
 /*
-	Requests an access token for the user from auth0.
+	Repeatedly polls the request token endpoint from auth0 to check if the user
+	has authenticated successfully. For more information: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#request-tokens
+*/
+func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	done := make(chan bool)
+	go func() {
+		time.Sleep(pollTimeout)
+		done <- true
+	}()
+	for {
+		select {
+		case <-done:
+			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
+		case t := <-ticker.C:
+			logrus.Tracef("Polling for token at %s\n", t)
+			tokenResponse, err := requestToken(deviceCode)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Failed to request authentication token.")
+			} else if tokenResponse != nil {
+				return tokenResponse, nil
+			}
+		}
+	}
+}
+
+
+/*
+	Given a device code for the device running kurtosis, checks with auth0 if the user has logged in
+	and confirmed this device is theirs. For more information: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#request-tokens
 	If the user has not yet signed in to auth0, will return nil, nil.
 */
 func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
@@ -91,28 +130,4 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	json.Unmarshal(body, &tokenResponse)
 	logrus.Tracef("Response from polling token: %+v", tokenResponse)
 	return tokenResponse, nil
-}
-
-func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	defer ticker.Stop()
-	done := make(chan bool)
-	go func() {
-		time.Sleep(pollTimeout)
-		done <- true
-	}()
-	for {
-		select {
-		case <-done:
-			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
-		case t := <-ticker.C:
-			logrus.Tracef("Polling for token at %s\n", t)
-			tokenResponse, err := requestToken(deviceCode)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Failed to request authentication token.")
-			} else if tokenResponse != nil {
-				return tokenResponse, nil
-			}
-		}
-	}
 }

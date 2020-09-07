@@ -88,7 +88,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(kurtosisLevel)
-
+	å
 	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*ciLicenseArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred while attempting to authenticate user: %v\n", err)
