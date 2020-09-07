@@ -26,6 +26,7 @@
     2. Run a build on PR commits
 * Modify the machinery to only use a single Docker volume for an entire test suite execution
 * Containerize the Docker initializer
+* Refactored all the stuff in `scripts` into a single script
 
 # 0.9.0
 * Change ConfigurationID to be a string

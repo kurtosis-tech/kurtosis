@@ -20,7 +20,6 @@ ENV DO_LIST="false"
 ENV TEST_NAMES=""
 ENV KURTOSIS_LOG_LEVEL="debug"
 ENV TEST_SUITE_LOG_LEVEL="debug"
-ENV KURTOSIS_API_IMAGE="kurtosistech/kurtosis-core_api:latest"
 ENV PARALLELISM="4"
 ENV CUSTOM_ENV_VARS_JSON="{}"
 
