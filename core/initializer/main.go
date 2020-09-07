@@ -27,9 +27,19 @@ const (
 
 	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
 	defaultParallelism = 4
+
+	// The location on the INITIALIZER container where the suite execution volume will be mounted
+	// A user MUST mount a volume here
+	suiteExecutionVolumeMountDirpath = "/suite-execution"
 )
 
 func main() {
+	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors:   true,
+		FullTimestamp: true,
+	})
+
 	testSuiteImageArg := flag.String(
 		"test-suite-image",
 		"",
@@ -72,6 +82,11 @@ func main() {
 		"{}",
 		"JSON containing key-value mappings of custom environment variables that will be set in " +
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
+
+	suiteExecutionVolumeArg := flag.String(
+		"suite-execution-volume",
+		"",
+		"The name of the Docker volume that will contain all the data for the test suite execution")
 	flag.Parse()
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
@@ -96,6 +111,8 @@ func main() {
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		*testSuiteImageArg,
+		*suiteExecutionVolumeArg,
+		suiteExecutionVolumeMountDirpath,
 		dockerClient,
 		*testSuiteLogLevelArg,
 		customEnvVars)
@@ -133,6 +150,8 @@ func main() {
 	parallelismUint := uint(*parallelismArg)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		dockerClient,
+		*suiteExecutionVolumeArg,
+		suiteExecutionVolumeMountDirpath,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,

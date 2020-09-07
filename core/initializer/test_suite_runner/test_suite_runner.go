@@ -32,6 +32,9 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 
 Args:
 	dockerClient: Docker client to use when interacting with the Docker engine
+	suiteExecutionVolume: The name of the Docker volume that will be used for all file I/O during test suite execution
+	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
+		mounted.
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
 	testNamesToRun: A "set" of test names to run
 	testParallelism: How many tests to run in parallel
@@ -50,6 +53,8 @@ Returns:
  */
 func RunTests(
 		dockerClient *client.Client,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeMountDirpath string,
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
@@ -74,7 +79,7 @@ func RunTests(
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(executionInstanceId, testNamesToRun, testSuiteMetadata.NetworkWidthBits)
+	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -83,6 +88,8 @@ func RunTests(
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		executionInstanceId,
 		dockerClient,
+		suiteExecutionVolume,
+		suiteExecutionVolumeMountDirpath,
 		testParallelism,
 		testParams,
 		kurtosisApiImage,
@@ -99,7 +106,7 @@ Helper function to build, from the set of tests to run, the map of test params t
 Args:
 	testsToRun: A "set" of test names to run in parallel
  */
-func buildTestParams(executionInstanceId uuid.UUID, testNamesToRun map[string]bool, networkWidthBits uint32) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
+func buildTestParams(testNamesToRun map[string]bool, networkWidthBits uint32) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
@@ -126,7 +133,7 @@ func buildTestParams(executionInstanceId uuid.UUID, testNamesToRun map[string]bo
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
-		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, executionInstanceId)
+		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr)
 		testIndex++
 	}
 	return testParams, nil

@@ -24,6 +24,8 @@
 * Change Circle config file to:
     1. Build images on pushes to `develop` or `master`
     2. Run a build on PR commits
+* Modify the machinery to only use a single Docker volume for an entire test suite execution
+* Containerize the Docker initializer
 
 # 0.9.0
 * Change ConfigurationID to be a string
