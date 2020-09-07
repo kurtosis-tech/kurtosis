@@ -19,7 +19,11 @@ const (
 	Returns true if the license associated with the user has ever
 	been registered in Kurtosis, even if that user has no permissions.
  */
-func AuthenticateAndAuthorize() (authenticated bool, authorized bool, err error) {
+func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized bool, err error) {
+	if len(ciLicense) > 0 {
+		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows
+		return true, true, nil
+	}
 	tokenResponse, alreadyAuthenticated, err := loadToken()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "")

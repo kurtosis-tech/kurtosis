@@ -52,9 +52,9 @@ func authorizeUserDevice() (*TokenResponse, error) {
 	res, _ := http.DefaultClient.Do(req)
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
-	logrus.Debugf(string(body))
 	json.Unmarshal(body, &deviceCodeResponse)
 	logrus.Debugf("Device Code: %+v\n", deviceCodeResponse)
+	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
 	tokenResponse, err := pollForToken(deviceCodeResponse.DeviceCode, deviceCodeResponse.Interval)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for token.")
@@ -78,7 +78,6 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
-	logrus.Debug(res)
 	// TODO TODO TODO make unauthorized response catching more specific to expected errors
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
 		/*
@@ -90,7 +89,7 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal(body, &tokenResponse)
-	logrus.Debugf(string(body))
+	logrus.Tracef("Response from polling token: %+v", tokenResponse)
 	return tokenResponse, nil
 }
 
@@ -107,7 +106,7 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 		case <-done:
 			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
 		case t := <-ticker.C:
-			logrus.Debugf("Grab at %s\n", t)
+			logrus.Tracef("Polling for token at %s\n", t)
 			tokenResponse, err := requestToken(deviceCode)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Failed to request authentication token.")

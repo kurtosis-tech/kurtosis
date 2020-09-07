@@ -60,6 +60,11 @@ func main() {
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
 
+	ciLicenseArg := flag.String(
+		"ci-license",
+		"",
+		fmt.Sprintf("License to run Kurtosis inside of CI. Only specify if Kurtosis will be run inside of CI."))
+
 	kurtosisApiImageArg := flag.String(
 		"kurtosis-api-image",
 		defaultKurtosisApiImage,
@@ -84,7 +89,7 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize()
+	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*ciLicenseArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)

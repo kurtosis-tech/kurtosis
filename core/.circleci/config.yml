@@ -14,4 +14,4 @@ jobs:
       - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/full_build_and_run.sh --parallelism=2
+      - run: scripts/full_build_and_run.sh --parallelism=2 --ci-license=circleci
