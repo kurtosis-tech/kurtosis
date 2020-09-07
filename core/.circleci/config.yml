@@ -24,7 +24,10 @@ jobs:
               circleci step halt
           fi
       - checkout
-      - run: "bash .circleci/check_for_changelog_in_diff.sh << pipeline.git.base_revision >> ${CIRCLE_BRANCH}"
+
+      # TODO There's no way to get the base branch, so we hardcode develop :(
+      # The --exit-code command will return 0 with no diff, and 1 when a diff exists
+      - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
       - run: scripts/full_build_and_run.sh --parallelism=2
