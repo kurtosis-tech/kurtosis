@@ -22,6 +22,7 @@
 * Added `--list` arg to print test names in test suite
 * Kill unnecessary `TestSuiteRunner`, `TestExecutorParallelizer`, and `TestExecutor` structs
 * Create an access controller with basic license auth
+* Connect access controller to auth0 device authorization flow
 
 # 0.9.0
 * Change ConfigurationID to be a string
