@@ -21,6 +21,9 @@
 * Allow configurable, custom Docker environment variables that will be passed as-is to the test suite
 * Added `--list` arg to print test names in test suite
 * Kill unnecessary `TestSuiteRunner`, `TestExecutorParallelizer`, and `TestExecutor` structs
+* Change Circle config file to:
+    1. Build images on pushes to `develop` or `master`
+    2. Run a build on PR commits
 * Modify the machinery to only use a single Docker volume for an entire test suite execution
 * Containerize the Docker initializer
 
