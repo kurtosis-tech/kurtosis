@@ -1,3 +1,33 @@
+# 1.0.0
+* Add a tutorial explaining what Kurtosis does at the Docker level
+* Kill TODOs in "Debugging Failed Tests" tutorial
+* Build a v0 of Docker container containing the Kurtosis API 
+* Add registration endpoint to the API container
+* Fix bugs with registration endpoint in API container
+* Upgrade new initializer to actually run a test suite!
+* Print rudimentary version of testsuite container logs
+* Refactor the new intializer's `main` method, which had become 550 lines long, into separate classes
+* Run tests in parallel
+* Add copyright headers
+* Clean up some bugs in DockerManager where `context.Background` was getting used where it shouldn't
+* Added test to make sure the IP placeholder string replacement happens as expected
+* Actually mount the test volume at the location the user requests in the `AddService` Kurtosis API endpoint
+* Pass extra information back from the testsuite container to the initializer (e.g. where to mount the test volume on the test suite container)
+* Remove some unnecessary `context.Context` pointer-passing
+* Made log levels of Kurtosis & test suite independently configurable
+* Switch to using CircleCI for builds
+* Made the API image & parallelism configurable
+* Remove TODO in run.sh about parameterizing binary name
+* Allow configurable, custom Docker environment variables that will be passed as-is to the test suite
+* Added `--list` arg to print test names in test suite
+* Kill unnecessary `TestSuiteRunner`, `TestExecutorParallelizer`, and `TestExecutor` structs
+* Change Circle config file to:
+    1. Build images on pushes to `develop` or `master`
+    2. Run a build on PR commits
+* Modify the machinery to only use a single Docker volume for an entire test suite execution
+* Containerize the Docker initializer
+* Refactored all the stuff in `scripts` into a single script
+
 # 0.9.0
 * Change ConfigurationID to be a string
 * Print test output as the tests finish, rather than waiting for all tests to finish to do so

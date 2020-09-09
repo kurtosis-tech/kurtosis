@@ -15,6 +15,8 @@ Kurtosis is a testing framework atop Docker, meaning you'll need to build a Dock
 * Go, we recommend the [official Golang installation & quickstart guide](https://golang.org/doc/install) along with [JetBrains' excellent GoLand IDE](https://www.jetbrains.com/go/)
 * Docker, we recommend [the official Docker "Get Started" guide](https://docs.docker.com/get-started/), coupled with [the docs explaining how to view container logs](https://docs.docker.com/config/containers/logging/) (which you'll be doing a lot)
 
+**NOTE:** Make sure that you're using Docker version >= 2.3; we've seen Docker 2.0 behaving strangely.
+
 ### Architecture
 The Kurtosis architecture has four components:
 
@@ -40,6 +42,9 @@ See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-
 
 ### Debugging Failed Tests
 See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
+
+### Kurtosis & Docker
+See [the "Kurtosis With Docker" tutorial](./tutorials/kurtosis-with-docker.md) for a deeper dive into how Kurtosis interacts with the Docker engine.
 
 Examples
 --------
@@ -93,3 +98,26 @@ Remove unused images:
 ```
 docker image rm $(docker images --quiet --filter "dangling=true")
 ```
+
+Test Suite Container Contract
+-----------------------------
+Must take in at least [these environment variables](https://github.com/kurtosis-tech/kurtosis-core/blob/develop/initializer/test_suite_env_vars/test_suite_env_vars.go ), and can optionally take in custom environment variables (which will be set via the `--custom-env-vars-json` flag)
+
+Only one of `METADATA_FILEPATH` or `TEST` will be set at a time
+
+When the `METADATA_FILEPATH` environment variable is set, the container must write JSON file with the following structure to the filepath specified by the variable:
+```json
+{
+    "testNames": {
+        "test1": true,
+        "test2": true
+    },
+    "networkWidthBits": 8
+}
+```
+where `testNames` is a "set" of tests in the suite and `networkWidthBits` is the number of bits in the network mask of each test network that will be created.
+
+
+Initializer
+-----------
+TODO TODO you must 1) create a test suite execution volume 2) mount it at /suite-execution on the initializer image 3) make sure to bind-mount the /var/run/docker.sock

@@ -18,7 +18,8 @@ build/
 *.out
 
 # files for JetBrains IDE
-.idea/
+.idea/*.xml
+.idea/*.iml
 
 # Built binary
 ./kurtosis
