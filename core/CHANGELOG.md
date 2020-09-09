@@ -1,4 +1,4 @@
-# TBD
+# 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
 * Kill TODOs in "Debugging Failed Tests" tutorial
 * Build a v0 of Docker container containing the Kurtosis API 
