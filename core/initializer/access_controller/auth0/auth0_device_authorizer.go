@@ -74,7 +74,10 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Send request for device code.
 	res, _ := http.DefaultClient.Do(req)
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to read response body.")
+	}
 
 	// Parse response from device code endpoint
 	var deviceCodeResponse = new(DeviceCodeResponse)
@@ -100,13 +103,18 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	has authenticated successfully. For more information: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#request-tokens
 */
 func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
+	// Set up a ticker to mark intervals for polling
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
+
+	// Set up a timeout channel to signal when to stop polling
 	done := make(chan bool)
 	go func() {
 		time.Sleep(pollTimeout)
 		done <- true
 	}()
+
+	// Poll token endpoint at intervals until timeout is hit.
 	for {
 		select {
 		case <-done:
@@ -132,13 +140,15 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 	If the user has not yet signed in to auth0, will return nil, nil.
 */
 func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
-	tokenResponse = new(TokenResponse)
+	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
 	payloadString := requestTokenPayloadStringBase
 	payloadString += fmt.Sprintf("&device_code=%s&client_id=%s", deviceCode, localDevClientId)
 	payload := strings.NewReader(payloadString)
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	// Execute request
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
@@ -152,7 +162,12 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 		*/
 		return nil, nil
 	}
-	body, _ := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to read response body.")
+	}
+
+	tokenResponse = new(TokenResponse)
 	json.Unmarshal(body, &tokenResponse)
 	logrus.Tracef("Response from polling token: %+v", tokenResponse)
 	return tokenResponse, nil

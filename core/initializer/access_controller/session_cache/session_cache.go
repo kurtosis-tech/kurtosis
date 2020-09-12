@@ -36,12 +36,15 @@ func NewSessionCache() (*SessionCache, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
 	}
+
 	storageDirectoryFullPath := filepath.Join(userHomeDir, storageDirName)
 	err = createDirectoryIfNotExist(storageDirectoryFullPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
 	}
+
 	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, tokenFileName)
+
 	var lock sync.Mutex
 	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath, lock}, nil
 }
@@ -83,17 +86,21 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alre
 func (cache *SessionCache) saveObject(path string, object interface{}) error {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
+
 	filePointer, err := os.Create(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create %s", path)
 	}
 	defer filePointer.Close()
+
 	jsonBytes, err := json.MarshalIndent(object, "", "\t")
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to marshal object")
 	}
+
 	jsonBytesReader := bytes.NewReader(jsonBytes)
 	_, err = io.Copy(filePointer, jsonBytesReader)
+
 	return err
 }
 
@@ -101,15 +108,18 @@ func (cache *SessionCache) saveObject(path string, object interface{}) error {
 func (cache *SessionCache) loadObject(path string, object interface{}) error {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
+
 	filePointer, err := os.Open(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to open %s", path)
 	}
 	defer filePointer.Close()
-	json.NewDecoder(filePointer).Decode(object)
+
+	err = json.NewDecoder(filePointer).Decode(object)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal object.")
 	}
+
 	return nil
 }
 
