@@ -29,7 +29,7 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 	}
 	tokenResponse, alreadyAuthenticated, err := cache.LoadToken()
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.AccessTokenFileFullPath)
+		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.TokenFilePath)
 	}
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)

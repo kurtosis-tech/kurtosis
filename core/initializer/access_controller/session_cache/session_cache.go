@@ -19,17 +19,16 @@ import (
 
 const (
 	// By default, the kurtosis storage directory will be created in the user's home directory.
-	kurtosisStorageDirectory     = ".kurtosis"
-	kurtosisTokenStorageFileName = "access_token"
+	storageDirName            = ".kurtosis"
+	tokenFileName             = "access_token"
 	userReadWriteExecutePerms = 0700
 )
 
-// Package-wide lock for reading/writing files.
-var lock sync.Mutex
 
 type SessionCache struct {
-	StorageDirectoryFullPath string
-	AccessTokenFileFullPath string
+	StorageDirPath string
+	TokenFilePath  string
+	lock           sync.Mutex
 }
 
 func NewSessionCache() (*SessionCache, error) {
@@ -37,13 +36,14 @@ func NewSessionCache() (*SessionCache, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
 	}
-	storageDirectoryFullPath := filepath.Join(userHomeDir,  kurtosisStorageDirectory)
+	storageDirectoryFullPath := filepath.Join(userHomeDir, storageDirName)
 	err = createDirectoryIfNotExist(storageDirectoryFullPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
 	}
-	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, kurtosisTokenStorageFileName)
-	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath}, nil
+	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, tokenFileName)
+	var lock sync.Mutex
+	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath, lock}, nil
 }
 
 /*
@@ -51,7 +51,7 @@ func NewSessionCache() (*SessionCache, error) {
 	On later runs of Kurtosis, the token will be preserved and re-auth will be unnecessary.
  */
 func (cache *SessionCache) PersistToken(tokenResponse *auth0.TokenResponse) error {
-	if err := saveObject(cache.AccessTokenFileFullPath, tokenResponse); err != nil {
+	if err := cache.saveObject(cache.TokenFilePath, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
 	}
 	return nil
@@ -64,15 +64,15 @@ func (cache *SessionCache) PersistToken(tokenResponse *auth0.TokenResponse) erro
 */
 func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
 	tokenResponse = new(auth0.TokenResponse)
-	if _, err := os.Stat(cache.AccessTokenFileFullPath); err == nil {
-		if err := loadObject(cache.AccessTokenFileFullPath, &tokenResponse); err != nil {
+	if _, err := os.Stat(cache.TokenFilePath); err == nil {
+		if err := cache.loadObject(cache.TokenFilePath, &tokenResponse); err != nil {
 			return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 		}
 		return tokenResponse, true, nil
 	} else if os.IsNotExist(err) {
 		return nil, false, nil
 	} else {
-		return nil, false, stacktrace.Propagate(err, "Received error checking for status of token file %s", cache.AccessTokenFileFullPath)
+		return nil, false, stacktrace.Propagate(err, "Received error checking for status of token file %s", cache.TokenFilePath)
 	}
 }
 
@@ -80,9 +80,9 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alre
 
 // saves a representation of object to the file at path.
 // https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
-func saveObject(path string, object interface{}) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (cache *SessionCache) saveObject(path string, object interface{}) error {
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
 	filePointer, err := os.Create(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create %s", path)
@@ -98,9 +98,9 @@ func saveObject(path string, object interface{}) error {
 }
 
 // loads the file at path into v.
-func loadObject(path string, object interface{}) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (cache *SessionCache) loadObject(path string, object interface{}) error {
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
 	filePointer, err := os.Open(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to open %s", path)

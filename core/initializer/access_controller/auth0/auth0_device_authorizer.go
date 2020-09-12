@@ -36,6 +36,7 @@ const (
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	audience = "https://api.kurtosistech.com/login"
 	pollTimeout = 5 * 60 * time.Second
+	requestTokenPayloadStringBase = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 )
 
 // Response from device code endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#device-code-response
@@ -123,7 +124,7 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	tokenResponse = new(TokenResponse)
 	url := auth0UrlBase + auth0TokenPath
-	payloadString := "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+	payloadString := requestTokenPayloadStringBase
 	payloadString += fmt.Sprintf("&device_code=%s&client_id=%s", deviceCode, localDevClientId)
 	payload := strings.NewReader(payloadString)
 	req, _ := http.NewRequest("POST", url, payload)
@@ -132,6 +133,7 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
+	defer res.Body.Close()
 	// TODO TODO TODO make unauthorized response catching more specific to expected errors
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
 		/*
@@ -140,7 +142,6 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 		*/
 		return nil, nil
 	}
-	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	json.Unmarshal(body, &tokenResponse)
 	logrus.Tracef("Response from polling token: %+v", tokenResponse)
