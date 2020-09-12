@@ -19,13 +19,17 @@ import (
 	Returns authorized if the user is authorized to run Kurtosis.
  */
 func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized bool, err error) {
+	cache, err := session_cache.NewSessionCache()
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
+	}
 	if len(ciLicense) > 0 {
 		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
 		return true, true, nil
 	}
-	tokenResponse, alreadyAuthenticated, err := session_cache.LoadToken()
+	tokenResponse, alreadyAuthenticated, err := cache.LoadToken()
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to attempt to load authorization token from file %s in the session cache directory %s", session_cache.KurtosisTokenStorageFileName, session_cache.KurtosisStorageDirectory)
+		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.AccessTokenFileFullPath)
 	}
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
@@ -36,7 +40,7 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
 	}
 	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
-	err = session_cache.PersistToken(tokenResponse)
+	err = cache.PersistToken(tokenResponse)
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}

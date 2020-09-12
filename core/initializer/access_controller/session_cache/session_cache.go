@@ -18,29 +18,38 @@ import (
 
 const (
 	// By default, the kurtosis storage directory will be created in the user's home directory.
-	KurtosisStorageDirectory     = ".kurtosis"
-	KurtosisTokenStorageFileName = "access_token"
+	kurtosisStorageDirectory     = ".kurtosis"
+	kurtosisTokenStorageFileName = "access_token"
 )
 
 // Package-wide lock for reading/writing files.
 var lock sync.Mutex
 
+type SessionCache struct {
+	StorageDirectoryFullPath string
+	AccessTokenFileFullPath string
+}
+
+func NewSessionCache() (*SessionCache, error) {
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
+	}
+	storageDirectoryFullPath := userHomeDir + "/" + kurtosisStorageDirectory
+	err = createDirectoryIfNotExist(storageDirectoryFullPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
+	}
+	accessTokenFileFullPath := storageDirectoryFullPath + "/" + kurtosisTokenStorageFileName
+	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath}, nil
+}
+
 /*
 	Writes a tokenResponse to a local file in the user's home directory.
 	On later runs of Kurtosis, the token will be preserved and re-auth will be unnecessary.
  */
-func PersistToken(tokenResponse *auth0.TokenResponse) error {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to find user home directory.")
-	}
-	logrus.Debugf("User home dir: %+v", userHomeDir)
-	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
-	err = createDirectoryIfNotExist(kurtosisStorageDirectoryFullPath)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create or check existence of session cache directory %s", kurtosisStorageDirectoryFullPath)
-	}
-	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, tokenResponse); err != nil {
+func (cache *SessionCache) PersistToken(tokenResponse *auth0.TokenResponse) error {
+	if err := saveObject(cache.AccessTokenFileFullPath, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
 	}
 	return nil
@@ -49,23 +58,20 @@ func PersistToken(tokenResponse *auth0.TokenResponse) error {
 /*
 	Loads a tokenResponse from a local file in the user's home directory.
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
+	TODO TODO TODO Ensure that the token has been verified against the provider in the last 48 hours
 */
-func LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "Failed to find user home directory.")
-	}
-	logrus.Debugf("User home dir: %+v", userHomeDir)
-	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
-	err = createDirectoryIfNotExist(kurtosisStorageDirectoryFullPath)
-	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "Failed to create or check existence of session cache directory %s", kurtosisStorageDirectoryFullPath)
-	}
+func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
 	tokenResponse = new(auth0.TokenResponse)
-	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, &tokenResponse); err != nil {
-		return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
+	if _, err := os.Stat(cache.AccessTokenFileFullPath); err == nil {
+		if err := loadObject(cache.AccessTokenFileFullPath, &tokenResponse); err != nil {
+			return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
+		}
+		return tokenResponse, true, nil
+	} else if os.IsNotExist(err) {
+		return nil, false, nil
+	} else {
+		return nil, false, stacktrace.Propagate(err, "Received error checking for status of token file %s", cache.AccessTokenFileFullPath)
 	}
-	return tokenResponse, true, nil
 }
 
 // ================================= HELPER FUNCTIONS =========================================
