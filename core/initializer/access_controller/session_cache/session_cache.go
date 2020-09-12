@@ -78,35 +78,35 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alre
 
 // ================================= HELPER FUNCTIONS =========================================
 
-// saves a representation of v to the file at path.
+// saves a representation of object to the file at path.
 // https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
-func saveObject(path string, v interface{}) error {
+func saveObject(path string, object interface{}) error {
 	lock.Lock()
 	defer lock.Unlock()
-	f, err := os.Create(path)
+	filePointer, err := os.Create(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create %s", path)
 	}
-	defer f.Close()
-	b, err := json.MarshalIndent(v, "", "\t")
+	defer filePointer.Close()
+	jsonBytes, err := json.MarshalIndent(object, "", "\t")
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to marshal object")
 	}
-	r := bytes.NewReader(b)
-	_, err = io.Copy(f, r)
+	jsonBytesReader := bytes.NewReader(jsonBytes)
+	_, err = io.Copy(filePointer, jsonBytesReader)
 	return err
 }
 
 // loads the file at path into v.
-func loadObject(path string, v interface{}) error {
+func loadObject(path string, object interface{}) error {
 	lock.Lock()
 	defer lock.Unlock()
-	f, err := os.Open(path)
+	filePointer, err := os.Open(path)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to open %s", path)
 	}
-	defer f.Close()
-	json.NewDecoder(f).Decode(v)
+	defer filePointer.Close()
+	json.NewDecoder(filePointer).Decode(object)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to unmarshal object.")
 	}
