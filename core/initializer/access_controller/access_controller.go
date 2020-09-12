@@ -25,7 +25,7 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 	}
 	tokenResponse, alreadyAuthenticated, err := session_cache.LoadToken()
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "")
+		return false, false, stacktrace.Propagate(err, "Failed to attempt to load authorization token from file %s in the session cache directory %s", session_cache.KurtosisTokenStorageFileName, session_cache.KurtosisStorageDirectory)
 	}
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
@@ -33,12 +33,13 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 	}
 	tokenResponse, err = auth0.AuthorizeUserDevice()
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "")
+		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
 	}
 	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
 	err = session_cache.PersistToken(tokenResponse)
 	if err != nil {
-		return false, false, stacktrace.Propagate(err, "")
+		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}
+
 	return true, tokenResponse.Scope == auth0.RequiredScope, nil
 }

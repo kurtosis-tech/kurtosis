@@ -18,8 +18,8 @@ import (
 
 const (
 	// By default, the kurtosis storage directory will be created in the user's home directory.
-	kurtosisStorageDirectory = ".kurtosis"
-	kurtosisTokenStorageFileName = "access_token"
+	KurtosisStorageDirectory     = ".kurtosis"
+	KurtosisTokenStorageFileName = "access_token"
 )
 
 // Package-wide lock for reading/writing files.
@@ -35,7 +35,7 @@ func PersistToken(tokenResponse *auth0.TokenResponse) error {
 		return stacktrace.Propagate(err, "Failed to find user home directory.")
 	}
 	logrus.Debugf("User home dir: %+v", userHomeDir)
-	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + kurtosisStorageDirectory
+	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
 	_, err = os.Stat(kurtosisStorageDirectoryFullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -45,7 +45,7 @@ func PersistToken(tokenResponse *auth0.TokenResponse) error {
 			return stacktrace.Propagate(err, "")
 		}
 	}
-	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" +kurtosisTokenStorageFileName, tokenResponse); err != nil {
+	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
 	}
 	return nil
@@ -61,7 +61,7 @@ func LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool,
 		return nil, false, stacktrace.Propagate(err, "Failed to find user home directory.")
 	}
 	logrus.Debugf("User home dir: %+v", userHomeDir)
-	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + kurtosisStorageDirectory
+	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
 	_, err = os.Stat(kurtosisStorageDirectoryFullPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -73,7 +73,7 @@ func LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool,
 		}
 	}
 	tokenResponse = new(auth0.TokenResponse)
-	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" +kurtosisTokenStorageFileName, &tokenResponse); err != nil {
+	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, &tokenResponse); err != nil {
 		return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 	}
 	return tokenResponse, true, nil
