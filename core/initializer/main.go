@@ -63,6 +63,7 @@ func main() {
 	ciLicenseArg := flag.String(
 		"ci-license",
 		"",
+		// TODO TODO TODO Change this text when actually implement CI licensing.
 		fmt.Sprintf("License to run Kurtosis inside of CI. Only specify if Kurtosis will be run inside of CI."))
 
 	kurtosisApiImageArg := flag.String(
@@ -93,10 +94,12 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)
-	} else if !authenticated {
+	}
+	if !authenticated {
 		logrus.Fatalf("Please log in to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
-	} else if !authorized {
+	}
+	if !authorized {
 		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
 	}
