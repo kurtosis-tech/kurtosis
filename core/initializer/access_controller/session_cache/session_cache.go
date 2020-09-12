@@ -36,14 +36,9 @@ func PersistToken(tokenResponse *auth0.TokenResponse) error {
 	}
 	logrus.Debugf("User home dir: %+v", userHomeDir)
 	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
-	_, err = os.Stat(kurtosisStorageDirectoryFullPath)
+	err = createDirectoryIfNotExist(kurtosisStorageDirectoryFullPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			logrus.Debugf("Creating kurtosis storage directory at %s", kurtosisStorageDirectoryFullPath)
-			os.Mkdir(kurtosisStorageDirectoryFullPath, 0777)
-		} else {
-			return stacktrace.Propagate(err, "")
-		}
+		return stacktrace.Propagate(err, "Failed to create or check existence of session cache directory %s", kurtosisStorageDirectoryFullPath)
 	}
 	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
@@ -62,15 +57,9 @@ func LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool,
 	}
 	logrus.Debugf("User home dir: %+v", userHomeDir)
 	kurtosisStorageDirectoryFullPath := userHomeDir + "/" + KurtosisStorageDirectory
-	_, err = os.Stat(kurtosisStorageDirectoryFullPath)
+	err = createDirectoryIfNotExist(kurtosisStorageDirectoryFullPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			logrus.Debugf("Creating kurtosis storage directory at %s", kurtosisStorageDirectoryFullPath)
-			os.Mkdir(kurtosisStorageDirectoryFullPath, 0777)
-			return nil, false, nil
-		} else {
-			return nil, false, stacktrace.Propagate(err, "")
-		}
+		return nil, false, stacktrace.Propagate(err, "Failed to create or check existence of session cache directory %s", kurtosisStorageDirectoryFullPath)
 	}
 	tokenResponse = new(auth0.TokenResponse)
 	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" +KurtosisTokenStorageFileName, &tokenResponse); err != nil {
@@ -119,7 +108,7 @@ func saveObject(path string, v interface{}) error {
 	return err
 }
 
-// Load loads the file at path into v.
+// loads the file at path into v.
 func loadObject(path string, v interface{}) error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -129,4 +118,18 @@ func loadObject(path string, v interface{}) error {
 	}
 	defer f.Close()
 	return unmarshalObject(f, v)
+}
+
+// checks if the directory specified in path exists. if not, creates it.
+func createDirectoryIfNotExist(path string) error {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			logrus.Debugf("Creating kurtosis storage directory at %s", path)
+			os.Mkdir(path, 0777)
+		} else {
+			return stacktrace.Propagate(err, "Failed to check stat for %s", path)
+		}
+	}
+	return nil
 }
