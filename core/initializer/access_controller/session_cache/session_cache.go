@@ -83,7 +83,7 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alre
 func marshalObject(v interface{}) (io.Reader, error) {
 	b, err := json.MarshalIndent(v, "", "\t")
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "Failed to marshal object")
 	}
 	return bytes.NewReader(b), nil
 }
@@ -93,7 +93,11 @@ func marshalObject(v interface{}) (io.Reader, error) {
 	Read: https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
 */
 func unmarshalObject(r io.Reader, v interface{}) error {
-	return json.NewDecoder(r).Decode(v)
+	err := json.NewDecoder(r).Decode(v)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unmarshal object.")
+	}
+	return nil
 }
 
 // Save saves a representation of v to the file at path.
@@ -103,7 +107,7 @@ func saveObject(path string, v interface{}) error {
 	defer lock.Unlock()
 	f, err := os.Create(path)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Failed to create %s", path)
 	}
 	defer f.Close()
 	r, err := marshalObject(v)
@@ -120,7 +124,7 @@ func loadObject(path string, v interface{}) error {
 	defer lock.Unlock()
 	f, err := os.Open(path)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Failed to open %s", path)
 	}
 	defer f.Close()
 	return unmarshalObject(f, v)
