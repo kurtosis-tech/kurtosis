@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package access_controller
+package session_cache
 
 import (
 	"bytes"
@@ -29,7 +29,7 @@ var lock sync.Mutex
 	Writes a tokenResponse to a local file in the user's home directory.
 	On later runs of Kurtosis, the token will be preserved and re-auth will be unnecessary.
  */
-func persistToken(tokenResponse *auth0.TokenResponse) error {
+func PersistToken(tokenResponse *auth0.TokenResponse) error {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to find user home directory.")
@@ -45,7 +45,7 @@ func persistToken(tokenResponse *auth0.TokenResponse) error {
 			return stacktrace.Propagate(err, "")
 		}
 	}
-	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" + kurtosisTokenStorageFileName, tokenResponse); err != nil {
+	if err := saveObject(kurtosisStorageDirectoryFullPath + "/" +kurtosisTokenStorageFileName, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
 	}
 	return nil
@@ -55,7 +55,7 @@ func persistToken(tokenResponse *auth0.TokenResponse) error {
 	Loads a tokenResponse from a local file in the user's home directory.
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
 */
-func loadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
+func LoadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, "Failed to find user home directory.")
@@ -73,7 +73,7 @@ func loadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool,
 		}
 	}
 	tokenResponse = new(auth0.TokenResponse)
-	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" + kurtosisTokenStorageFileName, &tokenResponse); err != nil {
+	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" +kurtosisTokenStorageFileName, &tokenResponse); err != nil {
 		return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 	}
 	return tokenResponse, true, nil

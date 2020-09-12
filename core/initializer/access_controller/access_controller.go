@@ -7,6 +7,7 @@ package access_controller
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +23,7 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
 		return true, true, nil
 	}
-	tokenResponse, alreadyAuthenticated, err := loadToken()
+	tokenResponse, alreadyAuthenticated, err := session_cache.LoadToken()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "")
 	}
@@ -35,7 +36,7 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return false, false, stacktrace.Propagate(err, "")
 	}
 	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
-	err = persistToken(tokenResponse)
+	err = session_cache.PersistToken(tokenResponse)
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "")
 	}
