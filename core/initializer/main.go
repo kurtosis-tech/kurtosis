@@ -91,13 +91,13 @@ func main() {
 
 	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*ciLicenseArg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while attempting to authenticate user: %v\n", err)
+		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)
 	} else if !authenticated {
-		fmt.Printf("Please log in to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
+		logrus.Fatalf("Please log in to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
 	} else if !authorized {
-		fmt.Printf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
+		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
 	}
 
