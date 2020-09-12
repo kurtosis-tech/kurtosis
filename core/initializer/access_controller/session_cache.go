@@ -8,6 +8,7 @@ package access_controller
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -28,7 +29,7 @@ var lock sync.Mutex
 	Writes a tokenResponse to a local file in the user's home directory.
 	On later runs of Kurtosis, the token will be preserved and re-auth will be unnecessary.
  */
-func persistToken(tokenResponse *TokenResponse) error {
+func persistToken(tokenResponse *auth0.TokenResponse) error {
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to find user home directory.")
@@ -54,7 +55,7 @@ func persistToken(tokenResponse *TokenResponse) error {
 	Loads a tokenResponse from a local file in the user's home directory.
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
 */
-func loadToken() (tokenResponse *TokenResponse, alreadyAuthenticated bool, err error){
+func loadToken() (tokenResponse *auth0.TokenResponse, alreadyAuthenticated bool, err error){
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, "Failed to find user home directory.")
@@ -71,7 +72,7 @@ func loadToken() (tokenResponse *TokenResponse, alreadyAuthenticated bool, err e
 			return nil, false, stacktrace.Propagate(err, "")
 		}
 	}
-	tokenResponse = new(TokenResponse)
+	tokenResponse = new(auth0.TokenResponse)
 	if err := loadObject(kurtosisStorageDirectoryFullPath + "/" + kurtosisTokenStorageFileName, &tokenResponse); err != nil {
 		return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 	}

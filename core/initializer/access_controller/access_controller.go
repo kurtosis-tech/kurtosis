@@ -6,12 +6,9 @@
 package access_controller
 
 import (
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	requiredScopeToExecute = "execute:kurtosis-core"
 )
 
 /*
@@ -31,9 +28,9 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 	}
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
-		return true, tokenResponse.Scope == requiredScopeToExecute, nil
+		return true, tokenResponse.Scope == auth0.RequiredScope, nil
 	}
-	tokenResponse, err = authorizeUserDevice()
+	tokenResponse, err = auth0.AuthorizeUserDevice()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "")
 	}
@@ -42,5 +39,5 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "")
 	}
-	return true, tokenResponse.Scope == requiredScopeToExecute, nil
+	return true, tokenResponse.Scope == auth0.RequiredScope, nil
 }

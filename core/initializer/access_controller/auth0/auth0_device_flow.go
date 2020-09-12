@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package access_controller
+package auth0
 
 import (
 	"encoding/json"
@@ -17,11 +17,12 @@ import (
 )
 
 const (
+	RequiredScope = "execute:kurtosis-core"
+
 	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
 	auth0DeviceAuthPath = "/oauth/device/code"
 	auth0TokenPath = "/oauth/token"
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
-	requiredScope = "execute:kurtosis-core"
 	audience = "https://api.kurtosistech.com/login"
 	pollTimeout = 60 * time.Second
 )
@@ -48,11 +49,11 @@ type TokenResponse struct {
 	Auth0 is polled until it confirms that the user has successfully logged in and confirmed their device.
  */
 
-func authorizeUserDevice() (*TokenResponse, error) {
+func AuthorizeUserDevice() (*TokenResponse, error) {
 	var deviceCodeResponse = new(DeviceCodeResponse)
 	url := auth0UrlBase + auth0DeviceAuthPath
 	payload := strings.NewReader(
-		fmt.Sprintf("client_id=%s&scope=%s&audience=%s", localDevClientId, requiredScope, audience))
+		fmt.Sprintf("client_id=%s&scope=%s&audience=%s", localDevClientId, RequiredScope, audience))
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 	res, _ := http.DefaultClient.Do(req)
