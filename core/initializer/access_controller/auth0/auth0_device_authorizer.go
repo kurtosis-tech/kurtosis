@@ -64,18 +64,27 @@ type TokenResponse struct {
  */
 
 func AuthorizeUserDevice() (*TokenResponse, error) {
-	var deviceCodeResponse = new(DeviceCodeResponse)
+	// Prepare to request device code.
 	url := auth0UrlBase + auth0DeviceAuthPath
 	payload := strings.NewReader(
 		fmt.Sprintf("client_id=%s&scope=%s&audience=%s", localDevClientId, RequiredScope, audience))
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	// Send request for device code.
 	res, _ := http.DefaultClient.Do(req)
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
+
+	// Parse response from device code endpoint
+	var deviceCodeResponse = new(DeviceCodeResponse)
 	json.Unmarshal(body, &deviceCodeResponse)
+
+	// Prompt user to access authentication URL in browser in order to authenticate.
 	logrus.Debugf("Device Code: %+v\n", deviceCodeResponse)
 	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
+
+	// Poll for token while the user authenticates and confirms their device.
 	tokenResponse, err := pollForToken(deviceCodeResponse.DeviceCode, deviceCodeResponse.Interval)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for token.")
@@ -106,7 +115,8 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 			logrus.Tracef("Polling for token at %s\n", t)
 			tokenResponse, err := requestToken(deviceCode)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "Failed to request authentication token.")
+				// ignore errors while polling so temporary network blips don't break functionality
+				continue
 			}
 			if tokenResponse != nil {
 				return tokenResponse, nil
