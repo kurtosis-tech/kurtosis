@@ -16,26 +16,39 @@ import (
 	"time"
 )
 
+/*
+	Implements the Device Code authorization flow from auth0: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow
+	At a high level:
+		1. Request device code (Device Flow): Request a device code that the user can use to authorize the device.
+		2. Request device activation (Device Flow): Request that the user authorize the device using their laptop or smartphone.
+		3. Request tokens (Device Flow): Poll the token endpoint to request a token.
+		4. Authorize user (Browser Flow): The user authorizes the device, so the device can receive tokens.
+		5. Receive tokens (Device Flow): After the user successfully authorizes the device, receive tokens.
+ */
+
 const (
 	RequiredScope = "execute:kurtosis-core"
 
 	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
 	auth0DeviceAuthPath = "/oauth/device/code"
 	auth0TokenPath = "/oauth/token"
+	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	audience = "https://api.kurtosistech.com/login"
-	pollTimeout = 60 * time.Second
+	pollTimeout = 5 * 60 * time.Second
 )
 
+// Response from device code endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#device-code-response
 type DeviceCodeResponse struct {
 	DeviceCode string `json:"device_code"`
 	UserCode string `json:"user_code"`
 	VerificationUri string `json:"verification_uri"`
 	VerificationUriComplete string `json:"verification_uri_complete"`
-	ExpiresIn string `json:"expires_in"`
+	ExpiresIn int `json:"expires_in"`
 	Interval int `json:"interval"`
 }
 
+// Response from token endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#receive-tokens
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 	Scope string `json:"scope"`
@@ -93,7 +106,8 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 			tokenResponse, err := requestToken(deviceCode)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Failed to request authentication token.")
-			} else if tokenResponse != nil {
+			}
+			if tokenResponse != nil {
 				return tokenResponse, nil
 			}
 		}

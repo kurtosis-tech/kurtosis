@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -20,6 +21,7 @@ const (
 	// By default, the kurtosis storage directory will be created in the user's home directory.
 	kurtosisStorageDirectory     = ".kurtosis"
 	kurtosisTokenStorageFileName = "access_token"
+	userReadWriteExecutePerms = 0700
 )
 
 // Package-wide lock for reading/writing files.
@@ -35,12 +37,12 @@ func NewSessionCache() (*SessionCache, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
 	}
-	storageDirectoryFullPath := userHomeDir + "/" + kurtosisStorageDirectory
+	storageDirectoryFullPath := filepath.Join(userHomeDir,  kurtosisStorageDirectory)
 	err = createDirectoryIfNotExist(storageDirectoryFullPath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
 	}
-	accessTokenFileFullPath := storageDirectoryFullPath + "/" + kurtosisTokenStorageFileName
+	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, kurtosisTokenStorageFileName)
 	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath}, nil
 }
 
@@ -76,31 +78,7 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0.TokenResponse, alre
 
 // ================================= HELPER FUNCTIONS =========================================
 
-/*
-   marshals the object into an io.Reader. By default, it uses the JSON marshaller.
-   Read: https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
-*/
-func marshalObject(v interface{}) (io.Reader, error) {
-	b, err := json.MarshalIndent(v, "", "\t")
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to marshal object")
-	}
-	return bytes.NewReader(b), nil
-}
-
-/*
-	unmarshals data from an io Reader into the specified value. By default, it uses the JSON unmarshaller.
-	Read: https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
-*/
-func unmarshalObject(r io.Reader, v interface{}) error {
-	err := json.NewDecoder(r).Decode(v)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unmarshal object.")
-	}
-	return nil
-}
-
-// Save saves a representation of v to the file at path.
+// saves a representation of v to the file at path.
 // https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
 func saveObject(path string, v interface{}) error {
 	lock.Lock()
@@ -110,10 +88,11 @@ func saveObject(path string, v interface{}) error {
 		return stacktrace.Propagate(err, "Failed to create %s", path)
 	}
 	defer f.Close()
-	r, err := marshalObject(v)
+	b, err := json.MarshalIndent(v, "", "\t")
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "Failed to marshal object")
 	}
+	r := bytes.NewReader(b)
 	_, err = io.Copy(f, r)
 	return err
 }
@@ -127,7 +106,11 @@ func loadObject(path string, v interface{}) error {
 		return stacktrace.Propagate(err, "Failed to open %s", path)
 	}
 	defer f.Close()
-	return unmarshalObject(f, v)
+	json.NewDecoder(f).Decode(v)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to unmarshal object.")
+	}
+	return nil
 }
 
 // checks if the directory specified in path exists. if not, creates it.
@@ -136,7 +119,10 @@ func createDirectoryIfNotExist(path string) error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			logrus.Debugf("Creating kurtosis storage directory at %s", path)
-			os.Mkdir(path, 0777)
+			err := os.Mkdir(path, userReadWriteExecutePerms)
+			if err != nil {
+				return stacktrace.Propagate(err, "Failed to create directory %s", path)
+			}
 		} else {
 			return stacktrace.Propagate(err, "Failed to check stat for %s", path)
 		}

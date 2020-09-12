@@ -96,7 +96,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	if !authenticated {
-		logrus.Fatalf("Please log in to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
+		logrus.Fatalf("Please register to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
 		os.Exit(failureExitCode)
 	}
 	if !authorized {
