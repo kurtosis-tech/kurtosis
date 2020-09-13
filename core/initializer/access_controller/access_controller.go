@@ -5,39 +5,50 @@
 
 package access_controller
 
-import "github.com/palantir/stacktrace"
-
-const (
-	freeTrialLicense = "free-trial"
-	expiredTrialLicense = "expired-trial"
-	paidLicense = "paid-license"
+import (
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_device_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/session_cache"
+	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 /*
-	Verifies that the license is a credential for a registered user,
-	Returns true if the license associated with the user has ever
-	been registered in Kurtosis, even if that user has no permissions.
+	If ciLicense is non-empty, bypasses authentication TODO TODO TODO implement CI machine to machine auth.
+	If ciLicense is empty, run a user and device-based authentication flow, prompting the user to login.
+	Returns authenticated to indicate if the user exists in the system.
+	Returns authorized if the user is authorized to run Kurtosis.
  */
-func AuthenticateLicense(license string) (bool, error) {
-	switch license {
-	case freeTrialLicense, paidLicense, expiredTrialLicense:
-		return true, nil
-	default:
-		return false, nil
+func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized bool, err error) {
+	cache, err := session_cache.NewSessionCache()
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
 	}
-}
 
-/*
-	Verifies that the user associated with the license is authorized
-	to run kurtosis (either has a free trial or has purchased a full license).
-*/
-func AuthorizeLicense(license string) (bool, error) {
-	switch license {
-	case freeTrialLicense, paidLicense:
-		return true, nil
-	case expiredTrialLicense:
-		return false, nil
-	default:
-		return false, stacktrace.NewError("Failed to authorize license.")
+	if len(ciLicense) > 0 {
+		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
+		return true, true, nil
 	}
+
+	tokenResponse, alreadyAuthenticated, err := cache.LoadToken()
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.TokenFilePath)
+	}
+
+	if alreadyAuthenticated {
+		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
+		return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
+	}
+
+	tokenResponse, err = auth0_device_authorizer.AuthorizeUserDevice()
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
+	}
+
+	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
+	err = cache.PersistToken(tokenResponse)
+	if err != nil {
+		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
+	}
+
+	return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
 }

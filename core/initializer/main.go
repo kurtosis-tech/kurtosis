@@ -60,6 +60,12 @@ func main() {
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
 
+	ciLicenseArg := flag.String(
+		"ci-license",
+		"",
+		// TODO TODO TODO Change this text when actually implement CI licensing.
+		fmt.Sprintf("License to run Kurtosis inside of CI. Only specify if Kurtosis will be run inside of CI."))
+
 	kurtosisApiImageArg := flag.String(
 		"kurtosis-api-image",
 		defaultKurtosisApiImage,
@@ -70,11 +76,6 @@ func main() {
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
 
-	licenseArg := flag.String(
-		"license",
-		"",
-		fmt.Sprintf("Kurtosis license key. To register for a license, visit %s", licenseWebUrl))
-
 	customEnvVarsJsonArg := flag.String(
 		"custom-env-vars-json",
 		"{}",
@@ -82,29 +83,26 @@ func main() {
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
 	flag.Parse()
 
-	authenticated, err := access_controller.AuthenticateLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authenticating the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authenticated {
-		fmt.Printf("Please enter a valid Kurtosis license. To register for a license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	authorized, err := access_controller.AuthorizeLicense(*licenseArg)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred while authorizing the Kurtosis license: %v\n", err)
-		os.Exit(failureExitCode)
-	} else if !authorized {
-		fmt.Printf("Your license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
 		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(kurtosisLevel)
+
+	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*ciLicenseArg)
+	if err != nil {
+		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
+		os.Exit(failureExitCode)
+	}
+	if !authenticated {
+		logrus.Fatalf("Please register to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
+		os.Exit(failureExitCode)
+	}
+	if !authorized {
+		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
+		os.Exit(failureExitCode)
+	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

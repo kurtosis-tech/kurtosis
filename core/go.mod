@@ -10,9 +10,9 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.4 // indirect
 	github.com/gorilla/rpc v1.2.0
+	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -23,5 +23,5 @@ require (
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 	google.golang.org/grpc v1.29.1 // indirect
 	gotest.tools v2.2.0+incompatible
-	gotest.tools/v3 v3.0.2
+	gotest.tools/v3 v3.0.2 // indirect
 )
