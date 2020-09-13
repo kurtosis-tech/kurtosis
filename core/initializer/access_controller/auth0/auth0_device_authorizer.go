@@ -76,6 +76,8 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Send request for device code.
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = httpRetryMax
+	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
+	retryClient.Logger = nil
 
 	res, err := retryClient.StandardClient().Do(req)
 	if err != nil {
@@ -92,7 +94,6 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	json.Unmarshal(body, &deviceCodeResponse)
 
 	// Prompt user to access authentication URL in browser in order to authenticate.
-	logrus.Debugf("Device Code: %+v\n", deviceCodeResponse)
 	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
 
 	// Poll for token while the user authenticates and confirms their device.
@@ -159,6 +160,8 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	// Execute request
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = httpRetryMax
+	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
+	retryClient.Logger = nil
 
 	res, err := retryClient.StandardClient().Do(req)
 	if err != nil {
