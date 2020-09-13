@@ -8,6 +8,7 @@ package auth0
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -29,12 +30,13 @@ import (
 const (
 	RequiredScope = "execute:kurtosis-core"
 
+	audience = "https://api.kurtosistech.com/login"
 	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
 	auth0DeviceAuthPath = "/oauth/device/code"
 	auth0TokenPath = "/oauth/token"
+	httpRetryMax = 5
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
-	audience = "https://api.kurtosistech.com/login"
 	pollTimeout = 5 * 60 * time.Second
 	requestTokenPayloadStringBase = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 )
@@ -72,7 +74,13 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	// Send request for device code.
-	res, _ := http.DefaultClient.Do(req)
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = httpRetryMax
+
+	res, err := retryClient.StandardClient().Do(req)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
+	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -149,7 +157,10 @@ func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	// Execute request
-	res, err := http.DefaultClient.Do(req)
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = httpRetryMax
+
+	res, err := retryClient.StandardClient().Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
