@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0
+package auth0_device_authorizer
 
 import (
 	"encoding/json"
@@ -116,17 +116,10 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
-	// Set up a timeout channel to signal when to stop polling
-	done := make(chan bool)
-	go func() {
-		time.Sleep(pollTimeout)
-		done <- true
-	}()
-
 	// Poll token endpoint at intervals until timeout is hit.
 	for {
 		select {
-		case <-done:
+		case <-time.After(pollTimeout):
 			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
 		case t := <-ticker.C:
 			logrus.Tracef("Polling for token at %s\n", t)

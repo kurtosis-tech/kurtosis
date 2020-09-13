@@ -6,7 +6,7 @@
 package access_controller
 
 import (
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_device_authorizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -36,10 +36,10 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
-		return true, tokenResponse.Scope == auth0.RequiredScope, nil
+		return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
 	}
 
-	tokenResponse, err = auth0.AuthorizeUserDevice()
+	tokenResponse, err = auth0_device_authorizer.AuthorizeUserDevice()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
 	}
@@ -50,5 +50,5 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}
 
-	return true, tokenResponse.Scope == auth0.RequiredScope, nil
+	return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
 }
