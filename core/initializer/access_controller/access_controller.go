@@ -6,7 +6,7 @@
 package access_controller
 
 import (
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_device_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_authorizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,11 +24,6 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
 	}
 
-	if len(ciLicense) > 0 {
-		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
-		return true, true, nil
-	}
-
 	tokenResponse, alreadyAuthenticated, err := cache.LoadToken()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.TokenFilePath)
@@ -36,10 +31,15 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
-		return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
+		return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 	}
 
-	tokenResponse, err = auth0_device_authorizer.AuthorizeUserDevice()
+	if len(ciLicense) > 0 {
+		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
+		return true, true, nil
+	} else {
+		tokenResponse, err = auth0_authorizer.AuthorizeUserDevice()
+	}
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
 	}
@@ -50,5 +50,5 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}
 
-	return true, tokenResponse.Scope == auth0_device_authorizer.RequiredScope, nil
+	return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 }
