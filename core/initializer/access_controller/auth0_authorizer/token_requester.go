@@ -28,10 +28,11 @@ const (
 	jsonHeaderType = "application/json"
 	formContentType = "application/x-www-form-urlencoded"
 
-
 	clientIdQueryParamName = "client_id"
 	grantTypeQueryParamName = "grant_type"
 	audienceQueryParam = "audience"
+
+	RequiredScope = "execute:kurtosis-core"
 )
 
 // Response from token endpoint

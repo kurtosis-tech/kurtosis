@@ -37,7 +37,7 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 
 	if alreadyAuthenticated {
 		logrus.Debugf("Already authenticated on this device! Access token: %s", cachedTokenResponse.AccessToken)
-		return true, isClientCredentialsFlow || cachedTokenResponse.Scope == auth0_authorizer.RequiredScope, nil
+		return true, cachedTokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 	}
 
 	var tokenResponse *auth0_authorizer.TokenResponse
@@ -59,5 +59,5 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}
 
-	return true, isClientCredentialsFlow || tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
+	return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 }

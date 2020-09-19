@@ -28,8 +28,6 @@ import (
  */
 
 const (
-	RequiredScope = "execute:kurtosis-core"
-
 	auth0DeviceAuthPath = "/oauth/device/code"
 	httpRetryMax = 5
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
