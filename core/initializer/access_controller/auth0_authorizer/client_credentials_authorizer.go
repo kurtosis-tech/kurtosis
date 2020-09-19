@@ -17,7 +17,6 @@ import (
 const (
 	clientCredentialGrantType = "client_credentials"
 	clientSecretQueryParamName = "client_secret"
-	jsonHeaderType = "application/json"
 )
 
 func AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
@@ -30,10 +29,12 @@ func AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenRes
 	headers := map[string]string{
 		contentTypeHeaderName: jsonHeaderType,
 	}
+
 	tokenResponse, err := requestAuthToken(params, headers)
-	logrus.Debugf("Token response: %+v", tokenResponse)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get token response for client credential authorization flow.")
 	}
+	logrus.Tracef("Token response: %+v", tokenResponse)
+
 	return tokenResponse, nil
 }

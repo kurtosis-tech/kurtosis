@@ -8,20 +8,25 @@ package auth0_authorizer
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 const (
 	audience = "https://api.kurtosistech.com/login"
 	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
-	auth0DeviceAuthPath = "/oauth/device/code"
 	auth0TokenPath = "/oauth/token"
 
 	contentTypeHeaderName = "content-type"
+
+	jsonHeaderType = "application/json"
+	formContentType = "application/x-www-form-urlencoded"
 
 
 	clientIdQueryParamName = "client_id"
@@ -41,19 +46,47 @@ type TokenResponse struct {
 func requestAuthToken(params map[string]string, headers map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
-	requestBody, err := json.Marshal(params)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse body parameters.")
+	contentType := headers[contentTypeHeaderName]
+	if contentType == "" {
+		return nil, stacktrace.NewError("Headers must have a content-type header.")
 	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+
+	var paramReader io.Reader
+	switch contentType {
+	case "":
+		return nil, stacktrace.NewError("Headers must have a content-type header.")
+
+	case jsonHeaderType:
+		requestBody, err := json.Marshal(params)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to parse body parameters.")
+		}
+		paramReader = bytes.NewBuffer(requestBody)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to make HTTP request.")
+		}
+
+	case formContentType:
+		payloadString := ""
+		for variable, value := range params {
+			payloadString += fmt.Sprintf("&%s=%s", variable, value)
+		}
+		paramReader = strings.NewReader(payloadString)
+
+	default:
+		return nil, stacktrace.NewError("Unrecognized content type header: %s", contentType)
+	}
+
+
+	req, err := http.NewRequest("POST", url, paramReader)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to make HTTP request.")
 	}
+
 	for variable, value := range headers {
 		req.Header.Add(variable, value)
 	}
-	logrus.Debugf("Request: %+v", req)
+	logrus.Tracef("Request: %+v", req)
 
 	// Execute request
 	retryClient := retryablehttp.NewClient()
@@ -68,8 +101,8 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	defer res.Body.Close()
 	// TODO TODO TODO make unauthorized response catching more specific to expected errors
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
-		logrus.Debugf("Received an error code: %v", res.StatusCode)
-		logrus.Debugf("Full response: %+v", res)
+		logrus.Tracef("Received an error code: %v", res.StatusCode)
+		logrus.Tracef("Full response: %+v", res)
 		/*
 			If the user has not yet logged in and authorized the device,
 			auth0 will return a 4xx response: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#token-responses
