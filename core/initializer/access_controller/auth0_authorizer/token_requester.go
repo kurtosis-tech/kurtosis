@@ -28,7 +28,7 @@ type TokenResponse struct {
 func requestAuthToken(queryParams map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
-	payloadString := requestTokenPayloadStringBase
+	payloadString := ""
 	for variable, value := range queryParams {
 		payloadString += fmt.Sprintf("&%s=%s", variable, value)
 	}
