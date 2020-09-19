@@ -185,8 +185,6 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred generating the map of test suite environment variables")
 	}
 
-	// TODO Switch to using a Docker logging driver that captures ALL output of the test suite container to file, so that
-	//  way the user can get as detailed information about the running of the test suite container as possible
 	log.Infof("Creating test suite container that will run the test...")
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
@@ -263,8 +261,6 @@ func RunTest(
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
 		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
 	case exit_codes.OutOfOrderTestStatusExitCode:
@@ -276,8 +272,6 @@ func RunTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
 		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
 	case exit_codes.ShutdownSignalExitCode:
