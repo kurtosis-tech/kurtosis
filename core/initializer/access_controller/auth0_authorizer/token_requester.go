@@ -16,7 +16,19 @@ import (
 	"strings"
 )
 
-// Response from token endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#receive-tokens
+const (
+	audience = "https://api.kurtosistech.com/login"
+	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
+	auth0DeviceAuthPath = "/oauth/device/code"
+	auth0TokenPath = "/oauth/token"
+
+
+	clientIdQueryParamName = "client_id"
+	grantTypeQueryParamName = "grant_type"
+	audienceQueryParam = "audience"
+)
+
+// Response from token endpoint
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
 	Scope string `json:"scope"`

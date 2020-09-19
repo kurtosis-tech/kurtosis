@@ -18,7 +18,7 @@ import (
 	Returns authenticated to indicate if the user exists in the system.
 	Returns authorized if the user is authorized to run Kurtosis.
  */
-func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized bool, err error) {
+func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticated bool, authorized bool, err error) {
 	cache, err := session_cache.NewSessionCache()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
@@ -34,9 +34,12 @@ func AuthenticateAndAuthorize(ciLicense string) (authenticated bool, authorized 
 		return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 	}
 
-	if len(ciLicense) > 0 {
-		// TODO TODO TODO Implement machine-to-machine auth flow to actually do auth for CI workflows https://auth0.com/docs/applications/set-up-an-application/register-machine-to-machine-applications
-		return true, true, nil
+	if (len(clientId) > 0 || len(clientSecret) > 0) && !(len(clientId) > 0 && len(clientSecret) > 0) {
+		return false, false, stacktrace.Propagate(err, "If one of clientId or clientSecret are specified, both must be specified. These are only needed when running Kurtosis in CI.")
+	}
+
+	if len(clientId) > 0 && len(clientSecret) > 0 {
+		tokenResponse, err = auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
 	} else {
 		tokenResponse, err = auth0_authorizer.AuthorizeUserDevice()
 	}

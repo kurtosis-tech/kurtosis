@@ -30,18 +30,12 @@ import (
 const (
 	RequiredScope = "execute:kurtosis-core"
 
-	audience = "https://api.kurtosistech.com/login"
-	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
-	auth0DeviceAuthPath = "/oauth/device/code"
-	auth0TokenPath = "/oauth/token"
 	httpRetryMax = 5
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	pollTimeout = 5 * 60 * time.Second
-	deviceCodeGrantType = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 	deviceCodeQueryParamName = "device_code"
-	clientIdQueryParamName = "client_id"
-	grantTypeQueryParamName = "grant_type"
+	deviceCodeGrantType = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
 )
 
 // Response from device code endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#device-code-response
