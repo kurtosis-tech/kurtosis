@@ -38,7 +38,10 @@ const (
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	pollTimeout = 5 * 60 * time.Second
-	requestTokenPayloadStringBase = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+	deviceCodeGrantType = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+	deviceCodeQueryParamName = "device_code"
+	clientIdQueryParamName = "client_id"
+	grantTypeQueryParamName = "grant_type"
 )
 
 // Response from device code endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#device-code-response
@@ -49,14 +52,6 @@ type DeviceCodeResponse struct {
 	VerificationUriComplete string `json:"verification_uri_complete"`
 	ExpiresIn int `json:"expires_in"`
 	Interval int `json:"interval"`
-}
-
-// Response from token endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#receive-tokens
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	Scope string `json:"scope"`
-	ExpiresIn int `json:"expires_in"`
-	TokenType string `json:"token_type"`
 }
 
 /*
@@ -118,8 +113,9 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 
 	// initialize device query map
 	deviceQueryParams := map[string]string{
-		"device_code": deviceCode,
-		"client_id": localDevClientId,
+		grantTypeQueryParamName: deviceCodeGrantType,
+		deviceCodeQueryParamName: deviceCode,
+		clientIdQueryParamName: localDevClientId,
 	}
 
 	// Poll token endpoint at intervals until timeout is hit.
@@ -139,49 +135,4 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 			}
 		}
 	}
-}
-
-
-/*
-	Given a device code for the device running kurtosis, checks with auth0 if the user has logged in
-	and confirmed this device is theirs. For more information: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#request-tokens
-	If the user has not yet signed in to auth0, will return nil, nil.
-*/
-func requestToken(deviceCode string) (tokenResponse *TokenResponse, err error) {
-	// Prepare request for token endpoint
-	url := auth0UrlBase + auth0TokenPath
-	payloadString := requestTokenPayloadStringBase
-	payloadString += fmt.Sprintf("&device_code=%s&client_id=%s", deviceCode, localDevClientId)
-	payload := strings.NewReader(payloadString)
-	req, _ := http.NewRequest("POST", url, payload)
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
-
-	// Execute request
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = httpRetryMax
-	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
-	retryClient.Logger = nil
-
-	res, err := retryClient.StandardClient().Do(req)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
-	}
-	defer res.Body.Close()
-	// TODO TODO TODO make unauthorized response catching more specific to expected errors
-	if res.StatusCode >= 400 && res.StatusCode <= 499 {
-		/*
-			If the user has not yet logged in and authorized the device,
-			auth0 will return a 4xx response: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#token-responses
-		*/
-		return nil, nil
-	}
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to read response body.")
-	}
-
-	tokenResponse = new(TokenResponse)
-	json.Unmarshal(body, &tokenResponse)
-	logrus.Tracef("Response from polling token: %+v", tokenResponse)
-	return tokenResponse, nil
 }

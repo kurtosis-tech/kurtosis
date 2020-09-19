@@ -16,6 +16,15 @@ import (
 	"strings"
 )
 
+// Response from token endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#receive-tokens
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+	Scope string `json:"scope"`
+	ExpiresIn int `json:"expires_in"`
+	TokenType string `json:"token_type"`
+}
+
+
 func requestAuthToken(queryParams map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
