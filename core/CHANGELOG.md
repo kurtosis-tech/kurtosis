@@ -1,3 +1,6 @@
+# TBD
+* Small comment/doc changes from weekly review
+
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
 * Kill TODOs in "Debugging Failed Tests" tutorial

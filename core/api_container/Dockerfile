@@ -21,10 +21,9 @@ WORKDIR /run
 # Copy the code into the container
 COPY --from=builder /build/kurtosis-api-server .
 
-# IMPORTANT NOTES:
-#  1) The flag arguments are sorted alphabetically!!
-#  2) This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
-#  3) We call "sh" as the first command so that environment variable expansion will still happen
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#  1. Keep these flags sorted alphabetically!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
     --api-container-ip=${API_CONTAINER_IP} \
     --gateway-ip=${GATEWAY_IP} \
@@ -34,3 +33,6 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
     --test-suite-container-id=${TEST_SUITE_CONTAINER_ID} \
     --test-suite-container-ip=${TEST_SUITE_CONTAINER_IP} \
     --test-volume=${TEST_VOLUME}"]
+# Developer notes about the above:
+# - This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
+# - We call "sh" as the first command so that environment variable expansion will still happen

@@ -39,12 +39,10 @@ jobs:
       - checkout
       - run: scripts/build_and_run.sh -b
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-
-      # TODO change the image names to be parameterized - it's hardcoded right now
       - run: "docker push kurtosistech/kurtosis-core_api:<< pipeline.git.branch >>"
       - run: "docker push kurtosistech/kurtosis-core_initializer:<< pipeline.git.branch >>"
 
-      # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
+      # NOTE: When we need caching, look at https://circleci.com/docs/2.0/language-go/
       - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
 
 workflows:

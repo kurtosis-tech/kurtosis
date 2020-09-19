@@ -28,10 +28,10 @@ WORKDIR /run
 # Copy the code into the container
 COPY --from=builder /build/kurtosis-initializer .
 
-# IMPORTANT NOTES:
-#  1) The flag arguments are sorted alphabetically!!
-#  2) This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
-#  3) We call "sh" as the first command so that environment variable expansion will still happen
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#  1. Keep these flags sorted alphabetically!
+#  2. If you make any changes here, you need to modify the docs at https://github.com/kurtosis-tech/kurtosis-docs
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --custom-env-vars-json=${CUSTOM_ENV_VARS_JSON} \
     --kurtosis-api-image=${KURTOSIS_API_IMAGE} \
@@ -42,3 +42,6 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --test-names=${TEST_NAMES} \
     --test-suite-image=${TEST_SUITE_IMAGE} \
     --test-suite-log-level=${TEST_SUITE_LOG_LEVEL}"]
+# Code notes about the above:
+# - This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
+# - We call "sh" as the first command so that environment variable expansion will still happen
