@@ -6,14 +6,13 @@
 package auth0_authorizer
 
 import (
+	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 const (
@@ -21,6 +20,8 @@ const (
 	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
 	auth0DeviceAuthPath = "/oauth/device/code"
 	auth0TokenPath = "/oauth/token"
+
+	contentTypeHeaderName = "content-type"
 
 
 	clientIdQueryParamName = "client_id"
@@ -37,16 +38,22 @@ type TokenResponse struct {
 }
 
 
-func requestAuthToken(queryParams map[string]string) (tokenResponse *TokenResponse, err error) {
+func requestAuthToken(params map[string]string, headers map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
-	payloadString := ""
-	for variable, value := range queryParams {
-		payloadString += fmt.Sprintf("&%s=%s", variable, value)
+	requestBody, err := json.Marshal(params)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse body parameters.")
 	}
-	payload := strings.NewReader(payloadString)
-	req, _ := http.NewRequest("POST", url, payload)
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	var req *http.Request
+	req, err = http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to make HTTP request.")
+	}
+	for variable, value := range headers {
+		req.Header.Add(variable, value)
+	}
+	logrus.Debugf("Request: %+v", req)
 
 	// Execute request
 	retryClient := retryablehttp.NewClient()
@@ -61,6 +68,8 @@ func requestAuthToken(queryParams map[string]string) (tokenResponse *TokenRespon
 	defer res.Body.Close()
 	// TODO TODO TODO make unauthorized response catching more specific to expected errors
 	if res.StatusCode >= 400 && res.StatusCode <= 499 {
+		logrus.Debugf("Received an error code: %v", res.StatusCode)
+		logrus.Debugf("Full response: %+v", res)
 		/*
 			If the user has not yet logged in and authorized the device,
 			auth0 will return a 4xx response: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#token-responses

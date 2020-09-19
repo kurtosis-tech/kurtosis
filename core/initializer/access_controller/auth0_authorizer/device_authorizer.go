@@ -36,6 +36,7 @@ const (
 	pollTimeout = 5 * 60 * time.Second
 	deviceCodeQueryParamName = "device_code"
 	deviceCodeGrantType = "urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+	formContentType = "application/x-www-form-urlencoded"
 )
 
 // Response from device code endpoint: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#device-code-response
@@ -106,11 +107,13 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 	defer ticker.Stop()
 
 	// initialize device query map
-	deviceQueryParams := map[string]string{
+	params := map[string]string{
 		grantTypeQueryParamName: deviceCodeGrantType,
 		deviceCodeQueryParamName: deviceCode,
 		clientIdQueryParamName: localDevClientId,
 	}
+
+	deviceCodeHeaderParams := map[string]string{contentTypeHeaderName: formContentType}
 
 	// Poll token endpoint at intervals until timeout is hit.
 	for {
@@ -119,7 +122,7 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
 		case t := <-ticker.C:
 			logrus.Tracef("Polling for token at %s\n", t)
-			tokenResponse, err := requestAuthToken(deviceQueryParams)
+			tokenResponse, err := requestAuthToken(params, deviceCodeHeaderParams)
 			if err != nil {
 				// ignore errors while polling so temporary network blips don't break functionality
 				continue

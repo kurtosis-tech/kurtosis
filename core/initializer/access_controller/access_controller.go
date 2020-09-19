@@ -24,27 +24,33 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
 	}
 
-	tokenResponse, alreadyAuthenticated, err := cache.LoadToken()
+	if (len(clientId) > 0 || len(clientSecret) > 0) && !(len(clientId) > 0 && len(clientSecret) > 0) {
+		return false, false, stacktrace.Propagate(err, "If one of clientId or clientSecret are specified, both must be specified. These are only needed when running Kurtosis in CI.")
+	}
+
+	isClientCredentialsFlow := len(clientId) > 0 && len(clientSecret) > 0
+
+	cachedTokenResponse, alreadyAuthenticated, err := cache.LoadToken()
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.TokenFilePath)
 	}
 
 	if alreadyAuthenticated {
-		logrus.Debugf("Already authenticated on this device! Access token: %s", tokenResponse.AccessToken)
-		return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
+		logrus.Debugf("Already authenticated on this device! Access token: %s", cachedTokenResponse.AccessToken)
+		return true, isClientCredentialsFlow || cachedTokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 	}
 
-	if (len(clientId) > 0 || len(clientSecret) > 0) && !(len(clientId) > 0 && len(clientSecret) > 0) {
-		return false, false, stacktrace.Propagate(err, "If one of clientId or clientSecret are specified, both must be specified. These are only needed when running Kurtosis in CI.")
-	}
-
-	if len(clientId) > 0 && len(clientSecret) > 0 {
+	var tokenResponse *auth0_authorizer.TokenResponse
+	if isClientCredentialsFlow {
 		tokenResponse, err = auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
+		if err != nil {
+			return false, false, stacktrace.Propagate(err, "Failed to authorize client credentials.")
+		}
 	} else {
 		tokenResponse, err = auth0_authorizer.AuthorizeUserDevice()
-	}
-	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
+		if err != nil {
+			return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
+		}
 	}
 
 	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
@@ -53,5 +59,5 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
 	}
 
-	return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
+	return true, isClientCredentialsFlow || tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
 }
