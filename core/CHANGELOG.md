@@ -1,5 +1,6 @@
 # TBD
 * Small comment/doc changes from weekly review
+* Easy fix to sort `api_container_env_vars` alphabetically
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
