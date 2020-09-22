@@ -33,7 +33,7 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 		return false, false, stacktrace.Propagate(err, "If one of clientId or clientSecret are specified, both must be specified. These are only needed when running Kurtosis in CI.")
 	}
 
-	isClientCredentialsFlow := len(clientId) > 0 && len(clientSecret) > 0
+	isRunningInCI := len(clientId) > 0 && len(clientSecret) > 0
 
 	cachedTokenResponse, alreadyAuthenticated, err := cache.LoadToken()
 	if err != nil {
@@ -46,7 +46,7 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 	}
 
 	var tokenResponse *auth0_authorizer.TokenResponse
-	if isClientCredentialsFlow {
+	if isRunningInCI {
 		tokenResponse, err = auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
 		if err != nil {
 			return false, false, stacktrace.Propagate(err, "Failed to authorize client credentials.")
