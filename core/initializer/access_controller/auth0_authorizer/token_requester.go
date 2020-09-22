@@ -113,7 +113,10 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	}
 
 	tokenResponse = new(TokenResponse)
-	json.Unmarshal(body, &tokenResponse)
+	err = json.Unmarshal(body, &tokenResponse)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to deserialize response from token endpoint.")
+	}
 	logrus.Tracef("Response from polling token: %+v", tokenResponse)
 	return tokenResponse, nil
 }
