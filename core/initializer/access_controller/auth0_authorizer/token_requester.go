@@ -48,9 +48,6 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	// Prepare request for token endpoint
 	url := auth0UrlBase + auth0TokenPath
 	contentType := headers[contentTypeHeaderName]
-	if contentType == "" {
-		return nil, stacktrace.NewError("Headers must have a content-type header.")
-	}
 
 	var paramReader io.Reader
 	switch contentType {
