@@ -11,7 +11,9 @@ import (
 )
 
 /*
-	Implements the client credentials auth0 flow https://auth0.com/docs/flows/call-your-api-using-the-client-credentials-flow
+	Used for machine-to-machine auth. This should be used for Kurtosis running in CI jobs.
+	Runs the client credentials oAuth workflow:https://tools.ietf.org/html/rfc6749#section-4.4
+	Implemented using the auth0 implementation of this flow: https://auth0.com/docs/flows/call-your-api-using-the-client-credentials-flow
  */
 
 const (

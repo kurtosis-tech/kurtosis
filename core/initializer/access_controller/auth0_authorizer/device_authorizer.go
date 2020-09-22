@@ -18,6 +18,9 @@ import (
 )
 
 /*
+	Authenticates and authorizes a user running Kurtosis on their own device.
+	User authenticates with username and password, and verifies their device.
+
 	Implements the Device Code authorization flow from auth0: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow
 	At a high level:
 		1. Request device code (Device Flow): Request a device code that the user can use to authorize the device.
