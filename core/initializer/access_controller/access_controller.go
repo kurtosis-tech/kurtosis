@@ -13,8 +13,13 @@ import (
 )
 
 /*
-	If ciLicense is non-empty, bypasses authentication TODO TODO TODO implement CI machine to machine auth.
-	If ciLicense is empty, run a user and device-based authentication flow, prompting the user to login.
+	If clientId and clientSecret are non-empty, authorizes based on an OAuth Client ID and Client Secret. ( https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/ )
+	This workflow is for Kurtosis tests running in CI (no device or username).
+
+	If clientId and clientSecret are empty, authorizes a user based on username and password credentials, in addition to device validation.
+
+	In either case, access tokens are cached in a local session.
+
 	Returns authenticated to indicate if the user exists in the system.
 	Returns authorized if the user is authorized to run Kurtosis.
  */
