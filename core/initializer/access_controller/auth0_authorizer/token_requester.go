@@ -57,11 +57,11 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	case jsonHeaderType:
 		requestBody, err := json.Marshal(params)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to parse body parameters.")
+			return nil, stacktrace.Propagate(err, "Failed to serialize body parameters.")
 		}
 		paramReader = bytes.NewBuffer(requestBody)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to make HTTP request.")
+			return nil, stacktrace.Propagate(err, "Failed to create byte form of request body.")
 		}
 
 	case formContentType:
