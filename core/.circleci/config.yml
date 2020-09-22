@@ -15,4 +15,4 @@ jobs:
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
       # TODO TODO TODO Switch this to use the Dockerized initializer
-      - run: scripts/full_build_and_run.sh --parallelism=2 --ci-license=circleci
+      - run: scripts/full_build_and_run.sh --parallelism=2 --client-id="${KURTOSIS_INTERNAL_CI_CLIENT_ID}" --client-secret="${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}"
