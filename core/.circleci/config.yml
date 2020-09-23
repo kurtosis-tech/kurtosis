@@ -26,7 +26,7 @@ jobs:
       #     fi
       - checkout
 
-      # TODO There's no way to get the base branch, so we hardcode develop :(
+      # There's no way to get the base branch in CircleCI, so we hardcode develop :( When CircleCI has a way to do get the base branch, use that instead
       # The --exit-code command will return 0 with no diff, and 1 when a diff exists
       - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
