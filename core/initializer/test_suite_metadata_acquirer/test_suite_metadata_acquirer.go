@@ -12,8 +12,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_mount_locations"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -23,6 +22,11 @@ import (
 
 const (
 	bridgeNetworkName = "bridge"
+
+	// The name of the dirctory that will be created inside the suite execution volume for storing files related
+	//  to acquiring test suite metadata
+	metadataAcquirerDirname = "metadata-acquirer"
+
 	testListingContainerDescription = "Test-Listing Container"
 	testSuiteMetadataFilename = "test-suite-metadata.json"
 	logFilename = "test-listing.log"
@@ -30,9 +34,19 @@ const (
 
 /*
 Spins up a testsuite container in test-listing mode and returns the "set" of tests that it spits out
+
+Args:
+	testSuiteImage: The name of the Docker image containing the test suite
+	suiteExecutionVolume: The name of the Docker volume dedicated for storing file IO for the suite execution
+	suiteExecutionVolumeMountDirpath: The dirpath where the suite execution volume is mounted on the initializer container
+	dockerClient: The Docker client with which Docker requests will be made
+	testSuiteLogLevel: The log level the test suite will output with
+	customEnvVars: A key-value mapping of custom environment variables that will be set when running the test suite image
 */
 func GetTestSuiteMetadata(
 		testSuiteImage string,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeMountDirpath string,
 		dockerClient *client.Client,
 		testSuiteLogLevel string,
 		customEnvVars map[string]string) (*TestSuiteMetadata, error) {
@@ -42,22 +56,6 @@ func GetTestSuiteMetadata(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
-
-	// Create the tempfile that the testsuite image will write test names to
-	testSuiteMetadataFp, err := ioutil.TempFile("", testSuiteMetadataFilename)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to write test suite " +
-			"metadata to")
-	}
-	testSuiteMetadataFp.Close()
-
-	containerLogFp, err := ioutil.TempFile("", logFilename)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the temp filepath to store the " +
-			"test suite container logs")
-	}
-	containerLogFp.Close()
-	defer os.Remove(containerLogFp.Name())
 
 	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(parentContext, bridgeNetworkName)
 	if err != nil {
@@ -74,13 +72,22 @@ func GetTestSuiteMetadata(
 	}
 	bridgeNetworkId := bridgeNetworkIds[0]
 
-	testSuiteMetadataFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, testSuiteMetadataFilename)
-	logFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, logFilename)
-	envVars, err := test_suite_env_vars.GenerateTestSuiteEnvVars(
-		testSuiteMetadataFilepath,
+	metadataAcquirerDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, metadataAcquirerDirname)
+	if err := os.Mkdir(metadataAcquirerDirpathOnInitializer, os.ModeDir); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a directory in the suite execution volume to " +
+			"store data for the acquisition of test suite metadata")
+	}
+	metadataAcquirerDirpathOnSuite := path.Join(test_suite_constants.SuiteExecutionVolumeMountpoint, metadataAcquirerDirname)
+
+	metadataFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, testSuiteMetadataFilename)
+	logFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, logFilename)
+
+	envVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
+		metadataFilepathOnSuite,
 		"", // We leave the test name blank to signify that we want test listing, not test execution
 		"", // Because we're doing test listing, not test execution, the Kurtosis API IP can be blank
-		logFilepath,
+		"", // We leave the services dirpath blank because getting suite metadata doesn't require knowing this
+		logFilepathOnSuite,
 		testSuiteLogLevel,
 		customEnvVars)
 	if err != nil {
@@ -95,30 +102,29 @@ func GetTestSuiteMetadata(
 		map[nat.Port]bool{},
 		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
 		envVars,
+		map[string]string{},
 		map[string]string{
-			testSuiteMetadataFp.Name(): testSuiteMetadataFilepath,
-			containerLogFp.Name():      logFilepath,
-		},
-		map[string]string{})
+			suiteExecutionVolume: test_suite_constants.SuiteExecutionVolumeMountpoint,
+		})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test suite container to list the tests")
 	}
 
+	logFilepathOnInitializer := path.Join(metadataAcquirerDirpathOnInitializer, logFilename)
 	testListingExitCode, err := dockerManager.WaitForExit(
 		parentContext,
 		testListingContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, logFilepathOnInitializer)
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
-		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, logFilepathOnInitializer)
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
 
-	testSuiteMetadataReaderFp, err := os.Open(testSuiteMetadataFp.Name())
+	metadataFilepathOnInitializer := path.Join(metadataAcquirerDirpathOnInitializer, testSuiteMetadataFilename)
+	testSuiteMetadataReaderFp, err := os.Open(metadataFilepathOnInitializer)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred opening the temp filename containing test suite metadata for reading")
 	}

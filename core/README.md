@@ -116,4 +116,3 @@ When the `METADATA_FILEPATH` environment variable is set, the container must wri
 }
 ```
 where `testNames` is a "set" of tests in the suite and `networkWidthBits` is the number of bits in the network mask of each test network that will be created.
-

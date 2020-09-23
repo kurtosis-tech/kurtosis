@@ -1,4 +1,11 @@
 # TBD
+* Small comment/doc changes from weekly review
+* Easy fix to sort `api_container_env_vars` alphabetically
+* Create an access controller with basic license auth
+* Connect access controller to auth0 device authorization flow
+* Implement machine-to-machine authorization flow for CI jobs
+
+# 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
 * Kill TODOs in "Debugging Failed Tests" tutorial
 * Build a v0 of Docker container containing the Kurtosis API 
@@ -21,9 +28,12 @@
 * Allow configurable, custom Docker environment variables that will be passed as-is to the test suite
 * Added `--list` arg to print test names in test suite
 * Kill unnecessary `TestSuiteRunner`, `TestExecutorParallelizer`, and `TestExecutor` structs
-* Create an access controller with basic license auth
-* Connect access controller to auth0 device authorization flow
-* Implement machine-to-machine authorization flow for CI jobs
+* Change Circle config file to:
+    1. Build images on pushes to `develop` or `master`
+    2. Run a build on PR commits
+* Modify the machinery to only use a single Docker volume for an entire test suite execution
+* Containerize the Docker initializer
+* Refactored all the stuff in `scripts` into a single script
 
 # 0.9.0
 * Change ConfigurationID to be a string

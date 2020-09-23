@@ -16,11 +16,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_env_vars"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_mount_locations"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"os"
 	"path"
 	"time"
 )
@@ -38,6 +37,10 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
 
 const (
 	testSuiteLogFilename = "test-execution.log"
+	apiContainerLogFilename = "api-container.log"
+
+	// The name of the directory inside a test execution directory where service file IO will be stored
+	servicesDirname = "services"
 
 	// When we're tearing down a network after a test (either after normal exit or test timeout), this is the maximum
 	//  time we'll wait for each container to stop
@@ -69,6 +72,13 @@ Args:
 	ctx: The Context that the test execution is happening in
 	log: the logger to which all logging events during test execution will be sent
 	dockerClient: The Docker client to use to manipulate the Docker engine
+	suiteExecutionVolume: The name of the Docker volume where file IO for the entire suite execution will be stored
+	suiteExecutionVolumeDirpathOnInitializer: The dirpath, ON THE INITIALIZER CONTAINER, where the suite execution
+		Docker volume is mounted
+	testExecutionRelativeDirpath: The dirpath, relative to the root of the the suite execution volume, where file IO
+		for this particular test should happen.
+
+		NOTE: This directory must already exist!
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
 	kurtosisApiImageName: The name of the Docker image that will be used to run the Kurtosis API container
 	testSuiteImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
@@ -87,6 +97,9 @@ func RunTest(
 		ctx context.Context,
 		log *logrus.Logger,
 		dockerClient *client.Client,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeDirpathOnInitializer string,
+		testExecutionRelativeDirpath string,
 		subnetMask string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
@@ -94,8 +107,6 @@ func RunTest(
 		testSuiteLogLevel string,
 		customTestSuiteEnvVars map[string]string,
 		testName string) (bool, error) {
-	uniqueTestIdentifier := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
-
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
@@ -104,13 +115,6 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
 	log.Info("Docker manager created successfully")
-
-	volumeName := uniqueTestIdentifier
-	log.Debugf("Creating Docker volume %v which will be shared with the test network...", volumeName)
-	if err := dockerManager.CreateVolume(ctx, volumeName); err != nil {
-		return false, stacktrace.Propagate(err, "Error creating Docker volume to share amongst test nodes for test %v", testName)
-	}
-	log.Debugf("Docker volume %v created successfully", volumeName)
 
 	log.Infof("Creating Docker network for test with subnet mask %v...", subnetMask)
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
@@ -153,18 +157,28 @@ func RunTest(
 		testRunningContainerIp.String(),
 		kurtosisApiIp.String())
 
-	containerLogFp, err := ioutil.TempFile("", "test-execution.log")
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the temporary file for holding the " +
-			"logs of the test suite container running the test")
+	servicesDirpathOnInitializerContainer := path.Join(
+		suiteExecutionVolumeDirpathOnInitializer,
+		testExecutionRelativeDirpath,
+		servicesDirname)
+	if err := os.Mkdir(servicesDirpathOnInitializerContainer, os.ModeDir); err != nil {
+		return false, stacktrace.Propagate(
+			err,
+			"Could not create a directory inside the test execution directory, '%v', for storing services file IO",
+			testExecutionRelativeDirpath)
 	}
-	containerLogFp.Close()
 
-	testSuiteLogFilepath := path.Join(test_suite_mount_locations.BindMountsDirpath, testSuiteLogFilename)
-	testSuiteEnvVars, err := generateTestSuiteEnvVars(
+	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
+	suiteLogFilepathOnSuiteContainer := path.Join(
+		test_suite_constants.SuiteExecutionVolumeMountpoint,
+		testExecutionRelativeDirpath,
+		testSuiteLogFilename)
+	testSuiteEnvVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
+		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
 		kurtosisApiIp.String(),
-		testSuiteLogFilepath,
+		servicesRelativeDirpath,
+		suiteLogFilepathOnSuiteContainer,
 		testSuiteLogLevel,
 		customTestSuiteEnvVars)
 	if err != nil {
@@ -180,11 +194,9 @@ func RunTest(
 		map[nat.Port]bool{},
 		nil,
 		testSuiteEnvVars,
+		map[string]string{},
 		map[string]string{
-			containerLogFp.Name(): testSuiteLogFilepath,
-		},
-		map[string]string{
-			volumeName: test_suite_mount_locations.TestVolumeDirpath,
+			suiteExecutionVolume: test_suite_constants.SuiteExecutionVolumeMountpoint,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
@@ -192,6 +204,10 @@ func RunTest(
 	log.Info("Successfully created test suite container to run the test")
 
 	log.Info("Creating Kurtosis API container...")
+	apiLogFilepathOnApiContainer := path.Join(
+		api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
+		testExecutionRelativeDirpath,
+		apiContainerLogFilename)
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_docker_consts.ContainerPort))
 	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
@@ -204,22 +220,22 @@ func RunTest(
 		nil,
 		map[string]string{
 			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
-			api_container_env_vars.ApiLogFilepathEnvVar:           api_container_docker_consts.LogMountFilepath,
+			// TODO capture the API container's logs ONLY if the user is an admin, so we don't leak internals
+			//   about how our API container works to anyone trying to reverse-engineer Kurtosis
+			api_container_env_vars.ApiLogFilepathEnvVar:           apiLogFilepathOnApiContainer,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
 			api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: subnetMask,
 			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
 			api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
-			api_container_env_vars.TestVolumeName: volumeName,
+			api_container_env_vars.TestVolumeName: suiteExecutionVolume,
 		},
 		map[string]string{
 			dockerSocket: dockerSocket,
-			// TODO bind-mount the API container logfile and print its output ONLY IF the user's token is an admin
-			//  token, so we don't leak information about the API container
 		},
 		map[string]string{
-			volumeName: api_container_docker_consts.TestVolumeDirpath,
+			suiteExecutionVolume: api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
@@ -236,14 +252,17 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
 	}
 
+	suiteLogFilepathOnInitializerContainer := path.Join(
+		suiteExecutionVolumeDirpathOnInitializer,
+		testExecutionRelativeDirpath,
+		testSuiteLogFilename)
+
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -253,10 +272,8 @@ func RunTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, containerLogFp.Name())
+		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
 	case exit_codes.ShutdownSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
@@ -299,29 +316,4 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.Docker
 	} else {
 		log.Infof("Docker network with ID %v successfully removed", networkId)
 	}
-}
-
-func generateTestSuiteEnvVars(
-			testName string,
-			kurtosisApiIp string,
-			logFilepath string,
-			logLevel string,
-			customEnvVars map[string]string) (map[string]string, error) {
-	standardVars := map[string]string{
-		test_suite_env_vars.MetadataFilepathEnvVar: "", // We leave this blank because we want test execution, not listing
-		test_suite_env_vars.TestEnvVar:             testName,
-		test_suite_env_vars.KurtosisApiIpEnvVar:    kurtosisApiIp,
-		test_suite_env_vars.LogFilepathEnvVar:      logFilepath,
-		test_suite_env_vars.LogLevelEnvVar:         logLevel,
-	}
-	for key, val := range customEnvVars {
-		if _, ok := standardVars[key]; ok {
-			return nil, stacktrace.NewError(
-				"Tried to manually add custom environment variable %s to the test controller container, but it is " +
-					"already being used by Kurtosis.",
-				key)
-		}
-		standardVars[key] = val
-	}
-	return standardVars, nil
 }
