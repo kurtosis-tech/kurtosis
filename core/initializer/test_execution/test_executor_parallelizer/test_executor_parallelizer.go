@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -30,6 +31,9 @@ Runs the given tests in parallel, printing:
 Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
+	suiteExecutionVolume: The name of the Docker volume that will be used for all file I/O during test suite execution
+	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
+		mounted.
 	parallelism: The number of tests to run concurrently
 	allTestParams: A mapping of test_name -> parameters for running the test
 	kurtosisApiImageName: The name of the Docker image that will run the Kurtosis API container
@@ -45,6 +49,8 @@ Returns:
 func RunInParallelAndPrintResults(
 		executionId uuid.UUID,
 		dockerClient *client.Client,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeMountDirpath string,
 		parallelism uint,
 		allTestParams map[string]ParallelTestParams,
 		kurtosisApiImageName string,
@@ -87,6 +93,8 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		dockerClient,
+		suiteExecutionVolume,
+		suiteExecutionVolumeMountDirpath,
 		kurtosisApiImageName,
 		apiContainerLogLevel,
 		testSuiteImageName,
@@ -107,6 +115,8 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
+		suiteExecutionVolume string,
+		suiteExecutionVolumeMountDirpath string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
 		testSuiteImageName string,
@@ -131,6 +141,8 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
+			suiteExecutionVolume,
+			suiteExecutionVolumeMountDirpath,
 			kurtosisApiImageName,
 			apiContainerLogLevel,
 			testSuiteImageName,
@@ -151,6 +163,8 @@ func runTestWorkerGoroutine(
 			testParamsChan chan ParallelTestParams,
 			outputManager *ParallelTestOutputManager,
 			dockerClient *client.Client,
+			suiteExecutionVolume string,
+			suiteExecutionVolumeMountDirpath string,
 			kurtosisApiImageName string,
 			apiContainerLogLevel string,
 			testSuiteImageName string,
@@ -162,6 +176,16 @@ func runTestWorkerGoroutine(
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
 
+		// The path, relative to the root of the suite execution volume, where the file IO for this test should be stored
+		testExecutionRelativeDirpath := testName
+		testExecutionDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, testExecutionRelativeDirpath)
+		if err := os.Mkdir(testExecutionDirpathOnInitializer, os.ModeDir); err != nil {
+			emptyOutputReader := &strings.Reader{}
+			executionErr := stacktrace.Propagate(err, "An error occurred creating the directory to contain file IO of test %v", testName)
+			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
+			continue
+		}
+
 		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
 		writingTempFp, err := ioutil.TempFile("", tempFilename)
 		if err != nil {
@@ -170,9 +194,9 @@ func runTestWorkerGoroutine(
 			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
 			continue
 		}
-		defer os.Remove(writingTempFp.Name())
+		defer writingTempFp.Close()
 
-		// Create a separate logger just for this test that writes to a tempfile
+		// Create a separate logger just for this test that writes to the test execution logfile
 		log := logrus.New()
 		log.SetLevel(logrus.GetLevel())
 		log.SetOutput(writingTempFp)
@@ -183,6 +207,9 @@ func runTestWorkerGoroutine(
 			parentContext,
 			log,
 			dockerClient,
+			suiteExecutionVolume,
+			suiteExecutionVolumeMountDirpath,
+			testExecutionRelativeDirpath,
 			testParams.SubnetMask,
 			kurtosisApiImageName,
 			apiContainerLogLevel,
@@ -202,8 +229,6 @@ func runTestWorkerGoroutine(
 			defer readingTempFp.Close()
 			testOutputReader = readingTempFp
 		}
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		outputManager.logTestOutput(testName, executionErr, passed, testOutputReader)
 	}
 }

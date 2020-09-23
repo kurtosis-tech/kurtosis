@@ -1,18 +1,66 @@
 version: 2.1
-jobs:
-  build:
-    environment:
-      CIRCLE_BASE_REVISION: "<< pipeline.git.base_revision >>"
+
+executors:
+  ubuntu_vm:
     machine:
       image: ubuntu-1604:202007-01
       # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
       # docker_layer_caching: true
+
+# NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
+#  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
+#  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
+#  images), so we run everything inside a single job.
+# See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
+jobs:
+  validate:
+    executor: ubuntu_vm
     steps:
+      # NOTE: commenting this out because we might be prematurely optimizing, trying to save Circle hours
+      # # Frustratingly, CircleCI doesn't have a pipeline value indicating pull requests so we can't use a "when" condition to make sure we don't even run this
+      # #  job since the "when" condition is evaluated at configuration time and the environment variables like CIRCLE_PULL_REQUEST are only injected at runtime
+      # #  after spinning up the VM (meaning for all non-PR commits, we're going to waste time spinning up the VM only to abort)
+      # - run: |
+      #     if [ -z "$CIRCLE_PULL_REQUEST"]; then
+      #         circleci step halt
+      #     fi
       - checkout
 
-      # TODO Add caching like in https://circleci.com/docs/2.0/language-go/
-      - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
+      # There's no way to get the base branch in CircleCI, so we hardcode develop :( When CircleCI has a way to do get the base branch, use that instead
+      # The --exit-code command will return 0 with no diff, and 1 when a diff exists
+      - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      # TODO TODO TODO Switch this to use the Dockerized initializer
-      - run: scripts/full_build_and_run.sh --parallelism=2 --client-id="${KURTOSIS_INTERNAL_CI_CLIENT_ID}" --client-secret="${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}"
+      - run: scripts/build_and_run.sh -d "--env PARALLELISM=2 CLIENT_ID="${KURTOSIS_INTERNAL_CI_CLIENT_ID}" CLIENT_SECRET="${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}"
+
+  push_docker_images:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+      - run: scripts/build_and_run.sh -b
+      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+      - run: "docker push kurtosistech/kurtosis-core_api:<< pipeline.git.branch >>"
+      - run: "docker push kurtosistech/kurtosis-core_initializer:<< pipeline.git.branch >>"
+
+      # NOTE: When we need caching, look at https://circleci.com/docs/2.0/language-go/
+      - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
+
+workflows:
+  validation:
+    when:
+      not:
+        or: 
+        # Maybe also validate the develop/master branches???
+        - equal: [ "develop", "<< pipeline.git.branch >>" ]
+        - equal: [ "master", "<< pipeline.git.branch >>" ]
+    jobs:
+      - validate
+
+  push_stable_images:
+    when:
+      or:
+        - equal: [ "develop", "<< pipeline.git.branch >>" ]
+        - equal: [ "master", "<< pipeline.git.branch >>" ]
+    jobs:
+      - push_docker_images
+
