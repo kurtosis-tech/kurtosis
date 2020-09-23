@@ -6,10 +6,12 @@
 package access_controller
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_authorizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"github.com/dgrijalva/jwt-go"
 )
 
 /*
@@ -65,4 +67,24 @@ func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticat
 	}
 
 	return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
+}
+
+func validateToken(tokenString string) (bool, error) {
+	token, err := jwt.Parse(tokenString, keyFunction)
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		fmt.Println(claims["foo"], claims["nbf"])
+	} else {
+		fmt.Println(err)
+	}
+	return true, nil
+}
+
+func keyFunction(token *jwt.Token) (interface{}, error) {
+	if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		return nil, stacktrace.NewError("Unexpected signing method: %v", token.Header["alg"])
+	}
+
+	// TODO TODO TODO THIS MUST RETURN BYTE ARRAY OF RSA PUBLIC KEY
+	return []byte("Hello."), nil
 }
