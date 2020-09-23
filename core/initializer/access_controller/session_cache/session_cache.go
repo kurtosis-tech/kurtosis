@@ -8,7 +8,7 @@ package session_cache
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_device_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_authorizer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -53,7 +53,7 @@ func NewSessionCache() (*SessionCache, error) {
 	Writes a tokenResponse to a local file in the user's home directory.
 	On later runs of Kurtosis, the token will be preserved and re-auth will be unnecessary.
  */
-func (cache *SessionCache) PersistToken(tokenResponse *auth0_device_authorizer.TokenResponse) error {
+func (cache *SessionCache) PersistToken(tokenResponse *auth0_authorizer.TokenResponse) error {
 	if err := cache.saveObject(cache.TokenFilePath, tokenResponse); err != nil {
 		return stacktrace.Propagate(err, "Failed to cache users access token after authenticating.")
 	}
@@ -65,8 +65,8 @@ func (cache *SessionCache) PersistToken(tokenResponse *auth0_device_authorizer.T
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
 	TODO TODO TODO Ensure that the token has been verified against the provider in the last 48 hours
 */
-func (cache *SessionCache) LoadToken() (tokenResponse *auth0_device_authorizer.TokenResponse, alreadyAuthenticated bool, err error){
-	tokenResponse = new(auth0_device_authorizer.TokenResponse)
+func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenResponse, alreadyAuthenticated bool, err error){
+	tokenResponse = new(auth0_authorizer.TokenResponse)
 	if _, err := os.Stat(cache.TokenFilePath); err == nil {
 		if err := cache.loadObject(cache.TokenFilePath, &tokenResponse); err != nil {
 			return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
