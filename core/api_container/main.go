@@ -189,9 +189,6 @@ func createServer(
 	)
 
 	logrus.Info("Launching server...")
-
-	// TODO register a WithBeforefunc that adds a requestID to the request, so that each method's logging can use it
-	// TODO register an AfterFunc that will log errors as they leave the server
 	httpHandler := rpc.NewServer()
 	jsonCodec := json2.NewCodec()
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
