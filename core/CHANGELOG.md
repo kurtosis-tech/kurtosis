@@ -4,6 +4,7 @@
 * Create an access controller with basic license auth
 * Connect access controller to auth0 device authorization flow
 * Implement machine-to-machine authorization flow for CI jobs
+* Bind-mount Kurtosis home directory into the initializer image
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level

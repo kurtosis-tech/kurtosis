@@ -7,6 +7,7 @@ REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
 GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
+KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
@@ -84,10 +85,12 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
+    mkdir -p "${KURTOSIS_DIRPATH}"
     go_suite_execution_volume="go-example-suite_${docker_tag}_$(date +%s)"
     docker volume create "${go_suite_execution_volume}"
     docker run \
         --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
+        --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
         --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
         --env 'CUSTOM_ENV_VARS_JSON={"GO_EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \

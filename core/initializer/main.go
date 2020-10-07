@@ -35,6 +35,10 @@ const (
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
 	// A user MUST mount a volume here
 	suiteExecutionVolumeMountDirpath = "/suite-execution"
+
+	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
+	//  tokens) will be bind-mounted from the host filesystem
+	storageDirectoryBindMountDirpath = "/kurtosis"
 )
 
 func main() {
@@ -110,7 +114,10 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*clientIdArg, *clientSecretArg)
+	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
+		storageDirectoryBindMountDirpath,
+		*clientIdArg,
+		*clientSecretArg)
 	if err != nil {
 		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)

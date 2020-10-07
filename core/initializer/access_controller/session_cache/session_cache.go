@@ -18,10 +18,7 @@ import (
 )
 
 const (
-	// By default, the kurtosis storage directory will be created in the user's home directory.
-	storageDirName            = ".kurtosis"
 	tokenFileName             = "access_token"
-	userReadWriteExecutePerms = 0700
 )
 
 
@@ -31,22 +28,15 @@ type SessionCache struct {
 	lock           sync.Mutex
 }
 
-func NewSessionCache() (*SessionCache, error) {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
-	}
-
-	storageDirectoryFullPath := filepath.Join(userHomeDir, storageDirName)
-	err = createDirectoryIfNotExist(storageDirectoryFullPath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
-	}
-
-	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, tokenFileName)
-
+func NewSessionCache(tokenStorageDirpath string) (*SessionCache, error) {
+	logrus.Debugf("Initializing session cache with token storage dirpath: %v", tokenStorageDirpath)
+	accessTokenFileFullPath := filepath.Join(tokenStorageDirpath, tokenFileName)
 	var lock sync.Mutex
-	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath, lock}, nil
+	return &SessionCache{
+		StorageDirPath: tokenStorageDirpath,
+		TokenFilePath:  accessTokenFileFullPath,
+		lock: lock,
+	}, nil
 }
 
 /*
@@ -120,22 +110,5 @@ func (cache *SessionCache) loadObject(path string, object interface{}) error {
 		return stacktrace.Propagate(err, "Failed to unmarshal object.")
 	}
 
-	return nil
-}
-
-// checks if the directory specified in path exists. if not, creates it.
-func createDirectoryIfNotExist(path string) error {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			logrus.Debugf("Creating kurtosis storage directory at %s", path)
-			err := os.Mkdir(path, userReadWriteExecutePerms)
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to create directory %s", path)
-			}
-		} else {
-			return stacktrace.Propagate(err, "Failed to check stat for %s", path)
-		}
-	}
 	return nil
 }
