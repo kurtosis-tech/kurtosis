@@ -2,6 +2,7 @@
 * Small comment/doc changes from weekly review
 * Easy fix to sort `api_container_env_vars` alphabetically
 * Remove some now-unneeded TODOs
+* Disallow test names with our test name delimiter: `,`
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
