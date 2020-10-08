@@ -31,13 +31,13 @@ jobs:
       - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh -d "--env PARALLELISM=2"
+      - run: scripts/build_and_run.sh all --env PARALLELISM=2
 
   push_docker_images:
     executor: ubuntu_vm
     steps:
       - checkout
-      - run: scripts/build_and_run.sh -b
+      - run: scripts/build_and_run.sh build
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
       - run: "docker push kurtosistech/kurtosis-core_api:<< pipeline.git.branch >>"
       - run: "docker push kurtosistech/kurtosis-core_initializer:<< pipeline.git.branch >>"
