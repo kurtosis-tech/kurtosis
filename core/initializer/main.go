@@ -121,6 +121,18 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
+	//  error and loudly alert the user
+	for testName, _ := range suiteMetadata.TestNames {
+		if strings.Contains(testName, testNameArgSeparator) {
+			logrus.Errorf(
+				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
+				testName,
+				testNameArgSeparator)
+			os.Exit(failureExitCode)
+		}
+	}
+
 	if *doListArg {
 		testNames := []string{}
 		for name := range suiteMetadata.TestNames {

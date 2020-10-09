@@ -3,6 +3,7 @@
 * Easy fix to sort `api_container_env_vars` alphabetically
 * Remove some now-unneeded TODOs
 * Fix the `build_and_run.sh` script to use the proper way to pass in Docker args
+* Disallow test names with our test name delimiter: `,`
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
