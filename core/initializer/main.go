@@ -48,17 +48,16 @@ func main() {
 		FullTimestamp: true,
 	})
 
+	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
 	testSuiteImageArg := flag.String(
 		"test-suite-image",
 		"",
 		"The name of the Docker image of the test suite that will be run")
-
 	doListArg := flag.Bool(
 		"list",
 		false,
 		"Rather than running the tests, lists the tests available to run",
 	)
-
 	testNamesArg := flag.String(
 		"test-names",
 		"",
@@ -74,37 +73,33 @@ func main() {
 		"debug",
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
-
 	clientIdArg := flag.String(
 		"client-id",
 		"",
 		fmt.Sprintf("Only needed when running in CI. Client ID from CI license."))
-
 	clientSecretArg := flag.String(
 		"client-secret",
 		"",
 		fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."))
-
 	kurtosisApiImageArg := flag.String(
 		"kurtosis-api-image",
 		defaultKurtosisApiImage,
 		"The Docker image that will be used to run the Kurtosis API container")
-
 	parallelismArg := flag.Int(
 		"parallelism",
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
-
 	customEnvVarsJsonArg := flag.String(
 		"custom-env-vars-json",
 		"{}",
 		"JSON containing key-value mappings of custom environment variables that will be set in " +
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
-
 	suiteExecutionVolumeArg := flag.String(
 		"suite-execution-volume",
 		"",
 		"The name of the Docker volume that will contain all the data for the test suite execution")
+	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
+
 	flag.Parse()
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)

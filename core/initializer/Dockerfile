@@ -16,6 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.g
 # ============= Execution Stage ================
 FROM docker:stable AS execution
 
+# !!IMPORTANT!! Whenever you update these, make sure to modify https://github.com/kurtosis-tech/kurtosis-docs !!
 ENV CLIENT_ID=""
 ENV CLIENT_SECRET=""
 ENV CUSTOM_ENV_VARS_JSON="{}"
