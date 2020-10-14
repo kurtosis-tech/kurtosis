@@ -31,7 +31,7 @@ jobs:
       - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh all --env PARALLELISM=2
+      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CI_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}
 
   push_docker_images:
     executor: ubuntu_vm
@@ -63,3 +63,4 @@ workflows:
         - equal: [ "master", "<< pipeline.git.branch >>" ]
     jobs:
       - push_docker_images
+

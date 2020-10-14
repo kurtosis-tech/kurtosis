@@ -16,12 +16,14 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.g
 # ============= Execution Stage ================
 FROM docker:stable AS execution
 
-ENV DO_LIST="false"
-ENV TEST_NAMES=""
-ENV KURTOSIS_LOG_LEVEL="debug"
-ENV TEST_SUITE_LOG_LEVEL="debug"
-ENV PARALLELISM="4"
+ENV CLIENT_ID=""
+ENV CLIENT_SECRET=""
 ENV CUSTOM_ENV_VARS_JSON="{}"
+ENV DO_LIST="false"
+ENV KURTOSIS_LOG_LEVEL="debug"
+ENV PARALLELISM="4"
+ENV TEST_NAMES=""
+ENV TEST_SUITE_LOG_LEVEL="debug"
 
 WORKDIR /run
 
@@ -33,6 +35,8 @@ COPY --from=builder /build/kurtosis-initializer .
 #  2. If you make any changes here, you need to modify the docs at https://github.com/kurtosis-tech/kurtosis-docs
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
+    --client-id=${CLIENT_ID} \
+    --client-secret=${CLIENT_SECRET} \
     --custom-env-vars-json=${CUSTOM_ENV_VARS_JSON} \
     --kurtosis-api-image=${KURTOSIS_API_IMAGE} \
     --kurtosis-log-level=${KURTOSIS_LOG_LEVEL} \

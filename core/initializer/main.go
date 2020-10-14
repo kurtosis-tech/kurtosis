@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
@@ -28,9 +29,16 @@ const (
 	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
 	defaultParallelism = 4
 
+	// Web link shown to users who do not authenticate.
+	licenseWebUrl = "https://kurtosistech.com/"
+
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
 	// A user MUST mount a volume here
 	suiteExecutionVolumeMountDirpath = "/suite-execution"
+
+	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
+	//  tokens) will be bind-mounted from the host filesystem
+	storageDirectoryBindMountDirpath = "/kurtosis"
 )
 
 func main() {
@@ -67,6 +75,16 @@ func main() {
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
 
+	clientIdArg := flag.String(
+		"client-id",
+		"",
+		fmt.Sprintf("Only needed when running in CI. Client ID from CI license."))
+
+	clientSecretArg := flag.String(
+		"client-secret",
+		"",
+		fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."))
+
 	kurtosisApiImageArg := flag.String(
 		"kurtosis-api-image",
 		defaultKurtosisApiImage,
@@ -95,6 +113,23 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(kurtosisLevel)
+
+	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
+		storageDirectoryBindMountDirpath,
+		*clientIdArg,
+		*clientSecretArg)
+	if err != nil {
+		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
+		os.Exit(failureExitCode)
+	}
+	if !authenticated {
+		logrus.Fatalf("Please register to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
+		os.Exit(failureExitCode)
+	}
+	if !authorized {
+		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
+		os.Exit(failureExitCode)
+	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
