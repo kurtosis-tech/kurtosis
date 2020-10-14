@@ -30,7 +30,6 @@ const (
 	completionPrefix        = "Test completion thread"
 )
 
-// TODO for all the methods on this class, make the logging log with a request ID
 type KurtosisService struct {
 	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
 	// This is expected to be nil until the "register test suite container" endpoint is called, which should be called

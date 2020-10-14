@@ -9,35 +9,58 @@ INITIALIZER_REPO="${REPO_BASE}_initializer"
 GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
+BUILD_ACTION="build"
+RUN_ACTION="run"
+BOTH_ACTION="all"
+HELP_ACTION="help"
+
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0}:"
-    echo "  -h      Displays this message"
-    echo "  -b      Executes only the build step, skipping the run step"
-    echo "  -r      Executes only the run step, skipping the build step"
-    echo "  -d      Extra args to pass to 'docker run' (e.g. '--env MYVAR=somevalue')"
+    echo "${0} <action> <extra Docker args...>"
+    echo ""
+    echo "  Actions:"
+    echo "    help    Displays this messages"
+    echo "    build   Executes only the build step, skipping the run step"
+    echo "    run     Executes only the run step, skipping the build step"
+    echo "    all     Executes both build and run steps"
+    echo ""
+    echo "  Example:"
+    echo "    ${0} all --env PARALLELISM=4"
+    echo ""
 }
+
+if [ "${#}" -eq 0 ]; then
+    show_help
+    exit 0
+fi
+
+action="${1:-}"
+shift 1
 
 do_build=true
 do_run=true
-extra_docker_args=""
-while getopts "brd:" opt; do
-    case "${opt}" in
-        h)
-            show_help
-            exit 0
-            ;;
-        b)
-            do_run=false
-            ;;
-        r)
-            do_build=false
-            ;;
-        d)
-            extra_docker_args="${OPTARG}"
-            ;;
-    esac
-done
+case "${action}" in
+    ${HELP_ACTION})
+        show_help
+        exit 0
+        ;;
+    ${BUILD_ACTION})
+        do_build=true
+        do_run=false
+        ;;
+    ${RUN_ACTION})
+        do_build=false
+        do_run=true
+        ;;
+    ${BOTH_ACTION})
+        do_build=true
+        do_run=true
+        ;;
+    *)
+        echo "Error: First argument must be one of '${HELP_ACTION}', '${BUILD_ACTION}', '${RUN_ACTION}', or '${BOTH_ACTION}'" >&2
+        exit 1
+        ;;
+esac
 
 # ====================== MAIN LOGIC =======================================================
 git_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -96,6 +119,8 @@ if "${do_run}"; then
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
         --env "KURTOSIS_API_IMAGE=${api_image}" \
         --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
-        ${extra_docker_args:-} \
+        `# In Bash, this is how you feed arguments exactly as-is to a child script (since ${*} loses quoting and ${@} trips set -e if no arguments are passed)` \
+        `# It basically says, "if and only if ${1} exists, evaluate ${@}"` \
+        ${1+"${@}"} \
         "${initializer_image}"
 fi

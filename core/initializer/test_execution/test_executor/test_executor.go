@@ -242,7 +242,6 @@ func RunTest(
 	}
 	log.Infof("Successfully created Kurtosis API container")
 
-	// TODO add a timeout waiting for Kurtosis API container to stop???
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
 	kurtosisApiExitCode, err := dockerManager.WaitForExit(
