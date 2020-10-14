@@ -30,6 +30,8 @@ import (
 		authorized: Bool indicating if the user is authorized to run Kurtosis.
  */
 func AuthenticateAndAuthorize(tokenStorageDirpath string, clientId string, clientSecret string) (authenticated bool, authorized bool, err error) {
+	// TODO Switch to https://github.com/gorilla/sessions for token storage
+	//  per https://auth0.com/docs/quickstart/webapp/golang ???
 	cache, err := session_cache.NewSessionCache(tokenStorageDirpath)
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")

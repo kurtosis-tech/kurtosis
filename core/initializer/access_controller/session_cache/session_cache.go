@@ -53,7 +53,6 @@ func (cache *SessionCache) PersistToken(tokenResponse *auth0_authorizer.TokenRes
 /*
 	Loads a tokenResponse from a local file in the user's home directory.
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
-	TODO TODO TODO Ensure that the token has been verified against the provider in the last 48 hours
 */
 func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenResponse, alreadyAuthenticated bool, err error){
 	tokenResponse = new(auth0_authorizer.TokenResponse)
@@ -61,6 +60,9 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenRes
 		if err := cache.loadObject(cache.TokenFilePath, &tokenResponse); err != nil {
 			return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 		}
+		// TODO Validate that the token is signed by the correct cert
+		//   See: https://auth0.com/docs/quickstart/backend/golang/01-authorization
+		// TODO Validate that the token hasn't expired
 		return tokenResponse, true, nil
 	} else if os.IsNotExist(err) {
 		return nil, false, nil
@@ -71,7 +73,7 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenRes
 
 // ================================= HELPER FUNCTIONS =========================================
 
-// saves a representation of object to the file at path.
+// Saves a representation of object to the file at path.
 // https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
 func (cache *SessionCache) saveObject(path string, object interface{}) error {
 	cache.lock.Lock()
