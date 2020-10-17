@@ -27,7 +27,9 @@ const (
 	testNameArgSeparator = ","
 
 	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
-	defaultParallelism = 4
+
+	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
+	defaultParallelism = 2
 
 	// Web link shown to users who do not authenticate.
 	licenseWebUrl = "https://kurtosistech.com/"
