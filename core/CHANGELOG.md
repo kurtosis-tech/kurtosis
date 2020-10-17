@@ -8,6 +8,7 @@
 * Connect access controller to auth0 device authorization flow
 * Implement machine-to-machine authorization flow for CI jobs
 * Bind-mount Kurtosis home directory into the initializer image
+* Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
