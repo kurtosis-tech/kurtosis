@@ -27,7 +27,9 @@ const (
 	testNameArgSeparator = ","
 
 	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
-	defaultParallelism = 4
+
+	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
+	defaultParallelism = 2
 
 	// Web link shown to users who do not authenticate.
 	licenseWebUrl = "https://kurtosistech.com/"
@@ -35,6 +37,10 @@ const (
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
 	// A user MUST mount a volume here
 	suiteExecutionVolumeMountDirpath = "/suite-execution"
+
+	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
+	//  tokens) will be bind-mounted from the host filesystem
+	storageDirectoryBindMountDirpath = "/kurtosis"
 )
 
 func main() {
@@ -44,17 +50,16 @@ func main() {
 		FullTimestamp: true,
 	})
 
+	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
 	testSuiteImageArg := flag.String(
 		"test-suite-image",
 		"",
 		"The name of the Docker image of the test suite that will be run")
-
 	doListArg := flag.Bool(
 		"list",
 		false,
 		"Rather than running the tests, lists the tests available to run",
 	)
-
 	testNamesArg := flag.String(
 		"test-names",
 		"",
@@ -70,37 +75,33 @@ func main() {
 		"debug",
 		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
 	)
-
 	clientIdArg := flag.String(
 		"client-id",
 		"",
 		fmt.Sprintf("Only needed when running in CI. Client ID from CI license."))
-
 	clientSecretArg := flag.String(
 		"client-secret",
 		"",
 		fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."))
-
 	kurtosisApiImageArg := flag.String(
 		"kurtosis-api-image",
 		defaultKurtosisApiImage,
 		"The Docker image that will be used to run the Kurtosis API container")
-
 	parallelismArg := flag.Int(
 		"parallelism",
 		defaultParallelism,
 		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
-
 	customEnvVarsJsonArg := flag.String(
 		"custom-env-vars-json",
 		"{}",
 		"JSON containing key-value mappings of custom environment variables that will be set in " +
 			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
-
 	suiteExecutionVolumeArg := flag.String(
 		"suite-execution-volume",
 		"",
 		"The name of the Docker volume that will contain all the data for the test suite execution")
+	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
+
 	flag.Parse()
 
 	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
@@ -110,7 +111,10 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(*clientIdArg, *clientSecretArg)
+	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
+		storageDirectoryBindMountDirpath,
+		*clientIdArg,
+		*clientSecretArg)
 	if err != nil {
 		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)
@@ -147,6 +151,18 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
+	}
+
+	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
+	//  error and loudly alert the user
+	for testName, _ := range suiteMetadata.TestNames {
+		if strings.Contains(testName, testNameArgSeparator) {
+			logrus.Errorf(
+				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
+				testName,
+				testNameArgSeparator)
+			os.Exit(failureExitCode)
+		}
 	}
 
 	if *doListArg {

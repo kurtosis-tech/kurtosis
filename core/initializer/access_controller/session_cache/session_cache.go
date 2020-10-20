@@ -18,10 +18,7 @@ import (
 )
 
 const (
-	// By default, the kurtosis storage directory will be created in the user's home directory.
-	storageDirName            = ".kurtosis"
 	tokenFileName             = "access_token"
-	userReadWriteExecutePerms = 0700
 )
 
 
@@ -31,22 +28,15 @@ type SessionCache struct {
 	lock           sync.Mutex
 }
 
-func NewSessionCache() (*SessionCache, error) {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to find user home directory.")
-	}
-
-	storageDirectoryFullPath := filepath.Join(userHomeDir, storageDirName)
-	err = createDirectoryIfNotExist(storageDirectoryFullPath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create-if-not-exists session cache directory %s", storageDirectoryFullPath)
-	}
-
-	accessTokenFileFullPath := filepath.Join(storageDirectoryFullPath, tokenFileName)
-
+func NewSessionCache(tokenStorageDirpath string) (*SessionCache, error) {
+	logrus.Debugf("Initializing session cache with token storage dirpath: %v", tokenStorageDirpath)
+	accessTokenFileFullPath := filepath.Join(tokenStorageDirpath, tokenFileName)
 	var lock sync.Mutex
-	return &SessionCache{storageDirectoryFullPath, accessTokenFileFullPath, lock}, nil
+	return &SessionCache{
+		StorageDirPath: tokenStorageDirpath,
+		TokenFilePath:  accessTokenFileFullPath,
+		lock: lock,
+	}, nil
 }
 
 /*
@@ -63,7 +53,6 @@ func (cache *SessionCache) PersistToken(tokenResponse *auth0_authorizer.TokenRes
 /*
 	Loads a tokenResponse from a local file in the user's home directory.
 	Returns a boolean alreadyAuthenticated to indicate if a tokenResponse had been written before.
-	TODO TODO TODO Ensure that the token has been verified against the provider in the last 48 hours
 */
 func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenResponse, alreadyAuthenticated bool, err error){
 	tokenResponse = new(auth0_authorizer.TokenResponse)
@@ -71,6 +60,9 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenRes
 		if err := cache.loadObject(cache.TokenFilePath, &tokenResponse); err != nil {
 			return nil, false, stacktrace.Propagate(err, "Failed to load users access token.")
 		}
+		// TODO Validate that the token is signed by the correct cert
+		//   See: https://auth0.com/docs/quickstart/backend/golang/01-authorization
+		// TODO Validate that the token hasn't expired
 		return tokenResponse, true, nil
 	} else if os.IsNotExist(err) {
 		return nil, false, nil
@@ -81,7 +73,7 @@ func (cache *SessionCache) LoadToken() (tokenResponse *auth0_authorizer.TokenRes
 
 // ================================= HELPER FUNCTIONS =========================================
 
-// saves a representation of object to the file at path.
+// Saves a representation of object to the file at path.
 // https://medium.com/@matryer/golang-advent-calendar-day-eleven-persisting-go-objects-to-disk-7caf1ee3d11d
 func (cache *SessionCache) saveObject(path string, object interface{}) error {
 	cache.lock.Lock()
@@ -120,22 +112,5 @@ func (cache *SessionCache) loadObject(path string, object interface{}) error {
 		return stacktrace.Propagate(err, "Failed to unmarshal object.")
 	}
 
-	return nil
-}
-
-// checks if the directory specified in path exists. if not, creates it.
-func createDirectoryIfNotExist(path string) error {
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			logrus.Debugf("Creating kurtosis storage directory at %s", path)
-			err := os.Mkdir(path, userReadWriteExecutePerms)
-			if err != nil {
-				return stacktrace.Propagate(err, "Failed to create directory %s", path)
-			}
-		} else {
-			return stacktrace.Propagate(err, "Failed to check stat for %s", path)
-		}
-	}
 	return nil
 }

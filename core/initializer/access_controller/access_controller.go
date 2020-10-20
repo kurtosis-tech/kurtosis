@@ -22,11 +22,19 @@ import (
 
 	In either case, access tokens are cached in a local session.
 
-	Returns authenticated to indicate if the user exists in the system.
-	Returns authorized if the user is authorized to run Kurtosis.
+	Args:
+		tokenStorageDirpath: The directory to store the token received from authentication
+		clientId: The client ID, for use when running in CI
+		clientSecret: The client secret, for use when running in CI
+
+	Returns:
+		authenticated: Bool indicating if the user exists in the system.
+		authorized: Bool indicating if the user is authorized to run Kurtosis.
  */
-func AuthenticateAndAuthorize(clientId string, clientSecret string) (authenticated bool, authorized bool, err error) {
-	cache, err := session_cache.NewSessionCache()
+func AuthenticateAndAuthorize(tokenStorageDirpath string, clientId string, clientSecret string) (authenticated bool, authorized bool, err error) {
+	// TODO Switch to https://github.com/gorilla/sessions for token storage
+	//  per https://auth0.com/docs/quickstart/webapp/golang ???
+	cache, err := session_cache.NewSessionCache(tokenStorageDirpath)
 	if err != nil {
 		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
 	}

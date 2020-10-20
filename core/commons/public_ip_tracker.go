@@ -51,7 +51,6 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 	return ipAddrTracker, nil
 }
 
-// TODO Return IP objects (which are easily convertable to strings) rather than strings themselves
 // TODO rework this entire function to handle IPv6 as well (currently breaks on IPv6)
 /*
 Gets a free IP address from the subnet that the IP tracker was initializd with.
