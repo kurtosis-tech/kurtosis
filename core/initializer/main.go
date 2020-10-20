@@ -41,6 +41,9 @@ const (
 	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
 	//  tokens) will be bind-mounted from the host filesystem
 	storageDirectoryBindMountDirpath = "/kurtosis"
+
+	// Name of the directory within the Kurtosis storage directory where the session cache will be stored
+	sessionCacheDirname = "session-cache"
 )
 
 func main() {

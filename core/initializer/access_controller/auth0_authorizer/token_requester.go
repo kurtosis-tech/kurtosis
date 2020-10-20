@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -19,9 +20,8 @@ import (
 )
 
 const (
-	audience = "https://api.kurtosistech.com/login"
-	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
-	auth0TokenPath = "/oauth/token"
+
+	auth0TokenPath = "oauth/token"
 
 	contentTypeHeaderName = "content-type"
 
@@ -31,8 +31,6 @@ const (
 	clientIdQueryParamName = "client_id"
 	grantTypeQueryParamName = "grant_type"
 	audienceQueryParam = "audience"
-
-	RequiredScope = "execute:kurtosis-core"
 )
 
 // Response from token endpoint
@@ -46,7 +44,7 @@ type TokenResponse struct {
 
 func requestAuthToken(params map[string]string, headers map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
-	url := auth0UrlBase + auth0TokenPath
+	url := auth0_constants.Issuer + auth0TokenPath
 	contentType := headers[contentTypeHeaderName]
 
 	var paramReader io.Reader

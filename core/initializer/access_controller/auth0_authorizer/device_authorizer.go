@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -58,9 +59,13 @@ type DeviceCodeResponse struct {
 
 func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Prepare to request device code.
-	url := auth0UrlBase + auth0DeviceAuthPath
+	url := auth0_constants.Issuer + auth0DeviceAuthPath
 	payload := strings.NewReader(
-		fmt.Sprintf("client_id=%s&scope=%s&audience=%s", localDevClientId, RequiredScope, audience))
+		fmt.Sprintf(
+			"client_id=%s&scope=%s&audience=%s",
+			localDevClientId,
+			RequiredScope,
+			auth0_constants.Audience))
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
