@@ -26,6 +26,13 @@ const (
 
 	// For extra security, make sure only the user can read & write the session cache file
 	sessionCacheFilePerms = 0600
+
+	// We need to verify that the token has the expected algorithm, else we have a security vulnerability:
+	//  https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/
+	expectedTokenHeaderAlgorithm = "RS256"
+
+	// Key in the Headers hashmap of the token that points to the key ID
+	keyIdTokenHeaderKey = "kid"
 )
 
 /*
@@ -132,10 +139,17 @@ func parseAndValidateTokenClaims(tokenStr string) (Auth0TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenStr,
 		&Auth0TokenClaims{},
-		// This is the "key extractor" algorithm. We don't return anything here because our
-		//  signing algorithm is RSA, which doesn't have secret keys like HMAC which this seems intended for
+		// This is the "key extractor" algorithm, which simply returns the "kid" header as per the given example:
+		//  https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
 		func(token *jwt.Token) (interface{}, error) {
-			return nil, nil
+			// Validating the algorithm per https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, stacktrace.NewError(
+					"Expected token algorithm '%v' but got '%v'",
+					expectedTokenHeaderAlgorithm,
+					token.Header)
+			}
+			return token.Header[keyIdTokenHeaderKey], nil
 		},
 	)
 	if err != nil {
