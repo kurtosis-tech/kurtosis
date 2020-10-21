@@ -60,12 +60,13 @@ type DeviceCodeResponse struct {
 func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Prepare to request device code.
 	url := auth0_constants.Issuer + auth0DeviceAuthPath
-	payload := strings.NewReader(
-		fmt.Sprintf(
-			"client_id=%s&scope=%s&audience=%s",
-			localDevClientId,
-			auth0_constants.ExecutionScope,
-			auth0_constants.Audience))
+	payloadContents := fmt.Sprintf(
+		"client_id=%s&scope=%s&audience=%s",
+		localDevClientId,
+		auth0_constants.ExecutionScope,
+		auth0_constants.Audience)
+	logrus.Debugf("Payload contents: %v", payloadContents)
+	payload := strings.NewReader(payloadContents)
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
@@ -80,14 +81,22 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return nil, stacktrace.NewError("Expected 200 status code when requesting device code but got %v", res.StatusCode)
+	}
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to read response body.")
 	}
+	logrus.Debugf("Device code response body: %v", string(body))
 
 	// Parse response from device code endpoint
 	var deviceCodeResponse = new(DeviceCodeResponse)
-	json.Unmarshal(body, &deviceCodeResponse)
+	if err := json.Unmarshal(body, &deviceCodeResponse); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the device code response")
+	}
 
 	// Prompt user to access authentication URL in browser in order to authenticate.
 	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)

@@ -96,14 +96,14 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	}
 	defer res.Body.Close()
 	// TODO TODO TODO make unauthorized response catching more specific to expected errors
-	if res.StatusCode >= 400 && res.StatusCode <= 499 {
+	if res.StatusCode != 200 {
 		logrus.Tracef("Received an error code: %v", res.StatusCode)
 		logrus.Tracef("Full response: %+v", res)
 		/*
 			If the user has not yet logged in and authorized the device,
 			auth0 will return a 4xx response: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#token-responses
 		*/
-		return nil, nil
+		return nil, stacktrace.NewError("Expected 200 status code when requesting auth token but got %v", res.StatusCode)
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
