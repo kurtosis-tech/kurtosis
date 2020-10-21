@@ -104,9 +104,7 @@ func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, 
 		logrus.Debugf("The following error occurred loading the session from file: %v", err)
 		tokenResponse, err := auth0_authorizer.AuthorizeUserDevice()
 		if err != nil {
-			return "", stacktrace.Propagate(
-				err,
-				"An error occurred during Auth0 authentication")
+			return "", stacktrace.Propagate(err, "An error occurred during Auth0 authentication")
 		}
 
 		// The user has successfully authenticated, so we're good to go

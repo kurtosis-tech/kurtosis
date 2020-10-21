@@ -125,8 +125,9 @@ func main() {
 		authError = access_controller.RunDeveloperMachineAuthFlow(sessionCacheFilepath)
 	}
 	if authError != nil {
-		logrus.Fatal("The following error occurred when authenticating and authorizing your Kurtosis license:")
-		fmt.Fprintln(logrus.StandardLogger().Out, authError)
+		logrus.Fatalf(
+			"The following error occurred when authenticating and authorizing your Kurtosis license: %v",
+			authError)
 		os.Exit(failureExitCode)
 	}
 
