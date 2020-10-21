@@ -58,6 +58,8 @@ type DeviceCodeResponse struct {
  */
 
 func AuthorizeUserDevice() (*TokenResponse, error) {
+	logrus.Trace("Authorizing user device...")
+
 	// Prepare to request device code.
 	url := auth0_constants.Issuer + auth0DeviceAuthPath
 	payloadContents := fmt.Sprintf(
@@ -76,23 +78,25 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
 	retryClient.Logger = nil
 
+	logrus.Trace("Requesting device authorization...")
 	res, err := retryClient.StandardClient().Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
 	}
 	defer res.Body.Close()
-
 	if res.StatusCode != 200 {
 		return nil, stacktrace.NewError("Expected 200 status code when requesting device code but got %v", res.StatusCode)
 	}
 
+	logrus.Trace("Reading device authorization response body...")
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to read response body.")
 	}
-	logrus.Debugf("Device code response body: %v", string(body))
+	logrus.Debugf("Device authorization response body: %v", string(body))
 
 	// Parse response from device code endpoint
+	logrus.Trace("Parsing device authorization response JSON...")
 	var deviceCodeResponse = new(DeviceCodeResponse)
 	if err := json.Unmarshal(body, &deviceCodeResponse); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the device code response")
