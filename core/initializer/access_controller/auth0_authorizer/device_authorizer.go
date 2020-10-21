@@ -64,7 +64,7 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 		fmt.Sprintf(
 			"client_id=%s&scope=%s&audience=%s",
 			localDevClientId,
-			RequiredScope,
+			auth0_constants.ExecutionScope,
 			auth0_constants.Audience))
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")

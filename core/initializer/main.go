@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path"
 	"sort"
 	"strings"
 )
@@ -42,8 +43,8 @@ const (
 	//  tokens) will be bind-mounted from the host filesystem
 	storageDirectoryBindMountDirpath = "/kurtosis"
 
-	// Name of the directory within the Kurtosis storage directory where the session cache will be stored
-	sessionCacheDirname = "session-cache"
+	// Name of the file within the Kurtosis storage directory where the session cache will be stored
+	sessionCacheFilename = "session-cache"
 )
 
 func main() {
@@ -114,20 +115,18 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
-		storageDirectoryBindMountDirpath,
-		*clientIdArg,
-		*clientSecretArg)
-	if err != nil {
-		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
-		os.Exit(failureExitCode)
+	var authError error
+	if len(*clientIdArg) > 0 && len(*clientSecretArg) > 0 {
+		logrus.Debugf("Running CI machine-to-machine auth flow...")
+		authError = access_controller.RunCIAuthFlow(*clientIdArg, *clientSecretArg)
+	} else {
+		logrus.Debugf("Running developer device...")
+		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
+		authError = access_controller.RunDeveloperMachineAuthFlow(sessionCacheFilepath)
 	}
-	if !authenticated {
-		logrus.Fatalf("Please register to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	if !authorized {
-		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
+	if authError != nil {
+		logrus.Fatal("The following error occurred when authenticating and authorizing your Kurtosis license:")
+		fmt.Fprintln(logrus.StandardLogger().Out, authError)
 		os.Exit(failureExitCode)
 	}
 

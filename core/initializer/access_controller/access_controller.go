@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/encrypted_session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -22,31 +23,34 @@ const (
 
 	// How long we'll pause after displaying auth warnings, to give users a chance to see it
 	authWarningPause = 2 * time.Second
+
+	// For extra security, make sure only the user can read & write the session cache file
+	sessionCacheFilePerms = 0600
 )
 
 /*
 Used for a developer running Kurtosis on their local machine. This will:
 
 1) Check if they have a valid session cached locally that's still valid and, if not
-2) Prompt them for their creds
+2) Prompt them for their username and password
 
 Args:
-	sessionCacheDirpath: Directory where session cache files will be written
+	sessionCacheFilepath: Filepath to store the encrypted session cache at
 
 Returns:
 	An error if and only if an irrecoverable login error occurred
  */
-func RunDeveloperMachineAuthFlow(sessionCacheDirpath string) error {
-	cache := encrypted_session_cache.NewEncryptedSessionCache(sessionCacheDirpath, mode)
+func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
+	cache := encrypted_session_cache.NewEncryptedSessionCache(sessionCacheFilepath, sessionCacheFilePerms)
 
 	tokenStr, err := getTokenStr(cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the token string")
 	}
 
-	claims, err := parseTokenAndGetClaims(tokenStr)
+	claims, err := parseAndValidateTokenClaims(tokenStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the token string")
+		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
 
 	scope, err := getScopeFromClaimsAndRenewIfNeeded(claims, cache)
@@ -54,77 +58,44 @@ func RunDeveloperMachineAuthFlow(sessionCacheDirpath string) error {
 		return stacktrace.Propagate(err, "An error occurred renewing the token or getting the scope from the token's claims")
 	}
 
+	if scope != auth0_constants.ExecutionScope {
+		return stacktrace.NewError(
+			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
+			auth0_constants.ExecutionScope,
+			scope)
+	}
 	return nil
 }
 
 /*
-This workflow is for Kurtosis tests running in CI (no device or username).
+This workflow is for authenticating and authorizing Kurtosis tests running in CI (no device or username).
+	See also: https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/
  */
-func RunCIAuthFlow(clientId string, clientSecret string) {
-	// TODO
+func RunCIAuthFlow(clientId string, clientSecret string) error {
+	tokenResponse, err := auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred authenticating with the client ID & secret")
+	}
+
+	claims, err := parseAndValidateTokenClaims(tokenResponse.AccessToken)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
+	}
+
+	scope := claims.Scope
+	if scope != auth0_constants.ExecutionScope {
+		return stacktrace.NewError(
+			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
+			auth0_constants.ExecutionScope,
+			scope)
+	}
+	return nil
 }
-
-/*
-	If clientId and clientSecret are non-empty, authorizes based on an OAuth Client ID and Client Secret. ( https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/ )
-
-	If clientId and clientSecret are empty, authorizes a user based on username and password credentials, in addition to device validation.
-
-	In either case, access tokens are cached in a local session.
-
-	Args:
-		tokenStorageDirpath: The directory to store the token received from authentication
-		clientId: The client ID, for use when running in CI
-		clientSecret: The client secret, for use when running in CI
-
-	Returns: Error if
- */
-func AuthenticateAndAuthorize(tokenStorageDirpath string, clientId string, clientSecret string) (err error) {
-
-	cache, err := encrypted_session_cache.NewEncryptedSessionCache(tokenStorageDirpath)
-	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to initialize session cache.")
-	}
-
-	if (len(clientId) > 0 || len(clientSecret) > 0) && !(len(clientId) > 0 && len(clientSecret) > 0) {
-		return false, false, stacktrace.Propagate(err, "If one of clientId or clientSecret are specified, both must be specified. These are only needed when running Kurtosis in CI.")
-	}
-
-	isRunningInCI := len(clientId) > 0 && len(clientSecret) > 0
-
-	cachedTokenResponse, alreadyAuthenticated, err := cache.LoadToken()
-	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to load authorization token from session cache at %s", cache.TokenFilePath)
-	}
-
-	if alreadyAuthenticated {
-		logrus.Debugf("Already authenticated on this device! Access token: %s", cachedTokenResponse.AccessToken)
-		return true, cachedTokenResponse.Scope == auth0_authorizer.RequiredScope, nil
-	}
-
-	var tokenResponse *auth0_authorizer.TokenResponse
-	if isRunningInCI {
-		tokenResponse, err = auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
-		if err != nil {
-			return false, false, stacktrace.Propagate(err, "Failed to authorize client credentials.")
-		}
-	} else {
-		tokenResponse, err = auth0_authorizer.AuthorizeUserDevice()
-		if err != nil {
-			return false, false, stacktrace.Propagate(err, "Failed to authorize the user and device from auth provider.")
-		}
-	}
-
-	logrus.Debugf("Access token: %s", tokenResponse.AccessToken)
-	err = cache.PersistToken(tokenResponse)
-	if err != nil {
-		return false, false, stacktrace.Propagate(err, "Failed to persist access token to the session cache.")
-	}
-
-	return true, tokenResponse.Scope == auth0_authorizer.RequiredScope, nil
-}
-
 
 // ============================== PRIVATE HELPER FUNCTIONS =========================================
+/*
+Gets the token string, either by reading a valid cache or by prompting the user for their login credentials
+ */
 func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
 	var result string
 	session, err := cache.LoadSession()
@@ -133,7 +104,9 @@ func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, 
 		logrus.Debugf("The following error occurred loading the session from file: %v", err)
 		tokenResponse, err := auth0_authorizer.AuthorizeUserDevice()
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An irrecoverable error occurred during Auth0 authorization")
+			return "", stacktrace.Propagate(
+				err,
+				"An error occurred during Auth0 authentication")
 		}
 
 		// The user has successfully authenticated, so we're good to go
@@ -155,7 +128,7 @@ func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, 
 	return result, nil
 }
 
-func parseTokenAndGetClaims(tokenStr string) (Auth0TokenClaims, error) {
+func parseAndValidateTokenClaims(tokenStr string) (Auth0TokenClaims, error) {
 	// This includes validation like expiration date, issuer, etc.
 	// See Auth0TokenClaims for more details
 	token, err := jwt.ParseWithClaims(
