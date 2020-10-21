@@ -79,9 +79,13 @@ if "${do_build}"; then
     initializer_build_pid="${!}"
     docker build -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" 2>&1 > "${api_log_filepath}" &
     api_build_pid="${!}"
-    echo "Build threads launched successfully"
+    echo "Build threads launched successfully:"
+    echo " - Initializer thread PID: ${initializer_build_pid}"
+    echo " - Initializer logs: ${initializer_log_filepath}"
+    echo " - API thread PID: ${api_build_pid}"
+    echo " - API logs: ${api_log_filepath}"
 
-    echo "Waiting for build threads to exit... (initializer PID: ${initializer_build_pid}, API PID: ${api_build_pid})"
+    echo "Waiting for build threads to exit..."
     builds_succeeded=true
     if ! wait "${initializer_build_pid}"; then
         builds_succeeded=false

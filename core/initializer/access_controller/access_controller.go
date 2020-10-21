@@ -139,8 +139,9 @@ func parseAndValidateTokenClaims(tokenStr string) (Auth0TokenClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenStr,
 		&Auth0TokenClaims{},
-		// This is the "key extractor" algorithm, which simply returns the "kid" header as per the given example:
+		// This is the "key extractor" algorithm. We return the "kid" header because the example suggests doing it:
 		//  https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
+		// But I've no idea if that's actually right
 		func(token *jwt.Token) (interface{}, error) {
 			// Validating the algorithm per https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {

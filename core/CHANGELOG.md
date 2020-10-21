@@ -9,6 +9,7 @@
 * Implement machine-to-machine authorization flow for CI jobs
 * Bind-mount Kurtosis home directory into the initializer image
 * Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
+* Make `build_and_run.sh` also print the logfiles of the build threads it launches in parallel, so the user can follow along
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
