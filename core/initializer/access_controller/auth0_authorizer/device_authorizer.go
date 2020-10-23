@@ -8,7 +8,6 @@ package auth0_authorizer
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -32,8 +31,7 @@ import (
  */
 
 const (
-	auth0DeviceAuthPath = "/oauth/device/code"
-	httpRetryMax = 5
+	auth0DeviceAuthPath          = "/oauth/device/code"
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	pollTimeout = 5 * 60 * time.Second
@@ -73,13 +71,9 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	// Send request for device code.
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = httpRetryMax
-	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
-	retryClient.Logger = nil
-
 	logrus.Trace("Requesting device authorization...")
-	res, err := retryClient.StandardClient().Do(req)
+	retryClient := getConstantBackoffRetryClient()
+	res, err := retryClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
 	}

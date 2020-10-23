@@ -19,10 +19,10 @@ import (
 const (
 	// Users maybe be out of internet range when their token expires, so we give them a grace period to
 	//  get a new token so they don't get surprised by it
-	tokenExpirationGracePeriod = 5 * 24 * time.Hour
+	tokenExpirationGracePeriod = 0 * 24 * time.Hour
 
 	// How long we'll pause after displaying auth warnings, to give users a chance to see it
-	authWarningPause = 2 * time.Second
+	authWarningPause = 3 * time.Second
 
 	// For extra security, make sure only the user can read & write the session cache file
 	sessionCacheFilePerms = 0600
@@ -108,7 +108,7 @@ func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, 
 	session, err := cache.LoadSession()
 	if err != nil {
 		// We couldn't load any cached session, so the user MUST log in
-		logrus.Debugf("The following error occurred loading the session from file: %v", err)
+		logrus.Tracef("The following error occurred loading the session from file: %v", err)
 		tokenResponse, err := auth0_authorizer.AuthorizeUserDevice()
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred during Auth0 authentication")
@@ -136,23 +136,35 @@ func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, 
 func parseAndValidateTokenClaims(tokenStr string) (Auth0TokenClaims, error) {
 	// This includes validation like expiration date, issuer, etc.
 	// See Auth0TokenClaims for more details
-	token, err := jwt.ParseWithClaims(
+
+	// TODO POTENTIAL SECURITY HOLE: we don't validate token signatures!!!!! The reason this isn't *so* catastrophic:
+	//  1) to support offline Kurtosis operation, we need to be able to validate tokens offline
+	//  2) unfortunately, validating tokens requires online access (to pull the public keys for verifying the token)
+	//  3) we'd have to cache the public keys locally, but we'd need to encrypt them to make sure the user can't mess with them
+	//  4) writing the cert-pulling-and-encrypting logic is a big hassle, so instead we just encrypt the token (for the same effect)
+	//  The action item is to find a secure public key store that can't be tampered with, and to pull the public certs
+	token, _, err := new(jwt.Parser).ParseUnverified(
 		tokenStr,
 		&Auth0TokenClaims{},
-		// This is the "key extractor" algorithm. We return the "kid" header because the example suggests doing it:
-		//  https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
-		// But I've no idea if that's actually right
+		// This is the "key extractor" algorithm. It should use the "kid" (key ID) field to determine the
+		//  private key that the token was signed with (and therefore which public key to use)
+		// Only uncomment this when we switch back to validating tokens
+		/*
 		func(token *jwt.Token) (interface{}, error) {
-			// Validating the algorithm per https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
+			// IMPORTANT: Validating the algorithm per https://godoc.org/github.com/dgrijalva/jwt-go#example-Parse--Hmac
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, stacktrace.NewError(
 					"Expected token algorithm '%v' but got '%v'",
 					expectedTokenHeaderAlgorithm,
 					token.Header)
 			}
-			return token.Header[keyIdTokenHeaderKey], nil
+
+			// TOOD pull the Auth0 public keys
+			// TOOD return the one corresponding to the "kid" header value
 		},
+		 */
 	)
+
 	if err != nil {
 		return Auth0TokenClaims{}, stacktrace.Propagate(err, "An error occurred parsing or validating the JWT token")
 	}
@@ -166,18 +178,18 @@ func parseAndValidateTokenClaims(tokenStr string) (Auth0TokenClaims, error) {
 	// To actually do the validation, use ParseWithClaims and check token.Valid:
 	//	https://godoc.org/github.com/dgrijalva/jwt-go#example-ParseWithClaims--CustomClaimsType
 
-	claims, ok := token.Claims.(Auth0TokenClaims)
+	claims, ok := token.Claims.(*Auth0TokenClaims)
 	if !ok {
-		return Auth0TokenClaims{}, stacktrace.NewError("Could not assert token claims to Auth0 token claims object, indicating an invalid token")
+		return Auth0TokenClaims{}, stacktrace.NewError("Could not cast token claims to Auth0 token claims object, indicating an invalid token")
 	}
 
-	return claims, nil
+	return *claims, nil
 }
 
 func getScopeFromClaimsAndRenewIfNeeded(claims Auth0TokenClaims, cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
 	now := time.Now()
 	expiration := time.Unix(claims.ExpiresAt, 0)
-	if expiration.Sub(now) >= 0*time.Second {
+	if expiration.After(now) {
 		return claims.Scope, nil
 	}
 
@@ -187,13 +199,13 @@ func getScopeFromClaimsAndRenewIfNeeded(claims Auth0TokenClaims, cache *encrypte
 	logrus.Infof("Kurtosis token expired %v ago; attempting to get a new token...", expirationExceededAmount)
 	newTokenResponse, err := auth0_authorizer.AuthorizeUserDevice()
 	if err != nil {
+		logrus.Debugf("Token expiration error: %v", err)
 		logrus.Warnf(
 			"WARNING: Your Kurtosis token expired %v ago and we couldn't reach Auth0 to get a new one",
 			expirationExceededAmount)
 		logrus.Warnf(
 			"You will have a grace period of %v from expiration to get a connection to Auth0 before Kurtosis stops working",
 			tokenExpirationGracePeriod)
-		logrus.Debugf("Token expiration error: %v", err)
 		time.Sleep(authWarningPause)
 
 		// NOTE: If it's annoying for users for Kurtosis to try and hit Auth0 on every run after their token is expired

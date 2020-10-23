@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -84,12 +83,8 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	logrus.Tracef("Request: %+v", req)
 
 	// Execute request
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = httpRetryMax
-	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
-	retryClient.Logger = nil
-
-	res, err := retryClient.StandardClient().Do(req)
+	retryClient := getConstantBackoffRetryClient()
+	res, err := retryClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
