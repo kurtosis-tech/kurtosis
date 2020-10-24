@@ -89,7 +89,7 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
 	defer res.Body.Close()
-	// TODO TODO TODO make unauthorized response catching more specific to expected errors
+	// TODO TODO TODO handle fatal error codes when Auth0 absolutely won't return a
 	if res.StatusCode != 200 {
 		logrus.Tracef("Received an error code: %v", res.StatusCode)
 		logrus.Tracef("Full response: %+v", res)

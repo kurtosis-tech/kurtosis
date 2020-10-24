@@ -49,6 +49,20 @@ Returns:
 	An error if and only if an irrecoverable login error occurred
  */
 func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
+	/*
+	NOTE: As of 2020-10-24, we actually don't strictly *need* to encrypt anything on disk because we hardcode the
+	 Auth0 public keys used for verifying tokens so unless the user cracks Auth0 and gets the private key, there's
+	 no way for a user to forge a token.
+
+	However, this hardcode-public-keys approach becomes much harder if we start doing private key rotation (which would
+	 be good security hygiene) because:
+	  a) now our code needs to dynamically discover what public keys it should use and
+	  b) Kurtosis needs to work even if the developer is offline
+	The offline requirement is the real kicker, because it means we need to write the public keys to the developer's local
+	 machine and somehow protect it from tampering. This likely means encrypting the data, which means having an encryption
+	 key in the code, which would shift the weakpoint to someone decompiling kurtosis-core and discovering the encryption
+	 key there.
+	*/
 	cache := encrypted_session_cache.NewEncryptedSessionCache(sessionCacheFilepath, sessionCacheFilePerms)
 
 	tokenStr, err := getTokenStr(cache)

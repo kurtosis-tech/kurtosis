@@ -19,21 +19,9 @@ import (
 	"sync"
 )
 
-const (
-	// On-disk filename of the encrypted, cached JWT token
-	jwtTokenFilepath = "token"
-
-	// On-disk filename of the encrypted, cached cert
-	certFilepath = "cert"
-)
-
 /*
 Encryption key used for stuff stored on disk - uses 32 bytes = AES-256
-IMPORTANT: DO NOT EVER LOG THIS!!! We're doing some security-through-obscurity here because we have to:
- in order to validate tokens, we need to connect to the internet to verify that Auth0 did in fact sign the
- token. However, we want to support developers on airplanes for a good user experience. This means that we'd
- need to cache the Auth0 certificates for a certain length of time. We don't want the users to tamper with the
- Auth0 certificates, so we encrypt them so that only we can read them. This is the key for doing so.
+IMPORTANT: DO NOT EVER LOG THIS!!!
  */
 var blockKey_DO_NOT_EVER_LOG_ME = []byte{
 	0x4a, 0xe5, 0x95, 0xfa, 0x2e, 0x6e, 0x3e, 0xb5, 0x61, 0xca,
@@ -47,7 +35,7 @@ type Session struct {
 	// The actual token (which we can't trust - the user may have been able to modify this)
 	Token string
 
-	// If needed, we can store extra stuff here - e.g. the last time we warned the user about an expired token
+	// If needed, we can store extra stuff here
 }
 
 /*
