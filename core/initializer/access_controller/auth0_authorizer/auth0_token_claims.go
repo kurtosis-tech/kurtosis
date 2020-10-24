@@ -3,13 +3,18 @@
  * All Rights Reserved.
  */
 
-package access_controller
+package auth0_authorizer
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
 	"time"
+)
+
+const (
+	// Users maybe be out of internet range when their token expires, so we give them a grace period to
+	//  get a new token so they don't get surprised by it
+	tokenExpirationGracePeriod = 5 * 24 * time.Hour
 )
 
 type Auth0TokenClaims struct {
@@ -25,15 +30,10 @@ func (claims Auth0TokenClaims) Valid() error {
 	now := time.Now()
 	expiration := time.Unix(claims.ExpiresAt, 0)
 
-	logrus.Debugf("Expiration: %v", expiration)
-	logrus.Debugf("Grace period: %v", tokenExpirationGracePeriod)
-	logrus.Debugf("Expiration + grace period: %v", expiration.Add(tokenExpirationGracePeriod))
-	logrus.Debugf("Expiration + grace period before now: %v", expiration.Add(tokenExpirationGracePeriod).Before(now))
-
 	// We give users a grace period because they may not have internet connection when their token expires
 	if expiration.Add(tokenExpirationGracePeriod).Before(now) {
 		return stacktrace.NewError(
-			"Token claim expires at '%v', which is beyond the grace period of %v",
+			"Token claim expires at '%v', which is more than the grace period (%v) ago",
 			expiration,
 			tokenExpirationGracePeriod)
 	}
@@ -49,3 +49,6 @@ func (claims Auth0TokenClaims) Valid() error {
 	return nil
 }
 
+func (claims Auth0TokenClaims) GetGracePeriod() time.Duration {
+	return tokenExpirationGracePeriod
+}
