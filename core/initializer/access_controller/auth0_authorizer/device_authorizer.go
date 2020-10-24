@@ -31,7 +31,7 @@ import (
  */
 
 const (
-	auth0DeviceAuthPath          = "/oauth/device/code"
+	auth0DeviceAuthPath          = "oauth/device/code"
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	pollTimeout = 5 * 60 * time.Second

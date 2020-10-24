@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	auth0TokenPath = "/oauth/token"
+	auth0TokenPath = "oauth/token"
 
 	contentTypeHeaderName = "content-type"
 
