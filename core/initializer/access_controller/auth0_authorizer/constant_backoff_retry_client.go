@@ -16,6 +16,7 @@ const (
 	timeBetweenRetries = 3 * time.Second
 )
 
+// Gets a retrying client with a constant time in between retries
 func getConstantBackoffRetryClient() *http.Client {
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = maxRetries

@@ -24,10 +24,6 @@ const (
 	// For extra security, make sure only the user can read & write the session cache file
 	sessionCacheFilePerms = 0600
 
-	// We need to verify that the token has the expected algorithm, else we have a security vulnerability:
-	//  https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries/
-	expectedTokenHeaderAlgorithm = "RS256"
-
 	// Key in the Headers hashmap of the token that points to the key ID
 	keyIdTokenHeaderKey = "kid"
 
@@ -160,7 +156,7 @@ func parseAndValidateTokenClaims(tokenStr string) (auth0_authorizer.Auth0TokenCl
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, stacktrace.NewError(
 					"Expected token algorithm '%v' but got '%v'",
-					expectedTokenHeaderAlgorithm,
+					jwt.SigningMethodRS256.Name,
 					token.Header)
 			}
 
@@ -191,15 +187,6 @@ func parseAndValidateTokenClaims(tokenStr string) (auth0_authorizer.Auth0TokenCl
 	if err != nil {
 		return auth0_authorizer.Auth0TokenClaims{}, stacktrace.Propagate(err, "An error occurred parsing or validating the JWT token")
 	}
-
-	// NOTE: At this point we SHOULD be checking the signature by comparing against the Auth0 public
-	//  certs (see https://auth0.com/docs/quickstart/backend/golang ). However, we want to let users be able to
-	//  run Kurtosis while offline, which means we'd need to cache the Auth0 public keys. If we store the
-	//  public keys locally, we'd need to encrypt them. If we're decrypting them locally, the encryption key has
-	//  to be stored in code. Therefore, encrypting the token itself and not doing any signature checks gives
-	//  the same result for less complexity.
-	// To actually do the validation, use ParseWithClaims and check token.Valid:
-	//	https://godoc.org/github.com/dgrijalva/jwt-go#example-ParseWithClaims--CustomClaimsType
 
 	claims, ok := token.Claims.(*auth0_authorizer.Auth0TokenClaims)
 	if !ok {

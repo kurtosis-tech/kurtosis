@@ -120,7 +120,7 @@ func main() {
 		logrus.Debugf("Running CI machine-to-machine auth flow...")
 		authError = access_controller.RunCIAuthFlow(*clientIdArg, *clientSecretArg)
 	} else {
-		logrus.Debugf("Running developer device...")
+		logrus.Debugf("Running developer device auth flow...")
 		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
 		authError = access_controller.RunDeveloperMachineAuthFlow(sessionCacheFilepath)
 	}

@@ -7,7 +7,7 @@ WORKDIR /build
 # Because this is first, the dependencies will get cached as a Docker layer
 COPY go.mod .
 COPY go.sum .
-RUN go mod download -x
+RUN go mod download
 
 # Copy the code into the container
 COPY . .
