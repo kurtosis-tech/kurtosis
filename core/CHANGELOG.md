@@ -1,3 +1,6 @@
+# 1.0.1
+* Modified CircleCI config to tag Docker images with tag names `X.Y.Z` as well as `develop` and `master`
+
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
 * Kill TODOs in "Debugging Failed Tests" tutorial
