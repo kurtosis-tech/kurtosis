@@ -60,7 +60,7 @@ workflows:
   build:
     jobs:
       - validate:
-          contexts:
+          context:
             - docker-user
             - kurtosis-user
           filters:
@@ -69,7 +69,7 @@ workflows:
                 - develop
                 - master
       - push_docker_images:
-          contexts:
+          context:
             - docker-user
             - kurtosis-user
           filters:
