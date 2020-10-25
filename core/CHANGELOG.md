@@ -1,3 +1,6 @@
+# 1.0.3
+* Fix bug within CircleCI config file
+
 # 1.0.2
 * Fix bug with tagging `X.Y.Z` Docker images
 
