@@ -10,6 +10,15 @@
 * Bind-mount Kurtosis home directory into the initializer image
 * Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
 
+# 1.0.3
+* Fix bug within CircleCI config file
+
+# 1.0.2
+* Fix bug with tagging `X.Y.Z` Docker images
+
+# 1.0.1
+* Modified CircleCI config to tag Docker images with tag names `X.Y.Z` as well as `develop` and `master`
+
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level
 * Kill TODOs in "Debugging Failed Tests" tutorial
