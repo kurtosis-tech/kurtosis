@@ -31,7 +31,7 @@ show_help() {
 
 if [ "${#}" -eq 0 ]; then
     show_help
-    exit 0
+    exit 1   # Exit as error so we don't get spurious passes in CI
 fi
 
 action="${1:-}"
