@@ -29,7 +29,7 @@ jobs:
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CI_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}
+      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
 
   push_docker_images:
     environment:
@@ -59,9 +59,19 @@ jobs:
 workflows:
   build:
     jobs:
-      # If we start using too many CircleCI credits, we can exclude develop and master from validation
-      - validate
+      - validate:
+          context:
+            - docker-user
+            - kurtosis-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
       - push_docker_images:
+          context:
+            - docker-user
+            - kurtosis-user
           filters:
             branches:
               only:
