@@ -1,3 +1,6 @@
+# 1.0.2
+* Fix bug with tagging `X.Y.Z` Docker images
+
 # 1.0.1
 * Modified CircleCI config to tag Docker images with tag names `X.Y.Z` as well as `develop` and `master`
 

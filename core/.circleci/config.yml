@@ -29,6 +29,10 @@ jobs:
       - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CI_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CI_CLIENT_SECRET}
 
   push_docker_images:
+    environment:
+      KURTOSIS_ORG: "kurtosistech"
+      API_IMAGE_REPO: "${kurtosis-core_api"
+      INITIALIZER_IMAGE_REPO: "kurtosis-core_api"
     executor: ubuntu_vm
     steps:
       - checkout
@@ -37,13 +41,17 @@ jobs:
       - when:
           condition: "<<pipeline.git.tag>>"
           steps:
-            - run: "docker push kurtosistech/kurtosis-core_api:<<pipeline.git.tag>>"
-            - run: "docker push kurtosistech/kurtosis-core_initializer:<<pipeline.git.tag>>"
+            - run: echo 'export TAG_NAME=<<pipeline.git.tag>>' >> ${BASH_ENV}
+
+            # When we run as the result of a tag build, the built images get a tag called "HEAD" so we need to re-tag to the X.Y.Z name
+            - run: "docker tag kurtosistech/kurtosis-core_api:HEAD docker tag kurtosistech/kurtosis-core-api:<<pipeline.git.tag>>"
+            - run: "docker tag kurtosistech/kurtosis-core_initializer:HEAD docker tag kurtosistech/kurtosis-core-initializer:<<pipeline.git.tag>>"
       - unless:
           condition: "<<pipeline.git.tag>>"
           steps:
-            - run: "docker push kurtosistech/kurtosis-core_api:<<pipeline.git.branch>>"
-            - run: "docker push kurtosistech/kurtosis-core_initializer:<<pipeline.git.branch>>"
+            - run: echo 'export TAG_NAME=<<pipeline.git.branch>>' >> ${BASH_ENV}
+      - run: "docker push kurtosistech/kurtosis-core_api:${TAG_NAME}"
+      - run: "docker push kurtosistech/kurtosis-core_initializer:${TAG_NAME}"
 
 workflows:
   build:
