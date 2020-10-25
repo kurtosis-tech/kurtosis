@@ -18,9 +18,12 @@ jobs:
     steps:
       - checkout
 
-      # There's no way to get the base branch in CircleCI, so we hardcode develop :( When CircleCI has a way to do get the base branch, use that instead
-      # The --exit-code command will return 0 with no diff, and 1 when a diff exists
-      - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
+      # Gotchas I discovered when writing this:
+      # - Without the '--no-pager' flag, Git will print "WARNING: Terminal is not fully functional" and not display any output
+      # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
+      # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
+      # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
+      - run: "! git --no-pager diff --exit-code origin/develop...HEAD CHANGELOG.md"
 
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
@@ -35,6 +38,7 @@ jobs:
     executor: ubuntu_vm
     steps:
       - checkout
+      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
       - run: scripts/build_and_run.sh build
       - when:
