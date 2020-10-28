@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -19,9 +19,7 @@ import (
 )
 
 const (
-	audience = "https://api.kurtosistech.com/login"
-	auth0UrlBase = "https://dev-lswjao-7.us.auth0.com"
-	auth0TokenPath = "/oauth/token"
+	auth0TokenPath = "oauth/token"
 
 	contentTypeHeaderName = "content-type"
 
@@ -31,8 +29,6 @@ const (
 	clientIdQueryParamName = "client_id"
 	grantTypeQueryParamName = "grant_type"
 	audienceQueryParam = "audience"
-
-	RequiredScope = "execute:kurtosis-core"
 )
 
 // Response from token endpoint
@@ -46,7 +42,7 @@ type TokenResponse struct {
 
 func requestAuthToken(params map[string]string, headers map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
-	url := auth0UrlBase + auth0TokenPath
+	url := auth0_constants.Issuer + auth0TokenPath
 	contentType := headers[contentTypeHeaderName]
 
 	var paramReader io.Reader
@@ -87,25 +83,21 @@ func requestAuthToken(params map[string]string, headers map[string]string) (toke
 	logrus.Tracef("Request: %+v", req)
 
 	// Execute request
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = httpRetryMax
-	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
-	retryClient.Logger = nil
-
-	res, err := retryClient.StandardClient().Do(req)
+	retryClient := getConstantBackoffRetryClient()
+	res, err := retryClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to poll for valid token.")
 	}
 	defer res.Body.Close()
-	// TODO TODO TODO make unauthorized response catching more specific to expected errors
-	if res.StatusCode >= 400 && res.StatusCode <= 499 {
+	// TODO TODO TODO handle fatal error codes when Auth0 absolutely won't return a
+	if res.StatusCode != 200 {
 		logrus.Tracef("Received an error code: %v", res.StatusCode)
 		logrus.Tracef("Full response: %+v", res)
 		/*
 			If the user has not yet logged in and authorized the device,
 			auth0 will return a 4xx response: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#token-responses
 		*/
-		return nil, nil
+		return nil, stacktrace.NewError("Expected 200 status code when requesting auth token but got %v", res.StatusCode)
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {

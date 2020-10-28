@@ -2,7 +2,9 @@
 FROM golang:1.15-alpine AS builder
 
 WORKDIR /build
+
 # Copy and download dependencies using go mod
+# Because this is first, the dependencies will get cached as a Docker layer
 COPY go.mod .
 COPY go.sum .
 RUN go mod download

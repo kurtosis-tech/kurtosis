@@ -6,6 +6,7 @@
 package auth0_authorizer
 
 import (
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -23,10 +24,10 @@ const (
 
 func AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
 	params := map[string]string{
-		clientIdQueryParamName: clientId,
+		clientIdQueryParamName:     clientId,
 		clientSecretQueryParamName: clientSecret,
-		grantTypeQueryParamName: clientCredentialGrantType,
-		audienceQueryParam: audience,
+		grantTypeQueryParamName:    clientCredentialGrantType,
+		audienceQueryParam:         auth0_constants.Audience,
 	}
 	headers := map[string]string{
 		contentTypeHeaderName: jsonHeaderType,

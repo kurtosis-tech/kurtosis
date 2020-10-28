@@ -11,6 +11,8 @@
 * Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
 * Don't run `validate` workflow on `develop` and `master` branches (because it should already be done before merging any PRs in)
 * Exit with error code of 1 when `build_and_run.sh` receives no args
+* Make `build_and_run.sh` also print the logfiles of the build threads it launches in parallel, so the user can follow along
+* Check token validity and expiration
 
 # 1.0.3
 * Fix bug within CircleCI config file
