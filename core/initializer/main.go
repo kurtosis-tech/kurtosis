@@ -7,11 +7,11 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller"
+	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
@@ -41,7 +41,102 @@ const (
 	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
 	//  tokens) will be bind-mounted from the host filesystem
 	storageDirectoryBindMountDirpath = "/kurtosis"
+
+
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//            If you change any of these arguments, you need to update the Dockerfile!
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	doListArg = "DO_LIST"
+	testSuiteImageArg = "TEST_SUITE_IMAGE"
+	showHelpArg = "SHOW_HELP"
+	testNamesArg = "TEST_NAMES"
+	kurtosisLogLevelArg = "KURTOSIS_LOG_LEVEL"
+	testSuiteLogLevelArg = "TEST_SUITE_LOG_LEVEL"
+	clientIdArg = "CLIENT_ID"
+	clientSecretArg = "CLIENT_SECRET"
+	kurtosisApiImageArg = "KURTOSIS_API_IMAGE"
+	parallelismArg = "PARALLELISM"
+	customEnvVarsJsonArg = "CUSTOM_ENV_VARS_JSON"
+	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
 )
+
+var flagConfigs = map[string]docker_flag_parser.FlagConfig{
+	doListArg: {
+		Required: false,
+		Default:  false,
+		HelpText: "Rather than running the tests, lists the tests available to run",
+		Type:     docker_flag_parser.BoolFlagType,
+	},
+	testSuiteImageArg: {
+		Required: true,
+		Default:  "",
+		HelpText: "The name of the Docker image of the test suite that will be run",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	showHelpArg: {
+		Required: false,
+		Default:  false,
+		HelpText: "Shows this help message",
+		Type:     docker_flag_parser.BoolFlagType,
+	},
+	testNamesArg: {
+		Required: false,
+		Default:  "",
+		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	kurtosisLogLevelArg: {
+		Required: false,
+		Default: "info",
+		HelpText: fmt.Sprintf(
+			"Log level to use for Kurtosis itself (%v)",
+			strings.Join(logrus_log_levels.AcceptableLogLevels, "|"),
+		),
+		Type: docker_flag_parser.StringFlagType,
+	},
+	testSuiteLogLevelArg: {
+		Required: false,
+		Default:  "debug",
+		HelpText: fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is)"),
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	clientIdArg: {
+		Required: false,
+		Default:  "",
+		HelpText: fmt.Sprintf("Only needed when running in CI. Client ID from CI license."),
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	clientSecretArg: {
+		Required: false,
+		Default:  "",
+		HelpText: fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."),
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	kurtosisApiImageArg: {
+		Required: true,
+		Default:  "",
+		HelpText: "The Docker image that will be used to run the Kurtosis API container",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	parallelismArg: {
+		Required: false,
+		Default:  defaultParallelism,
+		HelpText: "Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)",
+		Type:     docker_flag_parser.IntFlagType,
+	},
+	customEnvVarsJsonArg: {
+		Required: false,
+		Default:  "{}",
+		HelpText: "JSON containing key-value mappings of custom environment variables that will be set in the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	suiteExecutionVolumeArg: {
+		Required: true,
+		Default:  "",
+		HelpText: "The name of the Docker volume that will contain all the data for the test suite execution",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+}
 
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
@@ -50,61 +145,19 @@ func main() {
 		FullTimestamp: true,
 	})
 
-	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
-	testSuiteImageArg := flag.String(
-		"test-suite-image",
-		"",
-		"The name of the Docker image of the test suite that will be run")
-	doListArg := flag.Bool(
-		"list",
-		false,
-		"Rather than running the tests, lists the tests available to run",
-	)
-	testNamesArg := flag.String(
-		"test-names",
-		"",
-		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
-	)
-	kurtosisLogLevelArg := flag.String(
-		"kurtosis-log-level",
-		"debug",
-		fmt.Sprintf("Log level to use for Kurtosis itself (%v)", logrus_log_levels.AcceptableLogLevels),
-	)
-	testSuiteLogLevelArg := flag.String(
-		"test-suite-log-level",
-		"debug",
-		fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is"),
-	)
-	clientIdArg := flag.String(
-		"client-id",
-		"",
-		fmt.Sprintf("Only needed when running in CI. Client ID from CI license."))
-	clientSecretArg := flag.String(
-		"client-secret",
-		"",
-		fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."))
-	kurtosisApiImageArg := flag.String(
-		"kurtosis-api-image",
-		defaultKurtosisApiImage,
-		"The Docker image that will be used to run the Kurtosis API container")
-	parallelismArg := flag.Int(
-		"parallelism",
-		defaultParallelism,
-		"Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)")
-	customEnvVarsJsonArg := flag.String(
-		"custom-env-vars-json",
-		"{}",
-		"JSON containing key-value mappings of custom environment variables that will be set in " +
-			"the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')")
-	suiteExecutionVolumeArg := flag.String(
-		"suite-execution-volume",
-		"",
-		"The name of the Docker volume that will contain all the data for the test suite execution")
-	// !!IMPORTANT!! Whenever adding new flags, make sure to update the documentation at https://github.com/kurtosis-tech/kurtosis-docs !!
+	flagParser := docker_flag_parser.NewFlagParser(flagConfigs)
+	parsedFlags, err := flagParser.Parse()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "An error occurred parsing the initializer CLI flags: %v\n", err)
+		os.Exit(failureExitCode)
+	}
 
-	flag.Parse()
+	if parsedFlags.GetBool(showHelpArg) {
+		flagParser.ShowUsage()
+		os.Exit(failureExitCode)
+	}
 
-	kurtosisLevel, err := logrus.ParseLevel(*kurtosisLogLevelArg)
+	kurtosisLevel, err := logrus.ParseLevel(parsedFlags.GetString(kurtosisLogLevelArg))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
 		os.Exit(failureExitCode)
@@ -113,8 +166,8 @@ func main() {
 
 	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
 		storageDirectoryBindMountDirpath,
-		*clientIdArg,
-		*clientSecretArg)
+		parsedFlags.GetString(clientIdArg),
+		parsedFlags.GetString(clientSecretArg))
 	if err != nil {
 		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
 		os.Exit(failureExitCode)
@@ -135,18 +188,19 @@ func main() {
 	}
 
 	// Parse environment variables
+	customEnvVarsJson := parsedFlags.GetString(customEnvVarsJsonArg)
 	var customEnvVars map[string]string
-	if err := json.Unmarshal([]byte(*customEnvVarsJsonArg), &customEnvVars); err != nil {
+	if err := json.Unmarshal([]byte(customEnvVarsJson), &customEnvVars); err != nil {
 		logrus.Errorf("An error occurred parsing the custom environment variables JSON: %v", err)
 		os.Exit(failureExitCode)
 	}
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		*testSuiteImageArg,
-		*suiteExecutionVolumeArg,
+		parsedFlags.GetString(testSuiteImageArg),
+		parsedFlags.GetString(suiteExecutionVolumeArg),
 		suiteExecutionVolumeMountDirpath,
 		dockerClient,
-		*testSuiteLogLevelArg,
+		parsedFlags.GetString(testSuiteLogLevelArg),
 		customEnvVars)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
@@ -165,7 +219,7 @@ func main() {
 		}
 	}
 
-	if *doListArg {
+	if parsedFlags.GetBool(doListArg) {
 		testNames := []string{}
 		for name := range suiteMetadata.TestNames {
 			testNames = append(testNames, name)
@@ -182,7 +236,7 @@ func main() {
 
 
 	// Split user-input string into actual candidate test names
-	testNamesArgStr := strings.TrimSpace(*testNamesArg)
+	testNamesArgStr := strings.TrimSpace(parsedFlags.GetString(testNamesArg))
 	testNamesToRun := map[string]bool{}
 	if len(testNamesArgStr) > 0 {
 		testNamesList := strings.Split(testNamesArgStr, testNameArgSeparator)
@@ -191,18 +245,18 @@ func main() {
 		}
 	}
 
-	parallelismUint := uint(*parallelismArg)
+	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
 		dockerClient,
-		*suiteExecutionVolumeArg,
+		parsedFlags.GetString(suiteExecutionVolumeArg),
 		suiteExecutionVolumeMountDirpath,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
-		*kurtosisApiImageArg,
-		*kurtosisLogLevelArg,
-		*testSuiteImageArg,
-		*testSuiteLogLevelArg,
+		parsedFlags.GetString(kurtosisApiImageArg),
+		parsedFlags.GetString(kurtosisLogLevelArg),
+		parsedFlags.GetString(testSuiteImageArg),
+		parsedFlags.GetString(testSuiteLogLevelArg),
 		customEnvVars)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")

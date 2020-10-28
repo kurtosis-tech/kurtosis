@@ -11,6 +11,9 @@
 * Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
 * Don't run `validate` workflow on `develop` and `master` branches (because it should already be done before merging any PRs in)
 * Exit with error code of 1 when `build_and_run.sh` receives no args
+* Renamed variables and cleaned up helptext to be easier to understand
+* Added `SHOW_HELP` flag to Kurtosis initializer
+* Switched default Kurtosis loglevel to `info`
 
 # 1.0.3
 * Fix bug within CircleCI config file
