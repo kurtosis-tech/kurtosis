@@ -26,8 +26,6 @@ const (
 
 	testNameArgSeparator = ","
 
-	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api:latest"
-
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism = 2
 
@@ -61,45 +59,6 @@ const (
 )
 
 var flagConfigs = map[string]docker_flag_parser.FlagConfig{
-	doListArg: {
-		Required: false,
-		Default:  false,
-		HelpText: "Rather than running the tests, lists the tests available to run",
-		Type:     docker_flag_parser.BoolFlagType,
-	},
-	testSuiteImageArg: {
-		Required: true,
-		Default:  "",
-		HelpText: "The name of the Docker image of the test suite that will be run",
-		Type:     docker_flag_parser.StringFlagType,
-	},
-	showHelpArg: {
-		Required: false,
-		Default:  false,
-		HelpText: "Shows this help message",
-		Type:     docker_flag_parser.BoolFlagType,
-	},
-	testNamesArg: {
-		Required: false,
-		Default:  "",
-		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
-		Type:     docker_flag_parser.StringFlagType,
-	},
-	kurtosisLogLevelArg: {
-		Required: false,
-		Default: "info",
-		HelpText: fmt.Sprintf(
-			"Log level to use for Kurtosis itself (%v)",
-			strings.Join(logrus_log_levels.AcceptableLogLevels, "|"),
-		),
-		Type: docker_flag_parser.StringFlagType,
-	},
-	testSuiteLogLevelArg: {
-		Required: false,
-		Default:  "debug",
-		HelpText: fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is)"),
-		Type:     docker_flag_parser.StringFlagType,
-	},
 	clientIdArg: {
 		Required: false,
 		Default:  "",
@@ -112,11 +71,32 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: fmt.Sprintf("Only needed when running in CI. Client Secret from CI license."),
 		Type:     docker_flag_parser.StringFlagType,
 	},
+	customEnvVarsJsonArg: {
+		Required: false,
+		Default:  "{}",
+		HelpText: "JSON containing key-value mappings of custom environment variables that will be set in the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	doListArg: {
+		Required: false,
+		Default:  false,
+		HelpText: "Rather than running the tests, lists the tests available to run",
+		Type:     docker_flag_parser.BoolFlagType,
+	},
 	kurtosisApiImageArg: {
 		Required: true,
 		Default:  "",
 		HelpText: "The Docker image that will be used to run the Kurtosis API container",
 		Type:     docker_flag_parser.StringFlagType,
+	},
+	kurtosisLogLevelArg: {
+		Required: false,
+		Default: "info",
+		HelpText: fmt.Sprintf(
+			"Log level to use for Kurtosis itself (%v)",
+			strings.Join(logrus_log_levels.AcceptableLogLevels, "|"),
+		),
+		Type: docker_flag_parser.StringFlagType,
 	},
 	parallelismArg: {
 		Required: false,
@@ -124,16 +104,34 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "Number of tests to run concurrently (NOTE: should be set no higher than the number of cores on your machine!)",
 		Type:     docker_flag_parser.IntFlagType,
 	},
-	customEnvVarsJsonArg: {
+	showHelpArg: {
 		Required: false,
-		Default:  "{}",
-		HelpText: "JSON containing key-value mappings of custom environment variables that will be set in the Docker environment when running the test suite container (e.g. '{\"MY_VAR\": \"/some/value\"}')",
-		Type:     docker_flag_parser.StringFlagType,
+		Default:  false,
+		HelpText: "Shows this help message",
+		Type:     docker_flag_parser.BoolFlagType,
 	},
 	suiteExecutionVolumeArg: {
 		Required: true,
 		Default:  "",
 		HelpText: "The name of the Docker volume that will contain all the data for the test suite execution",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	testNamesArg: {
+		Required: false,
+		Default:  "",
+		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	testSuiteImageArg: {
+		Required: true,
+		Default:  "",
+		HelpText: "The name of the Docker image of the test suite that will be run",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+	testSuiteLogLevelArg: {
+		Required: false,
+		Default:  "debug",
+		HelpText: fmt.Sprintf("Log level string to use for the test suite (will be passed to the test suite container as-is)"),
 		Type:     docker_flag_parser.StringFlagType,
 	},
 }
