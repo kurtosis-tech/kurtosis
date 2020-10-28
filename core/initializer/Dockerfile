@@ -33,7 +33,9 @@ COPY --from=builder /build/kurtosis-initializer .
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #  1. Keep these flags sorted alphabetically, to avoid duplicates (which will cause subtle problems)
-#  2. If you change any of these, you'll need to:
+#  2. Keep the flag name the exact same as the Docker environment variable, so main.go's usage function
+#       continues to make sense for users
+#  3. If you change any of these:
 #       a. Update the flag-parsing in maing.o
 #       b. Update the build_and_run.sh script, which passes in these environment variables
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -41,9 +43,9 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --CLIENT_ID=${CLIENT_ID} \
     --CLIENT_SECRET=${CLIENT_SECRET} \
     --CUSTOM_ENV_VARS_JSON=${CUSTOM_ENV_VARS_JSON} \
+    --DO_LIST=${DO_LIST} \
     --KURTOSIS_API_IMAGE=${KURTOSIS_API_IMAGE} \
     --KURTOSIS_LOG_LEVEL=${KURTOSIS_LOG_LEVEL} \
-    --DO_LIST=${DO_LIST} \
     --PARALLELISM=${PARALLELISM} \
     --SHOW_HELP=${SHOW_HELP} \
     --SUITE_EXECUTION_VOLUME=${SUITE_EXECUTION_VOLUME} \

@@ -58,6 +58,7 @@ const (
 	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
 )
 
+// Keep these sorted alphabetically to avoid duplicate keys, which will cause hard-to-debug problems!
 var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	clientIdArg: {
 		Required: false,
