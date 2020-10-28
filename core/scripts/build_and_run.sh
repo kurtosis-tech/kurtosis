@@ -31,7 +31,7 @@ show_help() {
 
 if [ "${#}" -eq 0 ]; then
     show_help
-    exit 0
+    exit 1   # Exit as error so we don't get spurious passes in CI
 fi
 
 action="${1:-}"
@@ -119,7 +119,7 @@ if "${do_run}"; then
         --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
         --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
         --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env 'CUSTOM_ENV_VARS_JSON={"GO_EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
+        --env 'CUSTOM_ENV_VARS_JSON={"EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
         --env "KURTOSIS_API_IMAGE=${api_image}" \
         --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
