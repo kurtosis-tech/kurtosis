@@ -13,6 +13,9 @@
 * Exit with error code of 1 when `build_and_run.sh` receives no args
 * Make `build_and_run.sh` also print the logfiles of the build threads it launches in parallel, so the user can follow along
 * Check token validity and expiration
+* Renamed all command-line flags to the initializer's `main.go` to be `UPPER_SNAKE_CASE` to be the same name as the corresponding environment variable passed in by Docker, which allows for a helptext that makes sense
+* Added `SHOW_HELP` flag to Kurtosis initializer
+* Switched default Kurtosis loglevel to `info`
 
 # 1.0.3
 * Fix bug within CircleCI config file
