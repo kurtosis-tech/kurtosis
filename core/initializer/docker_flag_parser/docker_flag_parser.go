@@ -103,7 +103,7 @@ func (parser *FlagParser) ShowUsage() error {
 	sort.Strings(sortedFlagNames)
 
 	fmt.Println("Docker environment variable 'arguments' that can be passed in using '--env ARGNAME=ARGVALUE':")
-	fmt.Println("")
+	fmt.Println()
 	for _, name := range sortedFlagNames {
 		config := parser.flagConfigs[name]
 
@@ -137,6 +137,8 @@ func (parser *FlagParser) ShowUsage() error {
 		fmt.Printf("      %v%v\n", config.HelpText, defaultValueSuffix)
 		fmt.Println()
 	}
+	fmt.Println("IMPORTANT: Docker doesn't like unescaped spaces when using the '--env' flag, so make sure you backslash-escape spaces in your environment variable values like so: --env TEST_NAMES=\"my\\ specific\\ test1\"")
+	fmt.Println()
 	return nil
 }
 
