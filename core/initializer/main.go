@@ -44,9 +44,7 @@ const (
 	// Name of the file within the Kurtosis storage directory where the session cache will be stored
 	sessionCacheFilename = "session-cache"
 
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//            If you change any of these arguments, you need to update the Dockerfile!
-	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// vvvvvvvvvvvvvvvv If you change these, you need to update the Dockerfile!! vvvvvvvvvvvvvvvvvvvvvvvvvvv
 	doListArg = "DO_LIST"
 	testSuiteImageArg = "TEST_SUITE_IMAGE"
 	showHelpArg = "SHOW_HELP"
@@ -59,9 +57,10 @@ const (
 	parallelismArg = "PARALLELISM"
 	customEnvVarsJsonArg = "CUSTOM_ENV_VARS_JSON"
 	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
+	// ^^^^^^^^^^^^^^^^ If you change these, you need to update the Dockerfile!! ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 )
 
-// Keep these sorted alphabetically to avoid duplicate keys, which will cause hard-to-debug problems!
+// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Keep these sorted alphabetically! vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	clientIdArg: {
 		Required: false,
@@ -139,6 +138,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Type:     docker_flag_parser.StringFlagType,
 	},
 }
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Keep these sorted alphabetically! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
@@ -156,6 +156,7 @@ func main() {
 
 	if parsedFlags.GetBool(showHelpArg) {
 		flagParser.ShowUsage()
+		// Exiting with error is intentional, so CI fails if the help flag is accidentally passed in
 		os.Exit(failureExitCode)
 	}
 

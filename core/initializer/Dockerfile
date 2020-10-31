@@ -38,9 +38,10 @@ COPY --from=builder /build/kurtosis-initializer .
 #  2. Keep the flag name the exact same as the Docker environment variable, so main.go's usage function
 #       continues to make sense for users
 #  3. If you change any of these:
-#       a. Update the flag-parsing in maing.o
+#       a. Update the flag-parsing in main.go
 #       b. Update the build_and_run.sh script, which passes in these environment variables
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# vvvvvvvvvvvvv Read the IMPORTANT section before modifying this! vvvvvvvvvvvvvvvvvvvvvvvv
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --CLIENT_ID=${CLIENT_ID} \
     --CLIENT_SECRET=${CLIENT_SECRET} \
@@ -54,6 +55,8 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --TEST_NAMES=${TEST_NAMES} \
     --TEST_SUITE_IMAGE=${TEST_SUITE_IMAGE} \
     --TEST_SUITE_LOG_LEVEL=${TEST_SUITE_LOG_LEVEL}"]
+# ^^^^^^^^^^^^^ Read the IMPORTANT section before modifying this! ^^^^^^^^^^^^^^^^^^^^^^^^
+
 # Code notes about the above:
 # - This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
 # - We call "sh" as the first command so that environment variable expansion will still happen
