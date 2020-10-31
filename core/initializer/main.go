@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
+	"path"
 	"sort"
 	"strings"
 )
@@ -40,6 +41,8 @@ const (
 	//  tokens) will be bind-mounted from the host filesystem
 	storageDirectoryBindMountDirpath = "/kurtosis"
 
+	// Name of the file within the Kurtosis storage directory where the session cache will be stored
+	sessionCacheFilename = "session-cache"
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//            If you change any of these arguments, you need to update the Dockerfile!
@@ -163,20 +166,21 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	authenticated, authorized, err := access_controller.AuthenticateAndAuthorize(
-		storageDirectoryBindMountDirpath,
-		parsedFlags.GetString(clientIdArg),
-		parsedFlags.GetString(clientSecretArg))
-	if err != nil {
-		logrus.Fatalf("An error occurred while attempting to authenticate user: %v\n", err)
-		os.Exit(failureExitCode)
+	clientId := parsedFlags.GetString(clientIdArg)
+	clientSecret := parsedFlags.GetString(clientSecretArg)
+	var authError error
+	if len(clientId) > 0 && len(clientSecret) > 0 {
+		logrus.Debugf("Running CI machine-to-machine auth flow...")
+		authError = access_controller.RunCIAuthFlow(clientId, clientSecret)
+	} else {
+		logrus.Debugf("Running developer device auth flow...")
+		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
+		authError = access_controller.RunDeveloperMachineAuthFlow(sessionCacheFilepath)
 	}
-	if !authenticated {
-		logrus.Fatalf("Please register to use Kurtosis. To register, visit %v.\n", licenseWebUrl)
-		os.Exit(failureExitCode)
-	}
-	if !authorized {
-		logrus.Fatalf("Your Kurtosis license has expired. To purchase an extended license, visit %v.\n", licenseWebUrl)
+	if authError != nil {
+		logrus.Fatalf(
+			"The following error occurred when authenticating and authorizing your Kurtosis license: %v",
+			authError)
 		os.Exit(failureExitCode)
 	}
 

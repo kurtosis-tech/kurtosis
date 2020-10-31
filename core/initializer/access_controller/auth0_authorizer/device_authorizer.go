@@ -8,7 +8,7 @@ package auth0_authorizer
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-retryablehttp"
+	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -31,8 +31,7 @@ import (
  */
 
 const (
-	auth0DeviceAuthPath = "/oauth/device/code"
-	httpRetryMax = 5
+	auth0DeviceAuthPath          = "oauth/device/code"
 	// Client ID for the Auth0 application pertaining to local dev workflows. https://auth0.com/docs/flows/device-authorization-flow#device-flow
 	localDevClientId = "ZkDXOzoc1AUZt3dAL5aJQxaPMmEClubl"
 	pollTimeout = 5 * 60 * time.Second
@@ -57,32 +56,45 @@ type DeviceCodeResponse struct {
  */
 
 func AuthorizeUserDevice() (*TokenResponse, error) {
+	logrus.Trace("Authorizing user device...")
+
 	// Prepare to request device code.
-	url := auth0UrlBase + auth0DeviceAuthPath
-	payload := strings.NewReader(
-		fmt.Sprintf("client_id=%s&scope=%s&audience=%s", localDevClientId, RequiredScope, audience))
+	url := auth0_constants.Issuer + auth0DeviceAuthPath
+	payloadContents := fmt.Sprintf(
+		"client_id=%s&scope=%s&audience=%s",
+		localDevClientId,
+		auth0_constants.ExecutionScope,
+		auth0_constants.Audience)
+	logrus.Debugf("Payload contents: %v", payloadContents)
+	payload := strings.NewReader(payloadContents)
 	req, _ := http.NewRequest("POST", url, payload)
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	// Send request for device code.
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = httpRetryMax
-	// Set retryClient logger off, otherwise you get annoying logs every request. https://github.com/hashicorp/go-retryablehttp/issues/31
-	retryClient.Logger = nil
-
-	res, err := retryClient.StandardClient().Do(req)
+	logrus.Trace("Requesting device authorization...")
+	retryClient := getConstantBackoffRetryClient()
+	res, err := retryClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
 	}
 	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, stacktrace.NewError("Expected 200 status code when requesting device code but got %v", res.StatusCode)
+	}
+
+	logrus.Trace("Reading device authorization response body...")
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to read response body.")
 	}
+	logrus.Debugf("Device authorization response body: %v", string(body))
 
 	// Parse response from device code endpoint
+	logrus.Trace("Parsing device authorization response JSON...")
 	var deviceCodeResponse = new(DeviceCodeResponse)
-	json.Unmarshal(body, &deviceCodeResponse)
+	if err := json.Unmarshal(body, &deviceCodeResponse); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the device code response")
+	}
 
 	// Prompt user to access authentication URL in browser in order to authenticate.
 	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
