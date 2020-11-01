@@ -8,13 +8,9 @@ package auth0_authorizer
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
 	"github.com/palantir/stacktrace"
-	"time"
 )
 
 const (
-	// Users maybe be out of internet range when their token expires, so we give them a grace period to
-	//  get a new token so they don't get surprised by it
-	tokenExpirationGracePeriod = 5 * 24 * time.Hour
 )
 
 type Auth0TokenClaims struct {
@@ -27,16 +23,9 @@ type Auth0TokenClaims struct {
 }
 
 func (claims Auth0TokenClaims) Valid() error {
-	now := time.Now()
-	expiration := time.Unix(claims.ExpiresAt, 0)
-
-	// We give users a grace period because they may not have internet connection when their token expires
-	if expiration.Add(tokenExpirationGracePeriod).Before(now) {
-		return stacktrace.NewError(
-			"Token claim expires at '%v', which is more than the grace period (%v) ago",
-			expiration,
-			tokenExpirationGracePeriod)
-	}
+	// We intentionally don't check the token expiration here because if a token were expired, we could only throw an error
+	// An error here means the entire token is invalid and should be rejected, but we want to retry if a token is expired
+	// Instead, we check the expiration after the token is parsed
 
 	if claims.Audience != auth0_constants.Audience {
 		return stacktrace.NewError("Claims audience '%v' != expected audience '%v'", claims.Audience, auth0_constants.Audience)
@@ -47,8 +36,4 @@ func (claims Auth0TokenClaims) Valid() error {
 	}
 
 	return nil
-}
-
-func (claims Auth0TokenClaims) GetGracePeriod() time.Duration {
-	return tokenExpirationGracePeriod
 }
