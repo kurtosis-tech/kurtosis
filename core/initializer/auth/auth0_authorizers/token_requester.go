@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizer
+package auth0_authorizers
 
 import (
 	"bytes"

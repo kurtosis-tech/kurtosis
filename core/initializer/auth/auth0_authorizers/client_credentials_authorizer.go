@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizer
+package auth0_authorizers
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -22,7 +22,14 @@ const (
 	clientSecretQueryParamName = "client_secret"
 )
 
-func AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
+// Extracted as an interface for testing
+type ClientCredentialsAuthorizer interface{
+	AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error)
+}
+
+type StandardClientCredentialsAuthorizer struct{}
+
+func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
 	params := map[string]string{
 		clientIdQueryParamName:     clientId,
 		clientSecretQueryParamName: clientSecret,

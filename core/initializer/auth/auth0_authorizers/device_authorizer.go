@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizer
+package auth0_authorizers
 
 import (
 	"encoding/json"
@@ -49,13 +49,19 @@ type DeviceCodeResponse struct {
 	Interval int `json:"interval"`
 }
 
+type DeviceAuthorizer interface {
+	AuthorizeUserDevice() (*TokenResponse, error)
+}
+
+type StandardDeviceAuthorizer struct{}
+
 /*
 	Prompts the user to click on a URL in which they will input their credentials.
 	They will also need to confirm that this device is the one they are logging in on and confirming.
 	Auth0 is polled until it confirms that the user has successfully logged in and confirmed their device.
  */
 
-func AuthorizeUserDevice() (*TokenResponse, error) {
+func (authorizer StandardDeviceAuthorizer) AuthorizeUserDevice() (*TokenResponse, error) {
 	logrus.Trace("Authorizing user device...")
 
 	// Prepare to request device code.

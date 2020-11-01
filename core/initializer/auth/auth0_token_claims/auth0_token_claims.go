@@ -3,14 +3,11 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizer
+package auth0_token_claims
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
-)
-
-const (
 )
 
 type Auth0TokenClaims struct {
@@ -33,6 +30,10 @@ func (claims Auth0TokenClaims) Valid() error {
 
 	if claims.Issuer != auth0_constants.Issuer {
 		return stacktrace.NewError("Claims issuer '%v' != expected issuer '%v'", claims.Issuer, auth0_constants.Issuer)
+	}
+
+	if _, found := auth0_constants.ValidScopes[claims.Scope]; !found {
+		return stacktrace.NewError("Invalid scope '%v'", claims.Scope)
 	}
 
 	return nil

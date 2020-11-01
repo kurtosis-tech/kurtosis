@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_token_claims"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/encrypted_session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -38,11 +40,16 @@ const (
 type AccessController struct {
 	// Mapping of key_id -> base64_encoded_pubkey for validating tokens
 	tokenValidationPubKeys map[string]string
+	clientCredsAuthorizer auth0_authorizers.ClientCredentialsAuthorizer
+	deviceAuthorizer auth0_authorizers.DeviceAuthorizer
 }
 
-func NewAccessController(tokenValidationPubKeys map[string]string) *AccessController {
+func NewAccessController(
+		tokenValidationPubKeys map[string]string,
+		clientCredsAuthorizer auth0_authorizers.ClientCredentialsAuthorizer) *AccessController {
 	return &AccessController{
-		tokenValidationPubKeys: tokenValidationPubKeys
+		tokenValidationPubKeys: tokenValidationPubKeys,
+		clientCredsAuthorizer: clientCredsAuthorizer,
 	}
 }
 
@@ -75,12 +82,12 @@ func (accessController AccessController) RunDeveloperMachineAuthFlow(sessionCach
 	*/
 	cache := encrypted_session_cache.NewEncryptedSessionCache(sessionCacheFilepath, sessionCacheFilePerms)
 
-	tokenStr, err := getTokenStr(cache)
+	tokenStr, err := getTokenStr(accessController.deviceAuthorizer, cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the token string")
 	}
 
-	claims, err := parseAndCheckTokenClaims(tokenStr, cache)
+	claims, err := parseAndCheckTokenClaims(tokenStr, accessController.deviceAuthorizer, cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unrecoverable error occurred checking the token expiration")
 	}
@@ -99,8 +106,8 @@ func (accessController AccessController) RunDeveloperMachineAuthFlow(sessionCach
 This workflow is for authenticating and authorizing Kurtosis tests running in CI (no device or username).
 	See also: https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/
  */
-func RunCIAuthFlow(clientId string, clientSecret string) error {
-	tokenResponse, err := auth0_authorizer.AuthorizeClientCredentials(clientId, clientSecret)
+func (accessController AccessController) RunCIAuthFlow(clientId string, clientSecret_DO_NOT_LOG string) error {
+	tokenResponse, err := accessController.clientCredsAuthorizer.AuthorizeClientCredentials(clientId, clientSecret_DO_NOT_LOG)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred authenticating with the client ID & secret")
 	}
@@ -124,13 +131,13 @@ func RunCIAuthFlow(clientId string, clientSecret string) error {
 /*
 Gets the token string, either by reading a valid cache or by prompting the user for their login credentials
  */
-func getTokenStr(cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
+func getTokenStr(deviceAuthorizer auth0_authorizers.DeviceAuthorizer, cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
 	var result string
 	session, err := cache.LoadSession()
 	if err != nil {
 		// We couldn't load any cached session, so the user MUST log in
 		logrus.Tracef("The following error occurred loading the session from file: %v", err)
-		newToken, err := refreshSession(cache)
+		newToken, err := refreshSession(deviceAuthorizer, cache)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "No token could be loaded from the cache and an error occurred " +
 				"retrieving a new token from Auth0; to continue using Kurtosis you'll need to resolve the error " +
@@ -151,7 +158,7 @@ Checks the token expiration and, if the expiration is date is passed but still w
 
 Returns a new claims object if we were able to
  */
-func parseAndCheckTokenClaims(tokenStr string, cache *encrypted_session_cache.EncryptedSessionCache) (*auth0_authorizer.Auth0TokenClaims, error) {
+func parseAndCheckTokenClaims(tokenStr string, deviceAuthorizer auth0_authorizers.DeviceAuthorizer, cache *encrypted_session_cache.EncryptedSessionCache) (*auth0_token_claims.Auth0TokenClaims, error) {
 	claims, err := parseTokenClaims(tokenStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing/validating the token claims")
@@ -167,7 +174,7 @@ func parseAndCheckTokenClaims(tokenStr string, cache *encrypted_session_cache.En
 
 	// At this point, the token is expired so we need to request a new token
 	logrus.Infof("Current token expired at '%v'; requesting new token...", expiration)
-	newToken, err := refreshSession(cache)
+	newToken, err := refreshSession(deviceAuthorizer, cache)
 	if err != nil {
 		// The token is expired, we couldn't reach Auth0, and we're beyond the grace period; Kurtosis stops working
 		if expiration.Add(tokenExpirationGracePeriod).Before(now) {
@@ -206,17 +213,17 @@ func parseAndCheckTokenClaims(tokenStr string, cache *encrypted_session_cache.En
 }
 
 // Parses a token string, validates the claims, and returns the claims object
-func parseTokenClaims(tokenStr string) (*auth0_authorizer.Auth0TokenClaims, error) {
+func parseTokenClaims(tokenStr string) (*auth0_token_claims.Auth0TokenClaims, error) {
 	token, err := new(jwt.Parser).ParseWithClaims(
 		tokenStr,
-		&auth0_authorizer.Auth0TokenClaims{},
+		&auth0_token_claims.Auth0TokenClaims{},
 		getPubKeyFromKurtosisToken,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing or validating the JWT token")
 	}
 
-	claims, ok := token.Claims.(*auth0_authorizer.Auth0TokenClaims)
+	claims, ok := token.Claims.(*auth0_token_claims.Auth0TokenClaims)
 	if !ok {
 		return nil, stacktrace.NewError("Could not cast token claims to Auth0 token claims object, indicating an invalid token")
 	}
@@ -259,8 +266,8 @@ func getPubKeyFromKurtosisToken(token *jwt.Token) (interface{}, error) {
 }
 
 // Attempts to contact Auth0, get a new token, and save the result to the session cache
-func refreshSession(cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
-	newTokenResponse, err := auth0_authorizer.AuthorizeUserDevice()
+func refreshSession(deviceAuthorizer auth0_authorizers.DeviceAuthorizer, cache *encrypted_session_cache.EncryptedSessionCache) (string, error) {
+	newTokenResponse, err := deviceAuthorizer.AuthorizeUserDevice()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred retrieving a new token from Auth0")
 	}
