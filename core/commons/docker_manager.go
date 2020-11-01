@@ -298,7 +298,7 @@ func (manager DockerManager) WaitForExit(context context.Context, containerId st
 }
 
 /*
-Gets the logs for the given container as a io.ReadCloser. The caller is responsible for closing the ReadCloser.
+Gets the logs for the given container as a io.ReadCloser. The caller is responsible for closing the ReadCloser!!!
  */
 func (manager DockerManager) GetContainerLogs(context context.Context, containerId string) (io.ReadCloser, error) {
 	containerLogOpts := types.ContainerLogsOptions{

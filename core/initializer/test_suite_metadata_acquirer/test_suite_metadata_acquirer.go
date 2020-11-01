@@ -29,7 +29,6 @@ const (
 
 	testListingContainerDescription = "Test-Listing Container"
 	testSuiteMetadataFilename = "test-suite-metadata.json"
-	logFilename = "test-listing.log"
 )
 
 /*
@@ -80,14 +79,12 @@ func GetTestSuiteMetadata(
 	metadataAcquirerDirpathOnSuite := path.Join(test_suite_constants.SuiteExecutionVolumeMountpoint, metadataAcquirerDirname)
 
 	metadataFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, testSuiteMetadataFilename)
-	logFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, logFilename)
 
 	envVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
 		metadataFilepathOnSuite,
 		"", // We leave the test name blank to signify that we want test listing, not test execution
 		"", // Because we're doing test listing, not test execution, the Kurtosis API IP can be blank
 		"", // We leave the services dirpath blank because getting suite metadata doesn't require knowing this
-		logFilepathOnSuite,
 		testSuiteLogLevel,
 		customEnvVars)
 	if err != nil {
@@ -110,16 +107,15 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test suite container to list the tests")
 	}
 
-	logFilepathOnInitializer := path.Join(metadataAcquirerDirpathOnInitializer, logFilename)
 	testListingExitCode, err := dockerManager.WaitForExit(
 		parentContext,
 		testListingContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, logFilepathOnInitializer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testListingContainerId, logrus.StandardLogger(), testListingContainerDescription)
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
 	}
 	if testListingExitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(logrus.StandardLogger(), testListingContainerDescription, logFilepathOnInitializer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testListingContainerId, logrus.StandardLogger(), testListingContainerDescription)
 		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
 	}
 

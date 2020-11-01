@@ -17,7 +17,6 @@ const (
 	TestEnvVar                    = "TEST"
 	KurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
 	ServicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
-	LogFilepathEnvVar             = "LOG_FILEPATH"
 	LogLevelEnvVar                = "LOG_LEVEL"
 )
 
@@ -31,7 +30,6 @@ func GenerateTestSuiteEnvVars(
 		testName string,
 		kurtosisApiIp string,
 		servicesRelativeDirpath string,
-		logFilepath string,
 		logLevel string,
 		customEnvVars map[string]string) (map[string]string, error) {
 	standardVars := map[string]string{
@@ -39,7 +37,6 @@ func GenerateTestSuiteEnvVars(
 		TestEnvVar:                    testName,
 		KurtosisApiIpEnvVar:           kurtosisApiIp,
 		ServicesRelativeDirpathEnvVar: servicesRelativeDirpath,
-		LogFilepathEnvVar:             logFilepath,
 		LogLevelEnvVar:                logLevel,
 	}
 	for key, val := range customEnvVars {
