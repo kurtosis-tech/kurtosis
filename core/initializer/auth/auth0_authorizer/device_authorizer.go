@@ -8,7 +8,7 @@ package auth0_authorizer
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -121,9 +121,9 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 
 	// initialize device query map
 	params := map[string]string{
-		grantTypeQueryParamName: deviceCodeGrantType,
+		grantTypeQueryParamName:  deviceCodeGrantType,
 		deviceCodeQueryParamName: deviceCode,
-		clientIdQueryParamName: localDevClientId,
+		clientIdQueryParamName:   localDevClientId,
 	}
 
 	deviceCodeHeaderParams := map[string]string{contentTypeHeaderName: formContentType}

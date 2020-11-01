@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"

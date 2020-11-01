@@ -8,9 +8,9 @@ package access_controller
 import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_authorizer"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/encrypted_session_cache"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/encrypted_session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -35,6 +35,17 @@ const (
 	pubKeyFooter = "-----END CERTIFICATE-----"
 )
 
+type AccessController struct {
+	// Mapping of key_id -> base64_encoded_pubkey for validating tokens
+	tokenValidationPubKeys map[string]string
+}
+
+func NewAccessController(tokenValidationPubKeys map[string]string) *AccessController {
+	return &AccessController{
+		tokenValidationPubKeys: tokenValidationPubKeys
+	}
+}
+
 /*
 Used for a developer running Kurtosis on their local machine. This will:
 
@@ -47,7 +58,7 @@ Args:
 Returns:
 	An error if and only if an irrecoverable login error occurred
  */
-func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
+func (accessController AccessController) RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
 	/*
 	NOTE: As of 2020-10-24, we actually don't strictly *need* to encrypt anything on disk because we hardcode the
 	 Auth0 public keys used for verifying tokens so unless the user cracks Auth0 and gets the private key, there's
@@ -69,7 +80,7 @@ func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
 		return stacktrace.Propagate(err, "An error occurred getting the token string")
 	}
 
-	claims, err := checkTokenExpiration(tokenStr, cache)
+	claims, err := parseAndCheckTokenClaims(tokenStr, cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unrecoverable error occurred checking the token expiration")
 	}
@@ -94,7 +105,7 @@ func RunCIAuthFlow(clientId string, clientSecret string) error {
 		return stacktrace.Propagate(err, "An error occurred authenticating with the client ID & secret")
 	}
 
-	claims, err := parseAndValidateTokenClaims(tokenResponse.AccessToken)
+	claims, err := parseTokenClaims(tokenResponse.AccessToken)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
@@ -140,10 +151,10 @@ Checks the token expiration and, if the expiration is date is passed but still w
 
 Returns a new claims object if we were able to
  */
-func checkTokenExpiration(tokenStr string, cache *encrypted_session_cache.EncryptedSessionCache) (*auth0_authorizer.Auth0TokenClaims, error) {
-	claims, err := parseAndValidateTokenClaims(tokenStr)
+func parseAndCheckTokenClaims(tokenStr string, cache *encrypted_session_cache.EncryptedSessionCache) (*auth0_authorizer.Auth0TokenClaims, error) {
+	claims, err := parseTokenClaims(tokenStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
+		return nil, stacktrace.Propagate(err, "An error occurred parsing/validating the token claims")
 	}
 
 	now := time.Now()
@@ -185,7 +196,7 @@ func checkTokenExpiration(tokenStr string, cache *encrypted_session_cache.Encryp
 	}
 
 	// If we get here, the current token is expired but we got a new one
-	newClaims, err := parseAndValidateTokenClaims(newToken)
+	newClaims, err := parseTokenClaims(newToken)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "We retrieved a new token, but an error occurred parsing/validating the " +
 			"token; this is VERY strange that a token we just received from Auth0 is invalid!")
@@ -195,7 +206,7 @@ func checkTokenExpiration(tokenStr string, cache *encrypted_session_cache.Encryp
 }
 
 // Parses a token string, validates the claims, and returns the claims object
-func parseAndValidateTokenClaims(tokenStr string) (*auth0_authorizer.Auth0TokenClaims, error) {
+func parseTokenClaims(tokenStr string) (*auth0_authorizer.Auth0TokenClaims, error) {
 	token, err := new(jwt.Parser).ParseWithClaims(
 		tokenStr,
 		&auth0_authorizer.Auth0TokenClaims{},

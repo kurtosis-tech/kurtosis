@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
