@@ -7,6 +7,7 @@ REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
 GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
+KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_ACTION="build"
 RUN_ACTION="run"
@@ -30,7 +31,7 @@ show_help() {
 
 if [ "${#}" -eq 0 ]; then
     show_help
-    exit 0
+    exit 1   # Exit as error so we don't get spurious passes in CI
 fi
 
 action="${1:-}"
@@ -78,9 +79,13 @@ if "${do_build}"; then
     initializer_build_pid="${!}"
     docker build -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" 2>&1 > "${api_log_filepath}" &
     api_build_pid="${!}"
-    echo "Build threads launched successfully"
+    echo "Build threads launched successfully:"
+    echo " - Initializer thread PID: ${initializer_build_pid}"
+    echo " - Initializer logs: ${initializer_log_filepath}"
+    echo " - API thread PID: ${api_build_pid}"
+    echo " - API logs: ${api_log_filepath}"
 
-    echo "Waiting for build threads to exit... (initializer PID: ${initializer_build_pid}, API PID: ${api_build_pid})"
+    echo "Waiting for build threads to exit..."
     builds_succeeded=true
     if ! wait "${initializer_build_pid}"; then
         builds_succeeded=false
@@ -107,12 +112,14 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
+    mkdir -p "${KURTOSIS_DIRPATH}"
     go_suite_execution_volume="go-example-suite_${docker_tag}_$(date +%s)"
     docker volume create "${go_suite_execution_volume}"
     docker run \
         --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
+        --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
         --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env 'CUSTOM_ENV_VARS_JSON={"GO_EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
+        --env 'CUSTOM_ENV_VARS_JSON={"EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
         --env "KURTOSIS_API_IMAGE=${api_image}" \
         --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \

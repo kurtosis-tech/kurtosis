@@ -4,6 +4,27 @@
 * Remove some now-unneeded TODOs
 * Fix the `build_and_run.sh` script to use the proper way to pass in Docker args
 * Disallow test names with our test name delimiter: `,`
+* Create an access controller with basic license auth
+* Connect access controller to auth0 device authorization flow
+* Implement machine-to-machine authorization flow for CI jobs
+* Bind-mount Kurtosis home directory into the initializer image
+* Drop default parallelism to `2` so we don't overwhelm slow machines (and users with fast machines can always bump it up)
+* Don't run `validate` workflow on `develop` and `master` branches (because it should already be done before merging any PRs in)
+* Exit with error code of 1 when `build_and_run.sh` receives no args
+* Make `build_and_run.sh` also print the logfiles of the build threads it launches in parallel, so the user can follow along
+* Check token validity and expiration
+* Renamed all command-line flags to the initializer's `main.go` to be `UPPER_SNAKE_CASE` to be the same name as the corresponding environment variable passed in by Docker, which allows for a helptext that makes sense
+* Added `SHOW_HELP` flag to Kurtosis initializer
+* Switched default Kurtosis loglevel to `info`
+
+# 1.0.3
+* Fix bug within CircleCI config file
+
+# 1.0.2
+* Fix bug with tagging `X.Y.Z` Docker images
+
+# 1.0.1
+* Modified CircleCI config to tag Docker images with tag names `X.Y.Z` as well as `develop` and `master`
 
 # 1.0.0
 * Add a tutorial explaining what Kurtosis does at the Docker level

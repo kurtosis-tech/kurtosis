@@ -16,50 +16,66 @@ jobs:
   validate:
     executor: ubuntu_vm
     steps:
-      # NOTE: commenting this out because we might be prematurely optimizing, trying to save Circle hours
-      # # Frustratingly, CircleCI doesn't have a pipeline value indicating pull requests so we can't use a "when" condition to make sure we don't even run this
-      # #  job since the "when" condition is evaluated at configuration time and the environment variables like CIRCLE_PULL_REQUEST are only injected at runtime
-      # #  after spinning up the VM (meaning for all non-PR commits, we're going to waste time spinning up the VM only to abort)
-      # - run: |
-      #     if [ -z "$CIRCLE_PULL_REQUEST"]; then
-      #         circleci step halt
-      #     fi
       - checkout
 
-      # There's no way to get the base branch in CircleCI, so we hardcode develop :( When CircleCI has a way to do get the base branch, use that instead
-      # The --exit-code command will return 0 with no diff, and 1 when a diff exists
-      - run: ! git diff --exit-code develop...HEAD CHANGELOG.md
+      # Gotchas I discovered when writing this:
+      # - Without the '--no-pager' flag, Git will print "WARNING: Terminal is not fully functional" and not display any output
+      # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
+      # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
+      # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
+      - run: "! git --no-pager diff --exit-code origin/develop...HEAD CHANGELOG.md"
+
+      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
+      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
       # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh all --env PARALLELISM=2
+      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
 
   push_docker_images:
+    environment:
+      API_IMAGE_REPO: "kurtosistech/kurtosis-core_api"
+      INITIALIZER_IMAGE_REPO: "kurtosistech/kurtosis-core_initializer"
     executor: ubuntu_vm
     steps:
       - checkout
-      - run: scripts/build_and_run.sh build
+      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-      - run: "docker push kurtosistech/kurtosis-core_api:<< pipeline.git.branch >>"
-      - run: "docker push kurtosistech/kurtosis-core_initializer:<< pipeline.git.branch >>"
+      - run: scripts/build_and_run.sh build
+      - when:
+          condition: "<<pipeline.git.tag>>"
+          steps:
+            - run: echo 'export TAG_NAME=<<pipeline.git.tag>>' >> ${BASH_ENV}
 
-      # NOTE: When we need caching, look at https://circleci.com/docs/2.0/language-go/
-      - run: 'if [ "${CIRCLE_PULL_REQUEST}" != "" ]; then bash .circleci/check_for_changelog_in_diff.sh ${CIRCLE_BASE_REVISION} ${CIRCLE_BRANCH} ; fi'
+            # When we run as the result of a tag build, the built images get a tag called "HEAD" so we need to re-tag to the X.Y.Z name
+            - run: "docker tag ${API_IMAGE_REPO}:HEAD ${API_IMAGE_REPO}:<<pipeline.git.tag>>"
+            - run: "docker tag ${INITIALIZER_IMAGE_REPO}:HEAD ${INITIALIZER_IMAGE_REPO}:<<pipeline.git.tag>>"
+      - unless:
+          condition: "<<pipeline.git.tag>>"
+          steps:
+            - run: echo 'export TAG_NAME=<<pipeline.git.branch>>' >> ${BASH_ENV}
+      - run: "docker push ${API_IMAGE_REPO}:${TAG_NAME}"
+      - run: "docker push ${INITIALIZER_IMAGE_REPO}:${TAG_NAME}"
 
 workflows:
-  validation:
-    when:
-      not:
-        or: 
-        # Maybe also validate the develop/master branches???
-        - equal: [ "develop", "<< pipeline.git.branch >>" ]
-        - equal: [ "master", "<< pipeline.git.branch >>" ]
+  build:
     jobs:
-      - validate
-
-  push_stable_images:
-    when:
-      or:
-        - equal: [ "develop", "<< pipeline.git.branch >>" ]
-        - equal: [ "master", "<< pipeline.git.branch >>" ]
-    jobs:
-      - push_docker_images
+      - validate:
+          context:
+            - docker-user
+            - kurtosis-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - push_docker_images:
+          context:
+            - docker-user
+            - kurtosis-user
+          filters:
+            branches:
+              only:
+                - develop
+                - master
+            tags: 
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
