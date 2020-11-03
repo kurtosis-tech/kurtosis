@@ -8,6 +8,7 @@ package banner_printer
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -31,18 +32,29 @@ func PrintContainerLogsWithBanners(
 		log *logrus.Logger,
 		containerDescription string) {
 	var logReader io.Reader
+	var useDockerLogDemultiplexing bool
 	logReadCloser, err := dockerManager.GetContainerLogs(context, containerId)
 	if err != nil {
 		errStr := fmt.Sprintf("Could not print container's logs due to the following error: %v", err)
 		logReader = strings.NewReader(errStr)
+		useDockerLogDemultiplexing = false
 	} else {
 		defer logReadCloser.Close()
 		logReader = logReadCloser
+		useDockerLogDemultiplexing = true
 	}
 
 	containerDescUppercase := strings.ToUpper(containerDescription)
 	log.Info("- - - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
-	if _, err := io.Copy(log.Out, logReader); err != nil {
+	var copyErr error
+	if useDockerLogDemultiplexing {
+		// Docker logs multiplex STDOUT and STDERR into a single stream, and need to be demultiplexed
+		// See https://github.com/moby/moby/issues/32794
+		_, copyErr = stdcopy.StdCopy(log.Out, log.Out, logReader)
+	} else {
+		_, copyErr = io.Copy(log.Out, logReader)
+	}
+	if copyErr != nil {
 		log.Errorf("Could not print the test suite container's logs due to the following error when copying log contents:")
 		fmt.Fprintln(log.Out, err)
 	}
