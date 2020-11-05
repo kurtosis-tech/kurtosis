@@ -76,8 +76,8 @@ func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
 		return stacktrace.Propagate(err, "An unrecoverable error occurred checking the token expiration")
 	}
 
-	if err := verifyRequiredPerm(claims, auth0_constants.ExecutionScope); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying the required permission")
+	if err := verifyExecutionPerms(claims); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying execution permissions")
 	}
 	return nil
 }
@@ -97,8 +97,8 @@ func RunCIAuthFlow(clientId string, clientSecret string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
 
-	if err := verifyRequiredPerm(claims, auth0_constants.ExecutionScope); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying the required permission")
+	if err := verifyExecutionPerms(claims); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying execution permissions")
 	}
 	return nil
 }
@@ -261,14 +261,14 @@ func refreshSession(cache *encrypted_session_cache.EncryptedSessionCache) (strin
 	return newToken, nil
 }
 
-func verifyRequiredPerm(claims *auth0_authorizer.Auth0TokenClaims, requiredPermission string) error {
+func verifyExecutionPerms(claims *auth0_authorizer.Auth0TokenClaims) error {
 	for _, perm := range claims.Permissions {
-		if perm == requiredPermission {
+		if perm == auth0_constants.ExecutionPermission {
 			return nil
 		}
 	}
 	return stacktrace.NewError(
 		"Kurtosis requires permission '%v' to run but token has perms '%v'; this is most likely due to an expired Kurtosis license",
-		auth0_constants.ExecutionScope,
+		auth0_constants.ExecutionPermission,
 		claims.Permissions)
 }
