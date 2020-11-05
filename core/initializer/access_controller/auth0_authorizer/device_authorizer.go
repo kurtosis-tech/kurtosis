@@ -61,9 +61,8 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	// Prepare to request device code.
 	url := auth0_constants.Issuer + auth0DeviceAuthPath
 	payloadContents := fmt.Sprintf(
-		"client_id=%s&scope=%s&audience=%s",
+		"client_id=%s&audience=%s",
 		localDevClientId,
-		auth0_constants.ExecutionScope,
 		auth0_constants.Audience)
 	logrus.Debugf("Payload contents: %v", payloadContents)
 	payload := strings.NewReader(payloadContents)

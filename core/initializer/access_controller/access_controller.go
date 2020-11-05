@@ -69,17 +69,15 @@ func RunDeveloperMachineAuthFlow(sessionCacheFilepath string) error {
 		return stacktrace.Propagate(err, "An error occurred getting the token string")
 	}
 
+	logrus.Debugf("Token str (before expiry check): %v", tokenStr)
+
 	claims, err := checkTokenExpiration(tokenStr, cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unrecoverable error occurred checking the token expiration")
 	}
 
-	scope := claims.Scope
-	if scope != auth0_constants.ExecutionScope {
-		return stacktrace.NewError(
-			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
-			auth0_constants.ExecutionScope,
-			scope)
+	if err := verifyRequiredPerm(claims, auth0_constants.ExecutionScope); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying the required permission")
 	}
 	return nil
 }
@@ -99,12 +97,8 @@ func RunCIAuthFlow(clientId string, clientSecret string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
 
-	scope := claims.Scope
-	if scope != auth0_constants.ExecutionScope {
-		return stacktrace.NewError(
-			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
-			auth0_constants.ExecutionScope,
-			scope)
+	if err := verifyRequiredPerm(claims, auth0_constants.ExecutionScope); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying the required permission")
 	}
 	return nil
 }
@@ -265,4 +259,16 @@ func refreshSession(cache *encrypted_session_cache.EncryptedSessionCache) (strin
 		time.Sleep(authWarningPause)
 	}
 	return newToken, nil
+}
+
+func verifyRequiredPerm(claims *auth0_authorizer.Auth0TokenClaims, requiredPermission string) error {
+	for _, perm := range claims.Permissions {
+		if perm == requiredPermission {
+			return nil
+		}
+	}
+	return stacktrace.NewError(
+		"Kurtosis requires permission '%v' to run but token has perms '%v'; this is most likely due to an expired Kurtosis license",
+		auth0_constants.ExecutionScope,
+		claims.Permissions)
 }
