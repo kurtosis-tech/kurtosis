@@ -17,6 +17,7 @@
 * Added `SHOW_HELP` flag to Kurtosis initializer
 * Switched default Kurtosis loglevel to `info`
 * Pull Docker logs directly from the container, removing the need for the `LOG_FILEPATH` variable for testsuites
+* Fixed bug where the initializer wouldn't attempt to pull a new token if the token were beyond the grace period
 
 # 1.0.3
 * Fix bug within CircleCI config file
