@@ -297,6 +297,23 @@ func (manager DockerManager) WaitForExit(context context.Context, containerId st
 	return
 }
 
+/*
+Gets the logs for the given container as a io.ReadCloser. The caller is responsible for closing the ReadCloser!!!
+
+NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' package needs to be used to
+	demultiplex them per https://github.com/moby/moby/issues/32794
+ */
+func (manager DockerManager) GetContainerLogs(context context.Context, containerId string) (io.ReadCloser, error) {
+	containerLogOpts := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+	}
+	readCloser, err := manager.dockerClient.ContainerLogs(context, containerId, containerLogOpts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs for container ID '%v'", containerId)
+	}
+	return readCloser, nil
+}
 
 
 // =================================================================================================================
