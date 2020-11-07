@@ -36,7 +36,6 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
  */
 
 const (
-	testSuiteLogFilename = "test-execution.log"
 	apiContainerLogFilename = "api-container.log"
 
 	// The name of the directory inside a test execution directory where service file IO will be stored
@@ -169,16 +168,11 @@ func RunTest(
 	}
 
 	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
-	suiteLogFilepathOnSuiteContainer := path.Join(
-		test_suite_constants.SuiteExecutionVolumeMountpoint,
-		testExecutionRelativeDirpath,
-		testSuiteLogFilename)
 	testSuiteEnvVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
 		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
 		kurtosisApiIp.String(),
 		servicesRelativeDirpath,
-		suiteLogFilepathOnSuiteContainer,
 		testSuiteLogLevel,
 		customTestSuiteEnvVars)
 	if err != nil {
@@ -251,17 +245,12 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
 	}
 
-	suiteLogFilepathOnInitializerContainer := path.Join(
-		suiteExecutionVolumeDirpathOnInitializer,
-		testExecutionRelativeDirpath,
-		testSuiteLogFilename)
-
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, ctx, testRunningContainerId, log, testRunningContainerDescription)
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -272,7 +261,7 @@ func RunTest(
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, ctx, testRunningContainerId, log, testRunningContainerDescription)
 	case exit_codes.ShutdownSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")

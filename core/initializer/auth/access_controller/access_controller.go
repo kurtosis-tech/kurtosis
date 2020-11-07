@@ -8,7 +8,6 @@ package access_controller
 import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_token_claims"
@@ -87,17 +86,15 @@ func (accessController AccessController) RunDeveloperMachineAuthFlow(sessionCach
 		return stacktrace.Propagate(err, "An error occurred getting the token string")
 	}
 
+	logrus.Debugf("Token str (before expiry check): %v", tokenStr)
+
 	claims, err := parseAndCheckTokenClaims(tokenStr, accessController.deviceAuthorizer, cache)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unrecoverable error occurred checking the token expiration")
 	}
 
-	scope := claims.Scope
-	if scope != auth0_constants.ExecutionScope {
-		return stacktrace.NewError(
-			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
-			auth0_constants.ExecutionScope,
-			scope)
+	if err := verifyExecutionPerms(claims); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying execution permissions")
 	}
 	return nil
 }
@@ -117,12 +114,8 @@ func (accessController AccessController) RunCIAuthFlow(clientId string, clientSe
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
 
-	scope := claims.Scope
-	if scope != auth0_constants.ExecutionScope {
-		return stacktrace.NewError(
-			"Kurtosis requires scope '%v' to run but token has scope '%v'; this is most likely due to an expired Kurtosis license",
-			auth0_constants.ExecutionScope,
-			scope)
+	if err := verifyExecutionPerms(claims); err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying execution permissions")
 	}
 	return nil
 }
@@ -283,4 +276,16 @@ func refreshSession(deviceAuthorizer auth0_authorizers.DeviceAuthorizer, cache *
 		time.Sleep(authWarningPause)
 	}
 	return newToken, nil
+}
+
+func verifyExecutionPerms(claims *auth0_token_claims.Auth0TokenClaims) error {
+	for _, perm := range claims.Permissions {
+		if perm == auth0_constants.ExecutionPermission {
+			return nil
+		}
+	}
+	return stacktrace.NewError(
+		"Kurtosis requires permission '%v' to run but token has perms '%v'; this is most likely due to an expired Kurtosis license",
+		auth0_constants.ExecutionPermission,
+		claims.Permissions)
 }

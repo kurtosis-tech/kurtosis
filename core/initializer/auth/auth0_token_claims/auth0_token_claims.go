@@ -17,6 +17,7 @@ type Auth0TokenClaims struct {
 	Issuer    string `json:"iss,omitempty"`
 	Scope 	  string `json:"scope"`
 	Subject   string `json:"sub,omitempty"`
+	Permissions []string	`json:"permissions"`
 }
 
 func (claims Auth0TokenClaims) Valid() error {

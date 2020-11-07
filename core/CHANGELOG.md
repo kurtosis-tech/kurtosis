@@ -16,7 +16,9 @@
 * Renamed all command-line flags to the initializer's `main.go` to be `UPPER_SNAKE_CASE` to be the same name as the corresponding environment variable passed in by Docker, which allows for a helptext that makes sense
 * Added `SHOW_HELP` flag to Kurtosis initializer
 * Switched default Kurtosis loglevel to `info`
+* Pull Docker logs directly from the container, removing the need for the `LOG_FILEPATH` variable for testsuites
 * Fixed bug where the initializer wouldn't attempt to pull a new token if the token were beyond the grace period
+* Switch to using `permissions` claim rather than `scope` now that RBAC is enabled
 
 # 1.0.3
 * Fix bug within CircleCI config file
