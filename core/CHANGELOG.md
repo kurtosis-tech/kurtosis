@@ -1,4 +1,4 @@
-# TBD
+# 1.1.0
 * Small comment/doc changes from weekly review
 * Easy fix to sort `api_container_env_vars` alphabetically
 * Remove some now-unneeded TODOs
