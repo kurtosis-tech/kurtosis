@@ -36,7 +36,6 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
  */
 
 const (
-	testSuiteLogFilename = "test-execution.log"
 	apiContainerLogFilename = "api-container.log"
 
 	// The name of the directory inside a test execution directory where service file IO will be stored
@@ -169,24 +168,17 @@ func RunTest(
 	}
 
 	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
-	suiteLogFilepathOnSuiteContainer := path.Join(
-		test_suite_constants.SuiteExecutionVolumeMountpoint,
-		testExecutionRelativeDirpath,
-		testSuiteLogFilename)
 	testSuiteEnvVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
 		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
 		kurtosisApiIp.String(),
 		servicesRelativeDirpath,
-		suiteLogFilepathOnSuiteContainer,
 		testSuiteLogLevel,
 		customTestSuiteEnvVars)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred generating the map of test suite environment variables")
 	}
 
-	// TODO Switch to using a Docker logging driver that captures ALL output of the test suite container to file, so that
-	//  way the user can get as detailed information about the running of the test suite container as possible
 	log.Infof("Creating test suite container that will run the test...")
 	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
@@ -244,7 +236,6 @@ func RunTest(
 	}
 	log.Infof("Successfully created Kurtosis API container")
 
-	// TODO add a timeout waiting for Kurtosis API container to stop???
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
 	kurtosisApiExitCode, err := dockerManager.WaitForExit(
@@ -254,19 +245,12 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
 	}
 
-	suiteLogFilepathOnInitializerContainer := path.Join(
-		suiteExecutionVolumeDirpathOnInitializer,
-		testExecutionRelativeDirpath,
-		testSuiteLogFilename)
-
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, ctx, testRunningContainerId, log, testRunningContainerDescription)
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -276,10 +260,8 @@ func RunTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-		// TODO switch to printing container STDOUT/STDERR, since a container failure that happens before the
-		//  Docker container launches (e.g. a variable not set) won't get logged here and thus won't show up in the output
 		// TODO this is in a really crappy spot; move it
-		banner_printer.PrintContainerLogsWithBanners(log, testRunningContainerDescription, suiteLogFilepathOnInitializerContainer)
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, ctx, testRunningContainerId, log, testRunningContainerDescription)
 	case exit_codes.ShutdownSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")

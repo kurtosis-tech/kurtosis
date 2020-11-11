@@ -7,14 +7,13 @@ package api_container_env_vars
 
 // Constants for the environment variables that are used in the Dockerfile, made available to Go code
 const (
-	// TODO sort these alphabetically
-	TestSuiteContainerIdEnvVar = "TEST_SUITE_CONTAINER_ID"
-	TestVolumeName = "TEST_VOLUME"
-	NetworkIdEnvVar            = "NETWORK_ID"
-	SubnetMaskEnvVar           = "SUBNET_MASK"
-	GatewayIpEnvVar            = "GATEWAY_IP"
-	LogLevelEnvVar             = "LOG_LEVEL"
-	ApiLogFilepathEnvVar       = "LOG_FILEPATH"
-	ApiContainerIpAddrEnvVar   = "API_CONTAINER_IP"
+	ApiContainerIpAddrEnvVar       = "API_CONTAINER_IP"
+	ApiLogFilepathEnvVar           = "LOG_FILEPATH"
+	GatewayIpEnvVar                = "GATEWAY_IP"
+	LogLevelEnvVar                 = "LOG_LEVEL"
+	NetworkIdEnvVar                = "NETWORK_ID"
+	SubnetMaskEnvVar               = "SUBNET_MASK"
+	TestSuiteContainerIdEnvVar     = "TEST_SUITE_CONTAINER_ID"
 	TestSuiteContainerIpAddrEnvVar = "TEST_SUITE_CONTAINER_IP"
+	TestVolumeName                 = "TEST_VOLUME"
 )

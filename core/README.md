@@ -116,8 +116,3 @@ When the `METADATA_FILEPATH` environment variable is set, the container must wri
 }
 ```
 where `testNames` is a "set" of tests in the suite and `networkWidthBits` is the number of bits in the network mask of each test network that will be created.
-
-
-Initializer
------------
-TODO TODO you must 1) create a test suite execution volume 2) mount it at /suite-execution on the initializer image 3) make sure to bind-mount the /var/run/docker.sock
