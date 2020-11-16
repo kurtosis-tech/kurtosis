@@ -1,3 +1,6 @@
+# TBD
+* Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
+
 # 1.1.0
 * Small comment/doc changes from weekly review
 * Easy fix to sort `api_container_env_vars` alphabetically
