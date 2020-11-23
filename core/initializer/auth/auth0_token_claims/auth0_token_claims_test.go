@@ -44,14 +44,6 @@ func TestInvalidAudience(t *testing.T) {
 	}
 }
 
-func TestInvalidScope(t *testing.T) {
-	claims := getValidClaim()
-	claims.Scope = "360 Noscope"
-	if err := claims.Valid(); err == nil {
-		t.Fatal("Token did not fail validation on invalid scope")
-	}
-}
-
 func getValidClaim() Auth0TokenClaims {
 	now := time.Now()
 	oneHourFromNow := now.Add(24 * time.Hour)

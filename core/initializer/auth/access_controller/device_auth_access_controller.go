@@ -16,7 +16,7 @@ import (
 )
 
 type DeviceAuthAccessController struct {
-	// Mapping of key_id -> base64_encoded_pubkey for validating tokens
+	// Mapping of key_id -> pem_encoded_pubkey_cert for validating tokens
 	tokenValidationPubKeys map[string]string
 	sessionCache session_cache.SessionCache
 	deviceAuthorizer auth0_authorizers.DeviceAuthorizer
