@@ -22,12 +22,16 @@ const (
 	clientSecretQueryParamName = "client_secret"
 )
 
-// Extracted as an interface for testing
+// Extracted as an interface so mocks can be written for testing
 type ClientCredentialsAuthorizer interface{
 	AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error)
 }
 
 type StandardClientCredentialsAuthorizer struct{}
+
+func NewStandardClientCredentialsAuthorizer() *StandardClientCredentialsAuthorizer {
+	return &StandardClientCredentialsAuthorizer{}
+}
 
 func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
 	params := map[string]string{

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package encrypted_session_cache
+package session_cache
 
 import (
 	"bytes"
@@ -28,14 +28,6 @@ var blockKey_DO_NOT_EVER_LOG_ME = []byte{
 	0xdf, 0xde, 0xf2, 0x40, 0xd8, 0x66, 0xd2, 0xad, 0x49, 0x80,
 	0x6f, 0xda, 0x13, 0xb5, 0xba, 0xd4, 0x1d, 0x0b, 0x9c, 0xcd,
 	0xd7, 0xf0,
-}
-
-// The struct to store on disk
-type Session struct {
-	// The actual token (which we can't trust - the user may have been able to modify this)
-	Token string
-
-	// If needed, we can store extra stuff here
 }
 
 /*
@@ -86,7 +78,7 @@ func (cache *EncryptedSessionCache) SaveSession(session Session) error {
 /*
 Decrypts a session from the session cache filepath given at session cache creation time
 */
-func (cache *EncryptedSessionCache) LoadSession() (tokenResponse *Session, err error){
+func (cache *EncryptedSessionCache) LoadSession() (tokenResponse *Session, err error) {
 	encryptedGobbedSession, err := ioutil.ReadFile(cache.storageFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading the encrypted session from %v", cache.storageFilepath)

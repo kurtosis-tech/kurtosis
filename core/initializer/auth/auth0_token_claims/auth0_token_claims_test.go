@@ -61,7 +61,7 @@ func getValidClaim() Auth0TokenClaims {
 		ExpiresAt: oneHourFromNow.Unix(),
 		IssuedAt:  now.Unix(),
 		Issuer:    auth0_constants.Issuer,
-		Scope:     auth0_constants.ExecutionScope,
+		Scope:     auth0_constants.ExecutionPermission,
 		Subject:   "not-sure-what-goes-here",
 	}
 }

@@ -18,6 +18,19 @@ type ClientAuthAccessController struct {
 	clientSecret string
 }
 
+func NewClientAuthAccessController(
+		tokenValidationPubKeys map[string]string,
+		clientCredsAuthorizer auth0_authorizers.ClientCredentialsAuthorizer,
+		clientId string,
+		clientSecret string) *ClientAuthAccessController {
+	return &ClientAuthAccessController{
+		tokenValidationPubKeys: tokenValidationPubKeys,
+		clientCredsAuthorizer: clientCredsAuthorizer,
+		clientId: clientId,
+		clientSecret: clientSecret,
+	}
+}
+
 /*
 This workflow is for authenticating and authorizing Kurtosis tests running in CI (no device or username).
 	See also: https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/
@@ -30,7 +43,7 @@ func (accessController ClientAuthAccessController) Authorize() error {
 		return stacktrace.Propagate(err, "An error occurred authenticating with the client ID & secret")
 	}
 
-	claims, err := parseTokenClaims(tokenResponse.AccessToken)
+	claims, err := parseTokenClaims(accessController.tokenValidationPubKeys, tokenResponse.AccessToken)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}

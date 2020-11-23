@@ -33,9 +33,5 @@ func (claims Auth0TokenClaims) Valid() error {
 		return stacktrace.NewError("Claims issuer '%v' != expected issuer '%v'", claims.Issuer, auth0_constants.Issuer)
 	}
 
-	if _, found := auth0_constants.ValidScopes[claims.Scope]; !found {
-		return stacktrace.NewError("Invalid scope '%v'", claims.Scope)
-	}
-
 	return nil
 }

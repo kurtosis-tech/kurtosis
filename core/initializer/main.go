@@ -11,6 +11,9 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
@@ -43,6 +46,7 @@ const (
 
 	// Name of the file within the Kurtosis storage directory where the session cache will be stored
 	sessionCacheFilename = "session-cache"
+	sessionCacheFileMode os.FileMode = 0600
 
 	// vvvvvvvvvvvvvvvv If you change these, you need to update the Dockerfile!! vvvvvvvvvvvvvvvvvvvvvvvvvvv
 	doListArg = "DO_LIST"
@@ -169,19 +173,31 @@ func main() {
 
 	clientId := parsedFlags.GetString(clientIdArg)
 	clientSecret := parsedFlags.GetString(clientSecretArg)
-	var authError error
+	var accessController access_controller.AccessController
 	if len(clientId) > 0 && len(clientSecret) > 0 {
 		logrus.Debugf("Running CI machine-to-machine auth flow...")
-		authError = access_controller.RunCIAuthFlow(clientId, clientSecret)
+		accessController = access_controller.NewClientAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
+			auth0_authorizers.NewStandardClientCredentialsAuthorizer(),
+			clientId,
+			clientSecret)
 	} else {
 		logrus.Debugf("Running developer device auth flow...")
 		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
-		authError = access_controller.RunDeveloperMachineAuthFlow(sessionCacheFilepath)
+		sessionCache := session_cache.NewEncryptedSessionCache(
+			sessionCacheFilepath,
+			sessionCacheFileMode,
+		)
+		accessController = access_controller.NewDeviceAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
+			sessionCache,
+			auth0_authorizers.NewStandardDeviceAuthorizer(),
+		)
 	}
-	if authError != nil {
+	if err := accessController.Authorize(); err != nil {
 		logrus.Fatalf(
 			"The following error occurred when authenticating and authorizing your Kurtosis license: %v",
-			authError)
+			err)
 		os.Exit(failureExitCode)
 	}
 

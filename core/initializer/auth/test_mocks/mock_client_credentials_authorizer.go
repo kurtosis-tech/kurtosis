@@ -5,22 +5,21 @@
 
 package test_mocks
 
-import "github.com/palantir/stacktrace"
-
 const (
 	testClientCredAuthorizerPrivateKey = "TODO TODO TODO"
 	TestClientCredAuthorizerKeyId = "test-key-id"
 	TestClientCredAuthorizerPubKey = "TODO TODO TODO"
 )
 
-type TestClientCredentialsAuthorizer struct{
-	ThrowErrorOnAuthorize bool
-	ScopeToReturn string
-	ExpiresInSeconds int
+type MockClientCredentialsAuthorizer struct{
+	throwErrorOnAuthorize bool
+	scopeToReturn string
+	expiresInSeconds int
 }
 
-func (t TestClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
-	if t.ThrowErrorOnAuthorize {
+/*
+func (t MockClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
+	if t.throwErrorOnAuthorize {
 		return nil, stacktrace.NewError("TEST ERROR")
 	}
 
@@ -35,3 +34,6 @@ func (t TestClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId str
 	}
 	return
 }
+
+
+ */
