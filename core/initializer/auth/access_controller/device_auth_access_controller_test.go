@@ -5,13 +5,12 @@
 package access_controller
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/test_mocks"
 	"github.com/palantir/stacktrace"
-	"os"
 	"testing"
 	"time"
 )
@@ -157,7 +156,7 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 		[]string{auth0_constants.ExecutionPermission},
 	)
 	if err != nil {
-		t.Fatalf("An error occurred getting a test token with an invalid audience: %v", err)
+		t.Fatalf("An error occurred getting a test token signed by the unknown private key: %v", err)
 	}
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
 
@@ -167,35 +166,251 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 	if err == nil {
 		t.Fatal("Expected an error due to a token signed by a key we don't recognize, but no error was thrown")
 	}
-	fmt.Fprintln(os.Stdout, err)
-}
-
-func Test_NoSavedSession_ReachableAuth0_ParseableToken_InvalidAudience(t *testing.T) {
-	// TODO
-}
-
-func Test_NoSavedSession_ReachableAuth0_ParseableToken_InvalidIssuer(t *testing.T) {
-	// TODO
+	savedSessions := loadingErrorSessionCache.GetSavedSessions()
+	if len(savedSessions) != 1 {
+		t.Fatalf("Expected one session to be saved (upon receiving the new token) but got %v", len(savedSessions))
+	}
+	firstSavedSession := savedSessions[0]
+	if firstSavedSession.Token != token {
+		t.Fatalf("Expected token '%v' to be saved but got '%v'", token, firstSavedSession.Token)
+	}
 }
 
 func Test_NoSavedSession_ReachableAuth0_ParseableToken_NoPerms(t *testing.T) {
-	// TODO
+	loadingErrorSessionCache := test_mocks.NewMockSessionCache(false, true, nil)
+
+	token, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		3600,
+		[]string{},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a test token without any perms: %v", err)
+	}
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
+
+	// These public keys don't match the private key we've signed the token with; we expect a rejection
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
+	err = accessController.Authorize()
+	if err == nil {
+		t.Fatal("Expected an error due to a token without execution perms, but no error was thrown")
+	}
+	savedSessions := loadingErrorSessionCache.GetSavedSessions()
+	if len(savedSessions) != 1 {
+		t.Fatalf("Expected one session to be saved (upon receiving the new token) but got %v", len(savedSessions))
+	}
+	firstSavedSession := savedSessions[0]
+	if firstSavedSession.Token != token {
+		t.Fatalf("Expected token '%v' to be saved but got '%v'", token, firstSavedSession.Token)
+	}
 }
 
 func Test_NoSavedSession_ReachableAuth0_ParseableToken_Valid(t *testing.T) {
-	// TODO
+	loadingErrorSessionCache := test_mocks.NewMockSessionCache(false, true, nil)
+
+	token, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		3600,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a test token: %v", err)
+	}
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err != nil {
+		t.Fatalf("We expected a successful authorization, but an error was thrown: %v", err)
+	}
+	savedSessions := loadingErrorSessionCache.GetSavedSessions()
+	if len(savedSessions) != 1 {
+		t.Fatalf("Expected one session to be saved (upon receiving the new token) but got %v", len(savedSessions))
+	}
+	firstSavedSession := savedSessions[0]
+	if firstSavedSession.Token != token {
+		t.Fatalf("Expected token '%v' to be saved but got '%v'", token, firstSavedSession.Token)
+	}
 }
 
-func TestValidCachedToken(t *testing.T) {
-	// TODO
+func Test_SavedSession_Valid(t *testing.T) {
+	token, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		3600,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a test token: %v", err)
+	}
+
+	sessionCache := test_mocks.NewMockSessionCache(
+		false,
+		false,
+		&session_cache.Session{Token: token},
+	)
+
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, sessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err != nil {
+		t.Fatalf("We expected a successful authorization, but an error was thrown: %v", err)
+	}
+	savedSessions := sessionCache.GetSavedSessions()
+	if len(savedSessions) != 0 {
+		t.Fatalf("Expected zero sessions to be saved (because a session was loaded from cache) but got %v", len(savedSessions))
+	}
 }
 
-func TestExpiredTokenInGracePeriod(t *testing.T) {
-	// TODO
+// This is the "user's on an airplane when their token expires" case
+func Test_SavedSession_InGracePeriod_UnreachableAuth0(t *testing.T) {
+	token, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		-1,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a test token: %v", err)
+	}
+
+	sessionCache := test_mocks.NewMockSessionCache(
+		false,
+		false,
+		&session_cache.Session{Token: token},
+	)
+
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(true, token)
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, sessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err != nil {
+		t.Fatalf("We expected a successful authorization due to being in the grace period (even though Auth0 is unreachable), but an error was thrown: %v", err)
+	}
+	savedSessions := sessionCache.GetSavedSessions()
+	if len(savedSessions) != 0 {
+		t.Fatalf("Expected zero sessions to be saved (because a session was loaded from cache) but got %v", len(savedSessions))
+	}
 }
 
-func TestExpiredTokenBeyondGracePeriod(t *testing.T) {
-	// TODO
+func Test_SavedSession_InGracePeriod_ReachableAuth0(t *testing.T) {
+	expiredToken, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		-1,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting an expired test token: %v", err)
+	}
+
+	sessionCache := test_mocks.NewMockSessionCache(
+		false,
+		false,
+		&session_cache.Session{Token: expiredToken},
+	)
+
+	freshToken, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		3600,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a fresh test token: %v", err)
+	}
+
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, freshToken)
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, sessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err != nil {
+		t.Fatalf("We expected a successful authorization due to being in the grace period with reachable Auth0, but an error was thrown: %v", err)
+	}
+	savedSessions := sessionCache.GetSavedSessions()
+	if len(savedSessions) != 1 {
+		t.Fatalf("Expected 1 sessions to be saved (when we get the new token from Auth0) but got %v", len(savedSessions))
+	}
+	firstSavedSession := savedSessions[0]
+	if firstSavedSession.Token != freshToken {
+		t.Fatalf("Expected token '%v' but got token '%v'", freshToken, firstSavedSession.Token)
+	}
+}
+
+func Test_SavedSession_BeyondGracePeriod_ReachableAuth0(t *testing.T) {
+	expiredToken, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		-int(tokenExpirationGracePeriod.Seconds() + 1),
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting an expired test token: %v", err)
+	}
+
+	sessionCache := test_mocks.NewMockSessionCache(
+		false,
+		false,
+		&session_cache.Session{Token: expiredToken},
+	)
+
+	freshToken, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		3600,
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting a fresh test token: %v", err)
+	}
+
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, freshToken)
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, sessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err != nil {
+		t.Fatalf("We expected a successful authorization due to Auth0 being reachable even though the token is beyond the grace period, but an error was thrown: %v", err)
+	}
+	savedSessions := sessionCache.GetSavedSessions()
+	if len(savedSessions) != 1 {
+		t.Fatalf("Expected 1 sessions to be saved (when we get the new token from Auth0) but got %v", len(savedSessions))
+	}
+	firstSavedSession := savedSessions[0]
+	if firstSavedSession.Token != freshToken {
+		t.Fatalf("Expected token '%v' but got token '%v'", freshToken, firstSavedSession.Token)
+	}
+}
+
+func Test_SavedSession_BeyondGracePeriod_UnreachableAuth0(t *testing.T) {
+	expiredToken, err := createTestToken(
+		testAuth0PrivateKey,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
+		-int(tokenExpirationGracePeriod.Seconds() + 1),
+		[]string{auth0_constants.ExecutionPermission},
+	)
+	if err != nil {
+		t.Fatalf("An error occurred getting an expired test token: %v", err)
+	}
+
+	sessionCache := test_mocks.NewMockSessionCache(
+		false,
+		false,
+		&session_cache.Session{Token: expiredToken},
+	)
+
+	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(true, "")
+
+	accessController := NewDeviceAuthAccessController(testAuth0PublicKeys, sessionCache, deviceAuthorizer)
+	if err := accessController.Authorize(); err == nil {
+		t.Fatalf("We expected authorization to be rejected due to having a token that's beyond the grace period with Auth0 unreachable, but authorization was allowed")
+	}
 }
 
 // ================= HELPER FUNCTIONS ========================================================
