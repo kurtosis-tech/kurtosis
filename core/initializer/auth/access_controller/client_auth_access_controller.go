@@ -36,14 +36,14 @@ This workflow is for authenticating and authorizing Kurtosis tests running in CI
 	See also: https://www.oauth.com/oauth2-servers/access-tokens/client-credentials/
 */
 func (accessController ClientAuthAccessController) Authorize() error {
-	tokenResponse, err := accessController.clientCredsAuthorizer.AuthorizeClientCredentials(
+	token, err := accessController.clientCredsAuthorizer.AuthorizeClientCredentials(
 		accessController.clientId,
 		accessController.clientSecret)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred authenticating with the client ID & secret")
 	}
 
-	claims, err := parseTokenClaims(accessController.tokenValidationPubKeys, tokenResponse.AccessToken)
+	claims, err := parseTokenClaims(accessController.tokenValidationPubKeys, token)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}

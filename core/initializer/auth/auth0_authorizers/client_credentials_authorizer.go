@@ -24,7 +24,7 @@ const (
 
 // Extracted as an interface so mocks can be written for testing
 type ClientCredentialsAuthorizer interface{
-	AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error)
+	AuthorizeClientCredentials(clientId string, clientSecret string) (string, error)
 }
 
 type StandardClientCredentialsAuthorizer struct{}
@@ -33,7 +33,7 @@ func NewStandardClientCredentialsAuthorizer() *StandardClientCredentialsAuthoriz
 	return &StandardClientCredentialsAuthorizer{}
 }
 
-func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
+func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (string, error) {
 	params := map[string]string{
 		clientIdQueryParamName:     clientId,
 		clientSecretQueryParamName: clientSecret,
@@ -46,9 +46,9 @@ func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials
 
 	tokenResponse, err := requestAuthToken(params, headers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get token response for client credential authorization flow.")
+		return "", stacktrace.Propagate(err, "Failed to get token response for client credential authorization flow.")
 	}
 	logrus.Tracef("Token response: %+v", tokenResponse)
 
-	return tokenResponse, nil
+	return tokenResponse.AccessToken, nil
 }

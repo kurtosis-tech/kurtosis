@@ -5,35 +5,27 @@
 
 package test_mocks
 
-const (
-	testClientCredAuthorizerPrivateKey = "TODO TODO TODO"
-	TestClientCredAuthorizerKeyId = "test-key-id"
-	TestClientCredAuthorizerPubKey = "TODO TODO TODO"
-)
+import "github.com/palantir/stacktrace"
 
 type MockClientCredentialsAuthorizer struct{
 	throwErrorOnAuthorize bool
-	scopeToReturn string
-	expiresInSeconds int
+	tokenToReturn string
 }
 
-/*
-func (t MockClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (*TokenResponse, error) {
-	if t.throwErrorOnAuthorize {
-		return nil, stacktrace.NewError("TEST ERROR")
+func NewMockClientCredentialsAuthorizer(
+		throwErrorOnAuthorize bool,
+		tokenToReturn string) *MockClientCredentialsAuthorizer {
+	return &MockClientCredentialsAuthorizer{
+		throwErrorOnAuthorize: throwErrorOnAuthorize,
+		tokenToReturn: tokenToReturn,
 	}
+}
 
-	// TODO create a token with the private key!
-	tokenStr := "TODO TODO THIS IS BROKEN"
-
-	TokenResponse{
-		AccessToken: tokenStr,
-		Scope:       "",
-		ExpiresIn:   0,
-		TokenType:   "",
+func (m MockClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (string, error) {
+	if m.throwErrorOnAuthorize {
+		return "", stacktrace.NewError("Test error on authorization, as requested")
 	}
-	return
+	return m.tokenToReturn, nil
 }
 
 
- */
