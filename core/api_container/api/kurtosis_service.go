@@ -88,7 +88,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 
 	usedPorts := map[nat.Port]bool{}
 	for _, portInt := range args.UsedPorts {
-		// TODO add ability to have non-TCP ports
+		// NOTE: We'll need to change this if we want non-TCP ports
 		castedPort := nat.Port(fmt.Sprintf("%v/tcp", portInt))
 		usedPorts[castedPort] = true
 	}
