@@ -51,7 +51,6 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 	return ipAddrTracker, nil
 }
 
-// TODO rework this entire function to handle IPv6 as well (currently breaks on IPv6)
 /*
 Gets a free IP address from the subnet that the IP tracker was initializd with.
 
@@ -60,6 +59,8 @@ Returns:
 		actual IP returned is undefined.
  */
 func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
+	// NOTE: This whole function will need to be rewritten if we support IPv6
+
 	// convert IPNet struct mask and address to uint32
 	// network is BigEndian
 	mask := binary.BigEndian.Uint32(networkManager.subnet.Mask)

@@ -1,6 +1,7 @@
 # TBD
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
 * Add multiple tests to the `AccessController` so that any future changes don't require manual testing to ensure correctness
+* Removed TODOs related to IPv6 and non-TCP ports
 
 # 1.1.0
 * Small comment/doc changes from weekly review
