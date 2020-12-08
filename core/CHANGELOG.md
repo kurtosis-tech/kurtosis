@@ -1,3 +1,9 @@
+# 1.2.0
+* Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
+* Add multiple tests to the `AccessController` so that any future changes don't require manual testing to ensure correctness
+* Removed TODOs related to IPv6 and non-TCP ports
+* Support UDP ports (**NOTE:** this is an API break for the Kurtosis API container, as ports are now specified with `string` rather than `int`!)
+
 # 1.1.0
 * Small comment/doc changes from weekly review
 * Easy fix to sort `api_container_env_vars` alphabetically

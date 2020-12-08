@@ -3,12 +3,12 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizer
+package auth0_authorizers
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/initializer/access_controller/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -49,13 +49,24 @@ type DeviceCodeResponse struct {
 	Interval int `json:"interval"`
 }
 
+// Extracted as an interface so mocks can be written for testing
+type DeviceAuthorizer interface {
+	AuthorizeUserDevice() (string, error)
+}
+
+type StandardDeviceAuthorizer struct{}
+
+func NewStandardDeviceAuthorizer() *StandardDeviceAuthorizer {
+	return &StandardDeviceAuthorizer{}
+}
+
 /*
 	Prompts the user to click on a URL in which they will input their credentials.
 	They will also need to confirm that this device is the one they are logging in on and confirming.
 	Auth0 is polled until it confirms that the user has successfully logged in and confirmed their device.
  */
 
-func AuthorizeUserDevice() (*TokenResponse, error) {
+func (authorizer StandardDeviceAuthorizer) AuthorizeUserDevice() (string, error) {
 	logrus.Trace("Authorizing user device...")
 
 	// Prepare to request device code.
@@ -74,17 +85,17 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	retryClient := getConstantBackoffRetryClient()
 	res, err := retryClient.Do(req)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
+		return "", stacktrace.Propagate(err, "Failed to request device authorization from auth provider.")
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		return nil, stacktrace.NewError("Expected 200 status code when requesting device code but got %v", res.StatusCode)
+		return "", stacktrace.NewError("Expected 200 status code when requesting device code but got %v", res.StatusCode)
 	}
 
 	logrus.Trace("Reading device authorization response body...")
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to read response body.")
+		return "", stacktrace.Propagate(err, "Failed to read response body.")
 	}
 	logrus.Debugf("Device authorization response body: %v", string(body))
 
@@ -92,18 +103,18 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	logrus.Trace("Parsing device authorization response JSON...")
 	var deviceCodeResponse = new(DeviceCodeResponse)
 	if err := json.Unmarshal(body, &deviceCodeResponse); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing the device code response")
+		return "", stacktrace.Propagate(err, "An error occurred deserializing the device code response")
 	}
 
 	// Prompt user to access authentication URL in browser in order to authenticate.
 	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
 
 	// Poll for token while the user authenticates and confirms their device.
-	tokenResponse, err := pollForToken(deviceCodeResponse.DeviceCode, deviceCodeResponse.Interval)
+	token, err := pollForToken(deviceCodeResponse.DeviceCode, deviceCodeResponse.Interval)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to poll for token.")
+		return "", stacktrace.Propagate(err, "Failed to poll for token.")
 	}
-	return tokenResponse, nil
+	return token, nil
 }
 
 
@@ -113,16 +124,16 @@ func AuthorizeUserDevice() (*TokenResponse, error) {
 	Repeatedly polls the request token endpoint from auth0 to check if the user
 	has authenticated successfully. For more information: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow#request-tokens
 */
-func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
+func pollForToken(deviceCode string, interval int) (string, error) {
 	// Set up a ticker to mark intervals for polling
 	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	defer ticker.Stop()
 
 	// initialize device query map
 	params := map[string]string{
-		grantTypeQueryParamName: deviceCodeGrantType,
+		grantTypeQueryParamName:  deviceCodeGrantType,
 		deviceCodeQueryParamName: deviceCode,
-		clientIdQueryParamName: localDevClientId,
+		clientIdQueryParamName:   localDevClientId,
 	}
 
 	deviceCodeHeaderParams := map[string]string{contentTypeHeaderName: formContentType}
@@ -131,7 +142,7 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 	for {
 		select {
 		case <-time.After(pollTimeout):
-			return nil, stacktrace.NewError("Timed out waiting for user to authorize device.")
+			return "", stacktrace.NewError("Timed out waiting for user to authorize device.")
 		case t := <-ticker.C:
 			logrus.Tracef("Polling for token at %s\n", t)
 			tokenResponse, err := requestAuthToken(params, deviceCodeHeaderParams)
@@ -140,7 +151,7 @@ func pollForToken(deviceCode string, interval int) (*TokenResponse, error) {
 				continue
 			}
 			if tokenResponse != nil {
-				return tokenResponse, nil
+				return tokenResponse.AccessToken, nil
 			}
 		}
 	}
