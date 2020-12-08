@@ -12,7 +12,11 @@ type AddServiceArgs struct {
 	IPPlaceholder		  string			`json:"ipPlaceholder"`
 
 	ImageName             string            `json:"imageName"`
-	UsedPorts             []int          `json:"usedPorts"`
+
+	// This is in Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
+	// It might even support ranges (e.g. "90:100/tcp"), though this is untested as of 2020-12-08
+	UsedPorts             []string          `json:"usedPorts"`
+
 	StartCmd              []string          `json:"startCommand"`
 	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
 	TestVolumeMountFilepath string			`json:"testVolumeMountFilepath"`
