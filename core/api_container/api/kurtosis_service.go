@@ -7,7 +7,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -87,10 +86,23 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	logrus.Infof("Received request to add a service with the following args: %v", *args)
 
 	usedPorts := map[nat.Port]bool{}
-	for _, portInt := range args.UsedPorts {
-		// NOTE: We'll need to change this if we want non-TCP ports
-		castedPort := nat.Port(fmt.Sprintf("%v/tcp", portInt))
-		usedPorts[castedPort] = true
+	for _, portSpecStr := range args.UsedPorts {
+		// NOTE: this function, frustratingly, doesn't return an error on failure - just emptystring
+		protocol, portNumberStr := nat.SplitProtoPort(portSpecStr)
+		if protocol == "" {
+			return stacktrace.NewError(
+				"Could not split port specification string '%s' into protocol & number strings",
+				portSpecStr)
+		}
+		portObj, err := nat.NewPort(protocol, portNumberStr)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred constructing a port object out of protocol '%v' and port number string '%v'",
+				protocol,
+				portNumberStr)
+		}
+		usedPorts[portObj] = true
 	}
 
 	freeIp, err := service.freeIpAddrTracker.GetFreeIpAddr()
