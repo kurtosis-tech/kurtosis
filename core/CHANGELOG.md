@@ -1,5 +1,5 @@
 # TBD
-* Make `build_and_run` direct users to the `SHOW_HELP` flag to the initializer
+* Add a more explanatory help message to `build_and_run`
 
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
