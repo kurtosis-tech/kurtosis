@@ -1,3 +1,6 @@
+# TBD
+* Make `build_and_run` direct users to the `SHOW_HELP` flag to the initializer
+
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
 * Add multiple tests to the `AccessController` so that any future changes don't require manual testing to ensure correctness

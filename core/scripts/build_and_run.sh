@@ -27,6 +27,8 @@ show_help() {
     echo "  Example:"
     echo "    ${0} all --env PARALLELISM=4"
     echo ""
+    echo "  To see all the environment variables Kurtosis accepts, add the '--env SHOW_HELP=true' flag"
+    echo ""
 }
 
 if [ "${#}" -eq 0 ]; then
