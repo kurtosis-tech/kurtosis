@@ -16,18 +16,23 @@ HELP_ACTION="help"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0} <action> <extra Docker args...>"
+    echo "${0} <action> [<extra 'docker run' args...>]"
     echo ""
-    echo "  Actions:"
+    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to 'docker run'"
+    echo ""
+    echo "  To select behaviour, choose from the following actions:"
     echo "    help    Displays this messages"
     echo "    build   Executes only the build step, skipping the run step"
     echo "    run     Executes only the run step, skipping the build step"
     echo "    all     Executes both build and run steps"
     echo ""
-    echo "  Example:"
+    echo "  To modify how your suite is run, you can set Kurtosis environment variables using the '--env' flag to 'docker run' like so:"
     echo "    ${0} all --env PARALLELISM=4"
     echo ""
+    echo "  To see all the environment variables Kurtosis accepts, add the '--env SHOW_HELP=true' flag"
+    echo ""
 }
+
 
 if [ "${#}" -eq 0 ]; then
     show_help
