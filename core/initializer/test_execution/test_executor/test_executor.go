@@ -101,7 +101,7 @@ func RunTest(
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
-		testsuiteDebuggerHostPortBinding *nat.PortBinding,
+		testsuiteDebuggerHostPortBinding nat.PortBinding,
 		testName string) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll

@@ -97,7 +97,7 @@ Args:
  */
 func (manager *ParallelTestOutputManager) logTestLaunch(
 			testName string,
-			debuggerHostPortBinding *nat.PortBinding) {
+			debuggerHostPortBinding nat.PortBinding) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 

@@ -18,10 +18,10 @@ type ParallelTestParams struct {
 	SubnetMask          string
 
 	// The IP:port on the host that the testsuite debugger port should be bound to
-	DebuggerHostPortBinding *nat.PortBinding
+	DebuggerHostPortBinding nat.PortBinding
 }
 
-func NewParallelTestParams(testName string, subnetMask string, debuggerHostPortBinding *nat.PortBinding) *ParallelTestParams {
+func NewParallelTestParams(testName string, subnetMask string, debuggerHostPortBinding nat.PortBinding) *ParallelTestParams {
 	return &ParallelTestParams{
 		TestName: testName,
 		SubnetMask: subnetMask,

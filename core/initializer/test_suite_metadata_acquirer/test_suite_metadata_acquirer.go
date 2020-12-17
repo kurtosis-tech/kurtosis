@@ -47,7 +47,7 @@ func GetTestSuiteMetadata(
 		initializerContainerSuiteExVolDirpath string,
 		dockerClient *client.Client,
 		launcher *test_suite_constants.TestsuiteContainerLauncher,
-		debuggerHostPortBinding *nat.PortBinding) (*TestSuiteMetadata, error) {
+		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -91,9 +91,10 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring testsuite container")
 	}
 	logrus.Infof(
-		"Metadata-acquiring testsuite container launched, with debugger port bound to host port %v (if a debugger " +
+		"Metadata-acquiring testsuite container launched, with debugger port bound to host port %v:%v (if a debugger " +
 			"is running in the testsuite, you may need to connect to this port to allow execution to proceed)",
-		debuggerHostPortBinding)
+		debuggerHostPortBinding.HostIP,
+		debuggerHostPortBinding.HostPort)
 
 	exitCode, err := dockerManager.WaitForExit(
 		parentContext,

@@ -59,7 +59,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		bridgeNetworkId string,
 		suiteExecutionVolume string,
 		metadataFilepathOnTestsuiteContainer string,
-		debuggerPortBinding *nat.PortBinding) (containerId string, err error) {
+		debuggerPortBinding nat.PortBinding) (containerId string, err error) {
 	envVars, err := launcher.generateTestSuiteEnvVars(
 		metadataFilepathOnTestsuiteContainer,
 		"", // We leave the test name blank to signify that we want test listing, not test execution
@@ -76,7 +76,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		bridgeNetworkId,
 		nil,  // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		map[nat.Port]*nat.PortBinding{
-			launcher.debuggerPort: debuggerPortBinding,
+			launcher.debuggerPort: &debuggerPortBinding,
 		},
 		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
 		envVars,
@@ -102,7 +102,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		kurtosisApiIpStr string,
 		testsuiteContainerIp net.IP,
 		servicesRelativeDirpath string,
-		debuggerPortBinding *nat.PortBinding) (containerId string, err error){
+		debuggerPortBinding nat.PortBinding) (containerId string, err error){
 	testSuiteEnvVars, err := launcher.generateTestSuiteEnvVars(
 		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
@@ -118,7 +118,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		networkId,
 		testsuiteContainerIp,
 		map[nat.Port]*nat.PortBinding{
-			launcher.debuggerPort: debuggerPortBinding,
+			launcher.debuggerPort: &debuggerPortBinding,
 		},
 		nil,
 		testSuiteEnvVars,
