@@ -1,6 +1,6 @@
 # TBD
 * Add a more explanatory help message to `build_and_run`
-* Add a debugger port (default `2778`, configurable with the `DEBUGGER_PORT` initializer envvar) to the testsuite that will always be mounted to the host machine in case the user wants to use a debugger
+* Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
 
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
