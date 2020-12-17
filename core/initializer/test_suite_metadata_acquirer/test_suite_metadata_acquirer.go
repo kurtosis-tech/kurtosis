@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
@@ -23,32 +22,30 @@ import (
 const (
 	bridgeNetworkName = "bridge"
 
-	// The name of the dirctory that will be created inside the suite execution volume for storing files related
+	// The name of the directory that will be created inside the suite execution volume for storing files related
 	//  to acquiring test suite metadata
 	metadataAcquirerDirname = "metadata-acquirer"
 
-	testListingContainerDescription = "Test-Listing Container"
-	testSuiteMetadataFilename = "test-suite-metadata.json"
+	metadataAcquiringContainerDescription = "Testsuite Metadata-Acquiring Container"
+	testSuiteMetadataFilename             = "test-suite-metadata.json"
 )
 
 /*
-Spins up a testsuite container in test-listing mode and returns the "set" of tests that it spits out
+Spins up a testsuite container in metadata-acquiring mode and returns the metadata that the suite returns
 
 Args:
 	testSuiteImage: The name of the Docker image containing the test suite
 	suiteExecutionVolume: The name of the Docker volume dedicated for storing file IO for the suite execution
-	suiteExecutionVolumeMountDirpath: The dirpath where the suite execution volume is mounted on the initializer container
+	initializerContainerSuiteExVolDirpath: The dirpath on the INITIALIZER container where the suite execution volume is mounted
 	dockerClient: The Docker client with which Docker requests will be made
 	testSuiteLogLevel: The log level the test suite will output with
 	customEnvVars: A key-value mapping of custom environment variables that will be set when running the test suite image
 */
 func GetTestSuiteMetadata(
-		testSuiteImage string,
 		suiteExecutionVolume string,
-		suiteExecutionVolumeMountDirpath string,
+		initializerContainerSuiteExVolDirpath string,
 		dockerClient *client.Client,
-		testSuiteLogLevel string,
-		customEnvVars map[string]string) (*TestSuiteMetadata, error) {
+		launcher *test_suite_constants.TestsuiteContainerLauncher) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -71,52 +68,30 @@ func GetTestSuiteMetadata(
 	}
 	bridgeNetworkId := bridgeNetworkIds[0]
 
-	metadataAcquirerDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, metadataAcquirerDirname)
+	metadataAcquirerDirpathOnInitializer := path.Join(initializerContainerSuiteExVolDirpath, metadataAcquirerDirname)
 	if err := os.Mkdir(metadataAcquirerDirpathOnInitializer, os.ModeDir); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a directory in the suite execution volume to " +
 			"store data for the acquisition of test suite metadata")
 	}
-	metadataAcquirerDirpathOnSuite := path.Join(test_suite_constants.SuiteExecutionVolumeMountpoint, metadataAcquirerDirname)
+	metadataAcquirerDirpathOnSuite := path.Join(test_suite_constants.TestsuiteContainerSuiteExVolMountpoint, metadataAcquirerDirname)
 
 	metadataFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, testSuiteMetadataFilename)
 
-	envVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
-		metadataFilepathOnSuite,
-		"", // We leave the test name blank to signify that we want test listing, not test execution
-		"", // Because we're doing test listing, not test execution, the Kurtosis API IP can be blank
-		"", // We leave the services dirpath blank because getting suite metadata doesn't require knowing this
-		testSuiteLogLevel,
-		customEnvVars)
+	containerId, err := launcher.LaunchMetadataAcquiringContainer(parentContext, dockerManager, bridgeNetworkId, suiteExecutionVolume, metadataFilepathOnSuite)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating the Docker environment variables for the test suite")
+		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring testsuite container")
 	}
 
-	testListingContainerId, err := dockerManager.CreateAndStartContainer(
+	exitCode, err := dockerManager.WaitForExit(
 		parentContext,
-		testSuiteImage,
-		bridgeNetworkId,
-		nil,  // Nil because the bridge network will assign IPs on its own; we don't need to (and won't know what IPs are already used)
-		map[nat.Port]bool{},
-		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
-		envVars,
-		map[string]string{},
-		map[string]string{
-			suiteExecutionVolume: test_suite_constants.SuiteExecutionVolumeMountpoint,
-		})
+		containerId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the test suite container to list the tests")
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, containerId, logrus.StandardLogger(), metadataAcquiringContainerDescription)
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to return test metadata")
 	}
-
-	testListingExitCode, err := dockerManager.WaitForExit(
-		parentContext,
-		testListingContainerId)
-	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testListingContainerId, logrus.StandardLogger(), testListingContainerDescription)
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to list the tests")
-	}
-	if testListingExitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testListingContainerId, logrus.StandardLogger(), testListingContainerDescription)
-		return nil, stacktrace.NewError("The testsuite container for listing tests exited with a nonzero exit code")
+	if exitCode != 0 {
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, containerId, logrus.StandardLogger(), metadataAcquiringContainerDescription)
+		return nil, stacktrace.NewError("The testsuite container for acquiring suite metadata exited with a nonzero exit code")
 	}
 
 	metadataFilepathOnInitializer := path.Join(metadataAcquirerDirpathOnInitializer, testSuiteMetadataFilename)

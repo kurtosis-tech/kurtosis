@@ -1,5 +1,6 @@
 # TBD
 * Add a more explanatory help message to `build_and_run`
+* Add a debugger port (default `2778`, configurable with the `DEBUGGER_PORT` initializer envvar) to the testsuite that will always be mounted to the host machine in case the user wants to use a debugger
 
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)

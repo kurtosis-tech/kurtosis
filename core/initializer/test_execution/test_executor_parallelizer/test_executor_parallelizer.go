@@ -11,6 +11,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -55,9 +56,7 @@ func RunInParallelAndPrintResults(
 		allTestParams map[string]ParallelTestParams,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
-		testSuiteImageName string,
-		testSuiteLogLevel string,
-		customTestSuiteEnvVars map[string]string) bool {
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -97,9 +96,7 @@ func RunInParallelAndPrintResults(
 		suiteExecutionVolumeMountDirpath,
 		kurtosisApiImageName,
 		apiContainerLogLevel,
-		testSuiteImageName,
-		testSuiteLogLevel,
-		customTestSuiteEnvVars)
+		testsuiteLauncher)
 
 	logrus.Info("All tests exited")
 
@@ -119,9 +116,7 @@ func disableSystemLogAndRunTestThreads(
 		suiteExecutionVolumeMountDirpath string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
-		testSuiteImageName string,
-		testSuiteLogLevel string,
-		customTestSuiteEnvVars map[string]string) {
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
 		/*
 		    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
@@ -145,9 +140,7 @@ func disableSystemLogAndRunTestThreads(
 			suiteExecutionVolumeMountDirpath,
 			kurtosisApiImageName,
 			apiContainerLogLevel,
-			testSuiteImageName,
-			testSuiteLogLevel,
-			customTestSuiteEnvVars)
+			testsuiteLauncher)
 	}
 	waitGroup.Wait()
 }
@@ -167,9 +160,7 @@ func runTestWorkerGoroutine(
 			suiteExecutionVolumeMountDirpath string,
 			kurtosisApiImageName string,
 			apiContainerLogLevel string,
-			testSuiteImageName string,
-			testSuiteLogLevel string,
-			customTestSuiteEnvVars map[string]string) {
+			testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -213,9 +204,7 @@ func runTestWorkerGoroutine(
 			testParams.SubnetMask,
 			kurtosisApiImageName,
 			apiContainerLogLevel,
-			testSuiteImageName,
-			testSuiteLogLevel,
-			customTestSuiteEnvVars,
+			testsuiteLauncher,
 			testName)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 

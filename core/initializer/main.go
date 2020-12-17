@@ -9,18 +9,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -38,7 +41,7 @@ const (
 
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
 	// A user MUST mount a volume here
-	suiteExecutionVolumeMountDirpath = "/suite-execution"
+	initializerContainerSuiteExVolMountDirpath = "/suite-execution"
 
 	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
 	//  tokens) will be bind-mounted from the host filesystem
@@ -48,7 +51,12 @@ const (
 	sessionCacheFilename = "session-cache"
 	sessionCacheFileMode os.FileMode = 0600
 
-	// vvvvvvvvvvvvvvvv If you change these, you need to update the Dockerfile!! vvvvvvvvvvvvvvvvvvvvvvvvvvv
+	defaultDebuggerPort = 2778
+	debuggerPortProtocol = "tcp"
+
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//                  If you change the below, you need to update the Dockerfile!
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	doListArg = "DO_LIST"
 	testSuiteImageArg = "TEST_SUITE_IMAGE"
 	showHelpArg = "SHOW_HELP"
@@ -61,10 +69,16 @@ const (
 	parallelismArg = "PARALLELISM"
 	customEnvVarsJsonArg = "CUSTOM_ENV_VARS_JSON"
 	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
-	// ^^^^^^^^^^^^^^^^ If you change these, you need to update the Dockerfile!! ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+	testSuiteDebuggerPortArg = "DEBUGGER_PORT"
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//                     If you change the above, you need to update the Dockerfile!
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 )
 
-// vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv Keep these sorted alphabetically! vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//          If you change default values below, you need to update the Dockerfile!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	clientIdArg: {
 		Required: false,
@@ -129,6 +143,13 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
 		Type:     docker_flag_parser.StringFlagType,
 	},
+	testSuiteDebuggerPortArg: {
+		Required: false,
+		Default: defaultDebuggerPort,
+		HelpText: "The port that debuggers running inside the testsuite should listen on, which Kurtosis will expose" +
+			"to the host machine",
+		Type:   docker_flag_parser.IntFlagType,
+	},
 	testSuiteImageArg: {
 		Required: true,
 		Default:  "",
@@ -138,11 +159,16 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	testSuiteLogLevelArg: {
 		Required: false,
 		Default:  "debug",
-		HelpText: fmt.Sprintf("A string that will be passed as-is to the test suite container to indicate what log level the test suite container should output at; this string should be meaningful to the test suite container because Kurtosis won't know what logging framework the testsuite uses"),
+		HelpText: fmt.Sprintf("A string that will be passed as-is to the test suite container to indicate " +
+			"what log level the test suite container should output at; this string should be meaningful to " +
+			"the test suite container because Kurtosis won't know what logging framework the testsuite uses"),
 		Type:     docker_flag_parser.StringFlagType,
 	},
 }
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Keep these sorted alphabetically! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//             If you change default values above, you need to update the Dockerfile!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
@@ -215,13 +241,22 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
+	debuggerPortInt := parsedFlags.GetInt(testSuiteDebuggerPortArg)
+	debuggerPort, err := nat.NewPort(debuggerPortProtocol, strconv.Itoa(debuggerPortInt))
+	if err != nil {
+		logrus.Errorf("An error occurred parsing debugger port spec: %v", err)
+		os.Exit(failureExitCode)
+	}
+	testsuiteLauncher := test_suite_constants.NewTestsuiteContainerLauncher(
 		parsedFlags.GetString(testSuiteImageArg),
-		parsedFlags.GetString(suiteExecutionVolumeArg),
-		suiteExecutionVolumeMountDirpath,
-		dockerClient,
 		parsedFlags.GetString(testSuiteLogLevelArg),
-		customEnvVars)
+		customEnvVars,
+		debuggerPort)
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
+		parsedFlags.GetString(suiteExecutionVolumeArg),
+		initializerContainerSuiteExVolMountDirpath,
+		dockerClient,
+		testsuiteLauncher)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
@@ -269,15 +304,13 @@ func main() {
 	allTestsPassed, err := test_suite_runner.RunTests(
 		dockerClient,
 		parsedFlags.GetString(suiteExecutionVolumeArg),
-		suiteExecutionVolumeMountDirpath,
+		initializerContainerSuiteExVolMountDirpath,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
 		parsedFlags.GetString(kurtosisApiImageArg),
 		parsedFlags.GetString(kurtosisLogLevelArg),
-		parsedFlags.GetString(testSuiteImageArg),
-		parsedFlags.GetString(testSuiteLogLevelArg),
-		customEnvVars)
+		testsuiteLauncher)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)

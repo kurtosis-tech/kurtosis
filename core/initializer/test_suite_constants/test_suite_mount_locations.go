@@ -6,7 +6,7 @@
 package test_suite_constants
 
 /*
-This filepath is a hardcoded location where the test suite execution volume will be mounted on the test suite image
+The dirpath on the TESTSUITE container where the execution volume will be mounted
 
 This is hardcoded because the only way to get information back from teh test suite container is with a mounted file, but
 	we won't know where to mount the file without getting information back from the test suite about where's an acceptable
@@ -14,5 +14,5 @@ This is hardcoded because the only way to get information back from teh test sui
 	to make it a mountable location in their image.
  */
 const (
-	SuiteExecutionVolumeMountpoint = "/suite-execution"
+	TestsuiteContainerSuiteExVolMountpoint = "/suite-execution"
 )

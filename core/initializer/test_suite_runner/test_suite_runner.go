@@ -11,6 +11,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -60,9 +61,7 @@ func RunTests(
 		testParallelism uint,
 		kurtosisApiImage string,
 		apiContainerLogLevel string,
-		testSuiteImage string,
-		testSuiteLogLevel string,
-		customTestSuiteEnvVars map[string]string) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
@@ -94,9 +93,7 @@ func RunTests(
 		testParams,
 		kurtosisApiImage,
 		apiContainerLogLevel,
-		testSuiteImage,
-		testSuiteLogLevel,
-		customTestSuiteEnvVars)
+		testsuiteLauncher)
 	return allTestsPassed, nil
 }
 

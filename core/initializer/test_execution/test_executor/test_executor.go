@@ -102,9 +102,7 @@ func RunTest(
 		subnetMask string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
-		testSuiteImageName string,
-		testSuiteLogLevel string,
-		customTestSuiteEnvVars map[string]string,
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		testName string) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
@@ -168,32 +166,19 @@ func RunTest(
 	}
 
 	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
-	testSuiteEnvVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
-		"",  // We're executing a test, not getting metadata, so this should be blank
+
+	log.Info("Creating test suite container to run the test...")
+	testRunningContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
+		ctx,
+		dockerManager,
+		networkId,
+		suiteExecutionVolume,
 		testName,
 		kurtosisApiIp.String(),
-		servicesRelativeDirpath,
-		testSuiteLogLevel,
-		customTestSuiteEnvVars)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred generating the map of test suite environment variables")
-	}
-
-	log.Infof("Creating test suite container that will run the test...")
-	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
-		ctx,
-		testSuiteImageName,
-		networkId,
 		testRunningContainerIp,
-		map[nat.Port]bool{},
-		nil,
-		testSuiteEnvVars,
-		map[string]string{},
-		map[string]string{
-			suiteExecutionVolume: test_suite_constants.SuiteExecutionVolumeMountpoint,
-		})
+		servicesRelativeDirpath)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
+		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite container to run the test")
 	}
 	log.Info("Successfully created test suite container to run the test")
 
