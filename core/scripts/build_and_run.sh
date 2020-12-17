@@ -120,11 +120,19 @@ if "${do_run}"; then
     mkdir -p "${KURTOSIS_DIRPATH}"
     go_suite_execution_volume="go-example-suite_${docker_tag}_$(date +%s)"
     docker volume create "${go_suite_execution_volume}"
+
+    # --------------------- Kurtosis Go environment variables ---------------------
+    api_service_image="${KURTOSIS_DOCKERHUB_ORG}/example-microservices_api"
+    datastore_service_image="${KURTOSIS_DOCKERHUB_ORG}/example-microservices_datastore"
+    # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
+    go_suite_env_vars_json="CUSTOM_ENV_VARS_JSON={\"API_SERVICE_IMAGE\":\"${api_service_image}\",\"DATASTORE_SERVICE_IMAGE\":\"${datastore_service_image}\"}"
+    # --------------------- End Kurtosis Go environment variables ---------------------
+
     docker run \
         --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
         --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
         --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env 'CUSTOM_ENV_VARS_JSON={"EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
+        --env "CUSTOM_ENV_VARS_JSON=${go_suite_env_vars_json}" \
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
         --env "KURTOSIS_API_IMAGE=${api_image}" \
         --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
