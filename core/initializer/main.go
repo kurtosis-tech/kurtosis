@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
@@ -23,7 +22,6 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -51,8 +49,14 @@ const (
 	sessionCacheFilename = "session-cache"
 	sessionCacheFileMode os.FileMode = 0600
 
+	// Can make these configurable if needed
+	hostPortTrackerInterfaceIp = "127.0.0.1"
+	hostPortTrackerStartRange = 8000
+	hostPortTrackerEndRange = 10000
+
 	defaultDebuggerPort = 2778
 	debuggerPortProtocol = "tcp"
+
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
@@ -197,6 +201,7 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
+	// TODO Break this into a private helper function
 	clientId := parsedFlags.GetString(clientIdArg)
 	clientSecret := parsedFlags.GetString(clientSecretArg)
 	var accessController access_controller.AccessController
@@ -227,6 +232,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+	// TODO Break everything from here on down into a private helper function
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("An error occurred creating the Docker client: %v", err)
@@ -241,22 +247,38 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	debuggerPortInt := parsedFlags.GetInt(testSuiteDebuggerPortArg)
-	debuggerPort, err := nat.NewPort(debuggerPortProtocol, strconv.Itoa(debuggerPortInt))
+	freeHostPortBindingSupplier, err := test_suite_runner.NewFreeHostPortBindingSupplier(
+		hostPortTrackerInterfaceIp,
+		debuggerPortProtocol,
+		hostPortTrackerStartRange,
+		hostPortTrackerEndRange)
 	if err != nil {
-		logrus.Errorf("An error occurred parsing debugger port spec: %v", err)
+		logrus.Errorf("An error occurred creating the free host port binding supplier: %v", err)
 		os.Exit(failureExitCode)
 	}
-	testsuiteLauncher := test_suite_constants.NewTestsuiteContainerLauncher(
+
+	testsuiteLauncher, err := test_suite_constants.NewTestsuiteContainerLauncher(
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		customEnvVars,
-		debuggerPort)
+		parsedFlags.GetInt(testSuiteDebuggerPortArg))
+	if err != nil {
+		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	metadataAcquisitionHostPortBinding, err := freeHostPortBindingSupplier.GetFreePortBinding()
+	if err != nil {
+		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
+		os.Exit(failureExitCode)
+	}
+
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		parsedFlags.GetString(suiteExecutionVolumeArg),
 		initializerContainerSuiteExVolMountDirpath,
 		dockerClient,
-		testsuiteLauncher)
+		testsuiteLauncher,
+		metadataAcquisitionHostPortBinding)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
@@ -310,7 +332,8 @@ func main() {
 		parallelismUint,
 		parsedFlags.GetString(kurtosisApiImageArg),
 		parsedFlags.GetString(kurtosisLogLevelArg),
-		testsuiteLauncher)
+		testsuiteLauncher,
+		freeHostPortBindingSupplier)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)

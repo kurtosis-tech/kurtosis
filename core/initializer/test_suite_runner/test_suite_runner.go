@@ -61,7 +61,8 @@ func RunTests(
 		testParallelism uint,
 		kurtosisApiImage string,
 		apiContainerLogLevel string,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
+		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (allTestsPassed bool, executionErr error) {
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
@@ -78,7 +79,7 @@ func RunTests(
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits)
+	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -103,7 +104,10 @@ Helper function to build, from the set of tests to run, the map of test params t
 Args:
 	testsToRun: A "set" of test names to run in parallel
  */
-func buildTestParams(testNamesToRun map[string]bool, networkWidthBits uint32) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
+func buildTestParams(
+		testNamesToRun map[string]bool,
+		networkWidthBits uint32,
+		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
@@ -130,7 +134,12 @@ func buildTestParams(testNamesToRun map[string]bool, networkWidthBits uint32) (m
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
-		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr)
+		freeHostPortBinding, err := freeHostPortBindingSupplier.GetFreePortBinding()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for test '%v'", testName)
+		}
+
+		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding)
 		testIndex++
 	}
 	return testParams, nil

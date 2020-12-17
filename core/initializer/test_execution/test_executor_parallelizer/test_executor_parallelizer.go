@@ -193,6 +193,9 @@ func runTestWorkerGoroutine(
 		log.SetOutput(writingTempFp)
 		log.SetFormatter(logrus.StandardLogger().Formatter)
 
+		testsuiteDebuggerHostPortBinding := testParams.DebuggerHostPortBinding
+
+		outputManager.logTestLaunch(testName, testsuiteDebuggerHostPortBinding)
 		passed, executionErr := test_executor.RunTest(
 			executionId,
 			parentContext,
@@ -205,6 +208,7 @@ func runTestWorkerGoroutine(
 			kurtosisApiImageName,
 			apiContainerLogLevel,
 			testsuiteLauncher,
+			testsuiteDebuggerHostPortBinding,
 			testName)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 

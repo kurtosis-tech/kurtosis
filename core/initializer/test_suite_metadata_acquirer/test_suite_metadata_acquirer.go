@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
@@ -45,7 +46,8 @@ func GetTestSuiteMetadata(
 		suiteExecutionVolume string,
 		initializerContainerSuiteExVolDirpath string,
 		dockerClient *client.Client,
-		launcher *test_suite_constants.TestsuiteContainerLauncher) (*TestSuiteMetadata, error) {
+		launcher *test_suite_constants.TestsuiteContainerLauncher,
+		debuggerHostPortBinding *nat.PortBinding) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -77,10 +79,21 @@ func GetTestSuiteMetadata(
 
 	metadataFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, testSuiteMetadataFilename)
 
-	containerId, err := launcher.LaunchMetadataAcquiringContainer(parentContext, dockerManager, bridgeNetworkId, suiteExecutionVolume, metadataFilepathOnSuite)
+	logrus.Info("Launching metadata-acquiring testsuite container...")
+	containerId, err := launcher.LaunchMetadataAcquiringContainer(
+		parentContext,
+		dockerManager,
+		bridgeNetworkId,
+		suiteExecutionVolume,
+		metadataFilepathOnSuite,
+		debuggerHostPortBinding)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring testsuite container")
 	}
+	logrus.Infof(
+		"Metadata-acquiring testsuite container launched, with debugger port bound to host port %v (if a debugger " +
+			"is running in the testsuite, you may need to connect to this port to allow execution to proceed)",
+		debuggerHostPortBinding)
 
 	exitCode, err := dockerManager.WaitForExit(
 		parentContext,

@@ -14,6 +14,10 @@ import (
 	"strconv"
 )
 
+const (
+	debuggerPortProtocol = "tcp"
+)
+
 type TestsuiteContainerLauncher struct {
 	testsuiteImage string
 
@@ -23,26 +27,39 @@ type TestsuiteContainerLauncher struct {
 	// The testsuite-custom Docker environment variables that should be set in the testsuite container
 	customEnvVars map[string]string
 
-	// We'll always bind this port on the user's host machine to the testsuite, so they can do debugging
-	//  if they want
+	// This is the port on the testsuite container that a debugger might be listening on, if any is running at all
+	// We'll always bind this port on the testsuite container to a port on the user's machine, so they can attach
+	//  a debugger if desired
 	debuggerPort nat.Port
 }
 
-func NewTestsuiteContainerLauncher(testsuiteImage string, logLevel string, customEnvVars map[string]string, debuggerPort nat.Port) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteImage: testsuiteImage, logLevel: logLevel, customEnvVars: customEnvVars, debuggerPort: debuggerPort}
+func NewTestsuiteContainerLauncher(
+		testsuiteImage string,
+		logLevel string,
+		customEnvVars map[string]string,
+		debuggerPort int) (*TestsuiteContainerLauncher, error) {
+	debuggerPortObj, err := nat.NewPort(debuggerPortProtocol, strconv.Itoa(debuggerPort))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the debugger port object from port int '%v'", debuggerPort)
+	}
+	return &TestsuiteContainerLauncher{
+		testsuiteImage: testsuiteImage,
+		logLevel: logLevel,
+		customEnvVars: customEnvVars,
+		debuggerPort: debuggerPortObj,
+	}, nil
 }
 
 /*
 Launches a new testsuite container to acquire testsuite metadata
-
-Returns: The container ID of the new container
  */
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		context context.Context,
 		dockerManager *commons.DockerManager,
 		bridgeNetworkId string,
 		suiteExecutionVolume string,
-		metadataFilepathOnTestsuiteContainer string) (string, error){
+		metadataFilepathOnTestsuiteContainer string,
+		debuggerPortBinding *nat.PortBinding) (containerId string, err error) {
 	envVars, err := launcher.generateTestSuiteEnvVars(
 		metadataFilepathOnTestsuiteContainer,
 		"", // We leave the test name blank to signify that we want test listing, not test execution
@@ -57,9 +74,9 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		context,
 		launcher.testsuiteImage,
 		bridgeNetworkId,
-		nil,  // Nil because the bridge network will assign IPs on its own so we don't need to specify one (and won't know what IPs are already used)
-		map[nat.Port]bool{
-			launcher.debuggerPort: true,
+		nil,  // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
+		map[nat.Port]*nat.PortBinding{
+			launcher.debuggerPort: debuggerPortBinding,
 		},
 		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
 		envVars,
@@ -75,8 +92,6 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 
 /*
 Launches a new testsuite container to acquire testsuite metadata
-
-Returns: The container ID of the new container
 */
 func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		context context.Context,
@@ -86,7 +101,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testName string,
 		kurtosisApiIpStr string,
 		testsuiteContainerIp net.IP,
-		servicesRelativeDirpath string) (string, error){
+		servicesRelativeDirpath string,
+		debuggerPortBinding *nat.PortBinding) (containerId string, err error){
 	testSuiteEnvVars, err := launcher.generateTestSuiteEnvVars(
 		"",  // We're executing a test, not getting metadata, so this should be blank
 		testName,
@@ -101,8 +117,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		launcher.testsuiteImage,
 		networkId,
 		testsuiteContainerIp,
-		map[nat.Port]bool{
-			launcher.debuggerPort: true,
+		map[nat.Port]*nat.PortBinding{
+			launcher.debuggerPort: debuggerPortBinding,
 		},
 		nil,
 		testSuiteEnvVars,
