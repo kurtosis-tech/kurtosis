@@ -1,3 +1,6 @@
+# TBD
+* Switch to Midnight theme instead of Hacker
+
 # 1.2.1
 * Add a more explanatory help message to `build_and_run`
 * Correct `build_and_run.sh` to use the example microservices for kurtosis-go 1.3.0 compatibility
