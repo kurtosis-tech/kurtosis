@@ -5,6 +5,8 @@
 # TBD
 * Print the names of the tests that will be run before running any tests
 * Fix bug with test suite results not ordered by test name alphabetically
+* Switch Docker volume format from `SUITEIMAGE_TAG_UNIXTIME` to `YYYY-MM-DDTHH.MM.SS_SUITEIMAGE_TAG` so it's better sorted in `docker volume ls` output
+* Prefix Docker networks with `YYYY-MM-DDTHH.MM.SS` so it sorts nicely on `docker network ls` output
 
 # 1.2.3
 * Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
