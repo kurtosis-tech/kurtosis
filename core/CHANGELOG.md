@@ -1,5 +1,6 @@
 # TBD
 * Add a more explanatory help message to `build_and_run`
+* Correct `build_and_run.sh` to use the example microservices for kurtosis-go 1.3.0 compatibility
 * Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
 
 # 1.2.0
