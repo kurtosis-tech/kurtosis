@@ -1,5 +1,5 @@
 # TBD
-* Only run CI builds on `X.Y.Z` tags (not `master`)
+* Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
 
 # 1.2.2
 * Switch to Midnight theme instead of Hacker
