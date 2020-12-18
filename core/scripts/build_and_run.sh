@@ -6,7 +6,7 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_ACTION="build"
@@ -122,8 +122,8 @@ if "${do_run}"; then
     docker volume create "${go_suite_execution_volume}"
 
     # --------------------- Kurtosis Go environment variables ---------------------
-    api_service_image="${KURTOSIS_DOCKERHUB_ORG}/example-microservices_api"
-    datastore_service_image="${KURTOSIS_DOCKERHUB_ORG}/example-microservices_datastore"
+    api_service_image="${DOCKER_ORG}/example-microservices_api"
+    datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
     # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
     go_suite_env_vars_json="{\"API_SERVICE_IMAGE\":\"${api_service_image}\",\"DATASTORE_SERVICE_IMAGE\":\"${datastore_service_image}\"}"
     # --------------------- End Kurtosis Go environment variables ---------------------
