@@ -259,7 +259,9 @@ func RunTest(
 			"test execution status update; this is a Kurtosis code bug")
 	case exit_codes.TestHitTimeoutExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test failed to complete within the hard test " +
-			"timeout (test_execution_timeout + setup_buffer)")
+			"timeout (setup_buffer + test_execution_timeout), which most likely means the testnet setup took " +
+			"too long (because if the test execution took too long, the test execution timeout" +
+			"would have been tripped instead)")
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
