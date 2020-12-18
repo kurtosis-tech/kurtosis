@@ -1,37 +1,28 @@
-## Welcome to GitHub Pages
+![](./images/horizontal-logo.jpg)
 
-You can use the [editor on GitHub](https://github.com/kurtosis-tech/kurtosis-core/edit/master/docs/index.md) to maintain and preview the content for your website in Markdown files.
+[Kurtosis](https://www.kurtosistech.com) is a platform for running whole-system tests against distributed systems with the frequency and repeatability of unit tests.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+The world is moving to microservices and systems are becoming increasingly complex. The more components a system has, the more [emergent phenomena](https://en.wikipedia.org/wiki/Emergence) and [unexpected outlier events](https://en.wikipedia.org/wiki/Black_swan_theory) that occur. More components equal more difficulty running a representative system, and more corners cut when testing. If nothing is done, testing will continue to decline and unpredictability will continue to rise. Engineers need a new tool to tame the complexity of the distributed age, that marries the ease and safety of unit tests with the representativeness of testing in production. Kurtosis is that tool.
 
-### Markdown
+Getting Started
+---------------
+You have two paths you can start with:
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+* For those who like to jump in and see things running, head over to [the quickstart instructions](./quickstart.md)
+* For those who prefer to start at a high level, check out [the Kurtosis architecture docs](./architecture.md)
 
-```markdown
-Syntax highlighted code block
+For Q&A, head over to the [Kurtosis Discord](https://discord.gg/6Jjp9c89z9) server.
 
-# Header 1
-## Header 2
-### Header 3
+Additional Documentation
+------------------------
 
-- Bulleted
-- List
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+Developer Notes
+---------------
+Stop running containers (replace `YOUR-IMAGE-NAME` with the name of the image of the containers you want to remove):
 ```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/kurtosis-tech/kurtosis-core/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
+docker stop $(docker ps -a --quiet --filter ancestor="YOUR-IMAGE-NAME" --format="{{.ID}}")
+```
