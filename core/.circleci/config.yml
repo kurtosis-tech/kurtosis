@@ -101,8 +101,7 @@ workflows:
             - kurtosis-user
           filters:
             branches:
-              only:
-                - master
+              ignore: /.*/
             tags: 
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
