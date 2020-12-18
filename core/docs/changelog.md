@@ -1,3 +1,8 @@
+# TBD
+* Switch to Midnight theme instead of Hacker
+* Migrate CI check from kurtosis-docs for verifying all links work
+* Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
+
 # 1.2.1
 * Add a more explanatory help message to `build_and_run`
 * Correct `build_and_run.sh` to use the example microservices for kurtosis-go 1.3.0 compatibility
