@@ -3,6 +3,7 @@
 * Migrate CI check from kurtosis-docs for verifying all links work
 * Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
 * Don't run Go code CI job when only docs have changed
+* Only build Docker images for `X.Y.Z` tags (no need to build `develop` any time a PR merges)
 
 # 1.2.1
 * Add a more explanatory help message to `build_and_run`
