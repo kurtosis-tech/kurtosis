@@ -27,13 +27,14 @@ To package the CLI into a Docker image, your repo will have a Dockerfile under t
 
 The only bit of complexity is that the Dockerfile will receive Kurtosis-specific parameters as magic environment variables, which will then be passed to your testsuite CLI in the form of flag args. These environment variables are as follows:
 
+* `DEBUGGER_PORT`
 * `KURTOSIS_API_IP`
 * `LOG_LEVEL`
 * `METADATA_FILEPATH`
 * `SERVICES_RELATIVE_DIRPATH`
 * `TEST`
 
-With the exception of the log level, all of these will be passed as-is to the `Client.run` call. If you modify the Dockerfile, you will need to make sure that you continue to receive these variables as flags in your CLI main function.
+With the exception of the log level and debugger port, all of these will be passed as-is to the `Client.run` call. If you modify the Dockerfile, you will need to make sure that you continue to receive these variables as flags in your CLI main function.
 
 ### TestSuite
 Every Kurtosis client's `Client.Run` function requires a `TestSuite` object that contains details about:
