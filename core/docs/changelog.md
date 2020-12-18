@@ -1,5 +1,6 @@
-# Versioning scheme
-Kurtosis follows a modified [semver], where in an `X.Y.Z` version string, _both_ major (`X`) and minor (`Y`) version changes signify API-breaking changes. Patch (`Z`) version changes will not introduce any API-breaking changes. To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
+**Versioning scheme:** Kurtosis follows a modified [Semver](https://semver.org/) where in an `X.Y.Z` version string, _both_ major (`X`) and minor (`Y`) version changes signify API-breaking changes. Patch (`Z`) version changes will not introduce any API-breaking changes. The reason for this modification is because strict Semver often results in silly versions like `238.1.1`. With the major version incremented so high and no higher version to roll over to, there's no way to signify a Really Big Change (like a major refactor). Our method fixes this.
+
+**Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
 
 # 1.2.3
 * Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
