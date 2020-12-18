@@ -48,6 +48,8 @@ const (
 	dockerSocket = "/var/run/docker.sock"
 
 	testRunningContainerDescription = "Test-Running Container"
+
+	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
 )
 
 /*
@@ -127,7 +129,11 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for the gateway for test %v", testName)
 	}
-	networkName := fmt.Sprintf("%v-%v", executionInstanceId.String(), testName)
+	networkName := fmt.Sprintf(
+		"%v_%v_%v",
+		time.Now().Format(networkNameTimestampFormat),
+		executionInstanceId.String(),
+		testName)
 	networkId, err := dockerManager.CreateNetwork(ctx, networkName, subnetMask, gatewayIp)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
