@@ -1,4 +1,4 @@
-# TBD
+# 1.2.2
 * Switch to Midnight theme instead of Hacker
 * Migrate CI check from kurtosis-docs for verifying all links work
 * Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
