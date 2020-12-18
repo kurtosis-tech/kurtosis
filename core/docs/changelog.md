@@ -1,8 +1,11 @@
+# Versioning scheme
+Kurtosis follows a modified [semver], where in an `X.Y.Z` version string, _both_ major (`X`) and minor (`Y`) version changes signify API-breaking changes. Patch (`Z`) version changes will not introduce any API-breaking changes. To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
+
 # 1.2.3
 * Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
 
 # 1.2.2
-* Switch to Midnight theme instead of Hacker
+* Switch to Midnight theme for docs instead of Hacker
 * Migrate CI check from kurtosis-docs for verifying all links work
 * Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
 * Don't run Go code CI job when only docs have changed
