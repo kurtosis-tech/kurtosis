@@ -13,8 +13,29 @@ executors:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
-  validate:
+  check_code:
     executor: ubuntu_vm
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
+      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+
+      # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
+      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
+
+  check_docs:
+    docker:
+      # Needed for `npm install` down below
+      - image: cimg/node:15.3.0
+    resource_class: small
     steps:
       - checkout
 
@@ -23,13 +44,13 @@ jobs:
       # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
       # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
       # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
-      - run: "! git --no-pager diff --exit-code origin/develop...HEAD CHANGELOG.md"
+      - run: "! git --no-pager diff --exit-code origin/develop...HEAD docs/changelog.md"
 
-      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
-      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-
-      # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
+      - run:
+          name: Check links in Markdown docs
+          command: |
+            sudo npm install -g markdown-link-check
+            bash .circleci/check-markdown-links.sh
 
   push_docker_images:
     environment:
@@ -59,7 +80,8 @@ jobs:
 workflows:
   build:
     jobs:
-      - validate:
+      # -- PR check jobs ------------------------------------------
+      - check_code:
           context:
             - docker-user
             - kurtosis-user
@@ -68,6 +90,15 @@ workflows:
               ignore:
                 - develop
                 - master
+      - check_docs:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      # -- End PR check jobs ---------------------------------------
+
+      # -- Artifact-publishing jobs --------------------------------
       - push_docker_images:
           context:
             - docker-user
@@ -75,7 +106,7 @@ workflows:
           filters:
             branches:
               only:
-                - develop
                 - master
             tags: 
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      # -- End artifact-publishing jobs ----------------------------

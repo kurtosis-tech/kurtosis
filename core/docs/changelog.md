@@ -1,7 +1,15 @@
 # TBD
+* Switch to Midnight theme instead of Hacker
+* Migrate CI check from kurtosis-docs for verifying all links work
+* Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
+* Don't run Go code CI job when only docs have changed
+* Only build Docker images for `X.Y.Z` tags (no need to build `develop` any time a PR merges)
+* Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
+
+# 1.2.1
 * Add a more explanatory help message to `build_and_run`
 * Correct `build_and_run.sh` to use the example microservices for kurtosis-go 1.3.0 compatibility
-* Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
+* Add `docs` directory for publishing user-friendly docs (including CHANGELOG!)
 
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)

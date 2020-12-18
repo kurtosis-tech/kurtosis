@@ -2,6 +2,11 @@ Debugging Failed Tests
 ======================
 Tests will of course fail over the course of your development, so here are some common error scenarios that you might encounter:
 
+Mount denied due to paths not being shared from OS X
+----------------------------------------------------
+**High-level:** If you're using MacOS, make sure that your Docker engine's `Resources > File Sharing` preferences are set to allow `/var/folders`
+**Details:** The Kurtosis controller is a Docker image that needs to access the Docker engine it's running in to create other Docker images. This is done via creating "sibling" containers, as detailed in the "Solution" section at the bottom of [this blog post](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/). However, this requires your Docker engine's communication socket to be bind-mounted inside the controller container. Kurtosis will do this for you, but you'll need to give Docker permission for the Docker socket (which lives at `/var/run/docker.sock`) to be bind-mounted inside the controller container.
+
 Tests failed but no controller logs were printed
 ------------------------------------------------
 If your tests are failing but you're not getting any controller logs whatsoever, you either have a failure in launching the test's controller container or in the machinery for reporting a controller container's logs back to the Kurtosis initializer.
@@ -12,11 +17,11 @@ If this still doesn't resolve the issue, you'll want to investigate the logs of 
 
 Overlapping IP address ranges
 -----------------------------
-When Docker errors saying that subnet IP address ranges conflict, this usually means that Kurtosis is trying to create the per-test subnets but is colliding with an existing network that was left over from a previous invocation of the test suite. Kurtosis will clean up the Docker networks it creates under normal circumstances, but abnormal exits (e.g. SIGKILL) will leave the Docker networks hanging around. To fix this error, remove the offending networks like so:
+When Docker errors saying that subnet IP address ranges conflict, this usually means that Kurtosis is trying to create the per-test subnets but is colliding with an existing network that was left over from a previous invocation of the test suite. Kurtosis will clean up the Docker networks it creates under normal circumstances, but abnormal exits (e.g. SIGKILL aka `kill -9`) will leave the Docker networks hanging around. To fix this error, remove the offending networks like so:
 
 ```
 docker network ls
-docker network rm <ID of offending network>
+docker network rm some_id_1 some_id_2 ...
 ```
 
 Timeout while waiting for a service to start
