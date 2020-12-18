@@ -5,6 +5,7 @@
 * Don't run Go code CI job when only docs have changed
 * Switch to `X.Y` tagging scheme, from `X.Y.Z`
 * Only build Docker images for release `X.Y` tags (no need to build `develop` any time a PR merges)
+* Remove `PARALLELISM=2` flag from CI build, since we now have 3 tests and there isn't a clear reason for gating it given we're spinning up many Docker containers
 
 # 1.2.1
 * Add a more explanatory help message to `build_and_run`
