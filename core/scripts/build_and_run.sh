@@ -117,9 +117,13 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
-    mkdir -p "${KURTOSIS_DIRPATH}"
-    go_suite_execution_volume="go-example-suite_${docker_tag}_$(date +%s)"
+    # Kurtosis needs a Docker volume to store its execution data in
+    # To learn more about volumes, see: https://docs.docker.com/storage/volumes/
+    sanitized_go_image="$(echo "${GO_EXAMPLE_SUITE_IMAGE}" | sed 's/[^a-zA-Z0-9_.-]/_/g')"
+    go_suite_execution_volume="$(date +%Y-%m-%dT%H.%M.%S)_${sanitized_go_image}_${docker_tag}"
     docker volume create "${go_suite_execution_volume}"
+
+    mkdir -p "${KURTOSIS_DIRPATH}"
 
     # --------------------- Kurtosis Go environment variables ---------------------
     api_service_image="${DOCKER_ORG}/example-microservices_api"
