@@ -6,7 +6,7 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-GO_EXAMPLE_SUITE_IMAGE="kurtosistech/kurtosis-go-example:develop"
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_ACTION="build"
@@ -16,18 +16,23 @@ HELP_ACTION="help"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0} <action> <extra Docker args...>"
+    echo "${0} <action> [<extra 'docker run' args...>]"
     echo ""
-    echo "  Actions:"
+    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to 'docker run'"
+    echo ""
+    echo "  To select behaviour, choose from the following actions:"
     echo "    help    Displays this messages"
     echo "    build   Executes only the build step, skipping the run step"
     echo "    run     Executes only the run step, skipping the build step"
     echo "    all     Executes both build and run steps"
     echo ""
-    echo "  Example:"
+    echo "  To modify how your suite is run, you can set Kurtosis environment variables using the '--env' flag to 'docker run' like so:"
     echo "    ${0} all --env PARALLELISM=4"
     echo ""
+    echo "  To see all the environment variables Kurtosis accepts, add the '--env SHOW_HELP=true' flag"
+    echo ""
 }
+
 
 if [ "${#}" -eq 0 ]; then
     show_help
@@ -115,11 +120,19 @@ if "${do_run}"; then
     mkdir -p "${KURTOSIS_DIRPATH}"
     go_suite_execution_volume="go-example-suite_${docker_tag}_$(date +%s)"
     docker volume create "${go_suite_execution_volume}"
+
+    # --------------------- Kurtosis Go environment variables ---------------------
+    api_service_image="${DOCKER_ORG}/example-microservices_api"
+    datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
+    # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
+    go_suite_env_vars_json="{\"API_SERVICE_IMAGE\":\"${api_service_image}\",\"DATASTORE_SERVICE_IMAGE\":\"${datastore_service_image}\"}"
+    # --------------------- End Kurtosis Go environment variables ---------------------
+
     docker run \
         --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
         --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
         --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env 'CUSTOM_ENV_VARS_JSON={"EXAMPLE_SERVICE_IMAGE":"nginxdemos/hello"}' \
+        --env "CUSTOM_ENV_VARS_JSON=${go_suite_env_vars_json}" \
         --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
         --env "KURTOSIS_API_IMAGE=${api_image}" \
         --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
