@@ -5,6 +5,7 @@
 # TBD
 * Print the names of the tests that will be run before running any tests
 * Fix bug with test suite results not ordered by test name alphabetically
+* Add more explanation to hard test timeout error, that this is often caused by testnet setup taking too long
 * Switch Docker volume format from `SUITEIMAGE_TAG_UNIXTIME` to `YYYY-MM-DDTHH.MM.SS_SUITEIMAGE_TAG` so it's better sorted in `docker volume ls` output
 * Prefix Docker networks with `YYYY-MM-DDTHH.MM.SS` so it sorts nicely on `docker network ls` output
 
