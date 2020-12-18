@@ -1,3 +1,6 @@
+# TBD
+* Only run CI builds on `X.Y.Z` tags (not `master`)
+
 # 1.2.2
 * Switch to Midnight theme instead of Hacker
 * Migrate CI check from kurtosis-docs for verifying all links work
