@@ -1,3 +1,6 @@
+# TBD
+* Default testsuite loglevel to `info` (was `debug`)
+
 # 1.2.3
 * Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
 
