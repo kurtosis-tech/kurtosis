@@ -2,53 +2,7 @@ Kurtosis
 ========
 Kurtosis is a framework on top of Docker for writing test suites for any networked system - be it blockchain, distributed datastore, or otherwise. It handles all the gruntwork of setup, test execution, and teardown so you don't have to.
 
-* [Architecture](#architecture)
-* [Tutorial](#tutorial)
-* [Examples](#examples)
-* [Notes](#notes)
-    * [Abnormal Exit](#abnormal-exit)
-    * [Container, Volume, &amp; Image Tidying](#container-volume--image-tidying)
-
-Getting Started
----------------
-Kurtosis is a testing framework atop Docker, meaning you'll need to build a Docker image of the service(s) you want to test, and a Golang implementation of several Kurtosis interfaces to construct your test suite. If you've never used:
-* Go, we recommend the [official Golang installation & quickstart guide](https://golang.org/doc/install) along with [JetBrains' excellent GoLand IDE](https://www.jetbrains.com/go/)
-* Docker, we recommend [the official Docker "Get Started" guide](https://docs.docker.com/get-started/), coupled with [the docs explaining how to view container logs](https://docs.docker.com/config/containers/logging/) (which you'll be doing a lot)
-
-**NOTE:** Make sure that you're using Docker version >= 2.3; we've seen Docker 2.0 behaving strangely.
-
-### Architecture
-The Kurtosis architecture has four components:
-
-1. The **test networks**, which are the networks (one network per test) of service containers that are spun up for tests to run against
-1. The **test suite**, which contains the package of tests that can be run
-1. The **controller**, which is the Docker image that will be used to launch a container (one per test) responsible for orchestrating the execution of a single test
-1. The **initializer**, which is the entrypoint to the testing application for CI
-
-The control flow goes:
-
-1. The initializer launches and looks at what tests need to be run
-1. In parallel, for each test:
-    1. The initializer launches a controller Docker container to orchestrate execution of the particular test
-    1. The controller spins up a network of whichever Docker services the test requires
-    1. The controller waits for the network to become available
-    1. The controller runs the logic of the test it's assigned to run
-    1. After the test finishes, the controller tears down the network of services that the test was using
-    1. The controller returns the result to the initializer and exits
-1. The initializer waits for all tests to complete and returns the results
-
-### Building An Implementation
-See [the "Getting Started" tutorial](./tutorials/getting-started.md) for a step-by-step tutorial on how to build a Kurtosis implementation from scratch.
-
-### Debugging Failed Tests
-See [the "Debugging Failed Tests" tutorial](./tutorials/debugging-failed-tests.md) for information on how to approach some common failure scenarios.
-
-### Kurtosis & Docker
-See [the "Kurtosis With Docker" tutorial](./tutorials/kurtosis-with-docker.md) for a deeper dive into how Kurtosis interacts with the Docker engine.
-
-Examples
---------
-See [the Ava end-to-end tests](https://github.com/kurtosis-tech/ava-e2e-tests) for the reference Kurtosis implementation.
+Official docs found [here](https://docs.kurtosistech.com) (created from Github Pages on the `docs` directory contents).
 
 Developer Notes
 ---------------
@@ -80,39 +34,3 @@ Stop running containers:
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
 docker stop $(docker ps -a --quiet --filter ancestor="IMAGENAME" --format="{{.ID}}")
 ```
-
-### Container, Volume, & Image Tidying
-If Kurtosis is allowed to finish normally, the Docker network will be deleted and the containers stopped. **However, even with normal exit, Kurtosis will not delete the Docker containers or volume it created.** This is intentional, so that a dev writing Kurtosis tests can examine the containers and volume that Kurtosis spins up for additional information. It is therefore recommended that the user periodically clear out their old containers, volumes, and images; this can be done with something like the following examples:
-
-Stopping & removing containers:
-```
-docker rm $(docker stop $(docker ps -a -q --filter ancestor="IMAGENAME" --format="{{.ID}}"))
-```
-
-Remove all volumes associated with a given test:
-```
-docker volume rm $(docker volume ls | grep "TESTNAME" | awk '{print $1}')
-```
-
-Remove unused images:
-```
-docker image rm $(docker images --quiet --filter "dangling=true")
-```
-
-Test Suite Container Contract
------------------------------
-Must take in at least [these environment variables](https://github.com/kurtosis-tech/kurtosis-core/blob/develop/initializer/test_suite_env_vars/test_suite_env_vars.go ), and can optionally take in custom environment variables (which will be set via the `--custom-env-vars-json` flag)
-
-Only one of `METADATA_FILEPATH` or `TEST` will be set at a time
-
-When the `METADATA_FILEPATH` environment variable is set, the container must write JSON file with the following structure to the filepath specified by the variable:
-```json
-{
-    "testNames": {
-        "test1": true,
-        "test2": true
-    },
-    "networkWidthBits": 8
-}
-```
-where `testNames` is a "set" of tests in the suite and `networkWidthBits` is the number of bits in the network mask of each test network that will be created.
