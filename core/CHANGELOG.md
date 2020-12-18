@@ -1,6 +1,7 @@
 # TBD
 * Add a more explanatory help message to `build_and_run`
 * Correct `build_and_run.sh` to use the example microservices for kurtosis-go 1.3.0 compatibility
+* Add `docs` directory for publishing user-friendly docs (including CHANGELOG!)
 
 # 1.2.0
 * Changed Kurtosis core to attempt to print the test suite log in all cases (not just success and `NoTestSuiteRegisteredExitCode`)
