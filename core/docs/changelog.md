@@ -1,3 +1,6 @@
+# 1.2.3
+* Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
+
 # 1.2.2
 * Switch to Midnight theme instead of Hacker
 * Migrate CI check from kurtosis-docs for verifying all links work
