@@ -18,6 +18,13 @@ jobs:
     steps:
       - checkout
 
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
@@ -73,6 +80,7 @@ jobs:
 workflows:
   build:
     jobs:
+      # -- PR check jobs ------------------------------------------
       - check_code:
           context:
             - docker-user
@@ -88,6 +96,9 @@ workflows:
               ignore:
                 - develop
                 - master
+      # -- End PR check jobs ---------------------------------------
+
+      # -- Artifact-publishing jobs --------------------------------
       - push_docker_images:
           context:
             - docker-user
@@ -99,3 +110,4 @@ workflows:
                 - master
             tags: 
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      # -- End artifact-publishing jobs ----------------------------
