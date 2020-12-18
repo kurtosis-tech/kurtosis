@@ -23,7 +23,7 @@ jobs:
       # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
       # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
       # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
-      - run: "! git --no-pager diff --exit-code origin/develop...HEAD docs/CHANGELOG.md"
+      - run: "! git --no-pager diff --exit-code origin/develop...HEAD docs/changelog.md"
 
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
@@ -38,14 +38,6 @@ jobs:
     resource_class: small
     steps:
       - checkout
-
-      # Gotchas I discovered when writing this:
-      # - Without the '--no-pager' flag, Git will print "WARNING: Terminal is not fully functional" and not display any output
-      # - Circle has no way of getting the PR base branch, so we have to hardcode the base branch :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
-      # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
-      # - We have to use 'origin/master' rather than 'master' because Circle does a shallow checkout, and 'master' gets set to something weird and wrong that makes the check buggy
-      - run: "! git --no-pager diff --exit-code origin/master...HEAD CHANGELOG.md"
-
       - run:
           name: Check links in Markdown docs
           command: |

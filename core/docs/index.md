@@ -26,3 +26,6 @@ Stop running containers (replace `YOUR-IMAGE-NAME` with the name of the image of
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
 docker stop $(docker ps -a --quiet --filter ancestor="YOUR-IMAGE-NAME" --format="{{.ID}}")
 ```
+
+[Changelog](./changelog.md)
+-----------
