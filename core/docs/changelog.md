@@ -2,7 +2,7 @@
 
 **Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
 
-# TBD
+# 1.3.0
 * Default testsuite loglevel to `info` (was `debug`)
 * Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
 
