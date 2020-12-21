@@ -2,7 +2,7 @@
 
 **Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
 
-# TBD
+# 1.2.4
 * Print the names of the tests that will be run before running any tests
 * Fix bug with test suite results not ordered by test name alphabetically
 * Add more explanation to hard test timeout error, that this is often caused by testnet setup taking too long
