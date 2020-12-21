@@ -1,8 +1,19 @@
+**Versioning scheme:** Kurtosis follows a modified [Semver](https://semver.org/) where in an `X.Y.Z` version string, _both_ major (`X`) and minor (`Y`) version changes signify API-breaking changes. Patch (`Z`) version changes will not introduce any API-breaking changes. The reason for this modification is because strict Semver often results in silly versions like `238.1.1`. With the major version incremented so high and no higher version to roll over to, there's no way to signify a Really Big Change (like a major refactor). Our method fixes this.
+
+**Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
+
+# 1.2.4
+* Print the names of the tests that will be run before running any tests
+* Fix bug with test suite results not ordered by test name alphabetically
+* Add more explanation to hard test timeout error, that this is often caused by testnet setup taking too long
+* Switch Docker volume format from `SUITEIMAGE_TAG_UNIXTIME` to `YYYY-MM-DDTHH.MM.SS_SUITEIMAGE_TAG` so it's better sorted in `docker volume ls` output
+* Prefix Docker networks with `YYYY-MM-DDTHH.MM.SS` so it sorts nicely on `docker network ls` output
+
 # 1.2.3
 * Only run the `docker_publish_images` CI job on `X.Y.Z` tags (used to be `master` and `X.Y.Z` tags, with the `master` one failing)
 
 # 1.2.2
-* Switch to Midnight theme instead of Hacker
+* Switch to Midnight theme for docs instead of Hacker
 * Migrate CI check from kurtosis-docs for verifying all links work
 * Move this changelog file from `CHANGELOG.md` to `docs/changelog.md` for easier client consumption
 * Don't run Go code CI job when only docs have changed
