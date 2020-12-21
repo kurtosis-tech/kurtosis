@@ -5,49 +5,20 @@
 
 package test_suite_constants
 
-import "github.com/palantir/stacktrace"
-
 /*
 A package to contain the contract of Docker environment variables that will be passed by the initializer to
 	the testsuite to run it
  */
 
 const (
-	MetadataFilepathEnvVar        = "METADATA_FILEPATH"
-	TestEnvVar                    = "TEST"
-	KurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
-	ServicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
-	LogLevelEnvVar                = "LOG_LEVEL"
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// When you change these, make sure to update the docs at:
+	// 	https://github.com/kurtosis-tech/kurtosis-docs/blob/develop/testsuite-details.md#dockerfile
+	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	metadataFilepathEnvVar        = "METADATA_FILEPATH"
+	testEnvVar                    = "TEST"
+	kurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
+	servicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
+	logLevelEnvVar                = "LOG_LEVEL"
+	debuggerPort				  = "DEBUGGER_PORT"
 )
-
-/*
-Generates the map of environment variables needed to run a test suite container
-
-NOTE: exactly one of metadata_filepath or test_name must be non-empty!
- */
-func GenerateTestSuiteEnvVars(
-		metadataFilepathEnvVar string,
-		testName string,
-		kurtosisApiIp string,
-		servicesRelativeDirpath string,
-		logLevel string,
-		customEnvVars map[string]string) (map[string]string, error) {
-	standardVars := map[string]string{
-		MetadataFilepathEnvVar:        metadataFilepathEnvVar,
-		TestEnvVar:                    testName,
-		KurtosisApiIpEnvVar:           kurtosisApiIp,
-		ServicesRelativeDirpathEnvVar: servicesRelativeDirpath,
-		LogLevelEnvVar:                logLevel,
-	}
-	for key, val := range customEnvVars {
-		if _, ok := standardVars[key]; ok {
-			return nil, stacktrace.NewError(
-				"Custom test suite environment variable binding %s=%s requested, but is not allowed because key is " +
-					"already being used by Kurtosis.",
-				key,
-				val)
-		}
-		standardVars[key] = val
-	}
-	return standardVars, nil
-}

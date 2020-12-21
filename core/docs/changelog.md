@@ -4,6 +4,7 @@
 
 # TBD
 * Default testsuite loglevel to `info` (was `debug`)
+* Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
 
 # 1.2.4
 * Print the names of the tests that will be run before running any tests

@@ -82,11 +82,9 @@ Args:
 		NOTE: This directory must already exist!
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
 	kurtosisApiImageName: The name of the Docker image that will be used to run the Kurtosis API container
-	testSuiteImageName: The name of the Docker image of the test controller that will orchestrate execution of this test
-	testSuiteLogLevel: A string representing the log level that the test controller should set for itself; this string
-		should be meaningful to the user-defined controller code
-	customTestSuiteEnvVars: A key-value mapping of custom Docker environment variables that will be passed to the
-		controller image (as a method for the user to pass their own custom params between initializer and controller)
+	apiContainerLogLevel: Log level that the Kurtosis API container should log at
+	testsuiteLauncher: Launcher for running the test-running testsuite instances
+	testsuiteDebuggerHostPortBinding: The port binding on the host machine that the testsuite debugger port should be tied to
 	testName: The name of the test the executor should execute
 
 Returns:
@@ -104,9 +102,8 @@ func RunTest(
 		subnetMask string,
 		kurtosisApiImageName string,
 		apiContainerLogLevel string,
-		testSuiteImageName string,
-		testSuiteLogLevel string,
-		customTestSuiteEnvVars map[string]string,
+		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
+		testsuiteDebuggerHostPortBinding nat.PortBinding,
 		testName string) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
@@ -174,33 +171,24 @@ func RunTest(
 	}
 
 	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
-	testSuiteEnvVars, err := test_suite_constants.GenerateTestSuiteEnvVars(
-		"",  // We're executing a test, not getting metadata, so this should be blank
+
+	log.Info("Launching testsuite container to run the test...")
+	testRunningContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
+		ctx,
+		dockerManager,
+		networkId,
+		suiteExecutionVolume,
 		testName,
 		kurtosisApiIp.String(),
-		servicesRelativeDirpath,
-		testSuiteLogLevel,
-		customTestSuiteEnvVars)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred generating the map of test suite environment variables")
-	}
-
-	log.Infof("Creating test suite container that will run the test...")
-	testRunningContainerId, err := dockerManager.CreateAndStartContainer(
-		ctx,
-		testSuiteImageName,
-		networkId,
 		testRunningContainerIp,
-		map[nat.Port]bool{},
-		nil,
-		testSuiteEnvVars,
-		map[string]string{},
-		map[string]string{
-			suiteExecutionVolume: test_suite_constants.SuiteExecutionVolumeMountpoint,
-		})
+		servicesRelativeDirpath,
+		testsuiteDebuggerHostPortBinding)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the test suite container to run the test")
+		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite container to run the test")
 	}
+	log.Infof(
+		"Test-running testsuite container launched, with debugger port bound to host port %v",
+		testsuiteDebuggerHostPortBinding)
 	log.Info("Successfully created test suite container to run the test")
 
 	log.Info("Creating Kurtosis API container...")
@@ -214,8 +202,8 @@ func RunTest(
 		kurtosisApiImageName,
 		networkId,
 		kurtosisApiIp,
-		map[nat.Port]bool{
-			kurtosisApiPort: true,
+		map[nat.Port]*nat.PortBinding{
+			kurtosisApiPort: nil,
 		},
 		nil,
 		map[string]string{

@@ -91,6 +91,7 @@ Next steps
 ----------
 Now that you have your own custom testsuite running, you can:
 
+* [Learn about debugging failed tests](./debugging-failed-tests.md)
 * Take a look at [the testsuite for the Avalanche (AVAX) token](https://github.com/ava-labs/avalanche-testing), a real-world Kurtosis use-case 
 * Visit [the Kurtosis testsuite docs](./testsuite-details.md) to learn more about what's in a testsuite and how to customize it to your needs
 * Check out [the CI documentation](./running-in-ci.md) to learn how to run Kurtosis in your CI environment

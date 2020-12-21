@@ -122,12 +122,17 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		args.StartCmd,
 		args.DockerEnvironmentVars)
 
+	portBindings := map[nat.Port]*nat.PortBinding{}
+	for port, _ := range usedPorts {
+		portBindings[port] = nil
+	}
+
 	containerId, err := service.dockerManager.CreateAndStartContainer(
 		httpReq.Context(),
 		args.ImageName,
 		service.dockerNetworkId,
 		freeIp,
-		usedPorts,
+		portBindings,
 		replacedStartCmd,
 		replacedEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
