@@ -39,8 +39,8 @@ Args:
 	suiteExecutionVolume: The name of the Docker volume dedicated for storing file IO for the suite execution
 	initializerContainerSuiteExVolDirpath: The dirpath on the INITIALIZER container where the suite execution volume is mounted
 	dockerClient: The Docker client with which Docker requests will be made
-	testSuiteLogLevel: The log level the test suite will output with
-	customEnvVars: A key-value mapping of custom environment variables that will be set when running the test suite image
+	launcher: Launcher for creating test suite containers
+	debuggerHostPortBinding: The host port binding to use for binding to the testsuite debugger port
 */
 func GetTestSuiteMetadata(
 		suiteExecutionVolume string,
