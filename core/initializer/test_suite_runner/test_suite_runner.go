@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"net"
+	"sort"
 )
 
 // =============================== Test Suite Runner =========================================
@@ -84,7 +85,17 @@ func RunTests(
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
 
-	logrus.Infof("Running %v tests with execution ID %v...", len(testNamesToRun), executionInstanceId.String())
+	orderedTestNames := []string{}
+	for testName, _ := range testNamesToRun {
+		orderedTestNames = append(orderedTestNames, testName)
+	}
+	sort.Strings(orderedTestNames)
+
+	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceId.String())
+	for _, testName := range orderedTestNames {
+		logrus.Infof(" - %v", testName)
+	}
+
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		executionInstanceId,
 		dockerClient,

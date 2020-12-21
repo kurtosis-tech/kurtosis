@@ -29,7 +29,7 @@ ENV KURTOSIS_LOG_LEVEL="info"
 ENV PARALLELISM="4"
 ENV SHOW_HELP="false"
 ENV TEST_NAMES=""
-ENV TEST_SUITE_LOG_LEVEL="debug"
+ENV TEST_SUITE_LOG_LEVEL="info"
 ENV DEBUGGER_PORT="2778"
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # If you change above NAMES or DEFAULT VALUES, make sure you make the same change in main.go!

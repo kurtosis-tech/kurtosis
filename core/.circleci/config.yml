@@ -28,8 +28,7 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
-      # As of 2020-08-30, the VMs we build on only have 2 cores so we set parallelism to 2
-      - run: scripts/build_and_run.sh all --env PARALLELISM=2 --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
+      - run: scripts/build_and_run.sh all --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
 
   check_docs:
     docker:
@@ -62,20 +61,17 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
       - run: scripts/build_and_run.sh build
-      - when:
-          condition: "<<pipeline.git.tag>>"
-          steps:
-            - run: echo 'export TAG_NAME=<<pipeline.git.tag>>' >> ${BASH_ENV}
 
-            # When we run as the result of a tag build, the built images get a tag called "HEAD" so we need to re-tag to the X.Y.Z name
-            - run: "docker tag ${API_IMAGE_REPO}:HEAD ${API_IMAGE_REPO}:<<pipeline.git.tag>>"
-            - run: "docker tag ${INITIALIZER_IMAGE_REPO}:HEAD ${INITIALIZER_IMAGE_REPO}:<<pipeline.git.tag>>"
-      - unless:
-          condition: "<<pipeline.git.tag>>"
-          steps:
-            - run: echo 'export TAG_NAME=<<pipeline.git.branch>>' >> ${BASH_ENV}
-      - run: "docker push ${API_IMAGE_REPO}:${TAG_NAME}"
-      - run: "docker push ${INITIALIZER_IMAGE_REPO}:${TAG_NAME}"
+      # We only want to publish X.Y versions, so that people transparently get patch version updates
+      - run: |
+          TAG="$(echo "<<pipeline.git.tag>>" | egrep -o '^[0-9]+\.[0-9]+')"
+
+          # When we run as the result of a tag build, the built images get a tag called "HEAD" so we need to re-tag to the X.Y name
+          docker tag ${API_IMAGE_REPO}:HEAD ${API_IMAGE_REPO}:${TAG}
+          docker tag ${INITIALIZER_IMAGE_REPO}:HEAD ${INITIALIZER_IMAGE_REPO}:${TAG}
+
+          docker push ${API_IMAGE_REPO}:${TAG}
+          docker push ${INITIALIZER_IMAGE_REPO}:${TAG}
 
 workflows:
   build:
@@ -105,8 +101,7 @@ workflows:
             - kurtosis-user
           filters:
             branches:
-              only:
-                - master
+              ignore: /.*/
             tags: 
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------

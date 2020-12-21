@@ -11,6 +11,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"sort"
 	"sync"
 )
 
@@ -221,6 +222,7 @@ func (manager *ParallelTestOutputManager) printSummary() {
 	for testName, _ := range manager.testOutputs {
 		testPrintOrder = append(testPrintOrder, testName)
 	}
+	sort.Strings(testPrintOrder)
 
 	var outputLogger *logrus.Logger
 	if !manager.isInterceptingStdLogger {
