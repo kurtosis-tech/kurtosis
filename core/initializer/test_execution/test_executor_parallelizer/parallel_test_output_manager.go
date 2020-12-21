@@ -7,6 +7,7 @@ package test_executor_parallelizer
 
 import (
 	"fmt"
+	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -86,6 +87,34 @@ func newParallelTestOutputManager() *ParallelTestOutputManager {
 		sideChannelLogger:       nil,
 		testOutputs:             make(map[string]parallelTestOutput),
 	}
+}
+
+/*
+Logs the launching of a new test, including any host-bound ports that the testsuite is using
+
+Args:
+	testName: Name of test being launched
+	debuggerHostPortBinding: Binding on the host that the testsuite debugger port will have
+ */
+func (manager *ParallelTestOutputManager) logTestLaunch(
+			testName string,
+			debuggerHostPortBinding nat.PortBinding) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	var outputLogger *logrus.Logger
+	if !manager.isInterceptingStdLogger {
+		outputLogger = logrus.StandardLogger()
+	} else {
+		outputLogger = manager.sideChannelLogger
+	}
+
+	message := fmt.Sprintf(
+		"Launching test %v ... (testsuite debugger port binding on host: %v:%v)",
+		testName,
+		debuggerHostPortBinding.HostIP,
+		debuggerHostPortBinding.HostPort)
+	outputLogger.Info(message)
 }
 
 /*
