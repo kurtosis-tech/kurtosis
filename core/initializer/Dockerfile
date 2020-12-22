@@ -33,18 +33,18 @@ COPY --from=builder /build/kurtosis-initializer .
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # vvvvvvvvvvvvv Read the IMPORTANT section before modifying this! vvvvvvvvvvvvvvvvvvvvvvvv
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
-    --CLIENT_ID=${CLIENT_ID} \
-    --CLIENT_SECRET=${CLIENT_SECRET} \
-    --CUSTOM_ENV_VARS_JSON=${CUSTOM_ENV_VARS_JSON} \
-    --DO_LIST=${DO_LIST} \
-    --KURTOSIS_API_IMAGE=${KURTOSIS_API_IMAGE} \
-    --KURTOSIS_LOG_LEVEL=${KURTOSIS_LOG_LEVEL} \
-    --PARALLELISM=${PARALLELISM} \
-    --SHOW_HELP=${SHOW_HELP} \
-    --SUITE_EXECUTION_VOLUME=${SUITE_EXECUTION_VOLUME} \
-    --TEST_NAMES=${TEST_NAMES} \
-    --TEST_SUITE_IMAGE=${TEST_SUITE_IMAGE} \
-    --TEST_SUITE_LOG_LEVEL=${TEST_SUITE_LOG_LEVEL}"]
+    --CLIENT_ID=\"${CLIENT_ID}\" \
+    --CLIENT_SECRET=\"${CLIENT_SECRET}\" \
+    --CUSTOM_ENV_VARS_JSON=\"${CUSTOM_ENV_VARS_JSON}\" \
+    --DO_LIST=\"${DO_LIST}\" \
+    --KURTOSIS_API_IMAGE=\"${KURTOSIS_API_IMAGE}\" \
+    --KURTOSIS_LOG_LEVEL=\"${KURTOSIS_LOG_LEVEL}\" \
+    --PARALLELISM=\"${PARALLELISM}\" \
+    --SUITE_EXECUTION_VOLUME=\"${SUITE_EXECUTION_VOLUME}\" \
+    --TEST_NAMES=\"${TEST_NAMES}\" \
+    --TEST_SUITE_IMAGE=\"${TEST_SUITE_IMAGE}\" \
+    --TEST_SUITE_LOG_LEVEL=\"${TEST_SUITE_LOG_LEVEL}\" \
+"]
 # ^^^^^^^^^^^^^ Read the IMPORTANT section before modifying this! ^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Code notes about the above:

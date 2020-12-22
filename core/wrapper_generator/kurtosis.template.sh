@@ -52,18 +52,28 @@ while [ ${#} -gt 0 ]; do
     case "${key}" in
         {{range $flagArg := .FlagArgParsingData }}
         {{$flagArg.Flag}})
-            {{if $flagArg.DoStoreTrue}}{{$flagArg.Variable}}="true"{{end}}
-            {{if $flagArg.DoStoreValue}}{{$flagArg.Variable}}="${1}"
-            shift{{end}}
+            {{if $flagArg.DoStoreTrue}}{{$flagArg.Variable}}="true"
+            shift   # Shift to clear out the flag{{end}}
+            {{if $flagArg.DoStoreValue}}{{$flagArg.Variable}}="${2}"
+            shift   # Shift to clear out the flag
+            shift   # Shift again to clear out the value{{end}}
             ;;
         {{end}}
+        -*)
+            echo "Error: Unrecognized flag '${key}'" >&2
+            exit 1
+            ;;
         *)
             POSITIONAL+=("${1}")
             shift
             ;;
     esac
 done
-set -- "${POSITIONAL[@]}" # restore positional parameters
+
+# Restore positional parameters and assign them to variables
+set -- "${POSITIONAL[@]}"
+{{range $idx, $variable := .PositionalArgAssignment}}{{$variable}}="${{$idx}}"
+{{end}}
 
 if "${show_help}"; then
     print_help_and_exit
@@ -79,7 +89,7 @@ if [ "${#}" -ne {{.NumPositionalArgs}} ]; then
     print_help_and_exit
 fi
 
-{{range $variable := .RequiredVariables}}if [ -z "${{$variable}}" ]; then
+{{range $idx, $variable := .PositionalArgAssignment}}if [ -z "${{$variable}}" ]; then
     echo "Error: Variable '{{$variable}}' cannot be empty" >&2
     exit 1
 fi{{end}}
@@ -103,21 +113,6 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
     exit 1
 fi
 
-# The little '-' in '<<-' tells Bash to strip leading tabs, so the leading tabs will disappear
-docker_environment_configs= <<- EOF
-    CLIENT_ID="${client_id}"
-    CLIENT_SECRET="${client_id}"
-    CUSTOM_ENV_VARS_JSON="${custom_env_vars_json}"
-    DO_LIST="${do_list}"
-    KURTOSIS_API_IMAGE="${API_IMAGE}"
-    KURTOSIS_LOG_LEVEL="${kurtosis_log_level}"
-    PARALLELISM="${parallelism}"
-    SUITE_EXECUTION_VOLUME="${suite_execution_volume}"
-    TEST_NAMES="${test_names}"
-    TEST_SUITE_IMAGE="${test_suite_image}"
-    TEST_SUITE_LOG_LEVEL="${test_suite_log_level}"
-EOF
-
 docker run \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
     `# For more info, see the bottom of: http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/` \
@@ -130,8 +125,17 @@ docker run \
     `# The Kurtosis initializer image requires the volume for storing suite execution data to be mounted at the special "/suite-execution" path` \
     --mount "type=volume,source=${suite_execution_volume},target=/suite-execution" \
     \
-    `# Docker only allows you to have spaces in an environment variable if you put the var in a file or escape the space, so to avoid making the user escape` \
-    `#  all their spaces we write all the config values to file` \
-    --env-file <(echo "${docker_environment_configs}") \
+    `# Keep these sorted alphabetically` \
+    --env CLIENT_ID="${client_id}" \
+    --env CLIENT_SECRET="${client_id}" \
+    --env CUSTOM_ENV_VARS_JSON="${custom_env_vars_json}" \
+    --env DO_LIST="${do_list}" \
+    --env KURTOSIS_API_IMAGE="${API_IMAGE}" \
+    --env KURTOSIS_LOG_LEVEL="${kurtosis_log_level}" \
+    --env PARALLELISM="${parallelism}" \
+    --env SUITE_EXECUTION_VOLUME="${suite_execution_volume}" \
+    --env TEST_NAMES="${test_names}" \
+    --env TEST_SUITE_IMAGE="${test_suite_image}" \
+    --env TEST_SUITE_LOG_LEVEL="${test_suite_log_level}" \
     \
     "${INITIALIZER_IMAGE}"

@@ -43,12 +43,12 @@ type WrapperTemplateData struct {
 
 	KurtosisCoreVersion string
 
+	FlagArgParsingData []WrapperFlagArgParsingData
+
 	NumPositionalArgs int
 
-	// List of variables whose value can't be empty after parsing
-	RequiredVariables []string
-
-	FlagArgParsingData []WrapperFlagArgParsingData
+	// Mapping of index in Bash's argument array (e.g. "${1}") -> the positional arg that will receive the value
+	PositionalArgAssignment map[int]string
 
 	OneLinerHelpText string
 	LinewiseHelpText []string
@@ -303,8 +303,8 @@ func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*Wrapp
 
 	allFlagArgParsingData := []WrapperFlagArgParsingData{}
 	defaultValues := map[string]string{}
-	requiredVariables := []string{}
-	numPositionalArgs := 0
+	positionalArgAssignment := map[int]string{}
+	positionalArgAssignmentIndex := 0
 
 	flagArgsOnelinerFragments := []string{}
 	positionalArgsOnelinerFragments := []string{}
@@ -354,8 +354,9 @@ func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*Wrapp
 				fmt.Sprintf("   %v", linewiseText),
 			)
 		} else {
-			numPositionalArgs++
-			requiredVariables = append(requiredVariables, arg.Variable)
+			// Bash's argument list starts at 1, so we add 1
+			positionalArgAssignment[positionalArgAssignmentIndex + 1] = arg.Variable
+			positionalArgAssignmentIndex++
 
 			positionalArgsOnelinerFragments = append(
 				positionalArgsOnelinerFragments,
@@ -382,8 +383,8 @@ func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*Wrapp
 		DefaultValues:      defaultValues,
 		FlagArgParsingData: allFlagArgParsingData,
 		KurtosisCoreVersion: kurtosisCoreVersion,
-		NumPositionalArgs: numPositionalArgs,
-		RequiredVariables:  requiredVariables,
+		NumPositionalArgs: len(positionalArgAssignment),
+		PositionalArgAssignment: positionalArgAssignment,
 		OneLinerHelpText:   combinedOneliner,
 		LinewiseHelpText:   combinedLinewiseHelptext,
 	}, nil

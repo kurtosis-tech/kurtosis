@@ -6,6 +6,8 @@
 * Add Go code to generate a `kurtosis.sh` wrapper script to call Kurtosis, which:
     * Has proper flag arguments (which means proper argument-checking, and no more `--env ENVVAR="some-env-value"`!)
     * Contains the Kurtosis version embedded inside, so upgrading Kurtosis is now as simple as upgrading the wrapper script
+* Fixed the bug where whitespace couldn't be used in the `CUSTOM_ENV_VARS_JSON` variable
+    * Whitespaces and newlines can be happily passed in to the wrapper script's `--custom-env-vars` flag now!
 
 # 1.2.4
 * Print the names of the tests that will be run before running any tests
