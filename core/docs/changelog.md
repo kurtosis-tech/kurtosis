@@ -9,6 +9,10 @@
 * Fixed the bug where whitespace couldn't be used in the `CUSTOM_ENV_VARS_JSON` variable
     * Whitespaces and newlines can be happily passed in to the wrapper script's `--custom-env-vars` flag now!
 
+# 1.3.0
+* Default testsuite loglevel to `info` (was `debug`)
+* Running testsuites can now be remote-debugged by updating the `Dockerfile` to run a debugger that listens on the `DEBUGGER_PORT` Docker environment variable; this port will then get exposed as an IP:port binding on the user's local machine for debugger attachment
+
 # 1.2.4
 * Print the names of the tests that will be run before running any tests
 * Fix bug with test suite results not ordered by test name alphabetically

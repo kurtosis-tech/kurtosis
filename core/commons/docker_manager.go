@@ -186,7 +186,8 @@ Args:
 	dockerImage: image to start
 	networkId: The ID of the Docker network that this container should be attached to
 	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
-	usedPorts: A "set" of the ports that the container will listen on
+	usedPorts: A map of (ports that the container will listen on) -> (an *optional* IP/port on the host that
+		will get bound to the container port); set the binding to nil to exclude it
 	startCmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
 	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
@@ -200,7 +201,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage string,
 			networkId string,
 			staticIp net.IP,
-			usedPorts map[nat.Port]bool,
+			usedPortsWithHostBindings map[nat.Port]*nat.PortBinding,
 			startCmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
@@ -228,11 +229,23 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
 	}
 
+	usedPorts := map[nat.Port]bool{}
+	usedPortsWithHostBindingsDeref := map[nat.Port]nat.PortBinding{}
+	for usedPort, hostBinding := range usedPortsWithHostBindings {
+		usedPorts[usedPort] = true
+		if hostBinding != nil {
+			usedPortsWithHostBindingsDeref[usedPort] = *hostBinding
+		}
+	}
+
 	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
-	containerHostConfigPtr, err := manager.getContainerHostConfig(bindMounts, volumeMounts)
+	containerHostConfigPtr, err := manager.getContainerHostConfig(
+		bindMounts,
+		volumeMounts,
+		usedPortsWithHostBindingsDeref)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -388,14 +401,18 @@ Creates a Docker-Container-To-Host Port mapping, defining how a Container's JSON
 mapped to the host ports.
 
 Args:
-	usedPorts: A "set" of ports that the container will listen on (and which need to be mapped to host ports)
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted at container startup (used when
 		sharing data between the host filesystem - in our case, the test initializer - and a Docker container)
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
+	hostPortBindings: Mapping of (container port) -> (IP/port on host to bind to)
  */
-func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]string, volumeMounts map[string]string) (hostConfig *container.HostConfig, err error) {
+func (manager *DockerManager) getContainerHostConfig(
+		bindMounts map[string]string,
+		volumeMounts map[string]string,
+		hostPortBindings map[nat.Port]nat.PortBinding) (hostConfig *container.HostConfig, err error) {
+
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
 		bindsList = append(bindsList, hostFilepath + ":" + containerFilepath)
@@ -408,9 +425,15 @@ func (manager *DockerManager) getContainerHostConfig(bindMounts map[string]strin
 
 	manager.log.Debugf("Binds: %v", bindsList)
 
+	portMap := nat.PortMap{}
+	for containerPort, hostBinding := range hostPortBindings {
+		portMap[containerPort] = []nat.PortBinding{hostBinding}
+	}
+
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		NetworkMode: container.NetworkMode("default"),
+		PortBindings: portMap,
 	}
 	return containerHostConfigPtr, nil
 }
