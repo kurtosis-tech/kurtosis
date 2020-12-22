@@ -28,7 +28,7 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
-      - run: scripts/build_and_run.sh all --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
+      - run: scripts/build_and_run.sh all --client-id=${KURTOSIS_INTERNAL_CLIENT_ID} --client-secret=${KURTOSIS_INTERNAL_CLIENT_SECRET}
 
   check_docs:
     docker:
