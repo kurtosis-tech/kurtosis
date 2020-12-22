@@ -4,7 +4,6 @@
 #
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
 set -euo pipefail
 
 
@@ -104,22 +103,20 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
     exit 1
 fi
 
-docker_environment_configs= << EOF
-CLIENT_ID="${client_id}"
-CLIENT_SECRET="${client_id}"
-CUSTOM_ENV_VARS_JSON="${custom_env_vars_json}"
-DO_LIST="${do_list}"
-KURTOSIS_API_IMAGE="${API_IMAGE}"
-KURTOSIS_LOG_LEVEL="${kurtosis_log_level}"
-PARALLELISM="${parallelism}"
-SUITE_EXECUTION_VOLUME="${suite_execution_volume}"
-TEST_NAMES="${test_names}"
-TEST_SUITE_IMAGE="${test_suite_image}"
-TEST_SUITE_LOG_LEVEL="${test_suite_log_level}"
+# The little '-' in '<<-' tells Bash to strip leading tabs, so the leading tabs will disappear
+docker_environment_configs= <<- EOF
+    CLIENT_ID="${client_id}"
+    CLIENT_SECRET="${client_id}"
+    CUSTOM_ENV_VARS_JSON="${custom_env_vars_json}"
+    DO_LIST="${do_list}"
+    KURTOSIS_API_IMAGE="${API_IMAGE}"
+    KURTOSIS_LOG_LEVEL="${kurtosis_log_level}"
+    PARALLELISM="${parallelism}"
+    SUITE_EXECUTION_VOLUME="${suite_execution_volume}"
+    TEST_NAMES="${test_names}"
+    TEST_SUITE_IMAGE="${test_suite_image}"
+    TEST_SUITE_LOG_LEVEL="${test_suite_log_level}"
 EOF
-
-# Docker only allows you to have spaces in the variable if you escape them or use a Docker env file, so we escape all the w
-sanitized_custom_env_vars_json="$(echo "${custom_env_vars_json}" | tr -d '[:space:]')"
 
 docker run \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
@@ -133,23 +130,8 @@ docker run \
     `# The Kurtosis initializer image requires the volume for storing suite execution data to be mounted at the special "/suite-execution" path` \
     --mount "type=volume,source=${suite_execution_volume},target=/suite-execution" \
     \
-    `# ========================= Initializer Environment Variable "Params" ============================================` \
-    `# A JSON map of custom environment variable bindings that should be set when running the testsuite container` \
-    --env "CUSTOM_ENV_VARS_JSON=${sanitized_custom_env_vars_json}" \
-    \
-    `# Test suite image that will run the user's testsuite` \
-    --env "TEST_SUITE_IMAGE=${test_suite_image}" \
-    \
-    `# Tell the initializer the name of the volume to store data in, so it can mount it on new Docker containers it creates` \
-    --env "SUITE_EXECUTION_VOLUME=${suite_execution_volume}" \
-    \
-    `# The initializer needs a special Kurtosis API image to operate` \
-    `# The release channel here should match the release channel of the initializer itself` \
-    --env "KURTOSIS_API_IMAGE=${API_IMAGE}" \
-    \
-    `# Extra Docker arguments that will be passed as-is to 'docker run'` \
-    `# In Bash, this is how you feed arguments exactly as-is to a child script (since ${*} loses quoting and ${@} trips set -e if no arguments are passed)` \
-    `# It basically says, "if and only if ${1} exists, evaluate ${@}"` \
-    ${1+"${@}"} \
+    `# Docker only allows you to have spaces in an environment variable if you put the var in a file or escape the space, so to avoid making the user escape` \
+    `#  all their spaces we write all the config values to file` \
+    --env-file <(echo "${docker_environment_configs}") \
     \
     "${INITIALIZER_IMAGE}"

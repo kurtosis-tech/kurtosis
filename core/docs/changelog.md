@@ -2,6 +2,11 @@
 
 **Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
 
+# TBD
+* Add Go code to generate a `kurtosis.sh` wrapper script to call Kurtosis, which:
+    * Has proper flag arguments (which means proper argument-checking, and no more `--env ENVVAR="some-env-value"`!)
+    * Contains the Kurtosis version embedded inside, so upgrading Kurtosis is now as simple as upgrading the wrapper script
+
 # 1.2.4
 * Print the names of the tests that will be run before running any tests
 * Fix bug with test suite results not ordered by test name alphabetically

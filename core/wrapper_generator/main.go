@@ -28,16 +28,17 @@ const (
 	failureExitCode = 1
 )
 
-type Action int
-
-type FlagArgParsingData struct {
+// Struct containing data specifically about the flag args to the wrapper script, bundled in such a way
+//  as to be easy for the template to consume it
+type WrapperFlagArgParsingData struct {
 	Flag string
 	Variable string
 	DoStoreTrue bool
 	DoStoreValue bool
 }
 
-type TemplateData struct {
+// Package of data that will be used to fill the template
+type WrapperTemplateData struct {
 	DefaultValues map[string]string
 
 	KurtosisCoreVersion string
@@ -47,14 +48,17 @@ type TemplateData struct {
 	// List of variables whose value can't be empty after parsing
 	RequiredVariables []string
 
-	FlagArgParsingData []FlagArgParsingData
+	FlagArgParsingData []WrapperFlagArgParsingData
 
 	OneLinerHelpText string
 	LinewiseHelpText []string
 }
 
-type Argument struct {
-	// If empty, this is a positional Argument
+type Action int
+
+// Definition of a wrapper arg, which will get parsed to generate the template data
+type WrapperArg struct {
+	// If empty, this is a positional arg
 	Flag string
 
 	// The Bash Variable that the value will be stored to
@@ -70,9 +74,9 @@ type Argument struct {
 	Action Action
 }
 
-var args = []Argument{
+var wrapperArgs = []WrapperArg{
 	{
-		Flag:       "--custom-env-vars-json",
+		Flag:       "--custom-env-vars",
 		Variable:   "custom_env_vars_json",
 		DefaultVal: "{}",
 		HelpText:   "JSON containing key-value mappings of custom environment variables that will be passed through to the Dockerfile of the test suite container, e.g. '{\"MY_VAR\": \"/some/value\"}'",
@@ -145,6 +149,49 @@ var args = []Argument{
 
 // Fills the Bash wrapper script template with the appropriate variables
 func main()  {
+	kurtosisCoreVersion, templateFilepath, outputFilepath, err := parseAndValidateFlags()
+	if err != nil {
+		logrus.Errorf("An error occurred parsing & validating the flags: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	if err := validateWrapperArgs(wrapperArgs); err != nil {
+		logrus.Errorf("An error occurred validating the wrapper args: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	// For some reason, the template name has to match teh basename of the file:
+	//  https://stackoverflow.com/questions/49043292/error-template-is-an-incomplete-or-empty-template
+	templateFilename := path.Base(templateFilepath)
+	tmpl, err := template.New(templateFilename).ParseFiles(templateFilepath)
+	if err != nil {
+		logrus.Errorf("An error occurred parsing the Bash template: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	data, err := generateTemplateData(wrapperArgs, kurtosisCoreVersion)
+	if err != nil {
+		logrus.Errorf("An error occurred generating the template data: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	fp, err := os.Create(outputFilepath)
+	if err != nil {
+		logrus.Errorf("An error occurred opening the output file for writing: %v", err)
+		os.Exit(failureExitCode)
+	}
+	defer fp.Close()
+
+	if err := tmpl.Execute(fp, data); err != nil {
+		logrus.Errorf("An error occurred filling the template: %v", err)
+		os.Exit(failureExitCode)
+	}
+}
+
+// TODO Replace this entire thing by:
+//  1. Moving the docker_flag_parser out of initializer and into commmons (it can now be generalized)
+//  2. Using that now-generalized class here
+func parseAndValidateFlags() (kurtosisCoreVersion, templateFilepath, outputFilepath string, err error) {
 	kurtosisCoreVersionArg := flag.String(
 		"kurtosis-core-version",
 		"",
@@ -162,38 +209,23 @@ func main()  {
 	)
 	flag.Parse()
 
-	// For some reason, the template name has to match teh basename of the file:
-	//  https://stackoverflow.com/questions/49043292/error-template-is-an-incomplete-or-empty-template
-	templateFilename := path.Base(*templateFilepathArg)
-	tmpl, err := template.New(templateFilename).ParseFiles(*templateFilepathArg)
-	if err != nil {
-		logrus.Errorf("An error occurred parsing the Bash template: %v", err)
-		os.Exit(failureExitCode)
+	if *kurtosisCoreVersionArg == "" {
+		return "", "", "", stacktrace.NewError("Kurtosis Core version arg is required")
+	}
+	if *templateFilepathArg == "" {
+		return "", "", "", stacktrace.NewError("Template filepath arg is required")
+	}
+	if *outputFilepathArg == "" {
+		return "", "", "", stacktrace.NewError("Output filepath arg is required")
 	}
 
-	data, err := generateTemplateData(args, *kurtosisCoreVersionArg)
-	if err != nil {
-		logrus.Errorf("An error occurred generating the template data: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-	fp, err := os.Create(*outputFilepathArg)
-	if err != nil {
-		logrus.Errorf("An error occurred opening the output file for writing: %v", err)
-		os.Exit(failureExitCode)
-	}
-	defer fp.Close()
-
-	if err := tmpl.Execute(fp, data); err != nil {
-		logrus.Errorf("An error occurred filling the template: %v", err)
-		os.Exit(failureExitCode)
-	}
+	return *kurtosisCoreVersionArg, *templateFilepathArg, *outputFilepathArg, nil
 }
 
 /*
 Gets the text that an arg should have on the one-liner representation (e.g. "--parallelism parallelism")
  */
-func getOneLinerText(arg Argument) (string, error) {
+func getOneLinerText(arg WrapperArg) (string, error) {
 	isFlagArg := arg.Flag != ""
 
 	var onelinerText string
@@ -216,39 +248,42 @@ func padStringToLength(str string, desiredLength int) string {
 	return str + strings.Repeat(" ", numSpacesToAdd)
 }
 
-func generateTemplateData(args []Argument, kurtosisCoreVersion string) (*TemplateData, error) {
+func validateWrapperArgs(args []WrapperArg) error {
 	// Validate arguments
 	seenFlags := map[string]bool{}
 	for _, arg := range args {
 		isFlagArg := arg.Flag != ""
 		if isFlagArg {
 			if _, found := seenFlags[arg.Flag]; found {
-				return nil, stacktrace.NewError(
+				return stacktrace.NewError(
 					"Duplicate flag '%v'",
 					arg.Flag)
 			}
 			if !strings.HasPrefix(arg.Flag, flagPrefix) {
-				return nil, stacktrace.NewError(
+				return stacktrace.NewError(
 					"Flag '%v' must start with flag prefix '%v'",
 					arg.Flag,
 					flagPrefix)
 			}
 		} else {
 			if arg.DefaultVal != "" {
-				return nil, stacktrace.NewError(
+				return stacktrace.NewError(
 					"Positional argument '%v' cannot have default value",
 					arg.Variable,
 					flagPrefix)
 			}
 		}
 	}
+	return nil
+}
 
-	// Get the longest one-liner text (which is the title of the argument in linewise display)
+// Get the longest one-liner text (which will become the title of the argument in linewise display)
+func getLongestOneLinerLength(args []WrapperArg) (int, error) {
 	longestOneLinerText := 0
 	for _, arg := range args {
 		oneLinerText, err := getOneLinerText(arg)
 		if err != nil {
-			return nil, stacktrace.Propagate(
+			return 0, stacktrace.Propagate(
 				err,
 				"An error occurred getting oneliner text for arg with variable '%v' while calculating max pad length",
 				arg.Variable)
@@ -257,8 +292,16 @@ func generateTemplateData(args []Argument, kurtosisCoreVersion string) (*Templat
 			longestOneLinerText = len(oneLinerText)
 		}
 	}
+	return longestOneLinerText, nil
+}
 
-	allFlagArgParsingData := []FlagArgParsingData{}
+func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*WrapperTemplateData, error) {
+	longestOneLinerLength, err := getLongestOneLinerLength(args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the length of the longest one-liner text")
+	}
+
+	allFlagArgParsingData := []WrapperFlagArgParsingData{}
 	defaultValues := map[string]string{}
 	requiredVariables := []string{}
 	numPositionalArgs := 0
@@ -274,11 +317,11 @@ func generateTemplateData(args []Argument, kurtosisCoreVersion string) (*Templat
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting oneliner text for arg with variable '%v' while building template data", arg.Variable)
 		}
-		paddedOneLinerText := padStringToLength(oneLinerText, longestOneLinerText + 3)
+		paddedOneLinerText := padStringToLength(oneLinerText, longestOneLinerLength + 3)
 
 		isFlagArg := arg.Flag != ""
 		if isFlagArg {
-			flagArgParsingData := FlagArgParsingData{
+			flagArgParsingData := WrapperFlagArgParsingData{
 				Flag:         arg.Flag,
 				Variable:     arg.Variable,
 				DoStoreTrue:  arg.Action == StoreTrue,
@@ -292,7 +335,7 @@ func generateTemplateData(args []Argument, kurtosisCoreVersion string) (*Templat
 			)
 
 			var linewiseText string
-			if (arg.DefaultVal != "") {
+			if arg.DefaultVal != "" && arg.Action != StoreTrue {
 				linewiseText = fmt.Sprintf(
 					"%v%v (default: %v)",
 					paddedOneLinerText,
@@ -329,12 +372,13 @@ func generateTemplateData(args []Argument, kurtosisCoreVersion string) (*Templat
 			)
 		}
 	}
+
 	flagArgsOneliner := strings.Join(flagArgsOnelinerFragments, " ")
 	positionalArgsOneliner := strings.Join(positionalArgsOnelinerFragments, " ")
 	combinedOneliner := fmt.Sprintf("%v %v", flagArgsOneliner, positionalArgsOneliner)
 
 	combinedLinewiseHelptext := append(flagArgsLinewiseHelptext, positionalArgsLinewiseHelptext...)
-	return &TemplateData{
+	return &WrapperTemplateData{
 		DefaultValues:      defaultValues,
 		FlagArgParsingData: allFlagArgParsingData,
 		KurtosisCoreVersion: kurtosisCoreVersion,

@@ -1,5 +1,6 @@
 set -euo pipefail
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+root_dirpath="$(dirname "${script_dirpath}")"
 
 # ====================== CONSTANTS =======================================================
 DOCKER_ORG="kurtosistech"
@@ -8,6 +9,13 @@ API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
 GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
+
+BUILD_DIRPATH="${root_dirpath}/build"
+WRAPPER_GENERATOR_DIRPATH="${root_dirpath}/wrapper_generator"
+WRAPPER_GENERATOR_FILEPATH="${BUILD_DIRPATH}/wrapper-generator"
+WRAPPER_TEMPLATE_FILEPATH="${WRAPPER_GENERATOR_DIRPATH}/kurtosis.template.sh"
+WRAPPER_FILEPATH="${BUILD_DIRPATH}/kurtosis.sh"
+
 
 BUILD_ACTION="build"
 RUN_ACTION="run"
@@ -71,14 +79,18 @@ esac
 git_branch="$(git rev-parse --abbrev-ref HEAD)"
 docker_tag="$(echo "${git_branch}" | sed 's,[/:],_,g')"
 
-root_dirpath="$(dirname "${script_dirpath}")"
-
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
 api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
+    echo "Generating wrapper script..."
+    mkdir -p "${BUILD_DIRPATH}"
+    go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
+    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
+    echo "Successfully generated wrapper script"
+
     echo "Launching builds of initializer & API images in parallel threads..."
     docker build -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" 2>&1 > "${initializer_log_filepath}" &
     initializer_build_pid="${!}"
@@ -129,19 +141,8 @@ if "${do_run}"; then
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
     # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
-    go_suite_env_vars_json="{\"API_SERVICE_IMAGE\":\"${api_service_image}\",\"DATASTORE_SERVICE_IMAGE\":\"${datastore_service_image}\"}"
+    go_suite_env_vars_json='{"API_SERVICE_IMAGE" :"'${api_service_image}'", "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"}'
     # --------------------- End Kurtosis Go environment variables ---------------------
 
-    docker run \
-        --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
-        --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
-        --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env "CUSTOM_ENV_VARS_JSON=${go_suite_env_vars_json}" \
-        --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
-        --env "KURTOSIS_API_IMAGE=${api_image}" \
-        --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
-        `# In Bash, this is how you feed arguments exactly as-is to a child script (since ${*} loses quoting and ${@} trips set -e if no arguments are passed)` \
-        `# It basically says, "if and only if ${1} exists, evaluate ${@}"` \
-        ${1+"${@}"} \
-        "${initializer_image}"
+    "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
