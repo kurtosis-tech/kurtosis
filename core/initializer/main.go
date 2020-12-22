@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
+	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/sirupsen/logrus"
@@ -25,10 +26,9 @@ import (
 )
 
 const (
+
 	successExitCode = 0
 	failureExitCode = 1
-
-	testNameArgSeparator = ","
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism = 2
@@ -126,7 +126,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	testNamesArg: {
 		Required: false,
 		Default:  "",
-		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+		HelpText: "List of test names to run, separated by '" + initializer_container_constants.TestNameArgSeparator + "' (default or empty: run all tests)",
 		Type:     docker_flag_parser.StringFlagType,
 	},
 	testSuiteImageArg: {
