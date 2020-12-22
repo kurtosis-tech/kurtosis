@@ -103,7 +103,7 @@ fi{{end}}
 # To learn more about volumes, see: https://docs.docker.com/storage/volumes/
 sanitized_image="$(echo "${test_suite_image}" | sed 's/[^a-zA-Z0-9_.-]/_/g')"
 suite_execution_volume="$(date +%Y-%m-%dT%H.%M.%S)_${sanitized_image}"
-if ! docker volume create "${suite_execution_volume}"; then
+if ! docker volume create "${suite_execution_volume}" > /dev/null; then
     echo "Error: Failed to create a Docker volume to store the execution files in" >&2
     exit 1
 fi
