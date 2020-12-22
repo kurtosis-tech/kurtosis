@@ -24,9 +24,9 @@ HELP_ACTION="help"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0} <action> [<extra 'docker run' args...>]"
+    echo "${0} <action> [<extra kurtosis.sh args...>]"
     echo ""
-    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to 'docker run'"
+    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to the kurtosis.sh wrapper script"
     echo ""
     echo "  To select behaviour, choose from the following actions:"
     echo "    help    Displays this messages"
@@ -34,10 +34,7 @@ show_help() {
     echo "    run     Executes only the run step, skipping the build step"
     echo "    all     Executes both build and run steps"
     echo ""
-    echo "  To modify how your suite is run, you can set Kurtosis environment variables using the '--env' flag to 'docker run' like so:"
-    echo "    ${0} all --env PARALLELISM=4"
-    echo ""
-    echo "  To see all the environment variables Kurtosis accepts, add the '--env SHOW_HELP=true' flag"
+    echo "  To see the flags the kurtosis.sh script accepts, add the '--help' flag"
     echo ""
 }
 
@@ -76,8 +73,9 @@ case "${action}" in
 esac
 
 # ====================== MAIN LOGIC =======================================================
-git_branch="$(git rev-parse --abbrev-ref HEAD)"
-docker_tag="$(echo "${git_branch}" | sed 's,[/:],_,g')"
+# Captures the first of tag > branch > commit
+git_ref="$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)"
+docker_tag="$(echo "${git_ref}" | sed 's,[/:],_,g')"
 
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
 api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
@@ -88,7 +86,14 @@ if "${do_build}"; then
     echo "Generating wrapper script..."
     mkdir -p "${BUILD_DIRPATH}"
     go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
-    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
+
+    # If we're building a tag, then we need to generate the wrapper script to pull the 'X.Y' Docker tag (rather than X.Y.Z, since X.Y is the only
+    #  tag Docker images get published with)
+    kurtosis_core_version="${docker_tag}"
+    if [[ "${git_ref}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        kurtosis_core_version="$(echo "${git_ref}" | egrep -o '^[0-9]+\.[0-9]+')"
+    fi
+    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${kurtosis_core_version}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
     echo "Successfully generated wrapper script"
 
     echo "Launching builds of initializer & API images in parallel threads..."
@@ -140,5 +145,5 @@ if "${do_run}"; then
     # --------------------- End Kurtosis Go environment variables ---------------------
 
     # The generated wrapper will come hardcoded the correct version of the initializer/API images
-    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${GO_EXAMPLE_SUITE_IMAGE}"
+    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
