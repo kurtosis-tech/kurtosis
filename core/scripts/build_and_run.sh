@@ -139,5 +139,6 @@ if "${do_run}"; then
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
 
+    # The generated wrapper will come hardcoded the correct version of the initializer/API images
     bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
