@@ -87,7 +87,7 @@ if "${do_build}"; then
     mkdir -p "${BUILD_DIRPATH}"
     go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
 
-    # If we're building a tag, then we need to generate the wrapper script to pull the 'X.Y' Docker tag (rather than X.Y.Z, since X.Y is the only
+    # If we're building a tag, then we need to generate the wrapper script with the 'X.Y' Docker tag hardcoded (rather than X.Y.Z, since X.Y is the only
     #  tag Docker images get published with)
     kurtosis_core_version="${docker_tag}"
     if [[ "${git_ref}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
