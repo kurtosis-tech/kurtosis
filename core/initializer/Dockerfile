@@ -16,7 +16,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.go
 
 # ============= Execution Stage ================
-FROM docker:stable AS execution
+FROM alpine:3.12 AS execution
 
 WORKDIR /run
 
