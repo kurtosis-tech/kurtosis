@@ -76,7 +76,13 @@ esac
 # ====================== MAIN LOGIC =======================================================
 # Captures the first of tag > branch > commit
 git_ref="$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)"
-docker_tag="$(echo "${git_ref}" | sed 's,[/:],_,g')"
+docker_tag="$(echo "${git_ref}" | sed 's,[/:],_,g')"    # Sanitize git ref to be acceptable Docker tag format
+
+# If we're building a tag of X.Y.Z, then we need to actually build the Docker images and generate the wrapper script with tag X.Y so that users will
+#  get patch updates transparently
+if [[ "${docker_tag}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    docker_tag="$(echo "${docker_tag}" | egrep -o '^[0-9]+\.[0-9]+')"
+fi
 
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
 api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
@@ -87,14 +93,7 @@ if "${do_build}"; then
     echo "Generating wrapper script..."
     mkdir -p "${BUILD_DIRPATH}"
     go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
-
-    # If we're building a tag, then we need to generate the wrapper script with the 'X.Y' Docker tag hardcoded (rather than X.Y.Z, since X.Y is the only
-    #  tag Docker images get published with)
-    kurtosis_core_version="${docker_tag}"
-    if [[ "${git_ref}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        kurtosis_core_version="$(echo "${git_ref}" | egrep -o '^[0-9]+\.[0-9]+')"
-    fi
-    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${kurtosis_core_version}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
+    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
     echo "Successfully generated wrapper script"
 
     echo "Launching builds of initializer & API images in parallel threads..."
