@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# 1.4.1
+* Empty commit to debug why Circle suddenly isn't building tags
+
 # 1.4.0
 * Add Go code to generate a `kurtosis.sh` wrapper script to call Kurtosis, which:
     * Has proper flag arguments (which means proper argument-checking, and no more `--env ENVVAR="some-env-value"`!)
