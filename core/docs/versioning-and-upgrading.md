@@ -9,3 +9,8 @@ To minimize bugs and keep Kurtosis users running the latest patch version, the k
 Upgrading
 ---------
 The version of Kurtosis is encapsulated in the `kurtosis.sh` script that you use to launch it. To upgrade Kurtosis, simply download the latest version of the wrapper script from [the public Kurtosis S3 bucket](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=wrapper-script/) and replace the version you have in your repo.
+
+Next Steps
+----------
+* Go [here](./changelog.md) to see the Kurtosis changelog
+* Visit [the quickstart docs](./quickstart.md) to get your own testsuite
