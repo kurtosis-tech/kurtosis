@@ -1,6 +1,13 @@
-**Versioning scheme:** Kurtosis follows a modified [Semver](https://semver.org/) where in an `X.Y.Z` version string, _both_ major (`X`) and minor (`Y`) version changes signify API-breaking changes. Patch (`Z`) version changes will not introduce any API-breaking changes. The reason for this modification is because strict Semver often results in silly versions like `238.1.1`. With the major version incremented so high and no higher version to roll over to, there's no way to signify a Really Big Change (like a major refactor). Our method fixes this.
+_For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-**Artifact tagging:** To minimize bugs and keep Kurtosis users running the latest patch version, the kurtosis-core Docker [initializer image](https://hub.docker.com/r/kurtosistech/kurtosis-core_initializer) and [API image](https://hub.docker.com/r/kurtosistech/kurtosis-core_api) will only be tagged `X.Y`, always running the latest patch release.
+# TBD
+* Add Go code to generate a `kurtosis.sh` wrapper script to call Kurtosis, which:
+    * Has proper flag arguments (which means proper argument-checking, and no more `--env ENVVAR="some-env-value"`!)
+    * Contains the Kurtosis version embedded inside, so upgrading Kurtosis is now as simple as upgrading the wrapper script
+* Fixed the bug where whitespace couldn't be used in the `CUSTOM_ENV_VARS_JSON` variable
+    * Whitespaces and newlines can be happily passed in to the wrapper script's `--custom-env-vars` flag now!
+* Add CircleCI logic to upload `kurtosis.sh` versions to [a folder in our public-access S3 bucket](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=wrapper-script/)
+* Updated docs to reflect the use of `kurtosis.sh`
 
 # 1.3.0
 * Default testsuite loglevel to `info` (was `debug`)

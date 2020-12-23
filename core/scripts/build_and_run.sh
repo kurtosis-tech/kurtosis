@@ -1,5 +1,6 @@
 set -euo pipefail
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+root_dirpath="$(dirname "${script_dirpath}")"
 
 # ====================== CONSTANTS =======================================================
 DOCKER_ORG="kurtosistech"
@@ -9,6 +10,13 @@ INITIALIZER_REPO="${REPO_BASE}_initializer"
 GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
+BUILD_DIRPATH="${root_dirpath}/build"
+WRAPPER_GENERATOR_DIRPATH="${root_dirpath}/wrapper_generator"
+WRAPPER_GENERATOR_FILEPATH="${BUILD_DIRPATH}/wrapper-generator"
+WRAPPER_TEMPLATE_FILEPATH="${WRAPPER_GENERATOR_DIRPATH}/kurtosis.template.sh"
+WRAPPER_FILEPATH="${BUILD_DIRPATH}/kurtosis.sh"
+
+
 BUILD_ACTION="build"
 RUN_ACTION="run"
 BOTH_ACTION="all"
@@ -16,20 +24,18 @@ HELP_ACTION="help"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0} <action> [<extra 'docker run' args...>]"
+    echo "$(basename "${0}") <action> [<kurtosis.sh args...>]"
     echo ""
-    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to 'docker run'"
+    echo "  This script will optionally a) generate a kurtosis.sh script + build your testsuite into a Docker image, and/or b) call down to the generated kurtosis.sh script to run the testsuite"
     echo ""
-    echo "  To select behaviour, choose from the following actions:"
+    echo "  To select this script's behaviour, choose from the following actions:"
+    echo ""
     echo "    help    Displays this messages"
-    echo "    build   Executes only the build step, skipping the run step"
-    echo "    run     Executes only the run step, skipping the build step"
+    echo "    build   Executes only the kurtosis.sh generation and Docker build steps, skipping the run step"
+    echo "    run     Executes only the call to kurtosis.sh, skipping the build step"
     echo "    all     Executes both build and run steps"
     echo ""
-    echo "  To modify how your suite is run, you can set Kurtosis environment variables using the '--env' flag to 'docker run' like so:"
-    echo "    ${0} all --env PARALLELISM=4"
-    echo ""
-    echo "  To see all the environment variables Kurtosis accepts, add the '--env SHOW_HELP=true' flag"
+    echo "  To see the args the kurtosis.sh script accepts for the 'run' phase, call '$(basename ${0}) all --help'"
     echo ""
 }
 
@@ -68,10 +74,9 @@ case "${action}" in
 esac
 
 # ====================== MAIN LOGIC =======================================================
-git_branch="$(git rev-parse --abbrev-ref HEAD)"
-docker_tag="$(echo "${git_branch}" | sed 's,[/:],_,g')"
-
-root_dirpath="$(dirname "${script_dirpath}")"
+# Captures the first of tag > branch > commit
+git_ref="$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)"
+docker_tag="$(echo "${git_ref}" | sed 's,[/:],_,g')"
 
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
 api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
@@ -79,6 +84,19 @@ api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
+    echo "Generating wrapper script..."
+    mkdir -p "${BUILD_DIRPATH}"
+    go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
+
+    # If we're building a tag, then we need to generate the wrapper script with the 'X.Y' Docker tag hardcoded (rather than X.Y.Z, since X.Y is the only
+    #  tag Docker images get published with)
+    kurtosis_core_version="${docker_tag}"
+    if [[ "${git_ref}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        kurtosis_core_version="$(echo "${git_ref}" | egrep -o '^[0-9]+\.[0-9]+')"
+    fi
+    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${kurtosis_core_version}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
+    echo "Successfully generated wrapper script"
+
     echo "Launching builds of initializer & API images in parallel threads..."
     docker build -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" 2>&1 > "${initializer_log_filepath}" &
     initializer_build_pid="${!}"
@@ -117,31 +135,16 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
-    # Kurtosis needs a Docker volume to store its execution data in
-    # To learn more about volumes, see: https://docs.docker.com/storage/volumes/
-    sanitized_go_image="$(echo "${GO_EXAMPLE_SUITE_IMAGE}" | sed 's/[^a-zA-Z0-9_.-]/_/g')"
-    go_suite_execution_volume="$(date +%Y-%m-%dT%H.%M.%S)_${sanitized_go_image}_${docker_tag}"
-    docker volume create "${go_suite_execution_volume}"
-
-    mkdir -p "${KURTOSIS_DIRPATH}"
-
     # --------------------- Kurtosis Go environment variables ---------------------
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
     # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
-    go_suite_env_vars_json="{\"API_SERVICE_IMAGE\":\"${api_service_image}\",\"DATASTORE_SERVICE_IMAGE\":\"${datastore_service_image}\"}"
+    go_suite_env_vars_json='{
+        "API_SERVICE_IMAGE" :"'${api_service_image}'",
+        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"
+    }'
     # --------------------- End Kurtosis Go environment variables ---------------------
 
-    docker run \
-        --mount "type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock" \
-        --mount "type=bind,source=${KURTOSIS_DIRPATH},target=/kurtosis" \
-        --mount "type=volume,source=${go_suite_execution_volume},target=/suite-execution" \
-        --env "CUSTOM_ENV_VARS_JSON=${go_suite_env_vars_json}" \
-        --env "TEST_SUITE_IMAGE=${GO_EXAMPLE_SUITE_IMAGE}" \
-        --env "KURTOSIS_API_IMAGE=${api_image}" \
-        --env "SUITE_EXECUTION_VOLUME=${go_suite_execution_volume}" \
-        `# In Bash, this is how you feed arguments exactly as-is to a child script (since ${*} loses quoting and ${@} trips set -e if no arguments are passed)` \
-        `# It basically says, "if and only if ${1} exists, evaluate ${@}"` \
-        ${1+"${@}"} \
-        "${initializer_image}"
+    # The generated wrapper will come hardcoded the correct version of the initializer/API images
+    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi

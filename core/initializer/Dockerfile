@@ -18,23 +18,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.g
 # ============= Execution Stage ================
 FROM docker:stable AS execution
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# If you change below NAMES or DEFAULT VALUES, make sure you make the same change in main.go!
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-ENV CLIENT_ID=""
-ENV CLIENT_SECRET=""
-ENV CUSTOM_ENV_VARS_JSON="{}"
-ENV DO_LIST="false"
-ENV KURTOSIS_LOG_LEVEL="info"
-ENV PARALLELISM="4"
-ENV SHOW_HELP="false"
-ENV TEST_NAMES=""
-ENV TEST_SUITE_LOG_LEVEL="info"
-ENV DEBUGGER_PORT="2778"
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# If you change above NAMES or DEFAULT VALUES, make sure you make the same change in main.go!
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 WORKDIR /run
 
 # Copy the code into the container
@@ -50,18 +33,18 @@ COPY --from=builder /build/kurtosis-initializer .
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # vvvvvvvvvvvvv Read the IMPORTANT section before modifying this! vvvvvvvvvvvvvvvvvvvvvvvv
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
-    --CLIENT_ID=${CLIENT_ID} \
-    --CLIENT_SECRET=${CLIENT_SECRET} \
-    --CUSTOM_ENV_VARS_JSON=${CUSTOM_ENV_VARS_JSON} \
-    --DO_LIST=${DO_LIST} \
-    --KURTOSIS_API_IMAGE=${KURTOSIS_API_IMAGE} \
-    --KURTOSIS_LOG_LEVEL=${KURTOSIS_LOG_LEVEL} \
-    --PARALLELISM=${PARALLELISM} \
-    --SHOW_HELP=${SHOW_HELP} \
-    --SUITE_EXECUTION_VOLUME=${SUITE_EXECUTION_VOLUME} \
-    --TEST_NAMES=${TEST_NAMES} \
-    --TEST_SUITE_IMAGE=${TEST_SUITE_IMAGE} \
-    --TEST_SUITE_LOG_LEVEL=${TEST_SUITE_LOG_LEVEL}"]
+    --CLIENT_ID=\"${CLIENT_ID}\" \
+    --CLIENT_SECRET=\"${CLIENT_SECRET}\" \
+    --CUSTOM_ENV_VARS_JSON=\"${CUSTOM_ENV_VARS_JSON}\" \
+    --DO_LIST=\"${DO_LIST}\" \
+    --KURTOSIS_API_IMAGE=\"${KURTOSIS_API_IMAGE}\" \
+    --KURTOSIS_LOG_LEVEL=\"${KURTOSIS_LOG_LEVEL}\" \
+    --PARALLELISM=\"${PARALLELISM}\" \
+    --SUITE_EXECUTION_VOLUME=\"${SUITE_EXECUTION_VOLUME}\" \
+    --TEST_NAMES=\"${TEST_NAMES}\" \
+    --TEST_SUITE_IMAGE=\"${TEST_SUITE_IMAGE}\" \
+    --TEST_SUITE_LOG_LEVEL=\"${TEST_SUITE_LOG_LEVEL}\" \
+"]
 # ^^^^^^^^^^^^^ Read the IMPORTANT section before modifying this! ^^^^^^^^^^^^^^^^^^^^^^^^
 
 # Code notes about the above:

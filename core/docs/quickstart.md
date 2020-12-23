@@ -85,7 +85,7 @@ You'll notice that one of the flags that the example entrypoint CLI above receiv
 1. Add another flag to the main CLI and pass it to your `TestSuite` object's constructor
 1. Modify the Dockerfile to set the flag value using an environment variable
 
-These environment variables in the Dockerfile might seem like magic, but they're just set by Kurtosis when it launches the Docker image containing your testsuite. You'll need to tell Kurtosis what values to use for your custom flags, which can be done at time of launch with the `CUSTOM_ENV_VARS_JSON` parameter to the Kurtosis initializer. For example, if your Dockerfile uses the `MY_CUSTOM_VAR` environment variable then you might call `build_and_run.sh` with `--env CUSTOM_ENV_VARS_JSON="{\"MY_CUSTOM_ENV_VAR\":5}"`.
+These environment variables in the Dockerfile might seem like magic, but they're just set by Kurtosis when it launches the Docker image containing your testsuite. You'll need to tell Kurtosis what values to use for your custom flags, which can be done at time of running `build_and_run` with the `--custom-env-vars` flag to `build_and_run.sh`. For example, if your Dockerfile uses the `MY_CUSTOM_VAR` environment variable then you might call `build_and_run.sh all --custom-env-vars '{"MY_CUSTOM_ENV_VAR": 5}'`.
 
 Next steps
 ----------

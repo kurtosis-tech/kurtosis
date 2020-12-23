@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
+	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
@@ -26,10 +27,9 @@ import (
 )
 
 const (
+
 	successExitCode = 0
 	failureExitCode = 1
-
-	testNameArgSeparator = ","
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism = 2
@@ -63,7 +63,6 @@ const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	doListArg = "DO_LIST"
 	testSuiteImageArg = "TEST_SUITE_IMAGE"
-	showHelpArg = "SHOW_HELP"
 	testNamesArg = "TEST_NAMES"
 	kurtosisLogLevelArg = "KURTOSIS_LOG_LEVEL"
 	testSuiteLogLevelArg = "TEST_SUITE_LOG_LEVEL"
@@ -129,12 +128,6 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "A positive integer telling Kurtosis how many tests to run concurrently (should be set no higher than the number of cores on your machine, else you'll slow down your tests and potentially hit test timeouts!)",
 		Type:     docker_flag_parser.IntFlagType,
 	},
-	showHelpArg: {
-		Required: false,
-		Default:  false,
-		HelpText: "Shows this help message",
-		Type:     docker_flag_parser.BoolFlagType,
-	},
 	suiteExecutionVolumeArg: {
 		Required: true,
 		Default:  "",
@@ -144,7 +137,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 	testNamesArg: {
 		Required: false,
 		Default:  "",
-		HelpText: "List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+		HelpText: "List of test names to run, separated by '" + initializer_container_constants.TestNameArgSeparator + "' (default or empty: run all tests)",
 		Type:     docker_flag_parser.StringFlagType,
 	},
 	testSuiteDebuggerPortArg: {
@@ -185,12 +178,6 @@ func main() {
 	parsedFlags, err := flagParser.Parse()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the initializer CLI flags: %v\n", err)
-		os.Exit(failureExitCode)
-	}
-
-	if parsedFlags.GetBool(showHelpArg) {
-		flagParser.ShowUsage()
-		// Exiting with error is intentional, so CI fails if the help flag is accidentally passed in
 		os.Exit(failureExitCode)
 	}
 
@@ -287,11 +274,11 @@ func main() {
 	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
 	//  error and loudly alert the user
 	for testName, _ := range suiteMetadata.TestNames {
-		if strings.Contains(testName, testNameArgSeparator) {
+		if strings.Contains(testName, initializer_container_constants.TestNameArgSeparator) {
 			logrus.Errorf(
 				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
 				testName,
-				testNameArgSeparator)
+				initializer_container_constants.TestNameArgSeparator)
 			os.Exit(failureExitCode)
 		}
 	}
@@ -316,7 +303,7 @@ func main() {
 	testNamesArgStr := strings.TrimSpace(parsedFlags.GetString(testNamesArg))
 	testNamesToRun := map[string]bool{}
 	if len(testNamesArgStr) > 0 {
-		testNamesList := strings.Split(testNamesArgStr, testNameArgSeparator)
+		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
 		for _, name := range testNamesList {
 			testNamesToRun[name] = true
 		}
