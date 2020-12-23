@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.4.4
 * Correcting bug with `build_and_run` Docker tags
 
 # 1.4.3
