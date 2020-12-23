@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+* Debugging CircleCI config
+
 # 1.4.1
 * Empty commit to debug why Circle suddenly isn't building tags
 
