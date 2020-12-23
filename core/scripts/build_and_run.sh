@@ -24,17 +24,18 @@ HELP_ACTION="help"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
-    echo "${0} <action> [<extra kurtosis.sh args...>]"
+    echo "$(basename "${0}") <action> [<kurtosis.sh args...>]"
     echo ""
-    echo "  This script will optionally build your Kurtosis testsuite into a Docker image and/or run it via a call to the kurtosis.sh wrapper script"
+    echo "  This script will optionally a) generate a kurtosis.sh script + build your testsuite into a Docker image, and/or b) call down to the generated kurtosis.sh script to run the testsuite"
     echo ""
-    echo "  To select behaviour, choose from the following actions:"
+    echo "  To select this script's behaviour, choose from the following actions:"
+    echo ""
     echo "    help    Displays this messages"
-    echo "    build   Executes only the build step, skipping the run step"
-    echo "    run     Executes only the run step, skipping the build step"
+    echo "    build   Executes only the kurtosis.sh generation and Docker build steps, skipping the run step"
+    echo "    run     Executes only the call to kurtosis.sh, skipping the build step"
     echo "    all     Executes both build and run steps"
     echo ""
-    echo "  To see the flags the kurtosis.sh script accepts, add the '--help' flag"
+    echo "  To see the args the kurtosis.sh script accepts for the 'run' phase, call '$(basename ${0}) all --help'"
     echo ""
 }
 
