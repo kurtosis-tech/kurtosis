@@ -13,19 +13,24 @@ You have two paths you can start with:
 
 For Q&A, head over to the [Kurtosis Discord](https://discord.gg/6Jjp9c89z9) server.
 
-Additional Documentation
+Documentation Index
 ------------------------
 
+* [Architecture](./architecture.md)
+* [Changelog](./changelog.md) 
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Quickstart](./quickstart.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Testsuite deepdive](./testsuite-details.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
 
-Developer Notes
+Developer Tips
 ---------------
-Stop running containers (replace `YOUR-IMAGE-NAME` with the name of the image of the containers you want to remove):
+### Stop all running containers
+Run the following, replacing `YOUR-IMAGE-NAME` with the name of the image of the containers you want to remove:
+
 ```
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
 docker stop $(docker ps -a --quiet --filter ancestor="YOUR-IMAGE-NAME" --format="{{.ID}}")
 ```
-
-[Changelog](./changelog.md)
------------

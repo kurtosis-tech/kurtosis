@@ -32,12 +32,13 @@ This architecture has the following components:
 
 * **Testnet:** The network of services being tested (one per test)
 * **Service:** A Dockerized service forming part of a testnet
-* **Initializer:** The Docker container "CLI" that serves as the entrypoint for running Kurtosis
+* **Initializer:** The Docker container that coordinates execution of the testsuite
+* **kurtosis.sh:** The Bash script that launches the initializer container, and the entrypoint for running Kurtosis
 * **Kurtosis API:** The Docker sidecar container (one per test) that handles initializing, manipulating, and tearing down testnets
 * **Testsuite:** The Docker container (one per test) that holds the user's custom logic for starting the custom services forming the networks being tested, as well as the logic for the tests to run
 * **Kurtosis Client:** A library in the user's language of choice that abstracts away communication with the Kurtosis API for testnet initialization, manipulation, and teardown
 
-The test phases proceed in the following order:
+The test phases proceed in the following order for each test:
 
 1. **Setup:**
     1. The initializer creates a new Docker subnet to contain the Kurtosis API container, testsuite container, and testnet services
