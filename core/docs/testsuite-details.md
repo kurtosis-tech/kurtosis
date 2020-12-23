@@ -63,11 +63,9 @@ The `Service` interface represents a service running in a Docker container. For 
 
 Running A Testsuite
 -------------------
-As detailed in [the architecture docs](./architecture.md), testsuite containers are launched, one per test, by the Kurtosis initializer container. The initializer container itself is a sort of "CLI", and the entrypoint into running the Kurtosis platform; however, launching it is nontrivial as it requires several special flags to its `docker run` command. Further, because the initializer is a CLI, it receives its own flags (separate from `docker run`'s flags) to customize its behavior!
+As detailed in [the architecture docs](./architecture.md), testsuite containers are launched, one per test, by the Kurtosis initializer container. The initializer container itself is launched by the `kurtosis.sh` Bash script, which is the entrypoint into the platform. You'll often want to rebuild your testsuite Docker image before running `kurtosis.sh` though, so every bootstrapped repo comes with a `build_and_run.sh` script in the `scripts` directory to make building and running your testsuite simple. Run `build_and_run.sh help` inside your bootstrapped repo to display detailed information about how to use this script.
 
-This can become very confusing very quickly, so every bootstrapped repo comes with a `build_and_run.sh` script in the `scripts` directory to make building and running your testsuite simple. Run `build_and_run.sh help` inside your bootstrapped repo to display detailed information about how to use this script.
-
-As the script's help text mentions, the execution of the testsuite can be modified by adding additional Docker `--env` flags to set certain Kurtosis environment variables. `build_and_run.sh` already sets all the required parameters by default, but if you want to customize execution further you can see all available parameters to the initializer with the `SHOW_HELP` Docker environment like so: `build_and_run.sh all --env SHOW_HELP=true`.
+As the script's help text mentions, the execution of the testsuite can be modified by passing in additional flags which will in turn get passed to the `kurtosis.sh` wrapper script during the "run" phase of build-and-run. To see the parameters that the `kurtosis.sh` script accepts, call `build_and_run.sh run --help`.
 
 Customizing Testsuite Execution
 -------------------------------
@@ -75,9 +73,7 @@ You'll very likely want to customize the behaviour of your testsuite based on in
 
 1. Add the appropriate flags to your CLI's main function
 1. Edit the `Dockerfile` that wraps your testsuite CLI to set the flag using a Docker environment variable (e.g. `--fast-tests-only=${FAST_TESTS_ONLY}`)
-1. When running Kurtosis, use the `--env` Docker flag to set the value of the initializer's `CUSTOM_ENV_VARS_JSON` parameter-variable to a JSON map containing your desired values (e.g. `build_and_run.sh all --env CUSTOM_ENV_VARS_JSON="{\"FAST_TESTS_ONLY\":true}"`)
-
-**WARNING:** Docker doesn't like unescaped spaces when using the `--env` flag. You'll therefore want to backslash-escape BOTH spaces and double-quotes, like so: `--env CUSTOM_ENV_VARS_JSON="{\"VAR1\":\ \"var1-value\",\ \"VAR2\":\ \"var2-value\"}"`.
+1. When running Kurtosis, use the `--custom-env-vars` flag to a JSON map containing your desired values (e.g. `build_and_run.sh all --custom-env-vars '{"FAST_TESTS_ONLY": "true"}'`)
 
 Next Steps
 ----------

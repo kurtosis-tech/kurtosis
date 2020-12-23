@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  aws-s3: circleci/aws-s3@2.0.0
+
 executors:
   ubuntu_vm:
     machine:
@@ -28,7 +31,7 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
-      - run: scripts/build_and_run.sh all --env CLIENT_ID=${KURTOSIS_INTERNAL_CLIENT_ID} --env CLIENT_SECRET=${KURTOSIS_INTERNAL_CLIENT_SECRET}
+      - run: scripts/build_and_run.sh all --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
 
   check_docs:
     docker:
@@ -63,15 +66,20 @@ jobs:
       - run: scripts/build_and_run.sh build
 
       # We only want to publish X.Y versions, so that people transparently get patch version updates
+      - run: export X_Y_VERSION="$(echo "<<pipeline.git.tag>>" | egrep -o '^[0-9]+\.[0-9]+')"
+
+      # Docker images with this tag will have gotten built by build_and_run
       - run: |
-          TAG="$(echo "<<pipeline.git.tag>>" | egrep -o '^[0-9]+\.[0-9]+')"
+          docker push ${API_IMAGE_REPO}:${X_Y_VERSION}
+          docker push ${INITIALIZER_IMAGE_REPO}:${X_Y_VERSION}
 
-          # When we run as the result of a tag build, the built images get a tag called "HEAD" so we need to re-tag to the X.Y name
-          docker tag ${API_IMAGE_REPO}:HEAD ${API_IMAGE_REPO}:${TAG}
-          docker tag ${INITIALIZER_IMAGE_REPO}:HEAD ${INITIALIZER_IMAGE_REPO}:${TAG}
-
-          docker push ${API_IMAGE_REPO}:${TAG}
-          docker push ${INITIALIZER_IMAGE_REPO}:${TAG}
+      # All the variables here from the s3-upload-user context that we attach
+      - aws-s3/copy:
+          aws-access-key-id: S3_ACCESS_KEY
+          aws-region: S3_REGION
+          aws-secret-access-key: S3_SECRET_KEY
+          from: build/kurtosis.sh
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/wrapper-script/${X_Y_VERSION}/kurtosis.sh"
 
 workflows:
   build:
@@ -99,6 +107,7 @@ workflows:
           context:
             - docker-user
             - kurtosis-user
+            - s3-upload-user
           filters:
             branches:
               ignore: /.*/
