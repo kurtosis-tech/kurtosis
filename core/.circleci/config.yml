@@ -65,14 +65,14 @@ jobs:
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
       - run: scripts/build_and_run.sh build
 
-      # We only want to publish X.Y versions, so that people transparently get patch version updates
+      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
+      #  we have to do this
       - run: |
-          export X_Y_VERSION="$(echo '<<pipeline.git.tag>>' | egrep -o '^[0-9]+\.[0-9]+')"
+          echo "export X_Y_VERSION=\"$(echo '<<pipeline.git.tag>>' | egrep -o '^[0-9]+\.[0-9]+')\"" >> $BASH_ENV
 
       # Docker images with this tag will have gotten built by build_and_run
       - run: |
-          echo docker push ${API_IMAGE_REPO}:${X_Y_VERSION}
-          echo docker push ${INITIALIZER_IMAGE_REPO}:${X_Y_VERSION}
+          echo "X.Y version: ${X_Y_VERSION}"
 
           docker push ${API_IMAGE_REPO}:${X_Y_VERSION}
           docker push ${INITIALIZER_IMAGE_REPO}:${X_Y_VERSION}
