@@ -8,6 +8,7 @@
     * Contains the Kurtosis version embedded inside, so upgrading Kurtosis is now as simple as upgrading the wrapper script
 * Fixed the bug where whitespace couldn't be used in the `CUSTOM_ENV_VARS_JSON` variable
     * Whitespaces and newlines can be happily passed in to the wrapper script's `--custom-env-vars` flag now!
+* Add CircleCI logic to upload `kurtosis.sh` versions to [a folder in our public-access S3 bucket](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=wrapper-script/)
 
 # 1.3.0
 * Default testsuite loglevel to `info` (was `debug`)
