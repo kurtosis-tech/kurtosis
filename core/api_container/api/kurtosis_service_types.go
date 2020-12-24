@@ -17,6 +17,8 @@ type AddServiceArgs struct {
 	// It might even support ranges (e.g. "90:100/tcp"), though this is untested as of 2020-12-08
 	UsedPorts             []string          `json:"usedPorts"`
 
+	// TODO partition ID, which if emptystring or nil is translated to default partition
+
 	StartCmd              []string          `json:"startCommand"`
 	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
 	TestVolumeMountFilepath string			`json:"testVolumeMountFilepath"`

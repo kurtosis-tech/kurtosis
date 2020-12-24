@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
+	"github.com/kurtosis-tech/kurtosis/api_container/partitioning"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -53,6 +54,9 @@ type KurtosisService struct {
 
 	// Flag that will only be switched to true once, indicating that a test execution has been registered
 	testExecutionRegistered bool
+
+	// This will be nil if and only if partitioning is disabled for this test
+	partitionTopology *partitioning.PartitionTopology
 
 	mutex *sync.Mutex
 }
