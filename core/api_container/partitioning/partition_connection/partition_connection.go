@@ -17,21 +17,21 @@ type PartitionConnection struct {
 /*
 Represents two partitions, where order is unimportant
  */
-type PartitionTuple struct {
+type PartitionConnectionID struct {
 	lexicalFirst  partitioning.PartitionID
 	lexicalSecond partitioning.PartitionID
 }
 
-func NewPartitionTuple(partitionA partitioning.PartitionID, partitionB partitioning.PartitionID) *PartitionTuple {
+func NewPartitionConnectionID(partitionA partitioning.PartitionID, partitionB partitioning.PartitionID) *PartitionConnectionID {
 
 	// We sort these upon creation so that this type can be used as a key in a map, and so that
-	// 	this tuple is commutative: PartitionTuple(A, B) == PartitionTuple(B, A) as a map key
+	// 	this tuple is commutative: PartitionConnectionID(A, B) == PartitionConnectionID(B, A) as a map key
 	first, second := partitionA, partitionB
 	result := strings.Compare(string(first), string(second))
 	if result > 0 {
 		first, second = second, first
 	}
-	return &PartitionTuple{
+	return &PartitionConnectionID{
 		lexicalFirst:  first,
 		lexicalSecond: second,
 	}

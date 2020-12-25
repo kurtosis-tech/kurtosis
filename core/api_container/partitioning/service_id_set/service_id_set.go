@@ -18,8 +18,14 @@ func NewServiceIDSet() *ServiceIDSet {
 	}
 }
 
-func (set *ServiceIDSet) Add(elem partitioning.ServiceID) {
+func (set *ServiceIDSet) AddElem(elem partitioning.ServiceID) {
 	set.elems[elem] = true
+}
+
+func (set *ServiceIDSet) AddElems(elems ServiceIDSet) {
+	for _, elem := range elems.Elems() {
+		set.AddElem(elem)
+	}
 }
 
 func (set ServiceIDSet) Copy() ServiceIDSet {

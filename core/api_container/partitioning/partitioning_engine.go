@@ -46,7 +46,7 @@ type PartitioningEngine struct {
 
 	defaultConnection partition_connection.PartitionConnection
 
-	partitionConnections map[partition_connection.PartitionConnection]
+	partitionConnections map[partition_connection.PartitionConnectionID]partition_connection.PartitionConnection
 
 	// A service can be a part of exactly one partition at a time
 	partitionServices map[PartitionID]service_id_set.ServiceIDSet // partitionId -> set<serviceId>
@@ -78,7 +78,7 @@ Completely repartitions the network, throwing away the old topology
  */
 func (engine *PartitioningEngine) Repartition(
 		servicePartitions map[ServiceID]PartitionID,
-		partitionConnections map[partition_connection.PartitionTuple]partition_connection.PartitionConnection) error {
+		partitionConnections map[partition_connection.PartitionConnectionID]partition_connection.PartitionConnection) error {
 	if !engine.isPartitioningEnabled {
 		stacktrace.NewError("Cannot repartition; partitioning is not enabled")
 	}
@@ -131,10 +131,39 @@ func (engine *PartitioningEngine) CreateServiceInPartition(
 	return nil
 }
 
-func calcNewBlocklistWithPartitionHint() {
+// TODO test me, including speed profiling!!
+func (engine PartitioningEngine) recalculateBlocklists() map[ServiceID]service_id_set.ServiceIDSet {
+	result := map[ServiceID]service_id_set.ServiceIDSet{}
+	for partitionId, servicesInPartition := range engine.partitionServices {
+		for otherPartitionId, servicesInOtherPartition := range engine.partitionServices {
+			// Services in a partition will never have services in the same partition on their blocklist
+			if partitionId == otherPartitionId {
+				continue
+			}
+			connectionId := *partition_connection.NewPartitionConnectionID(partitionId, otherPartitionId)
+			connection := engine.defaultConnection
+			if definedConnection, found := engine.partitionConnections[connectionId]; found {
+				connection = definedConnection
+			}
 
+			if !connection.IsBlocked {
+				continue
+			}
+
+			for _, serviceId := range servicesInPartition.Elems() {
+				blockedServicesForId := *service_id_set.NewServiceIDSet()
+				if definedBlockedServicesForId, found := result[serviceId]; found {
+					blockedServicesForId = definedBlockedServicesForId
+				}
+				blockedServicesForId.AddElems(servicesInOtherPartition)
+				result[serviceId] = blockedServicesForId
+			}
+		}
+	}
+	return result
 }
 
+// TODO write tests for me!!
 /*
 Compares the newBlockedServices with the existing state and, if any services need to have their iptables updated,
 	applies the changes before finally updating the engine's state with the new state
@@ -173,8 +202,10 @@ func (engine *PartitioningEngine) updateIpTableBlocklists(newBlockedServices map
 		blockListToStore[serviceId] = newBlockedServicesForId.Copy()
 	}
 	engine.blockedServices = blockListToStore
+	return nil
 }
 
+// TODO Write tests for me!!
 /*
 Compares the desired new state of the world with the current state of the world, and returns only a list of
 	the services that need to be updated.
@@ -205,6 +236,7 @@ func getServicesNeedingIpTablesUpdates(
 	return result, nil
 }
 
+// TODO write tests for me!!
 /*
 Given a list of updates that need to happen to a service's iptables, a map of serviceID -> commands that
 	will be executed on the sidecar Docker container for the service
