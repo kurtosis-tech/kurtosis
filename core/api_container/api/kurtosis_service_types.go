@@ -5,19 +5,26 @@
 
 package api
 
+type ServiceID string
+
 type AddServiceArgs struct {
+	// The ID that the service will be identified by going forward
+	ServiceID		      string			`json:"serviceId"`
+
+	// The partition that the new service should be added to
+	// Empty or nil == default partition
+	PartitionID			  string			`json:"partitionId"`
+
+	ImageName             string            `json:"imageName"`
+
 	// The user won't know the IP address of the service they're creating in advance, but they might need to use the IP
 	//  in their start command. This string is the placeholder they used for it, which we'll substitute before launching
 	//  the container
 	IPPlaceholder		  string			`json:"ipPlaceholder"`
 
-	ImageName             string            `json:"imageName"`
-
 	// This is in Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
 	// It might even support ranges (e.g. "90:100/tcp"), though this is untested as of 2020-12-08
 	UsedPorts             []string          `json:"usedPorts"`
-
-	// TODO partition ID, which if emptystring or nil is translated to default partition
 
 	StartCmd              []string          `json:"startCommand"`
 	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
@@ -25,12 +32,11 @@ type AddServiceArgs struct {
 }
 
 type AddServiceResponse struct {
-	ContainerID string	`json:"containerId"`
 	IPAddress string 	`json:"ipAddress"`
 }
 
 type RemoveServiceArgs struct {
-	ContainerID string 	`json:"containerId"`
+	ServiceID string 	`json:"serviceId"`
 }
 
 type RegisterTestExecutionArgs struct {
@@ -48,3 +54,4 @@ type ListTestsResponse struct {
 	IsTestSuiteRegistered	bool
 	Tests 					[]string
 }
+

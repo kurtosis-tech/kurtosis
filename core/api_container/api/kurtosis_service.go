@@ -10,12 +10,11 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/partitioning"
+	"github.com/kurtosis-tech/kurtosis/api_container/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -38,16 +37,11 @@ type KurtosisService struct {
 
 	dockerManager *commons.DockerManager
 
-	dockerNetworkId string
-
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	partitioningEngine *partitioning.PartitioningEngine
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
 	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
-
-	// The name of the Docker volume for this test that will be mounted on all services
-	testVolumeName string
 
 	// The names of the tests inside the suite; will be nil if no test suite has been registered yet
 	suiteTestNames []string
@@ -55,8 +49,8 @@ type KurtosisService struct {
 	// Flag that will only be switched to true once, indicating that a test execution has been registered
 	testExecutionRegistered bool
 
-	// This will be nil if and only if partitioning is disabled for this test
-	partitionTopology *partitioning.PartitionTopology
+	// Map of service ID -> container ID
+	serviceContainerIds map[ServiceID]string
 
 	mutex *sync.Mutex
 }
@@ -67,14 +61,24 @@ func NewKurtosisService(
 		dockerManager *commons.DockerManager,
 		dockerNetworkId string,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		testVolumeName string) *KurtosisService {
+		testVolumeName string,
+		isPartitioningEnabled bool) *KurtosisService {
+	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
+		dockerManager,
+		freeIpAddrTracker,
+		dockerNetworkId,
+		testVolumeName)
+	partitioningEngine := partitioning.NewPartitioningEngine(
+		isPartitioningEnabled,
+		dockerNetworkId,
+		freeIpAddrTracker,
+		dockerManager,
+		userServiceLauncher)
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
 		dockerManager:           dockerManager,
-		dockerNetworkId:         dockerNetworkId,
-		freeIpAddrTracker:       freeIpAddrTracker,
-		testVolumeName: testVolumeName,
+		partitioningEngine: partitioningEngine,
 		suiteTestNames:          nil,
 		mutex:                   &sync.Mutex{},
 	}
@@ -88,6 +92,11 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	defer service.mutex.Unlock()
 
 	logrus.Infof("Received request to add a service with the following args: %v", *args)
+
+	requestedServiceId := ServiceID(args.ServiceID)
+	if _, found := service.serviceContainerIds[requestedServiceId]; found {
+		return stacktrace.NewError("Could not create service with ID '%v'; ID is already in use", requestedServiceId)
+	}
 
 	usedPorts := map[nat.Port]bool{}
 	for _, portSpecStr := range args.UsedPorts {
@@ -109,47 +118,11 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		usedPorts[portObj] = true
 	}
 
-	freeIp, err := service.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred when getting an IP to give the container running the new service with Docker image '%v'",
-			args.ImageName)
-	}
-	logrus.Debugf("Giving new service the following IP: %v", freeIp.String())
-
-	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
-	//  IP
-	replacedStartCmd, replacedEnvVars := replaceIpPlaceholderForDockerParams(
-		args.IPPlaceholder,
-		freeIp,
-		args.StartCmd,
-		args.DockerEnvironmentVars)
-
-	portBindings := map[nat.Port]*nat.PortBinding{}
-	for port, _ := range usedPorts {
-		portBindings[port] = nil
-	}
-
-	containerId, err := service.dockerManager.CreateAndStartContainer(
+	service.partitioningEngine.CreateServiceInPartition(
 		httpReq.Context(),
-		args.ImageName,
-		service.dockerNetworkId,
-		freeIp,
-		portBindings,
-		replacedStartCmd,
-		replacedEnvVars,
-		map[string]string{}, // no bind mounts for services created via the Kurtosis API
-		map[string]string{
-			service.testVolumeName: args.TestVolumeMountFilepath,
-		},
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the Docker container for the new service")
-	}
+		)
 
-	result.IPAddress = freeIp.String()
-	result.ContainerID = containerId
+
 
 	logrus.Infof("Successfully added service")
 	return nil
@@ -162,8 +135,13 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
 
-	containerId := args.ContainerID
-	logrus.Debugf("Removing container ID %v...", containerId)
+	serviceId := ServiceID(args.ServiceID)
+	containerId, found := service.serviceContainerIds[serviceId]
+	if !found {
+		return stacktrace.NewError("Could not remove service with ID '%v'; no such ID exists", serviceId)
+	}
+
+	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", containerId)
 
 	// Make a best-effort attempt to stop the container
 	err := service.dockerManager.StopContainer(httpReq.Context(), containerId, containerStopTimeout)
@@ -171,6 +149,8 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", containerId)
 	}
 	logrus.Debugf("Successfully removed service with container ID %v", containerId)
+
+	// TODO need to stop the iproute2 sidecar container too!
 
 	return nil
 }
@@ -257,27 +237,4 @@ func awaitTestSuiteContainerExit(
 	//  after the timeout, this won't do anything because nobody will be monitoring the other end of the channel
 	close(testSuiteContainerExitedChan)
 	logrus.Debugf("[%v] Thread is exiting", completionPrefix)
-}
-
-/*
-Small helper function to replace the IP placeholder with the real IP string in the start command and Docker environment
-	variables.
- */
-func replaceIpPlaceholderForDockerParams(
-		ipPlaceholder string,
-		realIp net.IP,
-		startCmd []string,
-		envVars map[string]string) ([]string, map[string]string) {
-	ipPlaceholderStr := ipPlaceholder
-	replacedStartCmd := []string{}
-	for _, cmdFragment := range startCmd {
-		replacedCmdFragment := strings.ReplaceAll(cmdFragment, ipPlaceholderStr, realIp.String())
-		replacedStartCmd = append(replacedStartCmd, replacedCmdFragment)
-	}
-	replacedEnvVars := map[string]string{}
-	for key, value := range envVars {
-		replacedValue := strings.ReplaceAll(value, ipPlaceholderStr, realIp.String())
-		replacedEnvVars[key] = replacedValue
-	}
-	return replacedStartCmd, replacedEnvVars
 }
