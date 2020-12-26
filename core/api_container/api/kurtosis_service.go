@@ -21,9 +21,6 @@ import (
 
 const (
 
-	// How long we'll wait when making a best-effort attempt to stop a container
-	containerStopTimeout = 15 * time.Second
-
 	// Prefixes for the two types of threads we'll spin up
 	completionTimeoutPrefix = "Test completion/timeout thread"
 	completionPrefix        = "Test completion thread"
@@ -151,22 +148,13 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 Removes the service with the given service ID from the network
  */
 func (service *KurtosisService) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
-	serviceId := ServiceID(args.ServiceID)
-	containerId, found := service.serviceContainerIds[serviceId]
-	if !found {
-		return stacktrace.NewError("Could not remove service with ID '%v'; no such ID exists", serviceId)
+	serviceIdStr := strings.TrimSpace(args.ServiceID)
+	if serviceIdStr == "" {
+		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
+	serviceId := ServiceID(serviceIdStr)
 
-	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", containerId)
-
-	// Make a best-effort attempt to stop the container
-	err := service.dockerManager.StopContainer(httpReq.Context(), containerId, containerStopTimeout)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", containerId)
-	}
-	logrus.Debugf("Successfully removed service with container ID %v", containerId)
-
-	// TODO need to stop the iproute2 sidecar container too!
+	service.partitioningEngine.RemoveService(httpReq.Context(), serviceId)
 
 	return nil
 }

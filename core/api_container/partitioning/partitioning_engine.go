@@ -19,6 +19,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -37,9 +38,17 @@ const (
 	ipTablesFlushChainFlag = "-F"
 	ipTablesAppendRuleFlag  = "-A"
 	ipTablesDropAction = "DROP"
+
+	// How long we'll wait when making a best-effort attempt to stop a container
+	containerStopTimeout = 15 * time.Second
 )
 
 type PartitionID string
+
+type containerInfo struct {
+	containerId string
+	ipAddr net.IP
+}
 
 /**
 This is the engine
@@ -61,15 +70,9 @@ type PartitioningEngine struct {
 	topology *testnet_topology.TestnetTopology
 
 	// == Per-service info ==================================================================
-	serviceIps map[api.ServiceID]net.IP
+	serviceContainerInfo map[api.ServiceID]containerInfo
 
-	serviceContainerIds map[api.ServiceID]string
-
-	sidecarContainerIps map[api.ServiceID]net.IP
-
-	// Mapping of Service ID -> the sidecar iproute container that we'll use to manipulate the
-	//  container's networking
-	sidecarContainerIds map[api.ServiceID]string
+	sidecarContainerInfo map[api.ServiceID]containerInfo
 
 	// Mapping of serviceID -> set of serviceIDs tracking what's currently being dropped in the INPUT chain of the service
 	ipTablesBlocks map[api.ServiceID]*ServiceIDSet
@@ -93,8 +96,8 @@ func NewPartitioningEngine(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceIps:          map[api.ServiceID]net.IP{},
-		sidecarContainerIds: map[api.ServiceID]string{},
+		serviceContainerInfo: map[api.ServiceID]containerInfo{},
+		sidecarContainerInfo: map[api.ServiceID]containerInfo{},
 	}
 }
 
@@ -168,9 +171,10 @@ func (engine *PartitioningEngine) CreateServiceInPartition(
 			err,
 			"An error occurred creating the user service")
 	}
-	// TODO this is very error-prone - combine them into a single object so it's atomic!
-	engine.serviceIps[serviceId] = serviceIp
-	engine.serviceContainerIds[serviceId] = serviceContainerId
+	engine.serviceContainerInfo[serviceId] = containerInfo{
+		containerId: serviceContainerId,
+		ipAddr:      serviceIp,
+	}
 	if err := engine.topology.AddService(serviceId, partitionId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to partition '%v'", serviceId, partitionId)
 	}
@@ -200,9 +204,10 @@ func (engine *PartitioningEngine) CreateServiceInPartition(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred starting the sidecar iproute container for modifying the service container's iptables")
 		}
-		// TODO combine these into an object so it's one atomic operation
-		engine.sidecarContainerIps[serviceId] = sidecarIp
-		engine.sidecarContainerIds[serviceId] = sidecarContainerId
+		engine.sidecarContainerInfo[serviceId] = containerInfo{
+			containerId: sidecarContainerId,
+			ipAddr:      sidecarIp,
+		}
 
 		// As soon as we have the sidecar, we need to create the Kurtosis chain and insert it in first position on the INPUT chain
 		configureKurtosisChainCommand := []string{
@@ -236,6 +241,48 @@ func (engine *PartitioningEngine) CreateServiceInPartition(
 	}
 
 	return serviceIp, nil
+}
+
+func (engine *PartitioningEngine) RemoveService(context context.Context, serviceId api.ServiceID) error {
+	engine.mutex.Lock()
+	defer engine.mutex.Unlock()
+
+	serviceInfo, found := engine.serviceContainerInfo[serviceId]
+	if !found {
+		return stacktrace.NewError("Unknown service '%v'", serviceId)
+	}
+	serviceContainerId := serviceInfo.containerId
+
+	// Make a best-effort attempt to stop the service container
+	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceContainerId)
+	if err := engine.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
+	}
+	engine.topology.RemoveService(serviceId)
+	// TODO release the IP that the service got
+	delete(engine.serviceContainerInfo, serviceId)
+	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
+
+	if engine.isPartitioningEnabled {
+		sidecarContainerInfo, found := engine.sidecarContainerInfo[serviceId]
+		if !found {
+			return stacktrace.NewError(
+				"Couldn't find sidecar container ID for service '%v'; this is a code bug where the sidecar container ID didn't get stored at creation time",
+				serviceId)
+
+		}
+		sidecarContainerId := sidecarContainerInfo.containerId
+
+		// Try to stop the sidecar container too
+		logrus.Debugf("Removing sidecar container with container ID '%v'...", sidecarContainerId)
+		if err := engine.dockerManager.StopContainer(context, sidecarContainerId, containerStopTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
+		}
+		// TODO release the IP that the service received
+		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
+
+		// TODO call update IPtables
+	}
 }
 
 // TODO write tests for me!!
