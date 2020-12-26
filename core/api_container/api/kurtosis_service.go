@@ -158,7 +158,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 
 	containerStopTimeout := time.Duration(args.ContainerStopTimeoutSeconds) * time.Second
 	if err := service.serviceEngine.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 
 	return nil
