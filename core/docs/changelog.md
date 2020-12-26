@@ -3,6 +3,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 # TBD
 * Add .dockerignore file
 * Give users the ability to partition their testnets
+* Fixed bug where the timeout being passed in to the `RemoveService` call wasn't being used
 
 # 1.4.5
 * Use `alpine` base for the API image & initializer image rather than the `docker` Docker-in-Docker image (which we thought we needed at the start, but don't actually); this saves downloading 530 MB _per CI build_, and so should significantly speed up CI times

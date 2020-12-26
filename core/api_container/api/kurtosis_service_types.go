@@ -31,11 +31,11 @@ type AddServiceArgs struct {
 
 type AddServiceResponse struct {
 	IPAddress string 	`json:"ipAddress"`
-	ServiceID string	`json:"serviceId"`
 }
 
 type RemoveServiceArgs struct {
 	ServiceID string 	`json:"serviceId"`
+	ContainerStopTimeoutSeconds int `json:"containerStopTimeoutSeconds"`
 }
 
 type RegisterTestExecutionArgs struct {

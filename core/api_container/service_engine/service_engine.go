@@ -39,8 +39,8 @@ const (
 	ipTablesAppendRuleFlag  = "-A"
 	ipTablesDropAction = "DROP"
 
-	// How long we'll wait when making a best-effort attempt to stop a container
-	containerStopTimeout = 15 * time.Second
+	// How long we'll wait when stopping a sidecar container
+	sidecarContainerStopTimeout = 15 * time.Second
 )
 
 type containerInfo struct {
@@ -241,7 +241,10 @@ func (engine *ServiceEngine) CreateServiceInPartition(
 	return serviceIp, nil
 }
 
-func (engine *ServiceEngine) RemoveService(context context.Context, serviceId topology_types.ServiceID) error {
+func (engine *ServiceEngine) RemoveService(
+		context context.Context,
+		serviceId topology_types.ServiceID,
+		containerStopTimeout time.Duration) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
 
@@ -273,7 +276,7 @@ func (engine *ServiceEngine) RemoveService(context context.Context, serviceId to
 
 		// Try to stop the sidecar container too
 		logrus.Debugf("Removing sidecar container with container ID '%v'...", sidecarContainerId)
-		if err := engine.dockerManager.StopContainer(context, sidecarContainerId, containerStopTimeout); err != nil {
+		if err := engine.dockerManager.StopContainer(context, sidecarContainerId, sidecarContainerStopTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
 		}
 		// TODO release the IP that the service received

@@ -45,6 +45,8 @@ Now that you have a running testsuite, you'll want to start customizing the test
 ### Service Interface & Implementation
 You're writing a Kurtosis testsuite because you want to write tests for a network, and networks are composed of services. To a test, a service is just an API that represents an interaction with the actual Docker container. To give your tests this API, define an implementation of the `Service` interface that provides the functionality you want for your test [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/services_impl/datastore/datastore_service.go). Here you'll provide the functions you want to be able to call on the service, as well as two Kurtosis-required bits:
 
+TODO TODO TODO need to explain GetServiceID
+
 1. `Service.getIpAddress`, a getter to retrieve the service's IP and a check if the service is available. Your service should take in the IP address as a constructor parameter, and return it with this function; later we'll see how this gets passed to the constructor.
 2. `Service.isAvailable`, a check you'll need to implement to tell Kurtosis when your service should be considered available and ready for use.
 

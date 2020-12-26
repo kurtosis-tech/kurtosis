@@ -89,11 +89,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	}
 	serviceId := topology_types.ServiceID(serviceIdStr)
 
-	partitionIdStr := strings.TrimSpace(args.PartitionID)
-	if partitionIdStr == "" {
-		return stacktrace.NewError("Partition ID cannot be empty or whitespace")
-	}
-	partitionId := topology_types.PartitionID(partitionIdStr)
+	partitionId := topology_types.PartitionID(args.PartitionID)
 
 	imageNameStr := strings.TrimSpace(args.ImageName)
 	if imageNameStr == "" {
@@ -141,7 +137,6 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	logrus.Infof("Successfully added service '%v'", serviceId)
 
 	result.IPAddress = serviceIp.String()
-	result.ServiceID = string(serviceId)
 	return nil
 }
 
@@ -149,13 +144,22 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 Removes the service with the given service ID from the network
  */
 func (service *KurtosisService) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
+	logrus.Infof("Received request to remove a service with the following args: %v", *args)
+
 	serviceIdStr := strings.TrimSpace(args.ServiceID)
 	if serviceIdStr == "" {
 		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 	serviceId := topology_types.ServiceID(serviceIdStr)
 
-	service.serviceEngine.RemoveService(httpReq.Context(), serviceId)
+	if args.ContainerStopTimeoutSeconds <= 0 {
+		return stacktrace.NewError("Container stop timeout seconds cannot be <= 0")
+	}
+
+	containerStopTimeout := time.Duration(args.ContainerStopTimeoutSeconds) * time.Second
+	if err := service.serviceEngine.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'")
+	}
 
 	return nil
 }
@@ -164,6 +168,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 //  given amount of time before calling the test lost
 func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, args *RegisterTestExecutionArgs, result *struct{}) error {
 	logrus.Infof("Received request to register a test execution with timeout of %v seconds...", args.TestTimeoutSeconds)
+
 	if service.testExecutionRegistered {
 		return stacktrace.NewError("A test execution is already registered with the API container")
 	}
