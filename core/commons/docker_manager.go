@@ -357,9 +357,7 @@ func (manager DockerManager) RunExecCommand(
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred creating the exec",
-			command,
-			containerId)
+			"An error occurred creating the exec process")
 	}
 
 	execId := createResp.ID
@@ -375,18 +373,14 @@ func (manager DockerManager) RunExecCommand(
 	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred starting the exec command",
-			command,
-			containerId)
+			"An error occurred starting the exec command")
 	}
 
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred attaching to the exec command",
-			command,
-			containerId)
+			"An error occurred attaching to the exec command")
 	}
 	defer attachResp.Close()
 

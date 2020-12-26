@@ -3,15 +3,15 @@
  * All Rights Reserved.
  */
 
-package partitioning
+package service_engine
 
 import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api"
-	"github.com/kurtosis-tech/kurtosis/api_container/partitioning/testnet_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	defaultPartitionId                   PartitionID = "default"
-	startingDefaultConnectionBlockStatus             = false
+	defaultPartitionId                   topology_types.PartitionID = "default"
+	startingDefaultConnectionBlockStatus                            = false
 
 	iproute2ContainerImage = "kurtosistech/iproute2"
 
@@ -43,8 +43,6 @@ const (
 	containerStopTimeout = 15 * time.Second
 )
 
-type PartitionID string
-
 type containerInfo struct {
 	containerId string
 	ipAddr net.IP
@@ -53,7 +51,7 @@ type containerInfo struct {
 /**
 This is the engine
  */
-type PartitioningEngine struct {
+type ServiceEngine struct {
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
 
@@ -67,48 +65,48 @@ type PartitioningEngine struct {
 
 	mutex *sync.Mutex
 
-	topology *testnet_topology.TestnetTopology
+	topology *partition_topology.PartitionTopology
 
 	// == Per-service info ==================================================================
-	serviceContainerInfo map[api.ServiceID]containerInfo
+	serviceContainerInfo map[topology_types.ServiceID]containerInfo
 
-	sidecarContainerInfo map[api.ServiceID]containerInfo
+	sidecarContainerInfo map[topology_types.ServiceID]containerInfo
 
 	// Mapping of serviceID -> set of serviceIDs tracking what's currently being dropped in the INPUT chain of the service
-	ipTablesBlocks map[api.ServiceID]*ServiceIDSet
+	ipTablesBlocks map[topology_types.ServiceID]*topology_types.ServiceIDSet
 }
 
-func NewPartitioningEngine(
+func NewServiceEngine(
 		isPartitioningEnabled bool,
 		dockerNetworkId string,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *commons.DockerManager,
-		userServiceLauncher *user_service_launcher.UserServiceLauncher) *PartitioningEngine {
-	defaultPartitionConnection := testnet_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
-	return &PartitioningEngine{
+		userServiceLauncher *user_service_launcher.UserServiceLauncher) *ServiceEngine {
+	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
+	return &ServiceEngine{
 		isPartitioningEnabled: isPartitioningEnabled,
 		dockerNetworkId: dockerNetworkId,
 		freeIpAddrTracker: freeIpAddrTracker,
 		dockerManager: dockerManager,
 		userServiceLauncher: userServiceLauncher,
 		mutex:               &sync.Mutex{},
-		topology:            testnet_topology.NewTestnetTopology(
+		topology:            partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceContainerInfo: map[api.ServiceID]containerInfo{},
-		sidecarContainerInfo: map[api.ServiceID]containerInfo{},
+		serviceContainerInfo: map[topology_types.ServiceID]containerInfo{},
+		sidecarContainerInfo: map[topology_types.ServiceID]containerInfo{},
 	}
 }
 
 /*
 Completely repartitions the network, throwing away the old topology
  */
-func (engine *PartitioningEngine) Repartition(
+func (engine *ServiceEngine) Repartition(
 		context context.Context,
-		newPartitionServices map[PartitionID]*ServiceIDSet,
-		newPartitionConnections map[testnet_topology.PartitionConnectionID]testnet_topology.PartitionConnection,
-		newDefaultConnection testnet_topology.PartitionConnection) error {
+		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
+		newPartitionConnections map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection,
+		newDefaultConnection partition_topology.PartitionConnection) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
 
@@ -133,12 +131,12 @@ If partitionId is empty string, the default partition ID is used
 
 Returns: The IP address of the new service
  */
-func (engine *PartitioningEngine) CreateServiceInPartition(
+func (engine *ServiceEngine) CreateServiceInPartition(
 		context context.Context,
-		serviceId api.ServiceID,
+		serviceId topology_types.ServiceID,
 		imageName string,
 		usedPorts map[nat.Port]bool,
-		partitionId PartitionID,
+		partitionId topology_types.PartitionID,
 		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
@@ -243,7 +241,7 @@ func (engine *PartitioningEngine) CreateServiceInPartition(
 	return serviceIp, nil
 }
 
-func (engine *PartitioningEngine) RemoveService(context context.Context, serviceId api.ServiceID) error {
+func (engine *ServiceEngine) RemoveService(context context.Context, serviceId topology_types.ServiceID) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
 
@@ -254,7 +252,7 @@ func (engine *PartitioningEngine) RemoveService(context context.Context, service
 	serviceContainerId := serviceInfo.containerId
 
 	// Make a best-effort attempt to stop the service container
-	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceContainerId)
+	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceId, serviceContainerId)
 	if err := engine.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 	}
@@ -279,17 +277,21 @@ func (engine *PartitioningEngine) RemoveService(context context.Context, service
 			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
 		}
 		// TODO release the IP that the service received
+		delete(engine.sidecarContainerInfo, serviceId)
 		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
 
-		// TODO call update IPtables
+		if err := engine.updateIpTables(context); err != nil {
+			return stacktrace.Propagate(err, "An error occurred updating the iptables after removing service '%v'", serviceId)
+		}
 	}
+	return nil
 }
 
 // TODO write tests for me!!
 /*
 Gets the latest target blocklists from the topology and makes sure iptables matches
  */
-func (engine *PartitioningEngine) updateIpTables(context context.Context) error {
+func (engine *ServiceEngine) updateIpTables(context context.Context) error {
 	targetBlocklists, err := engine.topology.GetBlocklists()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the current blocklists")
@@ -301,7 +303,7 @@ func (engine *PartitioningEngine) updateIpTables(context context.Context) error 
 		return stacktrace.Propagate(err, "An error occurred getting the services that need iptables updated")
 	}
 
-	sidecarContainerCmds, err := getSidecarContainerCommands(toUpdate, engine.serviceIps)
+	sidecarContainerCmds, err := getSidecarContainerCommands(toUpdate, engine.serviceContainerInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the sidecar container commands for the " +
 			"services that need iptables updates")
@@ -309,17 +311,22 @@ func (engine *PartitioningEngine) updateIpTables(context context.Context) error 
 
 	// TODO Run the container updates in parallel, with the container being modified being the most important
 	for serviceId, command := range sidecarContainerCmds {
-		sidecarContainerId, found := engine.sidecarContainerIds[serviceId]
+		sidecarContainerInfo, found := engine.sidecarContainerInfo[serviceId]
 		if !found {
 			// TODO maybe start one if we can't find it?
 			return stacktrace.NewError(
-				"Couldn't find a sidecar container for Service ID '%v', which means there's no way " +
+				"Couldn't find a sidecar container info for Service ID '%v', which means there's no way " +
 					"to update its iptables",
 				serviceId,
 			)
 		}
+		sidecarContainerId := sidecarContainerInfo.containerId
 
-		logrus.Info("Running iptables command '%v' in sidecar container '%v' to update blocklist for service '%v'...")
+		logrus.Infof(
+			"Running iptables command '%v' in sidecar container '%v' to update blocklist for service '%v'...",
+			command,
+			sidecarContainerId,
+			serviceId)
 		commandLogsBuf := &bytes.Buffer{}
 		if err := engine.dockerManager.RunExecCommand(context, sidecarContainerId, command, commandLogsBuf); err != nil {
 			return stacktrace.Propagate(
@@ -329,16 +336,16 @@ func (engine *PartitioningEngine) updateIpTables(context context.Context) error 
 				sidecarContainerId,
 				serviceId)
 		}
-		logrus.Info("Successfully updated blocklist for service '%v'")
+		logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
 		logrus.Info("---------------------------------- Command Logs ---------------------------------------")
 		if _, err := io.Copy(logrus.StandardLogger().Out, commandLogsBuf); err != nil {
-			logrus.Error("An error occurred printing the exec logs: %v", err)
+			logrus.Errorf("An error occurred printing the exec logs: %v", err)
 		}
 		logrus.Info("---------------------------------End Command Logs -------------------------------------")
 	}
 
 	// Defensive copy when we store
-	blockListToStore := map[api.ServiceID]*ServiceIDSet{}
+	blockListToStore := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
 	for serviceId, newBlockedServicesForId := range targetBlocklists {
 		blockListToStore[serviceId] = newBlockedServicesForId.Copy()
 	}
@@ -352,9 +359,9 @@ Compares the target state of the world with the current state of the world, and 
 	the services that need to be updated.
  */
 func getServicesNeedingIpTablesUpdates(
-		currentBlockedServices map[api.ServiceID]*ServiceIDSet,
-		newBlockedServices map[api.ServiceID]*ServiceIDSet) (map[api.ServiceID]*ServiceIDSet, error) {
-	result := map[api.ServiceID]*ServiceIDSet{}
+		currentBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet,
+		newBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet) (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
+	result := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
 	for serviceId, newBlockedServicesForId := range newBlockedServices {
 		if newBlockedServicesForId.Contains(serviceId) {
 			return nil, stacktrace.NewError("Requested for service ID '%v' to block itself!", serviceId)
@@ -364,7 +371,7 @@ func getServicesNeedingIpTablesUpdates(
 		//  as the current state
 		currentBlockedServicesForId, found := currentBlockedServices[serviceId]
 		if !found {
-			currentBlockedServicesForId = NewServiceIDSet()
+			currentBlockedServicesForId = topology_types.NewServiceIDSet()
 		}
 
 		noChangesNeeded := newBlockedServicesForId.Equals(currentBlockedServicesForId)
@@ -386,10 +393,9 @@ Args:
 	toUpdate: A mapping of serviceID -> set of serviceIDs to block
  */
 func getSidecarContainerCommands(
-		toUpdate map[api.ServiceID]*ServiceIDSet,
-		serviceIps map[api.ServiceID]net.IP) (map[api.ServiceID][]string, error) {
-	result := map[api.ServiceID][]string{}
-
+		toUpdate map[topology_types.ServiceID]*topology_types.ServiceIDSet,
+		serviceContainerInfo map[topology_types.ServiceID]containerInfo) (map[topology_types.ServiceID][]string, error) {
+	result := map[topology_types.ServiceID][]string{}
 
 	// TODO We build two separate commands - flush the Kurtosis iptables chain, and then populate it with new stuff
 	//  This means that there's a (very small) window of time where the iptables aren't blocked
@@ -408,13 +414,14 @@ func getSidecarContainerCommands(
 		if newBlockedServicesForId.Size() >= 0 {
 			ipsToBlockStrSlice := []string{}
 			for _, serviceIdToBlock := range newBlockedServicesForId.Elems() {
-				ipToBlock, found := serviceIps[serviceIdToBlock]
+				toBlockContainerInfo, found := serviceContainerInfo[serviceIdToBlock]
 				if !found {
 					return nil, stacktrace.NewError("Service ID '%v' needs to block the IP of target service ID '%v', but " +
 						"the target service doesn't have an IP associated to it",
 						serviceId,
 						serviceIdToBlock)
 				}
+				ipToBlock := toBlockContainerInfo.ipAddr
 				ipsToBlockStrSlice = append(ipsToBlockStrSlice, ipToBlock.String())
 			}
 			ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
@@ -435,3 +442,4 @@ func getSidecarContainerCommands(
 	}
 	return result, nil
 }
+

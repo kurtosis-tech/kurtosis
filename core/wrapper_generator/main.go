@@ -269,8 +269,7 @@ func validateWrapperArgs(args []WrapperArg) error {
 			if arg.DefaultVal != "" {
 				return stacktrace.NewError(
 					"Positional argument '%v' cannot have default value",
-					arg.Variable,
-					flagPrefix)
+					arg.Variable)
 			}
 		}
 	}

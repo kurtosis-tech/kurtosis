@@ -3,61 +3,37 @@
  * All Rights Reserved.
  */
 
-package testnet_topology
+package partition_topology
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/api"
-	"github.com/kurtosis-tech/kurtosis/api_container/partitioning"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
 	"github.com/palantir/stacktrace"
 	"strings"
 )
-
-/*
-Represents two partitions, where order is unimportant
-*/
-type PartitionConnectionID struct {
-	lexicalFirst  partitioning.PartitionID
-	lexicalSecond partitioning.PartitionID
-}
-
-func NewPartitionConnectionID(partitionA partitioning.PartitionID, partitionB partitioning.PartitionID) *PartitionConnectionID {
-
-	// We sort these upon creation so that this type can be used as a key in a map, and so that
-	// 	this tuple is commutative: partitionConnectionID(A, B) == partitionConnectionID(B, A) as a map key
-	first, second := partitionA, partitionB
-	result := strings.Compare(string(first), string(second))
-	if result > 0 {
-		first, second = second, first
-	}
-	return &PartitionConnectionID{
-		lexicalFirst:  first,
-		lexicalSecond: second,
-	}
-}
 
 type PartitionConnection struct {
 	IsBlocked bool
 }
 
 
-// Provides an API for modifying the topology of
-type TestnetTopology struct {
+// Provides an API for modifying the topology of services
+type PartitionTopology struct {
 	defaultConnection PartitionConnection
 
-	servicePartitions map[api.ServiceID]partitioning.PartitionID
+	servicePartitions map[topology_types.ServiceID]topology_types.PartitionID
 
-	partitionConnections map[PartitionConnectionID]PartitionConnection
+	partitionConnections map[topology_types.PartitionConnectionID]PartitionConnection
 
 	// A service can be a part of exactly one partition at a time
-	partitionServices map[partitioning.PartitionID]*partitioning.ServiceIDSet // partitionId -> set<serviceId>
+	partitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet // partitionId -> set<serviceId>
 }
 
-func NewTestnetTopology(defaultPartition partitioning.PartitionID, defaultConnection PartitionConnection) *TestnetTopology {
-	return &TestnetTopology{
-		servicePartitions:    map[api.ServiceID]partitioning.PartitionID{},
-		partitionConnections: map[PartitionConnectionID]PartitionConnection{},
-		partitionServices: map[partitioning.PartitionID]*partitioning.ServiceIDSet{
-			defaultPartition: partitioning.NewServiceIDSet(),
+func NewPartitionTopology(defaultPartition topology_types.PartitionID, defaultConnection PartitionConnection) *PartitionTopology {
+	return &PartitionTopology{
+		servicePartitions:    map[topology_types.ServiceID]topology_types.PartitionID{},
+		partitionConnections: map[topology_types.PartitionConnectionID]PartitionConnection{},
+		partitionServices: map[topology_types.PartitionID]*topology_types.ServiceIDSet{
+			defaultPartition: topology_types.NewServiceIDSet(),
 		},
 	}
 }
@@ -66,19 +42,19 @@ func NewTestnetTopology(defaultPartition partitioning.PartitionID, defaultConnec
 //                                        Public Methods
 // ================================================================================================
 // TODO Add tests for this!
-func (topology *TestnetTopology) Repartition(
-		newPartitionServices map[partitioning.PartitionID]*partitioning.ServiceIDSet,
-		newPartitionConnections map[PartitionConnectionID]PartitionConnection,
+func (topology *PartitionTopology) Repartition(
+		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
+		newPartitionConnections map[topology_types.PartitionConnectionID]PartitionConnection,
 		newDefaultConnection PartitionConnection) error {
 
 	// Validate that each existing service in the testnet gets exactly one partition allocation
-	servicesNeedingAllocation := partitioning.NewServiceIDSet()
+	servicesNeedingAllocation := topology_types.NewServiceIDSet()
 	for serviceId, _ := range topology.servicePartitions {
 		servicesNeedingAllocation.AddElem(serviceId)
 	}
-	allocatedServices := partitioning.NewServiceIDSet()
-	unknownServices := partitioning.NewServiceIDSet()
-	duplicatedAllocations := partitioning.NewServiceIDSet()
+	allocatedServices := topology_types.NewServiceIDSet()
+	unknownServices := topology_types.NewServiceIDSet()
+	duplicatedAllocations := topology_types.NewServiceIDSet()
 	for _, servicesForPartition := range newPartitionServices {
 		for _, serviceId := range servicesForPartition.Elems() {
 			if allocatedServices.Contains(serviceId) {
@@ -113,31 +89,33 @@ func (topology *TestnetTopology) Repartition(
 
 	// Validate the connections point to defined partitions
 	for partitionConnectionId, _ := range newPartitionConnections {
-		if _, found := newPartitionServices[partitionConnectionId.lexicalFirst]; !found {
+		firstPartition := partitionConnectionId.GetFirst()
+		secondPartition := partitionConnectionId.GetSecond()
+		if _, found := newPartitionServices[firstPartition]; !found {
 			return stacktrace.NewError(
 				"Partition '%v' in partition connection '%v' <-> '%v' doesn't exist",
-				partitionConnectionId.lexicalFirst,
-				partitionConnectionId.lexicalFirst,
-				partitionConnectionId.lexicalSecond)
+				firstPartition,
+				firstPartition,
+				secondPartition)
 		}
-		if _, found := newPartitionServices[partitionConnectionId.lexicalSecond]; !found {
+		if _, found := newPartitionServices[secondPartition]; !found {
 			return stacktrace.NewError("Partition '%v' in partition connection '%v' <-> '%v' doesn't exist",
-				partitionConnectionId.lexicalSecond,
-				partitionConnectionId.lexicalFirst,
-				partitionConnectionId.lexicalSecond)
+				secondPartition,
+				firstPartition,
+				secondPartition)
 		}
 	}
 
 	// Defensive copies
-	newPartitionServicesCopy := map[partitioning.PartitionID]*partitioning.ServiceIDSet{}
-	newServicePartitionsCopy := map[api.ServiceID]partitioning.PartitionID{}
+	newPartitionServicesCopy := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
+	newServicePartitionsCopy := map[topology_types.ServiceID]topology_types.PartitionID{}
 	for partitionId, servicesForPartition := range newPartitionServices {
 		newPartitionServicesCopy[partitionId] = servicesForPartition.Copy()
 		for _, serviceId := range servicesForPartition.Elems() {
 			newServicePartitionsCopy[serviceId] = partitionId
 		}
 	}
-	newPartitionConnectionsCopy := map[PartitionConnectionID]PartitionConnection{}
+	newPartitionConnectionsCopy := map[topology_types.PartitionConnectionID]PartitionConnection{}
 	for partitionConnectionId, connection := range newPartitionConnections {
 		newPartitionConnectionsCopy[partitionConnectionId] = connection
 	}
@@ -150,7 +128,7 @@ func (topology *TestnetTopology) Repartition(
 	return nil
 }
 
-func (topology *TestnetTopology) AddService(serviceId api.ServiceID, partitionId partitioning.PartitionID) error {
+func (topology *PartitionTopology) AddService(serviceId topology_types.ServiceID, partitionId topology_types.PartitionID) error {
 	if existingPartition, found := topology.servicePartitions[serviceId]; found {
 		return stacktrace.NewError(
 			"Cannot add service '%v' to partition '%v' because the service is already assigned to partition '%v'",
@@ -171,7 +149,7 @@ func (topology *TestnetTopology) AddService(serviceId api.ServiceID, partitionId
 	return nil
 }
 
-func (topology *TestnetTopology) RemoveService(serviceId api.ServiceID) {
+func (topology *PartitionTopology) RemoveService(serviceId topology_types.ServiceID) {
 	partitionId, found := topology.servicePartitions[serviceId]
 	if !found {
 		return
@@ -182,36 +160,19 @@ func (topology *TestnetTopology) RemoveService(serviceId api.ServiceID) {
 	servicesForPartition.RemoveElem(serviceId)
 }
 
-func (topology TestnetTopology) GetPartitionServices() map[partitioning.PartitionID]*partitioning.ServiceIDSet {
+func (topology PartitionTopology) GetPartitionServices() map[topology_types.PartitionID]*topology_types.ServiceIDSet {
 	return topology.partitionServices
 }
 
-
-/*
-func (topology TestnetTopology) GetPartitionServices(partitionId partitioning.PartitionID) (*partitioning.ServiceIDSet, bool) {
-	services, found := topology.partitionServices[partitionId]
-	return services, found
-}
-
-func (topology TestnetTopology) GetPartitions() []partitioning.PartitionID {
-	// WHY doesn't Go have a stupid set type
-	result := []partitioning.PartitionID{}
-	for partitionId, _ := range topology.partitionServices {
-		result = append(result, partitionId)
-	}
-	return result
-}
-*/
-
 // TODO test me, including speed profiling!!
 // Returns a map indicating, for each service, which services it should be blocking based on the current network topology
-func (topology TestnetTopology) GetBlocklists() (map[api.ServiceID]*partitioning.ServiceIDSet, error) {
+func (topology PartitionTopology) GetBlocklists() (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
 	// TODO to speed this method up, we can remove this method in favor of spitting out updated blocklists on each change operation (addservice, repartition, etc.)
 	//  so that only the nodes that need updating will get updated incrementally
-	result := map[api.ServiceID]*partitioning.ServiceIDSet{}
+	result := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
 	for partitionId, servicesInPartition := range topology.partitionServices {
 		for _, serviceId := range servicesInPartition.Elems() {
-			blockedServices := partitioning.NewServiceIDSet()
+			blockedServices := topology_types.NewServiceIDSet()
 			for otherPartitionId, servicesInOtherPartition := range topology.partitionServices {
 				if partitionId == otherPartitionId {
 					// Two services in the same partition will never block each other
@@ -236,16 +197,16 @@ func (topology TestnetTopology) GetBlocklists() (map[api.ServiceID]*partitioning
 // ================================================================================================
 //                                  Private Helper Methods
 // ================================================================================================
-func (topology TestnetTopology) getPartitionConnection(
-	a partitioning.PartitionID,
-	b partitioning.PartitionID) (PartitionConnection, error) {
+func (topology PartitionTopology) getPartitionConnection(
+	a topology_types.PartitionID,
+	b topology_types.PartitionID) (PartitionConnection, error) {
 	if _, found := topology.partitionServices[a]; !found {
 		return PartitionConnection{}, stacktrace.NewError("Unrecognized partition '%v'", a)
 	}
 	if _, found := topology.partitionServices[b]; !found {
 		return PartitionConnection{}, stacktrace.NewError("Unrecognized partition '%v'", b)
 	}
-	connectionId := NewPartitionConnectionID(a, b)
+	connectionId := topology_types.NewPartitionConnectionID(a, b)
 	connection, found := topology.partitionConnections[*connectionId]
 	if !found {
 		return topology.defaultConnection, nil
@@ -253,7 +214,7 @@ func (topology TestnetTopology) getPartitionConnection(
 	return connection, nil
 }
 
-func serviceIdSetToCommaStr(set *partitioning.ServiceIDSet) string {
+func serviceIdSetToCommaStr(set *topology_types.ServiceIDSet) string {
 	strSlice := []string{}
 	for _, serviceId := range set.Elems() {
 		strSlice = append(strSlice, string(serviceId))

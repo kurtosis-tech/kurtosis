@@ -202,6 +202,8 @@ func RunTest(
 		kurtosisApiImageName,
 		networkId,
 		kurtosisApiIp,
+		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for the API container
+		commons.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
@@ -212,6 +214,8 @@ func RunTest(
 			//   about how our API container works to anyone trying to reverse-engineer Kurtosis
 			api_container_env_vars.ApiLogFilepathEnvVar:           apiLogFilepathOnApiContainer,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
+			// TODO Pull this value from testsuite metadata!!!
+			api_container_env_vars.IsPartitioningEnabledEnvVar: "false",
 			api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: subnetMask,

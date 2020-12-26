@@ -9,8 +9,9 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/partitioning"
-	"github.com/kurtosis-tech/kurtosis/api_container/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ type KurtosisService struct {
 
 	dockerManager *commons.DockerManager
 
-	partitioningEngine *partitioning.PartitioningEngine
+	serviceEngine *service_engine.ServiceEngine
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
@@ -61,7 +62,7 @@ func NewKurtosisService(
 		freeIpAddrTracker,
 		dockerNetworkId,
 		testVolumeName)
-	partitioningEngine := partitioning.NewPartitioningEngine(
+	partitioningEngine := service_engine.NewServiceEngine(
 		isPartitioningEnabled,
 		dockerNetworkId,
 		freeIpAddrTracker,
@@ -71,7 +72,7 @@ func NewKurtosisService(
 		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
 		dockerManager:           dockerManager,
-		partitioningEngine: partitioningEngine,
+		serviceEngine:           partitioningEngine,
 		suiteTestNames:          nil,
 	}
 }
@@ -86,13 +87,13 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	if serviceIdStr == "" {
 		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
-	serviceId := ServiceID(serviceIdStr)
+	serviceId := topology_types.ServiceID(serviceIdStr)
 
 	partitionIdStr := strings.TrimSpace(args.PartitionID)
 	if partitionIdStr == "" {
 		return stacktrace.NewError("Partition ID cannot be empty or whitespace")
 	}
-	partitionId := partitioning.PartitionID(partitionIdStr)
+	partitionId := topology_types.PartitionID(partitionIdStr)
 
 	imageNameStr := strings.TrimSpace(args.ImageName)
 	if imageNameStr == "" {
@@ -124,7 +125,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		usedPorts[portObj] = true
 	}
 
-	serviceIp, err := service.partitioningEngine.CreateServiceInPartition(
+	serviceIp, err := service.serviceEngine.CreateServiceInPartition(
 		httpReq.Context(),
 		serviceId,
 		imageNameStr,
@@ -152,9 +153,9 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 	if serviceIdStr == "" {
 		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
-	serviceId := ServiceID(serviceIdStr)
+	serviceId := topology_types.ServiceID(serviceIdStr)
 
-	service.partitioningEngine.RemoveService(httpReq.Context(), serviceId)
+	service.serviceEngine.RemoveService(httpReq.Context(), serviceId)
 
 	return nil
 }

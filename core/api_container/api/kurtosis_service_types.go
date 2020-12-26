@@ -5,8 +5,6 @@
 
 package api
 
-type ServiceID string
-
 type AddServiceArgs struct {
 	// The ID that the service will be identified by going forward
 	ServiceID		      string			`json:"serviceId"`

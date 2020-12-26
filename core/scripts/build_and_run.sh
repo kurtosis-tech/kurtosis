@@ -90,6 +90,13 @@ api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
+    echo "Running tests..."
+    if ! go test "${root_dirpath}/..."; then
+        echo 'Tests failed!'
+        exit 1
+    fi
+    echo "Tests completed"
+
     echo "Generating wrapper script..."
     mkdir -p "${BUILD_DIRPATH}"
     go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"

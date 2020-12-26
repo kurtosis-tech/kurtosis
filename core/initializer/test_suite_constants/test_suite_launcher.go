@@ -75,6 +75,8 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		launcher.testsuiteImage,
 		bridgeNetworkId,
 		nil,  // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
+		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for testsuite containers
+		commons.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
@@ -117,6 +119,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		launcher.testsuiteImage,
 		networkId,
 		testsuiteContainerIp,
+		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for testsuite container
+		commons.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
