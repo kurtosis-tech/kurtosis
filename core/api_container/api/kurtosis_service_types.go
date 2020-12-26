@@ -28,11 +28,12 @@ type AddServiceArgs struct {
 
 	StartCmd              []string          `json:"startCommand"`
 	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
-	TestVolumeMountFilepath string			`json:"testVolumeMountFilepath"`
+	TestVolumeMountDirpath string			`json:"testVolumeMountDirpath"`
 }
 
 type AddServiceResponse struct {
 	IPAddress string 	`json:"ipAddress"`
+	ServiceID string	`json:"serviceId"`
 }
 
 type RemoveServiceArgs struct {

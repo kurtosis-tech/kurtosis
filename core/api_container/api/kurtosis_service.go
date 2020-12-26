@@ -15,7 +15,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"sync"
+	"strings"
 	"time"
 )
 
@@ -48,11 +48,6 @@ type KurtosisService struct {
 
 	// Flag that will only be switched to true once, indicating that a test execution has been registered
 	testExecutionRegistered bool
-
-	// Map of service ID -> container ID
-	serviceContainerIds map[ServiceID]string
-
-	mutex *sync.Mutex
 }
 
 func NewKurtosisService(
@@ -63,6 +58,7 @@ func NewKurtosisService(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		testVolumeName string,
 		isPartitioningEnabled bool) *KurtosisService {
+
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		dockerManager,
 		freeIpAddrTracker,
@@ -80,7 +76,6 @@ func NewKurtosisService(
 		dockerManager:           dockerManager,
 		partitioningEngine: partitioningEngine,
 		suiteTestNames:          nil,
-		mutex:                   &sync.Mutex{},
 	}
 }
 
@@ -88,14 +83,28 @@ func NewKurtosisService(
 Adds a service with the given parameters to the network
  */
 func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServiceArgs, result *AddServiceResponse) error {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-
 	logrus.Infof("Received request to add a service with the following args: %v", *args)
 
-	requestedServiceId := ServiceID(args.ServiceID)
-	if _, found := service.serviceContainerIds[requestedServiceId]; found {
-		return stacktrace.NewError("Could not create service with ID '%v'; ID is already in use", requestedServiceId)
+	serviceIdStr := strings.TrimSpace(args.ServiceID)
+	if serviceIdStr == "" {
+		return stacktrace.NewError("Service ID cannot be empty or whitespace")
+	}
+	serviceId := ServiceID(serviceIdStr)
+
+	partitionIdStr := strings.TrimSpace(args.PartitionID)
+	if partitionIdStr == "" {
+		return stacktrace.NewError("Partition ID cannot be empty or whitespace")
+	}
+	partitionId := partitioning.PartitionID(partitionIdStr)
+
+	imageNameStr := strings.TrimSpace(args.ImageName)
+	if imageNameStr == "" {
+		return stacktrace.NewError("Image name cannot be empty or whitespace")
+	}
+
+	ipPlaceholderStr := strings.TrimSpace(args.IPPlaceholder)
+	if ipPlaceholderStr == "" {
+		return stacktrace.NewError("IP placeholder string cannot be empty or whitespace")
 	}
 
 	usedPorts := map[nat.Port]bool{}
@@ -118,13 +127,23 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		usedPorts[portObj] = true
 	}
 
-	service.partitioningEngine.CreateServiceInPartition(
+	serviceIp, err := service.partitioningEngine.CreateServiceInPartition(
 		httpReq.Context(),
-		)
+		serviceId,
+		imageNameStr,
+		usedPorts,
+		partitionId,
+		ipPlaceholderStr,
+		args.StartCmd,
+		args.DockerEnvironmentVars,
+		args.TestVolumeMountDirpath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating service '%v' inside partition '%v'", serviceId, partitionId)
+	}
+	logrus.Infof("Successfully added service '%v'", serviceId)
 
-
-
-	logrus.Infof("Successfully added service")
+	result.IPAddress = serviceIp.String()
+	result.ServiceID = string(serviceId)
 	return nil
 }
 
@@ -132,9 +151,6 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 Removes the service with the given service ID from the network
  */
 func (service *KurtosisService) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-
 	serviceId := ServiceID(args.ServiceID)
 	containerId, found := service.serviceContainerIds[serviceId]
 	if !found {
@@ -158,9 +174,6 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 // Registers that the test suite container is going to run a test, and the Kurtosis API container should wait for the
 //  given amount of time before calling the test lost
 func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, args *RegisterTestExecutionArgs, result *struct{}) error {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-
 	logrus.Infof("Received request to register a test execution with timeout of %v seconds...", args.TestTimeoutSeconds)
 	if service.testExecutionRegistered {
 		return stacktrace.NewError("A test execution is already registered with the API container")
