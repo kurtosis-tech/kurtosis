@@ -273,7 +273,7 @@ func main() {
 
 	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
 	//  error and loudly alert the user
-	for testName, _ := range suiteMetadata.TestNames {
+	for testName, _ := range suiteMetadata.TestMetadata {
 		if strings.Contains(testName, initializer_container_constants.TestNameArgSeparator) {
 			logrus.Errorf(
 				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
@@ -285,7 +285,7 @@ func main() {
 
 	if parsedFlags.GetBool(doListArg) {
 		testNames := []string{}
-		for name := range suiteMetadata.TestNames {
+		for name := range suiteMetadata.TestMetadata {
 			testNames = append(testNames, name)
 		}
 		sort.Strings(testNames)

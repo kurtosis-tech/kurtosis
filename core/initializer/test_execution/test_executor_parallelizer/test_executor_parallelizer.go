@@ -209,7 +209,8 @@ func runTestWorkerGoroutine(
 			apiContainerLogLevel,
 			testsuiteLauncher,
 			testsuiteDebuggerHostPortBinding,
-			testName)
+			testName,
+			testParams.TestMetadata)
 		writingTempFp.Close() // Close to flush out anything remaining in the buffer
 
 		// Create a new FP to read the logfile from the start

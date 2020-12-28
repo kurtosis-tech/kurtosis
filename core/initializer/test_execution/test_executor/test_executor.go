@@ -17,10 +17,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -86,6 +88,7 @@ Args:
 	testsuiteLauncher: Launcher for running the test-running testsuite instances
 	testsuiteDebuggerHostPortBinding: The port binding on the host machine that the testsuite debugger port should be tied to
 	testName: The name of the test the executor should execute
+	testMetadata: Metadata declared by the test itslef (e.g. if partitioning is enabled)
 
 Returns:
 	bool: True if the test passed, false otherwise
@@ -104,7 +107,8 @@ func RunTest(
 		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		testsuiteDebuggerHostPortBinding nat.PortBinding,
-		testName string) (bool, error) {
+		testName string,
+		testMetadata test_suite_metadata_acquirer.TestMetadata) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
@@ -214,8 +218,7 @@ func RunTest(
 			//   about how our API container works to anyone trying to reverse-engineer Kurtosis
 			api_container_env_vars.ApiLogFilepathEnvVar:           apiLogFilepathOnApiContainer,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
-			// TODO Pull this value from testsuite metadata!!!
-			api_container_env_vars.IsPartitioningEnabledEnvVar: "false",
+			api_container_env_vars.IsPartitioningEnabledEnvVar: strconv.FormatBool(testMetadata.IsPartitioningEnabled),
 			api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: subnetMask,

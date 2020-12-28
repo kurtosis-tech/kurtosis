@@ -67,20 +67,20 @@ func RunTests(
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}
-		for testName := range testSuiteMetadata.TestNames {
+		for testName := range testSuiteMetadata.TestMetadata {
 			testNamesToRun[testName] = true
 		}
 	}
 
 	// Validate all the requested tests exist
 	for testName := range testNamesToRun {
-		if _, found := testSuiteMetadata.TestNames[testName]; !found {
+		if _, found := testSuiteMetadata.TestMetadata[testName]; !found {
 			return false, stacktrace.NewError("No test registered with name '%v'", testName)
 		}
 	}
 
 	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier)
+	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -118,7 +118,8 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		networkWidthBits uint32,
-		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
+		freeHostPortBindingSupplier *FreeHostPortBindingSupplier,
+		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
@@ -150,7 +151,12 @@ func buildTestParams(
 			return nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for test '%v'", testName)
 		}
 
-		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding)
+		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
+		if !found {
+			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
+		}
+
+		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding, testMetadata)
 		testIndex++
 	}
 	return testParams, nil
