@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -163,6 +164,54 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 
 	return nil
 }
+
+func (service *KurtosisService) Repartition(httpReq *http.Request, args *RepartitionArgs, result *interface{}) error {
+	// No need to check for dupes here - that happens at the lowest-level call to ServiceEngine.Repartition (as it should)
+	partitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
+	for partitionIdStr, serviceIdStrSet := range args.PartitionServices {
+		partitionId := topology_types.PartitionID(partitionIdStr)
+		serviceIdSet := topology_types.NewServiceIDSet()
+		for serviceIdStr, _ := range serviceIdStrSet {
+			serviceId := topology_types.ServiceID(serviceIdStr)
+			serviceIdSet.AddElem(serviceId)
+		}
+		partitionServices[partitionId] = serviceIdSet
+	}
+
+	partitionConnections := map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection{}
+	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
+		partitionAId := topology_types.PartitionID(partitionAStr)
+		for partitionBStr, connectionInfo := range partitionBToConnection {
+			partitionBId := topology_types.PartitionID(partitionBStr)
+			partitionConnectionId := *topology_types.NewPartitionConnectionID(partitionAId, partitionBId)
+			if _, found := partitionConnections[partitionConnectionId]; found {
+				return stacktrace.NewError(
+					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
+					partitionAId,
+					partitionBId)
+			}
+			partitionConnection := partition_topology.PartitionConnection{
+				IsBlocked: connectionInfo.IsBlocked,
+			}
+			partitionConnections[partitionConnectionId] = partitionConnection
+		}
+	}
+
+	defaultConnectionInfo := args.DefaultConnection
+	defaultConnection := partition_topology.PartitionConnection{
+		IsBlocked: defaultConnectionInfo.IsBlocked,
+	}
+
+	if err := service.serviceEngine.Repartition(
+			httpReq.Context(),
+			partitionServices,
+			partitionConnections,
+			defaultConnection); err != nil {
+		return stacktrace.Propagate(err, "An error occurred repartitioning the test network")
+	}
+	return nil
+}
+
 
 // Registers that the test suite container is going to run a test, and the Kurtosis API container should wait for the
 //  given amount of time before calling the test lost
