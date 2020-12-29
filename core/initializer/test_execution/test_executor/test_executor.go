@@ -231,7 +231,8 @@ func RunTest(
 		},
 		map[string]string{
 			suiteExecutionVolume: api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
-		})
+		},
+	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
 	}
@@ -255,6 +256,12 @@ func RunTest(
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
+	case exit_codes.StartupErrorExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error while " +
+			"starting up and wasn't able to start the JSON RPC server")
+	case exit_codes.ShutdownErrorExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error during " +
+			"shutdown that prevented it from stopping cleanly")
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -266,7 +273,7 @@ func RunTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-	case exit_codes.ShutdownSignalExitCode:
+	case exit_codes.ReceivedTermSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
 	default:
@@ -292,10 +299,9 @@ func RunTest(
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
-
 /*
-Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
-as a deferred function.
+Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
+	exited (either normally or with error)
 */
 func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.DockerManager, networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
@@ -306,6 +312,6 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.Docker
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
-		log.Infof("Docker network with ID %v successfully removed", networkId)
+		log.Infof("Successfully removed Docker network with ID %v", networkId)
 	}
 }

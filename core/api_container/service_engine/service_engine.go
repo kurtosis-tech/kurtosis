@@ -48,10 +48,18 @@ type containerInfo struct {
 	ipAddr net.IP
 }
 
+// TODO Rename this to just ServiceNetwork, to more accurately reflect what it is
 /**
 This is the engine
  */
-type ServiceEngine struct {
+type ServiceNetworkEngine struct {
+	// When the engine is destroyed, all requests will fail
+	// This ensures that when the initializer tells the API container to destroy everything, the still-running
+	//  testsuite can't create more work
+	isDestroyed bool   	// VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
+
+	mutex *sync.Mutex	// VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
+
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
 
@@ -62,8 +70,6 @@ type ServiceEngine struct {
 	dockerManager *commons.DockerManager
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
-
-	mutex *sync.Mutex
 
 	topology *partition_topology.PartitionTopology
 
@@ -76,14 +82,15 @@ type ServiceEngine struct {
 	ipTablesBlocks map[topology_types.ServiceID]*topology_types.ServiceIDSet
 }
 
-func NewServiceEngine(
+func NewServiceNetworkEngine(
 		isPartitioningEnabled bool,
 		dockerNetworkId string,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *commons.DockerManager,
-		userServiceLauncher *user_service_launcher.UserServiceLauncher) *ServiceEngine {
+		userServiceLauncher *user_service_launcher.UserServiceLauncher) *ServiceNetworkEngine {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
-	return &ServiceEngine{
+	return &ServiceNetworkEngine{
+		isDestroyed: false,
 		isPartitioningEnabled: isPartitioningEnabled,
 		dockerNetworkId: dockerNetworkId,
 		freeIpAddrTracker: freeIpAddrTracker,
@@ -102,13 +109,16 @@ func NewServiceEngine(
 /*
 Completely repartitions the network, throwing away the old topology
  */
-func (engine *ServiceEngine) Repartition(
+func (engine *ServiceNetworkEngine) Repartition(
 		context context.Context,
 		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
 		newPartitionConnections map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
+	if engine.isDestroyed {
+		return stacktrace.NewError("Cannot repartition; the service engine has been destroyed")
+	}
 
 	if !engine.isPartitioningEnabled {
 		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
@@ -131,7 +141,7 @@ If partitionId is empty string, the default partition ID is used
 
 Returns: The IP address of the new service
  */
-func (engine *ServiceEngine) CreateServiceInPartition(
+func (engine *ServiceNetworkEngine) AddServiceInPartition(
 		context context.Context,
 		serviceId topology_types.ServiceID,
 		imageName string,
@@ -143,6 +153,9 @@ func (engine *ServiceEngine) CreateServiceInPartition(
 		testVolumeMountDirpath string) (net.IP, error) {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
+	if engine.isDestroyed {
+		return nil, stacktrace.NewError("Cannot add service; the service engine has been destroyed")
+	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
@@ -241,12 +254,15 @@ func (engine *ServiceEngine) CreateServiceInPartition(
 	return serviceIp, nil
 }
 
-func (engine *ServiceEngine) RemoveService(
+func (engine *ServiceNetworkEngine) RemoveService(
 		context context.Context,
 		serviceId topology_types.ServiceID,
 		containerStopTimeout time.Duration) error {
 	engine.mutex.Lock()
 	defer engine.mutex.Unlock()
+	if engine.isDestroyed {
+		return stacktrace.NewError("Cannot remove service; the service engine has been destroyed")
+	}
 
 	serviceInfo, found := engine.serviceContainerInfo[serviceId]
 	if !found {
@@ -290,11 +306,74 @@ func (engine *ServiceEngine) RemoveService(
 	return nil
 }
 
+// Stops all services that have been created by the API container, and renders the engine unusable
+func (engine *ServiceNetworkEngine) Destroy(context context.Context, containerStopTimeout time.Duration) error {
+	engine.mutex.Lock()
+	defer engine.mutex.Unlock()
+	if engine.isDestroyed {
+		return stacktrace.NewError("Cannot destroy the service engine; it has already been destroyed")
+	}
+
+	// TODO parallelize this for faster shutdown
+	containerStopErrors := []error{}
+	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
+	for serviceId, sidecarContainerInfo := range engine.sidecarContainerInfo {
+		sidecarContainerId := sidecarContainerInfo.containerId
+		// TODO set the stop timeout on the service itself
+		if err := engine.dockerManager.StopContainer(context, sidecarContainerId, containerStopTimeout); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred stopping sidecar container with container ID '%v' for service '%s'",
+				sidecarContainerId,
+				serviceId)
+			containerStopErrors = append(containerStopErrors, wrappedErr)
+		}
+	}
+	logrus.Debugf("Made best-effort attempt to stop sidecar containers")
+
+	// TODO parallelize this for faster shutdown
+	logrus.Debugf("Making best-effort attempt to stop service containers...")
+	for serviceId, serviceContainerInfo := range engine.serviceContainerInfo {
+		serviceContainerId := serviceContainerInfo.containerId
+		// TODO set the stop timeout on the service itself
+		if err := engine.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred stopping container for service '%v' with container ID '%v'",
+				serviceId,
+				serviceContainerId)
+			containerStopErrors = append(containerStopErrors, wrappedErr)
+		}
+	}
+	logrus.Debugf("Made best-effort attempt to stop service containers")
+
+	engine.isDestroyed = true
+
+	if len(containerStopErrors) > 0 {
+		errorStrs := []string{}
+		for _, err := range containerStopErrors {
+			errStr := err.Error()
+			errorStrs = append(errorStrs, errStr)
+		}
+		joinedErrStrings := strings.Join(errorStrs, "\n")
+		return stacktrace.NewError(
+			"One or more error(s) occurred stopping the services in the test network " +
+				"during service engine destruction:\n%s",
+			joinedErrStrings)
+	}
+
+	return nil
+}
+
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
+
 // TODO write tests for me!!
 /*
 Gets the latest target blocklists from the topology and makes sure iptables matches
  */
-func (engine *ServiceEngine) updateIpTables(context context.Context) error {
+func (engine *ServiceNetworkEngine) updateIpTables(context context.Context) error {
 	targetBlocklists, err := engine.topology.GetBlocklists()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the current blocklists")

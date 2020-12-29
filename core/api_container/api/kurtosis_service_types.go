@@ -49,9 +49,9 @@ type RepartitionArgs struct {
 	// Mapping of partitionA -> partitionB -> partitionConnection details
 	// We use this format because JSON doesn't allow object keys
 	// This format allows for the same connection to be defined twice, but we'll do error-checking to catch it
-	PartitionConnections map[string]map[string]PartitionConnectionInfo	`json:"partitionConnections"`
+	PartitionConnections map[string]map[string]PartitionConnectionInfo `json:"partitionConnections"`
 
-	DefaultConnection PartitionConnectionInfo	`json:"defaultConnection"`
+	DefaultConnection PartitionConnectionInfo `json:"defaultConnection"`
 }
 
 type RegisterTestExecutionArgs struct {
