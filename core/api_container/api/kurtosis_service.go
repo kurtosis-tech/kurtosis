@@ -9,9 +9,9 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/topology_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -35,7 +35,7 @@ type KurtosisService struct {
 
 	dockerManager *commons.DockerManager
 
-	serviceNetworkEngine *service_engine.ServiceNetworkEngine
+	serviceNetworkEngine *service_network_engine.ServiceNetworkEngine
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
@@ -49,7 +49,7 @@ func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *commons.DockerManager,
-		serviceNetworkEngine *service_engine.ServiceNetworkEngine) *KurtosisService {
+		serviceNetworkEngine *service_network_engine.ServiceNetworkEngine) *KurtosisService {
 
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,

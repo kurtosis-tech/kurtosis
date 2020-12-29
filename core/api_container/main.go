@@ -16,8 +16,8 @@ import (
 	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
@@ -205,7 +205,7 @@ func createServiceNetworkEngine(
 		apiContainerIp string,
 		testSuiteContainerIp string,
 		testVolumeName string,
-		isPartitioningEnabled bool) (*service_engine.ServiceNetworkEngine, error) {
+		isPartitioningEnabled bool) (*service_network_engine.ServiceNetworkEngine, error) {
 
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
@@ -225,7 +225,7 @@ func createServiceNetworkEngine(
 		dockerNetworkId,
 		testVolumeName)
 
-	engine := service_engine.NewServiceNetworkEngine(
+	engine := service_network_engine.NewServiceNetworkEngine(
 		isPartitioningEnabled,
 		dockerNetworkId,
 		freeIpAddrTracker,
@@ -238,7 +238,7 @@ func createServer(
 		dockerManager *commons.DockerManager,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
-		serviceNetworkEngine *service_engine.ServiceNetworkEngine) (*http.Server, error) {
+		serviceNetworkEngine *service_network_engine.ServiceNetworkEngine) (*http.Server, error) {
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
 		testExecutionStatusChan,

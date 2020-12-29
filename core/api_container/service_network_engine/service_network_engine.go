@@ -3,15 +3,15 @@
  * All Rights Reserved.
  */
 
-package service_engine
+package service_network_engine
 
 import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -229,16 +229,32 @@ func (engine *ServiceNetworkEngine) AddServiceInPartition(
 			ipTablesCommand,
 			ipTablesInsertRuleFlag,
 			ipTablesInputChain,
-			"1",  // We want to insert the Kurtosis chain first, so it always runs
+			"1",  // We want to insert the Kurtosis chain in first position, so it always runs
 			"-j",
 			kurtosisIpTablesChain,
 		}
+
+		// We need to wrap this command with 'sh -c' because we're using '&&', and if we don't do this then
+		//  iptables will think the '&&' is an argument for it and fail
+		configureKurtosisChainShWrappedCommand := []string{
+			"sh",
+			"-c",
+			strings.Join(configureKurtosisChainCommand, " "),
+		}
+
+		logrus.Debugf("Running exec command to configure Kurtosis iptables chain: '%v'", configureKurtosisChainShWrappedCommand)
+		execOutputBuf := &bytes.Buffer{}
 		if err := engine.dockerManager.RunExecCommand(
 				context,
 				sidecarContainerId,
-				configureKurtosisChainCommand,
-				logrus.StandardLogger().Out); err !=  nil {
-			return nil, stacktrace.Propagate(err, "An error occurred configuring iptables to use the custom Kurtosis chain")
+			configureKurtosisChainShWrappedCommand,
+				execOutputBuf); err !=  nil {
+			logrus.Error("------------------ Kurtosis iptables chain-configuring exec command output --------------------")
+			if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
+				logrus.Errorf("An error occurred printing the exec logs: %v", err)
+			}
+			logrus.Error("---------------- End Kurtosis iptables chain-configuring exec command output --------------------")
+			return nil, stacktrace.Propagate(err, "An error occurred running the exec command to configure iptables to use the custom Kurtosis chain")
 		}
 
 		// TODO Right now, there's a period of time between user service container launch, and the recalculation of
@@ -392,7 +408,7 @@ func (engine *ServiceNetworkEngine) updateIpTables(context context.Context) erro
 	}
 
 	// TODO Run the container updates in parallel, with the container being modified being the most important
-	for serviceId, command := range sidecarContainerCmds {
+	for serviceId, rawCommand := range sidecarContainerCmds {
 		sidecarContainerInfo, found := engine.sidecarContainerInfo[serviceId]
 		if !found {
 			// TODO maybe start one if we can't find it?
@@ -404,26 +420,34 @@ func (engine *ServiceNetworkEngine) updateIpTables(context context.Context) erro
 		}
 		sidecarContainerId := sidecarContainerInfo.containerId
 
+		// Because the sidecar command contains '&&', we need to wrap this in 'sh -c' else iptables
+		//  will think the '&&' is an argument intended for itself
+		shWrappedCommand := []string{
+			"sh",
+			"-c",
+			strings.Join(rawCommand, " "),
+		}
+
 		logrus.Infof(
 			"Running iptables command '%v' in sidecar container '%v' to update blocklist for service '%v'...",
-			command,
+			shWrappedCommand,
 			sidecarContainerId,
 			serviceId)
-		commandLogsBuf := &bytes.Buffer{}
-		if err := engine.dockerManager.RunExecCommand(context, sidecarContainerId, command, commandLogsBuf); err != nil {
+		execOutputBuf := &bytes.Buffer{}
+		if err := engine.dockerManager.RunExecCommand(context, sidecarContainerId, shWrappedCommand, execOutputBuf); err != nil {
+			logrus.Error("-------------------- iptables blocklist-updating exec command output --------------------")
+			if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
+				logrus.Errorf("An error occurred printing the exec logs: %v", err)
+			}
+			logrus.Error("------------------ End iptables blocklist-updating exec command output --------------------")
 			return stacktrace.Propagate(
 				err,
 				"An error occurred running iptables command '%v' in sidecar container '%v' to update the blocklist of service '%v'",
-				command,
+				shWrappedCommand,
 				sidecarContainerId,
 				serviceId)
 		}
 		logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
-		logrus.Info("---------------------------------- Command Logs ---------------------------------------")
-		if _, err := io.Copy(logrus.StandardLogger().Out, commandLogsBuf); err != nil {
-			logrus.Errorf("An error occurred printing the exec logs: %v", err)
-		}
-		logrus.Info("---------------------------------End Command Logs -------------------------------------")
 	}
 
 	// Defensive copy when we store
