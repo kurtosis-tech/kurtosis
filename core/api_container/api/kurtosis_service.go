@@ -9,9 +9,9 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -35,7 +35,7 @@ type KurtosisService struct {
 
 	dockerManager *commons.DockerManager
 
-	serviceNetworkEngine *service_network_engine.ServiceNetworkEngine
+	serviceNetwork *service_network.ServiceNetwork
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
@@ -49,12 +49,12 @@ func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *commons.DockerManager,
-		serviceNetworkEngine *service_network_engine.ServiceNetworkEngine) *KurtosisService {
+		serviceNetwork *service_network.ServiceNetwork) *KurtosisService {
 
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,
 		dockerManager:           dockerManager,
-		serviceNetworkEngine:    serviceNetworkEngine,
+		serviceNetwork:          serviceNetwork,
 		testExecutionStatusChan: testExecutionStatusChan,
 		testExecutionRegistered: false,
 	}
@@ -104,7 +104,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		usedPorts[portObj] = true
 	}
 
-	serviceIp, err := service.serviceNetworkEngine.AddServiceInPartition(
+	serviceIp, err := service.serviceNetwork.AddServiceInPartition(
 		httpReq.Context(),
 		serviceId,
 		imageNameStr,
@@ -140,7 +140,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 	}
 
 	containerStopTimeout := time.Duration(args.ContainerStopTimeoutSeconds) * time.Second
-	if err := service.serviceNetworkEngine.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
+	if err := service.serviceNetwork.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 
@@ -150,7 +150,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 func (service *KurtosisService) Repartition(httpReq *http.Request, args *RepartitionArgs, _ *interface{}) error {
 	logrus.Infof("Received request to repartition the test network with the following args: %v", args)
 
-	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetworkEngine.Repartition (as it should)
+	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
 	for partitionIdStr, serviceIdStrSet := range args.PartitionServices {
 		partitionId := topology_types.PartitionID(partitionIdStr)
@@ -186,7 +186,7 @@ func (service *KurtosisService) Repartition(httpReq *http.Request, args *Reparti
 		IsBlocked: defaultConnectionInfo.IsBlocked,
 	}
 
-	if err := service.serviceNetworkEngine.Repartition(
+	if err := service.serviceNetwork.Repartition(
 			httpReq.Context(),
 			partitionServices,
 			partitionConnections,

@@ -16,8 +16,8 @@ import (
 	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network_engine/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
@@ -118,7 +118,7 @@ func main() {
 		os.Exit(exit_codes.StartupErrorExitCode)
 	}
 
-	serviceNetworkEngine, err := createServiceNetworkEngine(
+	serviceNetwork, err := createServiceNetwork(
 		dockerManager,
 		*networkIdArg,
 		*subnetMaskArg,
@@ -128,7 +128,7 @@ func main() {
 		*testVolumeNameArg,
 		*isPartitioningEnabledArg)
 	if err != nil {
-		logrus.Error("An error occurred creating the service network engine:")
+		logrus.Error("An error occurred creating the service network:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
 		os.Exit(exit_codes.StartupErrorExitCode)
 	}
@@ -140,7 +140,7 @@ func main() {
 		dockerManager,
 		testExecutionStatusChan,
 		*testSuiteContainerIdArg,
-		serviceNetworkEngine)
+		serviceNetwork)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -170,14 +170,14 @@ func main() {
 	}
 
 	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
-	//  the service network engine hangs forever trying to shutdown
-	logrus.Info("Destroying service network engine...")
-	if err := serviceNetworkEngine.Destroy(context.Background(), containerStopTimeout); err != nil {
-		logrus.Error("An error occurred destroying the service network engine:")
+	//  the service network hangs forever trying to shutdown
+	logrus.Info("Destroying service network...")
+	if err := serviceNetwork.Destroy(context.Background(), containerStopTimeout); err != nil {
+		logrus.Error("An error occurred destroying the service network:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
 		exitCode = exit_codes.ShutdownErrorExitCode
 	} else {
-		logrus.Info("Service network engine destroyed successfully")
+		logrus.Info("Service network destroyed successfully")
 	}
 
 	os.Exit(exitCode)
@@ -197,7 +197,7 @@ func createDockerManager() (*commons.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkEngine(
+func createServiceNetwork(
 		dockerManager *commons.DockerManager,
 		dockerNetworkId string,
 		networkSubnetMask string,
@@ -205,7 +205,7 @@ func createServiceNetworkEngine(
 		apiContainerIp string,
 		testSuiteContainerIp string,
 		testVolumeName string,
-		isPartitioningEnabled bool) (*service_network_engine.ServiceNetworkEngine, error) {
+		isPartitioningEnabled bool) (*service_network.ServiceNetwork, error) {
 
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
@@ -225,25 +225,25 @@ func createServiceNetworkEngine(
 		dockerNetworkId,
 		testVolumeName)
 
-	engine := service_network_engine.NewServiceNetworkEngine(
+	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,
 		dockerNetworkId,
 		freeIpAddrTracker,
 		dockerManager,
 		userServiceLauncher)
-	return engine, nil
+	return serviceNetwork, nil
 }
 
 func createServer(
 		dockerManager *commons.DockerManager,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
-		serviceNetworkEngine *service_network_engine.ServiceNetworkEngine) (*http.Server, error) {
+		serviceNetwork *service_network.ServiceNetwork) (*http.Server, error) {
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
 		testExecutionStatusChan,
 		dockerManager,
-		serviceNetworkEngine)
+		serviceNetwork)
 
 	logrus.Info("Launching server...")
 	httpHandler := rpc.NewServer()
