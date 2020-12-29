@@ -517,7 +517,7 @@ func getSidecarContainerCommands(
 			kurtosisIpTablesChain,
 		}
 
-		if newBlockedServicesForId.Size() >= 0 {
+		if newBlockedServicesForId.Size() > 0 {
 			ipsToBlockStrSlice := []string{}
 			for _, serviceIdToBlock := range newBlockedServicesForId.Elems() {
 				toBlockContainerInfo, found := serviceContainerInfo[serviceIdToBlock]
