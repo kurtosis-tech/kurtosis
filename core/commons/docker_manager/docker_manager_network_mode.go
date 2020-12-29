@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package commons
+package docker_manager
 
 import "github.com/docker/docker/api/types/container"
 

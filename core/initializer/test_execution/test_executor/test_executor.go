@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
@@ -112,7 +113,7 @@ func RunTest(
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := commons.NewDockerManager(log, dockerClient)
+	dockerManager, err := docker_manager.NewDockerManager(log, dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
@@ -206,8 +207,8 @@ func RunTest(
 		kurtosisApiImageName,
 		networkId,
 		kurtosisApiIp,
-		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for the API container
-		commons.DefaultNetworkMode,
+		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
+		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
@@ -303,7 +304,7 @@ func RunTest(
 Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
 	exited (either normally or with error)
 */
-func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.DockerManager, networkId string) {
+func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker_manager.DockerManager, networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!

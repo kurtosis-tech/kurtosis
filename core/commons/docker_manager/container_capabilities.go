@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package commons
+package docker_manager
 
 const (
 	NetAdmin ContainerCapability = "NET_ADMIN"

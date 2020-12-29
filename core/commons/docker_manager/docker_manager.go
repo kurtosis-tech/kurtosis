@@ -3,9 +3,7 @@
  * All Rights Reserved.
  */
 
-package commons
-
-// TODO TODO TODO Move everything in this file, and the auxiliary files, to "docker_manager" package
+package docker_manager
 
 import (
 	"context"

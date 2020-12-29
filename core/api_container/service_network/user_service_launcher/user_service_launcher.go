@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -19,7 +20,7 @@ import (
 Convenience struct whose only purpose is launching user services
  */
 type UserServiceLauncher struct {
-	dockerManager *commons.DockerManager
+	dockerManager *docker_manager.DockerManager
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
@@ -29,7 +30,7 @@ type UserServiceLauncher struct {
 	testVolumeName string
 }
 
-func NewUserServiceLauncher(dockerManager *commons.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string, testVolumeName string) *UserServiceLauncher {
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string, testVolumeName string) *UserServiceLauncher {
 	return &UserServiceLauncher{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId, testVolumeName: testVolumeName}
 }
 
@@ -73,8 +74,8 @@ func (launcher UserServiceLauncher) Launch(
 		imageName,
 		launcher.dockerNetworkId,
 		freeIp,
-		map[commons.ContainerCapability]bool{},
-		commons.DefaultNetworkMode,
+		map[docker_manager.ContainerCapability]bool{},
+		docker_manager.DefaultNetworkMode,
 		portBindings,
 		replacedStartCmd,
 		replacedEnvVars,
