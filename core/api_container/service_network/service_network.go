@@ -507,7 +507,6 @@ func getSidecarContainerCommands(
 	//  To fix this, we should really have two Kurtosis chains, and while one is running build the other one and
 	//  then switch over in one atomic operation.
 	for serviceId, newBlockedServicesForId := range toUpdate {
-		// TODO If this is performance-inhibitive, we could do the extra work to insert only what's needed
 		// When modifying a service's iptables, we always want to flush the old and set the new, rather
 		//  than trying to update
 		sidecarContainerCommand := []string{
@@ -531,6 +530,8 @@ func getSidecarContainerCommands(
 			}
 			ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
 
+			// PERF NOTE: If it takes iptables a long time to insert all the rules, we could do the
+			//  extra work leg work to calculate the diff and insert only what's needed
 			addBlockedIpsCommand := []string{
 				ipTablesCommand,
 				ipTablesAppendRuleFlag,
