@@ -16,7 +16,7 @@ type PartitionConnection struct {
 }
 
 
-// Provides an API for modifying the topology of services
+// Stores the partition topology of the network, and exposes an API for modifying it
 type PartitionTopology struct {
 	defaultConnection PartitionConnection
 
@@ -35,13 +35,13 @@ func NewPartitionTopology(defaultPartition topology_types.PartitionID, defaultCo
 		partitionServices: map[topology_types.PartitionID]*topology_types.ServiceIDSet{
 			defaultPartition: topology_types.NewServiceIDSet(),
 		},
+		defaultConnection: defaultConnection,
 	}
 }
 
 // ================================================================================================
 //                                        Public Methods
 // ================================================================================================
-// TODO Add tests for this!
 func (topology *PartitionTopology) Repartition(
 		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
 		newPartitionConnections map[topology_types.PartitionConnectionID]PartitionConnection,
@@ -52,10 +52,11 @@ func (topology *PartitionTopology) Repartition(
 	}
 
 	// Validate that each existing service in the testnet gets exactly one partition allocation
-	servicesNeedingAllocation := topology_types.NewServiceIDSet()
+	allServicesInNetwork := topology_types.NewServiceIDSet()
 	for serviceId, _ := range topology.servicePartitions {
-		servicesNeedingAllocation.AddElem(serviceId)
+		allServicesInNetwork.AddElem(serviceId)
 	}
+	servicesNeedingAllocation := allServicesInNetwork.Copy()
 	allocatedServices := topology_types.NewServiceIDSet()
 	unknownServices := topology_types.NewServiceIDSet()
 	duplicatedAllocations := topology_types.NewServiceIDSet()
@@ -64,7 +65,7 @@ func (topology *PartitionTopology) Repartition(
 			if allocatedServices.Contains(serviceId) {
 				duplicatedAllocations.AddElem(serviceId)
 			}
-			if !servicesNeedingAllocation.Contains(serviceId) {
+			if !allServicesInNetwork.Contains(serviceId) {
 				unknownServices.AddElem(serviceId)
 			}
 			allocatedServices.AddElem(serviceId)
@@ -153,6 +154,9 @@ func (topology *PartitionTopology) AddService(serviceId topology_types.ServiceID
 	return nil
 }
 
+/*
+Removes the given service from the toplogy, if it exists. If it doesn't exist, this is a no-op.
+ */
 func (topology *PartitionTopology) RemoveService(serviceId topology_types.ServiceID) {
 	partitionId, found := topology.servicePartitions[serviceId]
 	if !found {

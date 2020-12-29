@@ -10,9 +10,13 @@ type ServiceIDSet struct {
 	elems map[ServiceID]bool
 }
 
-func NewServiceIDSet() *ServiceIDSet {
+func NewServiceIDSet(services ...ServiceID) *ServiceIDSet {
+	elems := map[ServiceID]bool{}
+	for _, service := range services {
+		elems[service] = true
+	}
 	return &ServiceIDSet{
-		elems: map[ServiceID]bool{},
+		elems: elems,
 	}
 }
 
@@ -27,11 +31,7 @@ func (set *ServiceIDSet) AddElems(elems *ServiceIDSet) {
 }
 
 func (set ServiceIDSet) Copy() *ServiceIDSet {
-	elemsCopy := map[ServiceID]bool{}
-	for elem, _ := range set.elems {
-		elemsCopy[elem] = true
-	}
-	return &ServiceIDSet{elems: elemsCopy}
+	return NewServiceIDSet(set.Elems()...)
 }
 
 func (set ServiceIDSet) Equals(other *ServiceIDSet) bool {
