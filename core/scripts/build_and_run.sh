@@ -97,6 +97,11 @@ if "${do_build}"; then
     fi
     echo "Tests completed"
 
+    if ! [ -f "${root_dirpath}"/.dockerignore ]; then
+        echo "Error: No .dockerignore file found in root; this is required so Docker caching works properly" >&2
+        exit 1
+    fi
+
     echo "Generating wrapper script..."
     mkdir -p "${BUILD_DIRPATH}"
     go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
