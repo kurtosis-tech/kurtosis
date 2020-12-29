@@ -148,7 +148,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 }
 
 func (service *KurtosisService) Repartition(httpReq *http.Request, args *RepartitionArgs, _ *interface{}) error {
-	logrus.Info("Received request to repartition the test network with the following args: %v", args)
+	logrus.Infof("Received request to repartition the test network with the following args: %v", args)
 
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetworkEngine.Repartition (as it should)
 	partitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
