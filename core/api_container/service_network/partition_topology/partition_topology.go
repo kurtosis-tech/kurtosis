@@ -53,7 +53,7 @@ func (topology *PartitionTopology) Repartition(
 
 	// Validate that each existing service in the testnet gets exactly one partition allocation
 	allServicesInNetwork := topology_types.NewServiceIDSet()
-	for serviceId, _ := range topology.servicePartitions {
+	for serviceId := range topology.servicePartitions {
 		allServicesInNetwork.AddElem(serviceId)
 	}
 	servicesNeedingAllocation := allServicesInNetwork.Copy()
@@ -93,7 +93,7 @@ func (topology *PartitionTopology) Repartition(
 	}
 
 	// Validate the connections point to defined partitions
-	for partitionConnectionId, _ := range newPartitionConnections {
+	for partitionConnectionId := range newPartitionConnections {
 		firstPartition := partitionConnectionId.GetFirst()
 		secondPartition := partitionConnectionId.GetSecond()
 		if _, found := newPartitionServices[firstPartition]; !found {
@@ -172,7 +172,6 @@ func (topology PartitionTopology) GetPartitionServices() map[topology_types.Part
 	return topology.partitionServices
 }
 
-// TODO test me, including speed profiling!!
 // Returns a map indicating, for each service, which services it should be blocking based on the current network topology
 func (topology PartitionTopology) GetBlocklists() (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
 	// TODO to speed this method up, we can remove this method in favor of spitting out updated blocklists on each change operation (addservice, repartition, etc.)
