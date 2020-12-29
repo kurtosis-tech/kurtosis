@@ -335,8 +335,8 @@ func (engine *ServiceNetworkEngine) Destroy(context context.Context, containerSt
 	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
 	for serviceId, sidecarContainerInfo := range engine.sidecarContainerInfo {
 		sidecarContainerId := sidecarContainerInfo.containerId
-		// TODO set the stop timeout on the service itself
-		if err := engine.dockerManager.StopContainer(context, sidecarContainerId, containerStopTimeout); err != nil {
+		// Sidecar containers run 'sleep infinity' so it only wastes time to wait for graceful shutdown
+		if err := engine.dockerManager.KillContainer(context, sidecarContainerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred stopping sidecar container with container ID '%v' for service '%s'",

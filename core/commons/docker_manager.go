@@ -285,12 +285,27 @@ Stops the container with the given container ID, waiting for the provided timeou
 Args:
 	context: The context that the stopping runs in (useful for cancellation)
 	containerId: ID of Docker container to stop
-	timeout: How long to wait for container stoppage before throwing an errorj
+	timeout: How long to wait for container stoppage before throwing an error
  */
 func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
+	}
+	return nil
+}
+
+/*
+Kills the container with the given ID, giving it no opportunity to gracefully exit
+
+Args:
+	context: The context that the kill runs in
+	containerId: ID of Docker container to kill
+ */
+func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
+	err := manager.dockerClient.ContainerKill(context, containerId, "KILL")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
 	return nil
 }
