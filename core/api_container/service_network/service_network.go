@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+/* * Copyright (c) 2020 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
@@ -75,8 +74,11 @@ type ServiceNetwork struct {
 
 	sidecarContainerInfo map[topology_types.ServiceID]containerInfo
 
+	/*
 	// Mapping of serviceID -> set of serviceIDs tracking what's currently being dropped in the INPUT chain of the service
 	ipTablesBlocks map[topology_types.ServiceID]*topology_types.ServiceIDSet
+
+	 */
 }
 
 func NewServiceNetwork(
@@ -124,7 +126,12 @@ func (network *ServiceNetwork) Repartition(
 	if err := network.topology.Repartition(newPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
-	if err := network.updateIpTables(context); err != nil {
+	blocklists, err := network.topology.GetBlocklists()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the blocklists after repartition, meaning that " +
+			"no partitions are actually being enforced!")
+	}
+	if err := network.updateIpTables(context, blocklists); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
 	}
 	return nil
@@ -165,9 +172,62 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		)
 	}
 
-	// TODO Modify this to take in an IP, to kill the race condition with the service starting & partition application
-	serviceContainerId, serviceIp, err := network.userServiceLauncher.Launch(
+	serviceIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when getting an IP to give the container running the new service with Docker image '%v'",
+			imageName)
+	}
+	logrus.Debugf("Giving new service the following IP: %v", serviceIp.String())
+
+	// When partitioning is enabled, there's a race condition where:
+	//   a) we need to start the service before we can launch the sidecar but
+	//   b) we can't modify the iptables until the sidecar container is launched.
+	// This means that there's a period of time at startup where the container might not be partitioned. We solve
+	//  this by blocking the new service's IP in the already-existing services' iptables BEFORE we start the service.
+	// This means that when the new service is launched, even if its own iptables aren't yet updated, all the services
+	//  it would communicate are already dropping traffic from it.
+	// The unfortunate result is that we need to add the service to the PartitionTopology before the container or
+	//  its sidecar is even started, which means we need to roll back if an error occurred during startup.
+	if err := network.topology.AddService(serviceId, partitionId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to partition '%v' in the topology", serviceId, partitionId)
+	}
+	shouldLeaveServiceInTopology := false
+	defer func() {
+		if !shouldLeaveServiceInTopology {
+			network.topology.RemoveService(serviceId)
+
+			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we made to all
+			//  the other services, because their iptables will be completely overwritten by the next
+			//  Add/Repartition event. If we ever make iptables updates incremental though, we WILL need to
+			//  undo the iptables we added here!
+		}
+	}()
+
+	// Tell all the other services to ignore the soon-to-be-started node
+	if network.isPartitioningEnabled {
+		blocklists, err := network.topology.GetBlocklists()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the " +
+				"node was added, which means we can't add the node because we can't partition it away properly")
+		}
+		blocklistsWithoutNewNode := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
+		for serviceInTopologyId, servicesToBlock := range blocklists {
+			if serviceId == serviceInTopologyId {
+				continue
+			}
+			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
+		}
+		if err := network.updateIpTables(context, blocklistsWithoutNewNode); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
+				"before adding the node, meaning that the node wouldn't actually start in a partition")
+		}
+	}
+
+	serviceContainerId, err := network.userServiceLauncher.Launch(
 		context,
+		serviceIp,
 		imageName,
 		usedPorts,
 		ipPlaceholder,
@@ -179,12 +239,10 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			err,
 			"An error occurred creating the user service")
 	}
+	shouldLeaveServiceInTopology = true
 	network.serviceContainerInfo[serviceId] = containerInfo{
 		containerId: serviceContainerId,
 		ipAddr:      serviceIp,
-	}
-	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to partition '%v'", serviceId, partitionId)
 	}
 
 	if network.isPartitioningEnabled {
@@ -254,13 +312,20 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			return nil, stacktrace.Propagate(err, "An error occurred running the exec command to configure iptables to use the custom Kurtosis chain")
 		}
 
-		// TODO Right now, there's a period of time between user service container launch, and the recalculation of
-		//  the blocklist and the application of iptables to the user's container
-		//  This means there's a race condition period of time where the service container will be able to talk to everyone!
-		//  The fix is to, before starting the service, apply the blocklists to every other node
-		//  That way, even with the race condition, the other nodes won't accept traffic from the new node
-		if err := network.updateIpTables(context); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred updating IP tables after adding service '%v'", serviceId)
+		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
+		//  getting the blocklists not an expensive call
+		blocklists, err := network.topology.GetBlocklists()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables " +
+				"updates to apply on the new node")
+		}
+		newNodeBlocklist := blocklists[serviceId]
+		updatesToApply := map[topology_types.ServiceID]*topology_types.ServiceIDSet{
+			serviceId: newNodeBlocklist,
+		}
+		if err := network.updateIpTables(context, updatesToApply); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occured applying the iptables on the new node to partition it " +
+				"off from other nodes")
 		}
 	}
 
@@ -295,6 +360,12 @@ func (network *ServiceNetwork) RemoveService(
 	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
 
 	if network.isPartitioningEnabled {
+		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
+		//  clear the now-removed service's IP because:
+		// 	 a) nothing is using it so it doesn't do anything and
+		//	 b) all service's iptables get overwritten on the next Add/Repartition call
+		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
+
 		sidecarContainerInfo, found := network.sidecarContainerInfo[serviceId]
 		if !found {
 			return stacktrace.NewError(
@@ -314,10 +385,6 @@ func (network *ServiceNetwork) RemoveService(
 		// TODO release the IP that the service received
 		delete(network.sidecarContainerInfo, serviceId)
 		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
-
-		if err := network.updateIpTables(context); err != nil {
-			return stacktrace.Propagate(err, "An error occurred updating the iptables after removing service '%v'", serviceId)
-		}
 	}
 	return nil
 }
@@ -387,21 +454,20 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 
 // TODO write tests for me!!
 /*
-Gets the latest target blocklists from the topology and makes sure iptables matches
+Updates the iptables of the services with the given IDs to match the target blocklists
  */
-func (network *ServiceNetwork) updateIpTables(context context.Context) error {
-	targetBlocklists, err := network.topology.GetBlocklists()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the current blocklists")
-	}
-
+func (network *ServiceNetwork) updateIpTables(
+		context context.Context,
+		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) error {
+	/*
 	toUpdate, err := getServicesNeedingIpTablesUpdates(network.ipTablesBlocks, targetBlocklists)
-
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the services that need iptables updated")
 	}
 
 	sidecarContainerCmds, err := getSidecarContainerCommands(toUpdate, network.serviceContainerInfo)
+	 */
+	sidecarContainerCmds, err := getSidecarContainerCommands(targetBlocklists, network.serviceContainerInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the sidecar container commands for the " +
 			"services that need iptables updates")
@@ -450,12 +516,14 @@ func (network *ServiceNetwork) updateIpTables(context context.Context) error {
 		logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
 	}
 
+	/*
 	// Defensive copy when we store
 	blockListToStore := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
 	for serviceId, newBlockedServicesForId := range targetBlocklists {
 		blockListToStore[serviceId] = newBlockedServicesForId.Copy()
 	}
 	network.ipTablesBlocks = blockListToStore
+	 */
 	return nil
 }
 
@@ -464,6 +532,7 @@ func (network *ServiceNetwork) updateIpTables(context context.Context) error {
 Compares the target state of the world with the current state of the world, and returns only a list of
 	the services that need to be updated.
  */
+/*
 func getServicesNeedingIpTablesUpdates(
 		currentBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet,
 		newBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet) (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
@@ -489,6 +558,8 @@ func getServicesNeedingIpTablesUpdates(
 	}
 	return result, nil
 }
+
+ */
 
 // TODO write tests for me!!
 /*

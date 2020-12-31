@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strings"
 )
@@ -37,30 +36,23 @@ func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, freeIpA
 /**
 Launches a testnet service with the given parameters
 
-Returns: The container ID of the newly-launched service, and the IP that the service was launched with
+Returns: The container ID of the newly-launched service
  */
 func (launcher UserServiceLauncher) Launch(
 		context context.Context,
+		ipAddr net.IP,
 		imageName string,
 		usedPorts map[nat.Port]bool,
 		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountFilepath string) (string, net.IP, error) {
-	freeIp, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"An error occurred when getting an IP to give the container running the new service with Docker image '%v'",
-			imageName)
-	}
-	logrus.Debugf("Giving new service the following IP: %v", freeIp.String())
+		testVolumeMountFilepath string) (string, error) {
 
 	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
 	//  IP
 	replacedStartCmd, replacedEnvVars := replaceIpPlaceholderForDockerParams(
 		ipPlaceholder,
-		freeIp,
+		ipAddr,
 		startCmd,
 		dockerEnvVars)
 
@@ -73,7 +65,7 @@ func (launcher UserServiceLauncher) Launch(
 		context,
 		imageName,
 		launcher.dockerNetworkId,
-		freeIp,
+		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		portBindings,
@@ -85,9 +77,9 @@ func (launcher UserServiceLauncher) Launch(
 		},
 	)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
+		return "", stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
-	return containerId, freeIp, nil
+	return containerId, nil
 }
 
 /*
