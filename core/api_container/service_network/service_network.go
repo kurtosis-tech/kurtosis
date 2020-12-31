@@ -33,6 +33,7 @@ const (
 
 	ipTablesCommand = "iptables"
 	ipTablesInputChain = "INPUT"
+	ipTablesOutputChain = "OUTPUT"
 	ipTablesNewChainFlag = "-N"
 	ipTablesInsertRuleFlag = "-I"
 	ipTablesFlushChainFlag = "-F"
@@ -275,18 +276,26 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			ipAddr:      sidecarIp,
 		}
 
-		// As soon as we have the sidecar, we need to create the Kurtosis chain and insert it in first position on the INPUT chain
+		// As soon as we have the sidecar, we need to create the Kurtosis chain and insert it in first position
+		//  on both the INPUT *and* the OUTPUT chains
 		configureKurtosisChainCommand := []string{
 			ipTablesCommand,
 			ipTablesNewChainFlag,
 			kurtosisIpTablesChain,
-			"&&",
-			ipTablesCommand,
-			ipTablesInsertRuleFlag,
-			ipTablesInputChain,
-			"1",  // We want to insert the Kurtosis chain in first position, so it always runs
-			"-j",
-			kurtosisIpTablesChain,
+		}
+		for _, chain := range []string{ipTablesInputChain, ipTablesOutputChain} {
+			addKurtosisChainInFirstPositionCommand := []string{
+				ipTablesCommand,
+				ipTablesInsertRuleFlag,
+				chain,
+				"1",  // iptables entries are 1-indexed
+				"-j",
+				kurtosisIpTablesChain,
+			}
+			configureKurtosisChainCommand = append(configureKurtosisChainCommand, "&&")
+			configureKurtosisChainCommand = append(
+				configureKurtosisChainCommand,
+				addKurtosisChainInFirstPositionCommand...)
 		}
 
 		// We need to wrap this command with 'sh -c' because we're using '&&', and if we don't do this then
@@ -602,19 +611,23 @@ func getSidecarContainerCommands(
 			}
 			ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
 
-			// PERF NOTE: If it takes iptables a long time to insert all the rules, we could do the
-			//  extra work leg work to calculate the diff and insert only what's needed
-			addBlockedIpsCommand := []string{
-				ipTablesCommand,
-				ipTablesAppendRuleFlag,
-				kurtosisIpTablesChain,
-				"-s",
-				ipsToBlockCommaList,
-				"-j",
-				ipTablesDropAction,
+			// As of 2020-12-31 there's a single chain that both INPUT and OUTPUT iptables chains use,
+			//  so we add rules to drop traffic both inbound and outbound
+			for _, flag := range []string{"-s", "-d"} {
+				// PERF NOTE: If it takes iptables a long time to insert all the rules, we could do the
+				//  extra work leg work to calculate the diff and insert only what's needed
+				addBlockedSourceIpsCommand := []string{
+					ipTablesCommand,
+					ipTablesAppendRuleFlag,
+					kurtosisIpTablesChain,
+					flag,
+					ipsToBlockCommaList,
+					"-j",
+					ipTablesDropAction,
+				}
+				sidecarContainerCommand = append(sidecarContainerCommand, "&&")
+				sidecarContainerCommand = append(sidecarContainerCommand, addBlockedSourceIpsCommand...)
 			}
-			sidecarContainerCommand = append(sidecarContainerCommand, "&&")
-			sidecarContainerCommand = append(sidecarContainerCommand, addBlockedIpsCommand...)
 		}
 		result[serviceId] = sidecarContainerCommand
 	}
