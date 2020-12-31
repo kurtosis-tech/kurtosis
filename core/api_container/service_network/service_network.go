@@ -41,6 +41,12 @@ const (
 	ipTablesDropAction = "DROP"
 )
 
+// We sleep forever because all the commands this container will run will be executed
+//  via Docker exec
+var ipRouteContainerCommand = []string{
+	"sleep","infinity",
+}
+
 type containerInfo struct {
 	containerId string
 	ipAddr net.IP
@@ -70,16 +76,12 @@ type ServiceNetwork struct {
 
 	topology *partition_topology.PartitionTopology
 
-	// == Per-service info ==================================================================
-	serviceContainerInfo map[topology_types.ServiceID]containerInfo
+	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
+	//  they're registered at different times (rather than in one atomic operation)
+	serviceIps map[topology_types.ServiceID]net.IP
+	serviceContainerIds map[topology_types.ServiceID]string
 
 	sidecarContainerInfo map[topology_types.ServiceID]containerInfo
-
-	/*
-	// Mapping of serviceID -> set of serviceIDs tracking what's currently being dropped in the INPUT chain of the service
-	ipTablesBlocks map[topology_types.ServiceID]*topology_types.ServiceIDSet
-
-	 */
 }
 
 func NewServiceNetwork(
@@ -101,7 +103,8 @@ func NewServiceNetwork(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceContainerInfo: map[topology_types.ServiceID]containerInfo{},
+		serviceIps: map[topology_types.ServiceID]net.IP{},
+		serviceContainerIds: map[topology_types.ServiceID]string{},
 		sidecarContainerInfo: map[topology_types.ServiceID]containerInfo{},
 	}
 }
@@ -139,6 +142,8 @@ func (network *ServiceNetwork) Repartition(
 }
 
 
+// TODO Refactor this into smaller chunks - it's currently a very complex and tricky method
+// TODO Add tests for this
 /*
 Creates the service with the given ID in the given partition
 
@@ -194,10 +199,12 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to partition '%v' in the topology", serviceId, partitionId)
 	}
+	network.serviceIps[serviceId] = serviceIp
 	shouldLeaveServiceInTopology := false
 	defer func() {
 		if !shouldLeaveServiceInTopology {
 			network.topology.RemoveService(serviceId)
+			delete(network.serviceIps, serviceId)
 
 			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we made to all
 			//  the other services, because their iptables will be completely overwritten by the next
@@ -206,7 +213,8 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		}
 	}()
 
-	// Tell all the other services to ignore the soon-to-be-started node
+	// Tell all the other services to ignore the soon-to-be-started node, so that when it starts
+	//  they absolutely won't communicate with it
 	if network.isPartitioningEnabled {
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
@@ -241,10 +249,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			"An error occurred creating the user service")
 	}
 	shouldLeaveServiceInTopology = true
-	network.serviceContainerInfo[serviceId] = containerInfo{
-		containerId: serviceContainerId,
-		ipAddr:      serviceIp,
-	}
+	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
 		sidecarIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
@@ -263,7 +268,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			},
 			docker_manager.NewContainerNetworkMode(serviceContainerId),
 			map[nat.Port]*nat.PortBinding{},
-			[]string{"sleep","infinity"},  // We sleep forever since iptables stuff gets executed via 'exec'
+			ipRouteContainerCommand,
 			map[string]string{}, // No environment variables
 			map[string]string{}, // no bind mounts for services created via the Kurtosis API
 			map[string]string{}, // No volume mounts either
@@ -351,11 +356,10 @@ func (network *ServiceNetwork) RemoveService(
 		return stacktrace.NewError("Cannot remove service; the service network has been destroyed")
 	}
 
-	serviceInfo, found := network.serviceContainerInfo[serviceId]
+	serviceContainerId, found := network.serviceContainerIds[serviceId]
 	if !found {
 		return stacktrace.NewError("Unknown service '%v'", serviceId)
 	}
-	serviceContainerId := serviceInfo.containerId
 
 	// TODO Parallelize the shutdown of the service container and the sidecar container
 	// Make a best-effort attempt to stop the service container
@@ -365,7 +369,8 @@ func (network *ServiceNetwork) RemoveService(
 	}
 	network.topology.RemoveService(serviceId)
 	// TODO release the IP that the service got
-	delete(network.serviceContainerInfo, serviceId)
+	delete(network.serviceContainerIds, serviceId)
+	delete(network.serviceIps, serviceId)
 	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
 
 	if network.isPartitioningEnabled {
@@ -406,8 +411,9 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 		return stacktrace.NewError("Cannot destroy the service network; it has already been destroyed")
 	}
 
-	// TODO parallelize this for faster shutdown
 	containerStopErrors := []error{}
+
+	// TODO parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
 	for serviceId, sidecarContainerInfo := range network.sidecarContainerInfo {
 		sidecarContainerId := sidecarContainerInfo.containerId
@@ -425,8 +431,7 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 
 	// TODO parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop service containers...")
-	for serviceId, serviceContainerInfo := range network.serviceContainerInfo {
-		serviceContainerId := serviceContainerInfo.containerId
+	for serviceId, serviceContainerId := range network.serviceContainerIds {
 		// TODO set the stop timeout on the service itself
 		if err := network.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(
@@ -468,15 +473,7 @@ Updates the iptables of the services with the given IDs to match the target bloc
 func (network *ServiceNetwork) updateIpTables(
 		context context.Context,
 		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) error {
-	/*
-	toUpdate, err := getServicesNeedingIpTablesUpdates(network.ipTablesBlocks, targetBlocklists)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the services that need iptables updated")
-	}
-
-	sidecarContainerCmds, err := getSidecarContainerCommands(toUpdate, network.serviceContainerInfo)
-	 */
-	sidecarContainerCmds, err := getSidecarContainerCommands(targetBlocklists, network.serviceContainerInfo)
+	sidecarContainerCmds, err := getSidecarContainerCommands(targetBlocklists, network.serviceIps)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the sidecar container commands for the " +
 			"services that need iptables updates")
@@ -524,51 +521,8 @@ func (network *ServiceNetwork) updateIpTables(
 		}
 		logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
 	}
-
-	/*
-	// Defensive copy when we store
-	blockListToStore := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
-	for serviceId, newBlockedServicesForId := range targetBlocklists {
-		blockListToStore[serviceId] = newBlockedServicesForId.Copy()
-	}
-	network.ipTablesBlocks = blockListToStore
-	 */
 	return nil
 }
-
-// TODO Write tests for me!!
-/*
-Compares the target state of the world with the current state of the world, and returns only a list of
-	the services that need to be updated.
- */
-/*
-func getServicesNeedingIpTablesUpdates(
-		currentBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet,
-		newBlockedServices map[topology_types.ServiceID]*topology_types.ServiceIDSet) (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
-	result := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
-	for serviceId, newBlockedServicesForId := range newBlockedServices {
-		if newBlockedServicesForId.Contains(serviceId) {
-			return nil, stacktrace.NewError("Requested for service ID '%v' to block itself!", serviceId)
-		}
-
-		// To avoid unnecessary Docker work, we won't update any iptables if the result would be the same
-		//  as the current state
-		currentBlockedServicesForId, found := currentBlockedServices[serviceId]
-		if !found {
-			currentBlockedServicesForId = topology_types.NewServiceIDSet()
-		}
-
-		noChangesNeeded := newBlockedServicesForId.Equals(currentBlockedServicesForId)
-		if noChangesNeeded {
-			continue
-		}
-
-		result[serviceId] = newBlockedServicesForId
-	}
-	return result, nil
-}
-
- */
 
 // TODO write tests for me!!
 /*
@@ -580,13 +534,13 @@ Args:
  */
 func getSidecarContainerCommands(
 		toUpdate map[topology_types.ServiceID]*topology_types.ServiceIDSet,
-		serviceContainerInfo map[topology_types.ServiceID]containerInfo) (map[topology_types.ServiceID][]string, error) {
+		serviceIps map[topology_types.ServiceID]net.IP) (map[topology_types.ServiceID][]string, error) {
 	result := map[topology_types.ServiceID][]string{}
 
 	// TODO We build two separate commands - flush the Kurtosis iptables chain, and then populate it with new stuff
 	//  This means that there's a (very small) window of time where the iptables aren't blocked
-	//  To fix this, we should really have two Kurtosis chains, and while one is running build the other one and
-	//  then switch over in one atomic operation.
+	//  To fix this, we should really have two Kurtosis chains so that one is live while the other is being built;
+	//   we could then switch over in one atomic operation
 	for serviceId, newBlockedServicesForId := range toUpdate {
 		// When modifying a service's iptables, we always want to flush the old and set the new, rather
 		//  than trying to update
@@ -599,14 +553,13 @@ func getSidecarContainerCommands(
 		if newBlockedServicesForId.Size() > 0 {
 			ipsToBlockStrSlice := []string{}
 			for _, serviceIdToBlock := range newBlockedServicesForId.Elems() {
-				toBlockContainerInfo, found := serviceContainerInfo[serviceIdToBlock]
+				ipToBlock, found := serviceIps[serviceIdToBlock]
 				if !found {
 					return nil, stacktrace.NewError("Service ID '%v' needs to block the IP of target service ID '%v', but " +
 						"the target service doesn't have an IP associated to it",
 						serviceId,
 						serviceIdToBlock)
 				}
-				ipToBlock := toBlockContainerInfo.ipAddr
 				ipsToBlockStrSlice = append(ipsToBlockStrSlice, ipToBlock.String())
 			}
 			ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
