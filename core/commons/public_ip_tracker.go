@@ -10,6 +10,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"sync"
 )
 
 /*
@@ -20,6 +21,7 @@ type FreeIpAddrTracker struct {
 	log *logrus.Logger
 	subnet *net.IPNet
 	takenIps map[string]bool
+	mutex *sync.Mutex
 }
 
 /*
@@ -47,6 +49,7 @@ func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps
 		log: log,
 		subnet: ipv4Net,
 		takenIps: takenIps,
+		mutex: &sync.Mutex{},
 	}
 	return ipAddrTracker, nil
 }
@@ -58,7 +61,10 @@ Returns:
 	An IP from the subnet the tracker was initialized with that won't collide with any previously-given IP. The
 		actual IP returned is undefined.
  */
-func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
+func (networkManager *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
+	networkManager.mutex.Lock()
+	defer networkManager.mutex.Unlock()
+
 	// NOTE: This whole function will need to be rewritten if we support IPv6
 
 	// convert IPNet struct mask and address to uint32
@@ -94,3 +100,5 @@ func (networkManager FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err erro
 	}
 	return nil, stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
 }
+
+// TODO Add a method to free IP addresses

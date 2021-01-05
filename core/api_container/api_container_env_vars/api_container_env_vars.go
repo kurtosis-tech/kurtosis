@@ -10,6 +10,7 @@ const (
 	ApiContainerIpAddrEnvVar       = "API_CONTAINER_IP"
 	ApiLogFilepathEnvVar           = "LOG_FILEPATH"
 	GatewayIpEnvVar                = "GATEWAY_IP"
+	IsPartitioningEnabledEnvVar    = "IS_PARTITIONING_ENABLED"
 	LogLevelEnvVar                 = "LOG_LEVEL"
 	NetworkIdEnvVar                = "NETWORK_ID"
 	SubnetMaskEnvVar               = "SUBNET_MASK"

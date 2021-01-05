@@ -24,11 +24,13 @@ WORKDIR /run
 COPY --from=builder /build/kurtosis-api-server .
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#  1. Keep these flags sorted alphabetically!
+#              1. Need to change api_container_envA_vars if any of these changes!!
+#              2. Keep these sorted alphabetically, to ensure no duplicates
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
     --api-container-ip=\"${API_CONTAINER_IP}\" \
     --gateway-ip=\"${GATEWAY_IP}\" \
+    --is-partitioning-enabled=\"${IS_PARTITIONING_ENABLED}\" \
     --log-level=\"${LOG_LEVEL}\" \
     --network-id=\"${NETWORK_ID}\" \
     --subnet-mask=\"${SUBNET_MASK}\" \

@@ -90,6 +90,12 @@ func main() {
 		"info",
 		fmt.Sprintf("Log level to use for the API container (%v)", logrus_log_levels.AcceptableLogLevels),
 	)
+
+	isPartitioningEnabledArg := flag.Bool(
+		"is-partitioning-enabled",
+		false,
+		"True if partitioning is enabled, signifying that the API container should run the extra machinery needed to support partitioning")
+
 	flag.Parse()
 
 	logLevel, err := logrus.ParseLevel(*logLevelArg)
@@ -110,7 +116,8 @@ func main() {
 		*gatewayIpArg,
 		*apiContainerIpAddrArg,
 		*testSuiteContainerIpAddrArg,
-		*testVolumeNameArg)
+		*testVolumeNameArg,
+		*isPartitioningEnabledArg)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -145,7 +152,8 @@ func createServer(
 		gatewayIp string,
 		apiContainerIp string,
 		testSuiteContainerIp string,
-		testVolumeName string) (*http.Server, error) {
+		testVolumeName string,
+		isPartitioningEnabled bool) (*http.Server, error) {
 	logrus.Debugf(
 		"Creating a server with test suite container ID '%v', network ID '%v', network subnet mask '%v', " +
 			"gateway IP '%v', API container IP '%v', test suite container IP '%v', and test volume name '%v'",
@@ -186,6 +194,7 @@ func createServer(
 		networkId,
 		freeIpAddrTracker,
 		testVolumeName,
+		isPartitioningEnabled,
 	)
 
 	logrus.Info("Launching server...")
