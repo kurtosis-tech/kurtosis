@@ -11,6 +11,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"gotest.tools/assert"
 	"net"
+	"reflect"
 	"testing"
 )
 
@@ -34,20 +35,34 @@ func TestGetSidecarContainerCommandNormalOperation(t *testing.T) {
 			backgroundChain),
 		)
 	}
-	commandStr := fmt.Sprintf(
-		"iptables -F %v && iptables -A %v -s 1.2.3.4,5.6.7.8 -j DROP " +
-			"&& iptables -A %v -d 1.2.3.4,5.6.7.8 -j DROP " +
-			"&& iptables -R INPUT 1 -j %v " +
-			"&& iptables -R OUTPUT 1 -j %v",
-		backgroundChain,
-		backgroundChain,
-		backgroundChain,
-		backgroundChain,
-		backgroundChain)
-	expected := []string{
-		"sh",
-		"-c",
-		commandStr,
+
+	// The order in which the IPs get iterated and put into a joined string is nondeterministic, so
+	//  we have to prepare two versions of the expected string to account for both permutations
+	ipStrVersions := []string{
+		service1Ip.String() + "," + service2Ip.String(),
+		service2Ip.String() + "," + service1Ip.String(),
 	}
-	assert.DeepEqual(t, expected, actual)
+
+	expectedCommands := [][]string{}
+	for _, ipStrVersion := range ipStrVersions {
+		commandStr := fmt.Sprintf(
+			"iptables -F %v " +
+				"&& iptables -A %v -s %v -j DROP " +
+				"&& iptables -A %v -d %v -j DROP " +
+				"&& iptables -R INPUT 1 -j %v " +
+				"&& iptables -R OUTPUT 1 -j %v",
+			backgroundChain,
+			backgroundChain, ipStrVersion,
+			backgroundChain, ipStrVersion,
+			backgroundChain,
+			backgroundChain)
+		expected := []string{
+			"sh",
+			"-c",
+			commandStr,
+		}
+		expectedCommands = append(expectedCommands, expected)
+	}
+	matches := reflect.DeepEqual(expectedCommands[0], actual) || reflect.DeepEqual(expectedCommands[1], actual)
+	assert.Assert(t, matches, "Expected command doesn't match either IP string combination")
 }
