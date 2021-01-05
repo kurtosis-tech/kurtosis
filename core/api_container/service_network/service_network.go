@@ -92,7 +92,7 @@ type ServiceNetwork struct {
 	// Tracks which Kurtosis chain is the primary chain, so we know
 	//  which chain is in the background that we can flush and rebuild
 	//  when we're changing iptables
-	ipTablesChainInUse map[topology_types.ServiceID]ipTablesChain
+	serviceIpTablesChainInUse map[topology_types.ServiceID]ipTablesChain
 
 	sidecarContainerInfo map[topology_types.ServiceID]containerInfo
 }
@@ -118,6 +118,7 @@ func NewServiceNetwork(
 		),
 		serviceIps: map[topology_types.ServiceID]net.IP{},
 		serviceContainerIds: map[topology_types.ServiceID]string{},
+		serviceIpTablesChainInUse: map[topology_types.ServiceID]ipTablesChain{},
 		sidecarContainerInfo: map[topology_types.ServiceID]containerInfo{},
 	}
 }
@@ -342,7 +343,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			logrus.Error("---------------- End Kurtosis iptables chain-configuring exec command output --------------------")
 			return nil, stacktrace.Propagate(err, "An error occurred running the exec command to configure iptables to use the custom Kurtosis chain")
 		}
-		network.ipTablesChainInUse[serviceId] = initialKurtosisIpTablesChain
+		network.serviceIpTablesChainInUse[serviceId] = initialKurtosisIpTablesChain
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
 		//  getting the blocklists not an expensive call
@@ -512,7 +513,7 @@ func (network *ServiceNetwork) updateIpTables(
 // TODO Write tests for this, by extracting the logic to run exec commands on the sidecar into a separate, mockable
 //  interface
 func (network ServiceNetwork) updateIpTablesForService(ctx context.Context, serviceId topology_types.ServiceID, newBlocklist topology_types.ServiceIDSet) error {
-	primaryChain := network.ipTablesChainInUse[serviceId]
+	primaryChain := network.serviceIpTablesChainInUse[serviceId]
 	var backgroundChain ipTablesChain
 	if primaryChain == kurtosisIpTablesChain1 {
 		backgroundChain = kurtosisIpTablesChain2
@@ -556,7 +557,7 @@ func (network ServiceNetwork) updateIpTablesForService(ctx context.Context, serv
 			sidecarContainerId,
 			serviceId)
 	}
-	network.ipTablesChainInUse[serviceId] = backgroundChain
+	network.serviceIpTablesChainInUse[serviceId] = backgroundChain
 	logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
 	return nil
 }
