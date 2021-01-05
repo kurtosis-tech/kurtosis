@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
@@ -79,21 +80,28 @@ func RunTests(
 		}
 	}
 
-	executionInstanceId := uuid.Generate()
-	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
-	}
-
 	orderedTestNames := []string{}
 	for testName, _ := range testNamesToRun {
 		orderedTestNames = append(orderedTestNames, testName)
 	}
 	sort.Strings(orderedTestNames)
 
+	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceId.String())
 	for _, testName := range orderedTestNames {
 		logrus.Infof(" - %v", testName)
+	}
+
+	// Download any required artifacts for the tests being run
+	logrus.Debug("Downloading artifacts used by the tests...")
+	if err := downloadUsedArtifacts(suiteExecutionVolumeMountDirpath, testNamesToRun, testSuiteMetadata); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred downloading the artifacts needed by the tests being run: %v")
+	}
+	logrus.Debug("Test artifacts downloaded successfully")
+
+	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
@@ -107,6 +115,27 @@ func RunTests(
 		apiContainerLogLevel,
 		testsuiteLauncher)
 	return allTestsPassed, nil
+}
+
+// Downloads only the artifacts that are needed by the tests being run (i.e. not any artifacts used by
+// 	tests which aren't being run)
+func downloadUsedArtifacts(
+		suiteExecutionVolumeMountDirpath string,
+		testNames map[string]bool,
+		suiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) error {
+	artifactCache := artifact_cache.NewArtifactCache(suiteExecutionVolumeMountDirpath)
+	allTestMetadata := suiteMetadata.TestMetadata
+	artifactUrlsToDownloadById := map[string]string{}
+	for testName := range testNames {
+		testMetadata := allTestMetadata[testName]
+		for artifactId, artifactUrl := range testMetadata.UsedArtifacts {
+			artifactUrlsToDownloadById[artifactId] = artifactUrl
+		}
+	}
+	if err := artifactCache.DownloadArtifacts(artifactUrlsToDownloadById); err != nil {
+		return stacktrace.Propagate(err, "An error occurred downloading the artifacts used by the following tests")
+	}
+	return nil
 }
 
 /*
