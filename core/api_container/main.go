@@ -13,12 +13,12 @@ import (
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api"
-	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -48,6 +48,11 @@ func main() {
 		FullTimestamp: true,
 	})
 
+	executionInstanceIdArg := flag.String(
+		"execution-instance-id",
+		"",
+		"UUID uniquely identifying an execution of the test suite across all test runs",
+	)
 
 	networkIdArg := flag.String(
 		"network-id",
@@ -67,10 +72,15 @@ func main() {
 		"IP address of the gateway address on the Docker network that the test controller is running in",
 	)
 
+	testNameArg := flag.String(
+		"test-name",
+		"",
+		"The name of the test that this API container is responsible for")
+
 	testVolumeNameArg := flag.String(
 		"test-volume",
 		"",
-		"Name of the test volume that should be mounted on every new service",
+		"Name of the volume containing data about the suite execution that should be mounted on every new service",
 	)
 
 	testSuiteContainerIdArg := flag.String(
@@ -120,24 +130,25 @@ func main() {
 		os.Exit(exit_codes.StartupErrorExitCode)
 	}
 
-	serviceNetwork, err := createServiceNetwork(
-		dockerManager,
-		*networkIdArg,
+	freeIpAddrTracker, err := createFreeIpAddrTracker(
 		*subnetMaskArg,
 		*gatewayIpArg,
 		*apiContainerIpAddrArg,
-		*testSuiteContainerIpAddrArg,
-		*testVolumeNameArg,
-		*isPartitioningEnabledArg)
+		*testSuiteContainerIpAddrArg)
 	if err != nil {
-		logrus.Error("An error occurred creating the service network:")
+		logrus.Error("An error occurred creating the free IP address tracker:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
 		os.Exit(exit_codes.StartupErrorExitCode)
 	}
 
-	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
+	serviceNetwork := createServiceNetwork(
+		*executionInstanceIdArg,
+		*testNameArg,
 		*testVolumeNameArg,
-		dockerManager)
+		dockerManager,
+		freeIpAddrTracker,
+		*networkIdArg,
+		*isPartitioningEnabledArg)
 
 	// A value on this channel indicates a change in the test execution status
 	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)
@@ -146,8 +157,7 @@ func main() {
 		dockerManager,
 		testExecutionStatusChan,
 		*testSuiteContainerIdArg,
-		serviceNetwork,
-		filesArtifactExpander)
+		serviceNetwork)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -204,16 +214,11 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetwork(
-		dockerManager *docker_manager.DockerManager,
-		dockerNetworkId string,
+func createFreeIpAddrTracker(
 		networkSubnetMask string,
 		gatewayIp string,
 		apiContainerIp string,
-		testSuiteContainerIp string,
-		testVolumeName string,
-		isPartitioningEnabled bool) (*service_network.ServiceNetwork, error) {
-
+		testSuiteContainerIp string) (*commons.FreeIpAddrTracker, error){
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkSubnetMask,
@@ -225,12 +230,32 @@ func createServiceNetwork(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
+	return freeIpAddrTracker, nil
+}
+
+func createServiceNetwork(
+		executionInstanceId string,
+		testName string,
+		suiteExecutionVolName string,
+		dockerManager *docker_manager.DockerManager,
+		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		dockerNetworkId string,
+		isPartitioningEnabled bool) *service_network.ServiceNetwork {
+
+	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
+		suiteExecutionVolName,
+		dockerManager,
+		dockerNetworkId,
+		freeIpAddrTracker)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
+		executionInstanceId,
+		testName,
 		dockerManager,
 		freeIpAddrTracker,
+		filesArtifactExpander,
 		dockerNetworkId,
-		testVolumeName)
+		suiteExecutionVolName)
 
 	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,
@@ -238,29 +263,29 @@ func createServiceNetwork(
 		freeIpAddrTracker,
 		dockerManager,
 		userServiceLauncher)
-	return serviceNetwork, nil
+	return serviceNetwork
 }
 
 func createServer(
 		dockerManager *docker_manager.DockerManager,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
-		serviceNetwork *service_network.ServiceNetwork,
-		filesArtifactExpander *files_artifact_expander.FilesArtifactExpander) (*http.Server, error) {
+		serviceNetwork *service_network.ServiceNetwork) (*http.Server, error) {
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
 		testExecutionStatusChan,
 		dockerManager,
-		serviceNetwork,
-		filesArtifactExpander)
+		serviceNetwork)
 
 	logrus.Info("Launching server...")
 	httpHandler := rpc.NewServer()
 	jsonCodec := json2.NewCodec()
 	httpHandler.RegisterCodec(jsonCodec, "application/json")
-	httpHandler.RegisterService(kurtosisService, "")
+	if err := httpHandler.RegisterService(kurtosisService, ""); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred registering the Kurtosis service to the HTTP handler")
+	}
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", api_container_docker_consts2.ContainerPort),
+		Addr:    fmt.Sprintf(":%v", api_container_docker_consts.ContainerPort),
 		Handler: httpHandler,
 	}
 

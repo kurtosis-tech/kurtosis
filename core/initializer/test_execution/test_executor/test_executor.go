@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"os"
 	"path"
 	"strconv"
@@ -202,6 +203,19 @@ func RunTest(
 		testExecutionRelativeDirpath,
 		apiContainerLogFilename)
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_docker_consts.ContainerPort))
+	kurtosisApiContainerEnvVars := buildApiContainerEnvVarsMap(
+		kurtosisApiIp,
+		apiLogFilepathOnApiContainer,
+		executionInstanceId,
+		gatewayIp,
+		testMetadata.IsPartitioningEnabled,
+		apiContainerLogLevel,
+		networkId,
+		subnetMask,
+		testName,
+		testRunningContainerId,
+		testRunningContainerIp,
+		suiteExecutionVolume)
 	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		kurtosisApiImageName,
@@ -213,20 +227,7 @@ func RunTest(
 			kurtosisApiPort: nil,
 		},
 		nil,
-		map[string]string{
-			api_container_env_vars.ApiContainerIpAddrEnvVar:       kurtosisApiIp.String(),
-			// TODO capture the API container's logs ONLY if the user is an admin, so we don't leak internals
-			//   about how our API container works to anyone trying to reverse-engineer Kurtosis
-			api_container_env_vars.ApiLogFilepathEnvVar:           apiLogFilepathOnApiContainer,
-			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
-			api_container_env_vars.IsPartitioningEnabledEnvVar: strconv.FormatBool(testMetadata.IsPartitioningEnabled),
-			api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
-			api_container_env_vars.NetworkIdEnvVar: networkId,
-			api_container_env_vars.SubnetMaskEnvVar: subnetMask,
-			api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
-			api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
-			api_container_env_vars.TestVolumeName: suiteExecutionVolume,
-		},
+		kurtosisApiContainerEnvVars,
 		map[string]string{
 			dockerSocket: dockerSocket,
 		},
@@ -300,6 +301,38 @@ func RunTest(
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
+func buildApiContainerEnvVarsMap(
+		apiContainerIp net.IP,
+		logFilepathOnContainer string,
+		executionInstanceId uuid.UUID,
+		gatewayIp net.IP,
+		isPartitioningEnabled bool,
+		apiContainerLogLevel string,
+		networkId string,
+		subnetMask string,
+		testName string,
+		testRunningContainerId string,
+		testRunningContainerIp net.IP,
+		suiteExecutionVolumeName string) map[string]string {
+	return map[string]string{
+		api_container_env_vars.ApiContainerIpAddrEnvVar:       apiContainerIp.String(),
+		// TODO capture the API container's logs ONLY if the user is an admin, so we don't leak internals
+		//   about how our API container works to anyone trying to reverse-engineer Kurtosis
+		api_container_env_vars.ApiLogFilepathEnvVar:           logFilepathOnContainer,
+		api_container_env_vars.ExecutionInstanceIdEnvVar: executionInstanceId.String(),
+		api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
+		api_container_env_vars.IsPartitioningEnabledEnvVar: strconv.FormatBool(isPartitioningEnabled),
+		api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
+		api_container_env_vars.NetworkIdEnvVar: networkId,
+		api_container_env_vars.SubnetMaskEnvVar: subnetMask,
+		api_container_env_vars.TestNameEnvVar: testName,
+		api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
+		api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
+		api_container_env_vars.TestVolumeNameEnvVar: suiteExecutionVolumeName,
+	}
+}
+
+
 /*
 Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
 	exited (either normally or with error)

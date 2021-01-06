@@ -174,7 +174,8 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string) (net.IP, error) {
+		testVolumeMountDirpath string,
+		filesArtifactMountDirpaths map[string]string) (net.IP, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -250,13 +251,15 @@ func (network *ServiceNetwork) AddServiceInPartition(
 
 	serviceContainerId, err := network.userServiceLauncher.Launch(
 		context,
+		serviceId,
 		serviceIp,
 		imageName,
 		usedPorts,
 		ipPlaceholder,
 		startCmd,
 		dockerEnvVars,
-		testVolumeMountDirpath)
+		testVolumeMountDirpath,
+		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

@@ -9,7 +9,6 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
@@ -31,8 +30,6 @@ const (
 type KurtosisService struct {
 	dockerManager *docker_manager.DockerManager
 
-	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
-
 	serviceNetwork *service_network.ServiceNetwork
 
 	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
@@ -51,12 +48,10 @@ func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *docker_manager.DockerManager,
-		serviceNetwork *service_network.ServiceNetwork,
-		filesArtifactExpander *files_artifact_expander.FilesArtifactExpander) *KurtosisService {
+		serviceNetwork *service_network.ServiceNetwork) *KurtosisService {
 
 	return &KurtosisService{
 		dockerManager:           dockerManager,
-		filesArtifactExpander: 	 filesArtifactExpander,
 		serviceNetwork:          serviceNetwork,
 		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
@@ -117,7 +112,8 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		ipPlaceholderStr,
 		args.StartCmd,
 		args.DockerEnvironmentVars,
-		args.TestVolumeMountDirpath)
+		args.TestVolumeMountDirpath,
+		args.FilesArtifactMountDirpaths)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating service '%v' inside partition '%v'", serviceId, partitionId)
 	}

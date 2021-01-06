@@ -33,9 +33,10 @@ type FilesArtifactExpander struct {
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 }
 
-func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager) *FilesArtifactExpander {
-	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager}
+func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker) *FilesArtifactExpander {
+	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker}
 }
+
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Context,
 		artifactIdsToVolumeNames map[string]string) error {
