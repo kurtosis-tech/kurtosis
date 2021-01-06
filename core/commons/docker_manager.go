@@ -140,7 +140,8 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkId st
 		return stacktrace.Propagate(err, "Failed to get network information for network with ID %v", networkId)
 	}
 
-	for containerId, _ := range inspectResponse.Containers {
+	for containerId, endpointInfo := range inspectResponse.Containers {
+		manager.log.Debugf("Stopping container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
 		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
 		}
@@ -284,12 +285,27 @@ Stops the container with the given container ID, waiting for the provided timeou
 Args:
 	context: The context that the stopping runs in (useful for cancellation)
 	containerId: ID of Docker container to stop
-	timeout: How long to wait for container stoppage before throwing an errorj
+	timeout: How long to wait for container stoppage before throwing an error
  */
 func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
+	}
+	return nil
+}
+
+/*
+Kills the container with the given ID, giving it no opportunity to gracefully exit
+
+Args:
+	context: The context that the kill runs in
+	containerId: ID of Docker container to kill
+ */
+func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
+	err := manager.dockerClient.ContainerKill(context, containerId, "KILL")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
 	return nil
 }
@@ -351,6 +367,9 @@ func (manager DockerManager) RunExecCommand(
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		Cmd:          command,
+		AttachStderr: true,
+		AttachStdout: true,
+		Detach: false,
 	}
 
 	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
@@ -368,14 +387,12 @@ func (manager DockerManager) RunExecCommand(
 	execStartConfig := types.ExecStartCheck{
 		// Because detach is false, we'll block until the command comes back
 		Detach: false,
-		Tty:    false,
-	}
-	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred starting the exec command")
 	}
 
+	// IMPORTANT DEEP DOCKER MAGIC:
+	// If this attach isn't BEFORE the ContainerExecStart, by the time we try the attach the command
+	//  will have finished running and Docker won't give us back the logs of the command but instead a Docker-generated
+	//  error saying "Exec proc 123451312321321 has already finished"
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
 		return stacktrace.Propagate(
@@ -383,6 +400,12 @@ func (manager DockerManager) RunExecCommand(
 			"An error occurred attaching to the exec command")
 	}
 	defer attachResp.Close()
+
+	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred starting the exec command")
+	}
 
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF

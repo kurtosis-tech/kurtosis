@@ -9,9 +9,9 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -35,14 +35,11 @@ type KurtosisService struct {
 
 	dockerManager *commons.DockerManager
 
-	serviceEngine *service_engine.ServiceEngine
+	serviceNetwork *service_network.ServiceNetwork
 
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
 	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
-
-	// The names of the tests inside the suite; will be nil if no test suite has been registered yet
-	suiteTestNames []string
 
 	// Flag that will only be switched to true once, indicating that a test execution has been registered
 	testExecutionRegistered bool
@@ -52,28 +49,14 @@ func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *commons.DockerManager,
-		dockerNetworkId string,
-		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		testVolumeName string,
-		isPartitioningEnabled bool) *KurtosisService {
+		serviceNetwork *service_network.ServiceNetwork) *KurtosisService {
 
-	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
-		dockerManager,
-		freeIpAddrTracker,
-		dockerNetworkId,
-		testVolumeName)
-	partitioningEngine := service_engine.NewServiceEngine(
-		isPartitioningEnabled,
-		dockerNetworkId,
-		freeIpAddrTracker,
-		dockerManager,
-		userServiceLauncher)
 	return &KurtosisService{
 		testSuiteContainerId:    testSuiteContainerId,
-		testExecutionStatusChan: testExecutionStatusChan,
 		dockerManager:           dockerManager,
-		serviceEngine:           partitioningEngine,
-		suiteTestNames:          nil,
+		serviceNetwork:          serviceNetwork,
+		testExecutionStatusChan: testExecutionStatusChan,
+		testExecutionRegistered: false,
 	}
 }
 
@@ -121,7 +104,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		usedPorts[portObj] = true
 	}
 
-	serviceIp, err := service.serviceEngine.CreateServiceInPartition(
+	serviceIp, err := service.serviceNetwork.AddServiceInPartition(
 		httpReq.Context(),
 		serviceId,
 		imageNameStr,
@@ -143,7 +126,7 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 /*
 Removes the service with the given service ID from the network
  */
-func (service *KurtosisService) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, result *interface{}) error {
+func (service *KurtosisService) RemoveService(httpReq *http.Request, args *RemoveServiceArgs, _ *interface{}) error {
 	logrus.Infof("Received request to remove a service with the following args: %v", *args)
 
 	serviceIdStr := strings.TrimSpace(args.ServiceID)
@@ -157,17 +140,67 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 	}
 
 	containerStopTimeout := time.Duration(args.ContainerStopTimeoutSeconds) * time.Second
-	if err := service.serviceEngine.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
+	if err := service.serviceNetwork.RemoveService(httpReq.Context(), serviceId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 
 	return nil
 }
 
+func (service *KurtosisService) Repartition(httpReq *http.Request, args *RepartitionArgs, _ *interface{}) error {
+	logrus.Infof("Received request to repartition the test network with the following args: %v", args)
+
+	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
+	partitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
+	for partitionIdStr, serviceIdStrSet := range args.PartitionServices {
+		partitionId := topology_types.PartitionID(partitionIdStr)
+		serviceIdSet := topology_types.NewServiceIDSet()
+		for serviceIdStr := range serviceIdStrSet {
+			serviceId := topology_types.ServiceID(serviceIdStr)
+			serviceIdSet.AddElem(serviceId)
+		}
+		partitionServices[partitionId] = serviceIdSet
+	}
+
+	partitionConnections := map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection{}
+	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
+		partitionAId := topology_types.PartitionID(partitionAStr)
+		for partitionBStr, connectionInfo := range partitionBToConnection {
+			partitionBId := topology_types.PartitionID(partitionBStr)
+			partitionConnectionId := *topology_types.NewPartitionConnectionID(partitionAId, partitionBId)
+			if _, found := partitionConnections[partitionConnectionId]; found {
+				return stacktrace.NewError(
+					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
+					partitionAId,
+					partitionBId)
+			}
+			partitionConnection := partition_topology.PartitionConnection{
+				IsBlocked: connectionInfo.IsBlocked,
+			}
+			partitionConnections[partitionConnectionId] = partitionConnection
+		}
+	}
+
+	defaultConnectionInfo := args.DefaultConnection
+	defaultConnection := partition_topology.PartitionConnection{
+		IsBlocked: defaultConnectionInfo.IsBlocked,
+	}
+
+	if err := service.serviceNetwork.Repartition(
+			httpReq.Context(),
+			partitionServices,
+			partitionConnections,
+			defaultConnection); err != nil {
+		return stacktrace.Propagate(err, "An error occurred repartitioning the test network")
+	}
+	return nil
+}
+
+
 // Registers that the test suite container is going to run a test, and the Kurtosis API container should wait for the
 //  given amount of time before calling the test lost
-func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, args *RegisterTestExecutionArgs, result *struct{}) error {
-	logrus.Infof("Received request to register a test execution with timeout of %v seconds...", args.TestTimeoutSeconds)
+func (service *KurtosisService) RegisterTestExecution(_ *http.Request, args *RegisterTestExecutionArgs, _ *struct{}) error {
+	logrus.Infof("Received request to register a test execution with timeout of %v seconds", args.TestTimeoutSeconds)
 
 	if service.testExecutionRegistered {
 		return stacktrace.NewError("A test execution is already registered with the API container")
@@ -182,7 +215,6 @@ func (service *KurtosisService) RegisterTestExecution(httpReq *http.Request, arg
 	return nil
 }
 
-
 // ============================ Private helper functions ==============================================================
 /*
 Waits for either a) the testsuite container to exit or b) the given timeout to be reached, and pushes a corresponding
@@ -195,14 +227,14 @@ func awaitTestCompletionOrTimeout(
 			testExecutionStatusChan chan test_execution_status.TestExecutionStatus) {
 	logrus.Debugf("[%v] Thread started", completionTimeoutPrefix)
 
-	context, cancelFunc := context.WithCancel(context.Background())
+	cancellableCtx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 
 	// Kick off a thread that will only exit upon a) the testsuite container exiting or b) the context getting cancelled
 	testSuiteContainerExitedChan := make(chan struct{})
 
 	logrus.Debugf("[%v] Launching thread to await testsuite container exit...", completionTimeoutPrefix)
-	go awaitTestSuiteContainerExit(context, dockerManager, testSuiteContainerId, testSuiteContainerExitedChan)
+	go awaitTestSuiteContainerExit(cancellableCtx, dockerManager, testSuiteContainerId, testSuiteContainerExitedChan)
 	logrus.Debugf("[%v] Launched thread to await testsuite container exit", completionTimeoutPrefix)
 
 	logrus.Debugf("[%v] Blocking until either the test suite exits or the test timeout is hit...", completionTimeoutPrefix)

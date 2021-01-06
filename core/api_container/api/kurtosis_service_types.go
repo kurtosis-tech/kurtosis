@@ -38,19 +38,25 @@ type RemoveServiceArgs struct {
 	ContainerStopTimeoutSeconds int `json:"containerStopTimeoutSeconds"`
 }
 
+type PartitionConnectionInfo struct {
+	IsBlocked bool		`json:"isBlocked"`
+}
+
+type RepartitionArgs struct {
+	// Mapping of partition ID -> "set" of service IDs
+	PartitionServices map[string]map[string]bool	`json:"partitionServices"`
+
+	// Mapping of partitionA -> partitionB -> partitionConnection details
+	// We use this format because JSON doesn't allow object keys
+	// This format allows for the same connection to be defined twice, but we'll do error-checking to catch it
+	PartitionConnections map[string]map[string]PartitionConnectionInfo `json:"partitionConnections"`
+
+	DefaultConnection PartitionConnectionInfo `json:"defaultConnection"`
+}
+
 type RegisterTestExecutionArgs struct {
 	// The testsuite container will be running a single test, and this lets the Kurtosis API know what the hard test
 	//  timeout of that test will be (after which the Kurtosis API container will count the testsuite container as hung
 	//  and report back to the initializer that the test didn't finish in the alloted time)
-	TestTimeoutSeconds int
+	TestTimeoutSeconds int	`json:"testTimeoutSeconds"`
 }
-
-type RegisterTestSuiteArgs struct {
-	TestNames []string
-}
-
-type ListTestsResponse struct {
-	IsTestSuiteRegistered	bool
-	Tests 					[]string
-}
-

@@ -6,7 +6,7 @@
 package partition_topology
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/service_engine/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/palantir/stacktrace"
 	"strings"
 )
@@ -46,6 +46,10 @@ func (topology *PartitionTopology) Repartition(
 		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
 		newPartitionConnections map[topology_types.PartitionConnectionID]PartitionConnection,
 		newDefaultConnection PartitionConnection) error {
+	// Validate we have at least one partition
+	if len(newPartitionServices) == 0 {
+		return stacktrace.NewError("Cannot repartition with no partitions")
+	}
 
 	// Validate that each existing service in the testnet gets exactly one partition allocation
 	servicesNeedingAllocation := topology_types.NewServiceIDSet()
