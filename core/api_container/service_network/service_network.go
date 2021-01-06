@@ -266,6 +266,9 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
+		// TODO This uses up the user's requested IPs with a long-running container that's not one of their
+		//  services!!! What we really want to do is, if network partitioning is enabled, double the size
+		//  of their network to make space for the sidecars
 		sidecarIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
 			return nil, stacktrace.Propagate(

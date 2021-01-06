@@ -17,13 +17,13 @@ import (
 
 const (
 	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where artifacts are being
-	//  a) stored using the initializer and b) retrieved using the API container
+	//  a) stored using the initializer and b) retrieved using the files artifact expander
 	artifactCacheDirname = "artifact-cache"
 )
 
 /*
 An interface for interacting with the artifact cache directory that exists inside the suite execution volume,
-	and is a) populated by the initializer and b) accessed by the API container
+	and is a) populated by the initializer and b) accessed by the files artifact expander
  */
 type ArtifactCache struct {
 	// Dirpath where artifacts should be written to/read from
@@ -33,7 +33,7 @@ type ArtifactCache struct {
 /*
 Args:
 	suiteExecutionVolumeMountDirpath: Dirpath where the suite execution volume is mounted, either on the
-		initializer or the API container (depending on who's instantiating the artifact cache)
+		initializer or the files artifact expander container (depending on who's instantiating the artifact cache)
  */
 func NewArtifactCache(suiteExecutionVolumeMountDirpath string) *ArtifactCache {
 	artifactCacheDirpath := path.Join(suiteExecutionVolumeMountDirpath, artifactCacheDirname)
@@ -48,7 +48,7 @@ func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]st
 
 	// TODO Download in parallel to increase instantiation speed
 	for artifactId, artifactUrl := range artifactUrlsById {
-		destFilepath := downloader.getArtifactFilepathFromId(artifactId)
+		destFilepath := downloader.GetArtifactFilepath(artifactId)
 		if err := downloadArtifactToFilepath(artifactUrl, destFilepath); err != nil {
 			return stacktrace.Propagate(
 				err,
@@ -60,18 +60,7 @@ func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]st
 	return nil
 }
 
-// NOTE: It is the caller's responsibility to close the file pointer when done with it
-func (downloader ArtifactCache) GetArtifactFile(artifactId string) (*os.File, error) {
-	artifactFilepath := downloader.getArtifactFilepathFromId(artifactId)
-	fp, err := os.Open(artifactFilepath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening artifact filepath '%v' for reading", artifactFilepath)
-
-	}
-	return fp, nil
-}
-
-func (downloader ArtifactCache) getArtifactFilepathFromId(artifactId string) string {
+func (downloader ArtifactCache) GetArtifactFilepath(artifactId string) string {
 	return path.Join(downloader.artifactCacheDirpath, artifactId)
 }
 

@@ -16,6 +16,7 @@ import (
 	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
+	"github.com/kurtosis-tech/kurtosis/api_container/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -134,6 +135,10 @@ func main() {
 		os.Exit(exit_codes.StartupErrorExitCode)
 	}
 
+	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
+		*testVolumeNameArg,
+		dockerManager)
+
 	// A value on this channel indicates a change in the test execution status
 	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)
 
@@ -141,7 +146,8 @@ func main() {
 		dockerManager,
 		testExecutionStatusChan,
 		*testSuiteContainerIdArg,
-		serviceNetwork)
+		serviceNetwork,
+		filesArtifactExpander)
 	if err != nil {
 		logrus.Error("Failed to create a server with the following error:")
 		fmt.Fprint(logrus.StandardLogger().Out, err)
@@ -239,12 +245,14 @@ func createServer(
 		dockerManager *docker_manager.DockerManager,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
-		serviceNetwork *service_network.ServiceNetwork) (*http.Server, error) {
+		serviceNetwork *service_network.ServiceNetwork,
+		filesArtifactExpander *files_artifact_expander.FilesArtifactExpander) (*http.Server, error) {
 	kurtosisService := api.NewKurtosisService(
 		testSuiteContainerId,
 		testExecutionStatusChan,
 		dockerManager,
-		serviceNetwork)
+		serviceNetwork,
+		filesArtifactExpander)
 
 	logrus.Info("Launching server...")
 	httpHandler := rpc.NewServer()

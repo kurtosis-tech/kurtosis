@@ -27,6 +27,11 @@ type AddServiceArgs struct {
 	StartCmd              []string          `json:"startCommand"`
 	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
 	TestVolumeMountDirpath string			`json:"testVolumeMountDirpath"`
+
+	// Artifacts containing compressed files which should be unzipped and then
+	//  mounted at the given location for the service
+	// The ID of the artifact will correspond to the artifacts declared in the test metadata
+	FilesArtifactMounts map[string]string
 }
 
 type AddServiceResponse struct {

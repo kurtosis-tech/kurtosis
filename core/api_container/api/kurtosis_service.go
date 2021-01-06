@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
+	"github.com/kurtosis-tech/kurtosis/api_container/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
@@ -28,15 +29,16 @@ const (
 )
 
 type KurtosisService struct {
+	dockerManager *docker_manager.DockerManager
+
+	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
+
+	serviceNetwork *service_network.ServiceNetwork
+
 	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
 	// This is expected to be nil until the "register test suite container" endpoint is called, which should be called
 	//  exactly once
 	testSuiteContainerId string
-
-	dockerManager *docker_manager.DockerManager
-
-	serviceNetwork *service_network.ServiceNetwork
-
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
 	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
@@ -49,12 +51,14 @@ func NewKurtosisService(
 		testSuiteContainerId string,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		dockerManager *docker_manager.DockerManager,
-		serviceNetwork *service_network.ServiceNetwork) *KurtosisService {
+		serviceNetwork *service_network.ServiceNetwork,
+		filesArtifactExpander *files_artifact_expander.FilesArtifactExpander) *KurtosisService {
 
 	return &KurtosisService{
-		testSuiteContainerId:    testSuiteContainerId,
 		dockerManager:           dockerManager,
+		filesArtifactExpander: 	 filesArtifactExpander,
 		serviceNetwork:          serviceNetwork,
+		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
 		testExecutionRegistered: false,
 	}
