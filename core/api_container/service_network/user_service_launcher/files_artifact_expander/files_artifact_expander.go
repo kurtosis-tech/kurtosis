@@ -90,7 +90,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 		}
 		if exitCode != successExitCode {
 			return stacktrace.NewError(
-				"The files artifact-expanding Docker container exited with non-%v exit code: ",
+				"The files artifact-expanding Docker container exited with non-%v exit code: %v",
 				successExitCode,
 				exitCode)
 		}

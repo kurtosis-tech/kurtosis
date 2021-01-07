@@ -95,7 +95,9 @@ func RunTests(
 	// Download any required artifacts for the tests being run
 	logrus.Debug("Downloading artifacts used by the tests...")
 	if err := downloadUsedArtifacts(suiteExecutionVolumeMountDirpath, testNamesToRun, testSuiteMetadata); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred downloading the artifacts needed by the tests being run: %v")
+		return false, stacktrace.Propagate(
+			err,
+			"An error occurred downloading the artifacts needed by the tests being run")
 	}
 	logrus.Debug("Test artifacts downloaded successfully")
 

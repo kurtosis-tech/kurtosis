@@ -41,6 +41,15 @@ func NewArtifactCache(suiteExecutionVolumeMountDirpath string) *ArtifactCache {
 }
 
 func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]string) error {
+	if _, statErr := os.Stat(downloader.artifactCacheDirpath); os.IsNotExist(statErr) {
+		if mkdirErr := os.Mkdir(downloader.artifactCacheDirpath, os.ModeDir); mkdirErr != nil {
+			return stacktrace.Propagate(
+				mkdirErr,
+				"An error occurred creating the artifact cache directory '%v'",
+				downloader.artifactCacheDirpath)
+		}
+	}
+
 	logrus.Debug("Downloading the following artifacts with the given IDs and URLs:")
 	for artifactId, artifactUrl := range artifactUrlsById {
 		logrus.Debugf("- %v:%v", artifactId, artifactUrl)
