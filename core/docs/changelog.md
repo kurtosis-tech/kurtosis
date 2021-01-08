@@ -7,6 +7,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Added a suite of tests for `PartitionTopology`
 * Add a `ReleaseIpAddr` method to `FreeIpAddrTracker`
 * Resolve the race condition that was occurring when a node was started in a partition, where it wouldn't be sectioned off from other nodes until AFTER its start
+* Add docs on how to turn on network partitioning for a test
 
 # 1.4.5
 * Use `alpine` base for the API image & initializer image rather than the `docker` Docker-in-Docker image (which we thought we needed at the start, but don't actually); this saves downloading 530 MB _per CI build_, and so should significantly speed up CI times
