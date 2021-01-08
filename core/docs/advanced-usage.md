@@ -1,5 +1,6 @@
 Advanced Usage
 ==============
+
 Network Partitioning
 --------------------
 Kurtosis allows you to write tests that simulate network partitions between different nodes of your network. To use this functionality:
