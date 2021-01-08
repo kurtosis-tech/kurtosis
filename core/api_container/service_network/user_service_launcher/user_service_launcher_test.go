@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package api
+package user_service_launcher
 
 import (
 	"gotest.tools/assert"

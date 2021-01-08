@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/sirupsen/logrus"
 	"io"
 	"strings"
@@ -26,7 +26,7 @@ Args:
 	logFilepath: Filepath of the file containing the container's logs
 */
 func PrintContainerLogsWithBanners(
-		dockerManager commons.DockerManager,
+		dockerManager docker_manager.DockerManager,
 		context context.Context,
 		containerId string,
 		log *logrus.Logger,

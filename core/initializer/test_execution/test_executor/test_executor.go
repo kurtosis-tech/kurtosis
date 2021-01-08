@@ -15,12 +15,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -86,6 +89,7 @@ Args:
 	testsuiteLauncher: Launcher for running the test-running testsuite instances
 	testsuiteDebuggerHostPortBinding: The port binding on the host machine that the testsuite debugger port should be tied to
 	testName: The name of the test the executor should execute
+	testMetadata: Metadata declared by the test itslef (e.g. if partitioning is enabled)
 
 Returns:
 	bool: True if the test passed, false otherwise
@@ -104,11 +108,12 @@ func RunTest(
 		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		testsuiteDebuggerHostPortBinding nat.PortBinding,
-		testName string) (bool, error) {
+		testName string,
+		testMetadata test_suite_metadata_acquirer.TestMetadata) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := commons.NewDockerManager(log, dockerClient)
+	dockerManager, err := docker_manager.NewDockerManager(log, dockerClient)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
 	}
@@ -202,6 +207,8 @@ func RunTest(
 		kurtosisApiImageName,
 		networkId,
 		kurtosisApiIp,
+		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
+		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
@@ -212,6 +219,7 @@ func RunTest(
 			//   about how our API container works to anyone trying to reverse-engineer Kurtosis
 			api_container_env_vars.ApiLogFilepathEnvVar:           apiLogFilepathOnApiContainer,
 			api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
+			api_container_env_vars.IsPartitioningEnabledEnvVar: strconv.FormatBool(testMetadata.IsPartitioningEnabled),
 			api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
 			api_container_env_vars.NetworkIdEnvVar: networkId,
 			api_container_env_vars.SubnetMaskEnvVar: subnetMask,
@@ -224,7 +232,8 @@ func RunTest(
 		},
 		map[string]string{
 			suiteExecutionVolume: api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
-		})
+		},
+	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
 	}
@@ -248,6 +257,12 @@ func RunTest(
 	switch kurtosisApiExitCode {
 	case exit_codes.TestCompletedInTimeoutExitCode:
 		testStatusRetrievalError = nil
+	case exit_codes.StartupErrorExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error while " +
+			"starting up and wasn't able to start the JSON RPC server")
+	case exit_codes.ShutdownErrorExitCode:
+		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error during " +
+			"shutdown that prevented it from stopping cleanly")
 	case exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
@@ -259,7 +274,7 @@ func RunTest(
 	case exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-	case exit_codes.ShutdownSignalExitCode:
+	case exit_codes.ReceivedTermSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
 	default:
@@ -285,12 +300,11 @@ func RunTest(
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
-
 /*
-Helper function for making a best-effort attempt at removing a network and logging any error states; intended to be run
-as a deferred function.
+Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
+	exited (either normally or with error)
 */
-func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.DockerManager, networkId string) {
+func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker_manager.DockerManager, networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
@@ -299,6 +313,6 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *commons.Docker
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
-		log.Infof("Docker network with ID %v successfully removed", networkId)
+		log.Infof("Successfully removed Docker network with ID %v", networkId)
 	}
 }

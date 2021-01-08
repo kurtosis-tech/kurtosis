@@ -90,6 +90,13 @@ api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
+    echo "Running tests..."
+    if ! go test "${root_dirpath}/..."; then
+        echo 'Tests failed!'
+        exit 1
+    fi
+    echo "Tests completed"
+
     if ! [ -f "${root_dirpath}"/.dockerignore ]; then
         echo "Error: No .dockerignore file found in root; this is required so Docker caching works properly" >&2
         exit 1

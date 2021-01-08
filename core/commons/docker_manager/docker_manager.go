@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package commons
+package docker_manager
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -137,7 +138,8 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkId st
 		return stacktrace.Propagate(err, "Failed to get network information for network with ID %v", networkId)
 	}
 
-	for containerId, _ := range inspectResponse.Containers {
+	for containerId, endpointInfo := range inspectResponse.Containers {
+		manager.log.Debugf("Stopping container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
 		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
 		}
@@ -186,6 +188,9 @@ Args:
 	dockerImage: image to start
 	networkId: The ID of the Docker network that this container should be attached to
 	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
+	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
+		For more info, see the --cap-add section of https://docs.docker.com/engine/reference/run/
+	networkMode: When a non-empty string, sets the Docker --network flag to be this given string
 	usedPorts: A map of (ports that the container will listen on) -> (an *optional* IP/port on the host that
 		will get bound to the container port); set the binding to nil to exclude it
 	startCmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
@@ -201,6 +206,8 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage string,
 			networkId string,
 			staticIp net.IP,
+			addedCapabilities map[ContainerCapability]bool,
+			networkMode DockerManagerNetworkMode,
 			usedPortsWithHostBindings map[nat.Port]*nat.PortBinding,
 			startCmdArgs []string,
 			envVariables map[string]string,
@@ -243,6 +250,8 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
+		addedCapabilities,
+		networkMode,
 		bindMounts,
 		volumeMounts,
 		usedPortsWithHostBindingsDeref)
@@ -274,12 +283,27 @@ Stops the container with the given container ID, waiting for the provided timeou
 Args:
 	context: The context that the stopping runs in (useful for cancellation)
 	containerId: ID of Docker container to stop
-	timeout: How long to wait for container stoppage before throwing an errorj
+	timeout: How long to wait for container stoppage before throwing an error
  */
 func (manager DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
+	}
+	return nil
+}
+
+/*
+Kills the container with the given ID, giving it no opportunity to gracefully exit
+
+Args:
+	context: The context that the kill runs in
+	containerId: ID of Docker container to kill
+ */
+func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
+	err := manager.dockerClient.ContainerKill(context, containerId, "KILL")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
 	return nil
 }
@@ -326,6 +350,82 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs for container ID '%v'", containerId)
 	}
 	return readCloser, nil
+}
+
+/*
+Executes the given command inside the container with the given ID, blocking until the command completes
+
+If the command has a non-zero exit code, an error will be returned
+ */
+func (manager DockerManager) RunExecCommand(
+		context context.Context,
+		containerId string,
+		command []string,
+		logOutput io.Writer) error {
+	dockerClient := manager.dockerClient
+	execConfig := types.ExecConfig{
+		Cmd:          command,
+		AttachStderr: true,
+		AttachStdout: true,
+		Detach: false,
+	}
+
+	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating the exec process")
+	}
+
+	execId := createResp.ID
+	if execId == "" {
+		return stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
+	}
+
+	execStartConfig := types.ExecStartCheck{
+		// Because detach is false, we'll block until the command comes back
+		Detach: false,
+	}
+
+	// IMPORTANT DEEP DOCKER MAGIC:
+	// If this attach isn't BEFORE the ContainerExecStart, by the time we try the attach the command
+	//  will have finished running and Docker won't give us back the logs of the command but instead a Docker-generated
+	//  error saying "Exec proc 123451312321321 has already finished"
+	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred attaching to the exec command")
+	}
+	defer attachResp.Close()
+
+	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred starting the exec command")
+	}
+
+	// NOTE: We have to demultiplex the logs that come back
+	// This will keep reading until it receives EOF
+	if _, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred copying the exec command output to the given output writer")
+	}
+
+	inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred inspecting the exec to get the response code")
+	}
+	if inspectResponse.Running {
+		return stacktrace.NewError("Expected exec to have stopped, but it's still running!")
+	}
+	if inspectResponse.ExitCode != 0 {
+		return stacktrace.NewError("Expected exit code 0 but exec exit code was '%v'", inspectResponse.ExitCode)
+	}
+	return  nil
 }
 
 
@@ -409,6 +509,8 @@ Args:
 	hostPortBindings: Mapping of (container port) -> (IP/port on host to bind to)
  */
 func (manager *DockerManager) getContainerHostConfig(
+		addedCapabilities map[ContainerCapability]bool,
+		networkMode DockerManagerNetworkMode,
 		bindMounts map[string]string,
 		volumeMounts map[string]string,
 		hostPortBindings map[nat.Port]nat.PortBinding) (hostConfig *container.HostConfig, err error) {
@@ -430,9 +532,16 @@ func (manager *DockerManager) getContainerHostConfig(
 		portMap[containerPort] = []nat.PortBinding{hostBinding}
 	}
 
+	addedCapabilitiesSlice := []string{}
+	for capability, _ := range addedCapabilities {
+		capabilityStr := string(capability)
+		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
+	}
+
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
-		NetworkMode: container.NetworkMode("default"),
+		CapAdd: addedCapabilitiesSlice,
+		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
 	}
 	return containerHostConfigPtr, nil
