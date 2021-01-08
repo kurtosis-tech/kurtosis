@@ -20,6 +20,7 @@ Documentation Index
 * [Changelog](./changelog.md) 
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
 * [Quickstart](./quickstart.md)
+* [Advanced Usage](./advanced-usage.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
 * [Supported languages](./supported-languages.md)
 * [Testsuite deepdive](./testsuite-details.md)
