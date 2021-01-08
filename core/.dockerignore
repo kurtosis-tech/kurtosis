@@ -1,0 +1,15 @@
+.circleci
+.git
+.github
+.gitignore
+.idea
+.vscode
+
+*.md
+
+docs
+scripts
+wrapper_generator
+
+api_container/Dockerfile
+initializer/Dockerfile

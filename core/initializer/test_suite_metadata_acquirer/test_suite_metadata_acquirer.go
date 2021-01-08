@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
@@ -50,7 +50,7 @@ func GetTestSuiteMetadata(
 		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
-	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
@@ -120,8 +120,16 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred reading the test suite metadata JSON string from file")
 	}
 
+	logrus.Debugf("Test suite metadata JSON: " + string(jsonBytes))
+
 	var suiteMetadata TestSuiteMetadata
-	json.Unmarshal(jsonBytes, &suiteMetadata)
+	if err := json.Unmarshal(jsonBytes, &suiteMetadata); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the testsuite metadata JSON")
+	}
+
+	if err := validateTestSuiteMetadata(&suiteMetadata); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
+	}
 
 	return &suiteMetadata, nil
 }

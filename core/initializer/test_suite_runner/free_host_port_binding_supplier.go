@@ -29,7 +29,8 @@ type FreeHostPortBindingSupplier struct {
 Creates a supplier that will dole out free host port bindings, tracking which ones are beign used
 
 WARNING: The interface should match the interface ports are bound on! If not, the host port tracker will return a "free" port
-that is really bound on another interface.
+that is really bound on another interface
+
 
 Args:
 	interfaceIpAddr: IP address of the interface that the ports will be bound on

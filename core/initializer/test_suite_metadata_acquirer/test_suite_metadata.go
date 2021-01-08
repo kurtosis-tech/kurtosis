@@ -5,11 +5,38 @@
 
 package test_suite_metadata_acquirer
 
+import (
+	"github.com/palantir/stacktrace"
+	"strings"
+)
+
+type TestMetadata struct {
+	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
+}
+
 // Simple package struct to contain information about a test suite
 type TestSuiteMetadata struct {
 	// How many bits to give each test subnetwork
-	NetworkWidthBits uint32
+	NetworkWidthBits uint32		`json:"networkWidthBits"`
 
-	TestNames map[string]bool
+	TestMetadata map[string]TestMetadata `json:"testMetadata"`
 }
 
+// Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
+func validateTestSuiteMetadata(suiteMetadata *TestSuiteMetadata) error {
+	if suiteMetadata.NetworkWidthBits == 0 {
+		return stacktrace.NewError("Test suite metdata has a network width bits == 0")
+	}
+	if suiteMetadata.TestMetadata == nil {
+		return stacktrace.NewError("Test metadata map is nil")
+	}
+	if len(suiteMetadata.TestMetadata) == 0 {
+		return stacktrace.NewError("Test suite doesn't declare any tests")
+	}
+	for testName, _ := range suiteMetadata.TestMetadata {
+		if len(strings.TrimSpace(testName)) == 0 {
+			return stacktrace.NewError("Test name '%v' is empty", testName)
+		}
+	}
+	return nil
+}

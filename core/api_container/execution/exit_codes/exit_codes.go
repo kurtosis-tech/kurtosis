@@ -6,9 +6,12 @@
 package exit_codes
 
 const (
-	TestCompletedInTimeoutExitCode = 0
-	NoTestSuiteRegisteredExitCode = 1
-	TestHitTimeoutExitCode = 2
-	ShutdownSignalExitCode = 3
-	OutOfOrderTestStatusExitCode = 4
+	// NOTE: If you add new codes, make sure to modify the test_executor who consumes them!!
+	TestCompletedInTimeoutExitCode = iota
+	StartupErrorExitCode           	// The API container hit an error while starting up
+	ShutdownErrorExitCode			// The API container encountered erros during shutodwn
+	NoTestSuiteRegisteredExitCode
+	TestHitTimeoutExitCode
+	ReceivedTermSignalExitCode
+	OutOfOrderTestStatusExitCode
 )

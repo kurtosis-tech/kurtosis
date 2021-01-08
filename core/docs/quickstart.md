@@ -43,15 +43,16 @@ Now that you have a running testsuite, you'll want to start customizing the test
 **NOTE:** This tutorial will avoid language-specific idioms and use a Java-like pseudocode notation in this documentation, but will reference the example in [the Go implementation](https://github.com/kurtosis-tech/kurtosis-go) to illustrate. All object names and methods will be more or less the same in your language of choice, and [all language repos](./supported-languages.md) come with an example.
 
 ### Service Interface & Implementation
-You're writing a Kurtosis testsuite because you want to write tests for a network, and networks are composed of services. To a test, a service is just an API that represents an interaction with the actual Docker container. To give your tests this API, define an implementation of the `Service` interface that provides the functionality you want for your test [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/services_impl/datastore/datastore_service.go). Here you'll provide the functions you want to be able to call on the service, as well as two Kurtosis-required bits:
+You're writing a Kurtosis testsuite because you want to write tests for a network, and networks are composed of services. To a test, a service is just an API that represents an interaction with the actual Docker container. To give your tests this API, define an implementation of the `Service` interface that provides the functionality you want for your test [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/services_impl/datastore/datastore_service.go). Here you'll provide the functions you want to be able to call on the service, as well as three Kurtosis-required bits:
 
-1. `Service.getIpAddress`, a getter to retrieve the service's IP and a check if the service is available. Your service should take in the IP address as a constructor parameter, and return it with this function; later we'll see how this gets passed to the constructor.
-2. `Service.isAvailable`, a check you'll need to implement to tell Kurtosis when your service should be considered available and ready for use.
+1. `Service.getServiceId`, a getter to retrieve the service's ID. Your service should take in the service ID as a constructor parameter, adn return it with this function; later we'll see how this gets passed to the constructor.
+2. `Service.getIpAddress`, a second getter to retrieve the service's IP. Like with the service ID, this should be taken in as a constructor param.
+3. `Service.isAvailable`, a check you'll need to implement to tell Kurtosis when your service should be considered available and ready for use.
 
 By now, you should have an implementation of the `Service` interface that represents an instance of your service.
 
 ### Docker Container Initializer
-Our tests now have a nice interface for interacting with a service running in a Docker container, but we need to tell Kurtosis how to actually start the Docker container running the service. This is done by implementing the `DockerContainerInitializer` interface. This interface will be very well-documented in code in your language, so you can use the documents there to write an initializer [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/services_impl/datastore/datastore_container_initializer.go). Of note: this is where you'll pass in the IP address to the constructor of your `Service` implementation.
+Our tests now have a nice interface for interacting with a service running in a Docker container, but we need to tell Kurtosis how to actually start the Docker container running the service. This is done by implementing the `DockerContainerInitializer` interface. This interface will be very well-documented in code in your language, so you can use the documents there to write an initializer [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/services_impl/datastore/datastore_container_initializer.go). Of note: this is where you'll pass in the service ID and IP address to the constructor of your `Service` implementation.
 
 ### Tests & Test Setup
 Now that we have a service, we can use it in a test. Each test is simply an implementation of the `Test` interface, and each has a `Test.setup` method which performs the work necessary to setup the testnet to a state where the test can run over it. You should use the `NetworkContext.addService` method to create instances of your service [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/basic_datastore_test/basic_datastore_test_.go#L36). 
@@ -76,6 +77,8 @@ With your testsuite complete, your only remaining step is to make sure it's gett
 
 You now have a custom testsuite running using Kurtosis!
 
+<!--- TODO move everything from here down into the Advanced Usage page --->
+
 ### Custom Networks
 So far your `Test.setup` method has returned the Kurtosis-provided `NetworkContext`, and your `Test.run` method has consumed it. This can be enough for basic tests, but you'll often want to centralize the network setup logic into a custom object that all your tests will use. Kurtosis allows this by letting your `Test.setup` method return any implementation of the `Network` marker interface; the `Test.run` will then receive that same `Network` object as an argument. To see this in action, the Go example testsuite has [this custom `Network` object](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/networks_impl/test_network.go), which makes the `Test.setup` of complex networks [a whole lot simpler](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/advanced_network_test/advanced_network_test_.go#L34) by encapsulating all the `DockerContainerInitializer` instantiation and waiting-for-availability.
 
@@ -91,6 +94,7 @@ Next steps
 ----------
 Now that you have your own custom testsuite running, you can:
 
+* Visit [the "advanced usage" page](./advanced-usage.md) to learn about writing more complicated tests
 * [Learn about debugging failed tests](./debugging-failed-tests.md)
 * Take a look at [the testsuite for the Avalanche (AVAX) token](https://github.com/ava-labs/avalanche-testing), a real-world Kurtosis use-case 
 * Visit [the Kurtosis testsuite docs](./testsuite-details.md) to learn more about what's in a testsuite and how to customize it to your needs
