@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -63,7 +64,7 @@ type ServiceNetwork struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
-	dockerManager *commons.DockerManager
+	dockerManager *docker_manager.DockerManager
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -82,7 +83,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled bool,
 		dockerNetworkId string,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		dockerManager *commons.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
 	return &ServiceNetwork{
@@ -198,10 +199,10 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			iproute2ContainerImage,
 			network.dockerNetworkId,
 			sidecarIp,
-			map[commons.ContainerCapability]bool{
-				commons.NetAdmin: true,
+			map[docker_manager.ContainerCapability]bool{
+				docker_manager.NetAdmin: true,
 			},
-			commons.NewContainerNetworkMode(serviceContainerId),
+			docker_manager.NewContainerNetworkMode(serviceContainerId),
 			map[nat.Port]*nat.PortBinding{},
 			[]string{"sleep","infinity"},  // We sleep forever since iptables stuff gets executed via 'exec'
 			map[string]string{}, // No environment variables

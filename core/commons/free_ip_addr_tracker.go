@@ -61,17 +61,17 @@ Returns:
 	An IP from the subnet the tracker was initialized with that won't collide with any previously-given IP. The
 		actual IP returned is undefined.
  */
-func (networkManager *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
-	networkManager.mutex.Lock()
-	defer networkManager.mutex.Unlock()
+func (tracker *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err error){
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
 
 	// NOTE: This whole function will need to be rewritten if we support IPv6
 
 	// convert IPNet struct mask and address to uint32
 	// network is BigEndian
-	mask := binary.BigEndian.Uint32(networkManager.subnet.Mask)
+	mask := binary.BigEndian.Uint32(tracker.subnet.Mask)
 
-	subnetIp := networkManager.subnet.IP
+	subnetIp := tracker.subnet.IP
 
 	// The IP can be either 4 bytes or 16 bytes long; we need to handle both!
 	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
@@ -93,12 +93,19 @@ func (networkManager *FreeIpAddrTracker) GetFreeIpAddr() (ipAddr net.IP, err err
 		ip := make(net.IP, 4)
 		binary.BigEndian.PutUint32(ip, i)
 		ipStr := ip.String()
-		if !networkManager.takenIps[ipStr] {
-			networkManager.takenIps[ipStr] = true
+		if !tracker.takenIps[ipStr] {
+			tracker.takenIps[ipStr] = true
 			return ip, nil
 		}
 	}
-	return nil, stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", networkManager.subnet)
+	return nil, stacktrace.NewError("Failed to allocate IpAddr on subnet %v - all taken.", tracker.subnet)
 }
 
-// TODO Add a method to free IP addresses
+// Returns a previously-taken IP address back to the pool
+func (tracker *FreeIpAddrTracker) ReleaseIpAddr(ip net.IP) {
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
+
+	ipStr := ip.String()
+	delete(tracker.takenIps, ipStr)
+}

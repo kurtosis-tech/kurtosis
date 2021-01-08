@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -183,13 +184,13 @@ func main() {
 	os.Exit(exitCode)
 }
 
-func createDockerManager() (*commons.DockerManager, error) {
+func createDockerManager() (*docker_manager.DockerManager, error) {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
 	}
 
-	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
@@ -198,7 +199,7 @@ func createDockerManager() (*commons.DockerManager, error) {
 }
 
 func createServiceNetwork(
-		dockerManager *commons.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		dockerNetworkId string,
 		networkSubnetMask string,
 		gatewayIp string,
@@ -235,7 +236,7 @@ func createServiceNetwork(
 }
 
 func createServer(
-		dockerManager *commons.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		testExecutionStatusChan chan test_execution_status.TestExecutionStatus,
 		testSuiteContainerId string,
 		serviceNetwork *service_network.ServiceNetwork) (*http.Server, error) {

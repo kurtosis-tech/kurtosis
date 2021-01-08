@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
@@ -50,7 +50,7 @@ func GetTestSuiteMetadata(
 		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
-	dockerManager, err := commons.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}

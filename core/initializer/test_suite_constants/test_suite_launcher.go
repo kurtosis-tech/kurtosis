@@ -8,7 +8,7 @@ package test_suite_constants
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"net"
 	"strconv"
@@ -55,7 +55,7 @@ Launches a new testsuite container to acquire testsuite metadata
  */
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		context context.Context,
-		dockerManager *commons.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		bridgeNetworkId string,
 		suiteExecutionVolume string,
 		metadataFilepathOnTestsuiteContainer string,
@@ -74,9 +74,9 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		context,
 		launcher.testsuiteImage,
 		bridgeNetworkId,
-		nil,  // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
-		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for testsuite containers
-		commons.DefaultNetworkMode,
+		nil,                                           // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
+		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for testsuite containers
+		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
@@ -97,7 +97,7 @@ Launches a new testsuite container to acquire testsuite metadata
 */
 func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		context context.Context,
-		dockerManager *commons.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		networkId string,
 		suiteExecutionVolume string,
 		testName string,
@@ -119,8 +119,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		launcher.testsuiteImage,
 		networkId,
 		testsuiteContainerIp,
-		map[commons.ContainerCapability]bool{},	// No extra capabilities needed for testsuite container
-		commons.DefaultNetworkMode,
+		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for testsuite container
+		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
