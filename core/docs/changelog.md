@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# 1.5.1
+* Clarify network partitioning docs
+
 # 1.5.0
 * Add .dockerignore file, and a check in `build.sh` to ensure it exists
 * Give users the ability to partition their testnets
