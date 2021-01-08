@@ -120,8 +120,16 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred reading the test suite metadata JSON string from file")
 	}
 
+	logrus.Debugf("Test suite metadata JSON: " + string(jsonBytes))
+
 	var suiteMetadata TestSuiteMetadata
-	json.Unmarshal(jsonBytes, &suiteMetadata)
+	if err := json.Unmarshal(jsonBytes, &suiteMetadata); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the testsuite metadata JSON")
+	}
+
+	if err := validateTestSuiteMetadata(&suiteMetadata); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
+	}
 
 	return &suiteMetadata, nil
 }
