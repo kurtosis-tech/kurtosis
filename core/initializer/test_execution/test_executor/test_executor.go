@@ -251,7 +251,9 @@ func RunTest(
 	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
 	//  still-running container that's exceeded the hard test timeout. Regardless, we want to print these so the user
 	//  gets more information about what's going on, and the user will learn the exact error below
-	banner_printer.PrintContainerLogsWithBanners(*dockerManager, ctx, testRunningContainerId, log, testRunningContainerDescription)
+	// NOTE: We use the background context here because we still want to print container logs even if the context was
+	//  cancelled (like it would if the user pressed Ctrl-C)
+	banner_printer.PrintContainerLogsWithBanners(*dockerManager, context.Background(), testRunningContainerId, log, testRunningContainerDescription)
 
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
