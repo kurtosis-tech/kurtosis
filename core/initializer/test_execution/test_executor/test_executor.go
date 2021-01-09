@@ -97,7 +97,7 @@ Returns:
 */
 func RunTest(
 		executionInstanceId uuid.UUID,
-		ctx context.Context,
+		testSetupContext context.Context,
 		log *logrus.Logger,
 		dockerClient *client.Client,
 		suiteExecutionVolume string,
@@ -119,6 +119,12 @@ func RunTest(
 	}
 	log.Info("Docker manager created successfully")
 
+	// We'll use the test setup context for setting stuff up so that a cancellation (e.g. Ctrl-C)
+	//  will prevent any new things from getting added to Docker. We still want to be able to retrieve exit codes
+	//  and logs after a Ctrl-C though, so we use the background context for doing those tasks (rather than the
+	//  potentially-cancelled setup context).
+	testTeardownContext := context.Background()
+
 	log.Infof("Creating Docker network for test with subnet mask %v...", subnetMask)
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		log,
@@ -136,7 +142,7 @@ func RunTest(
 		time.Now().Format(networkNameTimestampFormat),
 		executionInstanceId.String(),
 		testName)
-	networkId, err := dockerManager.CreateNetwork(ctx, networkName, subnetMask, gatewayIp)
+	networkId, err := dockerManager.CreateNetwork(testSetupContext, networkName, subnetMask, gatewayIp)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
 		//  that the Context was cancelled as expected, but *the Docker engine will still create the networks!!! We'll
@@ -144,7 +150,7 @@ func RunTest(
 		//  networks with our network name and delete them
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
 	}
-	defer removeNetworkDeferredFunc(log, dockerManager, networkId)
+	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId)
 	log.Infof("Docker network %v created successfully", networkId)
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
@@ -179,7 +185,7 @@ func RunTest(
 
 	log.Info("Launching testsuite container to run the test...")
 	testRunningContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
-		ctx,
+		testSetupContext,
 		dockerManager,
 		networkId,
 		suiteExecutionVolume,
@@ -203,7 +209,7 @@ func RunTest(
 		apiContainerLogFilename)
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_docker_consts.ContainerPort))
 	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
-		ctx,
+		testSetupContext,
 		kurtosisApiImageName,
 		networkId,
 		kurtosisApiIp,
@@ -238,12 +244,6 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
 	}
 	log.Infof("Successfully created Kurtosis API container")
-
-	// We used the context passed in to this function for adding services so that a context cancellation (e.g. in
-	//  response to Ctrl-C) would prevent adding anything more to the Docker environment. When we're retrieving the state
-	//  of the various components though, we want to use the background context so that even if the normal context
-	//  was cancelled (e.g. Ctrl-C'd) we still get Kurtosis API state, testsuite logs, etc.
-	testTeardownContext := context.Background()
 
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
@@ -310,11 +310,13 @@ func RunTest(
 Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
 	exited (either normally or with error)
 */
-func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker_manager.DockerManager, networkId string) {
+func removeNetworkDeferredFunc(
+		testTeardownContext context.Context,
+		log *logrus.Logger,
+		dockerManager *docker_manager.DockerManager,
+		networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
-	// We use the background context here because we want to try and tear down the network even if the context the test was running in
-	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
-	if err := dockerManager.RemoveNetwork(context.Background(), networkId, networkTeardownContainerStopTimeout); err != nil {
+	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId, networkTeardownContainerStopTimeout); err != nil {
 		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
