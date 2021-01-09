@@ -239,10 +239,16 @@ func RunTest(
 	}
 	log.Infof("Successfully created Kurtosis API container")
 
+	// We used the context passed in to this function for adding services so that a context cancellation (e.g. in
+	//  response to Ctrl-C) would prevent adding anything more to the Docker environment. When we're retrieving the state
+	//  of the various components though, we want to use the background context so that even if the normal context
+	//  was cancelled (e.g. Ctrl-C'd) we still get Kurtosis API state, testsuite logs, etc.
+	testTeardownContext := context.Background()
+
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
 	kurtosisApiExitCode, err := dockerManager.WaitForExit(
-		context.Background(),
+		testTeardownContext,
 		kurtosisApiContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
@@ -251,9 +257,7 @@ func RunTest(
 	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
 	//  still-running container that's exceeded the hard test timeout. Regardless, we want to print these so the user
 	//  gets more information about what's going on, and the user will learn the exact error below
-	// NOTE: We use the background context here because we still want to print container logs even if the context was
-	//  cancelled (like it would if the user pressed Ctrl-C)
-	banner_printer.PrintContainerLogsWithBanners(*dockerManager, context.Background(), testRunningContainerId, log, testRunningContainerDescription)
+	banner_printer.PrintContainerLogsWithBanners(*dockerManager, testTeardownContext, testRunningContainerId, log, testRunningContainerDescription)
 
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
@@ -292,7 +296,7 @@ func RunTest(
 
 	// The test suite container will already have stopped, so now we get the exit code
 	testSuiteExitCode, err := dockerManager.WaitForExit(
-		context.Background(),
+		testTeardownContext,
 		testRunningContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
