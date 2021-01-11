@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.6.0
 * Allow users to mount external files-containing artifacts into Kurtosis services
 
 # 1.5.1
