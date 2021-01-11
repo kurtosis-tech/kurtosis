@@ -60,8 +60,9 @@ type containerInfo struct {
 	ipAddr net.IP
 }
 
-/**
-This is the in-memory representation of the service network that the API container will manipulate
+/*
+This is the in-memory representation of the service network that the API container will manipulate. To make
+	any changes to the test network, this struct must be used.
  */
 type ServiceNetwork struct {
 	// When the network is destroyed, all requests will fail
@@ -174,7 +175,8 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string) (net.IP, error) {
+		testVolumeMountDirpath string,
+		filesArtifactMountDirpaths map[string]string) (net.IP, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -250,13 +252,15 @@ func (network *ServiceNetwork) AddServiceInPartition(
 
 	serviceContainerId, err := network.userServiceLauncher.Launch(
 		context,
+		serviceId,
 		serviceIp,
 		imageName,
 		usedPorts,
 		ipPlaceholder,
 		startCmd,
 		dockerEnvVars,
-		testVolumeMountDirpath)
+		testVolumeMountDirpath,
+		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -266,6 +270,9 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
+		// TODO This uses up the user's requested IPs with a long-running container that's not one of their
+		//  services!!! What we really want to do is, if network partitioning is enabled, double the size
+		//  of their network to make space for the sidecars
 		sidecarIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
 			return nil, stacktrace.Propagate(
