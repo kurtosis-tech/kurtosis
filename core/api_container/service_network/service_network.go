@@ -60,8 +60,9 @@ type containerInfo struct {
 	ipAddr net.IP
 }
 
-/**
-This is the in-memory representation of the service network that the API container will manipulate
+/*
+This is the in-memory representation of the service network that the API container will manipulate. To make
+	any changes to the test network, this struct must be used.
  */
 type ServiceNetwork struct {
 	// When the network is destroyed, all requests will fail

@@ -1,6 +1,9 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.5.1
+* Clarify network partitioning docs
+
+# 1.5.0
 * Add .dockerignore file, and a check in `build.sh` to ensure it exists
 * Give users the ability to partition their testnets
 * Fixed bug where the timeout being passed in to the `RemoveService` call wasn't being used
@@ -10,6 +13,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Add docs on how to turn on network partitioning for a test
 * Resolve the brief race condition that could happen when updating iptables, in between flushing the iptables contents and adding the new rules
 * Tighten up error-checking when deserializing test suite metadata
+* Implement network partitioning PR fixes
 
 # 1.4.5
 * Use `alpine` base for the API image & initializer image rather than the `docker` Docker-in-Docker image (which we thought we needed at the start, but don't actually); this saves downloading 530 MB _per CI build_, and so should significantly speed up CI times
