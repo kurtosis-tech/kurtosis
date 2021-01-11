@@ -11,12 +11,22 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/files_artifact_expander_consts"
 	"github.com/palantir/stacktrace"
 )
 
 const (
-	successExitCode = 0
+	// Docker image that will be used to launch the container that will expand the files artifact
+	//  into a Docker volume
+	dockerImage = "alpine:3.12"
+
+	// Dirpath on the artifact expander container where the suite execution volume (which contains the artifacts)
+	//  will be mounted
+	suiteExecutionVolumeMountDirpath = "/suite-execution"
+
+	// Dirpath on the artifact expander container where the destination volume will be mounted
+	destinationVolumeMountDirpath = "/dest"
+
+	expanderContainerSuccessExitCode = 0
 )
 
 /*
@@ -41,7 +51,7 @@ func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *do
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Context,
 		artifactIdsToVolumeNames map[string]string) error {
 	// Representation of the cache *on the expander image*
-	expanderContainerArtifactCache := artifact_cache.NewArtifactCache(files_artifact_expander_consts.SuiteExecutionVolumeMountDirpath)
+	expanderContainerArtifactCache := artifact_cache.NewArtifactCache(suiteExecutionVolumeMountDirpath)
 
 	// TODO parallelize this to increase speed
 	for artifactId, volumeName := range artifactIdsToVolumeNames {
@@ -51,11 +61,11 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 
 		artifactFilepathOnExpanderContainer := expanderContainerArtifactCache.GetArtifactFilepath(artifactId)
 
-		containerCmd := files_artifact_expander_consts.GetExtractionCommand(artifactFilepathOnExpanderContainer)
+		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
 
 		volumeMounts := map[string]string{
-			expander.suiteExecutionVolumeName: files_artifact_expander_consts.SuiteExecutionVolumeMountDirpath,
-			volumeName:                        files_artifact_expander_consts.DestinationVolumeMountDirpath,
+			expander.suiteExecutionVolumeName: suiteExecutionVolumeMountDirpath,
+			volumeName:                        destinationVolumeMountDirpath,
 		}
 
 		// TODO This silently (temporarily) uses up one of the user's requested IP addresses with a container
@@ -69,7 +79,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 
 		containerId, err := expander.dockerManager.CreateAndStartContainer(
 			ctx,
-			files_artifact_expander_consts.DockerImage,
+			dockerImage,
 			expander.testNetworkId,
 			containerIp,
 			map[docker_manager.ContainerCapability]bool{},
@@ -88,10 +98,10 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred waiting for the files artifact-expanding Docker container to exit")
 		}
-		if exitCode != successExitCode {
+		if exitCode != expanderContainerSuccessExitCode {
 			return stacktrace.NewError(
 				"The files artifact-expanding Docker container exited with non-%v exit code: %v",
-				successExitCode,
+				expanderContainerSuccessExitCode,
 				exitCode)
 		}
 
@@ -99,6 +109,18 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 	}
 
 	return nil
+}
+
+// Image-specific generator of the command that should be run to extract the artifact at the given filepath
+//  to the destination
+func getExtractionCommand(artifactFilepath string) (dockerRunCmd []string) {
+	return []string{
+		"tar",
+		"-xzvf",
+		artifactFilepath,
+		"-C",
+		destinationVolumeMountDirpath,
+	}
 }
 
 
