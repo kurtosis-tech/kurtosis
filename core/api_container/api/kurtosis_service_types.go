@@ -24,9 +24,14 @@ type AddServiceArgs struct {
 	// It might even support ranges (e.g. "90:100/tcp"), though this is untested as of 2020-12-08
 	UsedPorts             []string          `json:"usedPorts"`
 
-	StartCmd              []string          `json:"startCommand"`
-	DockerEnvironmentVars map[string]string `json:"dockerEnvironmentVars"`
-	TestVolumeMountDirpath string			`json:"testVolumeMountDirpath"`
+	StartCmd               []string          `json:"startCommand"`
+	DockerEnvironmentVars  map[string]string `json:"dockerEnvironmentVars"`
+	TestVolumeMountDirpath string            `json:"testVolumeMountDirpath"`
+
+	// Declares artifacts containing compressed files which should be unzipped and then
+	//  mounted at the given location for the service, in mapping: artifactID -> mountpoint
+	// The ID of the artifact will correspond to the artifacts declared in the test metadata
+	FilesArtifactMountDirpaths map[string]string	`json:"filesArtifactMountDirpaths"`
 }
 
 type AddServiceResponse struct {

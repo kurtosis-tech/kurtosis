@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-type TestMetadata struct {
-	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
-}
-
 // Simple package struct to contain information about a test suite
 type TestSuiteMetadata struct {
 	// How many bits to give each test subnetwork
@@ -23,7 +19,7 @@ type TestSuiteMetadata struct {
 }
 
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
-func validateTestSuiteMetadata(suiteMetadata *TestSuiteMetadata) error {
+func validateTestSuiteMetadata(suiteMetadata TestSuiteMetadata) error {
 	if suiteMetadata.NetworkWidthBits == 0 {
 		return stacktrace.NewError("Test suite metdata has a network width bits == 0")
 	}
@@ -33,9 +29,12 @@ func validateTestSuiteMetadata(suiteMetadata *TestSuiteMetadata) error {
 	if len(suiteMetadata.TestMetadata) == 0 {
 		return stacktrace.NewError("Test suite doesn't declare any tests")
 	}
-	for testName, _ := range suiteMetadata.TestMetadata {
+	for testName, testMetadata := range suiteMetadata.TestMetadata {
 		if len(strings.TrimSpace(testName)) == 0 {
 			return stacktrace.NewError("Test name '%v' is empty", testName)
+		}
+		if err := validateTestMetadata(testMetadata); err != nil {
+			return stacktrace.Propagate(err, "An error occurred validating metadata for test '%v'", testName)
 		}
 	}
 	return nil

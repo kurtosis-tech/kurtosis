@@ -175,7 +175,8 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string) (net.IP, error) {
+		testVolumeMountDirpath string,
+		filesArtifactMountDirpaths map[string]string) (net.IP, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -251,13 +252,15 @@ func (network *ServiceNetwork) AddServiceInPartition(
 
 	serviceContainerId, err := network.userServiceLauncher.Launch(
 		context,
+		serviceId,
 		serviceIp,
 		imageName,
 		usedPorts,
 		ipPlaceholder,
 		startCmd,
 		dockerEnvVars,
-		testVolumeMountDirpath)
+		testVolumeMountDirpath,
+		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -267,6 +270,9 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
+		// TODO This uses up the user's requested IPs with a long-running container that's not one of their
+		//  services!!! What we really want to do is, if network partitioning is enabled, double the size
+		//  of their network to make space for the sidecars
 		sidecarIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
 			return nil, stacktrace.Propagate(
