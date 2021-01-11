@@ -53,7 +53,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Con
 	// Representation of the cache *on the expander image*
 	expanderContainerArtifactCache := artifact_cache.NewArtifactCache(suiteExecutionVolumeMountDirpath)
 
-	// TODO parallelize this to increase speed
+	// TODO PERF: parallelize this to increase speed
 	for artifactId, volumeName := range artifactIdsToVolumeNames {
 		if err := expander.dockerManager.CreateVolume(ctx, volumeName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", volumeName)

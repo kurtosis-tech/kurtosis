@@ -21,6 +21,7 @@ const (
 	artifactCacheDirname = "artifact-cache"
 )
 
+// TODO absorb this class into a class abstracting away all access with the suite execution volume
 /*
 An interface for interacting with the artifact cache directory that exists inside the suite execution volume,
 	and is a) populated by the initializer and b) accessed by the files artifact expander
@@ -40,13 +41,13 @@ func NewArtifactCache(suiteExecutionVolumeMountDirpath string) *ArtifactCache {
 	return &ArtifactCache{artifactCacheDirpath: artifactCacheDirpath}
 }
 
-func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]string) error {
-	if _, statErr := os.Stat(downloader.artifactCacheDirpath); os.IsNotExist(statErr) {
-		if mkdirErr := os.Mkdir(downloader.artifactCacheDirpath, os.ModeDir); mkdirErr != nil {
+func (cache ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]string) error {
+	if _, statErr := os.Stat(cache.artifactCacheDirpath); os.IsNotExist(statErr) {
+		if mkdirErr := os.Mkdir(cache.artifactCacheDirpath, os.ModeDir); mkdirErr != nil {
 			return stacktrace.Propagate(
 				mkdirErr,
-				"An error occurred creating the artifact cache directory '%v'",
-				downloader.artifactCacheDirpath)
+				"The artifact cache directory '%v' doesn't exist, and an error occurred creating it",
+				cache.artifactCacheDirpath)
 		}
 	}
 
@@ -55,9 +56,9 @@ func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]st
 		logrus.Debugf("- %v:%v", artifactId, artifactUrl)
 	}
 
-	// TODO Download in parallel to increase instantiation speed
+	// TODO PERF: Download in parallel to increase instantiation speed
 	for artifactId, artifactUrl := range artifactUrlsById {
-		destFilepath := downloader.GetArtifactFilepath(artifactId)
+		destFilepath := cache.GetArtifactFilepath(artifactId)
 		if err := downloadArtifactToFilepath(artifactUrl, destFilepath); err != nil {
 			return stacktrace.Propagate(
 				err,
@@ -69,8 +70,8 @@ func (downloader ArtifactCache) DownloadArtifacts(artifactUrlsById map[string]st
 	return nil
 }
 
-func (downloader ArtifactCache) GetArtifactFilepath(artifactId string) string {
-	return path.Join(downloader.artifactCacheDirpath, artifactId)
+func (cache ArtifactCache) GetArtifactFilepath(artifactId string) string {
+	return path.Join(cache.artifactCacheDirpath, artifactId)
 }
 
 func downloadArtifactToFilepath(url string, destFilepath string) error {

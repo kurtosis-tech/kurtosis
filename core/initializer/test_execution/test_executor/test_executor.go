@@ -316,7 +316,7 @@ func buildApiContainerEnvVarsMap(
 		suiteExecutionVolumeName string) map[string]string {
 	return map[string]string{
 		api_container_env_vars.ApiContainerIpAddrEnvVar:       apiContainerIp.String(),
-		// TODO capture the API container's logs ONLY if the user is an admin, so we don't leak internals
+		// TODO IP: capture the API container's logs ONLY if the user is an admin, so we don't leak internals
 		//   about how our API container works to anyone trying to reverse-engineer Kurtosis
 		api_container_env_vars.ApiLogFilepathEnvVar:           logFilepathOnContainer,
 		api_container_env_vars.ExecutionInstanceIdEnvVar: executionInstanceId.String(),
