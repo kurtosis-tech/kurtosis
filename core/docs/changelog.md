@@ -1,6 +1,7 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
 # TBD
+* Switch to using the background context for pulling test suite container logs, so that we get the logs regardless of context cancellation
 * Use `KillContainer`, rather than `StopContainer`, on network remove (no point waiting for graceful shutdown)
 
 # 1.6.0
