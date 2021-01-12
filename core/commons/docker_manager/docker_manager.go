@@ -41,6 +41,8 @@ const (
 	//  at some point in the future
 	dockerNetworkDriver = "bridge"
 
+	// Per https://docs.docker.com/engine/reference/commandline/kill/ , this seems to mean "the default
+	//  kill signal"
 	dockerKillSignal = "KILL"
 
 	// During network removal, how long to wait after issuing the kill command to the containers and before

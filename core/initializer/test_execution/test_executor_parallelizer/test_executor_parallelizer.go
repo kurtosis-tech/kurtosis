@@ -70,6 +70,7 @@ func RunInParallelAndPrintResults(
 		if !ok { return }
 		fmt.Printf("\nReceived signal: %v. Cleaning up tests and exiting gracefully...\n", sig)
 		cancelFunc()
+		// TODO send message to all the parallel threads that they should tear down immediately
 	}()
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
