@@ -28,15 +28,14 @@ const (
 )
 
 type KurtosisService struct {
-	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
-	// This is expected to be nil until the "register test suite container" endpoint is called, which should be called
-	//  exactly once
-	testSuiteContainerId string
-
 	dockerManager *docker_manager.DockerManager
 
 	serviceNetwork *service_network.ServiceNetwork
 
+	// The Docker container ID of the test suite that will be making calls against this Kurtosis API
+	// This is expected to be nil until the "register test suite container" endpoint is called, which should be called
+	//  exactly once
+	testSuiteContainerId string
 	// A value will be pushed to this channel when the status of the execution of a test changes, e.g. via the test suite
 	//  registering that execution has started, or the timeout has been hit, etc.
 	testExecutionStatusChan chan test_execution_status.TestExecutionStatus
@@ -52,9 +51,9 @@ func NewKurtosisService(
 		serviceNetwork *service_network.ServiceNetwork) *KurtosisService {
 
 	return &KurtosisService{
-		testSuiteContainerId:    testSuiteContainerId,
 		dockerManager:           dockerManager,
 		serviceNetwork:          serviceNetwork,
+		testSuiteContainerId:    testSuiteContainerId,
 		testExecutionStatusChan: testExecutionStatusChan,
 		testExecutionRegistered: false,
 	}
@@ -113,7 +112,8 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 		ipPlaceholderStr,
 		args.StartCmd,
 		args.DockerEnvironmentVars,
-		args.TestVolumeMountDirpath)
+		args.TestVolumeMountDirpath,
+		args.FilesArtifactMountDirpaths)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating service '%v' inside partition '%v'", serviceId, partitionId)
 	}

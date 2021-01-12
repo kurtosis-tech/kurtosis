@@ -29,11 +29,13 @@ COPY --from=builder /build/kurtosis-api-server .
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
     --api-container-ip=\"${API_CONTAINER_IP}\" \
+    --execution-instance-id=\"${EXECUTION_INSTANCE_ID}\" \
     --gateway-ip=\"${GATEWAY_IP}\" \
     --is-partitioning-enabled=\"${IS_PARTITIONING_ENABLED}\" \
     --log-level=\"${LOG_LEVEL}\" \
     --network-id=\"${NETWORK_ID}\" \
     --subnet-mask=\"${SUBNET_MASK}\" \
+    --test-name=\"${TEST_NAME}\" \
     --test-suite-container-id=\"${TEST_SUITE_CONTAINER_ID}\" \
     --test-suite-container-ip=\"${TEST_SUITE_CONTAINER_IP}\" \
     --test-volume=\"${TEST_VOLUME}\" \
