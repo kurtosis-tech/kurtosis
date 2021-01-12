@@ -45,10 +45,6 @@ const (
 	// The name of the directory inside a test execution directory where service file IO will be stored
 	servicesDirname = "services"
 
-	// When we're tearing down a network after a test (either after normal exit or test timeout), this is the maximum
-	//  time we'll wait for each container to stop
-	networkTeardownContainerStopTimeout = 10 * time.Second
-
 	dockerSocket = "/var/run/docker.sock"
 
 	testRunningContainerDescription = "Test-Running Container"
@@ -341,7 +337,7 @@ func removeNetworkDeferredFunc(log *logrus.Logger, dockerManager *docker_manager
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
 	// We use the background context here because we want to try and tear down the network even if the context the test was running in
 	//  was cancelled. This might not be right - the right way to do it might be to pipe a separate context for the network teardown to here!
-	if err := dockerManager.RemoveNetwork(context.Background(), networkId, networkTeardownContainerStopTimeout); err != nil {
+	if err := dockerManager.RemoveNetwork(context.Background(), networkId); err != nil {
 		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")

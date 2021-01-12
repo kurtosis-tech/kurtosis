@@ -39,7 +39,13 @@ WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING 
 const (
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
-	DOCKER_NETWORK_DRIVER = "bridge"
+	dockerNetworkDriver = "bridge"
+
+	dockerKillSignal = "KILL"
+
+	// During network removal, how long to wait after issuing the kill command to the containers and before
+	//  trying to remove the network (which will fail if there are running containers)
+	networkTeardownWaitTime = 2 * time.Second
 )
 
 /*
@@ -94,7 +100,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 		Gateway: gatewayIP.String(),
 	}}
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
-		Driver: DOCKER_NETWORK_DRIVER,
+		Driver: dockerNetworkDriver,
 		IPAM: &network.IPAM{
 			Config: ipamConfig,
 		},
@@ -123,15 +129,14 @@ func (manager DockerManager) GetNetworkIdsByName(context context.Context, name s
 
 
 /*
-Removes the Docker network with the given id, attempting to stop all containers connected to the network first (because
+Removes the Docker network with the given id, killing all containers connected to the network first (because
 	otherwise, the remove call will fail)
 
 Args:
 	context: The Context that this request is running in (useful for cancellation)
 	networkId: ID of Docker network to remove
-	containerStopTimeout: How long to wait for containers to stop
  */
-func (manager DockerManager) RemoveNetwork(context context.Context, networkId string, containerStopTimeout time.Duration) error {
+func (manager DockerManager) RemoveNetwork(context context.Context, networkId string) error {
 
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
 	if err != nil {
@@ -139,11 +144,13 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkId st
 	}
 
 	for containerId, endpointInfo := range inspectResponse.Containers {
-		manager.log.Debugf("Stopping container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
-		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
-		}
+		manager.log.Debugf("Killing container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
+		// We ignore any errors because the only real indicator of an error is if the network remove call fails
+		//  and it will fail if the containers attached to the network aren't stopped
+		_ = manager.KillContainer(context, containerId)
 	}
+
+	time.Sleep(networkTeardownWaitTime)
 
 	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with ID %v", networkId)
@@ -301,7 +308,7 @@ Args:
 	containerId: ID of Docker container to kill
  */
 func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
-	err := manager.dockerClient.ContainerKill(context, containerId, "KILL")
+	err := manager.dockerClient.ContainerKill(context, containerId, dockerKillSignal)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
