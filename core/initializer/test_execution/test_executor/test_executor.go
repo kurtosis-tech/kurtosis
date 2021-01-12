@@ -45,10 +45,6 @@ const (
 	// The name of the directory inside a test execution directory where service file IO will be stored
 	servicesDirname = "services"
 
-	// When we're tearing down a network after a test (either after normal exit or test timeout), this is the maximum
-	//  time we'll wait for each container to stop
-	networkTeardownContainerStopTimeout = 10 * time.Second
-
 	dockerSocket = "/var/run/docker.sock"
 
 	testRunningContainerDescription = "Test-Running Container"
@@ -349,7 +345,7 @@ func removeNetworkDeferredFunc(
 		dockerManager *docker_manager.DockerManager,
 		networkId string) {
 	log.Infof("Attempting to remove Docker network with id %v...", networkId)
-	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId, networkTeardownContainerStopTimeout); err != nil {
+	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
 		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
