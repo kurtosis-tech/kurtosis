@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+* Switch to using the background context for pulling test suite container logs, so that we get the logs regardless of context cancellation
+
 # 1.6.0
 * Allow users to mount external files-containing artifacts into Kurtosis services
 
