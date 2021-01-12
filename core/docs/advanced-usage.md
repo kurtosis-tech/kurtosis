@@ -19,4 +19,4 @@ External files can be mounted inside a Docker container running inside a Kurtosi
 1. Declare the URLs of the artifacts that your test will need in its `TestConfiguration` object, mapped to IDs that you'll use to identify the artifacts
 1. In the `getFilesArtifactMountpoints` function of your `DockerContainerInitializer` implementation, use the artifact IDs to declare where to mount the files inside the artifacts
 
-For an example test using this functionality, see TODO.
+For an example test using this functionality, see [here](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/files_artifact_mounting_test/files_artifact_mounting_test_.go).
