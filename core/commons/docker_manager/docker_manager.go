@@ -140,6 +140,7 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkId st
 
 	for containerId, endpointInfo := range inspectResponse.Containers {
 		manager.log.Debugf("Stopping container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
+		// TODO Switch to a kill call
 		if err := manager.dockerClient.ContainerStop(context, containerId, &containerStopTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping container with ID %v, which prevented the network from being removed", containerId)
 		}
