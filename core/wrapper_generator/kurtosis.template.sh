@@ -105,12 +105,12 @@ fi{{end}}
 #  used, we need to pull the latest API & initializer images
 echo "Pulling latest versions of API & initializer image..."
 if ! docker pull "${INITIALIZER_IMAGE}"; then
-    echo "WARN: An error occurred pulling the latest version of the initializer image (${INITIALIZER_IMAGE}); you may be running an out-of-date version"
+    echo "WARN: An error occurred pulling the latest version of the initializer image (${INITIALIZER_IMAGE}); you may be running an out-of-date version" >&2
 else
     echo "Successfully pulled latest version of initializer image"
 fi
 if ! docker pull "${API_IMAGE}"; then
-    echo "WARN: An error occurred pulling the latest version of the API image (${API_IMAGE}); you may be running an out-of-date version"
+    echo "WARN: An error occurred pulling the latest version of the API image (${API_IMAGE}); you may be running an out-of-date version" >&2
 else
     echo "Successfully pulled latest version of API image"
 fi
