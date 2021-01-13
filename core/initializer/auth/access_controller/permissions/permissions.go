@@ -6,6 +6,7 @@
 package permissions
 
 import (
+	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -51,11 +52,12 @@ func FromPermissionsSet(permissionsSet map[string]bool) *Permissions {
 
 func (perms *Permissions) CanExecuteSuite(numTestsInSuite int) error {
 	if numTestsInSuite > perms.maxNumTestsAllowed {
-		return stacktrace.NewError("Your current Kurtosis license only allows for testsuites with %v tests max" +
-			"and you're trying to run a testsuite with %v tests; either upgrade your Kurtosis license by visiting" +
-			"kurtosistech.com or reduce the number of tests in your testsuite",
+		return stacktrace.NewError("Your current Kurtosis license only allows for testsuites with %v tests " +
+			"and you're trying to run a testsuite with %v tests; either upgrade your Kurtosis license by emailing " +
+			"%v or reduce the number of tests in your testsuite",
 			perms.maxNumTestsAllowed,
-			numTestsInSuite)
+			numTestsInSuite,
+			user_support_constants.InfoEmail)
 	}
 	return nil
 }
