@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.6.3
 * Generate kurtosis.sh to always try and pull the latest version of the API & initializer containers
 
 # 1.6.2
