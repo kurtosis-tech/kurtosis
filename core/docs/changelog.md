@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.6.2
 * Prevent Kurtosis from running when the user is restricted to the free trial and has too many tests in their testsuite
 
 # 1.6.1
