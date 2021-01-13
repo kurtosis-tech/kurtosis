@@ -11,6 +11,7 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
@@ -28,12 +29,16 @@ const (
 	SUBNET_START_ADDR = "172.23.0.0"
 
 	BITS_IN_IP4_ADDR = 32
+
+	// Extracted as a separate variable for testing
+	suiteExecutionPermissionDeniedErrStr = "Permission denied to execute the test suite"
 )
 
 /*
 Runs the tests with the given names and prints the results to STDOUT. If no tests are specifically defined, all tests are run.
 
 Args:
+	permissions: The permissions the user is running the test suite with
 	dockerClient: Docker client to use when interacting with the Docker engine
 	suiteExecutionVolume: The name of the Docker volume that will be used for all file I/O during test suite execution
 	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
@@ -55,6 +60,7 @@ Returns:
 		being retrieved. If this is non-nil, the allTestsPassed value is undefined!
  */
 func RunTests(
+		permissions *permissions.Permissions,
 		dockerClient *client.Client,
 		suiteExecutionVolume string,
 		suiteExecutionVolumeMountDirpath string,
@@ -65,6 +71,13 @@ func RunTests(
 		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (allTestsPassed bool, executionErr error) {
+	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
+	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
+		return false, stacktrace.Propagate(
+			err,
+			suiteExecutionPermissionDeniedErrStr)
+	}
+
 	// If the user doesn't specify any test names to run, do all of them
 	if len(testNamesToRun) == 0 {
 		testNamesToRun = map[string]bool{}

@@ -260,25 +260,11 @@ func main() {
 		os.Exit(successExitCode)
 	}
 
-	// TODO Write a test to ensure that main.go does correctly block this!!!!!!!
-	numTestsInSuite := len(suiteMetadata.TestMetadata)
-	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
-		logrus.Errorf("An error occurred verifying the appropriate permissions exist to run the testsuite: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-	// Split user-input string into actual candidate test names
-	testNamesArgStr := strings.TrimSpace(parsedFlags.GetString(testNamesArg))
-	testNamesToRun := map[string]bool{}
-	if len(testNamesArgStr) > 0 {
-		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
-		for _, name := range testNamesList {
-			testNamesToRun[name] = true
-		}
-	}
+	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
+		permissions,
 		dockerClient,
 		parsedFlags.GetString(suiteExecutionVolumeArg),
 		initializerContainerSuiteExVolMountDirpath,
@@ -357,4 +343,17 @@ func printTestsInSuite(suiteMetadata *test_suite_metadata_acquirer.TestSuiteMeta
 		// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
 		fmt.Println("- " + name)
 	}
+}
+
+// Split user-input string into actual candidate test names
+func splitTestsStrIntoTestsSet(testsStr string) map[string]bool {
+	testNamesArgStr := strings.TrimSpace(testsStr)
+	testNamesToRun := map[string]bool{}
+	if len(testNamesArgStr) > 0 {
+		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
+		for _, name := range testNamesList {
+			testNamesToRun[name] = true
+		}
+	}
+	return testNamesToRun
 }
