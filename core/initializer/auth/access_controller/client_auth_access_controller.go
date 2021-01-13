@@ -48,6 +48,7 @@ func (accessController ClientAuthAccessController) Authorize() error {
 		return stacktrace.Propagate(err, "An error occurred parsing and validating the token claims")
 	}
 
+
 	if err := verifyExecutionPerms(claims); err != nil {
 		return stacktrace.Propagate(err, "An error occurred verifying execution permissions")
 	}

@@ -8,13 +8,13 @@ package auth0_constants
 const (
 	Audience = "https://api.kurtosistech.com/login"
 	Issuer   = "https://dev-lswjao-7.us.auth0.com/"
-
-	ExecutionPermission = "execute:kurtosis-core"
 )
 
 // "Set" of valid scopes
 var ValidScopes = map[string]bool{
 	ExecutionPermission: true,
+	RestrictedTestExecutionPermission: true,
+	UnlimitedTestExecutionPermission: true,
 }
 
 /*
