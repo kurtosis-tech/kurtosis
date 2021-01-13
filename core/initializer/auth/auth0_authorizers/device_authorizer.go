@@ -26,7 +26,7 @@ import (
 		1. Request device code (Device Flow): Request a device code that the user can use to authorize the device.
 		2. Request device activation (Device Flow): Request that the user authorize the device using their laptop or smartphone.
 		3. Request tokens (Device Flow): Poll the token endpoint to request a token.
-		4. Authorize user (Browser Flow): The user authorizes the device, so the device can receive tokens.
+		4. User authentication (Browser Flow): The user authenticates and authorizes the device, so the device can receive tokens.
 		5. Receive tokens (Device Flow): After the user successfully authorizes the device, receive tokens.
  */
 

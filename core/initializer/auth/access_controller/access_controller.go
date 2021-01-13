@@ -7,7 +7,7 @@ package access_controller
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_token_claims"
 	"github.com/palantir/stacktrace"
 	"time"
@@ -28,8 +28,10 @@ const (
 	keyIdTokenHeaderKey = "kid"
 )
 
+// NOTE: If we wanted, we could also refactor this into "abstract class" syntax, where it contains a couple
+//  a copule interfaces that are responsible for each little bit of functionality
 type AccessController interface {
-	Authorize() error
+	Authenticate() (*permissions.Permissions, error)
 }
 
 
@@ -98,14 +100,11 @@ func parseTokenClaims(rsaPubKeysPem map[string]string, tokenStr string) (*auth0_
 	return claims, nil
 }
 
-func verifyExecutionPerms(claims *auth0_token_claims.Auth0TokenClaims) error {
-	for _, perm := range claims.Permissions {
-		if perm == auth0_constants.ExecutionPermission {
-			return nil
-		}
+func parsePermissionsFromClaims(claims *auth0_token_claims.Auth0TokenClaims) (*permissions.Permissions) {
+	permsSet := map[string]bool{}
+	for _, permStr := range claims.Permissions {
+		permsSet[permStr] = true
 	}
-	return stacktrace.NewError(
-		"Kurtosis requires permission '%v' to run but token has perms '%v'; this is most likely due to an expired Kurtosis license",
-		auth0_constants.ExecutionPermission,
-		claims.Permissions)
+	result := permissions.FromPermissionsSet(permsSet)
+	return result
 }

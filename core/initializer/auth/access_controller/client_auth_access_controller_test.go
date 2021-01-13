@@ -6,6 +6,7 @@
 package access_controller
 
 import (
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/test_mocks"
 	"testing"
@@ -15,7 +16,8 @@ func Test_UnableToAuth(t *testing.T) {
 	errorThrowingAuthorizer := test_mocks.NewMockClientCredentialsAuthorizer(true, "")
 	accessController := NewClientAuthAccessController(test_mocks.TestAuth0PublicKeys, errorThrowingAuthorizer, "id", "secret")
 
-	if err := accessController.Authorize(); err == nil {
+	_, err := accessController.Authenticate()
+	if err == nil {
 		t.Fatal("Expected an error due to an error with the authorizer, but access was permitted")
 	}
 }
@@ -66,7 +68,7 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token signed by the unknown private key: %v", err)
@@ -80,58 +82,9 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 		"id",
 		"secret",
 	)
-	err = accessController.Authorize()
+	_, err = accessController.Authenticate()
 	if err == nil {
 		t.Fatal("Expected an error due to a token signed by a key we don't recognize, but no error was thrown")
 	}
 }
 
-func Test_AuthButMissingPerms(t *testing.T) {
-	token, err := test_mocks.CreateTestToken(
-		test_mocks.TestAuth0PrivateKey,
-		auth0_constants.Audience,
-		auth0_constants.Issuer,
-		3600,
-		[]string{},
-	)
-	if err != nil {
-		t.Fatalf("An error occurred getting a test token: %v", err)
-	}
-	clientCredsAuthorizer := test_mocks.NewMockClientCredentialsAuthorizer(false, token)
-
-	accessController := NewClientAuthAccessController(
-		test_mocks.TestAuth0PublicKeys,
-		clientCredsAuthorizer,
-		"id",
-		"secret",
-	)
-	err = accessController.Authorize()
-	if err == nil {
-		t.Fatal("Expected an error due to a token without the proper permissions, but no error was thrown")
-	}
-}
-
-func Test_CorrectPerms(t *testing.T) {
-	token, err := test_mocks.CreateTestToken(
-		test_mocks.TestAuth0PrivateKey,
-		auth0_constants.Audience,
-		auth0_constants.Issuer,
-		3600,
-		[]string{auth0_constants.ExecutionPermission},
-	)
-	if err != nil {
-		t.Fatalf("An error occurred getting a test token: %v", err)
-	}
-	clientCredsAuthorizer := test_mocks.NewMockClientCredentialsAuthorizer(false, token)
-
-	accessController := NewClientAuthAccessController(
-		test_mocks.TestAuth0PublicKeys,
-		clientCredsAuthorizer,
-		"id",
-		"secret",
-	)
-	err = accessController.Authorize()
-	if err != nil {
-		t.Fatalf("Expected a successful authorization, but an error was thrown: %v", err)
-	}
-}

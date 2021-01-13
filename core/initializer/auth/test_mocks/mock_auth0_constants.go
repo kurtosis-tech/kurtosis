@@ -83,11 +83,11 @@ ba2/Jl+DFf+wRk0oYEt+Gw7KF6H4yS5MOmLyqSPijXdEdej4u68=
 
 // ================= HELPER FUNCTIONS ========================================================
 func CreateTestToken(
-	rsaPrivateKeyPem string,
-	audience string,
-	issuer string,
-	expiresInSeconds int,
-	permissions []string) (string, error) {
+		rsaPrivateKeyPem string,
+		audience string,
+		issuer string,
+		expiresInSeconds int,
+		permissions []string) (string, error) {
 	now := time.Now()
 	expiration := now.Add(time.Second * time.Duration(expiresInSeconds))
 	claims := auth0_token_claims.Auth0TokenClaims{

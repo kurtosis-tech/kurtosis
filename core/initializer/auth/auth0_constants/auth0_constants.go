@@ -10,13 +10,6 @@ const (
 	Issuer   = "https://dev-lswjao-7.us.auth0.com/"
 )
 
-// "Set" of valid scopes
-var ValidScopes = map[string]bool{
-	ExecutionPermission: true,
-	RestrictedTestExecutionPermission: true,
-	UnlimitedTestExecutionPermission: true,
-}
-
 /*
 These come from https://dev-lswjao-7.us.auth0.com/.well-known/jwks.json
 The reason they're hardcoded is because the user needs offline access, which means

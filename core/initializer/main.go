@@ -212,9 +212,12 @@ func main() {
 			auth0_authorizers.NewStandardDeviceAuthorizer(),
 		)
 	}
-	if err := accessController.Authorize(); err != nil {
+
+	// TODO Write a test to ensure that main.go does correctly block this!!!!!!!
+	permissions, err := accessController.Authenticate()
+	if err != nil {
 		logrus.Fatalf(
-			"The following error occurred when authenticating and authorizing your Kurtosis license: %v",
+			"The following error occurred when authenticating this Kurtosis instance: %v",
 			err)
 		os.Exit(failureExitCode)
 	}
@@ -268,6 +271,12 @@ func main() {
 		metadataAcquisitionHostPortBinding)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	numTestsInSuite := len(suiteMetadata.TestMetadata)
+	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
+		logrus.Errorf("An error occurred verifying the appropriate permissions exist to run the testsuite: %v", err)
 		os.Exit(failureExitCode)
 	}
 
