@@ -60,7 +60,7 @@ while [ ${#} -gt 0 ]; do
             ;;
         {{end}}
         -*)
-            echo "Error: Unrecognized flag '${key}'" >&2
+            echo "ERROR: Unrecognized flag '${key}'" >&2
             exit 1
             ;;
         *)
@@ -85,12 +85,12 @@ fi
 #                                    Arg Validation
 # ============================================================================================
 if [ "${#}" -ne {{.NumPositionalArgs}} ]; then
-    echo "Error: Expected {{.NumPositionalArgs}} positional variables but got ${#}" >&2
+    echo "ERROR: Expected {{.NumPositionalArgs}} positional variables but got ${#}" >&2
     print_help_and_exit
 fi
 
 {{range $idx, $variable := .PositionalArgAssignment}}if [ -z "${{$variable}}" ]; then
-    echo "Error: Variable '{{$variable}}' cannot be empty" >&2
+    echo "ERROR: Variable '{{$variable}}' cannot be empty" >&2
     exit 1
 fi{{end}}
 
@@ -99,17 +99,34 @@ fi{{end}}
 # ============================================================================================
 #                                    Main Logic
 # ============================================================================================
+{{- /* if this is a local dev branch of kurtosis-core, we skip the docker pull because it will always fail (because the images will by definition be local) */ -}}
+{{- if .IsProductionRelease -}}
+# Because Kurtosis X.Y.Z tags are normalized to X.Y so that minor patch updates are transparently 
+#  used, we need to pull the latest API & initializer images
+echo "Pulling latest versions of API & initializer image..."
+if ! docker pull "${INITIALIZER_IMAGE}"; then
+    echo "WARN: An error occurred pulling the latest version of the initializer image (${INITIALIZER_IMAGE}); you may be running an out-of-date version" >&2
+else
+    echo "Successfully pulled latest version of initializer image"
+fi
+if ! docker pull "${API_IMAGE}"; then
+    echo "WARN: An error occurred pulling the latest version of the API image (${API_IMAGE}); you may be running an out-of-date version" >&2
+else
+    echo "Successfully pulled latest version of API image"
+fi
+{{- end}}
+
 # Kurtosis needs a Docker volume to store its execution data in
 # To learn more about volumes, see: https://docs.docker.com/storage/volumes/
 sanitized_image="$(echo "${test_suite_image}" | sed 's/[^a-zA-Z0-9_.-]/_/g')"
 suite_execution_volume="$(date +{{.VolumeTimestampDateFormat}})_${sanitized_image}"
 if ! docker volume create "${suite_execution_volume}" > /dev/null; then
-    echo "Error: Failed to create a Docker volume to store the execution files in" >&2
+    echo "ERROR: Failed to create a Docker volume to store the execution files in" >&2
     exit 1
 fi
 
 if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
-    echo "Error: Failed to create the Kurtosis directory at '${KURTOSIS_DIRPATH}'" >&2
+    echo "ERROR: Failed to create the Kurtosis directory at '${KURTOSIS_DIRPATH}'" >&2
     exit 1
 fi
 
