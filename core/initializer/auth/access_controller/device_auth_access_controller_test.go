@@ -5,6 +5,7 @@
 package access_controller
 
 import (
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/test_mocks"
@@ -18,7 +19,7 @@ func Test_NoSavedSession_UnreachableAuth0(t *testing.T) {
 
 	// There's no session to load and an error reaching Auth0, so should throw an error
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, errorThrowingSessionCache, errorThrowingDeviceAuthorizer)
-	if err := accessController.Authorize(); err == nil {
+	if _, err := accessController.Authenticate(); err == nil {
 		t.Fatal("Expected an error if no session cache could be loaded and Auth0 authorization failed, but no error was thrown")
 	}
 }
@@ -28,7 +29,7 @@ func Test_NoSavedSession_ReachableAuth0_UnparseableToken(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, "abcd1234")
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err == nil {
+	if _, err := accessController.Authenticate(); err == nil {
 		t.Fatal("Expected an error due to receiving an invalid token from Auth0, but no error was thrown")
 	}
 }
@@ -81,7 +82,7 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token signed by the unknown private key: %v", err)
@@ -90,40 +91,8 @@ P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 
 	// These public keys don't match the private key we've signed the token with; we expect a rejection
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
-	err = accessController.Authorize()
-	if err == nil {
+	if _, err := accessController.Authenticate(); err == nil {
 		t.Fatal("Expected an error due to a token signed by a key we don't recognize, but no error was thrown")
-	}
-	savedSessions := loadingErrorSessionCache.GetSavedSessions()
-	if len(savedSessions) != 1 {
-		t.Fatalf("Expected one session to be saved (upon receiving the new token) but got %v", len(savedSessions))
-	}
-	firstSavedSession := savedSessions[0]
-	if firstSavedSession.Token != token {
-		t.Fatalf("Expected token '%v' to be saved but got '%v'", token, firstSavedSession.Token)
-	}
-}
-
-func Test_NoSavedSession_ReachableAuth0_ParseableToken_NoPerms(t *testing.T) {
-	loadingErrorSessionCache := test_mocks.NewMockSessionCache(false, true, nil)
-
-	token, err := test_mocks.CreateTestToken(
-		test_mocks.TestAuth0PrivateKey,
-		auth0_constants.Audience,
-		auth0_constants.Issuer,
-		3600,
-		[]string{},
-	)
-	if err != nil {
-		t.Fatalf("An error occurred getting a test token without any perms: %v", err)
-	}
-	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
-
-	// These public keys don't match the private key we've signed the token with; we expect a rejection
-	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
-	err = accessController.Authorize()
-	if err == nil {
-		t.Fatal("Expected an error due to a token without execution perms, but no error was thrown")
 	}
 	savedSessions := loadingErrorSessionCache.GetSavedSessions()
 	if len(savedSessions) != 1 {
@@ -143,7 +112,7 @@ func Test_NoSavedSession_ReachableAuth0_ParseableToken_Valid(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token: %v", err)
@@ -151,7 +120,7 @@ func Test_NoSavedSession_ReachableAuth0_ParseableToken_Valid(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, loadingErrorSessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err != nil {
+	if _, err := accessController.Authenticate(); err != nil {
 		t.Fatalf("We expected a successful authorization, but an error was thrown: %v", err)
 	}
 	savedSessions := loadingErrorSessionCache.GetSavedSessions()
@@ -170,7 +139,7 @@ func Test_SavedSession_Valid(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token: %v", err)
@@ -185,7 +154,7 @@ func Test_SavedSession_Valid(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, token)
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, sessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err != nil {
+	if _, err := accessController.Authenticate(); err != nil {
 		t.Fatalf("We expected a successful authorization, but an error was thrown: %v", err)
 	}
 	savedSessions := sessionCache.GetSavedSessions()
@@ -201,7 +170,7 @@ func Test_SavedSession_InGracePeriod_UnreachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		-1,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token: %v", err)
@@ -216,7 +185,7 @@ func Test_SavedSession_InGracePeriod_UnreachableAuth0(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(true, token)
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, sessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err != nil {
+	if _, err := accessController.Authenticate(); err != nil {
 		t.Fatalf("We expected a successful authorization due to being in the grace period (even though Auth0 is unreachable), but an error was thrown: %v", err)
 	}
 	savedSessions := sessionCache.GetSavedSessions()
@@ -231,7 +200,7 @@ func Test_SavedSession_InGracePeriod_ReachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		-1,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting an expired test token: %v", err)
@@ -248,7 +217,7 @@ func Test_SavedSession_InGracePeriod_ReachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a fresh test token: %v", err)
@@ -257,7 +226,7 @@ func Test_SavedSession_InGracePeriod_ReachableAuth0(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, freshToken)
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, sessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err != nil {
+	if _, err := accessController.Authenticate(); err != nil {
 		t.Fatalf("We expected a successful authorization due to being in the grace period with reachable Auth0, but an error was thrown: %v", err)
 	}
 	savedSessions := sessionCache.GetSavedSessions()
@@ -276,7 +245,7 @@ func Test_SavedSession_BeyondGracePeriod_ReachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		-int(tokenExpirationGracePeriod.Seconds() + 1),
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting an expired test token: %v", err)
@@ -293,7 +262,7 @@ func Test_SavedSession_BeyondGracePeriod_ReachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		3600,
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a fresh test token: %v", err)
@@ -302,7 +271,7 @@ func Test_SavedSession_BeyondGracePeriod_ReachableAuth0(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(false, freshToken)
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, sessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err != nil {
+	if _, err := accessController.Authenticate(); err != nil {
 		t.Fatalf("We expected a successful authorization due to Auth0 being reachable even though the token is beyond the grace period, but an error was thrown: %v", err)
 	}
 	savedSessions := sessionCache.GetSavedSessions()
@@ -321,7 +290,7 @@ func Test_SavedSession_BeyondGracePeriod_UnreachableAuth0(t *testing.T) {
 		auth0_constants.Audience,
 		auth0_constants.Issuer,
 		-int(tokenExpirationGracePeriod.Seconds() + 1),
-		[]string{auth0_constants.ExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting an expired test token: %v", err)
@@ -336,7 +305,7 @@ func Test_SavedSession_BeyondGracePeriod_UnreachableAuth0(t *testing.T) {
 	deviceAuthorizer := test_mocks.NewMockDeviceAuthorizer(true, "")
 
 	accessController := NewDeviceAuthAccessController(test_mocks.TestAuth0PublicKeys, sessionCache, deviceAuthorizer)
-	if err := accessController.Authorize(); err == nil {
+	if _, err := accessController.Authenticate(); err == nil {
 		t.Fatalf("We expected authorization to be rejected due to having a token that's beyond the grace period with Auth0 unreachable, but authorization was allowed")
 	}
 }

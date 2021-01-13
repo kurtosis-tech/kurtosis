@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# 1.6.2
+* Prevent Kurtosis from running when the user is restricted to the free trial and has too many tests in their testsuite
+
 # 1.6.1
 * Switch to using the background context for pulling test suite container logs, so that we get the logs regardless of context cancellation
 * Use `KillContainer`, rather than `StopContainer`, on network remove (no point waiting for graceful shutdown)

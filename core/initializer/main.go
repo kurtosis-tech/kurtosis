@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
+	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
@@ -33,9 +34,6 @@ const (
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism = 2
-
-	// Web link shown to users who do not authenticate.
-	licenseWebUrl = "https://kurtosistech.com/"
 
 	// The location on the INITIALIZER container where the suite execution volume will be mounted
 	// A user MUST mount a volume here
@@ -168,7 +166,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 
 
 func main() {
-	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
+	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
@@ -188,33 +186,14 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLevel)
 
-	// TODO Break this into a private helper function
-	clientId := parsedFlags.GetString(clientIdArg)
-	clientSecret := parsedFlags.GetString(clientSecretArg)
-	var accessController access_controller.AccessController
-	if len(clientId) > 0 && len(clientSecret) > 0 {
-		logrus.Debugf("Running CI machine-to-machine auth flow...")
-		accessController = access_controller.NewClientAuthAccessController(
-			auth0_constants.RsaPublicKeyCertsPem,
-			auth0_authorizers.NewStandardClientCredentialsAuthorizer(),
-			clientId,
-			clientSecret)
-	} else {
-		logrus.Debugf("Running developer device auth flow...")
-		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
-		sessionCache := session_cache.NewEncryptedSessionCache(
-			sessionCacheFilepath,
-			sessionCacheFileMode,
-		)
-		accessController = access_controller.NewDeviceAuthAccessController(
-			auth0_constants.RsaPublicKeyCertsPem,
-			sessionCache,
-			auth0_authorizers.NewStandardDeviceAuthorizer(),
-		)
-	}
-	if err := accessController.Authorize(); err != nil {
+	accessController := getAccessController(
+		parsedFlags.GetString(clientIdArg),
+		parsedFlags.GetString(clientSecretArg),
+	)
+	permissions, err := accessController.Authenticate()
+	if err != nil {
 		logrus.Fatalf(
-			"The following error occurred when authenticating and authorizing your Kurtosis license: %v",
+			"The following error occurred when authenticating this Kurtosis instance: %v",
 			err)
 		os.Exit(failureExitCode)
 	}
@@ -271,46 +250,21 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
-	//  error and loudly alert the user
-	for testName, _ := range suiteMetadata.TestMetadata {
-		if strings.Contains(testName, initializer_container_constants.TestNameArgSeparator) {
-			logrus.Errorf(
-				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
-				testName,
-				initializer_container_constants.TestNameArgSeparator)
-			os.Exit(failureExitCode)
-		}
+	if err := verifyNoDelimiterCharInTestNames(suiteMetadata); err != nil {
+		logrus.Errorf("An error occurred verifying no delimiter in the test names: %v", err)
+		os.Exit(failureExitCode)
 	}
 
 	if parsedFlags.GetBool(doListArg) {
-		testNames := []string{}
-		for name := range suiteMetadata.TestMetadata {
-			testNames = append(testNames, name)
-		}
-		sort.Strings(testNames)
-
-		fmt.Println("\nTests in test suite:")
-		for _, name := range testNames {
-			// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
-			fmt.Println("- " + name)
-		}
+		printTestsInSuite(suiteMetadata)
 		os.Exit(successExitCode)
 	}
 
-
-	// Split user-input string into actual candidate test names
-	testNamesArgStr := strings.TrimSpace(parsedFlags.GetString(testNamesArg))
-	testNamesToRun := map[string]bool{}
-	if len(testNamesArgStr) > 0 {
-		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
-		for _, name := range testNamesList {
-			testNamesToRun[name] = true
-		}
-	}
+	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
+		permissions,
 		dockerClient,
 		parsedFlags.GetString(suiteExecutionVolumeArg),
 		initializerContainerSuiteExVolMountDirpath,
@@ -334,4 +288,72 @@ func main() {
 		exitCode = failureExitCode
 	}
 	os.Exit(exitCode)
+}
+
+func getAccessController(
+		clientId string,
+		clientSecret string) access_controller.AccessController {
+	var accessController access_controller.AccessController
+	if len(clientId) > 0 && len(clientSecret) > 0 {
+		logrus.Debugf("Running CI machine-to-machine auth flow...")
+		accessController = access_controller.NewClientAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
+			auth0_authenticators.NewStandardClientCredentialsAuthenticator(),
+			clientId,
+			clientSecret)
+	} else {
+		logrus.Debugf("Running developer device auth flow...")
+		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
+		sessionCache := session_cache.NewEncryptedSessionCache(
+			sessionCacheFilepath,
+			sessionCacheFileMode,
+		)
+		accessController = access_controller.NewDeviceAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
+			sessionCache,
+			auth0_authenticators.NewStandardDeviceCodeAuthenticator(),
+		)
+	}
+	return accessController
+}
+
+func verifyNoDelimiterCharInTestNames(suiteMetadata *test_suite_metadata_acquirer.TestSuiteMetadata) error {
+	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
+	//  error and loudly alert the user
+	for testName, _ := range suiteMetadata.TestMetadata {
+		if strings.Contains(testName, initializer_container_constants.TestNameArgSeparator) {
+			return stacktrace.NewError(
+				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
+				testName,
+				initializer_container_constants.TestNameArgSeparator)
+		}
+	}
+	return nil
+}
+
+func printTestsInSuite(suiteMetadata *test_suite_metadata_acquirer.TestSuiteMetadata) {
+	testNames := []string{}
+	for name := range suiteMetadata.TestMetadata {
+		testNames = append(testNames, name)
+	}
+	sort.Strings(testNames)
+
+	fmt.Println("\nTests in test suite:")
+	for _, name := range testNames {
+		// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
+		fmt.Println("- " + name)
+	}
+}
+
+// Split user-input string into actual candidate test names
+func splitTestsStrIntoTestsSet(testsStr string) map[string]bool {
+	testNamesArgStr := strings.TrimSpace(testsStr)
+	testNamesToRun := map[string]bool{}
+	if len(testNamesArgStr) > 0 {
+		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
+		for _, name := range testNamesList {
+			testNamesToRun[name] = true
+		}
+	}
+	return testNamesToRun
 }

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizers
+package auth0_authenticators
 
 import (
 	"github.com/hashicorp/go-retryablehttp"

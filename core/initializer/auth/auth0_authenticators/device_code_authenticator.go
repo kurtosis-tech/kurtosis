@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizers
+package auth0_authenticators
 
 import (
 	"encoding/json"
@@ -19,14 +19,14 @@ import (
 
 /*
 	Authenticates and authorizes a user running Kurtosis on their own device.
-	User authenticates with username and password, and verifies their device.
+	User verifies their device, and authenticated with username and password
 
-	Implements the Device Code authorization flow from auth0: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow
+	Implements the Device Code authentication flow from auth0: https://auth0.com/docs/flows/call-your-api-using-the-device-authorization-flow
 	At a high level:
 		1. Request device code (Device Flow): Request a device code that the user can use to authorize the device.
 		2. Request device activation (Device Flow): Request that the user authorize the device using their laptop or smartphone.
 		3. Request tokens (Device Flow): Poll the token endpoint to request a token.
-		4. Authorize user (Browser Flow): The user authorizes the device, so the device can receive tokens.
+		4. User authentication (Browser Flow): The user authenticates and authorizes the device, so the device can receive tokens.
 		5. Receive tokens (Device Flow): After the user successfully authorizes the device, receive tokens.
  */
 
@@ -50,14 +50,14 @@ type DeviceCodeResponse struct {
 }
 
 // Extracted as an interface so mocks can be written for testing
-type DeviceAuthorizer interface {
-	AuthorizeUserDevice() (string, error)
+type DeviceCodeAuthenticator interface {
+	AuthorizeDeviceAndAuthenticate() (string, error)
 }
 
-type StandardDeviceAuthorizer struct{}
+type StandardDeviceCodeAuthenticator struct{}
 
-func NewStandardDeviceAuthorizer() *StandardDeviceAuthorizer {
-	return &StandardDeviceAuthorizer{}
+func NewStandardDeviceCodeAuthenticator() *StandardDeviceCodeAuthenticator {
+	return &StandardDeviceCodeAuthenticator{}
 }
 
 /*
@@ -66,7 +66,7 @@ func NewStandardDeviceAuthorizer() *StandardDeviceAuthorizer {
 	Auth0 is polled until it confirms that the user has successfully logged in and confirmed their device.
  */
 
-func (authorizer StandardDeviceAuthorizer) AuthorizeUserDevice() (string, error) {
+func (authenticator StandardDeviceCodeAuthenticator) AuthorizeDeviceAndAuthenticate() (string, error) {
 	logrus.Trace("Authorizing user device...")
 
 	// Prepare to request device code.
