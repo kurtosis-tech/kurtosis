@@ -8,14 +8,7 @@ package auth0_constants
 const (
 	Audience = "https://api.kurtosistech.com/login"
 	Issuer   = "https://dev-lswjao-7.us.auth0.com/"
-
-	ExecutionPermission = "execute:kurtosis-core"
 )
-
-// "Set" of valid scopes
-var ValidScopes = map[string]bool{
-	ExecutionPermission: true,
-}
 
 /*
 These come from https://dev-lswjao-7.us.auth0.com/.well-known/jwks.json

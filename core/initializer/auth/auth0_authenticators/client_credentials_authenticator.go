@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package auth0_authorizers
+package auth0_authenticators
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -23,17 +23,17 @@ const (
 )
 
 // Extracted as an interface so mocks can be written for testing
-type ClientCredentialsAuthorizer interface{
-	AuthorizeClientCredentials(clientId string, clientSecret string) (string, error)
+type ClientCredentialsAuthenticator interface{
+	AuthenticateClientCredentials(clientId string, clientSecret string) (string, error)
 }
 
-type StandardClientCredentialsAuthorizer struct{}
+type StandardClientCredentialsAuthenticator struct{}
 
-func NewStandardClientCredentialsAuthorizer() *StandardClientCredentialsAuthorizer {
-	return &StandardClientCredentialsAuthorizer{}
+func NewStandardClientCredentialsAuthenticator() *StandardClientCredentialsAuthenticator {
+	return &StandardClientCredentialsAuthenticator{}
 }
 
-func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (string, error) {
+func (authenticator StandardClientCredentialsAuthenticator) AuthenticateClientCredentials(clientId string, clientSecret string) (string, error) {
 	params := map[string]string{
 		clientIdQueryParamName:     clientId,
 		clientSecretQueryParamName: clientSecret,
@@ -46,7 +46,7 @@ func (authorizer StandardClientCredentialsAuthorizer) AuthorizeClientCredentials
 
 	tokenResponse, err := requestAuthToken(params, headers)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to get token response for client credential authorization flow.")
+		return "", stacktrace.Propagate(err, "Failed to get token response for client credential auth flow.")
 	}
 	logrus.Tracef("Token response: %+v", tokenResponse)
 

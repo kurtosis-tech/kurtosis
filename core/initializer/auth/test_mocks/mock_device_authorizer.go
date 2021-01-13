@@ -27,7 +27,7 @@ func NewMockDeviceAuthorizer(
 
 
 
-func (t MockDeviceAuthorizer) AuthorizeUserDevice() (string, error) {
+func (t MockDeviceAuthorizer) AuthorizeDeviceAndAuthenticate() (string, error) {
 	if t.throwErrorOnAuthorize {
 		return "", stacktrace.NewError("Test error on authorization, as requested")
 	}

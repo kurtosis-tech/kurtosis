@@ -6,7 +6,7 @@ Machine-to-Machine Auth
 -----------------------
 While it's fine to prompt a user for their username and password when Kurtosis is run on the local machine, this method is insecure when executing Kurtosis on CI. Fortunately, our auth system provides [a system for handling this called "machine-to-machine auth"](https://auth0.com/docs/flows/client-credentials-flow). In the machine-to-machine flow, a client ID and a client secret are stored within the CI environment's secrets and passed in to every CI job. Kurtosis uses these credentials to retrieve a token from the auth provider, which allows Kurtosis execution to proceed.
 
-The client ID and secret are created by the Kurtosis team on the backend, so if you don't have them already then shoot us a ping at [inquiries@kurtosistech.com](mailto:inquiries@kurtosistech.com) to discuss pricing!
+The client ID and secret are created by the Kurtosis team on the backend, so if you don't have one already then reach out to [inquiries@kurtosistech.com](mailto:inquiries@kurtosistech.com) to discuss pricing.
 
 **WARNING: Make sure you store your client ID and secret in a secure place! Anyone with the credentials could impersonate you to Kurtosis, which would use up any usage-based credits on your behalf.**
 
