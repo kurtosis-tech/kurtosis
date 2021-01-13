@@ -166,7 +166,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 
 
 func main() {
-	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
+	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
 		FullTimestamp: true,
@@ -255,16 +255,16 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+	if parsedFlags.GetBool(doListArg) {
+		printTestsInSuite(suiteMetadata)
+		os.Exit(successExitCode)
+	}
+
 	// TODO Write a test to ensure that main.go does correctly block this!!!!!!!
 	numTestsInSuite := len(suiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
 		logrus.Errorf("An error occurred verifying the appropriate permissions exist to run the testsuite: %v", err)
 		os.Exit(failureExitCode)
-	}
-
-	if parsedFlags.GetBool(doListArg) {
-		printTestsInSuite(suiteMetadata)
-		os.Exit(successExitCode)
 	}
 
 	// Split user-input string into actual candidate test names
