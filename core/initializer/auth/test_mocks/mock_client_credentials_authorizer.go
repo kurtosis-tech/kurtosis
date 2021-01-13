@@ -21,7 +21,7 @@ func NewMockClientCredentialsAuthorizer(
 	}
 }
 
-func (m MockClientCredentialsAuthorizer) AuthorizeClientCredentials(clientId string, clientSecret string) (string, error) {
+func (m MockClientCredentialsAuthorizer) AuthenticateClientCredentials(clientId string, clientSecret string) (string, error) {
 	if m.throwErrorOnAuthorize {
 		return "", stacktrace.NewError("Test error on authorization, as requested")
 	}

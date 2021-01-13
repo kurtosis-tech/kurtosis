@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authorizers"
+	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
@@ -312,7 +312,7 @@ func getAccessController(
 		logrus.Debugf("Running CI machine-to-machine auth flow...")
 		accessController = access_controller.NewClientAuthAccessController(
 			auth0_constants.RsaPublicKeyCertsPem,
-			auth0_authorizers.NewStandardClientCredentialsAuthorizer(),
+			auth0_authenticators.NewStandardClientCredentialsAuthenticator(),
 			clientId,
 			clientSecret)
 	} else {
@@ -325,7 +325,7 @@ func getAccessController(
 		accessController = access_controller.NewDeviceAuthAccessController(
 			auth0_constants.RsaPublicKeyCertsPem,
 			sessionCache,
-			auth0_authorizers.NewStandardDeviceAuthorizer(),
+			auth0_authenticators.NewStandardDeviceCodeAuthenticator(),
 		)
 	}
 	return accessController
