@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -27,6 +28,8 @@ const (
 	flagPrefix = "--"
 
 	failureExitCode = 1
+
+	productionReleaseVersionPatternStr = `^[0-9]+\.[0-9]+$`
 )
 
 // Struct containing data specifically about the flag args to the wrapper script, bundled in such a way
@@ -43,6 +46,10 @@ type WrapperTemplateData struct {
 	DefaultValues map[string]string
 
 	KurtosisCoreVersion string
+
+	// Certain things in kurtosis.sh should only be enabled when we're generating a version that will be released to the
+	//  world (and not a version that's being generated for running a local dev branch of Kurtosis Core)
+	IsProductionRelease bool
 
 	FlagArgParsingData []WrapperFlagArgParsingData
 
@@ -153,6 +160,8 @@ var wrapperArgs = []WrapperArg{
 
 // Fills the Bash wrapper script template with the appropriate variables
 func main()  {
+	productionReleaseVersionPattern := regexp.MustCompile(productionReleaseVersionPatternStr)
+
 	kurtosisCoreVersion, templateFilepath, outputFilepath, err := parseAndValidateFlags()
 	if err != nil {
 		logrus.Errorf("An error occurred parsing & validating the flags: %v", err)
@@ -173,7 +182,7 @@ func main()  {
 		os.Exit(failureExitCode)
 	}
 
-	data, err := generateTemplateData(wrapperArgs, kurtosisCoreVersion)
+	data, err := generateTemplateData(wrapperArgs, kurtosisCoreVersion, productionReleaseVersionPattern)
 	if err != nil {
 		logrus.Errorf("An error occurred generating the template data: %v", err)
 		os.Exit(failureExitCode)
@@ -192,6 +201,9 @@ func main()  {
 	}
 }
 
+// ===================================================================================================
+//                                        Private helper functions
+// ===================================================================================================
 // TODO Replace this entire thing by:
 //  1. Moving the docker_flag_parser out of initializer and into commmons (it can now be generalized)
 //  2. Using that now-generalized class here
@@ -298,7 +310,7 @@ func getLongestOneLinerLength(args []WrapperArg) (int, error) {
 	return longestOneLinerText, nil
 }
 
-func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*WrapperTemplateData, error) {
+func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string, productionReleaseVersionPattern *regexp.Regexp) (*WrapperTemplateData, error) {
 	longestOneLinerLength, err := getLongestOneLinerLength(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the length of the longest one-liner text")
@@ -382,10 +394,12 @@ func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string) (*Wrapp
 	combinedOneliner := fmt.Sprintf("%v %v", flagArgsOneliner, positionalArgsOneliner)
 
 	combinedLinewiseHelptext := append(flagArgsLinewiseHelptext, positionalArgsLinewiseHelptext...)
+
 	return &WrapperTemplateData{
 		DefaultValues:      defaultValues,
 		FlagArgParsingData: allFlagArgParsingData,
 		KurtosisCoreVersion: kurtosisCoreVersion,
+		IsProductionRelease: productionReleaseVersionPattern.Match([]byte(kurtosisCoreVersion)),
 		NumPositionalArgs: len(positionalArgAssignment),
 		PositionalArgAssignment: positionalArgAssignment,
 		OneLinerHelpText:   combinedOneliner,

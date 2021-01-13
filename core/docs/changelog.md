@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+* Generate kurtosis.sh to always try and pull the latest version of the API & initializer containers
+
 # 1.6.2
 * Prevent Kurtosis from running when the user is restricted to the free trial and has too many tests in their testsuite
 
