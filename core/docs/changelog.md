@@ -1,5 +1,8 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+* Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code
+
 # 1.6.3
 * Generate kurtosis.sh to always try and pull the latest version of the API & initializer containers
 
