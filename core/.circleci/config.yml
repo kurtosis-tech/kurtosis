@@ -36,7 +36,7 @@ jobs:
 
       # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
-      - run: ! grep 'ERRO' build-output.txt
+      - run: "! grep 'ERRO' build-output.txt"
 
   check_docs:
     docker:
