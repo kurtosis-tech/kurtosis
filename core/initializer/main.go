@@ -260,8 +260,6 @@ func main() {
 		os.Exit(successExitCode)
 	}
 
-	logrus.Error("Test error")
-
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
