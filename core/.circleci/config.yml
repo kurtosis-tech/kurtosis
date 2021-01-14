@@ -32,7 +32,7 @@ jobs:
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
       - run: |
-          scripts/build_and_run.sh all --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" | tee build-output.txt
+          scripts/build_and_run.sh all --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee build-output.txt
 
       # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
