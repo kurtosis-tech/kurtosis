@@ -262,6 +262,8 @@ func main() {
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
+	logrus.Error("Test error")
+
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
