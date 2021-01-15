@@ -2,6 +2,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 # TBD
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code
+* When a container using an IP is destroyed, release it back into the free IP address tracker's pool
 
 # 1.6.3
 * Generate kurtosis.sh to always try and pull the latest version of the API & initializer containers
