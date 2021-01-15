@@ -177,6 +177,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		dockerEnvVars map[string]string,
 		testVolumeMountDirpath string,
 		filesArtifactMountDirpaths map[string]string) (net.IP, error) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
