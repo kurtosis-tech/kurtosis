@@ -220,6 +220,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	defer func() {
 		if !shouldLeaveServiceInTopology {
 			network.topology.RemoveService(serviceId)
+			network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
 			delete(network.serviceIps, serviceId)
 
 			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we made to all

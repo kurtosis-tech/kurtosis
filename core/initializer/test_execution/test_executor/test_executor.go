@@ -157,10 +157,12 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
+	defer freeIpAddrTracker.ReleaseIpAddr(kurtosisApiIp)
 	testRunningContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
 	}
+	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
