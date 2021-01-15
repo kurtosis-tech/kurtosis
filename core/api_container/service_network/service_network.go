@@ -386,6 +386,10 @@ func (network *ServiceNetwork) RemoveService(
 	if !found {
 		return stacktrace.NewError("Unknown service '%v'", serviceId)
 	}
+	serviceIp, found := network.serviceIps[serviceId]
+	if !found {
+		return stacktrace.NewError("No IP found for service '%v'", serviceId)
+	}
 
 	// TODO Parallelize the shutdown of the service container and the sidecar container
 	// Make a best-effort attempt to stop the service container
@@ -394,7 +398,7 @@ func (network *ServiceNetwork) RemoveService(
 		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 	}
 	network.topology.RemoveService(serviceId)
-	// TODO release the IP that the service got
+	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
 	delete(network.serviceContainerIds, serviceId)
 	delete(network.serviceIps, serviceId)
 	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
@@ -414,6 +418,7 @@ func (network *ServiceNetwork) RemoveService(
 
 		}
 		sidecarContainerId := sidecarContainerInfo.containerId
+		sidecarIp := sidecarContainerInfo.ipAddr
 
 		// TODO Parallelize the shutdown of the sidecar container with the service container
 		// Try to stop the sidecar container too
@@ -422,7 +427,7 @@ func (network *ServiceNetwork) RemoveService(
 		if err := network.dockerManager.KillContainer(context, sidecarContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
 		}
-		// TODO release the IP that the service received
+		network.freeIpAddrTracker.ReleaseIpAddr(sidecarIp)
 		delete(network.sidecarContainerInfo, serviceId)
 		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
 	}
