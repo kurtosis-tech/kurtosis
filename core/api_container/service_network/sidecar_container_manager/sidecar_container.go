@@ -38,14 +38,19 @@ const (
 	ipTablesFirstRuleIndex = 1	// iptables chains are 1-indexed
 )
 
+// ==========================================================================================
+//                                        Interface
+// ==========================================================================================
 // Extracted as interface for testing
 type SidecarContainer interface {
-	UpdateIpTables(
-		ctx context.Context,
-		blockedIps []net.IP,
-	) error
+	InitializeIpTables(ctx context.Context) error
+	UpdateIpTables(ctx context.Context, blockedIps []net.IP) error
 }
 
+
+// ==========================================================================================
+//                                      Implementation
+// ==========================================================================================
 type ipTablesChain string
 
 // Provides a handle into manipulating the network state of a service container indirectly, via the sidecar
@@ -62,12 +67,12 @@ type StandardSidecarContainer struct {
 
 	containerId string
 
-	ipAddr string
+	ipAddr net.IP
 
 	execCmdExecutor SidecarExecCmdExecutor
 }
 
-func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId string, ipAddr string, execCmdExecutor SidecarExecCmdExecutor) *StandardSidecarContainer {
+func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor SidecarExecCmdExecutor) *StandardSidecarContainer {
 	return &StandardSidecarContainer{
 		mutex: &sync.Mutex{},
 		serviceId: serviceId,
@@ -103,7 +108,7 @@ func (sidecar *StandardSidecarContainer) InitializeIpTables(ctx context.Context)
 	return nil
 }
 
-func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
+func (sidecar *StandardSidecarContainer) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
 	// TODO extract this boilerplate into a separate function
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()

@@ -22,44 +22,25 @@ import (
 )
 
 // ==========================================================================================
-//                               Private types
+//                                        Interface
 // ==========================================================================================
+type SidecarContainerManager interface {
+	CreateSidecarContainer(
+	) error
 
-// We sleep forever because all the commands this container will run will be executed
-//  via Docker exec
-var ipRouteContainerCommand = []string{
-	"sleep","infinity",
-}
-
-type serviceMetadata struct {
-	serviceContainerId string
-
-	sidecarContainerId string
-
-	sidecarIpAddr      net.IP
-
-	// Tracks which Kurtosis chain is the primary chain, so we know
-	//  which chain is in the background that we can flush and rebuild
-	//  when we're changing iptables
-	chainInUse ipTablesChain
+	DestroySidecarContainer(
+	) error
 }
 
 // ==========================================================================================
-//                               Standard sidecar container manager
+//                                      Implementation
 // ==========================================================================================
-type SidecarContainerID string
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // This class's methods are NOT thread-safe - it's up to the caller to ensure that
 //  only one change at a time is run on a given sidecar container!!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type StandardSidecarContainerManager struct {
-
-	dockerManager *docker_manager.DockerManager
-
-	freeIpAddrTracker *commons.FreeIpAddrTracker
-
-	dockerNetworkId string
 
 	serviceMetadata map[topology_types.ServiceID]*serviceMetadata
 }
@@ -70,30 +51,7 @@ type StandardSidecarContainerManager struct {
 func (manager *StandardSidecarContainerManager) AddSidecarContainer(
 		ctx context.Context,
 		serviceContainerId string) error {
-	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"An error occurred getting a free IP address for the networking sidecar container")
-	}
-	sidecarContainerIdStr, err := manager.dockerManager.CreateAndStartContainer(
-		ctx,
-		iproute2ContainerImage,
-		manager.dockerNetworkId,
-		sidecarIp,
-		map[docker_manager.ContainerCapability]bool{
-			docker_manager.NetAdmin: true,
-		},
-		docker_manager.NewContainerNetworkMode(serviceContainerId),
-		map[nat.Port]*nat.PortBinding{},
-		ipRouteContainerCommand,
-		map[string]string{}, // No environment variables
-		map[string]string{}, // no bind mounts for services created via the Kurtosis API
-		map[string]string{}, // No volume mounts either
-	)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred starting the sidecar iproute container for modifying the service container's iptables")
-	}
+	// TODO create sidecar container
 	sidecarContainerId := SidecarContainerID(sidecarContainerIdStr)
 	manager.serviceMetadata[sidecarContainerId] = &serviceMetadata{
 		sidecarContainerId: sidecarContainerId,
@@ -102,29 +60,6 @@ func (manager *StandardSidecarContainerManager) AddSidecarContainer(
 
 	// TODO initialize sidecar cotainer
 
-	// We need to wrap this command with 'sh -c' because we're using '&&', and if we don't do this then
-	//  iptables will think the '&&' is an argument for it and fail
-	configureKurtosisChainShWrappedCommand := []string{
-		"sh",
-		"-c",
-		strings.Join(configureKurtosisChainsCommand, " "),
-	}
-
-	logrus.Debugf("Running exec command to configure Kurtosis iptables chain: '%v'", configureKurtosisChainShWrappedCommand)
-	execOutputBuf := &bytes.Buffer{}
-	if err := network.dockerManager.RunExecCommand(
-		context,
-		sidecarContainerId,
-		configureKurtosisChainShWrappedCommand,
-		execOutputBuf); err !=  nil {
-		logrus.Error("------------------ Kurtosis iptables chain-configuring exec command output --------------------")
-		if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
-			logrus.Errorf("An error occurred printing the exec logs: %v", err)
-		}
-		logrus.Error("---------------- End Kurtosis iptables chain-configuring exec command output --------------------")
-		return nil, stacktrace.Propagate(err, "An error occurred running the exec command to configure iptables to use the custom Kurtosis chain")
-	}
-	network.serviceIpTablesChainInUse[serviceId] = initialKurtosisIpTablesChain
 }
 
 func (manager *StandardSidecarContainerManager) UpdateIpTablesForService(ctx context.Context, serviceId topology_types.ServiceID, blockedIps []net.IP) error {

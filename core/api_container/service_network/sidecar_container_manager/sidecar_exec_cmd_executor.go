@@ -26,6 +26,12 @@ type SidecarExecCmdExecutor struct {
 	shWrappingCmd func([]string) []string
 }
 
+func NewSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *SidecarExecCmdExecutor {
+	return &SidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
+}
+
+
+
 func (executor SidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
 	shWrappedCmd := executor.shWrappingCmd(unwrappedCmd)
 
