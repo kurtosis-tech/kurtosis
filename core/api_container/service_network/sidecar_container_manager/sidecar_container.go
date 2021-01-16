@@ -43,6 +43,8 @@ const (
 // ==========================================================================================
 // Extracted as interface for testing
 type SidecarContainer interface {
+	GetIPAddr() net.IP
+	GetContainerID() string
 	InitializeIpTables(ctx context.Context) error
 	UpdateIpTables(ctx context.Context, blockedIps []net.IP) error
 }
@@ -81,6 +83,14 @@ func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId
 		ipAddr: ipAddr,
 		execCmdExecutor: execCmdExecutor,
 	}
+}
+
+func (sidecar *StandardSidecarContainer) GetIPAddr() net.IP {
+	return sidecar.ipAddr
+}
+
+func (sidecar *StandardSidecarContainer) GetContainerID() string {
+	return sidecar.containerId
 }
 
 // Initializes the iptables of the attached service to a state where interactions with this SidecarContainer instance
