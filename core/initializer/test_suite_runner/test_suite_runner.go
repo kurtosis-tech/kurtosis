@@ -119,13 +119,18 @@ func RunTests(
 	//  one test has network partitioning enabled - and if running out of IP address ranges is ever a problem we can make
 	//  this more precise later ~ ktoday, 2021-01-15
 	shouldDoubleNetworkWidth := false
-	for _, testMetadata := range testSuiteMetadata.TestMetadata {
+	for testName, _ := range testNamesToRun {
+		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
+		if !found {
+			return false, stacktrace.NewError("Couldn't find test metadata for test '%v'", testName)
+		}
 		shouldDoubleNetworkWidth = shouldDoubleNetworkWidth || testMetadata.IsPartitioningEnabled
 	}
 	networkWidthBits := testSuiteMetadata.NetworkWidthBits
 	if shouldDoubleNetworkWidth {
 		networkWidthBits = networkWidthBits + 1
 	}
+	logrus.Debugf("Using network width bits: %v", networkWidthBits)
 
 	testParams, err := buildTestParams(testNamesToRun, networkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
 	if err != nil {
