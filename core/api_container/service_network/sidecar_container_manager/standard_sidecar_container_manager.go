@@ -100,31 +100,7 @@ func (manager *StandardSidecarContainerManager) AddSidecarContainer(
 		sidecarIpAddr:      sidecarIp,
 	}
 
-	// As soon as we have the sidecar, we need to create the Kurtosis chain and insert it in first position
-	//  on both the INPUT *and* the OUTPUT chains
-	configureKurtosisChainsCommand := []string{
-		ipTablesCommand,
-		ipTablesNewChainFlag,
-		string(kurtosisIpTablesChain1),
-		"&&",
-		ipTablesCommand,
-		ipTablesNewChainFlag,
-		string(kurtosisIpTablesChain2),
-	}
-	for _, chain := range []string{ipTablesInputChain, ipTablesOutputChain} {
-		addKurtosisChainInFirstPositionCommand := []string{
-			ipTablesCommand,
-			ipTablesInsertRuleFlag,
-			chain,
-			strconv.Itoa(ipTablesFirstRuleIndex),
-			"-j",
-			string(initialKurtosisIpTablesChain),
-		}
-		configureKurtosisChainsCommand = append(configureKurtosisChainsCommand, "&&")
-		configureKurtosisChainsCommand = append(
-			configureKurtosisChainsCommand,
-			addKurtosisChainInFirstPositionCommand...)
-	}
+	// TODO initialize sidecar cotainer
 
 	// We need to wrap this command with 'sh -c' because we're using '&&', and if we don't do this then
 	//  iptables will think the '&&' is an argument for it and fail

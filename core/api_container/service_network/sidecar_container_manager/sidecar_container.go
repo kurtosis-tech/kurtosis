@@ -6,13 +6,10 @@
 package sidecar_container_manager
 
 import (
-	"bytes"
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/sidecar_container_manager/sidecar_image_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -20,10 +17,13 @@ import (
 )
 
 const (
+
 	// We create two chains so that during modifications we can flush and rebuild one
 	//  while the other one is live
 	kurtosisIpTablesChain1 ipTablesChain = "KURTOSIS1"
 	kurtosisIpTablesChain2 ipTablesChain = "KURTOSIS2"
+
+	undefinedIpTablesChain ipTablesChain = ""
 	initialKurtosisIpTablesChain = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
 
 	ipTablesCommand = "iptables"
@@ -58,7 +58,7 @@ type StandardSidecarContainer struct {
 	// Tracks which Kurtosis chain is the primary chain, so we know
 	//  which chain is in the background that we can flush and rebuild
 	//  when we're changing iptables
-	chainInUse *ipTablesChain
+	chainInUse ipTablesChain
 
 	containerId string
 
@@ -71,10 +71,10 @@ func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId
 	return &StandardSidecarContainer{
 		mutex: &sync.Mutex{},
 		serviceId: serviceId,
-		chainInUse: nil,
+		chainInUse: undefinedIpTablesChain,
 		containerId: containerId,
 		ipAddr: ipAddr,
-		execCmdExecutor: execCmdExecutor
+		execCmdExecutor: execCmdExecutor,
 	}
 }
 
@@ -84,18 +84,30 @@ func (sidecar *StandardSidecarContainer) InitializeIpTables(ctx context.Context)
 	// Yes, initializers are bad, but I'm deeming having initialization logic in the constructor as even worse ~ ktoday, 2021-01-16
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()
-	if sidecar.chainInUse != nil {
+	if sidecar.chainInUse != undefinedIpTablesChain {
 		return nil
 	}
 
-	// TODO set chainInUse
+	initCmd := generateIpTablesInitCmd()
+
+	logrus.Infof(
+		"Running iptables init command '%v' in sidecar container '%v' attached to service with ID '%v'...",
+		initCmd,
+		sidecar.containerId,
+		sidecar.serviceId)
+	if err := sidecar.execCmdExecutor.exec(ctx, initCmd); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running sidecar iptables init command '%v'")
+	}
+	sidecar.chainInUse = initialKurtosisIpTablesChain
+	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
+	return nil
 }
 
 func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
 	// TODO extract this boilerplate into a separate function
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()
-	if sidecar.chainInUse == nil {
+	if sidecar.chainInUse == undefinedIpTablesChain {
 		return stacktrace.NewError("Cannot update iptables because they haven't yet been initialized")
 	}
 
@@ -109,10 +121,7 @@ func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, bloc
 		return stacktrace.NewError("Unrecognized iptables chain '%v' in use; this is a code bug", primaryChain)
 	}
 
-	updateCmd, err := generateIpTablesUpdateCmd(backgroundChain, blockedIps)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating the command to update the service's iptables")
-	}
+	updateCmd := generateIpTablesUpdateCmd(backgroundChain, blockedIps)
 
 	logrus.Infof(
 		"Running iptables update command '%v' in sidecar container '%v' attached to service with ID '%v'...",
@@ -122,16 +131,42 @@ func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, bloc
 	if err := sidecar.execCmdExecutor.exec(ctx, updateCmd); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'")
 	}
-	logrus.Infof("Successfully executed iptables update command '%v'", sidecar.serviceId)
+	sidecar.chainInUse = backgroundChain
+	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
 	return nil
 }
 
 // ==========================================================================================
 //                                   Private helper functions
 // ==========================================================================================
-func generateIpTablesInitCmd(
-	) {
+func generateIpTablesInitCmd() []string {
+	resultCmd := []string{
+		ipTablesCommand,
+		ipTablesNewChainFlag,
+		string(kurtosisIpTablesChain1),
+		"&&",
+		ipTablesCommand,
+		ipTablesNewChainFlag,
+		string(kurtosisIpTablesChain2),
+	}
 
+	// Very important that we set the Kurtosis chain for both INPUT *and* OUTPUT chain, to truly simulate
+	//  a network partition
+	for _, chain := range []string{ipTablesInputChain, ipTablesOutputChain} {
+		addKurtosisChainInFirstPositionCommand := []string{
+			ipTablesCommand,
+			ipTablesInsertRuleFlag,
+			chain,
+			strconv.Itoa(ipTablesFirstRuleIndex),
+			"-j",
+			string(initialKurtosisIpTablesChain),
+		}
+		resultCmd = append(resultCmd, "&&")
+		resultCmd = append(
+			resultCmd,
+			addKurtosisChainInFirstPositionCommand...)
+	}
+	return resultCmd
 }
 
 /*
@@ -140,7 +175,7 @@ Given the new IPs that should be blocked, generate the exec command that needs t
 */
 func generateIpTablesUpdateCmd(
 		backgroundChain ipTablesChain,
-		blockedIps []net.IP) ([]string, error) {
+		blockedIps []net.IP) []string {
 	// Deduplicate IPs for cleanliness
 	blockedIpStrs := map[string]bool{}
 	for _, ipAddr := range blockedIps {
@@ -195,5 +230,5 @@ func generateIpTablesUpdateCmd(
 		resultCmd = append(resultCmd, setBackgroundChainInFirstPositionCommand...)
 	}
 
-	return resultCmd, nil
+	return resultCmd
 }
