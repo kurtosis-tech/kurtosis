@@ -41,6 +41,7 @@ const (
 // ==========================================================================================
 //                                        Interface
 // ==========================================================================================
+// TODO rename
 // Extracted as interface for testing
 type SidecarContainer interface {
 	GetIPAddr() net.IP

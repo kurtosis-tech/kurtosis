@@ -5,7 +5,6 @@
 package service_network
 
 import (
-	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
@@ -16,9 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -57,7 +54,9 @@ type ServiceNetwork struct {
 	serviceIps map[topology_types.ServiceID]net.IP
 	serviceContainerIds map[topology_types.ServiceID]string
 
-	sidecarContainerManager *sidecar_container_manager.SidecarContainerManager
+	networkingSidecars map[topology_types.ServiceID]sidecar_container_manager.SidecarContainer
+
+	sidecarContainerManager sidecar_container_manager.SidecarContainerManager
 }
 
 func NewServiceNetwork(
@@ -65,7 +64,7 @@ func NewServiceNetwork(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
-		sidecarContainerManager *sidecar_container_manager.SidecarContainerManager) *ServiceNetwork {
+		sidecarContainerManager sidecar_container_manager.SidecarContainerManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
 	return &ServiceNetwork{
 		isDestroyed: false,
@@ -80,6 +79,7 @@ func NewServiceNetwork(
 		),
 		serviceIps: map[topology_types.ServiceID]net.IP{},
 		serviceContainerIds: map[topology_types.ServiceID]string{},
+		networkingSidecars: map[topology_types.ServiceID]sidecar_container_manager.SidecarContainer{},
 		sidecarContainerManager: sidecarContainerManager,
 	}
 }
@@ -88,7 +88,7 @@ func NewServiceNetwork(
 Completely repartitions the network, throwing away the old topology
  */
 func (network *ServiceNetwork) Repartition(
-		context context.Context,
+		ctx context.Context,
 		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
 		newPartitionConnections map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection) error {
@@ -110,7 +110,7 @@ func (network *ServiceNetwork) Repartition(
 		return stacktrace.Propagate(err, "An error occurred getting the blocklists after repartition, meaning that " +
 			"no partitions are actually being enforced!")
 	}
-	if err := network.updateIpTables(context, blocklists); err != nil {
+	if err := network.updateIpTables(ctx, blocklists); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
 	}
 	return nil
@@ -127,7 +127,7 @@ If partitionId is empty string, the default partition ID is used
 Returns: The IP address of the new service
  */
 func (network *ServiceNetwork) AddServiceInPartition(
-		context context.Context,
+		ctx context.Context,
 		serviceId topology_types.ServiceID,
 		imageName string,
 		usedPorts map[nat.Port]bool,
@@ -206,14 +206,14 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			}
 			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
 		}
-		if err := network.updateIpTables(context, blocklistsWithoutNewNode); err != nil {
+		if err := network.updateIpTables(ctx, blocklistsWithoutNewNode); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
 
 	serviceContainerId, err := network.userServiceLauncher.Launch(
-		context,
+		ctx,
 		serviceId,
 		serviceIp,
 		imageName,
@@ -232,7 +232,15 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
-		network.sidecarContainerManager.
+		sidecar, err := network.sidecarContainerManager.Create(ctx, serviceId, serviceContainerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
+		}
+		network.networkingSidecars[serviceId] = sidecar
+
+		if err := sidecar.InitializeIpTables(ctx); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
+		}
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
 		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/issues/123 )
@@ -245,8 +253,8 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		updatesToApply := map[topology_types.ServiceID]*topology_types.ServiceIDSet{
 			serviceId: newNodeBlocklist,
 		}
-		if err := network.updateIpTables(context, updatesToApply); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occured applying the iptables on the new node to partition it " +
+		if err := network.updateIpTables(ctx, updatesToApply); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it " +
 				"off from other nodes")
 		}
 	}
@@ -255,7 +263,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 }
 
 func (network *ServiceNetwork) RemoveService(
-		context context.Context,
+		ctx context.Context,
 		serviceId topology_types.ServiceID,
 		containerStopTimeout time.Duration) error {
 	network.mutex.Lock()
@@ -276,7 +284,7 @@ func (network *ServiceNetwork) RemoveService(
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	// Make a best-effort attempt to stop the service container
 	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceId, serviceContainerId)
-	if err := network.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
+	if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 	}
 	network.topology.RemoveService(serviceId)
@@ -292,32 +300,25 @@ func (network *ServiceNetwork) RemoveService(
 		//	 b) all service's iptables get overwritten on the next Add/Repartition call
 		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
 
-		sidecarContainerInfo, found := network.sidecarContainerInfo[serviceId]
+		sidecar, found := network.networkingSidecars[serviceId]
 		if !found {
 			return stacktrace.NewError(
-				"Couldn't find sidecar container ID for service '%v'; this is a code bug where the sidecar container ID didn't get stored at creation time",
+				"Couldn't find sidecar container for service '%v'; this is a code bug where the sidecar container ID didn't get stored at creation time",
 				serviceId)
 
 		}
-		sidecarContainerId := sidecarContainerInfo.containerId
-		sidecarIp := sidecarContainerInfo.ipAddr
 
-		// TODO PERF: Parallelize the shutdown of the sidecar container with the service container
-		// Try to stop the sidecar container too
-		logrus.Debugf("Removing sidecar container with container ID '%v'...", sidecarContainerId)
-		// The sidecar container doesn't have any state and is in a 'sleep infinity' loop; it's okay to just kill
-		if err := network.dockerManager.KillContainer(context, sidecarContainerId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
+		if err := network.sidecarContainerManager.Destroy(ctx, sidecar); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
-		network.freeIpAddrTracker.ReleaseIpAddr(sidecarIp)
-		delete(network.sidecarContainerInfo, serviceId)
-		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
+		delete(network.networkingSidecars, serviceId)
+		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
 	}
 	return nil
 }
 
 // Stops all services that have been created by the API container, and renders the service network unusable
-func (network *ServiceNetwork) Destroy(context context.Context, containerStopTimeout time.Duration) error {
+func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -328,14 +329,11 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 
 	// TODO PERF: parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
-	for serviceId, sidecarContainerInfo := range network.sidecarContainerInfo {
-		sidecarContainerId := sidecarContainerInfo.containerId
-		// Sidecar containers run 'sleep infinity' so it only wastes time to wait for graceful shutdown
-		if err := network.dockerManager.KillContainer(context, sidecarContainerId); err != nil {
+	for serviceId, sidecar := range network.networkingSidecars {
+		if err := network.sidecarContainerManager.Destroy(ctx, sidecar); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred stopping sidecar container with container ID '%v' for service '%s'",
-				sidecarContainerId,
+				"An error occurred destroying sidecar container for service with ID '%v'",
 				serviceId)
 			containerStopErrors = append(containerStopErrors, wrappedErr)
 		}
@@ -346,7 +344,7 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 	logrus.Debugf("Making best-effort attempt to stop service containers...")
 	for serviceId, serviceContainerId := range network.serviceContainerIds {
 		// TODO set the stop timeout on the service itself
-		if err := network.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
+		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred stopping container for service '%v' with container ID '%v'",
@@ -382,24 +380,38 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 // TODO write tests for me!!
 /*
 Updates the iptables of the services with the given IDs to match the target blocklists
+
+NOTE: This is not thread-safe, so it must be within a function that locks mutex!
  */
 func (network *ServiceNetwork) updateIpTables(
 		ctx context.Context,
 		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
-	erroredServiceIdStrs := []string{}
 	for serviceId, newBlocklist := range targetBlocklists {
-		if err := network.updateIpTablesForService(ctx, serviceId, *newBlocklist); err != nil {
-			logrus.Errorf("An error occurred updating the iptables for service '%v':", serviceId)
-			logrus.Error(err)
-			erroredServiceIdStrs = append(erroredServiceIdStrs, string(serviceId))
+		allIpsToBlock := []net.IP{}
+		for _, serviceIdToBlock := range newBlocklist.Elems() {
+			ipToBlock, found := network.serviceIps[serviceIdToBlock]
+			if !found {
+				return stacktrace.NewError(
+					"Service with ID '%v' needs to block service with ID '%v', but the latter " +
+						"doesn't have an IP associated with it",
+					serviceId,
+					serviceIdToBlock)
+			}
+			allIpsToBlock = append(allIpsToBlock, ipToBlock)
 		}
-	}
-	if len(erroredServiceIdStrs) > 0 {
-		return stacktrace.NewError(
-			"Error(s) occurred updating the iptables for the following services: %v",
-			strings.Join(erroredServiceIdStrs, ", "),
-		)
+
+		sidecar, found := network.networkingSidecars[serviceId]
+		if !found {
+			return stacktrace.NewError(
+				"Need to update iptables of service with ID '%v', but the service doesn't have a sidecar",
+				serviceId)
+		}
+		if err := sidecar.UpdateIpTables(ctx, allIpsToBlock); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred updating the iptables for service '%v'")
+		}
 	}
 	return nil
 }

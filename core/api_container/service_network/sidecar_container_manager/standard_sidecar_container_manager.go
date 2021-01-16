@@ -18,11 +18,8 @@ import (
 //                                        Interface
 // ==========================================================================================
 type SidecarContainerManager interface {
-	CreateSidecarContainer(
-	) error
-
-	DestroySidecarContainer(
-	) error
+	Create(ctx context.Context, serviceId topology_types.ServiceID, serviceContainerId string) (SidecarContainer, error)
+	Destroy(ctx context.Context, sidecar SidecarContainer) error
 }
 
 // ==========================================================================================
