@@ -3,10 +3,7 @@
  * All Rights Reserved.
  */
 
-package sidecar_container_manager
+package networking_sidecar
 
 import "testing"
 
-func TestGetSidecarContainerCmd(t *testing.T) {
-	// TODO
-}

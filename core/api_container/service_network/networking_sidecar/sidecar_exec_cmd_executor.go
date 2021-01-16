@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package sidecar_container_manager
+package networking_sidecar
 
 import (
 	"bytes"
@@ -14,10 +14,10 @@ import (
 	"io"
 )
 
-// The API for the SidecarContainer class run exec commands against the actual Docker container that backs it
-// This is a separate class because SidecarContainer shouldn't know about the underlying DockerManager used to run
-//  the exec commands; it should be transparent to SidecarContainer
-type SidecarExecCmdExecutor struct {
+// The API for the NetworkingSidecar class run exec commands against the actual Docker container that backs it
+// This is a separate class because NetworkingSidecar shouldn't know about the underlying DockerManager used to run
+//  the exec commands; it should be transparent to NetworkingSidecar
+type sidecarExecCmdExecutor struct {
 	dockerManager *docker_manager.DockerManager
 
 	// Container ID of the sidecar container in which exec commands should run
@@ -26,13 +26,13 @@ type SidecarExecCmdExecutor struct {
 	shWrappingCmd func([]string) []string
 }
 
-func NewSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *SidecarExecCmdExecutor {
-	return &SidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
+func newSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *sidecarExecCmdExecutor {
+	return &sidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
 }
 
 
 
-func (executor SidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
+func (executor sidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
 	shWrappedCmd := executor.shWrappingCmd(unwrappedCmd)
 
 	execOutputBuf := &bytes.Buffer{}

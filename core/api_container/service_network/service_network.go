@@ -8,7 +8,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/sidecar_container_manager"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -54,9 +54,9 @@ type ServiceNetwork struct {
 	serviceIps map[topology_types.ServiceID]net.IP
 	serviceContainerIds map[topology_types.ServiceID]string
 
-	networkingSidecars map[topology_types.ServiceID]sidecar_container_manager.SidecarContainer
+	networkingSidecars map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar
 
-	sidecarContainerManager sidecar_container_manager.SidecarContainerManager
+	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 }
 
 func NewServiceNetwork(
@@ -64,7 +64,7 @@ func NewServiceNetwork(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
-		sidecarContainerManager sidecar_container_manager.SidecarContainerManager) *ServiceNetwork {
+		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
 	return &ServiceNetwork{
 		isDestroyed: false,
@@ -77,10 +77,10 @@ func NewServiceNetwork(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceIps: map[topology_types.ServiceID]net.IP{},
-		serviceContainerIds: map[topology_types.ServiceID]string{},
-		networkingSidecars: map[topology_types.ServiceID]sidecar_container_manager.SidecarContainer{},
-		sidecarContainerManager: sidecarContainerManager,
+		serviceIps:               map[topology_types.ServiceID]net.IP{},
+		serviceContainerIds:      map[topology_types.ServiceID]string{},
+		networkingSidecars:       map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar{},
+		networkingSidecarManager: networkingSidecarManager,
 	}
 }
 
@@ -110,7 +110,7 @@ func (network *ServiceNetwork) Repartition(
 		return stacktrace.Propagate(err, "An error occurred getting the blocklists after repartition, meaning that " +
 			"no partitions are actually being enforced!")
 	}
-	if err := network.updateIpTables(ctx, blocklists); err != nil {
+	if err := updateIpTables(ctx, blocklists, network.serviceIps, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
 	}
 	return nil
@@ -206,7 +206,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			}
 			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
 		}
-		if err := network.updateIpTables(ctx, blocklistsWithoutNewNode); err != nil {
+		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceIps, network.networkingSidecars); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
@@ -232,7 +232,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.sidecarContainerManager.Create(ctx, serviceId, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
@@ -253,7 +253,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		updatesToApply := map[topology_types.ServiceID]*topology_types.ServiceIDSet{
 			serviceId: newNodeBlocklist,
 		}
-		if err := network.updateIpTables(ctx, updatesToApply); err != nil {
+		if err := updateIpTables(ctx, updatesToApply, network.serviceIps, network.networkingSidecars); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it " +
 				"off from other nodes")
 		}
@@ -308,7 +308,7 @@ func (network *ServiceNetwork) RemoveService(
 
 		}
 
-		if err := network.sidecarContainerManager.Destroy(ctx, sidecar); err != nil {
+		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
 		delete(network.networkingSidecars, serviceId)
@@ -330,7 +330,7 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 	// TODO PERF: parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
 	for serviceId, sidecar := range network.networkingSidecars {
-		if err := network.sidecarContainerManager.Destroy(ctx, sidecar); err != nil {
+		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred destroying sidecar container for service with ID '%v'",
@@ -383,14 +383,16 @@ Updates the iptables of the services with the given IDs to match the target bloc
 
 NOTE: This is not thread-safe, so it must be within a function that locks mutex!
  */
-func (network *ServiceNetwork) updateIpTables(
+func updateIpTables(
 		ctx context.Context,
-		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) error {
+		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet,
+		serviceIps map[topology_types.ServiceID]net.IP,
+		networkingSidecars map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	for serviceId, newBlocklist := range targetBlocklists {
 		allIpsToBlock := []net.IP{}
 		for _, serviceIdToBlock := range newBlocklist.Elems() {
-			ipToBlock, found := network.serviceIps[serviceIdToBlock]
+			ipToBlock, found := serviceIps[serviceIdToBlock]
 			if !found {
 				return stacktrace.NewError(
 					"Service with ID '%v' needs to block service with ID '%v', but the latter " +
@@ -401,7 +403,7 @@ func (network *ServiceNetwork) updateIpTables(
 			allIpsToBlock = append(allIpsToBlock, ipToBlock)
 		}
 
-		sidecar, found := network.networkingSidecars[serviceId]
+		sidecar, found := networkingSidecars[serviceId]
 		if !found {
 			return stacktrace.NewError(
 				"Need to update iptables of service with ID '%v', but the service doesn't have a sidecar",

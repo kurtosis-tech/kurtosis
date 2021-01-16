@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package sidecar_container_manager
+package networking_sidecar
 
 import (
 	"context"
@@ -41,9 +41,8 @@ const (
 // ==========================================================================================
 //                                        Interface
 // ==========================================================================================
-// TODO rename
 // Extracted as interface for testing
-type SidecarContainer interface {
+type NetworkingSidecar interface {
 	GetIPAddr() net.IP
 	GetContainerID() string
 	InitializeIpTables(ctx context.Context) error
@@ -57,7 +56,7 @@ type SidecarContainer interface {
 type ipTablesChain string
 
 // Provides a handle into manipulating the network state of a service container indirectly, via the sidecar
-type StandardSidecarContainer struct {
+type StandardNetworkingSidecar struct {
 	mutex *sync.Mutex
 
 	// ID of the service this sidecar container is attached to
@@ -72,11 +71,11 @@ type StandardSidecarContainer struct {
 
 	ipAddr net.IP
 
-	execCmdExecutor SidecarExecCmdExecutor
+	execCmdExecutor sidecarExecCmdExecutor
 }
 
-func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor SidecarExecCmdExecutor) *StandardSidecarContainer {
-	return &StandardSidecarContainer{
+func NewStandardNetworkingSidecar(serviceId topology_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
+	return &StandardNetworkingSidecar{
 		mutex: &sync.Mutex{},
 		serviceId: serviceId,
 		chainInUse: undefinedIpTablesChain,
@@ -86,17 +85,17 @@ func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId
 	}
 }
 
-func (sidecar *StandardSidecarContainer) GetIPAddr() net.IP {
+func (sidecar *StandardNetworkingSidecar) GetIPAddr() net.IP {
 	return sidecar.ipAddr
 }
 
-func (sidecar *StandardSidecarContainer) GetContainerID() string {
+func (sidecar *StandardNetworkingSidecar) GetContainerID() string {
 	return sidecar.containerId
 }
 
-// Initializes the iptables of the attached service to a state where interactions with this SidecarContainer instance
+// Initializes the iptables of the attached service to a state where interactions with this NetworkingSidecar instance
 //  can modify things
-func (sidecar *StandardSidecarContainer) InitializeIpTables(ctx context.Context) error {
+func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context) error {
 	// Yes, initializers are bad, but I'm deeming having initialization logic in the constructor as even worse ~ ktoday, 2021-01-16
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()
@@ -119,7 +118,7 @@ func (sidecar *StandardSidecarContainer) InitializeIpTables(ctx context.Context)
 	return nil
 }
 
-func (sidecar *StandardSidecarContainer) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
+func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
 	// TODO extract this boilerplate into a separate function
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()

@@ -15,6 +15,10 @@ import (
 	"testing"
 )
 
+func TestUpdateIpTables(t *testing.T) {
+	// TODO
+}
+
 func TestGetSidecarContainerCommandNormalOperation(t *testing.T) {
 	backgroundChain := kurtosisIpTablesChain1
 	service1 := topology_types.ServiceID("service1")

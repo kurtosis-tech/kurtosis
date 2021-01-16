@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package sidecar_container_manager
+package networking_sidecar
 
 import (
 	"context"
@@ -17,9 +17,9 @@ import (
 // ==========================================================================================
 //                                        Interface
 // ==========================================================================================
-type SidecarContainerManager interface {
-	Create(ctx context.Context, serviceId topology_types.ServiceID, serviceContainerId string) (SidecarContainer, error)
-	Destroy(ctx context.Context, sidecar SidecarContainer) error
+type NetworkingSidecarManager interface {
+	Create(ctx context.Context, serviceId topology_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
+	Destroy(ctx context.Context, sidecar NetworkingSidecar) error
 }
 
 // ==========================================================================================
@@ -30,7 +30,7 @@ type SidecarContainerManager interface {
 // This class's methods are NOT thread-safe - it's up to the caller to ensure that
 //  only one change at a time is run on a given sidecar container!!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-type StandardSidecarContainerManager struct {
+type StandardNetworkingSidecarManager struct {
 	dockerManager *docker_manager.DockerManager
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
@@ -45,15 +45,15 @@ type StandardSidecarContainerManager struct {
 	shWrappingCmd func([]string) []string
 }
 
-func NewStandardSidecarContainerManager(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string, sidecarImageName string, runForeverCmd []string, shWrappingCmd func([]string) []string) *StandardSidecarContainerManager {
-	return &StandardSidecarContainerManager{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId, sidecarImageName: sidecarImageName, runForeverCmd: runForeverCmd, shWrappingCmd: shWrappingCmd}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string, sidecarImageName string, runForeverCmd []string, shWrappingCmd func([]string) []string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId, sidecarImageName: sidecarImageName, runForeverCmd: runForeverCmd, shWrappingCmd: shWrappingCmd}
 }
 
 // Adds a sidecar container attached to the given service ID
-func (manager *StandardSidecarContainerManager) Create(
+func (manager *StandardNetworkingSidecarManager) Create(
 		ctx context.Context,
 		serviceId topology_types.ServiceID,
-		serviceContainerId string) (SidecarContainer, error) {
+		serviceContainerId string) (NetworkingSidecar, error) {
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -82,12 +82,12 @@ func (manager *StandardSidecarContainerManager) Create(
 		)
 	}
 
-	execCmdExecutor := NewSidecarExecCmdExecutor(
+	execCmdExecutor := newSidecarExecCmdExecutor(
 		manager.dockerManager,
 		sidecarContainerId,
 		manager.shWrappingCmd)
 
-	sidecarContainer := NewStandardSidecarContainer(
+	sidecarContainer := NewStandardNetworkingSidecar(
 		serviceId,
 		sidecarContainerId,
 		sidecarIp,
@@ -97,9 +97,9 @@ func (manager *StandardSidecarContainerManager) Create(
 	return sidecarContainer, nil
 }
 
-func (manager *StandardSidecarContainerManager) Destroy(
+func (manager *StandardNetworkingSidecarManager) Destroy(
 		ctx context.Context,
-		sidecar SidecarContainer) error {
+		sidecar NetworkingSidecar) error {
 	sidecarContainerId := sidecar.GetContainerID()
 	sidecarIp := sidecar.GetIPAddr()
 	if err := manager.dockerManager.KillContainer(ctx, sidecarContainerId); err != nil {
@@ -111,24 +111,3 @@ func (manager *StandardSidecarContainerManager) Destroy(
 	manager.freeIpAddrTracker.ReleaseIpAddr(sidecarIp)
 	return nil
 }
-
-
-	// ==========================================================================================
-//                                    Private helper functions
-// ==========================================================================================
-/*
-func (manager *StandardSidecarContainerManager) wrapWithMutexLocking(serviceId topology_types.ServiceID, delegate func() error) error {
-	mutex, found := manager.mutexes[serviceId]
-	if !found {
-		return stacktrace.NewError("Could not find ipTablesMutex for service ID '%v'", serviceId)
-	}
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if err := delegate(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred in the delegate function")
-	}
-	return nil
-}
-
- */
