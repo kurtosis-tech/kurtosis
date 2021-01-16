@@ -38,17 +38,6 @@ const (
 	ipTablesFirstRuleIndex = 1	// iptables chains are 1-indexed
 )
 
-type ipTablesChain string
-
-type serviceMetadata struct {
-	serviceContainerId string
-
-	sidecarContainerId string
-
-	sidecarIpAddr      net.IP
-
-}
-
 // Extracted as interface for testing
 type SidecarContainer interface {
 	UpdateIpTables(
@@ -56,6 +45,8 @@ type SidecarContainer interface {
 		blockedIps []net.IP,
 	) error
 }
+
+type ipTablesChain string
 
 // Provides a handle into manipulating the network state of a service container indirectly, via the sidecar
 type StandardSidecarContainer struct {
@@ -67,7 +58,7 @@ type StandardSidecarContainer struct {
 	// Tracks which Kurtosis chain is the primary chain, so we know
 	//  which chain is in the background that we can flush and rebuild
 	//  when we're changing iptables
-	chainInUse ipTablesChain
+	chainInUse *ipTablesChain
 
 	containerId string
 
@@ -76,7 +67,38 @@ type StandardSidecarContainer struct {
 	execCmdExecutor SidecarExecCmdExecutor
 }
 
+func NewStandardSidecarContainer(serviceId topology_types.ServiceID, containerId string, ipAddr string, execCmdExecutor SidecarExecCmdExecutor) *StandardSidecarContainer {
+	return &StandardSidecarContainer{
+		mutex: &sync.Mutex{},
+		serviceId: serviceId,
+		chainInUse: nil,
+		containerId: containerId,
+		ipAddr: ipAddr,
+		execCmdExecutor: execCmdExecutor
+	}
+}
+
+// Initializes the iptables of the attached service to a state where interactions with this SidecarContainer instance
+//  can modify things
+func (sidecar *StandardSidecarContainer) InitializeIpTables(ctx context.Context) error {
+	// Yes, initializers are bad, but I'm deeming having initialization logic in the constructor as even worse ~ ktoday, 2021-01-16
+	sidecar.mutex.Lock()
+	defer sidecar.mutex.Unlock()
+	if sidecar.chainInUse != nil {
+		return nil
+	}
+
+	// TODO set chainInUse
+}
+
 func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
+	// TODO extract this boilerplate into a separate function
+	sidecar.mutex.Lock()
+	defer sidecar.mutex.Unlock()
+	if sidecar.chainInUse == nil {
+		return stacktrace.NewError("Cannot update iptables because they haven't yet been initialized")
+	}
+
 	primaryChain := sidecar.chainInUse
 	var backgroundChain ipTablesChain
 	if primaryChain == kurtosisIpTablesChain1 {
@@ -104,6 +126,9 @@ func (sidecar StandardSidecarContainer) UpdateIpTables(ctx context.Context, bloc
 	return nil
 }
 
+// ==========================================================================================
+//                                   Private helper functions
+// ==========================================================================================
 func generateIpTablesInitCmd(
 	) {
 
