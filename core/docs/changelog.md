@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code
 * When a container using an IP is destroyed, release it back into the free IP address tracker's pool
 * When network partitioning is enabled, double the allocated test network width to make room for the sidecar containers
