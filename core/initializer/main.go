@@ -198,7 +198,6 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	// TODO Break everything from here on down into a private helper function
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("An error occurred creating the Docker client: %v", err)

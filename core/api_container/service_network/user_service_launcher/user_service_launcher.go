@@ -68,8 +68,9 @@ func (launcher UserServiceLauncher) Launch(
 		// Mapping artifactID -> mountpoint
 		filesArtifactMountDirpaths map[string]string) (string, error) {
 
-	// TODO keep track of the volumes we create, and delete them at the end of the test to keep things cleaner
 	// First expand the files artifacts into volumes, so that any errors get caught early
+	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
+	//  and delete them at the end of the test to keep things cleaner
 	artifactIdsToVolumeNames := map[string]string{}
 	for artifactId, _ := range filesArtifactMountDirpaths {
 		artifactIdsToVolumeNames[artifactId] = launcher.getExpandedFilesArtifactVolName(

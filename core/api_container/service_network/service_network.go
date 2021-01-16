@@ -220,6 +220,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	defer func() {
 		if !shouldLeaveServiceInTopology {
 			network.topology.RemoveService(serviceId)
+			network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
 			delete(network.serviceIps, serviceId)
 
 			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we made to all
@@ -353,7 +354,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 		network.serviceIpTablesChainInUse[serviceId] = initialKurtosisIpTablesChain
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
-		//  getting the blocklists not an expensive call
+		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/issues/123 )
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables " +
@@ -386,15 +387,19 @@ func (network *ServiceNetwork) RemoveService(
 	if !found {
 		return stacktrace.NewError("Unknown service '%v'", serviceId)
 	}
+	serviceIp, found := network.serviceIps[serviceId]
+	if !found {
+		return stacktrace.NewError("No IP found for service '%v'", serviceId)
+	}
 
-	// TODO Parallelize the shutdown of the service container and the sidecar container
+	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	// Make a best-effort attempt to stop the service container
 	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceId, serviceContainerId)
 	if err := network.dockerManager.StopContainer(context, serviceContainerId, containerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 	}
 	network.topology.RemoveService(serviceId)
-	// TODO release the IP that the service got
+	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
 	delete(network.serviceContainerIds, serviceId)
 	delete(network.serviceIps, serviceId)
 	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
@@ -414,15 +419,16 @@ func (network *ServiceNetwork) RemoveService(
 
 		}
 		sidecarContainerId := sidecarContainerInfo.containerId
+		sidecarIp := sidecarContainerInfo.ipAddr
 
-		// TODO Parallelize the shutdown of the sidecar container with the service container
+		// TODO PERF: Parallelize the shutdown of the sidecar container with the service container
 		// Try to stop the sidecar container too
 		logrus.Debugf("Removing sidecar container with container ID '%v'...", sidecarContainerId)
 		// The sidecar container doesn't have any state and is in a 'sleep infinity' loop; it's okay to just kill
 		if err := network.dockerManager.KillContainer(context, sidecarContainerId); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the sidecar container with ID %v", sidecarContainerId)
 		}
-		// TODO release the IP that the service received
+		network.freeIpAddrTracker.ReleaseIpAddr(sidecarIp)
 		delete(network.sidecarContainerInfo, serviceId)
 		logrus.Debugf("Successfully removed sidecar container with container ID %v", sidecarContainerId)
 	}
@@ -439,7 +445,7 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 
 	containerStopErrors := []error{}
 
-	// TODO parallelize this for faster shutdown
+	// TODO PERF: parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
 	for serviceId, sidecarContainerInfo := range network.sidecarContainerInfo {
 		sidecarContainerId := sidecarContainerInfo.containerId
@@ -455,7 +461,7 @@ func (network *ServiceNetwork) Destroy(context context.Context, containerStopTim
 	}
 	logrus.Debugf("Made best-effort attempt to stop sidecar containers")
 
-	// TODO parallelize this for faster shutdown
+	// TODO PERF: parallelize this for faster shutdown
 	logrus.Debugf("Making best-effort attempt to stop service containers...")
 	for serviceId, serviceContainerId := range network.serviceContainerIds {
 		// TODO set the stop timeout on the service itself
@@ -499,7 +505,7 @@ Updates the iptables of the services with the given IDs to match the target bloc
 func (network *ServiceNetwork) updateIpTables(
 		ctx context.Context,
 		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) error {
-	// TODO Run the container updates in parallel, with the container being modified being the most important
+	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	erroredServiceIdStrs := []string{}
 	for serviceId, newBlocklist := range targetBlocklists {
 		if err := network.updateIpTablesForService(ctx, serviceId, *newBlocklist); err != nil {
