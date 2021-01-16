@@ -3,8 +3,4 @@
  * All Rights Reserved.
  */
 
-package iptables_manager
-
-type IpTablesManager struct {
-
-}
+package sidecar_container_manager

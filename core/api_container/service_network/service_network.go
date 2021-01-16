@@ -26,39 +26,7 @@ import (
 const (
 	defaultPartitionId                   topology_types.PartitionID = "default"
 	startingDefaultConnectionBlockStatus                            = false
-
-	iproute2ContainerImage = "kurtosistech/iproute2"
-
-	// We create two chains so that during modifications we can flush and rebuild one
-	//  while the other one is live
-	kurtosisIpTablesChain1 ipTablesChain = "KURTOSIS1"
-	kurtosisIpTablesChain2 ipTablesChain = "KURTOSIS2"
-	initialKurtosisIpTablesChain = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
-
-	ipTablesCommand = "iptables"
-	ipTablesInputChain = "INPUT"
-	ipTablesOutputChain = "OUTPUT"
-	ipTablesNewChainFlag = "-N"
-	ipTablesInsertRuleFlag = "-I"
-	ipTablesFlushChainFlag = "-F"
-	ipTablesAppendRuleFlag  = "-A"
-	ipTablesReplaceRuleFlag = "-R"
-	ipTablesDropAction = "DROP"
-	ipTablesFirstRuleIndex = 1	// iptables chains are 1-indexed
 )
-
-type ipTablesChain string
-
-// We sleep forever because all the commands this container will run will be executed
-//  via Docker exec
-var ipRouteContainerCommand = []string{
-	"sleep","infinity",
-}
-
-type containerInfo struct {
-	containerId string
-	ipAddr net.IP
-}
 
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
@@ -89,13 +57,6 @@ type ServiceNetwork struct {
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceIps map[topology_types.ServiceID]net.IP
 	serviceContainerIds map[topology_types.ServiceID]string
-
-	// Tracks which Kurtosis chain is the primary chain, so we know
-	//  which chain is in the background that we can flush and rebuild
-	//  when we're changing iptables
-	serviceIpTablesChainInUse map[topology_types.ServiceID]ipTablesChain
-
-	sidecarContainerInfo map[topology_types.ServiceID]containerInfo
 }
 
 func NewServiceNetwork(
@@ -224,7 +185,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
 			delete(network.serviceIps, serviceId)
 
-			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we made to all
+			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we'll make to all
 			//  the other services, because their iptables will be completely overwritten by the next
 			//  Add/Repartition event. If we ever make iptables updates incremental though, we WILL need to
 			//  undo the iptables we added here!
@@ -524,124 +485,3 @@ func (network *ServiceNetwork) updateIpTables(
 	return nil
 }
 
-// TODO Write tests for this, by extracting the logic to run exec commands on the sidecar into a separate, mockable
-//  interface
-func (network ServiceNetwork) updateIpTablesForService(ctx context.Context, serviceId topology_types.ServiceID, newBlocklist topology_types.ServiceIDSet) error {
-	primaryChain := network.serviceIpTablesChainInUse[serviceId]
-	var backgroundChain ipTablesChain
-	if primaryChain == kurtosisIpTablesChain1 {
-		backgroundChain = kurtosisIpTablesChain2
-	} else if primaryChain == kurtosisIpTablesChain2 {
-		backgroundChain = kurtosisIpTablesChain1
-	} else {
-		return stacktrace.NewError("Unrecognized iptables chain '%v' in use; this is a code bug", primaryChain)
-	}
-
-	sidecarContainerCmd, err := getSidecarContainerCommand(backgroundChain, newBlocklist, network.serviceIps)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the command to run in the sidecar container")
-	}
-
-	sidecarContainerInfo, found := network.sidecarContainerInfo[serviceId]
-	if !found {
-		return stacktrace.NewError(
-			"Couldn't find a sidecar container info for Service ID '%v', which means there's no way " +
-				"to update its iptables",
-			serviceId,
-		)
-	}
-	sidecarContainerId := sidecarContainerInfo.containerId
-
-	logrus.Infof(
-		"Running iptables command '%v' in sidecar container '%v' to update blocklist for service '%v'...",
-		sidecarContainerCmd,
-		sidecarContainerId,
-		serviceId)
-	execOutputBuf := &bytes.Buffer{}
-	if err := network.dockerManager.RunExecCommand(ctx, sidecarContainerId, sidecarContainerCmd, execOutputBuf); err != nil {
-		logrus.Error("-------------------- iptables blocklist-updating exec command output --------------------")
-		if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
-			logrus.Errorf("An error occurred printing the exec logs: %v", err)
-		}
-		logrus.Error("------------------ End iptables blocklist-updating exec command output --------------------")
-		return stacktrace.Propagate(
-			err,
-			"An error occurred running iptables command '%v' in sidecar container '%v' to update the blocklist of service '%v'",
-			sidecarContainerCmd,
-			sidecarContainerId,
-			serviceId)
-	}
-	network.serviceIpTablesChainInUse[serviceId] = backgroundChain
-	logrus.Infof("Successfully updated blocklist for service '%v'", serviceId)
-	return nil
-}
-
-/*
-Given the new set of services that should be in the service's iptables, calculate the command that needs to be
-	run in the sidecar container to make the service's iptables match the desired state.
- */
-func getSidecarContainerCommand(
-		backgroundChain ipTablesChain,
-		newBlocklist topology_types.ServiceIDSet,
-		serviceIps map[topology_types.ServiceID]net.IP) ([]string, error) {
-	sidecarContainerCommand := []string{
-		ipTablesCommand,
-		ipTablesFlushChainFlag,
-		string(backgroundChain),
-	}
-
-	if newBlocklist.Size() > 0 {
-		ipsToBlockStrSlice := []string{}
-		for _, serviceIdToBlock := range newBlocklist.Elems() {
-			ipToBlock, found := serviceIps[serviceIdToBlock]
-			if !found {
-				return nil, stacktrace.NewError("Need to block the IP of target service ID '%v', but " +
-					"the target service doesn't have an IP associated to it",
-					serviceIdToBlock)
-			}
-			ipsToBlockStrSlice = append(ipsToBlockStrSlice, ipToBlock.String())
-		}
-		ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
-
-		// As of 2020-12-31 the Kurtosis chains get used by both INPUT and OUTPUT intrinsic iptables chains,
-		//  so we add rules to the Kurtosis chains to drop traffic both inbound and outbound
-		for _, flag := range []string{"-s", "-d"} {
-			// PERF NOTE: If it takes iptables a long time to insert all the rules, we could do the
-			//  extra work leg work to calculate the diff and insert only what's needed
-			addBlockedSourceIpsCommand := []string{
-				ipTablesCommand,
-				ipTablesAppendRuleFlag,
-				string(backgroundChain),
-				flag,
-				ipsToBlockCommaList,
-				"-j",
-				ipTablesDropAction,
-			}
-			sidecarContainerCommand = append(sidecarContainerCommand, "&&")
-			sidecarContainerCommand = append(sidecarContainerCommand, addBlockedSourceIpsCommand...)
-		}
-	}
-
-	// Lastly, make sure to update which chain is being used for both INPUT and OUTPUT iptables
-	for _, intrinsicChain := range []string{ipTablesInputChain, ipTablesOutputChain} {
-		setBackgroundChainInFirstPositionCommand := []string{
-			ipTablesCommand,
-			ipTablesReplaceRuleFlag,
-			intrinsicChain,
-			strconv.Itoa(ipTablesFirstRuleIndex),
-			"-j",
-			string(backgroundChain),
-		}
-		sidecarContainerCommand = append(sidecarContainerCommand, "&&")
-		sidecarContainerCommand = append(sidecarContainerCommand, setBackgroundChainInFirstPositionCommand...)
-	}
-
-	// Because the command contains '&&', we need to wrap this in 'sh -c' else iptables
-	//  will think the '&&' is an argument intended for itself
-	shWrappedCommand := []string{
-		"sh",
-		"-c",
-		strings.Join(sidecarContainerCommand, " "),
-	}
-	return shWrappedCommand, nil
-}
