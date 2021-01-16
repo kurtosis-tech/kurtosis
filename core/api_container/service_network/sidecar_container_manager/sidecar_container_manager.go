@@ -4,3 +4,11 @@
  */
 
 package sidecar_container_manager
+
+type SidecarContainerManager interface {
+	CreateSidecarContainer(
+	) error
+
+	DestroySidecarContainer(
+	) error
+}

@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/sidecar_container_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -43,8 +44,6 @@ type ServiceNetwork struct {
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
 
-	dockerNetworkId string
-
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerManager *docker_manager.DockerManager
@@ -57,19 +56,20 @@ type ServiceNetwork struct {
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceIps map[topology_types.ServiceID]net.IP
 	serviceContainerIds map[topology_types.ServiceID]string
+
+	sidecarContainerManager *sidecar_container_manager.SidecarContainerManager
 }
 
 func NewServiceNetwork(
 		isPartitioningEnabled bool,
-		dockerNetworkId string,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
-		userServiceLauncher *user_service_launcher.UserServiceLauncher) *ServiceNetwork {
+		userServiceLauncher *user_service_launcher.UserServiceLauncher,
+		sidecarContainerManager *sidecar_container_manager.SidecarContainerManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
 	return &ServiceNetwork{
 		isDestroyed: false,
 		isPartitioningEnabled: isPartitioningEnabled,
-		dockerNetworkId: dockerNetworkId,
 		freeIpAddrTracker: freeIpAddrTracker,
 		dockerManager: dockerManager,
 		userServiceLauncher: userServiceLauncher,
@@ -80,8 +80,7 @@ func NewServiceNetwork(
 		),
 		serviceIps: map[topology_types.ServiceID]net.IP{},
 		serviceContainerIds: map[topology_types.ServiceID]string{},
-		serviceIpTablesChainInUse: map[topology_types.ServiceID]ipTablesChain{},
-		sidecarContainerInfo: map[topology_types.ServiceID]containerInfo{},
+		sidecarContainerManager: sidecarContainerManager,
 	}
 }
 
@@ -233,87 +232,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
-		// TODO This uses up the user's requested IPs with a long-running container that's not one of their
-		//  services!!! What we really want to do is, if network partitioning is enabled, double the size
-		//  of their network to make space for the sidecars
-		sidecarIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
-		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred getting a free IP address for the networking sidecar container")
-		}
-		sidecarContainerId, err := network.dockerManager.CreateAndStartContainer(
-			context,
-			iproute2ContainerImage,
-			network.dockerNetworkId,
-			sidecarIp,
-			map[docker_manager.ContainerCapability]bool{
-				docker_manager.NetAdmin: true,
-			},
-			docker_manager.NewContainerNetworkMode(serviceContainerId),
-			map[nat.Port]*nat.PortBinding{},
-			ipRouteContainerCommand,
-			map[string]string{}, // No environment variables
-			map[string]string{}, // no bind mounts for services created via the Kurtosis API
-			map[string]string{}, // No volume mounts either
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred starting the sidecar iproute container for modifying the service container's iptables")
-		}
-		network.sidecarContainerInfo[serviceId] = containerInfo{
-			containerId: sidecarContainerId,
-			ipAddr:      sidecarIp,
-		}
-
-		// As soon as we have the sidecar, we need to create the Kurtosis chain and insert it in first position
-		//  on both the INPUT *and* the OUTPUT chains
-		configureKurtosisChainsCommand := []string{
-			ipTablesCommand,
-			ipTablesNewChainFlag,
-			string(kurtosisIpTablesChain1),
-			"&&",
-			ipTablesCommand,
-			ipTablesNewChainFlag,
-			string(kurtosisIpTablesChain2),
-		}
-		for _, chain := range []string{ipTablesInputChain, ipTablesOutputChain} {
-			addKurtosisChainInFirstPositionCommand := []string{
-				ipTablesCommand,
-				ipTablesInsertRuleFlag,
-				chain,
-				strconv.Itoa(ipTablesFirstRuleIndex),
-				"-j",
-				string(initialKurtosisIpTablesChain),
-			}
-			configureKurtosisChainsCommand = append(configureKurtosisChainsCommand, "&&")
-			configureKurtosisChainsCommand = append(
-				configureKurtosisChainsCommand,
-				addKurtosisChainInFirstPositionCommand...)
-		}
-
-		// We need to wrap this command with 'sh -c' because we're using '&&', and if we don't do this then
-		//  iptables will think the '&&' is an argument for it and fail
-		configureKurtosisChainShWrappedCommand := []string{
-			"sh",
-			"-c",
-			strings.Join(configureKurtosisChainsCommand, " "),
-		}
-
-		logrus.Debugf("Running exec command to configure Kurtosis iptables chain: '%v'", configureKurtosisChainShWrappedCommand)
-		execOutputBuf := &bytes.Buffer{}
-		if err := network.dockerManager.RunExecCommand(
-				context,
-				sidecarContainerId,
-			configureKurtosisChainShWrappedCommand,
-				execOutputBuf); err !=  nil {
-			logrus.Error("------------------ Kurtosis iptables chain-configuring exec command output --------------------")
-			if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
-				logrus.Errorf("An error occurred printing the exec logs: %v", err)
-			}
-			logrus.Error("---------------- End Kurtosis iptables chain-configuring exec command output --------------------")
-			return nil, stacktrace.Propagate(err, "An error occurred running the exec command to configure iptables to use the custom Kurtosis chain")
-		}
-		network.serviceIpTablesChainInUse[serviceId] = initialKurtosisIpTablesChain
+		network.sidecarContainerManager.
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
 		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/issues/123 )
