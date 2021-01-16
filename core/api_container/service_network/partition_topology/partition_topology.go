@@ -174,7 +174,7 @@ func (topology PartitionTopology) GetPartitionServices() map[topology_types.Part
 
 // Returns a map indicating, for each service, which services it should be blocking based on the current network topology
 func (topology PartitionTopology) GetBlocklists() (map[topology_types.ServiceID]*topology_types.ServiceIDSet, error) {
-	// TODO to speed this method up, we can remove this method in favor of spitting out updated blocklists on each change operation (addservice, repartition, etc.)
+	// TODO PERF: to speed this method up, we can remove this method in favor of spitting out updated blocklists on each change operation (addservice, repartition, etc.)
 	//  so that only the nodes that need updating will get updated incrementally
 	result := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
 	for partitionId, servicesInPartition := range topology.partitionServices {
