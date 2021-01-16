@@ -114,7 +114,25 @@ func RunTests(
 	}
 	logrus.Debug("Test artifacts downloaded successfully")
 
-	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata.NetworkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
+	// NOTE: To implement network partitioning we need to start sidecar containers, so we'll need 2N the IP addresses
+	//  that the user requests to avoid running out. We use this crude method - double ALL testnet widths if even
+	//  one test has network partitioning enabled - and if running out of IP address ranges is ever a problem we can make
+	//  this more precise later ~ ktoday, 2021-01-15
+	shouldDoubleNetworkWidth := false
+	for testName, _ := range testNamesToRun {
+		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
+		if !found {
+			return false, stacktrace.NewError("Couldn't find test metadata for test '%v'", testName)
+		}
+		shouldDoubleNetworkWidth = shouldDoubleNetworkWidth || testMetadata.IsPartitioningEnabled
+	}
+	networkWidthBits := testSuiteMetadata.NetworkWidthBits
+	if shouldDoubleNetworkWidth {
+		networkWidthBits = networkWidthBits + 1
+	}
+	logrus.Debugf("Using network width bits: %v", networkWidthBits)
+
+	testParams, err := buildTestParams(testNamesToRun, networkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -200,7 +218,15 @@ func buildTestParams(
 			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
 		}
 
-		testParams[testName] = *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding, testMetadata)
+		testParamsForTest := *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding, testMetadata)
+		logrus.Debugf(
+			"Built parallel test param for test '%v' with subnet CIDR string '%v', free host port binding '%v', and test metadata '%v'",
+			testName,
+			subnetCidrStr,
+			freeHostPortBinding,
+			testMetadata)
+
+		testParams[testName] = testParamsForTest
 		testIndex++
 	}
 	return testParams, nil
