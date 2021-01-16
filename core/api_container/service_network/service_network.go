@@ -412,7 +412,8 @@ func updateIpTables(
 		if err := sidecar.UpdateIpTables(ctx, allIpsToBlock); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred updating the iptables for service '%v'")
+				"An error occurred updating the iptables for service '%v'",
+				serviceId)
 		}
 	}
 	return nil

@@ -58,7 +58,8 @@ func (manager *StandardNetworkingSidecarManager) Create(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting a free IP address for the sidecar container attached to service with ID '%v'")
+			"An error occurred getting a free IP address for the sidecar container attached to service with ID '%v'",
+			serviceId)
 	}
 	sidecarContainerId, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
@@ -79,10 +80,11 @@ func (manager *StandardNetworkingSidecarManager) Create(
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred starting the sidecar container attached to service with ID '%v'",
+			serviceId,
 		)
 	}
 
-	execCmdExecutor := newSidecarExecCmdExecutor(
+	execCmdExecutor := newStandardSidecarExecCmdExecutor(
 		manager.dockerManager,
 		sidecarContainerId,
 		manager.shWrappingCmd)

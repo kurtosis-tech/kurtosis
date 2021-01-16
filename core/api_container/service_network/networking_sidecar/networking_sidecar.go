@@ -27,8 +27,6 @@ const (
 	initialKurtosisIpTablesChain = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
 
 	ipTablesCommand = "iptables"
-	ipTablesInputChain = "INPUT"
-	ipTablesOutputChain = "OUTPUT"
 	ipTablesNewChainFlag = "-N"
 	ipTablesInsertRuleFlag = "-I"
 	ipTablesFlushChainFlag = "-F"
@@ -36,7 +34,15 @@ const (
 	ipTablesReplaceRuleFlag = "-R"
 	ipTablesDropAction = "DROP"
 	ipTablesFirstRuleIndex = 1	// iptables chains are 1-indexed
+
+	ipTablesInputChain = "INPUT"
+	ipTablesOutputChain = "OUTPUT"
 )
+
+var intrinsicChainsToUpdate = []string{
+	ipTablesInputChain,
+	ipTablesOutputChain,
+}
 
 // ==========================================================================================
 //                                        Interface
@@ -111,7 +117,10 @@ func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context
 		sidecar.containerId,
 		sidecar.serviceId)
 	if err := sidecar.execCmdExecutor.exec(ctx, initCmd); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running sidecar iptables init command '%v'")
+		return stacktrace.Propagate(
+			err,
+			"An error occurred running sidecar iptables init command '%v'",
+			initCmd)
 	}
 	sidecar.chainInUse = initialKurtosisIpTablesChain
 	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
@@ -144,7 +153,7 @@ func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, bl
 		sidecar.containerId,
 		sidecar.serviceId)
 	if err := sidecar.execCmdExecutor.exec(ctx, updateCmd); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'")
+		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'", updateCmd)
 	}
 	sidecar.chainInUse = backgroundChain
 	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
@@ -167,7 +176,7 @@ func generateIpTablesInitCmd() []string {
 
 	// Very important that we set the Kurtosis chain for both INPUT *and* OUTPUT chain, to truly simulate
 	//  a network partition
-	for _, chain := range []string{ipTablesInputChain, ipTablesOutputChain} {
+	for _, chain := range intrinsicChainsToUpdate {
 		addKurtosisChainInFirstPositionCommand := []string{
 			ipTablesCommand,
 			ipTablesInsertRuleFlag,
@@ -232,7 +241,7 @@ func generateIpTablesUpdateCmd(
 	}
 
 	// Lastly, make sure to update which chain is being used for both INPUT and OUTPUT iptables
-	for _, intrinsicChain := range []string{ipTablesInputChain, ipTablesOutputChain} {
+	for _, intrinsicChain := range intrinsicChainsToUpdate {
 		setBackgroundChainInFirstPositionCommand := []string{
 			ipTablesCommand,
 			ipTablesReplaceRuleFlag,

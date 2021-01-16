@@ -14,10 +14,21 @@ import (
 	"io"
 )
 
+// ==========================================================================================
+//                                  Interface
+// ==========================================================================================
+// Extracted as an interface for testing
+type sidecarExecCmdExecutor interface {
+	exec(ctx context.Context, unwrappedCmd []string) error
+}
+
+// ==========================================================================================
+//                                  Implementation
+// ==========================================================================================
 // The API for the NetworkingSidecar class run exec commands against the actual Docker container that backs it
 // This is a separate class because NetworkingSidecar shouldn't know about the underlying DockerManager used to run
 //  the exec commands; it should be transparent to NetworkingSidecar
-type sidecarExecCmdExecutor struct {
+type standardSidecarExecCmdExecutor struct {
 	dockerManager *docker_manager.DockerManager
 
 	// Container ID of the sidecar container in which exec commands should run
@@ -26,13 +37,13 @@ type sidecarExecCmdExecutor struct {
 	shWrappingCmd func([]string) []string
 }
 
-func newSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *sidecarExecCmdExecutor {
-	return &sidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
+func newStandardSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *standardSidecarExecCmdExecutor {
+	return &standardSidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
 }
 
 
 
-func (executor sidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
+func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
 	shWrappedCmd := executor.shWrappingCmd(unwrappedCmd)
 
 	execOutputBuf := &bytes.Buffer{}
