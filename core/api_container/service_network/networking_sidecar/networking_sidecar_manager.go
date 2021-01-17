@@ -12,7 +12,29 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
+	"strings"
 )
+
+const (
+	networkingSidecarImageName = "kurtosistech/iproute2"
+)
+
+// We sleep forever because all the commands this container will run will be executed
+//  via Docker exec
+var sidecarContainerCommand = []string{
+	"sleep","infinity",
+}
+
+// Embeds the given command in a call to whichever shell is native to the image, so that a command with things
+//  like '&&' will get executed as expected
+var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
+	return []string{
+		"sh",
+		"-c",
+		strings.Join(unwrappedCmd, " "),
+	}
+}
+
 
 // ==========================================================================================
 //                                        Interface
@@ -36,18 +58,12 @@ type StandardNetworkingSidecarManager struct {
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
-
-	sidecarImageName string
-
-	// Command that will be executed on each new sidecar container to run it forever
-	runForeverCmd []string
-
-	shWrappingCmd func([]string) []string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string, sidecarImageName string, runForeverCmd []string, shWrappingCmd func([]string) []string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId, sidecarImageName: sidecarImageName, runForeverCmd: runForeverCmd, shWrappingCmd: shWrappingCmd}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
+
 
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Create(
@@ -63,7 +79,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 	}
 	sidecarContainerId, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
-		manager.sidecarImageName,
+		networkingSidecarImageName,
 		manager.dockerNetworkId,
 		sidecarIp,
 		map[docker_manager.ContainerCapability]bool{
@@ -71,7 +87,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 		},
 		docker_manager.NewContainerNetworkMode(serviceContainerId),
 		map[nat.Port]*nat.PortBinding{},
-		manager.runForeverCmd,
+		sidecarContainerCommand,
 		map[string]string{}, // No environment variables
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		map[string]string{}, // No volume mounts either
@@ -87,7 +103,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 	execCmdExecutor := newStandardSidecarExecCmdExecutor(
 		manager.dockerManager,
 		sidecarContainerId,
-		manager.shWrappingCmd)
+		sidecarContainerShWrapper)
 
 	sidecarContainer := NewStandardNetworkingSidecar(
 		serviceId,

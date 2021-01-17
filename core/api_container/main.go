@@ -28,7 +28,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -41,25 +40,7 @@ const (
 	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
 	//  before hard-killing it
 	containerStopTimeout = 10 * time.Second
-
-	networkingSidecarImageName = "kurtosistech/iproute2"
 )
-
-// We sleep forever because all the commands this container will run will be executed
-//  via Docker exec
-var sidecarContainerCommand = []string{
-	"sleep","infinity",
-}
-
-// Embeds the given command in a call to whichever shell is native to the image, so that a command with things
-//  like '&&' will get executed as expected
-var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
-	return []string{
-		"sh",
-		"-c",
-		strings.Join(unwrappedCmd, " "),
-	}
-}
 
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
@@ -280,10 +261,7 @@ func createServiceNetwork(
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
 		freeIpAddrTracker,
-		dockerNetworkId,
-		networkingSidecarImageName,
-		sidecarContainerCommand,
-		sidecarContainerShWrapper)
+		dockerNetworkId)
 
 	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,

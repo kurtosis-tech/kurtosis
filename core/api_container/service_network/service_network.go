@@ -117,7 +117,6 @@ func (network *ServiceNetwork) Repartition(
 }
 
 
-// TODO Refactor this into smaller chunks - it's currently a very complex and tricky method
 // TODO Add tests for this
 /*
 Creates the service with the given ID in the given partition
@@ -376,8 +375,6 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-
-// TODO write tests for me!!
 /*
 Updates the iptables of the services with the given IDs to match the target blocklists
 
