@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -27,6 +28,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -39,7 +41,25 @@ const (
 	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
 	//  before hard-killing it
 	containerStopTimeout = 10 * time.Second
+
+	networkingSidecarImageName = "kurtosistech/iproute2"
 )
+
+// We sleep forever because all the commands this container will run will be executed
+//  via Docker exec
+var sidecarContainerCommand = []string{
+	"sleep","infinity",
+}
+
+// Embeds the given command in a call to whichever shell is native to the image, so that a command with things
+//  like '&&' will get executed as expected
+var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
+	return []string{
+		"sh",
+		"-c",
+		strings.Join(unwrappedCmd, " "),
+	}
+}
 
 func main() {
 	// NOTE: we'll want to chnage the ForceColors to false if we ever want structured logging
@@ -257,12 +277,20 @@ func createServiceNetwork(
 		dockerNetworkId,
 		suiteExecutionVolName)
 
+	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
+		dockerManager,
+		freeIpAddrTracker,
+		dockerNetworkId,
+		networkingSidecarImageName,
+		sidecarContainerCommand,
+		sidecarContainerShWrapper)
+
 	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,
-		dockerNetworkId,
 		freeIpAddrTracker,
 		dockerManager,
-		userServiceLauncher)
+		userServiceLauncher,
+		networkingSidecarManager)
 	return serviceNetwork
 }
 
