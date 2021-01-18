@@ -32,13 +32,13 @@ type standardSidecarExecCmdExecutor struct {
 	dockerManager *docker_manager.DockerManager
 
 	// Container ID of the sidecar container in which exec commands should run
-	containerId string
+	sidecarContainerId string
 
 	shWrappingCmd func([]string) []string
 }
 
-func newStandardSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, containerId string, shWrappingCmd func([]string) []string) *standardSidecarExecCmdExecutor {
-	return &standardSidecarExecCmdExecutor{dockerManager: dockerManager, containerId: containerId, shWrappingCmd: shWrappingCmd}
+func newStandardSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, sidecarContainerId string, shWrappingCmd func([]string) []string) *standardSidecarExecCmdExecutor {
+	return &standardSidecarExecCmdExecutor{dockerManager: dockerManager, sidecarContainerId: sidecarContainerId, shWrappingCmd: shWrappingCmd}
 }
 
 
@@ -49,7 +49,7 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, unwrapp
 	execOutputBuf := &bytes.Buffer{}
 	err := executor.dockerManager.RunExecCommand(
 			ctx,
-			executor.containerId,
+			executor.sidecarContainerId,
 			shWrappedCmd,
 			execOutputBuf)
 	if err !=  nil {

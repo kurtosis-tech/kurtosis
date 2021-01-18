@@ -52,7 +52,7 @@ func TestGenerateUpdateCmd(t *testing.T) {
 
 func TestInitializationDoesAllNecessaryChains(t *testing.T) {
 	neededChains := map[string]bool{}
-	for _, chain := range intrinsicChainsToUpdate {
+	for chain := range intrinsicChainsToUpdate {
 		neededChains[chain] = true
 	}
 
@@ -70,7 +70,7 @@ func TestInitializationDoesAllNecessaryChains(t *testing.T) {
 
 func TestUpdateDoesAllNecessaryChains(t *testing.T) {
 	neededChains := map[string]bool{}
-	for _, chain := range intrinsicChainsToUpdate {
+	for chain := range intrinsicChainsToUpdate {
 		neededChains[chain] = true
 	}
 

@@ -39,9 +39,9 @@ const (
 	ipTablesOutputChain = "OUTPUT"
 )
 
-var intrinsicChainsToUpdate = []string{
-	ipTablesInputChain,
-	ipTablesOutputChain,
+var intrinsicChainsToUpdate = map[string]bool{
+	ipTablesInputChain: true,
+	ipTablesOutputChain: true,
 }
 
 // ==========================================================================================
@@ -176,7 +176,7 @@ func generateIpTablesInitCmd() []string {
 
 	// Very important that we set the Kurtosis chain for both INPUT *and* OUTPUT chain, to truly simulate
 	//  a network partition
-	for _, chain := range intrinsicChainsToUpdate {
+	for chain := range intrinsicChainsToUpdate {
 		addKurtosisChainInFirstPositionCommand := []string{
 			ipTablesCommand,
 			ipTablesInsertRuleFlag,
@@ -241,7 +241,7 @@ func generateIpTablesUpdateCmd(
 	}
 
 	// Lastly, make sure to update which chain is being used for both INPUT and OUTPUT iptables
-	for _, intrinsicChain := range intrinsicChainsToUpdate {
+	for intrinsicChain := range intrinsicChainsToUpdate {
 		setBackgroundChainInFirstPositionCommand := []string{
 			ipTablesCommand,
 			ipTablesReplaceRuleFlag,
