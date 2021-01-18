@@ -6,63 +6,81 @@
 package service_network
 
 import (
-	"fmt"
+	"context"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
-	"github.com/palantir/stacktrace"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 	"net"
-	"reflect"
+	"strconv"
 	"testing"
 )
 
-func TestGetSidecarContainerCommandNormalOperation(t *testing.T) {
-	backgroundChain := kurtosisIpTablesChain1
-	service1 := topology_types.ServiceID("service1")
-	service1Ip := net.IP{1, 2, 3, 4}
-	service2 := topology_types.ServiceID("service2")
-	service2Ip := net.IP{5, 6, 7, 8}
-	newBlocklist := topology_types.NewServiceIDSet(service1, service2)
-	serviceIps := map[topology_types.ServiceID]net.IP{
-		service1: service1Ip,
-		service2: service2Ip,
+func TestUpdateIpTables(t *testing.T) {
+	numServices := 10
+	ctx := context.Background()
+
+	sidecars := map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar{}
+	mockSidecars := map[topology_types.ServiceID]*networking_sidecar.MockNetworkingSidecar{}
+	for i := 0; i < numServices; i++ {
+		serviceId := testServiceIdFromInt(i)
+		sidecar := networking_sidecar.NewMockNetworkingSidecar()
+		sidecars[serviceId] = sidecar
+		mockSidecars[serviceId] = sidecar
 	}
 
-	actual, err := getSidecarContainerCommand(backgroundChain, *newBlocklist, serviceIps)
-	if err != nil {
-		t.Fatal(stacktrace.Propagate(
-			err,
-			"An error occurred getting the sidecar container command for background chain '%v'",
-			backgroundChain),
-		)
+	serviceIps := map[topology_types.ServiceID]net.IP{}
+	for i := 0; i < numServices; i++ {
+		serviceId := testServiceIdFromInt(i)
+		ip := testIpFromInt(i)
+		serviceIps[serviceId] = ip
 	}
 
-	// The order in which the IPs get iterated and put into a joined string is nondeterministic, so
-	//  we have to prepare two versions of the expected string to account for both permutations
-	ipStrVersions := []string{
-		service1Ip.String() + "," + service2Ip.String(),
-		service2Ip.String() + "," + service1Ip.String(),
-	}
-
-	expectedCommands := [][]string{}
-	for _, ipStrVersion := range ipStrVersions {
-		commandStr := fmt.Sprintf(
-			"iptables -F %v " +
-				"&& iptables -A %v -s %v -j DROP " +
-				"&& iptables -A %v -d %v -j DROP " +
-				"&& iptables -R INPUT 1 -j %v " +
-				"&& iptables -R OUTPUT 1 -j %v",
-			backgroundChain,
-			backgroundChain, ipStrVersion,
-			backgroundChain, ipStrVersion,
-			backgroundChain,
-			backgroundChain)
-		expected := []string{
-			"sh",
-			"-c",
-			commandStr,
+	// Creates the pathological "line" of connections, where each service can only see the services adjacent
+	targetBlocklists := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
+	for i := 0; i < numServices; i++ {
+		serviceId := testServiceIdFromInt(i)
+		blockedSet := topology_types.NewServiceIDSet()
+		for j := 0; j < numServices; j++ {
+			if j < i - 1 || j > i + 1 {
+				blockedServiceId := testServiceIdFromInt(j)
+				blockedSet.AddElem(blockedServiceId)
+			}
 		}
-		expectedCommands = append(expectedCommands, expected)
+		targetBlocklists[serviceId] = blockedSet
 	}
-	matches := reflect.DeepEqual(expectedCommands[0], actual) || reflect.DeepEqual(expectedCommands[1], actual)
-	assert.Assert(t, matches, "Expected command doesn't match either IP string combination")
+
+	assert.Nil(t, updateIpTables(ctx, targetBlocklists, serviceIps, sidecars))
+
+	// Verify that each service got told to block exactly the right things
+	for i := 0; i < numServices; i++ {
+		serviceId := testServiceIdFromInt(i)
+
+		expected := map[string]bool{}
+		for j := 0; j < numServices; j++ {
+			if j < i - 1 || j > i + 1 {
+				ip := testIpFromInt(j)
+				expected[ip.String()] = true
+			}
+		}
+
+		mockSidecar := mockSidecars[serviceId]
+		recordedUpdateIps := mockSidecar.GetRecordedUpdateIps()
+		assert.Equal(t, 1, len(recordedUpdateIps), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
+
+		firstRecordedIps := recordedUpdateIps[0]
+		actual := map[string]bool{}
+		for _, ip := range firstRecordedIps {
+			actual[ip.String()] = true
+		}
+
+		assert.Equal(t, expected, actual)
+	}
+}
+
+func testIpFromInt(i int) net.IP {
+	return []byte{1, 1, 1, byte(i)}
+}
+
+func testServiceIdFromInt(i int) topology_types.ServiceID {
+	return topology_types.ServiceID("service-" + strconv.Itoa(i))
 }

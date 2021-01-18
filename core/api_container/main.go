@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -257,12 +258,17 @@ func createServiceNetwork(
 		dockerNetworkId,
 		suiteExecutionVolName)
 
+	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
+		dockerManager,
+		freeIpAddrTracker,
+		dockerNetworkId)
+
 	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,
-		dockerNetworkId,
 		freeIpAddrTracker,
 		dockerManager,
-		userServiceLauncher)
+		userServiceLauncher,
+		networkingSidecarManager)
 	return serviceNetwork
 }
 
