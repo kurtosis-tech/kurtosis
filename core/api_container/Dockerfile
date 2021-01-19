@@ -28,6 +28,12 @@ COPY --from=builder /build/kurtosis-api-server .
 #              2. Keep these sorted alphabetically, to ensure no duplicates
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
+    --mode=\"${MODE}\" \
+    --params-json=\"${PARAMS_JSON}\" \
+
+
+
+
     --api-container-ip=\"${API_CONTAINER_IP}\" \
     --execution-instance-id=\"${EXECUTION_INSTANCE_ID}\" \
     --gateway-ip=\"${GATEWAY_IP}\" \

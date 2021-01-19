@@ -7,19 +7,24 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
-	"github.com/kurtosis-tech/kurtosis/api_container/api"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/execution/exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/execution/test_execution_status"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/execution_path"
+	"github.com/kurtosis-tech/kurtosis/api_container/print_suite_metadata_mode"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/api"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/execution/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/execution/test_execution_status"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -28,6 +33,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -40,6 +46,9 @@ const (
 	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
 	//  before hard-killing it
 	containerStopTimeout = 10 * time.Second
+
+	successExitCode = 0
+	failureExitCode = 1
 )
 
 func main() {
@@ -48,6 +57,69 @@ func main() {
 		ForceColors:   true,
 		FullTimestamp: true,
 	})
+
+	acceptedModesSlice := []string{}
+	for mode := range api_container_env_vars.AllModes {
+		acceptedModesSlice = append(acceptedModesSlice, mode)
+	}
+	modeArg := flag.String(
+		"mode",
+		"",
+		fmt.Sprintf(
+			"Mode that the API container should run in (allowed: %v)",
+			strings.Join(acceptedModesSlice, ", "),
+		),
+	)
+
+	paramsJsonArg := flag.String(
+		"params-json",
+		"",
+		"JSON string containing the params to the API container",
+	)
+
+	flag.Parse()
+
+	paramsJsonBytes := []byte(*paramsJsonArg)
+	mode := *modeArg
+
+	var executionPath execution_path.ExecutionPath
+	switch mode {
+	case api_container_env_vars.SuiteMetadataPrintingMode:
+		var args print_suite_metadata_mode.PrintSuiteMetadataExecutionArgs
+		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
+			logrus.Errorf("An error occurred deserializing the suite metadata printer args:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+		executionPath = print_suite_metadata_mode.NewPrintSuiteMetadataExecutionPath(args)
+	case api_container_env_vars.TestExecutionMode:
+		var args test_execution_mode.TestExecutionExecutionArgs
+		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
+			logrus.Errorf("An error occurred deserializing the test execution args:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+		executionPath = test_execution_mode.NewTestExecutionExecutionPath()
+	}
+
+	if err := executionPath.Execute(); err != nil {
+		logrus.Errorf("An error occurred running the execution path for mode '%v':", mode)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(failureExitCode)
+	}
+
+	logrus.Infof("Successfully ran execution path for mode '%v'", mode)
+	os.Exit(successExitCode)
+
+
+
+
+
+
+
+
+
+
 
 	executionInstanceIdArg := flag.String(
 		"execution-instance-id",
