@@ -11,5 +11,7 @@ docs
 scripts
 wrapper_generator
 
+api_container/generated_api_code
+
 api_container/Dockerfile
 initializer/Dockerfile
