@@ -9,6 +9,8 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 
+RUN apt install -y protobuf-compiler=3.13.0-r2
+
 # Copy the code into the container
 COPY . .
 
