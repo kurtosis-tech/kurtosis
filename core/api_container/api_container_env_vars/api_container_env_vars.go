@@ -15,8 +15,3 @@ const (
 	SuiteMetadataPrintingMode = "PRINT_SUITE_METADATA"
 	TestExecutionMode = "EXECUTE_TEST"
 )
-
-var AllModes = map[string]bool{
-	SuiteMetadataPrintingMode: true,
-	TestExecutionMode: true,
-}

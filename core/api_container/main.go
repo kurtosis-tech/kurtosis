@@ -17,13 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
-	"strings"
-)
-
-const (
-
-	successExitCode = 0
-	failureExitCode = 1
 )
 
 func main() {
@@ -39,17 +32,10 @@ func main() {
 		fmt.Sprintf("Log level to use for the API container (%v)", logrus_log_levels.AcceptableLogLevels),
 	)
 
-	acceptedModesSlice := []string{}
-	for mode := range api_container_env_vars.AllModes {
-		acceptedModesSlice = append(acceptedModesSlice, mode)
-	}
 	modeArg := flag.String(
 		"mode",
 		"",
-		fmt.Sprintf(
-			"Mode that the API container should run in (allowed: %v)",
-			strings.Join(acceptedModesSlice, ", "),
-		),
+		"Mode that the API container should run in",
 	)
 
 	paramsJsonArg := flag.String(
@@ -77,8 +63,7 @@ func main() {
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			logrus.Errorf("An error occurred deserializing the suite metadata printer args:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			// TODO switch to proper exit code
-			os.Exit(failureExitCode)
+			os.Exit(exit_codes.StartupErrorExitCode)
 		}
 		codepath = print_suite_metadata_mode.NewPrintSuiteMetadataCodepath(args)
 	case api_container_env_vars.TestExecutionMode:
@@ -86,8 +71,7 @@ func main() {
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			logrus.Errorf("An error occurred deserializing the test execution args:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			// TODO switch to proper exit code
-			os.Exit(failureExitCode)
+			os.Exit(exit_codes.StartupErrorExitCode)
 		}
 		codepath = test_execution_mode.NewTestExecutionCodepath(args)
 	}

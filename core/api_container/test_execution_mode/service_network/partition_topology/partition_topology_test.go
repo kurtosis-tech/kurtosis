@@ -67,7 +67,7 @@ func BenchmarkHugeNetworkPathologicalRepartition(b *testing.B) {
 			partConnId := *topology_types.NewPartitionConnectionID(partitionId, previousPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
-		if i < hugeNetworkNodeCount- 1 {
+		if i < (hugeNetworkNodeCount - 1) {
 			nextPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
 			partConnId := *topology_types.NewPartitionConnectionID(partitionId, nextPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
@@ -100,7 +100,7 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetBlocklists(b *testing.B) {
 			partConnId := *topology_types.NewPartitionConnectionID(partitionId, previousPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
-		if i < hugeNetworkNodeCount- 1 {
+		if i < (hugeNetworkNodeCount - 1) {
 			nextPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
 			partConnId := *topology_types.NewPartitionConnectionID(partitionId, nextPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}

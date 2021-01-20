@@ -257,5 +257,5 @@ func waitUntilExitCondition(testExecutionStatusChan chan test_execution_status.T
 	}
 
 	logrus.Info("Test completed before reaching the timeout")
-	return exit_codes.TestCompletedInTimeoutExitCode
+	return exit_codes.Success
 }
