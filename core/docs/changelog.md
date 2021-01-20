@@ -3,6 +3,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 # TBD
 * Refactor ServiceNetwork into several smaller components, and add tests for them
 * Switch API container to new mode-based operation, in preparation for multiple language clients
+* Make the "Supported Languages" docs page send users to the master branch of language client repos
 * Fix `build_and_run` breaking on empty `"${@}"` variable for Zsh/old Bash users
 * Added explicit quickstart instruction to check out `master` on the client language repo
 
