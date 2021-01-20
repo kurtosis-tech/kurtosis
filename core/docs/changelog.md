@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.6.5
 * Refactor ServiceNetwork into several smaller components, and add tests for them
 * Switch API container to new mode-based operation, in preparation for multiple language clients
 * Make the "Supported Languages" docs page send users to the master branch of language client repos
