@@ -39,25 +39,6 @@ const (
 	containerStopTimeout = 10 * time.Second
 )
 
-type TestExecutionArgs struct {
-	executionInstanceId      string
-	networkId                string
-	subnetMask               string
-	gatewayIpAddr            string
-	testName                 string
-	suiteExecutionVolumeName string
-	testSuiteContainerId     string
-
-	// It seems weird that we require this given that the test suite container doesn't run a server, but it's only so
-	//  that our free IP address tracker knows not to dole out the test suite container's IP address
-	testSuiteContainerIpAddr string
-	apiContainerIpAddr string
-
-	isPartitioningEnabled bool
-
-
-}
-
 type TestExecutionCodepath struct {
 	args TestExecutionArgs
 }
@@ -75,22 +56,22 @@ func (t TestExecutionCodepath) Execute() (int, error) {
 	}
 
 	freeIpAddrTracker, err := createFreeIpAddrTracker(
-		args.subnetMask,
-		args.gatewayIpAddr,
-		args.apiContainerIpAddr,
-		args.testSuiteContainerIpAddr)
+		args.SubnetMask,
+		args.GatewayIpAddr,
+		args.ApiContainerIpAddr,
+		args.TestSuiteContainerIpAddr)
 	if err != nil {
 		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
 	serviceNetwork := createServiceNetwork(
-		args.executionInstanceId,
-		args.testName,
-		args.suiteExecutionVolumeName,
+		args.ExecutionInstanceId,
+		args.TestName,
+		args.SuiteExecutionVolumeName,
 		dockerManager,
 		freeIpAddrTracker,
-		args.networkId,
-		args.isPartitioningEnabled)
+		args.NetworkId,
+		args.IsPartitioningEnabled)
 
 	// A value on this channel indicates a change in the test execution status
 	testExecutionStatusChan := make(chan test_execution_status.TestExecutionStatus, 1)
@@ -98,7 +79,7 @@ func (t TestExecutionCodepath) Execute() (int, error) {
 	server, err := createServer(
 		dockerManager,
 		testExecutionStatusChan,
-		args.testSuiteContainerId,
+		args.TestSuiteContainerId,
 		serviceNetwork)
 	if err != nil {
 		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(err, "An error occurred creating the RPC server for receiving test execution commands")

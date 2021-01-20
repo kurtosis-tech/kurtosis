@@ -5,12 +5,6 @@
 
 package print_suite_metadata_mode
 
-type PrintSuiteMetadataArgs struct {
-	// The filepath, RELATIVE to the suite execution volume root, where the suite metadata
-	//  will be written
-	SuiteMetadataRelativeFilepath string
-}
-
 type PrintSuiteMetadataCodepath struct {
 	args PrintSuiteMetadataArgs
 }

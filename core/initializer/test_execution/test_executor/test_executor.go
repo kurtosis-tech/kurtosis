@@ -7,6 +7,7 @@ package test_executor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
@@ -14,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -24,7 +26,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"strconv"
 	"time"
 )
 
@@ -207,7 +208,7 @@ func RunTest(
 		testExecutionRelativeDirpath,
 		apiContainerLogFilename)
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_docker_consts.ContainerPort))
-	kurtosisApiContainerEnvVars := buildApiContainerEnvVarsMap(
+	kurtosisApiContainerEnvVars, err := buildApiContainerEnvVarsMap(
 		kurtosisApiIp,
 		apiLogFilepathOnApiContainer,
 		executionInstanceId,
@@ -220,6 +221,9 @@ func RunTest(
 		testRunningContainerId,
 		testRunningContainerIp,
 		suiteExecutionVolume)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the API container envvars map")
+	}
 	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
 		testSetupContext,
 		kurtosisApiImageName,
@@ -317,23 +321,27 @@ func buildApiContainerEnvVarsMap(
 		testName string,
 		testRunningContainerId string,
 		testRunningContainerIp net.IP,
-		suiteExecutionVolumeName string) map[string]string {
-	return map[string]string{
-		api_container_env_vars.ApiContainerIpAddrEnvVar:       apiContainerIp.String(),
-		// TODO IP: capture the API container's logs ONLY if the user is an admin, so we don't leak internals
-		//   about how our API container works to anyone trying to reverse-engineer Kurtosis
-		api_container_env_vars.ApiLogFilepathEnvVar:           logFilepathOnContainer,
-		api_container_env_vars.ExecutionInstanceIdEnvVar: executionInstanceId.String(),
-		api_container_env_vars.GatewayIpEnvVar: gatewayIp.String(),
-		api_container_env_vars.IsPartitioningEnabledEnvVar: strconv.FormatBool(isPartitioningEnabled),
-		api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
-		api_container_env_vars.NetworkIdEnvVar: networkId,
-		api_container_env_vars.SubnetMaskEnvVar: subnetMask,
-		api_container_env_vars.TestNameEnvVar: testName,
-		api_container_env_vars.TestSuiteContainerIdEnvVar: testRunningContainerId,
-		api_container_env_vars.TestSuiteContainerIpAddrEnvVar: testRunningContainerIp.String(),
-		api_container_env_vars.TestVolumeNameEnvVar: suiteExecutionVolumeName,
+		suiteExecutionVolumeName string) (map[string]string, error) {
+	args := test_execution_mode.NewTestExecutionArgs(
+		executionInstanceId.String(),
+		networkId,
+		subnetMask,
+		gatewayIp.String(),
+		testName,
+		suiteExecutionVolumeName,
+		testRunningContainerId,
+		testRunningContainerIp.String(),
+		apiContainerIp.String(),
+		isPartitioningEnabled)
+	serializedArgsBytes, err := json.Marshal(args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the test execution args to JSON")
 	}
+	return map[string]string{
+		api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
+		api_container_env_vars.ModeEnvVar: api_container_env_vars.TestExecutionMode,
+		api_container_env_vars.ParamsJsonEnvVar: string(serializedArgsBytes),
+	}, nil
 }
 
 
