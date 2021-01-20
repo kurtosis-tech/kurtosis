@@ -7,7 +7,7 @@ package networking_sidecar
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api_container/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -23,8 +23,8 @@ const (
 	kurtosisIpTablesChain1 ipTablesChain = "KURTOSIS1"
 	kurtosisIpTablesChain2 ipTablesChain = "KURTOSIS2"
 
-	undefinedIpTablesChain ipTablesChain = ""
-	initialKurtosisIpTablesChain = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
+	undefinedIpTablesChain       ipTablesChain = ""
+	initialKurtosisIpTablesChain               = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
 
 	ipTablesCommand = "iptables"
 	ipTablesNewChainFlag = "-N"
@@ -40,7 +40,7 @@ const (
 )
 
 var intrinsicChainsToUpdate = map[string]bool{
-	ipTablesInputChain: true,
+	ipTablesInputChain:  true,
 	ipTablesOutputChain: true,
 }
 
@@ -82,11 +82,11 @@ type StandardNetworkingSidecar struct {
 
 func NewStandardNetworkingSidecar(serviceId topology_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
 	return &StandardNetworkingSidecar{
-		mutex: &sync.Mutex{},
-		serviceId: serviceId,
-		chainInUse: undefinedIpTablesChain,
-		containerId: containerId,
-		ipAddr: ipAddr,
+		mutex:           &sync.Mutex{},
+		serviceId:       serviceId,
+		chainInUse:      undefinedIpTablesChain,
+		containerId:     containerId,
+		ipAddr:          ipAddr,
 		execCmdExecutor: execCmdExecutor,
 	}
 }
