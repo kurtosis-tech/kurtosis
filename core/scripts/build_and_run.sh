@@ -153,7 +153,8 @@ if "${do_run}"; then
     # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
     go_suite_env_vars_json='{
         "API_SERVICE_IMAGE" :"'${api_service_image}'",
-        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"
+        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'",
+        "IS_KURTOSIS_CORE_DEV_MODE": "true"
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
