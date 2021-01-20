@@ -24,9 +24,5 @@ build/
 # Built binary
 ./kurtosis
 
-# This code will get generated locally on the user's machine every time they run 'build', as well as
-#  inside the Docker image whenever the API container image is built
-api_container/generated_api_code
-
 # Dependency directories (remove the comment below to include it)
 # vendor/
