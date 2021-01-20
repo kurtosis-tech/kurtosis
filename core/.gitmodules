@@ -1,0 +1,3 @@
+[submodule "api_container/api_protobufs"]
+	path = api_container/api_protobufs
+	url = git@github.com:kurtosis-tech/kurtosis-api-protobufs.git

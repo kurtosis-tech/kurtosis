@@ -3,6 +3,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 # TBD
 * Refactor ServiceNetwork into several smaller components, and add tests for them
 * Switch API container to new mode-based operation, in preparation for multiple language clients
+* Add protobufs to API container as Git submodule
 
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code
