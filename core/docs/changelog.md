@@ -1,5 +1,12 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# 1.6.5
+* Refactor ServiceNetwork into several smaller components, and add tests for them
+* Switch API container to new mode-based operation, in preparation for multiple language clients
+* Make the "Supported Languages" docs page send users to the master branch of language client repos
+* Fix `build_and_run` breaking on empty `"${@}"` variable for Zsh/old Bash users
+* Added explicit quickstart instruction to check out `master` on the client language repo
+
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code
 * When a container using an IP is destroyed, release it back into the free IP address tracker's pool

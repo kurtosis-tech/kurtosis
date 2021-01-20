@@ -90,6 +90,7 @@ api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
+
     echo "Running tests..."
     if ! go test "${root_dirpath}/..."; then
         echo 'Tests failed!'
@@ -152,10 +153,12 @@ if "${do_run}"; then
     # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
     go_suite_env_vars_json='{
         "API_SERVICE_IMAGE" :"'${api_service_image}'",
-        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"
+        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'",
+        "IS_KURTOSIS_CORE_DEV_MODE": "true"
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
-
-    # The generated wrapper will come hardcoded the correct version of the initializer/API images
-    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
+    # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
+    # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
+    #  ${1} exists, evaluate ${@}"
+    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" ${1+"${@}"} "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
