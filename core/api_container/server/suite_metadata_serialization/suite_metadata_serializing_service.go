@@ -3,30 +3,56 @@
  * All Rights Reserved.
  */
 
-package suite_metadata_serializing_service
+package suite_metadata_serialization
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
+	"sync"
 )
 
-type SuiteMetadataSerializingService struct {
+type suiteMetadataSerializingService struct {
+	mutex                                 *sync.Mutex
+	hasSerializeBeenCalled                bool
 	serializedSuiteMetadataOutputFilepath string
+	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-func NewSuiteMetadataSerializingService(serializedSuiteMetadataOutputFilepath string) *SuiteMetadataSerializingService {
-	return &SuiteMetadataSerializingService{serializedSuiteMetadataOutputFilepath: serializedSuiteMetadataOutputFilepath}
+func newSuiteMetadataSerializingService(
+		serializedSuiteMetadataOutputFilepath string,
+		shutdownChan chan exit_codes.ApiContainerExitCode) *suiteMetadataSerializingService {
+	return &suiteMetadataSerializingService{
+		mutex: &sync.Mutex{},
+		hasSerializeBeenCalled: false,
+		serializedSuiteMetadataOutputFilepath: serializedSuiteMetadataOutputFilepath,
+		shutdownChan: shutdownChan,
+	}
 }
 
-func (service SuiteMetadataSerializingService) SerializeSuiteMetadata(
+func (service *suiteMetadataSerializingService) ReceiveSuiteRegistrationEvent() {
+	// Nothing to do here
+}
+
+func (service *suiteMetadataSerializingService) SerializeSuiteMetadata(
 		ctx context.Context,
 		apiSuiteMetadata *bindings.TestSuiteMetadata) (*emptypb.Empty, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+
+	if service.hasSerializeBeenCalled {
+		// We don't use stacktrace to not leak internal details about the API container to callers
+		return nil, errors.New("suite metadata serialization has already been called; it should not be called twice")
+	}
+	service.hasSerializeBeenCalled = true
+
 	initializerAcceptableSuiteMetadata := convertToInitializerMetadata(apiSuiteMetadata)
 
 	logrus.Debugf(

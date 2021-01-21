@@ -6,14 +6,15 @@
 package server
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"google.golang.org/grpc"
 )
 
 type ApiContainerServerCore interface {
-	RegisterServices(grpcServer *grpc.Server)
-}
+	// The action that will be returned to the testsuite container that registers itself with the server
+	GetSuiteAction() bindings.SuiteAction
 
-type ApiContainerServerCoreFactory interface {
-	Create(shutdownChan chan exit_codes.ApiContainerExitCode) ApiContainerServerCore
+	// Creates a server using the given shutdownChan, and registers it with the given grpc server
+	CreateAndRegisterService(shutdownChan chan exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) ApiContainerServerService
 }

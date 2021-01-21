@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution_codepath"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/api_container/suite_metadata_serializing_mode"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -38,6 +39,7 @@ func main() {
 		"Mode that the API container should run in",
 	)
 
+	// NOTE: We take this in as JSON so that each mode can have their own independent args
 	paramsJsonArg := flag.String(
 		"params-json",
 		"",
@@ -48,33 +50,22 @@ func main() {
 
 	logLevel, err := logrus.ParseLevel(*logLevelArg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred parsing the log level string: %v\n", err)
-		os.Exit(exit_codes.StartupErrorExitCode)
+		logrus.Errorf("An error occurred parsing the log level string '%v':")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(int(exit_codes.StartupErrorExitCode))
 	}
 	logrus.SetLevel(logLevel)
 
-	paramsJsonBytes := []byte(*paramsJsonArg)
-	mode := *modeArg
-
-	var codepath execution_codepath.ExecutionCodepath
-	switch mode {
-	case api_container_env_vars.SuiteMetadataPrintingMode:
-		var args suite_metadata_serializing_mode.SuiteMetadataSerializingArgs
-		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-			logrus.Errorf("An error occurred deserializing the suite metadata printer args:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(exit_codes.StartupErrorExitCode)
-		}
-		codepath = suite_metadata_serializing_mode.NewSuiteMetadataSerializingCodepath(args)
-	case api_container_env_vars.TestExecutionMode:
-		var args test_execution_mode.TestExecutionArgs
-		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-			logrus.Errorf("An error occurred deserializing the test execution args:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(exit_codes.StartupErrorExitCode)
-		}
-		codepath = test_execution_mode.NewTestExecutionCodepath(args)
+	mode := api_container_env_vars.ApiContainerMode(*modeArg)
+	paramsJson := *paramsJsonArg
+	serverCore, err := server_core_creator.Create(mode, paramsJson)
+	if err != nil {
+		logrus.Errorf("An error occurred creating the service core for mode '%v' with params JSON '%v':", mode, paramsJson)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(int(exit_codes.StartupErrorExitCode))
 	}
+
+	server :=
 
 	exitCode, err := codepath.Execute()
 	if err != nil {

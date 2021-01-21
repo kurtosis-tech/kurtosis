@@ -10,8 +10,4 @@ const (
 	LogLevelEnvVar                 = "LOG_LEVEL"
 	ModeEnvVar					   = "MODE"
 	ParamsJsonEnvVar			   = "PARAMS_JSON"
-
-	// TODO break into separate file???
-	SuiteMetadataPrintingMode = "PRINT_SUITE_METADATA"
-	TestExecutionMode = "EXECUTE_TEST"
 )
