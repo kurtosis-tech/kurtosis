@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/rpc/v2/json2"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/api"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
@@ -40,10 +41,10 @@ const (
 )
 
 type TestExecutionCodepath struct {
-	args TestExecutionArgs
+	args server_core_creator.TestExecutionArgs
 }
 
-func NewTestExecutionCodepath(args TestExecutionArgs) *TestExecutionCodepath {
+func NewTestExecutionCodepath(args server_core_creator.TestExecutionArgs) *TestExecutionCodepath {
 	return &TestExecutionCodepath{args: args}
 }
 

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_execution_mode
+package server_core_creator
 
 // Fields are public for JSON de/serialization
 type TestExecutionArgs struct {

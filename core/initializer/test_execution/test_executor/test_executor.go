@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
+	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -322,7 +322,7 @@ func buildApiContainerEnvVarsMap(
 		testRunningContainerId string,
 		testRunningContainerIp net.IP,
 		suiteExecutionVolumeName string) (map[string]string, error) {
-	args := test_execution_mode.NewTestExecutionArgs(
+	args := server_core_creator.NewTestExecutionArgs(
 		executionInstanceId.String(),
 		networkId,
 		subnetMask,

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package suite_metadata_serializing_mode
+package server_core_creator
 
 // Fields are public for JSON de/serialization
 type SuiteMetadataSerializingArgs struct {
