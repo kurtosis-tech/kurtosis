@@ -264,7 +264,7 @@ func RunTest(
 
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
-	case exit_codes.Success:
+	case exit_codes.SuccessExitCode:
 		testStatusRetrievalError = nil
 	case exit_codes.StartupErrorExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error while " +

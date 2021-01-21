@@ -3,42 +3,39 @@
  * All Rights Reserved.
  */
 
-package lifecycle_service
+package suite_registration_service
 
 import (
-	"context"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 )
 
+// TODO rename to healthcheck_service
 type LifecycleService struct {
 	bindings.UnimplementedLifecycleServiceServer
 
-	shutdownChan chan interface{}
+	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-func NewLifecycleService(shutdownChan chan interface{}) *LifecycleService {
+// TODO rename to healthcheck_service
+func NewLifecycleService() *LifecycleService {
 	return &LifecycleService{}
 }
 
-func (service LifecycleService) IsAvailable(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
-	return &emptypb.Empty{}, nil
+func (service *LifecycleService) Startup() {
+	go func() {
+
+	}
 }
 
+func RegisterSuite() {
+
+}
+
+/*
 func (service LifecycleService) Shutdown(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	service.shutdownChan <- "shutdown received"
 	return &emptypb.Empty{}, nil
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+ */

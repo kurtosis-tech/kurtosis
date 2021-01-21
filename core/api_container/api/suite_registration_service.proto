@@ -1,0 +1,18 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service SuiteRegistrationService {
+  rpc RegisterSuite(google.protobuf.Empty) returns (SuiteRegistrationResponse) {};
+}
+
+message SuiteRegistrationResponse {
+  SuiteAction suite_action = 1;
+}
+
+// Tells the suite what action it should perform, based on the args that the API container received
+enum SuiteAction {
+  SERIALIZE_SUITE_METADATA = 0;
+  EXECUTE_TEST = 1;
+}

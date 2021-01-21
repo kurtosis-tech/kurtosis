@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/lifecycle_service"
+	"github.com/kurtosis-tech/kurtosis/api_container/suite_registration_service"
 	"github.com/kurtosis-tech/kurtosis/api_container/suite_metadata_serializing_mode/suite_metadata_serializing_service"
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc"
