@@ -153,7 +153,8 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(
 		kurtosisApiIpEnvVar:           kurtosisApiIp,
 		servicesRelativeDirpathEnvVar: servicesRelativeDirpath,
 		logLevelEnvVar:                launcher.logLevel,
-		debuggerPort: 				   debuggerPortIntStr,
+		debuggerPortEnvVar:            debuggerPortIntStr,
+		// TODO add mode!!!
 	}
 	for key, val := range launcher.customEnvVars {
 		if _, ok := standardVars[key]; ok {

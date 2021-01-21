@@ -10,6 +10,7 @@ A package to contain the contract of Docker environment variables that will be p
 	the testsuite to run it
  */
 
+// TODO Refactor these so that they're passed in as a single JSON str
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// When you change these, make sure to update the docs at:
@@ -20,5 +21,11 @@ const (
 	kurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
 	servicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
 	logLevelEnvVar                = "LOG_LEVEL"
-	debuggerPort				  = "DEBUGGER_PORT"
+	debuggerPortEnvVar            = "DEBUGGER_PORT"
+	modeEnvVar  				  = "MODE"
+
+	// TODO break into separate file??
+	printSuiteMetadataMode = "PRINT_SUITE_METADATA"
+	executeTestMode = "EXECUTE_TEST_MODE"
 )
+

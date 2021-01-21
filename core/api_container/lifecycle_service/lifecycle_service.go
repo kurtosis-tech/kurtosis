@@ -13,15 +13,32 @@ import (
 
 type LifecycleService struct {
 	bindings.UnimplementedLifecycleServiceServer
+
+	shutdownChan chan interface{}
 }
 
-func NewLifecycleService() *LifecycleService {
+func NewLifecycleService(shutdownChan chan interface{}) *LifecycleService {
 	return &LifecycleService{}
 }
 
 func (service LifecycleService) IsAvailable(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return &emptypb.Empty{}, nil
 }
+
+func (service LifecycleService) Shutdown(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	service.shutdownChan <- "shutdown received"
+	return &emptypb.Empty{}, nil
+}
+
+
+
+
+
+
+
+
+
+
 
 
 

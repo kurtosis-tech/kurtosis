@@ -31,6 +31,7 @@ The only bit of complexity is that the Dockerfile will receive Kurtosis-specific
 * `KURTOSIS_API_IP`
 * `LOG_LEVEL`
 * `METADATA_FILEPATH`
+* `MODE`
 * `SERVICES_RELATIVE_DIRPATH`
 * `TEST`
 

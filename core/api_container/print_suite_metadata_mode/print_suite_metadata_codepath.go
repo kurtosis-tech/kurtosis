@@ -28,25 +28,29 @@ func NewPrintSuiteMetadataCodepath(args PrintSuiteMetadataArgs) *PrintSuiteMetad
 	return &PrintSuiteMetadataCodepath{args: args}
 }
 
-func (p PrintSuiteMetadataCodepath) Execute() (int, error) {
-	healthcheckService := lifecycle_service.NewLifecycleService()
-	bindings.RegisterHealthcheckServiceServer(p.grpcServer, healthcheckService)
+func (codepath PrintSuiteMetadataCodepath) Execute() (int, error) {
+	shutdownChan := make(chan interface{})
+	lifecycleService := lifecycle_service.NewLifecycleService(shutdownChan)
+	bindings.RegisterLifecycleServiceServer(codepath.grpcServer, lifecycleService)
+	// TODO register printsuitemetadata service
 
-	listener, err := net.Listen(listenProtocol, p.listenAddress)
+	listener, err := net.Listen(listenProtocol, codepath.listenAddress)
 	if err != nil {
 		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
 			err,
 			"An error occurred creating the listener on %v/%v",
 			listenProtocol,
-			p.listenAddress)
+			codepath.listenAddress)
 	}
-	if err := p.grpcServer.Serve(listener); err != nil {
+	if err := codepath.grpcServer.Serve(listener); err != nil {
 		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
 			err,
 			"An error occurred starting the gRPC server",
 			listenProtocol,
-			p.listenAddress)
+			codepath.listenAddress)
 	}
+
+	codepath.grpcServer
 
 
 }
