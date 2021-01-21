@@ -5,7 +5,22 @@
 
 package print_suite_metadata_mode
 
+import (
+	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/lifecycle_service"
+	"github.com/palantir/stacktrace"
+	"google.golang.org/grpc"
+	"net"
+)
+
+const (
+	listenProtocol = "tcp"
+)
+
 type PrintSuiteMetadataCodepath struct {
+	grpcServer *grpc.Server
+	listenAddress string
 	args PrintSuiteMetadataArgs
 }
 
@@ -14,6 +29,25 @@ func NewPrintSuiteMetadataCodepath(args PrintSuiteMetadataArgs) *PrintSuiteMetad
 }
 
 func (p PrintSuiteMetadataCodepath) Execute() (int, error) {
-	panic("implement me")
+	healthcheckService := lifecycle_service.NewLifecycleService()
+	bindings.RegisterHealthcheckServiceServer(p.grpcServer, healthcheckService)
+
+	listener, err := net.Listen(listenProtocol, p.listenAddress)
+	if err != nil {
+		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
+			err,
+			"An error occurred creating the listener on %v/%v",
+			listenProtocol,
+			p.listenAddress)
+	}
+	if err := p.grpcServer.Serve(listener); err != nil {
+		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
+			err,
+			"An error occurred starting the gRPC server",
+			listenProtocol,
+			p.listenAddress)
+	}
+
+
 }
 
