@@ -19,9 +19,9 @@ WRAPPER_FILEPATH="${BUILD_DIRPATH}/kurtosis.sh"
 GO_MODULE="github.com/kurtosis-tech/kurtosis-core"
 
 API_CONTAINER_DIRNAME="api_container"
-PROTOBUF_INPUT_DIRNAME="api_protobufs"
-PROTOBUF_OUTPUT_DIRNAME="generated_api_code"
-PROTOBUF_OUTPUT_GO_PACKAGE="${GO_MODULE}/${API_CONTAINER_DIRNAME}/${PROTOBUF_OUTPUT_DIRNAME}"
+API_CONTAINER_API_DIRNAME="api"
+API_CONTAINER_API_BINDINGS_DIRNAME="bindings"
+API_CONTAINER_API_BINDINGS_GO_PKG="${GO_MODULE}/${API_CONTAINER_DIRNAME}/${API_CONTAINER_API_DIRNAME}/${API_CONTAINER_API_BINDINGS_DIRNAME}"
 
 BUILD_ACTION="build"
 RUN_ACTION="run"
@@ -104,12 +104,8 @@ if "${do_build}"; then
     #  5) Adding the locally-generated Go output files to .dockerignore (since they'll get generated inside Docker)
     echo "Generating API container code from protobufs..."
     api_container_dirpath="${root_dirpath}/${API_CONTAINER_DIRNAME}"
-    api_protobufs_input_dirpath="${api_container_dirpath}/${PROTOBUF_INPUT_DIRNAME}"
-    api_protobufs_output_dirpath="${api_container_dirpath}/${PROTOBUF_OUTPUT_DIRNAME}"
-    if [ "$(ls -A ${api_protobufs_dirpath})" == "" ]; then
-        echo "Error: No API container protobufs found; you'll need to initialize the protobufs submodule with 'git submodule init' then 'git submodule update'" >&2
-        exit 1
-    fi
+    api_protobufs_input_dirpath="${api_container_dirpath}/${API_CONTAINER_API_DIRNAME}"
+    api_protobufs_output_dirpath="${api_protobufs_input_dirpath}/${API_CONTAINER_API_BINDINGS_DIRNAME}"
     if [ "${api_protobufs_output_dirpath}/" != "/" ]; then
         if ! find ${api_protobufs_output_dirpath} -name '*.go' -delete; then
             echo "Error: An error occurred removing the protobuf-generated code" >&2
@@ -119,17 +115,17 @@ if "${do_build}"; then
         echo "Error: lib core generated API code dirpath must not be empty!" >&2
         exit 1
     fi
-    for protobuf_file in ${api_protobufs_input_dirpath}/*.proto; do
+    for protobuf_filepath in $(find "${api_protobufs_input_dirpath}" -name "*.proto"); do
+        protobuf_filename="$(basename "${protobuf_filepath}")"
         if ! protoc \
-                -I="${lib_core_api_dirpath}" \
-                --go_out="plugins=grpc:${generated_api_code_dirpath}" \
+                -I="${api_protobufs_input_dirpath}" \
+                --go_out="plugins=grpc:${api_protobufs_output_dirpath}" \
                 `# Rather than specify the go_package in source code (which means all consumers of these protobufs would get it),` \
                 `#  we specify the go_package here per https://developers.google.com/protocol-buffers/docs/reference/go-generated` \
-                --go_opt="M=${protobuf_file}=${PROTOBUF_OUTPUT_GO_PACKAGE}" \
-                `# This is necessary so the outputted files aren't in deeply-nested directories` \
-                --go_opt="module=${PROTOBUF_OUTPUT_GO_PACKAGE}" \
-                "${protobuf_file}"; then
-            echo "Error: An error occurred generating lib core files from protobuf file: ${protobuf_file}" >&2
+                `# See also: https://github.com/golang/protobuf/issues/1272` \
+                --go_opt="M${protobuf_filename}=${API_CONTAINER_API_BINDINGS_GO_PKG};$(basename "${API_CONTAINER_API_BINDINGS_GO_PKG}")" \
+                "${protobuf_filepath}"; then
+            echo "Error: An error occurred generating lib core files from protobuf file: ${protobuf_filepath}" >&2
             exit 1
         fi
     done

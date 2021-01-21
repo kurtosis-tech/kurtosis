@@ -1,0 +1,12 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service HealthcheckService {
+  rpc CheckHealth(google.protobuf.Empty) returns (CheckHealthResponse) {};
+}
+
+message CheckHealthResponse {
+  bool is_available = 1;
+}
