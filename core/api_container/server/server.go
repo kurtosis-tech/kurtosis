@@ -10,13 +10,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/suite_registration_service"
-	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
+)
+
+const (
+	// If no suite registers within this time, the API container will exit with an error
+	suiteRegistrationTimeout = 10 * time.Second
 )
 
 type ApiContainerServer struct {
@@ -29,13 +34,14 @@ type ApiContainerServer struct {
 func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 	grpcServer := grpc.NewServer()
 
-	isSuiteRegistered := NewConcurrentBool(false);
+	// These channels are intentionally buffered so that multithreading works as expected
+	suiteRegistrationChan := make(chan interface{}, 1)
 
-	// TODO get the correct SuiteAction
+	// TODO dynamically get the correct SuiteAction
 	suiteAction := bindings.SuiteAction_SERIALIZE_SUITE_METADATA
 
-	suiteRegistrationSvc := suite_registration_service.NewSuiteRegistrationService(suiteAction, isSuiteRegistered)
-	bindings.RegisterSuiteRegistrationServiceServer(suiteRegistrationSvc)
+	suiteRegistrationSvc := suite_registration_service.NewSuiteRegistrationService(suiteAction, suiteRegistrationChan)
+	bindings.RegisterSuiteRegistrationServiceServer(grpcServer, suiteRegistrationSvc)
 
 	shutdownChan := make(chan exit_codes.ApiContainerExitCode)
 	core := server.coreFactory.Create(shutdownChan)
@@ -52,26 +58,43 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 	}
 
 	// Docker will send SIGTERM to end the process, and we need to catch it to stop gracefully
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	termSignalChan := make(chan os.Signal, 1)
+	signal.Notify(termSignalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	go func() {
 		// TODO handle error response here???
 		grpcServer.Serve(listener)
 	}()
 
-	// TODO call post-startup hook
-
-	// TODO modify wait conditions here
-	select {
-	case signal := <- signalChan:
-		logrus.Infof("Received signal '%v'; server will shut down", signal)
-		return exit_codes.ReceivedTermSignalExitCode
-	}
+	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan)
 
 	// TODO call shutdown hook??????
 
 	// We use Stop rather than GracefulStop here because a stop condition means everything should shut down immediately
 	grpcServer.Stop()
-	return nil
+	return exitCode
+}
+
+func waitForExitCondition(suiteRegistrationChan chan interface{}, termSignalChan chan os.Signal, shutdownChan chan exit_codes.ApiContainerExitCode) exit_codes.ApiContainerExitCode {
+	select {
+	case <- suiteRegistrationChan:
+		logrus.Debugf("Suite registered")
+	case <- time.After(suiteRegistrationTimeout):
+		logrus.Errorf("No test suite registered itself after waiting for %v", suiteRegistrationTimeout)
+		return exit_codes.NoTestSuiteRegisteredExitCode
+	case termSignal := <-termSignalChan:
+		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)
+		return exit_codes.ReceivedTermSignalExitCode
+	}
+
+	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
+	//  If this becomes problematic, we could add a very long timeout here
+	select {
+	case exitCode := <-shutdownChan:
+		logrus.Infof("Received signal to shutdown with exit code '%v'", exitCode)
+		return exitCode
+	case termSignal := <-termSignalChan:
+		logrus.Infof("Received term signal '%v' while waiting for exit condition", termSignal)
+		return exit_codes.ReceivedTermSignalExitCode
+	}
 }
