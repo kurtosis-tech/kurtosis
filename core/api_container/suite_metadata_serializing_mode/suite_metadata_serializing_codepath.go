@@ -7,11 +7,14 @@ package suite_metadata_serializing_mode
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/lifecycle_service"
+	"github.com/kurtosis-tech/kurtosis/api_container/suite_metadata_serializing_mode/suite_metadata_serializing_service"
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc"
 	"net"
+	"path"
 )
 
 const (
@@ -19,7 +22,6 @@ const (
 )
 
 type SuiteMetadataSerializingCodepath struct {
-	grpcServer    *grpc.Server
 	listenAddress string
 	args          SuiteMetadataSerializingArgs
 }
@@ -29,29 +31,15 @@ func NewSuiteMetadataSerializingCodepath(args SuiteMetadataSerializingArgs) *Sui
 }
 
 func (codepath SuiteMetadataSerializingCodepath) Execute() (int, error) {
-	shutdownChan := make(chan interface{})
-	lifecycleService := lifecycle_service.NewLifecycleService(shutdownChan)
+	args := codepath.args
 
-	suiteMetadataSerializingService := New
 
-	bindings.RegisterLifecycleServiceServer(codepath.grpcServer, lifecycleService)
-	// TODO register printsuitemetadata service
-
-	listener, err := net.Listen(listenProtocol, codepath.listenAddress)
-	if err != nil {
-		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
-			err,
-			"An error occurred creating the listener on %v/%v",
-			listenProtocol,
-			codepath.listenAddress)
-	}
-	if err := codepath.grpcServer.Serve(listener); err != nil {
-		return exit_codes.StartupErrorExitCode, stacktrace.Propagate(
-			err,
-			"An error occurred starting the gRPC server",
-			listenProtocol,
-			codepath.listenAddress)
-	}
+	serializedSuiteMetadataOutputFilepath := path.Join(
+		api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
+		args.SuiteMetadataRelativeFilepath)
+	suiteMetadataSerializingService := suite_metadata_serializing_service.NewSuiteMetadataSerializingService(
+		serializedSuiteMetadataOutputFilepath)
+	bindings.RegisterSuiteMetadataSerializingServiceServer(codepath.grpcServer, suiteMetadataSerializingService)
 
 	codepath.grpcServer
 

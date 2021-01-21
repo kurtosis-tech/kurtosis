@@ -6,6 +6,7 @@
 package api_container_docker_consts
 
 const (
+	// TODO Push inside the server
 	// The port that the API container will listen on (hardcoded, because it runs in a Docker container so no real
 	//  reason to make configurable)
 	ContainerPort = 7443
