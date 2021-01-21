@@ -3,10 +3,10 @@
  * All Rights Reserved.
  */
 
-package print_suite_metadata_mode
+package suite_metadata_serializing_mode
 
 // Fields are public for JSON de/serialization
-type PrintSuiteMetadataArgs struct {
+type SuiteMetadataSerializingArgs struct {
 	// The filepath, RELATIVE to the suite execution volume root, where the suite metadata
 	//  will be written
 	SuiteMetadataRelativeFilepath string

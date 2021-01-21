@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package print_suite_metadata_mode
+package suite_metadata_serializing_mode
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
@@ -18,17 +18,17 @@ const (
 	listenProtocol = "tcp"
 )
 
-type PrintSuiteMetadataCodepath struct {
-	grpcServer *grpc.Server
+type SuiteMetadataSerializingCodepath struct {
+	grpcServer    *grpc.Server
 	listenAddress string
-	args PrintSuiteMetadataArgs
+	args          SuiteMetadataSerializingArgs
 }
 
-func NewPrintSuiteMetadataCodepath(args PrintSuiteMetadataArgs) *PrintSuiteMetadataCodepath {
-	return &PrintSuiteMetadataCodepath{args: args}
+func NewSuiteMetadataSerializingCodepath(args SuiteMetadataSerializingArgs) *SuiteMetadataSerializingCodepath {
+	return &SuiteMetadataSerializingCodepath{args: args}
 }
 
-func (codepath PrintSuiteMetadataCodepath) Execute() (int, error) {
+func (codepath SuiteMetadataSerializingCodepath) Execute() (int, error) {
 	shutdownChan := make(chan interface{})
 	lifecycleService := lifecycle_service.NewLifecycleService(shutdownChan)
 
