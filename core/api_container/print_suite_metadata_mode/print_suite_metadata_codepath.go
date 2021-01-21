@@ -31,6 +31,9 @@ func NewPrintSuiteMetadataCodepath(args PrintSuiteMetadataArgs) *PrintSuiteMetad
 func (codepath PrintSuiteMetadataCodepath) Execute() (int, error) {
 	shutdownChan := make(chan interface{})
 	lifecycleService := lifecycle_service.NewLifecycleService(shutdownChan)
+
+	suiteMetadataSerializingService := New
+
 	bindings.RegisterLifecycleServiceServer(codepath.grpcServer, lifecycleService)
 	// TODO register printsuitemetadata service
 

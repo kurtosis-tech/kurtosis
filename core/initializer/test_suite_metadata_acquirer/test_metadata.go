@@ -21,6 +21,12 @@ type TestMetadata struct {
 	UsedArtifacts map[string]string `json:"usedArtifacts"`
 }
 
+// Even though the struct's fields must be public for JSON, we create a constructor so that we don't forget
+//  to initialize any fields
+func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]string) *TestMetadata {
+	return &TestMetadata{IsPartitioningEnabled: isPartitioningEnabled, UsedArtifacts: usedArtifacts}
+}
+
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
 func validateTestMetadata(testMetadata TestMetadata) error {
 	for artifactId, artifactUrl := range testMetadata.UsedArtifacts {
