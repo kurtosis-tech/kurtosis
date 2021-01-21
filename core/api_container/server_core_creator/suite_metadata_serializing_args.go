@@ -9,7 +9,5 @@ package server_core_creator
 type SuiteMetadataSerializingArgs struct {
 	// The filepath, RELATIVE to the suite execution volume root, where the serialized suite metadata
 	//  should be written
-	SuiteMetadataRelativeFilepath string
+	SuiteMetadataRelativeFilepath string	`json:"suiteMetadataRelativeFilepath"`
 }
-
-// TODO Constructor

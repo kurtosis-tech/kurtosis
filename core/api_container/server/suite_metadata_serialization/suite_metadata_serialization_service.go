@@ -19,17 +19,17 @@ import (
 	"sync"
 )
 
-type suiteMetadataSerializingService struct {
+type suiteMetadataSerializationService struct {
 	mutex                                 *sync.Mutex
 	hasSerializeBeenCalled                bool
 	serializedSuiteMetadataOutputFilepath string
 	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-func newSuiteMetadataSerializingService(
+func newSuiteMetadataSerializationService(
 		serializedSuiteMetadataOutputFilepath string,
-		shutdownChan chan exit_codes.ApiContainerExitCode) *suiteMetadataSerializingService {
-	return &suiteMetadataSerializingService{
+		shutdownChan chan exit_codes.ApiContainerExitCode) *suiteMetadataSerializationService {
+	return &suiteMetadataSerializationService{
 		mutex: &sync.Mutex{},
 		hasSerializeBeenCalled: false,
 		serializedSuiteMetadataOutputFilepath: serializedSuiteMetadataOutputFilepath,
@@ -37,11 +37,11 @@ func newSuiteMetadataSerializingService(
 	}
 }
 
-func (service *suiteMetadataSerializingService) ReceiveSuiteRegistrationEvent() {
+func (service *suiteMetadataSerializationService) ReceiveSuiteRegistrationEvent() {
 	// Nothing to do here
 }
 
-func (service *suiteMetadataSerializingService) SerializeSuiteMetadata(
+func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 		ctx context.Context,
 		apiSuiteMetadata *bindings.TestSuiteMetadata) (*emptypb.Empty, error) {
 	service.mutex.Lock()

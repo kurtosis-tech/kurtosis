@@ -7,23 +7,20 @@ package server_core_creator
 
 // Fields are public for JSON de/serialization
 type TestExecutionArgs struct {
-	ExecutionInstanceId      string
-	NetworkId                string
-	SubnetMask               string
-	GatewayIpAddr            string
-	TestName                 string
-	SuiteExecutionVolumeName string
-	TestSuiteContainerId     string
+	ExecutionInstanceId      string	`json:"executionInstanceId"`
+	NetworkId                string `json:"networkId"`
+	SubnetMask               string	`json:"subnetMask"`
+	GatewayIpAddr            string	`json:"gatewayIpAddr"`
+	TestName                 string	`json:"testName"`
+	SuiteExecutionVolumeName string	`json:"suiteExecutionVolumeName"`
+	TestSuiteContainerId     string	`json:"testSuiteContainerId"`
 
 	// It seems weird that we require this given that the test suite container doesn't run a server, but it's only so
 	//  that our free IP address tracker knows not to dole out the test suite container's IP address
-	TestSuiteContainerIpAddr string
-	ApiContainerIpAddr       string
+	TestSuiteContainerIpAddr string	`json:"testSuiteContainerIpAddr"`
+	ApiContainerIpAddr       string	`json:"apiContainerIpAddr"`
 
-	IsPartitioningEnabled bool
+	// TODO can we remove this by having suite register itself with its metadata?? Or by passing over the suite
+	//  metadata?
+	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
 }
-
-func NewTestExecutionArgs(executionInstanceId string, networkId string, subnetMask string, gatewayIpAddr string, testName string, suiteExecutionVolumeName string, testSuiteContainerId string, testSuiteContainerIpAddr string, apiContainerIpAddr string, isPartitioningEnabled bool) *TestExecutionArgs {
-	return &TestExecutionArgs{ExecutionInstanceId: executionInstanceId, NetworkId: networkId, SubnetMask: subnetMask, GatewayIpAddr: gatewayIpAddr, TestName: testName, SuiteExecutionVolumeName: suiteExecutionVolumeName, TestSuiteContainerId: testSuiteContainerId, TestSuiteContainerIpAddr: testSuiteContainerIpAddr, ApiContainerIpAddr: apiContainerIpAddr, IsPartitioningEnabled: isPartitioningEnabled}
-}
-

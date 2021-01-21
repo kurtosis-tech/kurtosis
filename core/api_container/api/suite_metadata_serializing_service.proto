@@ -3,7 +3,7 @@ package api_container_api;
 
 import "google/protobuf/empty.proto";
 
-service SuiteMetadataSerializingService {
+service SuiteMetadataSerializationService {
   rpc SerializeSuiteMetadata(TestSuiteMetadata) returns (google.protobuf.Empty) {};
 }
 

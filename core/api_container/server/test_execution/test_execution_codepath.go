@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_execution_mode
+package test_execution
 
 import (
 	"context"

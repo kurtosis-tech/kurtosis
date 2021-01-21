@@ -27,7 +27,7 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 		serializationOutputFilepath := path.Join(
 			api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
 			args.SuiteMetadataRelativeFilepath)
-		result := suite_metadata_serialization.NewSuiteMetadataSerializingServerCore(serializationOutputFilepath)
+		result := suite_metadata_serialization.NewSuiteMetadataSerializationServerCore(serializationOutputFilepath)
 		return result,  nil
 	case api_container_env_vars.TestExecutionMode:
 		var args TestExecutionArgs
