@@ -87,6 +87,7 @@ type WrapperArg struct {
 
 var wrapperArgs = []WrapperArg{
 	{
+		// TODO TODO TOOD Update to reflect that this can now be arbitrary JSON
 		Flag:       "--custom-env-vars",
 		Variable:   "custom_env_vars_json",
 		DefaultVal: "{}",

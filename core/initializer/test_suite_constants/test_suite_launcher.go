@@ -53,8 +53,8 @@ type TestsuiteContainerLauncher struct {
 	// The log level string that will be passed as-is to the testsuite (should be meaningful to the testsuite)
 	suiteLogLevel string
 
-	// The testsuite-custom Docker environment variables that should be set in the testsuite container
-	customEnvVars map[string]string
+	// The JSON-serialized custom params object that will be passed as-is to the testsuite
+	customParamsJson string
 
 	// This is the port on the testsuite container that a debugger might be listening on, if any is running at all
 	// We'll always bind this port on the testsuite container to a port on the user's machine, so they can attach
@@ -68,7 +68,7 @@ func NewTestsuiteContainerLauncher(
 		kurtosisApiLogLevel logrus.Level,
 		testsuiteImage string,
 		testsuiteLogLevel string,
-		customEnvVars map[string]string,
+		customParamsJson string,
 		debuggerPort int) (*TestsuiteContainerLauncher, error) {
 	debuggerPortObj, err := nat.NewPort(debuggerPortProtocol, strconv.Itoa(debuggerPort))
 	if err != nil {
@@ -80,7 +80,7 @@ func NewTestsuiteContainerLauncher(
 		kurtosisApiLogLevel: kurtosisApiLogLevel,
 		testsuiteImage:      testsuiteImage,
 		suiteLogLevel:       testsuiteLogLevel,
-		customEnvVars:       customEnvVars,
+		customParamsJson: customParamsJson,
 		debuggerPort:        debuggerPortObj,
 	}, nil
 }
@@ -258,16 +258,7 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiI
 		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
 		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
 		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
-	}
-	for key, val := range launcher.customEnvVars {
-		if _, ok := standardVars[key]; ok {
-			return nil, stacktrace.NewError(
-				"Custom test suite environment variable binding %s=%s requested, but is not allowed because key is " +
-					"already being used by Kurtosis.",
-				key,
-				val)
-		}
-		standardVars[key] = val
+		test_suite_env_vars.CustomParamsJson: launcher.customParamsJson,
 	}
 	return standardVars, nil
 }

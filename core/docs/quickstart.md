@@ -81,6 +81,8 @@ You now have a custom testsuite running using Kurtosis!
 So far your `Test.setup` method has returned the Kurtosis-provided `NetworkContext`, and your `Test.run` method has consumed it. This can be enough for basic tests, but you'll often want to centralize the network setup logic into a custom object that all your tests will use. Kurtosis allows this by letting your `Test.setup` method return any implementation of the `Network` marker interface; the `Test.run` will then receive that same `Network` object as an argument. To see this in action, the Go example testsuite has [this custom `Network` object](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/networks_impl/test_network.go), which makes the `Test.setup` of complex networks [a whole lot simpler](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/advanced_network_test/advanced_network_test_.go#L34) by encapsulating all the `DockerContainerInitializer` instantiation and waiting-for-availability.
 
 ### Custom Parameterization
+TODO TODO TODO TODO Update to reflect that custom parameters are now arbitrary JSON
+
 You'll notice that one of the flags that the example entrypoint CLI above receives is `serviceImageArg`, which defines the name of the Docker image to use in the services in the network. This a **custom parameter** - a parameter not used by Kurtosis itself but by the testsuite. Your testsuite might also need additional parameters. To pipe these through, you'll need to:
 
 1. Add another flag to the main CLI and pass it to your `TestSuite` object's constructor

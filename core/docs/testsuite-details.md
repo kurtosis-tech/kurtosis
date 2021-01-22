@@ -70,6 +70,8 @@ As the script's help text mentions, the execution of the testsuite can be modifi
 
 Customizing Testsuite Execution
 -------------------------------
+TODO TODO TODO Update to reflect that custom parameters are now passed in as arbitrary JSON
+
 You'll very likely want to customize the behaviour of your testsuite based on information passed in when you execute Kurtosis (e.g. have a `--fast-tests-only` flag to your CLI's main function that runs a subset of the tests in your suite). To do so, you'll need to:
 
 1. Add the appropriate flags to your CLI's main function

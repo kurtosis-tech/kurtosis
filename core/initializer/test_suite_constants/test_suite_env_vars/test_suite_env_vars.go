@@ -20,6 +20,6 @@ const (
 	DebuggerPortEnvVar      = "DEBUGGER_PORT"
 	KurtosisApiSocketEnvVar = "KURTOSIS_API_SOCKET"
 	LogLevelEnvVar          = "LOG_LEVEL"
-	customParamsJson        = "CUSTOM_PARAMS_JSON"
+	CustomParamsJson        = "CUSTOM_PARAMS_JSON"
 )
 
