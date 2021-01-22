@@ -8,7 +8,7 @@ package server_core_creator
 import (
 	"encoding/json"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/suite_metadata_serialization"
@@ -24,14 +24,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (server.ApiContainerServerCore, error) {
+func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (server.ApiContainerServerCore, error) {
 	paramsJsonBytes := []byte(paramsJson)
 
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 
 	logrus.Debugf("Creating server core by parsing params JSON '%v' using mode '%v'...", paramsJson, mode)
 	switch mode {
-	case api_container_env_vars.SuiteMetadataSerializingMode:
+	case api_container_modes.SuiteMetadataSerializingMode:
 		var args SuiteMetadataSerializationArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the suite metadata serializing args JSON")
@@ -40,7 +40,7 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 		result := suite_metadata_serialization.NewSuiteMetadataSerializationServerCore(serializationOutputFilepath)
 		logrus.Debugf("Successfully created suite metadata-serializing server core")
 		return result,  nil
-	case api_container_env_vars.TestExecutionMode:
+	case api_container_modes.TestExecutionMode:
 		var args TestExecutionArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the test execution args JSON")

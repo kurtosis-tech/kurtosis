@@ -10,8 +10,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/gogo/protobuf/protoc-gen-gogo/testdata/import_public/sub"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
@@ -25,15 +27,21 @@ import (
 
 const (
 	debuggerPortProtocol = "tcp"
+
+	dockerSocket = "/var/run/docker.sock"
 )
 
 type TestsuiteContainerLauncher struct {
+	executionInstanceId uuid.UUID
+
 	kurtosisApiImage string
+
+	kurtosisApiLogLevel logrus.Level
 
 	testsuiteImage string
 
 	// The log level string that will be passed as-is to the testsuite (should be meaningful to the testsuite)
-	logLevel string
+	suiteLogLevel string
 
 	// The testsuite-custom Docker environment variables that should be set in the testsuite container
 	customEnvVars map[string]string
@@ -54,10 +62,13 @@ func NewTestsuiteContainerLauncher(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the debugger port object from port int '%v'", debuggerPort)
 	}
 	return &TestsuiteContainerLauncher{
+		// TODO add all the fields
+		kurtosisApiImage: kurtosisApiImage,
+		kurtosisApiLogLevel: kurtosisApiLogLevel,
 		testsuiteImage: testsuiteImage,
-		logLevel: logLevel,
-		customEnvVars: customEnvVars,
-		debuggerPort: debuggerPortObj,
+		suiteLogLevel:  logLevel,
+		customEnvVars:  customEnvVars,
+		debuggerPort:   debuggerPortObj,
 	}, nil
 }
 
@@ -100,19 +111,21 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 }
 
 /*
-Launches a new testsuite container to acquire testsuite metadata
+Launches a new testsuite container to run a test
 */
 func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
-		context context.Context,
+		ctx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		networkId string,
+		subnetMask string,
+		gatewayIpAddr net.IP,
 		suiteExecutionVolume string,
 		testName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
-		servicesRelativeDirpath string,
-		debuggerPortBinding nat.PortBinding) (containerId string, err error){
+		debuggerPortBinding nat.PortBinding,
+		isPartitioningEnabled bool) (testsuiteContainerId string, kurtosisApiContainerId string, resultErr error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
 		testsuiteContainerIp.String(),
@@ -120,12 +133,12 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	testSuiteEnvVars, err := launcher.generateTestSuiteEnvVars(kurtosisApiContainerIp)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
+		return "", "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
 	}
 
 	log.Info("Launching test-running testsuite container with debugger port bound to host port %v....", debuggerPortBinding)
-	resultContainerId, err := dockerManager.CreateAndStartContainer(
-		context,
+	suiteContainerId, err := dockerManager.CreateAndStartContainer(
+		ctx,
 		launcher.testsuiteImage,
 		networkId,
 		testsuiteContainerIp,
@@ -141,42 +154,39 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 			suiteExecutionVolume: TestsuiteContainerSuiteExVolMountpoint,
 		})
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
+		return "", "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
 	}
 	log.Infof("Successfully created test-running testsuite container")
 
 
-
-	log.Info("Creating Kurtosis API container...")
-	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_server_consts.ListenPort))
-	kurtosisApiContainerEnvVars, err := buildApiContainerEnvVarsMap(
-		kurtosisApiIp,
-		apiLogFilepathOnApiContainer,
-		executionInstanceId,
-		gatewayIp,
-		testMetadata.IsPartitioningEnabled,
-		apiContainerLogLevel,
+	apiContainerEnvVars, err := launcher.genTestExecutionApiContainerEnvVars(
 		networkId,
 		subnetMask,
+		gatewayIpAddr,
+		suiteExecutionVolume,
 		testName,
-		testRunningContainerId,
-		testRunningContainerIp,
-		suiteExecutionVolume)
+		suiteContainerId,
+		testsuiteContainerIp,
+		kurtosisApiContainerIp,
+		isPartitioningEnabled)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the API container envvars map")
+		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
-	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
-		testSetupContext,
-		kurtosisApiImageName,
+
+	log.Info("Launching Kurtosis API container...")
+	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_server_consts.ListenPort, api_container_server_consts.ListenProtocol))
+	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
+		ctx,
+		launcher.kurtosisApiImage,
 		networkId,
-		kurtosisApiIp,
+		kurtosisApiContainerIp,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
 		nil,
-		kurtosisApiContainerEnvVars,
+		apiContainerEnvVars,
 		map[string]string{
 			dockerSocket: dockerSocket,
 		},
@@ -185,11 +195,11 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		},
 	)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
+		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
 	}
-	log.Infof("Successfully created Kurtosis API container")
+	log.Infof("Successfully launched the Kurtosis API container")
 
-	return resultContainerId, nil
+	return suiteContainerId, kurtosisApiContainerId, nil
 }
 
 /*
@@ -203,7 +213,7 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiI
 	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
 	standardVars := map[string]string{
 		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
-		test_suite_env_vars.LogLevelEnvVar:          launcher.logLevel,
+		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
 		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
 	}
 	for key, val := range launcher.customEnvVars {
@@ -219,30 +229,30 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiI
 	return standardVars, nil
 }
 
-func generateBaseApiContainerEnvVars(
+func genApiContainerEnvVars(
 		logLevel logrus.Level,
-		mode api_container_env_vars.ApiContainerMode,
-		paramsJsonStr string) {
+		mode api_container_modes.ApiContainerMode,
+		paramsJsonStr string) map[string]string {
+	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	return map[string]string{
 		api_container_env_vars.LogLevelEnvVar: logLevel.String(),
-
+		api_container_env_vars.ModeEnvVar: string(mode),
+		api_container_env_vars.ParamsJsonEnvVar: paramsJsonStr,
 	}
 }
 
-func genTestExecutionApiContainerEnvVars(
-
-		executionInstanceId uuid.UUID,
+func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		testName string,
 		suiteExecutionVolName string,
+		testName string,
 		testSuiteContainerId string,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		isPartitioningEnabled bool) error {
+		isPartitioningEnabled bool) (map[string]string, error) {
 	args := server_core_creator.NewTestExecutionArgs(
-		executionInstanceId.String(),
+		launcher.executionInstanceId.String(),
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),
@@ -252,47 +262,27 @@ func genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr.String(),
 		apiContainerIpAddr.String(),
 		isPartitioningEnabled)
-	argsStr, err := json.Marshal(args)
+	argsBytes, err := json.Marshal(args)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred serializing API container args to JSON")
+		return nil, stacktrace.Propagate(err, "An error occurred serializing API container test execution args to JSON")
 	}
+	argsStr := string(argsBytes)
+	return genApiContainerEnvVars(
+		launcher.kurtosisApiLogLevel,
+		api_container_modes.TestExecutionMode,
+		argsStr), nil
 }
 
-func genSuiteMetadataSerializationApiContainerEnvVars() error {
-
-}
-
-func buildApiContainerEnvVarsMap(
-		apiContainerIp net.IP,
-		logFilepathOnContainer string,
-		executionInstanceId uuid.UUID,
-		gatewayIp net.IP,
-		isPartitioningEnabled bool,
-		apiContainerLogLevel string,
-		networkId string,
-		subnetMask string,
-		testName string,
-		testRunningContainerId string,
-		testRunningContainerIp net.IP,
-		suiteExecutionVolumeName string) (map[string]string, error) {
-	args := server_core_creator.NewTestExecutionArgs(
-		executionInstanceId.String(),
-		networkId,
-		subnetMask,
-		gatewayIp.String(),
-		testName,
-		suiteExecutionVolumeName,
-		testRunningContainerId,
-		testRunningContainerIp.String(),
-		apiContainerIp.String(),
-		isPartitioningEnabled)
-	serializedArgsBytes, err := json.Marshal(args)
+func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiContainerEnvVars() (map[string]string, error) {
+	args := server_core_creator.NewSuiteMetadataSerializationArgs()
+	argsBytes, err := json.Marshal(args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the test execution args to JSON")
+		return nil, stacktrace.Propagate(err, "An error occurred serializing API container suite metadata-serializing args to JSON")
 	}
-	return map[string]string{
-		api_container_env_vars.LogLevelEnvVar:   apiContainerLogLevel,
-		api_container_env_vars.ModeEnvVar:       api_container_env_vars.TestExecutionMode,
-		api_container_env_vars.ParamsJsonEnvVar: string(serializedArgsBytes),
-	}, nil
+	argsStr := string(argsBytes)
+	return genApiContainerEnvVars(
+		launcher.kurtosisApiLogLevel,
+		api_container_modes.SuiteMetadataSerializingMode,
+		argsStr), nil
+
 }

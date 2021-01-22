@@ -47,8 +47,6 @@ const (
 	// The name of the directory inside a test execution directory where service file IO will be stored
 	servicesDirname = "services"
 
-	dockerSocket = "/var/run/docker.sock"
-
 	testRunningContainerDescription = "Test-Running Container"
 
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...

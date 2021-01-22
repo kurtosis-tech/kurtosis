@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package api_container_env_vars
+package api_container_modes
 
 type ApiContainerMode string
 

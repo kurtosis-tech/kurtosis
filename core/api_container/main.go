@@ -8,8 +8,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -61,7 +61,7 @@ func main() {
 	}
 	logrus.SetLevel(logLevel)
 
-	mode := api_container_env_vars.ApiContainerMode(*modeArg)
+	mode := api_container_modes.ApiContainerMode(*modeArg)
 	paramsJson := *paramsJsonArg
 	serverCore, err := server_core_creator.Create(mode, paramsJson)
 	if err != nil {
