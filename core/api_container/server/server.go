@@ -71,7 +71,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 		}
 	}()
 
-	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
+	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan)
 
 	// We use Stop rather than GracefulStop here because a stop condition means everything should shut down immediately
 	grpcServer.Stop()
@@ -88,8 +88,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 func waitForExitCondition(
 		suiteRegistrationChan chan interface{},
 		termSignalChan chan os.Signal,
-		shutdownChan chan exit_codes.ApiContainerExitCode,
-		service ApiContainerServerService) exit_codes.ApiContainerExitCode {
+		shutdownChan chan exit_codes.ApiContainerExitCode) exit_codes.ApiContainerExitCode {
 	select {
 	case <- suiteRegistrationChan:
 		logrus.Debugf("Suite registered")
@@ -107,8 +106,6 @@ func waitForExitCondition(
 		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)
 		return exit_codes.ReceivedTermSignalExitCode
 	}
-
-	service.HandleSuiteRegistrationEvent()
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
 	//  If this becomes problematic, we could add a very long timeout here

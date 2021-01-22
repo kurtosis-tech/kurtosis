@@ -26,12 +26,13 @@ const (
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
-	awaitCompletionOrTimeoutThreadName = "Await completion/timeout thread"
-	awaitCompletionThreadName = "Await completion thread"
+	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
+	//  before hard-killing it
+	containerStopTimeout = 10 * time.Second
 )
 
 
-type TestExecutionService struct {
+type testExecutionService struct {
 	dockerManager *docker_manager.DockerManager
 	serviceNetwork *service_network.ServiceNetwork
 	testSuiteContainerId string
@@ -39,12 +40,12 @@ type TestExecutionService struct {
 	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-func NewTestExecutionService(
+func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
 		testSuiteContainerId string,
-		shutdownChan chan exit_codes.ApiContainerExitCode) *TestExecutionService {
-	return &TestExecutionService{dockerManager: dockerManager,
+		shutdownChan chan exit_codes.ApiContainerExitCode) *testExecutionService {
+	return &testExecutionService{dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
 		testSuiteContainerId: testSuiteContainerId,
 		stateMachine: newTestExecutionServiceStateMachine(),
@@ -52,7 +53,7 @@ func NewTestExecutionService(
 	}
 }
 
-func (service *TestExecutionService) HandleSuiteRegistrationEvent() error {
+func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	if err := service.stateMachine.assertAndAdvance(waitingForSuiteRegistration); err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -70,7 +71,18 @@ func (service *TestExecutionService) HandleSuiteRegistrationEvent() error {
 	return nil
 }
 
-func (service *TestExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) HandlePostShutdownEvent() error {
+	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
+	//  the service network hangs forever trying to shutdown
+	logrus.Info("gRPC server is shut down; destroying service network...")
+	if err := service.serviceNetwork.Destroy(context.Background(), containerStopTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the service network on shutdown")
+	}
+	logrus.Info("Service network destroyed successfully")
+	return nil
+}
+
+func (service *testExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestExecutionRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
@@ -106,7 +118,7 @@ func (service *TestExecutionService) RegisterTestExecution(ctx context.Context, 
 	return &emptypb.Empty{}, nil
 }
 
-func (service *TestExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
+func (service *testExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
 	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
@@ -128,7 +140,7 @@ func (service *TestExecutionService) RegisterService(_ context.Context, args *bi
 	}, nil
 }
 
-func (service *TestExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
@@ -173,7 +185,7 @@ func (service *TestExecutionService) StartService(ctx context.Context, args *bin
 	return &emptypb.Empty{}, nil
 }
 
-func (service *TestExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot remove service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
@@ -190,7 +202,7 @@ func (service *TestExecutionService) RemoveService(ctx context.Context, args *bi
 	return &emptypb.Empty{}, nil
 }
 
-func (service *TestExecutionService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {

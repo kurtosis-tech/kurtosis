@@ -29,7 +29,7 @@ func (core TestExecutionServerCore) GetSuiteAction() bindings.SuiteAction {
 }
 
 func (core TestExecutionServerCore) CreateAndRegisterService(shutdownChan chan exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) server.ApiContainerServerService {
-	service := NewTestExecutionService(
+	service := newTestExecutionService(
 		core.dockerManager,
 		core.serviceNetwork,
 		core.testSuiteContainerId,

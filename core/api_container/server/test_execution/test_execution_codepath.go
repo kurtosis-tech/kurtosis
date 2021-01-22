@@ -35,9 +35,6 @@ const (
 	// If no test suite registers a test execution in this time, the API container will shut itself down of its own accord
 	idleShutdownTimeout = 15 * time.Second
 
-	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
-	//  before hard-killing it
-	containerStopTimeout = 10 * time.Second
 )
 
 type TestExecutionCodepath struct {
