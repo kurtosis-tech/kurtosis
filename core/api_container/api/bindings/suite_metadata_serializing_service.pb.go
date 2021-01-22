@@ -181,15 +181,15 @@ var file_suite_metadata_serializing_service_proto_rawDesc = []byte{
 	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01,
-	0x32, 0x7b, 0x0a, 0x1f, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x69, 0x6e, 0x67, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x58, 0x0a, 0x16, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65,
-	0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x24, 0x2e,
-	0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70,
-	0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64,
-	0x61, 0x74, 0x61, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x32, 0x7d, 0x0a, 0x21, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x58, 0x0a, 0x16, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69,
+	0x7a, 0x65, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12,
+	0x24, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f,
+	0x61, 0x70, 0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74,
+	0x61, 0x64, 0x61, 0x74, 0x61, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -216,8 +216,8 @@ var file_suite_metadata_serializing_service_proto_depIdxs = []int32{
 	2, // 0: api_container_api.TestSuiteMetadata.test_metadata:type_name -> api_container_api.TestSuiteMetadata.TestMetadataEntry
 	3, // 1: api_container_api.TestMetadata.used_artifact_urls:type_name -> api_container_api.TestMetadata.UsedArtifactUrlsEntry
 	1, // 2: api_container_api.TestSuiteMetadata.TestMetadataEntry.value:type_name -> api_container_api.TestMetadata
-	0, // 3: api_container_api.SuiteMetadataSerializingService.SerializeSuiteMetadata:input_type -> api_container_api.TestSuiteMetadata
-	4, // 4: api_container_api.SuiteMetadataSerializingService.SerializeSuiteMetadata:output_type -> google.protobuf.Empty
+	0, // 3: api_container_api.SuiteMetadataSerializationService.SerializeSuiteMetadata:input_type -> api_container_api.TestSuiteMetadata
+	4, // 4: api_container_api.SuiteMetadataSerializationService.SerializeSuiteMetadata:output_type -> google.protobuf.Empty
 	4, // [4:5] is the sub-list for method output_type
 	3, // [3:4] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -284,72 +284,72 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// SuiteMetadataSerializingServiceClient is the client API for SuiteMetadataSerializingService service.
+// SuiteMetadataSerializationServiceClient is the client API for SuiteMetadataSerializationService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type SuiteMetadataSerializingServiceClient interface {
+type SuiteMetadataSerializationServiceClient interface {
 	SerializeSuiteMetadata(ctx context.Context, in *TestSuiteMetadata, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type suiteMetadataSerializingServiceClient struct {
+type suiteMetadataSerializationServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSuiteMetadataSerializingServiceClient(cc grpc.ClientConnInterface) SuiteMetadataSerializingServiceClient {
-	return &suiteMetadataSerializingServiceClient{cc}
+func NewSuiteMetadataSerializationServiceClient(cc grpc.ClientConnInterface) SuiteMetadataSerializationServiceClient {
+	return &suiteMetadataSerializationServiceClient{cc}
 }
 
-func (c *suiteMetadataSerializingServiceClient) SerializeSuiteMetadata(ctx context.Context, in *TestSuiteMetadata, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *suiteMetadataSerializationServiceClient) SerializeSuiteMetadata(ctx context.Context, in *TestSuiteMetadata, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/api_container_api.SuiteMetadataSerializingService/SerializeSuiteMetadata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api_container_api.SuiteMetadataSerializationService/SerializeSuiteMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SuiteMetadataSerializingServiceServer is the server API for SuiteMetadataSerializingService service.
-type SuiteMetadataSerializingServiceServer interface {
+// SuiteMetadataSerializationServiceServer is the server API for SuiteMetadataSerializationService service.
+type SuiteMetadataSerializationServiceServer interface {
 	SerializeSuiteMetadata(context.Context, *TestSuiteMetadata) (*emptypb.Empty, error)
 }
 
-// UnimplementedSuiteMetadataSerializingServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedSuiteMetadataSerializingServiceServer struct {
+// UnimplementedSuiteMetadataSerializationServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedSuiteMetadataSerializationServiceServer struct {
 }
 
-func (*UnimplementedSuiteMetadataSerializingServiceServer) SerializeSuiteMetadata(context.Context, *TestSuiteMetadata) (*emptypb.Empty, error) {
+func (*UnimplementedSuiteMetadataSerializationServiceServer) SerializeSuiteMetadata(context.Context, *TestSuiteMetadata) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SerializeSuiteMetadata not implemented")
 }
 
-func RegisterSuiteMetadataSerializingServiceServer(s *grpc.Server, srv SuiteMetadataSerializingServiceServer) {
-	s.RegisterService(&_SuiteMetadataSerializingService_serviceDesc, srv)
+func RegisterSuiteMetadataSerializationServiceServer(s *grpc.Server, srv SuiteMetadataSerializationServiceServer) {
+	s.RegisterService(&_SuiteMetadataSerializationService_serviceDesc, srv)
 }
 
-func _SuiteMetadataSerializingService_SerializeSuiteMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SuiteMetadataSerializationService_SerializeSuiteMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TestSuiteMetadata)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SuiteMetadataSerializingServiceServer).SerializeSuiteMetadata(ctx, in)
+		return srv.(SuiteMetadataSerializationServiceServer).SerializeSuiteMetadata(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api_container_api.SuiteMetadataSerializingService/SerializeSuiteMetadata",
+		FullMethod: "/api_container_api.SuiteMetadataSerializationService/SerializeSuiteMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SuiteMetadataSerializingServiceServer).SerializeSuiteMetadata(ctx, req.(*TestSuiteMetadata))
+		return srv.(SuiteMetadataSerializationServiceServer).SerializeSuiteMetadata(ctx, req.(*TestSuiteMetadata))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _SuiteMetadataSerializingService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "api_container_api.SuiteMetadataSerializingService",
-	HandlerType: (*SuiteMetadataSerializingServiceServer)(nil),
+var _SuiteMetadataSerializationService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "api_container_api.SuiteMetadataSerializationService",
+	HandlerType: (*SuiteMetadataSerializationServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "SerializeSuiteMetadata",
-			Handler:    _SuiteMetadataSerializingService_SerializeSuiteMetadata_Handler,
+			Handler:    _SuiteMetadataSerializationService_SerializeSuiteMetadata_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

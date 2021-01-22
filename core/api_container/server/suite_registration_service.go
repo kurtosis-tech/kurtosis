@@ -7,8 +7,10 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sync"
 )
@@ -16,6 +18,8 @@ import (
 // Service that allows for a testsuite container to register itself exactly once
 type suiteRegistrationService struct {
 	mutex *sync.Mutex
+
+	mainService ApiContainerServerService
 
 	suiteRegistered bool
 
@@ -25,11 +29,12 @@ type suiteRegistrationService struct {
 	suiteRegistrationChan chan interface{}
 }
 
-func newSuiteRegistrationService(suiteAction bindings.SuiteAction, suiteRegistrationChan chan interface{}) *suiteRegistrationService {
+func newSuiteRegistrationService(suiteAction bindings.SuiteAction, mainService ApiContainerServerService, suiteRegistrationChan chan interface{}) *suiteRegistrationService {
 	return &suiteRegistrationService{
-		mutex: &sync.Mutex{},
-		suiteRegistered: false,
-		suiteAction: suiteAction,
+		mutex:                 &sync.Mutex{},
+		mainService:           mainService,
+		suiteRegistered:       false,
+		suiteAction:           suiteAction,
 		suiteRegistrationChan: suiteRegistrationChan,
 	}
 }
@@ -39,8 +44,16 @@ func (service *suiteRegistrationService) RegisterSuite(_ context.Context, _ *emp
 	defer service.mutex.Unlock()
 
 	if service.suiteRegistered {
-		return nil, stacktrace.NewError("Suite has already been registered")
+		// Don't use stacktrace so we don't leak internal info
+		return nil, errors.New("suite has already been registered")
 	}
+
+	if err := service.mainService.HandleSuiteRegistrationEvent; err != nil {
+		logrus.Errorf("An error occurred while the main service was handling the suite registration event:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		return nil, errors.New("an internal error occurred while registering the suite")
+	}
+
 	service.suiteRegistered = true
 	service.suiteRegistrationChan <- "Suite registered"
 	response := &bindings.SuiteRegistrationResponse{SuiteAction: service.suiteAction}

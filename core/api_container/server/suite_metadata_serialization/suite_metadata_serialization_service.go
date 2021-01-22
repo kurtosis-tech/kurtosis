@@ -37,8 +37,9 @@ func newSuiteMetadataSerializationService(
 	}
 }
 
-func (service *suiteMetadataSerializationService) ReceiveSuiteRegistrationEvent() {
+func (service *suiteMetadataSerializationService) HandleSuiteRegistrationEvent() error {
 	// Nothing to do here
+	return nil
 }
 
 func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(

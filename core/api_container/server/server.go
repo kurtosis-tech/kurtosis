@@ -40,13 +40,13 @@ type ApiContainerServer struct {
 func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 	grpcServer := grpc.NewServer()
 
+	shutdownChan := make(chan exit_codes.ApiContainerExitCode, 1)
+	mainService := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
+
 	suiteRegistrationChan := make(chan interface{}, 1)
 	suiteAction := server.core.GetSuiteAction()
-	suiteRegistrationSvc := newSuiteRegistrationService(suiteAction, suiteRegistrationChan)
+	suiteRegistrationSvc := newSuiteRegistrationService(suiteAction, mainService, suiteRegistrationChan)
 	bindings.RegisterSuiteRegistrationServiceServer(grpcServer, suiteRegistrationSvc)
-
-	shutdownChan := make(chan exit_codes.ApiContainerExitCode, 1)
-	service := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
 
 	listener, err := net.Listen(server.listenProtocol, server.listenAddress)
 	if err != nil {
@@ -68,7 +68,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 		}
 	}()
 
-	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, service)
+	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
 
 	// TODO call shutdown hook??????
 
@@ -100,7 +100,7 @@ func waitForExitCondition(
 		return exit_codes.ReceivedTermSignalExitCode
 	}
 
-	service.ReceiveSuiteRegistrationEvent()
+	service.HandleSuiteRegistrationEvent()
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
 	//  If this becomes problematic, we could add a very long timeout here

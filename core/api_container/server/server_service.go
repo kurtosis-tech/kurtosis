@@ -9,5 +9,5 @@ type ApiContainerServerService interface {
 
 	// Hook to tell the service that a testsuite successfully registered with the API container server
 	// Services shouldn't do much before receiving this event
-	ReceiveSuiteRegistrationEvent()
+	HandleSuiteRegistrationEvent() error
 }

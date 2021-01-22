@@ -1,0 +1,15 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service TestExecutionService {
+  rpc RegisterTestExecution(RegisterTestExecutionArgs) returns (google.protobuf.Empty) {};
+}
+
+message RegisterTestExecutionArgs {
+  // TODO This should actually be unnecessary - we should pass in testsuite metadata at API container startup time,
+  //  so that registration just says "I'm starting" and the API container can look up the timeout
+  uint64 timeout_seconds = 1;
+}
+
