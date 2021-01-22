@@ -180,7 +180,34 @@ func (network ServiceNetwork) RegisterService(
 	return ip, generatedFilesRelativeFilepaths, nil
 }
 
-// TODO Add tests for this
+// Starts a previously-registered but not-started service by creating it in a container
+func (network *ServiceNetwork) StartService(
+		ctx context.Context,
+		serviceId topology_types.ServiceID,
+		imageName string,
+		usedPorts map[nat.Port]bool,
+		startCmd []string,
+		dockerEnvVars map[string]string,
+		testVolumeMountDirpath string,
+		filesArtifactMountDirpaths map[string]string) error {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
+	}
+
+	if _, found := network.serviceIps[serviceId]; !found {
+		return stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been reigstered")
+	}
+	if _, found := network.serviceContainerIds[serviceId]; found {
+		return stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has a container associated with it")
+	}
+
+
+}
+
+	// TODO Add tests for this
 /*
 Creates the service with the given ID in the given partition
 
@@ -334,89 +361,37 @@ func (network *ServiceNetwork) RemoveService(
 		return stacktrace.NewError("Cannot remove service; the service network has been destroyed")
 	}
 
-	serviceContainerId, found := network.serviceContainerIds[serviceId]
-	if !found {
-		return stacktrace.NewError("Unknown service '%v'", serviceId)
-	}
-	serviceIp, found := network.serviceIps[serviceId]
-	if !found {
-		return stacktrace.NewError("No IP found for service '%v'", serviceId)
-	}
-
-	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
-	// Make a best-effort attempt to stop the service container
-	logrus.Debugf("Removing service ID '%v' with container ID '%v'...", serviceId, serviceContainerId)
-	if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
-	}
-	network.topology.RemoveService(serviceId)
-	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
-	delete(network.serviceContainerIds, serviceId)
-	delete(network.serviceIps, serviceId)
-	logrus.Debugf("Successfully removed service with container ID %v", serviceContainerId)
-
-	if network.isPartitioningEnabled {
-		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
-		//  clear the now-removed service's IP because:
-		// 	 a) nothing is using it so it doesn't do anything and
-		//	 b) all service's iptables get overwritten on the next Add/Repartition call
-		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
-
-		sidecar, found := network.networkingSidecars[serviceId]
-		if !found {
-			return stacktrace.NewError(
-				"Couldn't find sidecar container for service '%v'; this is a code bug where the sidecar container ID didn't get stored at creation time",
-				serviceId)
-
-		}
-
-		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
-		}
-		delete(network.networkingSidecars, serviceId)
-		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
+	if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'")
 	}
 	return nil
 }
 
 // Stops all services that have been created by the API container, and renders the service network unusable
 func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
+	// TODO wrap this in wrapper method
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
 		return stacktrace.NewError("Cannot destroy the service network; it has already been destroyed")
 	}
 
-	containerStopErrors := []error{}
+	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
+	serviceIdsToRemove := map[topology_types.ServiceID]bool{}
+	for serviceId := range network.serviceIps {
+		serviceIdsToRemove[serviceId] = true
+	}
 
-	// TODO PERF: parallelize this for faster shutdown
-	logrus.Debugf("Making best-effort attempt to stop sidecar containers...")
-	for serviceId, sidecar := range network.networkingSidecars {
-		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
+	containerStopErrors := []error{}
+	for serviceId := range serviceIdsToRemove {
+		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred destroying sidecar container for service with ID '%v'",
+				"An error occurred removing service with ID '%v'",
 				serviceId)
 			containerStopErrors = append(containerStopErrors, wrappedErr)
 		}
 	}
-	logrus.Debugf("Made best-effort attempt to stop sidecar containers")
-
-	// TODO PERF: parallelize this for faster shutdown
-	logrus.Debugf("Making best-effort attempt to stop service containers...")
-	for serviceId, serviceContainerId := range network.serviceContainerIds {
-		// TODO set the stop timeout on the service itself
-		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred stopping container for service '%v' with container ID '%v'",
-				serviceId,
-				serviceContainerId)
-			containerStopErrors = append(containerStopErrors, wrappedErr)
-		}
-	}
-	logrus.Debugf("Made best-effort attempt to stop service containers")
-
 	network.isDestroyed = true
 
 	if len(containerStopErrors) > 0 {
@@ -438,6 +413,48 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func (network *ServiceNetwork) removeServiceWithoutMutex(
+		ctx context.Context,
+		serviceId topology_types.ServiceID,
+		// TODO allow choice between Kill and Stop
+		containerStopTimeout time.Duration) error {
+	serviceIp, foundIpAddr := network.serviceIps[serviceId]
+	if !foundIpAddr {
+		return stacktrace.NewError("No IP found for service '%v'", serviceId)
+	}
+	network.topology.RemoveService(serviceId)
+	delete(network.serviceIps, serviceId)
+
+	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
+	serviceContainerId, foundContainerId := network.serviceContainerIds[serviceId]
+	if foundContainerId {
+		// Make a best-effort attempt to stop the service container
+		logrus.Debugf("Stopping container ID '%v' for service ID '%v'...", serviceContainerId, serviceId)
+		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
+		}
+		delete(network.serviceContainerIds, serviceId)
+		logrus.Debugf("Successfully stopped container ID")
+	}
+	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
+
+	sidecar, foundSidecar := network.networkingSidecars[serviceId]
+	if network.isPartitioningEnabled && foundSidecar {
+		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
+		//  clear the now-removed service's IP because:
+		// 	 a) nothing is using it so it doesn't do anything and
+		//	 b) all service's iptables get overwritten on the next Add/Repartition call
+		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
+		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
+		}
+		delete(network.networkingSidecars, serviceId)
+		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
+	}
+
+	return nil
+}
+
 /*
 Updates the iptables of the services with the given IDs to match the target blocklists
 
@@ -478,4 +495,5 @@ func updateIpTables(
 	}
 	return nil
 }
+
 
