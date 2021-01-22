@@ -15,13 +15,14 @@ import (
 
 // API for interacting with a service's directory inside the suite execution volume
 type ServiceDirectory struct {
-	absoluteDirpath string
-	relativeDirpath string
+	absoluteDirpath          string
+	dirpathRelativeToVolRoot string
 }
 
-func newServiceDirectory(absoluteDirpath string, relativeDirpath string) *ServiceDirectory {
-	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, relativeDirpath: relativeDirpath}
+func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string) *ServiceDirectory {
+	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
+
 
 func (directory ServiceDirectory) CreateFile(filename string) (*File, error) {
 	uniqueId := uuid.New()
@@ -34,7 +35,7 @@ func (directory ServiceDirectory) CreateFile(filename string) (*File, error) {
 	}
 	fp.Close()
 
-	relativeFilepath := path.Join(directory.relativeDirpath, uniqueFilename)
+	relativeFilepath := path.Join(directory.dirpathRelativeToVolRoot, uniqueFilename)
 	return newFile(absoluteFilepath, relativeFilepath), nil
 }
 

@@ -12,6 +12,10 @@ import (
 
 const (
 	suiteMetadataFilename = "suite-metadata.json"
+
+	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where artifacts are being
+	//  a) stored using the initializer and b) retrieved using the files artifact expander
+	artifactCacheDirname = "artifact-cache"
 )
 
 // Interface for interacting with the contents of the suite execution volume
@@ -33,9 +37,19 @@ func (volume SuiteExecutionVolume) CreateTestExecutionDirectory(testExecutionId 
 	relativeDirpath := testExecutionId
 	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring test execution dirpath '%v' exists", relativeDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring test execution dirpath '%v' exists", absoluteDirpath)
 	}
 	return newTestExecutionDirectory(absoluteDirpath, relativeDirpath), nil
+}
+
+func (volume SuiteExecutionVolume) CreateArtifactCache() (*ArtifactCache, error) {
+	relativeDirpath := artifactCacheDirname
+	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
+	if err := ensureDirpathExists(absoluteDirpath); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring artifact cache dirpath '%v' exists", absoluteDirpath)
+	}
+
+	return newArtifactCache(absoluteDirpath, relativeDirpath), nil
 }
 
 

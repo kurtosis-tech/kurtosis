@@ -9,8 +9,8 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 )
 
@@ -51,7 +51,7 @@ func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *do
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Context,
 		artifactIdsToVolumeNames map[string]string) error {
 	// Representation of the cache *on the expander image*
-	expanderContainerArtifactCache := artifact_cache.NewArtifactCache(suiteExecutionVolumeMountDirpath)
+	expanderContainerArtifactCache := suite_execution_volume.NewArtifactCache(suiteExecutionVolumeMountDirpath)
 
 	// TODO PERF: parallelize this to increase speed
 	for artifactId, volumeName := range artifactIdsToVolumeNames {

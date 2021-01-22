@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/google/uuid"
-	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
@@ -148,7 +148,7 @@ func downloadUsedArtifacts(
 		suiteExecutionVolumeMountDirpath string,
 		testNames map[string]bool,
 		suiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) error {
-	artifactCache := artifact_cache.NewArtifactCache(suiteExecutionVolumeMountDirpath)
+	artifactCache := suite_execution_volume.NewArtifactCache(suiteExecutionVolumeMountDirpath)
 	allTestMetadata := suiteMetadata.TestMetadata
 	artifactUrlsToDownloadById := map[string]string{}
 	for testName := range testNames {
