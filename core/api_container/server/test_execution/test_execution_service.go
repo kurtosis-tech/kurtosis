@@ -29,6 +29,7 @@ const (
 
 type TestExecutionService struct {
 	dockerManager *docker_manager.DockerManager
+
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
 	shutdownChan chan exit_codes.ApiContainerExitCode
@@ -62,7 +63,7 @@ func (service *TestExecutionService) HandleSuiteRegistrationEvent() error {
 func (service *TestExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestExecutionRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine:")
+		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
 	timeoutSeconds := args.TimeoutSeconds
@@ -94,3 +95,17 @@ func (service *TestExecutionService) RegisterTestExecution(ctx context.Context, 
 
 	return &emptypb.Empty{}, nil
 }
+
+func (service *TestExecutionService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
+	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+	}
+
+
+}
+
+func (service *TestExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
+	panic("implement me")
+}
+

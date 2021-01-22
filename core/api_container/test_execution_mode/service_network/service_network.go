@@ -116,7 +116,6 @@ func (network *ServiceNetwork) Repartition(
 	return nil
 }
 
-
 // TODO Add tests for this
 /*
 Creates the service with the given ID in the given partition
