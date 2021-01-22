@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
 	"net"
@@ -31,6 +32,8 @@ type UserServiceLauncher struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
+	artifactCache *suite_execution_volume.ArtifactCache
+
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
 	dockerNetworkId string
@@ -39,10 +42,9 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
+func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
-
 
 /**
 Launches a testnet service with the given parameters
@@ -58,20 +60,26 @@ func (launcher UserServiceLauncher) Launch(
 		startCmd []string,
 		dockerEnvVars map[string]string,
 		suiteExecutionVolMntDirpath string,
-		// Mapping artifactID -> mountpoint
-		filesArtifactMountDirpaths map[string]string) (string, error) {
-
+		// Mapping artifactUrl -> mountpoint
+		artifactUrlToMountDirpath map[string]string) (string, error) {
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactIdsToVolumeNames := map[string]string{}
-	for artifactId, _ := range filesArtifactMountDirpaths {
-		artifactIdsToVolumeNames[artifactId] = launcher.getExpandedFilesArtifactVolName(
+	artifactToVolName := map[suite_execution_volume.Artifact]string{}
+	artifactVolToMountpoint := map[string]string{}
+	for artifactUrl, mountDirpath := range artifactUrlToMountDirpath {
+		artifact, err := launcher.artifactCache.GetArtifact(artifactUrl)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)
+		}
+		artifactUrlHash := artifact.GetUrlHash()
+		destVolName := launcher.getExpandedFilesArtifactVolName(
 			serviceId,
-			artifactId,
-		)
+			artifactUrlHash)
+		artifactToVolName[*artifact] = destVolName
+		artifactVolToMountpoint[destVolName] = mountDirpath
 	}
-	if err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, artifactIdsToVolumeNames); err != nil {
+	if err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, artifactToVolName); err != nil {
 		return "", stacktrace.Propagate(
 			err,
 			"An error occurred expanding the requested artifacts for service '%v' into Docker volumes",
@@ -86,14 +94,8 @@ func (launcher UserServiceLauncher) Launch(
 	volumeMounts := map[string]string{
 		launcher.suiteExecutionVolName: suiteExecutionVolMntDirpath,
 	}
-	for artifactId, mountpoint := range filesArtifactMountDirpaths {
-		volumeName, found := artifactIdsToVolumeNames[artifactId]
-		if !found {
-			return "", stacktrace.NewError(
-				"Could not find a volume name corresponding to artifact ID '%v' AFTER expansion; this is very strange",
-				artifactId)
-		}
-		volumeMounts[volumeName] = mountpoint
+	for artifactVolName, mountpoint := range artifactVolToMountpoint {
+		volumeMounts[artifactVolName] = mountpoint
 	}
 
 	containerId, err := launcher.dockerManager.CreateAndStartContainer(
@@ -120,7 +122,7 @@ func (launcher UserServiceLauncher) Launch(
 // ==================================================================================================
 func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
 		serviceId service_network_types.ServiceID,
-		artifactId string) string {
+		artifactUrlHash string) string {
 	timestampStr := time.Now().Format(volume_naming_consts.GoTimestampFormat)
 	return fmt.Sprintf(
 		"%v_%v_%v_%v_%v",
@@ -128,5 +130,5 @@ func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
 		launcher.executionInstanceId,
 		launcher.testName,
 		serviceId,
-		artifactId)
+		artifactUrlHash)
 }

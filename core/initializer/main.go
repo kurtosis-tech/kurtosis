@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -69,9 +70,9 @@ const (
 	kurtosisApiImageArg = "KURTOSIS_API_IMAGE"
 	parallelismArg = "PARALLELISM"
 	// TODO TODO Update to reflect that this is now CUSTOM_PARAMS_JSON
-	customEnvVarsJsonArg = "CUSTOM_ENV_VARS_JSON"
-	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
-	testSuiteDebuggerPortArg = "DEBUGGER_PORT"
+	customEnvVarsJsonArg        = "CUSTOM_ENV_VARS_JSON"
+	suiteExecutionVolumeNameArg = "SUITE_EXECUTION_VOLUME"
+	testSuiteDebuggerPortArg    = "DEBUGGER_PORT"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                     If you change the above, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -127,7 +128,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "A positive integer telling Kurtosis how many tests to run concurrently (should be set no higher than the number of cores on your machine, else you'll slow down your tests and potentially hit test timeouts!)",
 		Type:     docker_flag_parser.IntFlagType,
 	},
-	suiteExecutionVolumeArg: {
+	suiteExecutionVolumeNameArg: {
 		Required: true,
 		Default:  "",
 		HelpText: "The name of the Docker volume that will contain all the data for the test suite execution (should be a new volume for each execution!)",
@@ -220,7 +221,7 @@ func main() {
 
 	testsuiteLauncher, err := test_suite_constants.NewTestsuiteContainerLauncher(
 		executionInstanceId,
-		parsedFlags.GetString(suiteExecutionVolumeArg),
+		parsedFlags.GetString(suiteExecutionVolumeNameArg),
 		parsedFlags.GetString(kurtosisApiImageArg),
 		kurtosisLogLevel,
 		parsedFlags.GetString(testSuiteImageArg),
@@ -239,7 +240,7 @@ func main() {
 	}
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		parsedFlags.GetString(suiteExecutionVolumeArg),
+		parsedFlags.GetString(suiteExecutionVolumeNameArg),
 		initializerContainerSuiteExVolMountDirpath,
 		dockerClient,
 		testsuiteLauncher,
@@ -261,12 +262,19 @@ func main() {
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
+	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
+	artifactCache, err := suiteExecutionVolume.CreateArtifactCache()
+	if err != nil {
+		logrus.Errorf("An error occurred getting the artifact cache: %v", err)
+		os.Exit(failureExitCode)
+	}
+
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		executionInstanceId,
 		dockerClient,
-		parsedFlags.GetString(suiteExecutionVolumeArg),
+		artifactCache,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,

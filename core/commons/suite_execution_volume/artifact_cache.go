@@ -69,7 +69,7 @@ func (cache ArtifactCache) AddArtifact(artifactUrl string) error {
 }
 
 // Gets the artifact with the given URL, or throws an error if it doesn't exist
-func (cache ArtifactCache) GetArtifact(artifactUrl string) (*File, error) {
+func (cache ArtifactCache) GetArtifact(artifactUrl string) (*Artifact, error) {
 	artifactUrlHash, err := hashArtifactUrl(artifactUrl)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -79,7 +79,8 @@ func (cache ArtifactCache) GetArtifact(artifactUrl string) (*File, error) {
 	}
 	absoluteFilepath := path.Join(cache.absoluteDirpath, artifactUrlHash)
 	relativeFilepath := path.Join(cache.dirpathRelativeToVolRoot, artifactUrlHash)
-	return newFile(absoluteFilepath, relativeFilepath), nil
+	file := newFile(absoluteFilepath, relativeFilepath)
+	return newArtifact(artifactUrlHash, file), nil
 }
 
 func hashArtifactUrl(artifactUrl string) (string, error) {

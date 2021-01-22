@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
+	"path"
 )
 
 const (
@@ -21,10 +22,10 @@ const (
 
 	// Dirpath on the artifact expander container where the suite execution volume (which contains the artifacts)
 	//  will be mounted
-	suiteExecutionVolumeMountDirpath = "/suite-execution"
+	suiteExVolMntDirpathOnExpander = "/suite-execution"
 
 	// Dirpath on the artifact expander container where the destination volume will be mounted
-	destinationVolumeMountDirpath = "/dest"
+	destVolMntDirpathOnExpander = "/dest"
 
 	expanderContainerSuccessExitCode = 0
 )
@@ -48,24 +49,26 @@ func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *do
 }
 
 
-func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(ctx context.Context,
-		artifactIdsToVolumeNames map[string]string) error {
-	// Representation of the cache *on the expander image*
-	expanderContainerArtifactCache := suite_execution_volume.NewArtifactCache(suiteExecutionVolumeMountDirpath)
-
+func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
+		ctx context.Context,
+		artifactToVolName map[suite_execution_volume.Artifact]string) error {
 	// TODO PERF: parallelize this to increase speed
-	for artifactId, volumeName := range artifactIdsToVolumeNames {
+	for artifact, volumeName := range artifactToVolName {
 		if err := expander.dockerManager.CreateVolume(ctx, volumeName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", volumeName)
 		}
 
-		artifactFilepathOnExpanderContainer := expanderContainerArtifactCache.GetArtifactFilepath(artifactId)
+		artifactFile := artifact.GetFile()
+		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToVolRoot()
+		artifactFilepathOnExpanderContainer := path.Join(
+			suiteExVolMntDirpathOnExpander,
+			artifactRelativeFilepath)
 
 		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
 
 		volumeMounts := map[string]string{
-			expander.suiteExecutionVolumeName: suiteExecutionVolumeMountDirpath,
-			volumeName:                        destinationVolumeMountDirpath,
+			expander.suiteExecutionVolumeName: suiteExVolMntDirpathOnExpander,
+			volumeName:                        destVolMntDirpathOnExpander,
 		}
 
 		if err := expander.runExpanderContainer(ctx, containerCmd, volumeMounts); err != nil {
@@ -130,7 +133,7 @@ func getExtractionCommand(artifactFilepath string) (dockerRunCmd []string) {
 		"-xzvf",
 		artifactFilepath,
 		"-C",
-		destinationVolumeMountDirpath,
+		destVolMntDirpathOnExpander,
 	}
 }
 

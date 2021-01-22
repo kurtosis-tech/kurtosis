@@ -41,8 +41,7 @@ Args:
 	permissions: The permissions the user is running the test suite with
 	executionInstanceId: The UUID  uniquely identifying this testsuite execution
 	dockerClient: Docker client to use when interacting with the Docker engine
-	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
-		mounted.
+	artifactCache: The artifact cache where artifacts needed by the tests-to-run will be downloaded
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
 	testNamesToRun: A "set" of test names to run
 	testParallelism: How many tests to run in parallel
