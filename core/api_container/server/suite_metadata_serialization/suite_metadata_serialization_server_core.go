@@ -26,7 +26,7 @@ func (core SuiteMetadataSerializationServerCore) GetSuiteAction() bindings.Suite
 
 func (core SuiteMetadataSerializationServerCore) CreateAndRegisterService(shutdownChan chan exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) server.ApiContainerServerService {
 	service := newSuiteMetadataSerializationService(core.serializationOutputFilepath, shutdownChan)
-	bindings.RegisterSuiteMetadataSerializingServiceServer(grpcServer, service)
+	bindings.RegisterSuiteMetadataSerializationServiceServer(grpcServer, service)
 	return service
 }
 

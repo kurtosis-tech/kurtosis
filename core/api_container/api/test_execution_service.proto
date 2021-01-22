@@ -51,10 +51,10 @@ message StartServiceArgs {
 
   repeated string start_cmd_args = 4;
 
-  // TODO support env variable-based starting
+  map<string, string> docker_env_vars = 5;
 
-  string suite_execution_vol_mnt_dirpath = 5;
+  string suite_execution_vol_mnt_dirpath = 6;
 
   // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
-  map<string, string> files_artifact_mount_dirpaths = 6;
+  map<string, string> files_artifact_mount_dirpaths = 7;
 }

@@ -36,11 +36,11 @@ type UserServiceLauncher struct {
 	dockerNetworkId string
 
 	// The name of the Docker volume containing data for this suite execution that will be mounted on this service
-	testVolumeName string
+	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, testVolumeName string) *UserServiceLauncher {
-	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, testVolumeName: testVolumeName}
+func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
 
 
@@ -57,7 +57,7 @@ func (launcher UserServiceLauncher) Launch(
 		usedPorts map[nat.Port]bool,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string,
+		suiteExecutionVolMntDirpath string,
 		// Mapping artifactID -> mountpoint
 		filesArtifactMountDirpaths map[string]string) (string, error) {
 
@@ -84,7 +84,7 @@ func (launcher UserServiceLauncher) Launch(
 	}
 
 	volumeMounts := map[string]string{
-		launcher.testVolumeName: testVolumeMountDirpath,
+		launcher.suiteExecutionVolName: suiteExecutionVolMntDirpath,
 	}
 	for artifactId, mountpoint := range filesArtifactMountDirpaths {
 		volumeName, found := artifactIdsToVolumeNames[artifactId]

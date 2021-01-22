@@ -200,7 +200,7 @@ func (network *ServiceNetwork) StartService(
 		usedPorts map[nat.Port]bool,
 		startCmd []string,
 		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string,
+		suiteExecutionVolMntDirpath string,
 		filesArtifactMountDirpaths map[string]string) error {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
@@ -251,7 +251,7 @@ func (network *ServiceNetwork) StartService(
 		usedPorts,
 		startCmd,
 		dockerEnvVars,
-		testVolumeMountDirpath,
+		suiteExecutionVolMntDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
 		return stacktrace.Propagate(

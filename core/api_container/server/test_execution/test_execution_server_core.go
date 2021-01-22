@@ -16,6 +16,8 @@ type TestExecutionServerCore struct {
 	
 }
 
+// TODO constructor
+
 func (t TestExecutionServerCore) GetSuiteAction() bindings.SuiteAction {
 	return bindings.SuiteAction_EXECUTE_TEST
 }

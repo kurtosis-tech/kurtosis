@@ -8,6 +8,7 @@ package test_execution
 import (
 	"context"
 	"fmt"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
@@ -93,7 +94,7 @@ func (service *TestExecutionService) RegisterTestExecution(ctx context.Context, 
 	return &emptypb.Empty{}, nil
 }
 
-func (service *TestExecutionService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
+func (service *TestExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
 	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
@@ -116,6 +117,47 @@ func (service *TestExecutionService) RegisterService(ctx context.Context, args *
 }
 
 func (service *TestExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
-	panic("implement me")
+	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+	}
+
+	usedPorts := map[nat.Port]bool{}
+	for portSpecStr := range args.UsedPorts {
+		// NOTE: this function, frustratingly, doesn't return an error on failure - just emptystring
+		protocol, portNumberStr := nat.SplitProtoPort(portSpecStr)
+		if protocol == "" {
+			return nil, stacktrace.NewError(
+				"Could not split port specification string '%s' into protocol & number strings",
+				portSpecStr)
+		}
+		portObj, err := nat.NewPort(protocol, portNumberStr)
+		if err != nil {
+			// TODO IP: Leaks internal information about the API container
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred constructing a port object out of protocol '%v' and port number string '%v'",
+				protocol,
+				portNumberStr)
+		}
+		usedPorts[portObj] = true
+	}
+
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+
+	if err := service.serviceNetwork.StartService(
+			ctx,
+			serviceId,
+			args.DockerImage,
+			usedPorts,
+			args.StartCmdArgs,
+			args.DockerEnvVars,
+			args.SuiteExecutionVolMntDirpath,
+			args.FilesArtifactMountDirpaths); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
