@@ -166,88 +166,8 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
-	log.Debugf(
-		"Test suite container IP: %v; kurtosis API container IP: %v",
-		testRunningContainerIp.String(),
-		kurtosisApiIp.String())
+	// TODO call to testsuite container launcher
 
-	servicesDirpathOnInitializerContainer := path.Join(
-		suiteExecutionVolumeDirpathOnInitializer,
-		testExecutionRelativeDirpath,
-		servicesDirname)
-	if err := os.Mkdir(servicesDirpathOnInitializerContainer, os.ModeDir); err != nil {
-		return false, stacktrace.Propagate(
-			err,
-			"Could not create a directory inside the test execution directory, '%v', for storing services file IO",
-			testExecutionRelativeDirpath)
-	}
-
-	servicesRelativeDirpath := path.Join(testExecutionRelativeDirpath, servicesDirname)
-
-	log.Info("Launching testsuite container to run the test...")
-	testRunningContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
-		testSetupContext,
-		dockerManager,
-		networkId,
-		suiteExecutionVolume,
-		testName,
-		kurtosisApiIp.String(),
-		testRunningContainerIp,
-		servicesRelativeDirpath,
-		testsuiteDebuggerHostPortBinding)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite container to run the test")
-	}
-	log.Infof(
-		"Test-running testsuite container launched, with debugger port bound to host port %v",
-		testsuiteDebuggerHostPortBinding)
-	log.Info("Successfully created test suite container to run the test")
-
-	log.Info("Creating Kurtosis API container...")
-	apiLogFilepathOnApiContainer := path.Join(
-		api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
-		testExecutionRelativeDirpath,
-		apiContainerLogFilename)
-	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_server_consts.ListenPort))
-	kurtosisApiContainerEnvVars, err := buildApiContainerEnvVarsMap(
-		kurtosisApiIp,
-		apiLogFilepathOnApiContainer,
-		executionInstanceId,
-		gatewayIp,
-		testMetadata.IsPartitioningEnabled,
-		apiContainerLogLevel,
-		networkId,
-		subnetMask,
-		testName,
-		testRunningContainerId,
-		testRunningContainerIp,
-		suiteExecutionVolume)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the API container envvars map")
-	}
-	kurtosisApiContainerId, err := dockerManager.CreateAndStartContainer(
-		testSetupContext,
-		kurtosisApiImageName,
-		networkId,
-		kurtosisApiIp,
-		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
-		docker_manager.DefaultNetworkMode,
-		map[nat.Port]*nat.PortBinding{
-			kurtosisApiPort: nil,
-		},
-		nil,
-		kurtosisApiContainerEnvVars,
-		map[string]string{
-			dockerSocket: dockerSocket,
-		},
-		map[string]string{
-			suiteExecutionVolume: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
-		},
-	)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the Kurtosis API container")
-	}
-	log.Infof("Successfully created Kurtosis API container")
 
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
@@ -310,40 +230,6 @@ func RunTest(
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
-func buildApiContainerEnvVarsMap(
-		apiContainerIp net.IP,
-		logFilepathOnContainer string,
-		executionInstanceId uuid.UUID,
-		gatewayIp net.IP,
-		isPartitioningEnabled bool,
-		apiContainerLogLevel string,
-		networkId string,
-		subnetMask string,
-		testName string,
-		testRunningContainerId string,
-		testRunningContainerIp net.IP,
-		suiteExecutionVolumeName string) (map[string]string, error) {
-	args := server_core_creator.NewTestExecutionArgs(
-		executionInstanceId.String(),
-		networkId,
-		subnetMask,
-		gatewayIp.String(),
-		testName,
-		suiteExecutionVolumeName,
-		testRunningContainerId,
-		testRunningContainerIp.String(),
-		apiContainerIp.String(),
-		isPartitioningEnabled)
-	serializedArgsBytes, err := json.Marshal(args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the test execution args to JSON")
-	}
-	return map[string]string{
-		api_container_env_vars.LogLevelEnvVar:   apiContainerLogLevel,
-		api_container_env_vars.ModeEnvVar:       api_container_env_vars.TestExecutionMode,
-		api_container_env_vars.ParamsJsonEnvVar: string(serializedArgsBytes),
-	}, nil
-}
 
 
 /*

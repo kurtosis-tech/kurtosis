@@ -24,3 +24,11 @@ type TestExecutionArgs struct {
 	//  metadata?
 	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
 }
+
+// Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
+//  we get compile errors if there are missing fields
+func NewTestExecutionArgs(executionInstanceId string, networkId string, subnetMask string, gatewayIpAddr string, testName string, suiteExecutionVolumeName string, testSuiteContainerId string, testSuiteContainerIpAddr string, apiContainerIpAddr string, isPartitioningEnabled bool) *TestExecutionArgs {
+	return &TestExecutionArgs{ExecutionInstanceId: executionInstanceId, NetworkId: networkId, SubnetMask: subnetMask, GatewayIpAddr: gatewayIpAddr, TestName: testName, SuiteExecutionVolumeName: suiteExecutionVolumeName, TestSuiteContainerId: testSuiteContainerId, TestSuiteContainerIpAddr: testSuiteContainerIpAddr, ApiContainerIpAddr: apiContainerIpAddr, IsPartitioningEnabled: isPartitioningEnabled}
+}
+
+

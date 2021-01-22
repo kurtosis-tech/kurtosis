@@ -6,15 +6,12 @@
 package suite_execution_volume
 
 import (
-	"fmt"
-	"github.com/google/uuid"
 	"github.com/palantir/stacktrace"
-	"os"
 	"path"
 )
 
 const (
-	allServicesDirname = "services"
+	suiteMetadataFilename = "suite-metadata.json"
 )
 
 // Interface for interacting with the contents of the suite execution volume
@@ -26,17 +23,19 @@ func NewSuiteExecutionVolume(mountDirpath string) *SuiteExecutionVolume {
 	return &SuiteExecutionVolume{mountDirpath: mountDirpath}
 }
 
-// TODO change type to be ServiceID
-// Creates a new, unique service directory for a service with the given service ID
-func (volume SuiteExecutionVolume) CreateServiceDirectory(serviceId string) (*ServiceDirectory, error) {
-	allServicesRelativeDirpath := allServicesDirname
-	uniqueId := uuid.New()
-	serviceDirname := fmt.Sprintf("%v_%v", serviceId, uniqueId.String())
-	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, serviceDirname)
-	absoluteServiceDirpath := path.Join(volume.mountDirpath, relativeServiceDirpath)
-	if err := os.Mkdir(absoluteServiceDirpath, os.ModeDir); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new service directory '%v'", absoluteServiceDirpath)
-	}
-	serviceDirectoryObj := newServiceDirectory(absoluteServiceDirpath, relativeServiceDirpath)
-	return serviceDirectoryObj, nil
+func (volume SuiteExecutionVolume) GetSuiteMetadataFile() *File {
+	relativeFilepath := suiteMetadataFilename
+	absoluteFilepath := path.Join(volume.mountDirpath, relativeFilepath)
+	return newFile(absoluteFilepath, relativeFilepath)
 }
+
+func (volume SuiteExecutionVolume) CreateTestExecutionDirectory(testExecutionId string) (*TestExecutionDirectory, error) {
+	relativeDirpath := testExecutionId
+	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
+	if err := ensureDirpathExists(absoluteDirpath); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring test execution dirpath '%v' exists", relativeDirpath)
+	}
+	return newTestExecutionDirectory(absoluteDirpath, relativeDirpath), nil
+}
+
+

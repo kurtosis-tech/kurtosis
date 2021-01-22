@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
-	server2 "github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
@@ -66,15 +66,11 @@ func main() {
 		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
 	}
 
-	server := server2.NewApiContainerServer(serverCore, )
+	server := server.NewApiContainerServer(serverCore)
 
-	exitCode, err := codepath.Execute()
-	if err != nil {
-		logrus.Errorf("An error occurred running the codepath for mode '%v':", mode)
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-	} else {
-		logrus.Infof("Successfully ran codepath for mode '%v'", mode)
-	}
-	os.Exit(exitCode)
+	logrus.Info("Running server...")
+	exitCode := server.Run()
+	logrus.Info("Server exited with exit code '%v'", exitCode)
+	os.Exit(int(exitCode))
 }
 

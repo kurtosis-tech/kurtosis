@@ -39,7 +39,7 @@ func NewApiContainerServer(core ApiContainerServerCore) *ApiContainerServer {
 	return &ApiContainerServer{core: core}
 }
 
-func (server ApiContainerServer) Serve() api_container_exit_codes.ApiContainerExitCode {
+func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExitCode {
 	grpcServer := grpc.NewServer()
 
 	shutdownChan := make(chan api_container_exit_codes.ApiContainerExitCode, 1)

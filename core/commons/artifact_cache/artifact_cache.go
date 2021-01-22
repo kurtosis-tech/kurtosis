@@ -21,7 +21,7 @@ const (
 	artifactCacheDirname = "artifact-cache"
 )
 
-// TODO absorb this class into a class abstracting away all interactions with the suite execution volume
+// TODO absorb this class into SuiteExecutionVolume package
 /*
 An interface for interacting with the artifact cache directory that exists inside the suite execution volume,
 	and is a) populated by the initializer and b) accessed by the files artifact expander

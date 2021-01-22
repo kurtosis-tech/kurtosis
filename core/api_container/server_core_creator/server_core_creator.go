@@ -22,19 +22,25 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"path"
 )
 
 func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (server.ApiContainerServerCore, error) {
 	paramsJsonBytes := []byte(paramsJson)
 
+	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
+
+	logrus.Debugf("Creating server core by parsing params JSON '%v' using mode '%v'...", paramsJson, mode)
 	switch mode {
 	case api_container_env_vars.SuiteMetadataSerializingMode:
-		var args SuiteMetadataSerializingArgs
+		logrus.Debugf("Parsing ")
+		// NOTE: These are unused as of 2021-01-22, but we leave them here so we have space to add new args
+		var args SuiteMetadataSerializationArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the suite metadata serializing args JSON")
 		}
-		result := createSuiteMetadataSerializationCore(args)
+		serializationOutputFilepath := suiteExecutionVolume.GetSuiteMetadataFile().GetAbsoluteFilepath()
+		result := suite_metadata_serialization.NewSuiteMetadataSerializationServerCore(serializationOutputFilepath)
+		logrus.Debugf("Successfully created suite metadata-serializing server core")
 		return result,  nil
 	case api_container_env_vars.TestExecutionMode:
 		var args TestExecutionArgs
@@ -45,20 +51,11 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the test execution core")
 		}
+		logrus.Debugf("Successfully created test execution server core")
 		return result, nil
 	default:
 		return nil, stacktrace.NewError("Unrecognized API container mode '%v'", mode)
 	}
-}
-
-// ===============================================================================================
-//                                 Suite Metadata Serilaization
-// ===============================================================================================
-func createSuiteMetadataSerializationCore(args SuiteMetadataSerializingArgs) *suite_metadata_serialization.SuiteMetadataSerializationServerCore {
-	serializationOutputFilepath := path.Join(
-		api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
-		args.SuiteMetadataRelativeFilepath)
-	return suite_metadata_serialization.NewSuiteMetadataSerializationServerCore(serializationOutputFilepath)
 }
 
 // ===============================================================================================

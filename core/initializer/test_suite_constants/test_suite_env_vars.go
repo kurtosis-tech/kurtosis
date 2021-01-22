@@ -12,20 +12,14 @@ A package to contain the contract of Docker environment variables that will be p
 
 // TODO Refactor these so that they're passed in as a single JSON str
 const (
+	// TODO get rid of these docs - we don't want the user to have to fuss about this
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// When you change these, make sure to update the docs at:
 	// 	https://github.com/kurtosis-tech/kurtosis-docs/blob/develop/testsuite-details.md#dockerfile
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	metadataFilepathEnvVar        = "METADATA_FILEPATH"
-	testEnvVar                    = "TEST"
-	kurtosisApiIpEnvVar           = "KURTOSIS_API_IP"
-	servicesRelativeDirpathEnvVar = "SERVICES_RELATIVE_DIRPATH"
-	logLevelEnvVar                = "LOG_LEVEL"
 	debuggerPortEnvVar            = "DEBUGGER_PORT"
-	modeEnvVar  				  = "MODE"
-
-	// TODO break into separate file??
-	printSuiteMetadataMode = "PRINT_SUITE_METADATA"
-	executeTestMode = "EXECUTE_TEST_MODE"
+	kurtosisApiSocketEnvVar		  = "KURTOSIS_API_SOCKET"
+	logLevelEnvVar                = "LOG_LEVEL"
+	customParamsJson			  = "CUSTOM_PARAMS_JSON"
 )
 
