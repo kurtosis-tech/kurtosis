@@ -8,8 +8,8 @@ package server_core_creator
 import (
 	"encoding/json"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/suite_metadata_serialization"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution"
@@ -56,7 +56,7 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 // ===============================================================================================
 func createSuiteMetadataSerializationCore(args SuiteMetadataSerializingArgs) *suite_metadata_serialization.SuiteMetadataSerializationServerCore {
 	serializationOutputFilepath := path.Join(
-		api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
+		api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		args.SuiteMetadataRelativeFilepath)
 	return suite_metadata_serialization.NewSuiteMetadataSerializationServerCore(serializationOutputFilepath)
 }
@@ -145,7 +145,7 @@ func createServiceNetwork(
 		freeIpAddrTracker)
 
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(
-		api_container_docker_consts.SuiteExecutionVolumeMountDirpath)
+		api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		executionInstanceId,

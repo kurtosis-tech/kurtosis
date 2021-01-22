@@ -8,7 +8,7 @@ package server
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -28,7 +28,7 @@ type serverConfigForMode struct {
 	// The action the testsuite should take when the API container is in the given mode
 	suiteAction bindings.SuiteAction
 
-	serviceFactory func(shutdownChan chan exit_codes.ApiContainerExitCode) ApiContainerServerService
+	serviceFactory func(shutdownChan chan api_container_exit_codes.ApiContainerExitCode) ApiContainerServerService
 }
 
 type ApiContainerServer struct {
@@ -39,10 +39,10 @@ func NewApiContainerServer(core ApiContainerServerCore) *ApiContainerServer {
 	return &ApiContainerServer{core: core}
 }
 
-func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
+func (server ApiContainerServer) Serve() api_container_exit_codes.ApiContainerExitCode {
 	grpcServer := grpc.NewServer()
 
-	shutdownChan := make(chan exit_codes.ApiContainerExitCode, 1)
+	shutdownChan := make(chan api_container_exit_codes.ApiContainerExitCode, 1)
 	mainService := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
 
 	suiteRegistrationChan := make(chan interface{}, 1)
@@ -57,7 +57,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 			api_container_server_consts.ListenProtocol,
 			listenAddressStr)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		return exit_codes.StartupErrorExitCode
+		return api_container_exit_codes.StartupErrorExitCode
 	}
 
 	// Docker will send SIGTERM to end the process, and we need to catch it to stop gracefully
@@ -79,7 +79,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 	if err := mainService.HandlePostShutdownEvent(); err != nil {
 		logrus.Errorf("Post-shutdown hook on service returned an error:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		exitCode = exit_codes.ShutdownErrorExitCode
+		exitCode = api_container_exit_codes.ShutdownErrorExitCode
 	}
 
 	return exitCode
@@ -88,7 +88,7 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 func waitForExitCondition(
 		suiteRegistrationChan chan interface{},
 		termSignalChan chan os.Signal,
-		shutdownChan chan exit_codes.ApiContainerExitCode) exit_codes.ApiContainerExitCode {
+		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) api_container_exit_codes.ApiContainerExitCode {
 	select {
 	case <- suiteRegistrationChan:
 		logrus.Debugf("Suite registered")
@@ -96,15 +96,15 @@ func waitForExitCondition(
 	//  a certain amount of time else the API container will kill itself with an error
 	case <- time.After(suiteRegistrationTimeout):
 		logrus.Errorf("No test suite registered itself after waiting for %v", suiteRegistrationTimeout)
-		return exit_codes.NoTestSuiteRegisteredExitCode
+		return api_container_exit_codes.NoTestSuiteRegisteredExitCode
 	// We don't technically have to catch this, but it'll help catch code bugs (it indicates that a service is sending
 	//  a shutdown event before a testsuite is even registered)
 	case <- shutdownChan:
 		logrus.Errorf("Received shutdown event with exit code '%v' before testsuite is even registered; this is a code bug")
-		return exit_codes.ShutdownEventBeforeSuiteRegistration
+		return api_container_exit_codes.ShutdownEventBeforeSuiteRegistration
 	case termSignal := <-termSignalChan:
 		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)
-		return exit_codes.ReceivedTermSignalExitCode
+		return api_container_exit_codes.ReceivedTermSignalExitCode
 	}
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
@@ -115,6 +115,6 @@ func waitForExitCondition(
 		return exitCode
 	case termSignal := <-termSignalChan:
 		logrus.Infof("Received term signal '%v' while waiting for exit condition", termSignal)
-		return exit_codes.ReceivedTermSignalExitCode
+		return api_container_exit_codes.ReceivedTermSignalExitCode
 	}
 }

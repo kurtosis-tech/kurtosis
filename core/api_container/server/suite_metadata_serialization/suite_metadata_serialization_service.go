@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -23,12 +23,12 @@ type suiteMetadataSerializationService struct {
 	mutex                                 *sync.Mutex
 	hasSerializeBeenCalled                bool
 	serializedSuiteMetadataOutputFilepath string
-	shutdownChan chan exit_codes.ApiContainerExitCode
+	shutdownChan chan api_container_exit_codes.ApiContainerExitCode
 }
 
 func newSuiteMetadataSerializationService(
 		serializedSuiteMetadataOutputFilepath string,
-		shutdownChan chan exit_codes.ApiContainerExitCode) *suiteMetadataSerializationService {
+		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) *suiteMetadataSerializationService {
 	return &suiteMetadataSerializationService{
 		mutex: &sync.Mutex{},
 		hasSerializeBeenCalled: false,

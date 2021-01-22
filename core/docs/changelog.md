@@ -7,6 +7,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Split the adding of services into two steps:
     1. Register the service and get back the IP and filepaths of generated files
     2. Start the service container
+* Modified API container to do both test execution AND suite metadata-printing
 
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code

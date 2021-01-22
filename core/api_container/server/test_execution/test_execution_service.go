@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
@@ -37,14 +37,14 @@ type testExecutionService struct {
 	serviceNetwork *service_network.ServiceNetwork
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
-	shutdownChan chan exit_codes.ApiContainerExitCode
+	shutdownChan chan api_container_exit_codes.ApiContainerExitCode
 }
 
 func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
 		testSuiteContainerId string,
-		shutdownChan chan exit_codes.ApiContainerExitCode) *testExecutionService {
+		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) *testExecutionService {
 	return &testExecutionService{dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
 		testSuiteContainerId: testSuiteContainerId,
@@ -64,7 +64,7 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	go func() {
 		time.Sleep(testExecutionRegistrationTimeout)
 		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
-			service.shutdownChan <- exit_codes.NoTestExecutionRegisteredExitCode
+			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegisteredExitCode
 		}
 	}()
 
@@ -95,7 +95,7 @@ func (service *testExecutionService) RegisterTestExecution(ctx context.Context, 
 	go func() {
 		time.Sleep(timeout)
 		if err := service.stateMachine.assert(waitingForExecutionCompletion); err == nil {
-			service.shutdownChan <- exit_codes.TestHitTimeoutExitCode
+			service.shutdownChan <- api_container_exit_codes.TestHitTimeoutExitCode
 		}
 	}()
 
@@ -105,14 +105,14 @@ func (service *testExecutionService) RegisterTestExecution(ctx context.Context, 
 		if _, err := service.dockerManager.WaitForExit(context.Background(), service.testSuiteContainerId); err != nil {
 			logrus.Errorf("An error occurred waiting for the testsuite container to exit:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			service.shutdownChan <- exit_codes.ErrWaitingForSuiteContainerExitExitCode
+			service.shutdownChan <- api_container_exit_codes.ErrWaitingForSuiteContainerExitExitCode
 			return
 		}
 		if err := service.stateMachine.assertAndAdvance(waitingForExecutionCompletion); err != nil {
 			logrus.Warnf("The testsuite container exited, but an error occurred advancing the state machine to its final state")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
-		service.shutdownChan <- exit_codes.SuccessExitCode // TODO Rename this to "testsuite exited within timeout"
+		service.shutdownChan <- api_container_exit_codes.SuccessExitCode // TODO Rename this to "testsuite exited within timeout"
 	}()
 
 	return &emptypb.Empty{}, nil

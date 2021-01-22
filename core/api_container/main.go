@@ -6,16 +6,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/execution_codepath"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	server2 "github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
-	"github.com/kurtosis-tech/kurtosis/api_container/suite_metadata_serializing_mode"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -57,7 +53,7 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred parsing the log level string '%v':")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(exit_codes.StartupErrorExitCode))
+		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
 	}
 	logrus.SetLevel(logLevel)
 
@@ -67,7 +63,7 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred creating the service core for mode '%v' with params JSON '%v':", mode, paramsJson)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(exit_codes.StartupErrorExitCode))
+		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
 	}
 
 	server := server2.NewApiContainerServer(serverCore, )

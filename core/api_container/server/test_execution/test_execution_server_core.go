@@ -7,7 +7,7 @@ package test_execution
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -28,7 +28,7 @@ func (core TestExecutionServerCore) GetSuiteAction() bindings.SuiteAction {
 	return bindings.SuiteAction_EXECUTE_TEST
 }
 
-func (core TestExecutionServerCore) CreateAndRegisterService(shutdownChan chan exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) server.ApiContainerServerService {
+func (core TestExecutionServerCore) CreateAndRegisterService(shutdownChan chan api_container_exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) server.ApiContainerServerService {
 	service := newTestExecutionService(
 		core.dockerManager,
 		core.serviceNetwork,

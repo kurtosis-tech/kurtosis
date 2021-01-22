@@ -9,5 +9,7 @@ const (
 	// Protocol that the API container will listen on
 	ListenProtocol = "tcp"
 
+	// The port that the API container will listen on (hardcoded, because it runs in a Docker container so no real
+	//  reason to make configurable)
 	ListenPort = 7443
 )

@@ -12,9 +12,9 @@ import (
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -205,7 +205,7 @@ func RunTest(
 
 	log.Info("Creating Kurtosis API container...")
 	apiLogFilepathOnApiContainer := path.Join(
-		api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
+		api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		testExecutionRelativeDirpath,
 		apiContainerLogFilename)
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_server_consts.ListenPort))
@@ -241,7 +241,7 @@ func RunTest(
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			suiteExecutionVolume: api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
+			suiteExecutionVolume: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
 	)
 	if err != nil {
@@ -265,26 +265,26 @@ func RunTest(
 
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
-	case exit_codes.SuccessExitCode:
+	case api_container_exit_codes.SuccessExitCode:
 		testStatusRetrievalError = nil
-	case exit_codes.StartupErrorExitCode:
+	case api_container_exit_codes.StartupErrorExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error while " +
 			"starting up and wasn't able to start the JSON RPC server")
-	case exit_codes.ShutdownErrorExitCode:
+	case api_container_exit_codes.ShutdownErrorExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error during " +
 			"shutdown that prevented it from stopping cleanly")
-	case exit_codes.OutOfOrderTestStatusExitCode:
+	case api_container_exit_codes.OutOfOrderTestStatusExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
 			"test execution status update; this is a Kurtosis code bug")
-	case exit_codes.TestHitTimeoutExitCode:
+	case api_container_exit_codes.TestHitTimeoutExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test failed to complete within the hard test " +
 			"timeout (setup_buffer + test_execution_timeout), which most likely means the testnet setup took " +
 			"too long (because if the test execution took too long, the test execution timeout" +
 			"would have been tripped instead)")
-	case exit_codes.NoTestSuiteRegisteredExitCode:
+	case api_container_exit_codes.NoTestSuiteRegisteredExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
 			"Kurtosis API container; this is a bug with the test suite")
-	case exit_codes.ReceivedTermSignalExitCode:
+	case api_container_exit_codes.ReceivedTermSignalExitCode:
 		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
 			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
 	default:
@@ -339,8 +339,8 @@ func buildApiContainerEnvVarsMap(
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the test execution args to JSON")
 	}
 	return map[string]string{
-		api_container_env_vars.LogLevelEnvVar: apiContainerLogLevel,
-		api_container_env_vars.ModeEnvVar: api_container_env_vars.TestExecutionMode,
+		api_container_env_vars.LogLevelEnvVar:   apiContainerLogLevel,
+		api_container_env_vars.ModeEnvVar:       api_container_env_vars.TestExecutionMode,
 		api_container_env_vars.ParamsJsonEnvVar: string(serializedArgsBytes),
 	}, nil
 }

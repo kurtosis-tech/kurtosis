@@ -3,13 +3,14 @@
  * All Rights Reserved.
  */
 
-package exit_codes
+package api_container_exit_codes
 
 type ApiContainerExitCode int
 
 // TODO Refactor this to be a class with a visitor, so all versions MUST be handled!!!!
 const (
-	SuccessExitCode       ApiContainerExitCode = iota
+	// TODO Refactor this to have separate sets of exit codes for metadata serialization vs test execution
+	SuccessExitCode ApiContainerExitCode = iota
 	NoTestSuiteRegisteredExitCode
 	ShutdownEventBeforeSuiteRegistration	   // Service sends a shutdown exit code before the testsuite is registered
 	StartupErrorExitCode                       // The API container hit an error while starting up
