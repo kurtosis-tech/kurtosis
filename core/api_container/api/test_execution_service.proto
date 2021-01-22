@@ -23,11 +23,11 @@ message RegisterServiceArgs {
   // ID that will be used to identify the service going forward
   string service_id = 1;
 
-  // "Set" of files to generate, identified by a user-created key
-  map<string, bool> files_to_generate = 2;
-
   // If emptystring, the default partition ID will be used
-  string partition_id = 3;
+  string partition_id = 2;
+
+  // "Set" of files to generate, identified by a user-created key
+  map<string, bool> files_to_generate = 3;
 }
 
 message RegisterServiceResponse {

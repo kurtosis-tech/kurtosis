@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -45,6 +46,8 @@ type ServiceNetwork struct {
 
 	dockerManager *docker_manager.DockerManager
 
+	suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume
+
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
 	topology *partition_topology.PartitionTopology
@@ -63,6 +66,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
+		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -71,6 +75,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker: freeIpAddrTracker,
 		dockerManager: dockerManager,
+		suiteExecutionVolume: suiteExecutionVolume,
 		userServiceLauncher: userServiceLauncher,
 		mutex:               &sync.Mutex{},
 		topology:            partition_topology.NewPartitionTopology(
@@ -114,6 +119,65 @@ func (network *ServiceNetwork) Repartition(
 		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
 	}
 	return nil
+}
+
+// Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
+// If the partition ID is empty, registers the service with the default partition
+func (network ServiceNetwork) RegisterService(
+		serviceId topology_types.ServiceID,
+		partitionId topology_types.PartitionID,
+		filesToGenerate map[string]bool) (net.IP, map[string]string, error) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+	}
+
+	_, found := network.serviceIps[serviceId]
+	if found {
+		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists")
+	}
+
+	if partitionId == "" {
+		partitionId = defaultPartitionId
+	}
+
+	serviceDirectory, err := network.suiteExecutionVolume.CreateServiceDirectory(string(serviceId))
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the service directory for service with ID '%v'", serviceId)
+	}
+
+	generatedFilesRelativeFilepaths := map[string]string{}
+	for userCreatedFileKey := range filesToGenerate {
+		file, err := serviceDirectory.CreateFile(userCreatedFileKey)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
+		}
+		generatedFilesRelativeFilepaths[userCreatedFileKey] = file.GetRelativeFilepath()
+	}
+
+
+	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'")
+	}
+	network.serviceIps[serviceId] = ip
+	shouldUndoServiceIpAdd := true
+	// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
+	defer func() {
+		if shouldUndoServiceIpAdd {
+			delete(network.serviceIps, serviceId)
+			network.freeIpAddrTracker.ReleaseIpAddr(ip)
+		}
+	}()
+
+	if err := network.topology.AddService(serviceId, partitionId); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred adding service with ID '%v' to partition '%v' in the topology")
+	}
+	shouldUndoServiceIpAdd = false
+
+	return ip, generatedFilesRelativeFilepaths, nil
 }
 
 // TODO Add tests for this

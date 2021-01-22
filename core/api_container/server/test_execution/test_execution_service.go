@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -29,7 +30,7 @@ const (
 
 type TestExecutionService struct {
 	dockerManager *docker_manager.DockerManager
-
+	suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
 	shutdownChan chan exit_codes.ApiContainerExitCode
@@ -101,6 +102,8 @@ func (service *TestExecutionService) RegisterService(ctx context.Context, args *
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
 	}
+
+	ser
 
 
 }
