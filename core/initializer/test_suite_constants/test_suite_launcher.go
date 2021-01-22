@@ -44,6 +44,8 @@ var metadataAcquiringApiContainerIp net.IP = []byte{172, 17, 256, 256}
 type TestsuiteContainerLauncher struct {
 	executionInstanceId uuid.UUID
 
+	suiteExecutionVolName string
+
 	kurtosisApiImage string
 
 	kurtosisApiLogLevel logrus.Level
@@ -64,6 +66,7 @@ type TestsuiteContainerLauncher struct {
 
 func NewTestsuiteContainerLauncher(
 		executionInstanceId uuid.UUID,
+		suiteExecutionVolName string,
 		kurtosisApiImage string,
 		kurtosisApiLogLevel logrus.Level,
 		testsuiteImage string,
@@ -76,6 +79,7 @@ func NewTestsuiteContainerLauncher(
 	}
 	return &TestsuiteContainerLauncher{
 		executionInstanceId: executionInstanceId,
+		suiteExecutionVolName: suiteExecutionVolName,
 		kurtosisApiImage:    kurtosisApiImage,
 		kurtosisApiLogLevel: kurtosisApiLogLevel,
 		testsuiteImage:      testsuiteImage,
@@ -163,7 +167,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		suiteExecutionVolume string,
 		testName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
@@ -194,7 +197,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testSuiteEnvVars,
 		map[string]string{},
 		map[string]string{
-			suiteExecutionVolume: TestsuiteContainerSuiteExVolMountpoint,
+			launcher.suiteExecutionVolName: TestsuiteContainerSuiteExVolMountpoint,
 		})
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
@@ -206,7 +209,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
-		suiteExecutionVolume,
 		testName,
 		suiteContainerId,
 		testsuiteContainerIp,
@@ -234,7 +236,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			suiteExecutionVolume: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
+			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
 	)
 	if err != nil {
@@ -279,7 +281,6 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		suiteExecutionVolName string,
 		testName string,
 		testSuiteContainerId string,
 		testSuiteContainerIpAddr net.IP,
@@ -291,7 +292,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		subnetMask,
 		gatewayIpAddr.String(),
 		testName,
-		suiteExecutionVolName,
+		launcher.suiteExecutionVolName,
 		testSuiteContainerId,
 		testSuiteContainerIpAddr.String(),
 		apiContainerIpAddr.String(),

@@ -6,9 +6,9 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -68,6 +68,7 @@ const (
 	clientSecretArg = "CLIENT_SECRET"
 	kurtosisApiImageArg = "KURTOSIS_API_IMAGE"
 	parallelismArg = "PARALLELISM"
+	// TODO TODO Update to reflect that this is now CUSTOM_PARAMS_JSON
 	customEnvVarsJsonArg = "CUSTOM_ENV_VARS_JSON"
 	suiteExecutionVolumeArg = "SUITE_EXECUTION_VOLUME"
 	testSuiteDebuggerPortArg = "DEBUGGER_PORT"
@@ -179,12 +180,12 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	kurtosisLevel, err := logrus.ParseLevel(parsedFlags.GetString(kurtosisLogLevelArg))
+	kurtosisLogLevel, err := logrus.ParseLevel(parsedFlags.GetString(kurtosisLogLevelArg))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "An error occurred parsing the Kurtosis log level string: %v\n", err)
 		os.Exit(failureExitCode)
 	}
-	logrus.SetLevel(kurtosisLevel)
+	logrus.SetLevel(kurtosisLogLevel)
 
 	accessController := getAccessController(
 		parsedFlags.GetString(clientIdArg),
@@ -204,13 +205,6 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	// Parse environment variables
-	customEnvVarsJson := parsedFlags.GetString(customEnvVarsJsonArg)
-	var customEnvVars map[string]string
-	if err := json.Unmarshal([]byte(customEnvVarsJson), &customEnvVars); err != nil {
-		logrus.Errorf("An error occurred parsing the custom environment variables JSON: %v", err)
-		os.Exit(failureExitCode)
-	}
 
 	freeHostPortBindingSupplier, err := test_suite_runner.NewFreeHostPortBindingSupplier(
 		hostPortTrackerInterfaceIp,
@@ -222,10 +216,16 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+	executionInstanceId := uuid.New()
+
 	testsuiteLauncher, err := test_suite_constants.NewTestsuiteContainerLauncher(
+		executionInstanceId,
+		parsedFlags.GetString(suiteExecutionVolumeArg),
+		parsedFlags.GetString(kurtosisApiImageArg),
+		kurtosisLogLevel,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
-		customEnvVars,
+		parsedFlags.GetString(customEnvVarsJsonArg),
 		parsedFlags.GetInt(testSuiteDebuggerPortArg))
 	if err != nil {
 		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)
@@ -264,14 +264,12 @@ func main() {
 	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
+		executionInstanceId,
 		dockerClient,
 		parsedFlags.GetString(suiteExecutionVolumeArg),
-		initializerContainerSuiteExVolMountDirpath,
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
-		parsedFlags.GetString(kurtosisApiImageArg),
-		parsedFlags.GetString(kurtosisLogLevelArg),
 		testsuiteLauncher,
 		freeHostPortBindingSupplier)
 	if err != nil {

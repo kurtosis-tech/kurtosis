@@ -7,16 +7,11 @@ package test_executor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -24,9 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
-	"os"
-	"path"
 	"time"
 )
 
@@ -73,16 +65,7 @@ Args:
 	ctx: The Context that the test execution is happening in
 	log: the logger to which all logging events during test execution will be sent
 	dockerClient: The Docker client to use to manipulate the Docker engine
-	suiteExecutionVolume: The name of the Docker volume where file IO for the entire suite execution will be stored
-	suiteExecutionVolumeDirpathOnInitializer: The dirpath, ON THE INITIALIZER CONTAINER, where the suite execution
-		Docker volume is mounted
-	testExecutionRelativeDirpath: The dirpath, relative to the root of the the suite execution volume, where file IO
-		for this particular test should happen.
-
-		NOTE: This directory must already exist!
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
-	kurtosisApiImageName: The name of the Docker image that will be used to run the Kurtosis API container
-	apiContainerLogLevel: Log level that the Kurtosis API container should log at
 	testsuiteLauncher: Launcher for running the test-running testsuite instances
 	testsuiteDebuggerHostPortBinding: The port binding on the host machine that the testsuite debugger port should be tied to
 	testName: The name of the test the executor should execute
@@ -97,12 +80,7 @@ func RunTest(
 		testSetupContext context.Context,
 		log *logrus.Logger,
 		dockerClient *client.Client,
-		suiteExecutionVolume string,
-		suiteExecutionVolumeDirpathOnInitializer string,
-		testExecutionRelativeDirpath string,
 		subnetMask string,
-		kurtosisApiImageName string,
-		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		testsuiteDebuggerHostPortBinding nat.PortBinding,
 		testName string,
@@ -164,23 +142,38 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
-	// TODO call to testsuite container launcher
-
+	testsuiteContainerId, kurtosisApiContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
+		testSetupContext,
+		log,
+		dockerManager,
+		networkId,
+		subnetMask,
+		gatewayIp,
+		testName,
+		kurtosisApiIp,
+		testRunningContainerIp,
+		testsuiteDebuggerHostPortBinding,
+		testMetadata.IsPartitioningEnabled)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
+	}
 
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
-	kurtosisApiExitCode, err := dockerManager.WaitForExit(
+	kurtosisApiExitCodeInt, err := dockerManager.WaitForExit(
 		testTeardownContext,
 		kurtosisApiContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
 	}
+	kurtosisApiExitCode := api_container_exit_codes.ApiContainerExitCode(kurtosisApiExitCodeInt)
 
 	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
 	//  still-running container that's exceeded the hard test timeout. Regardless, we want to print these so the user
 	//  gets more information about what's going on, and the user will learn the exact error below
-	banner_printer.PrintContainerLogsWithBanners(*dockerManager, testTeardownContext, testRunningContainerId, log, testRunningContainerDescription)
+	banner_printer.PrintContainerLogsWithBanners(*dockerManager, testTeardownContext, testsuiteContainerId, log, testRunningContainerDescription)
 
+	// TODO Switch to visitor pattern so that we guarantee we handle each
 	var testStatusRetrievalError error
 	switch kurtosisApiExitCode {
 	case api_container_exit_codes.SuccessExitCode:
@@ -216,10 +209,10 @@ func RunTest(
 	}
 	log.Info("The test suite container running the test exited before the hard test timeout")
 
-	// The test suite container will already have stopped, so now we get the exit code
+	// If we get here, the test suite container is guaranteed to have stopped so now we get the exit code
 	testSuiteExitCode, err := dockerManager.WaitForExit(
 		testTeardownContext,
-		testRunningContainerId)
+		testsuiteContainerId)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
 	}

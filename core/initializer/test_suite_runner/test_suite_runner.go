@@ -8,8 +8,8 @@ package test_suite_runner
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/artifact_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
@@ -19,7 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"net"
-	"sort"
+	sort "sort"
 )
 
 // =============================== Test Suite Runner =========================================
@@ -39,15 +39,13 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 
 Args:
 	permissions: The permissions the user is running the test suite with
+	executionInstanceId: The UUID  uniquely identifying this testsuite execution
 	dockerClient: Docker client to use when interacting with the Docker engine
-	suiteExecutionVolume: The name of the Docker volume that will be used for all file I/O during test suite execution
 	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
 		mounted.
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
 	testNamesToRun: A "set" of test names to run
 	testParallelism: How many tests to run in parallel
-	kurtosisApiImage: The name of the Docker image that will be used to launch the Kurtosis API container
-	apiContainerLogLevel: The log level the Kurtosis API container should use
 	testSuiteImage: The Docker image that will be used to launch the test suite container
 	testSuiteLogLevel: The string representing the loglevel of the test suite (the initializer won't be able
 		to parse this, so this should be meaningful to the test suite image)
@@ -61,14 +59,12 @@ Returns:
  */
 func RunTests(
 		permissions *permissions.Permissions,
+		executionInstanceId uuid.UUID,
 		dockerClient *client.Client,
-		suiteExecutionVolume string,
 		suiteExecutionVolumeMountDirpath string,
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		kurtosisApiImage string,
-		apiContainerLogLevel string,
 		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
 		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
@@ -99,12 +95,12 @@ func RunTests(
 	}
 	sort.Strings(orderedTestNames)
 
-	executionInstanceId := uuid.Generate()
 	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceId.String())
 	for _, testName := range orderedTestNames {
 		logrus.Infof(" - %v", testName)
 	}
 
+	// TODO Switch this to be inside the SuiteExecutionVolume object
 	// Download any required artifacts for the tests being run
 	logrus.Debug("Downloading artifacts used by the tests...")
 	if err := downloadUsedArtifacts(suiteExecutionVolumeMountDirpath, testNamesToRun, testSuiteMetadata); err != nil {
@@ -140,12 +136,8 @@ func RunTests(
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		executionInstanceId,
 		dockerClient,
-		suiteExecutionVolume,
-		suiteExecutionVolumeMountDirpath,
 		testParallelism,
 		testParams,
-		kurtosisApiImage,
-		apiContainerLogLevel,
 		testsuiteLauncher)
 	return allTestsPassed, nil
 }
