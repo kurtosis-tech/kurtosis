@@ -161,3 +161,20 @@ func (service *TestExecutionService) StartService(ctx context.Context, args *bin
 	return &emptypb.Empty{}, nil
 }
 
+func (service *TestExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot remove service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+	}
+
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+
+	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
+	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
+
+	if err := service.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
+	}
+	return &emptypb.Empty{}, nil
+}
+

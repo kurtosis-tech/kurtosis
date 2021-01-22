@@ -11,6 +11,8 @@ service TestExecutionService {
 
   // Starts a previously-registered service by creating a Docker container for it
   rpc StartService(StartServiceArgs) returns (google.protobuf.Empty) {};
+
+  rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
 }
 
 message RegisterTestExecutionArgs {
@@ -57,4 +59,10 @@ message StartServiceArgs {
 
   // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mount_dirpaths = 7;
+}
+
+message RemoveServiceArgs {
+  string service_id = 1;
+
+  uint64 container_stop_timeout_seconds = 2;
 }
