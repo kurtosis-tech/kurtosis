@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"google.golang.org/grpc"
 )

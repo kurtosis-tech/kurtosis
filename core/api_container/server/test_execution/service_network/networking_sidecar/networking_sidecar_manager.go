@@ -8,7 +8,7 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"

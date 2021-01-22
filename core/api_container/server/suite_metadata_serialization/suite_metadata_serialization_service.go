@@ -11,7 +11,6 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"

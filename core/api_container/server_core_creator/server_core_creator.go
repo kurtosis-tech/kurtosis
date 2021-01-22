@@ -13,10 +13,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/suite_metadata_serialization"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher/files_artifact_expander"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
@@ -32,8 +32,6 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 	logrus.Debugf("Creating server core by parsing params JSON '%v' using mode '%v'...", paramsJson, mode)
 	switch mode {
 	case api_container_env_vars.SuiteMetadataSerializingMode:
-		logrus.Debugf("Parsing ")
-		// NOTE: These are unused as of 2021-01-22, but we leave them here so we have space to add new args
 		var args SuiteMetadataSerializationArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the suite metadata serializing args JSON")
