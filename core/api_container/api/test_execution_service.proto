@@ -13,14 +13,22 @@ service TestExecutionService {
   rpc StartService(StartServiceArgs) returns (google.protobuf.Empty) {};
 
   rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
+
+  rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
 }
 
+// ==============================================================================================
+//                                  Register Test Execution
+// ==============================================================================================
 message RegisterTestExecutionArgs {
   // TODO This should actually be unnecessary - we should pass in testsuite metadata at API container startup time,
   //  so that registration just says "I'm starting" and the API container can look up the timeout
   uint64 timeout_seconds = 1;
 }
 
+// ==============================================================================================
+//                                     Register Service
+// ==============================================================================================
 message RegisterServiceArgs {
   // ID that will be used to identify the service going forward
   string service_id = 1;
@@ -41,6 +49,9 @@ message RegisterServiceResponse {
   string ip_addr = 2;
 }
 
+// ==============================================================================================
+//                                        Start Service
+// ==============================================================================================
 message StartServiceArgs {
   // ID of the previously-registered service that should be started
   string service_id = 1;
@@ -61,8 +72,35 @@ message StartServiceArgs {
   map<string, string> files_artifact_mount_dirpaths = 7;
 }
 
+// ==============================================================================================
+//                                        Remove Service
+// ==============================================================================================
 message RemoveServiceArgs {
   string service_id = 1;
 
   uint64 container_stop_timeout_seconds = 2;
+}
+
+// ==============================================================================================
+//                                          Repartition
+// ==============================================================================================
+message RepartitionArgs {
+  map<string, PartitionServices> partition_services = 1;
+
+  map<string, PartitionConnections> partition_connections = 2;
+
+  PartitionConnectionInfo default_connection = 3;
+}
+
+message PartitionServices {
+  // "Set" of service IDs in partition
+  map<string, bool> service_id_set = 1;
+}
+
+message PartitionConnections {
+  map<string, PartitionConnectionInfo> connection_info = 1;
+}
+
+message PartitionConnectionInfo {
+  bool is_blocked = 1;
 }

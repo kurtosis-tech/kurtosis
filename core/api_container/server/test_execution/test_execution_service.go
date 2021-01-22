@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
@@ -177,4 +178,52 @@ func (service *TestExecutionService) RemoveService(ctx context.Context, args *bi
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (service *TestExecutionService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
+	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
+	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
+	for partitionIdStr, servicesInPartition := range args.PartitionServices {
+		partitionId := service_network_types.PartitionID(partitionIdStr)
+		serviceIdSet := service_network_types.NewServiceIDSet()
+		for serviceIdStr := range servicesInPartition.ServiceIdSet {
+			serviceId := service_network_types.ServiceID(serviceIdStr)
+			serviceIdSet.AddElem(serviceId)
+		}
+		partitionServices[partitionId] = serviceIdSet
+	}
+
+	partitionConnections := map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection{}
+	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
+		partitionAId := service_network_types.PartitionID(partitionAStr)
+		for partitionBStr, connectionInfo := range partitionBToConnection.ConnectionInfo {
+			partitionBId := service_network_types.PartitionID(partitionBStr)
+			partitionConnectionId := *service_network_types.NewPartitionConnectionID(partitionAId, partitionBId)
+			if _, found := partitionConnections[partitionConnectionId]; found {
+				return nil, stacktrace.NewError(
+					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
+					partitionAId,
+					partitionBId)
+			}
+			partitionConnection := partition_topology.PartitionConnection{
+				IsBlocked: connectionInfo.IsBlocked,
+			}
+			partitionConnections[partitionConnectionId] = partitionConnection
+		}
+	}
+
+	defaultConnectionInfo := args.DefaultConnection
+	defaultConnection := partition_topology.PartitionConnection{
+		IsBlocked: defaultConnectionInfo.IsBlocked,
+	}
+
+	if err := service.serviceNetwork.Repartition(
+			ctx,
+			partitionServices,
+			partitionConnections,
+			defaultConnection); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred repartitioning the test network")
+	}
+	return &emptypb.Empty{}, nil
+}
+
 
