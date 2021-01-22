@@ -11,8 +11,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/api"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/execution/test_execution_status"
@@ -211,7 +211,7 @@ func createServer(
 		return nil, stacktrace.Propagate(err, "An error occurred registering the Kurtosis service to the HTTP handler")
 	}
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%v", api_container_docker_consts.ContainerPort),
+		Addr:    fmt.Sprintf(":%v", api_container_server_consts.ListenPort),
 		Handler: httpHandler,
 	}
 

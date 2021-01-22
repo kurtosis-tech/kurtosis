@@ -153,6 +153,7 @@ func (network ServiceNetwork) RegisterService(
 		)
 	}
 
+	// TODO Move this stuff into the UserServiceLauncher???
 	serviceDirectory, err := network.suiteExecutionVolume.CreateServiceDirectory(string(serviceId))
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the service directory for service with ID '%v'", serviceId)

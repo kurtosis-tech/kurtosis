@@ -39,7 +39,18 @@ type TestExecutionService struct {
 	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-// TODO constructor
+func NewTestExecutionService(
+		dockerManager *docker_manager.DockerManager,
+		serviceNetwork *service_network.ServiceNetwork,
+		testSuiteContainerId string,
+		shutdownChan chan exit_codes.ApiContainerExitCode) *TestExecutionService {
+	return &TestExecutionService{dockerManager: dockerManager,
+		serviceNetwork: serviceNetwork,
+		testSuiteContainerId: testSuiteContainerId,
+		stateMachine: newTestExecutionServiceStateMachine(),
+		shutdownChan: shutdownChan,
+	}
+}
 
 func (service *TestExecutionService) HandleSuiteRegistrationEvent() error {
 	if err := service.stateMachine.assertAndAdvance(waitingForSuiteRegistration); err != nil {

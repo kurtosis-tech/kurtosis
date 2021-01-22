@@ -12,12 +12,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/execution_codepath"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	server2 "github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/api_container/suite_metadata_serializing_mode"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
+)
+
+const (
+	listenProtocol = "tcp"
 )
 
 func main() {
@@ -65,7 +70,7 @@ func main() {
 		os.Exit(int(exit_codes.StartupErrorExitCode))
 	}
 
-	server :=
+	server := server2.NewApiContainerServer(serverCore, )
 
 	exitCode, err := codepath.Execute()
 	if err != nil {

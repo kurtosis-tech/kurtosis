@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -207,7 +208,7 @@ func RunTest(
 		api_container_docker_consts.SuiteExecutionVolumeMountDirpath,
 		testExecutionRelativeDirpath,
 		apiContainerLogFilename)
-	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_docker_consts.ContainerPort))
+	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/tcp", api_container_server_consts.ListenPort))
 	kurtosisApiContainerEnvVars, err := buildApiContainerEnvVarsMap(
 		kurtosisApiIp,
 		apiLogFilepathOnApiContainer,

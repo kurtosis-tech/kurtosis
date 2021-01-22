@@ -22,6 +22,10 @@ type SuiteExecutionVolume struct {
 	mountDirpath string
 }
 
+func NewSuiteExecutionVolume(mountDirpath string) *SuiteExecutionVolume {
+	return &SuiteExecutionVolume{mountDirpath: mountDirpath}
+}
+
 // TODO change type to be ServiceID
 // Creates a new, unique service directory for a service with the given service ID
 func (volume SuiteExecutionVolume) CreateServiceDirectory(serviceId string) (*ServiceDirectory, error) {

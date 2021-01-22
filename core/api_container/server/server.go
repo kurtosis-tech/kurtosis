@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -32,9 +33,10 @@ type serverConfigForMode struct {
 
 type ApiContainerServer struct {
 	core ApiContainerServerCore
+}
 
-	listenProtocol string
-	listenAddress  string
+func NewApiContainerServer(core ApiContainerServerCore) *ApiContainerServer {
+	return &ApiContainerServer{core: core}
 }
 
 func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
@@ -48,11 +50,12 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 	suiteRegistrationSvc := newSuiteRegistrationService(suiteAction, mainService, suiteRegistrationChan)
 	bindings.RegisterSuiteRegistrationServiceServer(grpcServer, suiteRegistrationSvc)
 
-	listener, err := net.Listen(server.listenProtocol, server.listenAddress)
+	listenAddressStr := fmt.Sprintf(":%v", api_container_server_consts.ListenPort)
+	listener, err := net.Listen(api_container_server_consts.ListenProtocol, listenAddressStr)
 	if err != nil {
-		logrus.Errorf("An error occurred creating the listener on %v/%v:",
-			server.listenProtocol,
-			server.listenAddress)
+		logrus.Errorf("An error occurred creating the listener on %v/%v",
+			api_container_server_consts.ListenProtocol,
+			listenAddressStr)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		return exit_codes.StartupErrorExitCode
 	}
@@ -70,10 +73,15 @@ func (server ApiContainerServer) Serve() exit_codes.ApiContainerExitCode {
 
 	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
 
-	// TODO call shutdown hook??????
-
 	// We use Stop rather than GracefulStop here because a stop condition means everything should shut down immediately
 	grpcServer.Stop()
+
+	if err := mainService.HandlePostShutdownEvent(); err != nil {
+		logrus.Errorf("Post-shutdown hook on service returned an error:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		exitCode = exit_codes.ShutdownErrorExitCode
+	}
+
 	return exitCode
 }
 
