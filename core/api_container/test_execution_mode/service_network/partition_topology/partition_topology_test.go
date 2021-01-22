@@ -6,7 +6,7 @@
 package partition_topology
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/palantir/stacktrace"
 	"gotest.tools/assert"
 	"strconv"
@@ -14,21 +14,21 @@ import (
 )
 
 const (
-	defaultPartitionId topology_types.PartitionID = "default"
+	defaultPartitionId service_network_types.PartitionID = "default"
 
-	partition1 topology_types.PartitionID = "partition1"
-	partition2 topology_types.PartitionID = "partition2"
-	partition3 topology_types.PartitionID = "partition3"
+	partition1 service_network_types.PartitionID = "partition1"
+	partition2 service_network_types.PartitionID = "partition2"
+	partition3 service_network_types.PartitionID = "partition3"
 
-	service1 topology_types.ServiceID = "service1"
-	service2 topology_types.ServiceID = "service2"
-	service3 topology_types.ServiceID = "service3"
+	service1 service_network_types.ServiceID = "service1"
+	service2 service_network_types.ServiceID = "service2"
+	service3 service_network_types.ServiceID = "service3"
 
 	// How many nodes in a "huge" network, for benchmarking
 	hugeNetworkNodeCount = 10000
 )
 
-var allTestServiceIds = map[topology_types.ServiceID]bool{
+var allTestServiceIds = map[service_network_types.ServiceID]bool{
 	service1: true,
 	service2: true,
 	service3: true,
@@ -55,21 +55,21 @@ func BenchmarkHugeNetworkPathologicalRepartition(b *testing.B) {
 	partitionIdPrefix := "partition-"
 	topology := getHugeTestTopology(b, serviceIdPrefix, true)
 
-	newPartitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
-	newPartitionConnections := map[topology_types.PartitionConnectionID]PartitionConnection{}
+	newPartitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
+	newPartitionConnections := map[service_network_types.PartitionConnectionID]PartitionConnection{}
 	for i := 0; i < hugeNetworkNodeCount; i++ {
-		partitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
-		serviceId := topology_types.ServiceID(serviceIdPrefix + strconv.Itoa(i))
-		newPartitionServices[partitionId] = topology_types.NewServiceIDSet(serviceId)
+		partitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
+		serviceId := service_network_types.ServiceID(serviceIdPrefix + strconv.Itoa(i))
+		newPartitionServices[partitionId] = service_network_types.NewServiceIDSet(serviceId)
 
 		if i > 0 {
-			previousPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i - 1))
-			partConnId := *topology_types.NewPartitionConnectionID(partitionId, previousPartitionId)
+			previousPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i - 1))
+			partConnId := *service_network_types.NewPartitionConnectionID(partitionId, previousPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
 		if i < (hugeNetworkNodeCount - 1) {
-			nextPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
-			partConnId := *topology_types.NewPartitionConnectionID(partitionId, nextPartitionId)
+			nextPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
+			partConnId := *service_network_types.NewPartitionConnectionID(partitionId, nextPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
 	}
@@ -88,21 +88,21 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetBlocklists(b *testing.B) {
 	partitionIdPrefix := "partition-"
 	topology := getHugeTestTopology(b, serviceIdPrefix, true)
 
-	newPartitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
-	newPartitionConnections := map[topology_types.PartitionConnectionID]PartitionConnection{}
+	newPartitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
+	newPartitionConnections := map[service_network_types.PartitionConnectionID]PartitionConnection{}
 	for i := 0; i < hugeNetworkNodeCount; i++ {
-		partitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
-		serviceId := topology_types.ServiceID(serviceIdPrefix + strconv.Itoa(i))
-		newPartitionServices[partitionId] = topology_types.NewServiceIDSet(serviceId)
+		partitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i))
+		serviceId := service_network_types.ServiceID(serviceIdPrefix + strconv.Itoa(i))
+		newPartitionServices[partitionId] = service_network_types.NewServiceIDSet(serviceId)
 
 		if i > 0 {
-			previousPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i - 1))
-			partConnId := *topology_types.NewPartitionConnectionID(partitionId, previousPartitionId)
+			previousPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i - 1))
+			partConnId := *service_network_types.NewPartitionConnectionID(partitionId, previousPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
 		if i < (hugeNetworkNodeCount - 1) {
-			nextPartitionId := topology_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
-			partConnId := *topology_types.NewPartitionConnectionID(partitionId, nextPartitionId)
+			nextPartitionId := service_network_types.PartitionID(partitionIdPrefix + strconv.Itoa(i + 1))
+			partConnId := *service_network_types.NewPartitionConnectionID(partitionId, nextPartitionId)
 			newPartitionConnections[partConnId] = PartitionConnection{IsBlocked: false}
 		}
 	}
@@ -131,10 +131,10 @@ func TestAllServicesAreAlwaysInBlocklist(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		true)
 
 	blocklistsAfterRepartition := getBlocklistsMap(t, topology)
@@ -151,10 +151,10 @@ func TestServicesInSamePartitionAreNeverBlocked(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1, service2),
-		topology_types.NewServiceIDSet(),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1, service2),
+		service_network_types.NewServiceIDSet(),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		true)
 
 	blocklistsAfterRepartition := getBlocklistsMap(t, topology)
@@ -180,10 +180,10 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		true)
 
 	blocklistsWithClosedDefaultConn := getBlocklistsMap(t, topology)
@@ -196,10 +196,10 @@ func TestDefaultConnectionSettingsWork(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		false)
 
 	blocklistsWithOpenDefaultConn := getBlocklistsMap(t, topology)
@@ -214,19 +214,19 @@ func TestExplicitConnectionBlocksWork(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{
 			// Partition 2 can access 1 and 3
-			*topology_types.NewPartitionConnectionID(partition1, partition2): {
+			*service_network_types.NewPartitionConnectionID(partition1, partition2): {
 				IsBlocked: false,
 			},
-			*topology_types.NewPartitionConnectionID(partition2, partition3): {
+			*service_network_types.NewPartitionConnectionID(partition2, partition3): {
 				IsBlocked: false,
 			},
 			// Access between 1 and 3 is blocked
-			*topology_types.NewPartitionConnectionID(partition1, partition3): {
+			*service_network_types.NewPartitionConnectionID(partition1, partition3): {
 				IsBlocked: true,
 			},
 		},
@@ -250,12 +250,12 @@ func TestDuplicateServicesError(t *testing.T) {
 	topology := get3NodeTestTopology(t, false)
 
 	err := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{
-			partition1: topology_types.NewServiceIDSet(service1),
-			partition2: topology_types.NewServiceIDSet(service1, service2), // Should cause error
-			partition3: topology_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
+			partition1: service_network_types.NewServiceIDSet(service1),
+			partition2: service_network_types.NewServiceIDSet(service1, service2), // Should cause error
+			partition3: service_network_types.NewServiceIDSet(service3),
 		},
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		PartitionConnection{IsBlocked: false})
 	assert.Assert(t, err != nil, "Expected an error due to duplicate service IDs, but none was thrown")
 }
@@ -264,12 +264,12 @@ func TestUnknownServicesError(t *testing.T) {
 	topology := get3NodeTestTopology(t, false)
 
 	err := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{
-			partition1: topology_types.NewServiceIDSet(service1, "unknown-service"), // Should error
-			partition2: topology_types.NewServiceIDSet(service2),
-			partition3: topology_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
+			partition1: service_network_types.NewServiceIDSet(service1, "unknown-service"), // Should error
+			partition2: service_network_types.NewServiceIDSet(service2),
+			partition3: service_network_types.NewServiceIDSet(service3),
 		},
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		PartitionConnection{IsBlocked: false})
 	assert.Assert(t, err != nil, "Expected an error due to unknown service IDs, but none was thrown")
 }
@@ -278,12 +278,12 @@ func TestNotAllServicesAllocatedError(t *testing.T) {
 	topology := get3NodeTestTopology(t, false)
 
 	err := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{
-			partition1: topology_types.NewServiceIDSet(),
-			partition2: topology_types.NewServiceIDSet(service2),
-			partition3: topology_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
+			partition1: service_network_types.NewServiceIDSet(),
+			partition2: service_network_types.NewServiceIDSet(service2),
+			partition3: service_network_types.NewServiceIDSet(service3),
 		},
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		PartitionConnection{IsBlocked: false})
 	assert.Assert(t, err != nil, "Expected an error due to not all services being allocated, but none was thrown")
 }
@@ -292,8 +292,8 @@ func TestEmptyPartitionsError(t *testing.T) {
 	topology := get3NodeTestTopology(t, false)
 
 	err := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{},
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{},
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		PartitionConnection{IsBlocked: false})
 	assert.Assert(t, err != nil, "Expected an error due to no partitions beign defined, but none was thrown")
 }
@@ -302,12 +302,12 @@ func TestUnknownPartitionsError(t *testing.T) {
 	topology := get3NodeTestTopology(t, false)
 
 	firstPartErr := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{
-			partition1: topology_types.NewServiceIDSet(service1),
-			partition2: topology_types.NewServiceIDSet(service2, service3),
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
+			partition1: service_network_types.NewServiceIDSet(service1),
+			partition2: service_network_types.NewServiceIDSet(service2, service3),
 		},
-		map[topology_types.PartitionConnectionID]PartitionConnection{
-			*topology_types.NewPartitionConnectionID("aa-unknown-partition", partition2): {
+		map[service_network_types.PartitionConnectionID]PartitionConnection{
+			*service_network_types.NewPartitionConnectionID("aa-unknown-partition", partition2): {
 				IsBlocked: true,
 			},
 		},
@@ -315,12 +315,12 @@ func TestUnknownPartitionsError(t *testing.T) {
 	assert.Assert(t, firstPartErr != nil, "Expected an error due to an unknown partition in the first slot, but none was thrown")
 
 	secondPartErr := topology.Repartition(
-		map[topology_types.PartitionID]*topology_types.ServiceIDSet{
-			partition1: topology_types.NewServiceIDSet(service1),
-			partition2: topology_types.NewServiceIDSet(service2, service3),
+		map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
+			partition1: service_network_types.NewServiceIDSet(service1),
+			partition2: service_network_types.NewServiceIDSet(service2, service3),
 		},
-		map[topology_types.PartitionConnectionID]PartitionConnection{
-			*topology_types.NewPartitionConnectionID("zz-unknown-partition", partition2): {
+		map[service_network_types.PartitionConnectionID]PartitionConnection{
+			*service_network_types.NewPartitionConnectionID("zz-unknown-partition", partition2): {
 				IsBlocked: true,
 			},
 		},
@@ -345,10 +345,10 @@ func TestRegularAddServiceFlow(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		true)
 
 	if err := topology.AddService(service3, partition3); err != nil {
@@ -395,10 +395,10 @@ func TestRegularRemoveServiceFlow(t *testing.T) {
 	repartition(
 		t,
 		topology,
-		topology_types.NewServiceIDSet(service1),
-		topology_types.NewServiceIDSet(service2),
-		topology_types.NewServiceIDSet(service3),
-		map[topology_types.PartitionConnectionID]PartitionConnection{},
+		service_network_types.NewServiceIDSet(service1),
+		service_network_types.NewServiceIDSet(service2),
+		service_network_types.NewServiceIDSet(service3),
+		map[service_network_types.PartitionConnectionID]PartitionConnection{},
 		true)
 
 	topology.RemoveService(service2)
@@ -439,7 +439,7 @@ func getHugeTestTopology(t *testing.B, serviceIdPrefx string, isDefaultConnBlock
 	topology := NewPartitionTopology(defaultPartitionId, defaultConnection)
 
 	for i := 0; i < hugeNetworkNodeCount; i++ {
-		serviceId := topology_types.ServiceID(serviceIdPrefx + strconv.Itoa(i))
+		serviceId := service_network_types.ServiceID(serviceIdPrefx + strconv.Itoa(i))
 		if err := topology.AddService(serviceId, defaultPartitionId); err != nil {
 			t.Fatal(stacktrace.Propagate(err, "An error occurred adding service 1"))
 		}
@@ -450,13 +450,13 @@ func getHugeTestTopology(t *testing.B, serviceIdPrefx string, isDefaultConnBlock
 func repartition(
 		t *testing.T,
 		topology *PartitionTopology,
-		partition1Services *topology_types.ServiceIDSet,
-		partition2Services *topology_types.ServiceIDSet,
-		partition3Services *topology_types.ServiceIDSet,
-		connections map[topology_types.PartitionConnectionID]PartitionConnection,
+		partition1Services *service_network_types.ServiceIDSet,
+		partition2Services *service_network_types.ServiceIDSet,
+		partition3Services *service_network_types.ServiceIDSet,
+		connections map[service_network_types.PartitionConnectionID]PartitionConnection,
 		isDefaultConnBlocked bool) {
 	if err := topology.Repartition(
-			map[topology_types.PartitionID]*topology_types.ServiceIDSet{
+			map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{
 				partition1: partition1Services,
 				partition2: partition2Services,
 				partition3: partition3Services,
@@ -467,7 +467,7 @@ func repartition(
 	}
 }
 
-func getBlocklistsMap(t *testing.T, topology *PartitionTopology) map[topology_types.ServiceID]*topology_types.ServiceIDSet {
+func getBlocklistsMap(t *testing.T, topology *PartitionTopology) map[service_network_types.ServiceID]*service_network_types.ServiceIDSet {
 	blocklists, err := topology.GetBlocklists()
 	if err != nil {
 		t.Fatal(stacktrace.Propagate(err, "An error occurred getting the blocklists map before repartition"))
@@ -477,8 +477,8 @@ func getBlocklistsMap(t *testing.T, topology *PartitionTopology) map[topology_ty
 
 func getBlocklistForService(
 		t *testing.T,
-		serviceId topology_types.ServiceID,
-		blocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet) *topology_types.ServiceIDSet {
+		serviceId service_network_types.ServiceID,
+		blocklists map[service_network_types.ServiceID]*service_network_types.ServiceIDSet) *service_network_types.ServiceIDSet {
 	result, found := blocklists[serviceId]
 	if !found {
 		t.Fatal(stacktrace.NewError("Expected to find service '%v' in blocklists map but didn't", serviceId))
@@ -488,8 +488,8 @@ func getBlocklistForService(
 
 func assertBlocklistsEqual(
 		t *testing.T,
-		expected map[topology_types.ServiceID]*topology_types.ServiceIDSet,
-		actual map[topology_types.ServiceID]*topology_types.ServiceIDSet) {
+		expected map[service_network_types.ServiceID]*service_network_types.ServiceIDSet,
+		actual map[service_network_types.ServiceID]*service_network_types.ServiceIDSet) {
 	assert.Equal(
 		t,
 		len(expected),

@@ -10,8 +10,9 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -30,18 +31,13 @@ const (
 
 type TestExecutionService struct {
 	dockerManager *docker_manager.DockerManager
-	suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume
+	serviceNetwork *service_network.ServiceNetwork
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
 	shutdownChan chan exit_codes.ApiContainerExitCode
 }
 
-func NewTestExecutionService(shutdownChan chan exit_codes.ApiContainerExitCode) *TestExecutionService {
-	return &TestExecutionService{
-		stateMachine: newTestExecutionServiceStateMachine(),
-		shutdownChan: shutdownChan,
-	}
-}
+// TODO constructor
 
 func (service *TestExecutionService) HandleSuiteRegistrationEvent() error {
 	if err := service.stateMachine.assertAndAdvance(waitingForSuiteRegistration); err != nil {
@@ -103,9 +99,20 @@ func (service *TestExecutionService) RegisterService(ctx context.Context, args *
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
 	}
 
-	ser
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	partitionId := service_network_types.PartitionID(args.PartitionId)
+	filesToGenerate := args.FilesToGenerate
 
+	ip, generatedFilesRelativeFilepaths, err := service.serviceNetwork.RegisterService(serviceId, partitionId, filesToGenerate)
+	if err != nil {
+		// TODO IP: Leaks internal information about API container
+		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
+	}
 
+	return &bindings.RegisterServiceResponse{
+		GeneratedFilesRelativeFilepaths: generatedFilesRelativeFilepaths,
+		IpAddr:                          ip.String(),
+	}, nil
 }
 
 func (service *TestExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {

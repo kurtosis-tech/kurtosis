@@ -8,7 +8,7 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
@@ -40,7 +40,7 @@ var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
 //                                        Interface
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Create(ctx context.Context, serviceId topology_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
+	Create(ctx context.Context, serviceId service_network_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
 	Destroy(ctx context.Context, sidecar NetworkingSidecar) error
 }
 
@@ -68,7 +68,7 @@ func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerMan
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Create(
 		ctx context.Context,
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		serviceContainerId string) (NetworkingSidecar, error) {
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {

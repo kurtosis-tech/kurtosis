@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package topology_types
+package service_network_types
 
 // Stupid Go... why can't it just have generics so all this is part of stdlib
 type ServiceIDSet struct {

@@ -9,7 +9,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	defaultPartitionId                   topology_types.PartitionID = "default"
-	startingDefaultConnectionBlockStatus                            = false
+	defaultPartitionId                   service_network_types.PartitionID = "default"
+	startingDefaultConnectionBlockStatus                                   = false
 )
 
 /*
@@ -54,10 +54,10 @@ type ServiceNetwork struct {
 
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
-	serviceIps map[topology_types.ServiceID]net.IP
-	serviceContainerIds map[topology_types.ServiceID]string
+	serviceIps map[service_network_types.ServiceID]net.IP
+	serviceContainerIds map[service_network_types.ServiceID]string
 
-	networkingSidecars map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar
+	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 }
@@ -82,9 +82,9 @@ func NewServiceNetwork(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceIps:               map[topology_types.ServiceID]net.IP{},
-		serviceContainerIds:      map[topology_types.ServiceID]string{},
-		networkingSidecars:       map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar{},
+		serviceIps:               map[service_network_types.ServiceID]net.IP{},
+		serviceContainerIds:      map[service_network_types.ServiceID]string{},
+		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
 }
@@ -94,8 +94,8 @@ Completely repartitions the network, throwing away the old topology
  */
 func (network *ServiceNetwork) Repartition(
 		ctx context.Context,
-		newPartitionServices map[topology_types.PartitionID]*topology_types.ServiceIDSet,
-		newPartitionConnections map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection,
+		newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet,
+		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -124,14 +124,18 @@ func (network *ServiceNetwork) Repartition(
 // Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetwork) RegisterService(
-		serviceId topology_types.ServiceID,
-		partitionId topology_types.PartitionID,
+		serviceId service_network_types.ServiceID,
+		partitionId service_network_types.PartitionID,
 		filesToGenerate map[string]bool) (net.IP, map[string]string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
 		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+	}
+
+	if strings.TrimSpace(string(serviceId)) == "" {
+		return nil, nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
 	_, found := network.serviceIps[serviceId]
@@ -191,7 +195,7 @@ func (network ServiceNetwork) RegisterService(
 // Starts a previously-registered but not-started service by creating it in a container
 func (network *ServiceNetwork) StartService(
 		ctx context.Context,
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		imageName string,
 		usedPorts map[nat.Port]bool,
 		startCmd []string,
@@ -226,7 +230,7 @@ func (network *ServiceNetwork) StartService(
 			return stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the " +
 				"node was added, which means we can't add the node because we can't partition it away properly")
 		}
-		blocklistsWithoutNewNode := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
+		blocklistsWithoutNewNode := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
 		for serviceInTopologyId, servicesToBlock := range blocklists {
 			if serviceId == serviceInTopologyId {
 				continue
@@ -275,7 +279,7 @@ func (network *ServiceNetwork) StartService(
 				"updates to apply on the new node")
 		}
 		newNodeBlocklist := blocklists[serviceId]
-		updatesToApply := map[topology_types.ServiceID]*topology_types.ServiceIDSet{
+		updatesToApply := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{
 			serviceId: newNodeBlocklist,
 		}
 		if err := updateIpTables(ctx, updatesToApply, network.serviceIps, network.networkingSidecars); err != nil {
@@ -289,8 +293,9 @@ func (network *ServiceNetwork) StartService(
 
 func (network *ServiceNetwork) RemoveService(
 		ctx context.Context,
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		containerStopTimeout time.Duration) error {
+	// TODO switch to a wrapper function
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -313,7 +318,7 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 	}
 
 	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
-	serviceIdsToRemove := map[topology_types.ServiceID]bool{}
+	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
 	for serviceId := range network.serviceIps {
 		serviceIdsToRemove[serviceId] = true
 	}
@@ -351,7 +356,7 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 // ====================================================================================================
 func (network *ServiceNetwork) removeServiceWithoutMutex(
 		ctx context.Context,
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		// TODO allow choice between Kill and Stop
 		containerStopTimeout time.Duration) error {
 	serviceIp, foundIpAddr := network.serviceIps[serviceId]
@@ -398,9 +403,9 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
  */
 func updateIpTables(
 		ctx context.Context,
-		targetBlocklists map[topology_types.ServiceID]*topology_types.ServiceIDSet,
-		serviceIps map[topology_types.ServiceID]net.IP,
-		networkingSidecars map[topology_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
+		targetBlocklists map[service_network_types.ServiceID]*service_network_types.ServiceIDSet,
+		serviceIps map[service_network_types.ServiceID]net.IP,
+		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	for serviceId, newBlocklist := range targetBlocklists {
 		allIpsToBlock := []net.IP{}

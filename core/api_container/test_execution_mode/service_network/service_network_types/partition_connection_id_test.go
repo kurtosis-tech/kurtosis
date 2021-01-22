@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package topology_types
+package service_network_types
 
 import (
 	"gotest.tools/assert"

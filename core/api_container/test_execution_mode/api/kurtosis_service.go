@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/execution/test_execution_status"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -69,9 +69,9 @@ func (service *KurtosisService) AddService(httpReq *http.Request, args *AddServi
 	if serviceIdStr == "" {
 		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
-	serviceId := topology_types.ServiceID(serviceIdStr)
+	serviceId := service_network_types.ServiceID(serviceIdStr)
 
-	partitionId := topology_types.PartitionID(args.PartitionID)
+	partitionId := service_network_types.PartitionID(args.PartitionID)
 
 	imageNameStr := strings.TrimSpace(args.ImageName)
 	if imageNameStr == "" {
@@ -133,7 +133,7 @@ func (service *KurtosisService) RemoveService(httpReq *http.Request, args *Remov
 	if serviceIdStr == "" {
 		return stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
-	serviceId := topology_types.ServiceID(serviceIdStr)
+	serviceId := service_network_types.ServiceID(serviceIdStr)
 
 	if args.ContainerStopTimeoutSeconds <= 0 {
 		return stacktrace.NewError("Container stop timeout seconds cannot be <= 0")
@@ -151,23 +151,23 @@ func (service *KurtosisService) Repartition(httpReq *http.Request, args *Reparti
 	logrus.Infof("Received request to repartition the test network with the following args: %v", args)
 
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[topology_types.PartitionID]*topology_types.ServiceIDSet{}
+	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
 	for partitionIdStr, serviceIdStrSet := range args.PartitionServices {
-		partitionId := topology_types.PartitionID(partitionIdStr)
-		serviceIdSet := topology_types.NewServiceIDSet()
+		partitionId := service_network_types.PartitionID(partitionIdStr)
+		serviceIdSet := service_network_types.NewServiceIDSet()
 		for serviceIdStr := range serviceIdStrSet {
-			serviceId := topology_types.ServiceID(serviceIdStr)
+			serviceId := service_network_types.ServiceID(serviceIdStr)
 			serviceIdSet.AddElem(serviceId)
 		}
 		partitionServices[partitionId] = serviceIdSet
 	}
 
-	partitionConnections := map[topology_types.PartitionConnectionID]partition_topology.PartitionConnection{}
+	partitionConnections := map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection{}
 	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
-		partitionAId := topology_types.PartitionID(partitionAStr)
+		partitionAId := service_network_types.PartitionID(partitionAStr)
 		for partitionBStr, connectionInfo := range partitionBToConnection {
-			partitionBId := topology_types.PartitionID(partitionBStr)
-			partitionConnectionId := *topology_types.NewPartitionConnectionID(partitionAId, partitionBId)
+			partitionBId := service_network_types.PartitionID(partitionBStr)
+			partitionConnectionId := *service_network_types.NewPartitionConnectionID(partitionAId, partitionBId)
 			if _, found := partitionConnections[partitionConnectionId]; found {
 				return stacktrace.NewError(
 					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",

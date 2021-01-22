@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/topology_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -51,7 +51,7 @@ Returns: The container ID of the newly-launched service
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		ipAddr net.IP,
 		imageName string,
 		usedPorts map[nat.Port]bool,
@@ -119,7 +119,7 @@ func (launcher UserServiceLauncher) Launch(
 //                                     Private helper functions
 // ==================================================================================================
 func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
-		serviceId topology_types.ServiceID,
+		serviceId service_network_types.ServiceID,
 		artifactId string) string {
 	timestampStr := time.Now().Format(volume_naming_consts.GoTimestampFormat)
 	return fmt.Sprintf(
