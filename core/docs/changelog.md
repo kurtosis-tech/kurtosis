@@ -4,6 +4,9 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Refactor ServiceNetwork into several smaller components, and add tests for them
 * Switch API container to new mode-based operation, in preparation for multiple language clients
 * Add protobufs to API container as Git submodule
+* Split the adding of services into two steps:
+    1. Register the service and get back the IP and filepaths of generated files
+    2. Start the service container
 
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code

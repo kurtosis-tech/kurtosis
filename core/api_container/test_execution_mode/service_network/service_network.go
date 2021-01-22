@@ -142,6 +142,12 @@ func (network ServiceNetwork) RegisterService(
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
+	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
+		return nil, nil, stacktrace.NewError(
+			"No partition with ID '%v' exists in the current partition topology",
+			partitionId,
+		)
+	}
 
 	serviceDirectory, err := network.suiteExecutionVolume.CreateServiceDirectory(string(serviceId))
 	if err != nil {
@@ -162,6 +168,7 @@ func (network ServiceNetwork) RegisterService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'")
 	}
+	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 	network.serviceIps[serviceId] = ip
 	shouldUndoServiceIpAdd := true
 	// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
@@ -180,6 +187,7 @@ func (network ServiceNetwork) RegisterService(
 	return ip, generatedFilesRelativeFilepaths, nil
 }
 
+// TODO add tests for this
 // Starts a previously-registered but not-started service by creating it in a container
 func (network *ServiceNetwork) StartService(
 		ctx context.Context,
@@ -197,61 +205,13 @@ func (network *ServiceNetwork) StartService(
 		return stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
-	if _, found := network.serviceIps[serviceId]; !found {
+	serviceIpAddr, foundIp := network.serviceIps[serviceId]
+	if !foundIp {
 		return stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been reigstered")
 	}
 	if _, found := network.serviceContainerIds[serviceId]; found {
 		return stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has a container associated with it")
 	}
-
-
-}
-
-	// TODO Add tests for this
-/*
-Creates the service with the given ID in the given partition
-
-If partitionId is empty string, the default partition ID is used
-
-Returns: The IP address of the new service
- */
-func (network *ServiceNetwork) AddServiceInPartition(
-		ctx context.Context,
-		serviceId topology_types.ServiceID,
-		imageName string,
-		usedPorts map[nat.Port]bool,
-		partitionId topology_types.PartitionID,
-		ipPlaceholder string,
-		startCmd []string,
-		dockerEnvVars map[string]string,
-		testVolumeMountDirpath string,
-		filesArtifactMountDirpaths map[string]string) (net.IP, error) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot add service; the service network has been destroyed")
-	}
-
-	if partitionId == "" {
-		partitionId = defaultPartitionId
-	}
-
-	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, stacktrace.NewError(
-			"No partition with ID '%v' exists in the current partition topology",
-			partitionId,
-		)
-	}
-
-	serviceIp, err := network.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred when getting an IP to give the container running the new service with Docker image '%v'",
-			imageName)
-	}
-	logrus.Debugf("Giving new service the following IP: %v", serviceIp.String())
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -260,32 +220,10 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	//  this by blocking the new service's IP in the already-existing services' iptables BEFORE we start the service.
 	// This means that when the new service is launched, even if its own iptables aren't yet updated, all the services
 	//  it would communicate are already dropping traffic from it.
-	// The unfortunate result is that we need to add the service to the PartitionTopology before the container or
-	//  its sidecar is even started, which means we need to roll back if an error occurred during startup.
-	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to partition '%v' in the topology", serviceId, partitionId)
-	}
-	network.serviceIps[serviceId] = serviceIp
-	shouldLeaveServiceInTopology := false
-	defer func() {
-		if !shouldLeaveServiceInTopology {
-			network.topology.RemoveService(serviceId)
-			network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
-			delete(network.serviceIps, serviceId)
-
-			// NOTE: As of 2020-12-31, we don't actually have to undo the iptables modifications that we'll make to all
-			//  the other services, because their iptables will be completely overwritten by the next
-			//  Add/Repartition event. If we ever make iptables updates incremental though, we WILL need to
-			//  undo the iptables we added here!
-		}
-	}()
-
-	// Tell all the other services to ignore the soon-to-be-started node, so that when it starts
-	//  they absolutely won't communicate with it
 	if network.isPartitioningEnabled {
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the " +
+			return stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the " +
 				"node was added, which means we can't add the node because we can't partition it away properly")
 		}
 		blocklistsWithoutNewNode := map[topology_types.ServiceID]*topology_types.ServiceIDSet{}
@@ -296,7 +234,7 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
 		}
 		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceIps, network.networkingSidecars); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
+			return stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
@@ -304,38 +242,36 @@ func (network *ServiceNetwork) AddServiceInPartition(
 	serviceContainerId, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceId,
-		serviceIp,
+		serviceIpAddr,
 		imageName,
 		usedPorts,
-		ipPlaceholder,
 		startCmd,
 		dockerEnvVars,
 		testVolumeMountDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service")
+			"An error occurred creating the user service container")
 	}
-	shouldLeaveServiceInTopology = true
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
+			return stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
 		network.networkingSidecars[serviceId] = sidecar
 
 		if err := sidecar.InitializeIpTables(ctx); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
+			return stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
 		}
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
 		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/issues/123 )
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables " +
+			return stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables " +
 				"updates to apply on the new node")
 		}
 		newNodeBlocklist := blocklists[serviceId]
@@ -343,12 +279,12 @@ func (network *ServiceNetwork) AddServiceInPartition(
 			serviceId: newNodeBlocklist,
 		}
 		if err := updateIpTables(ctx, updatesToApply, network.serviceIps, network.networkingSidecars); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it " +
+			return stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it " +
 				"off from other nodes")
 		}
 	}
 
-	return serviceIp, nil
+	return nil
 }
 
 func (network *ServiceNetwork) RemoveService(

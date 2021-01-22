@@ -16,13 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
 	"net"
-	"strings"
 	"time"
-)
-
-const (
-	// We use YYYY-MM-DDTHH.mm.ss to match the timestamp format that the suite execution volume uses
-	expandedFilesArtifactVolNameDatePattern = "2006-01-02T15.04.05"
 )
 
 /*
@@ -61,7 +55,6 @@ func (launcher UserServiceLauncher) Launch(
 		ipAddr net.IP,
 		imageName string,
 		usedPorts map[nat.Port]bool,
-		ipPlaceholder string,
 		startCmd []string,
 		dockerEnvVars map[string]string,
 		testVolumeMountDirpath string,
@@ -84,14 +77,6 @@ func (launcher UserServiceLauncher) Launch(
 			"An error occurred expanding the requested artifacts for service '%v' into Docker volumes",
 			serviceId)
 	}
-
-	// The user won't know the IP address, so we'll need to replace all the IP address placeholders with the actual
-	//  IP
-	replacedStartCmd, replacedEnvVars := replaceIpPlaceholderForDockerParams(
-		ipPlaceholder,
-		ipAddr,
-		startCmd,
-		dockerEnvVars)
 
 	portBindings := map[nat.Port]*nat.PortBinding{}
 	for port, _ := range usedPorts {
@@ -119,8 +104,8 @@ func (launcher UserServiceLauncher) Launch(
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		portBindings,
-		replacedStartCmd,
-		replacedEnvVars,
+		startCmd,
+		dockerEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		volumeMounts,
 	)
@@ -144,27 +129,4 @@ func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
 		launcher.testName,
 		serviceId,
 		artifactId)
-}
-
-/*
-Small helper function to replace the IP placeholder with the real IP string in the start command and Docker environment
-	variables.
-*/
-func replaceIpPlaceholderForDockerParams(
-		ipPlaceholder string,
-		realIp net.IP,
-		startCmd []string,
-		envVars map[string]string) ([]string, map[string]string) {
-	ipPlaceholderStr := ipPlaceholder
-	replacedStartCmd := []string{}
-	for _, cmdFragment := range startCmd {
-		replacedCmdFragment := strings.ReplaceAll(cmdFragment, ipPlaceholderStr, realIp.String())
-		replacedStartCmd = append(replacedStartCmd, replacedCmdFragment)
-	}
-	replacedEnvVars := map[string]string{}
-	for key, value := range envVars {
-		replacedValue := strings.ReplaceAll(value, ipPlaceholderStr, realIp.String())
-		replacedEnvVars[key] = replacedValue
-	}
-	return replacedStartCmd, replacedEnvVars
 }
