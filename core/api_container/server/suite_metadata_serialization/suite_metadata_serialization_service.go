@@ -77,16 +77,9 @@ func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) test_suite_metadata_acquirer.TestSuiteMetadata {
 	allInitializerAcceptableTestMetadata := map[string]test_suite_metadata_acquirer.TestMetadata{}
 	for testName, apiTestMetadata := range apiSuiteMetadata.TestMetadata {
-		artifactIdToUrl := map[string]string{}
-		for artifactUrl := range apiTestMetadata.UsedArtifactUrls {
-			artifactId := generateArtifactId(artifactUrl)
-			artifactIdToUrl[artifactId] = artifactUrl
-		}
-
 		initializerAcceptableTestMetadata := test_suite_metadata_acquirer.NewTestMetadata(
 			apiTestMetadata.IsPartitioningEnabled,
-			// TODO reconsider whether we even want artifact IDs at all
-			artifactIdToUrl)
+			apiTestMetadata.UsedArtifactUrls)
 
 		allInitializerAcceptableTestMetadata[testName] = *initializerAcceptableTestMetadata
 	}

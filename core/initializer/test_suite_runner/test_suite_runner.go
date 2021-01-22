@@ -61,7 +61,7 @@ func RunTests(
 		permissions *permissions.Permissions,
 		executionInstanceId uuid.UUID,
 		dockerClient *client.Client,
-		suiteExecutionVolumeMountDirpath string,
+		artifactCache *suite_execution_volume.ArtifactCache,
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
@@ -100,10 +100,9 @@ func RunTests(
 		logrus.Infof(" - %v", testName)
 	}
 
-	// TODO Switch this to be inside the SuiteExecutionVolume object
 	// Download any required artifacts for the tests being run
 	logrus.Debug("Downloading artifacts used by the tests...")
-	if err := downloadUsedArtifacts(suiteExecutionVolumeMountDirpath, testNamesToRun, testSuiteMetadata); err != nil {
+	if err := downloadUsedArtifacts(artifactCache, testNamesToRun, testSuiteMetadata); err != nil {
 		return false, stacktrace.Propagate(
 			err,
 			"An error occurred downloading the artifacts needed by the tests being run")
@@ -145,20 +144,18 @@ func RunTests(
 // Downloads only the artifacts that are needed by the tests being run (i.e. not any artifacts used by
 // 	tests which aren't being run)
 func downloadUsedArtifacts(
-		suiteExecutionVolumeMountDirpath string,
+		artifactCache *suite_execution_volume.ArtifactCache,
 		testNames map[string]bool,
 		suiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) error {
-	artifactCache := suite_execution_volume.NewArtifactCache(suiteExecutionVolumeMountDirpath)
 	allTestMetadata := suiteMetadata.TestMetadata
-	artifactUrlsToDownloadById := map[string]string{}
+	// TODO PERF: parallelize to speed this up
 	for testName := range testNames {
 		testMetadata := allTestMetadata[testName]
-		for artifactId, artifactUrl := range testMetadata.UsedArtifacts {
-			artifactUrlsToDownloadById[artifactId] = artifactUrl
+		for artifactUrl := range testMetadata.UsedArtifacts {
+			if err := artifactCache.AddArtifact(artifactUrl); err != nil {
+				return stacktrace.Propagate(err, "An error occurred adding artifact with URL '%v' to the artifact cache", artifactUrl)
+			}
 		}
-	}
-	if err := artifactCache.DownloadArtifacts(artifactUrlsToDownloadById); err != nil {
-		return stacktrace.Propagate(err, "An error occurred downloading the artifacts used by the following tests")
 	}
 	return nil
 }
