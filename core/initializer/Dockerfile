@@ -35,7 +35,7 @@ COPY --from=builder /build/kurtosis-initializer .
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --CLIENT_ID=\"${CLIENT_ID}\" \
     --CLIENT_SECRET=\"${CLIENT_SECRET}\" \
-    --CUSTOM_ENV_VARS_JSON=\"${CUSTOM_ENV_VARS_JSON}\" \
+    --CUSTOM_PARAMS_JSON=\"${CUSTOM_PARAMS_JSON}\" \
     --DO_LIST=\"${DO_LIST}\" \
     --KURTOSIS_API_IMAGE=\"${KURTOSIS_API_IMAGE}\" \
     --KURTOSIS_LOG_LEVEL=\"${KURTOSIS_LOG_LEVEL}\" \

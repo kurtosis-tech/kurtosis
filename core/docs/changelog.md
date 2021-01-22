@@ -8,6 +8,9 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
     1. Register the service and get back the IP and filepaths of generated files
     2. Start the service container
 * Modified API container to do both test execution AND suite metadata-printing
+* Removed the `--custom-env-vars` flag to `kurtosis.sh`/`build_and_run` in favor of `--custom-params`
+    * The old way meant that the JSON must be in key-value format, and every time the user added a new custom envvar they'd need to modify their Dockerfile to receive it
+    * The new way allows users to pass in arbitrary JSON, and their testsuite 
 
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code

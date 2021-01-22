@@ -155,13 +155,12 @@ if "${do_run}"; then
     # --------------------- Kurtosis Go environment variables ---------------------
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
-    # Docker only allows you to have spaces in the variable if you escape them or use a Docker env file
-    go_suite_env_vars_json='{
+    go_suite_params_json='{
         "API_SERVICE_IMAGE" :"'${api_service_image}'",
         "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
 
     # The generated wrapper will come hardcoded the correct version of the initializer/API images
-    bash "${WRAPPER_FILEPATH}" --custom-env-vars "${go_suite_env_vars_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
+    bash "${WRAPPER_FILEPATH}" --custom-params"${go_suite_params_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi

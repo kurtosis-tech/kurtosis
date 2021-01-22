@@ -60,17 +60,16 @@ const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	doListArg = "DO_LIST"
-	testSuiteImageArg = "TEST_SUITE_IMAGE"
-	testNamesArg = "TEST_NAMES"
-	kurtosisLogLevelArg = "KURTOSIS_LOG_LEVEL"
-	testSuiteLogLevelArg = "TEST_SUITE_LOG_LEVEL"
-	clientIdArg = "CLIENT_ID"
-	clientSecretArg = "CLIENT_SECRET"
-	kurtosisApiImageArg = "KURTOSIS_API_IMAGE"
-	parallelismArg = "PARALLELISM"
-	// TODO TODO Update to reflect that this is now CUSTOM_PARAMS_JSON
-	customEnvVarsJsonArg        = "CUSTOM_ENV_VARS_JSON"
+	doListArg                   = "DO_LIST"
+	testSuiteImageArg           = "TEST_SUITE_IMAGE"
+	testNamesArg                = "TEST_NAMES"
+	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
+	testSuiteLogLevelArg        = "TEST_SUITE_LOG_LEVEL"
+	clientIdArg                 = "CLIENT_ID"
+	clientSecretArg             = "CLIENT_SECRET"
+	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
+	parallelismArg              = "PARALLELISM"
+	customParamsJson            = "CUSTOM_PARAMS_JSON"
 	suiteExecutionVolumeNameArg = "SUITE_EXECUTION_VOLUME"
 	testSuiteDebuggerPortArg    = "DEBUGGER_PORT"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -95,10 +94,10 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: fmt.Sprintf("An OAuth client secret which is needed for running Kurtosis in CI, and should be left empty when running Kurtosis on a local machine"),
 		Type:     docker_flag_parser.StringFlagType,
 	},
-	customEnvVarsJsonArg: {
+	customParamsJson: {
 		Required: false,
 		Default:  "{}",
-		HelpText: "JSON containing key-value mappings of custom environment variables that will be passed through to the test suite container, e.g. '{\"MY_VAR\":\\ \"/some/value\"}' (note the escaped spaces!)",
+		HelpText: "JSON string containing custom data that will be passed as-is to your testsuite, so your testsuite can modify its operation based on input",
 		Type:     docker_flag_parser.StringFlagType,
 	},
 	doListArg: {
@@ -226,7 +225,7 @@ func main() {
 		kurtosisLogLevel,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
-		parsedFlags.GetString(customEnvVarsJsonArg),
+		parsedFlags.GetString(customParamsJson),
 		parsedFlags.GetInt(testSuiteDebuggerPortArg))
 	if err != nil {
 		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)

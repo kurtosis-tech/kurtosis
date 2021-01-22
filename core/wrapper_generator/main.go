@@ -87,11 +87,10 @@ type WrapperArg struct {
 
 var wrapperArgs = []WrapperArg{
 	{
-		// TODO TODO TOOD Update to reflect that this can now be arbitrary JSON
-		Flag:       "--custom-env-vars",
-		Variable:   "custom_env_vars_json",
+		Flag:       "--custom-params",
+		Variable:   "custom_params_json",
 		DefaultVal: "{}",
-		HelpText:   "JSON containing key-value mappings of custom environment variables that will be passed through to the Dockerfile of the test suite container, e.g. '{\"MY_VAR\": \"/some/value\"}'",
+		HelpText:   "JSON string containing arbitrary data that will be passed as-is to your testsuite, so it can modify its behaviour based on input",
 		Action:     StoreValue,
 	},
 	{
