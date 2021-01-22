@@ -45,7 +45,7 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the test execution args JSON")
 		}
-		result, err := createTestExecutionCore(args)
+		result, err := createTestExecutionCore(suiteExecutionVolume, args)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the test execution core")
 		}
@@ -59,7 +59,9 @@ func Create(mode api_container_env_vars.ApiContainerMode, paramsJson string) (se
 // ===============================================================================================
 //                                      Test Execution
 // ===============================================================================================
-func createTestExecutionCore(args TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
+func createTestExecutionCore(
+		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
+		args TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
@@ -74,10 +76,16 @@ func createTestExecutionCore(args TestExecutionArgs) (*test_execution.TestExecut
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
+	testExecutionDirectory, err := suiteExecutionVolume.CreateTestExecutionDirectory(args.TestName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution directory for test '%v'", args.TestName)
+	}
+
 	serviceNetwork := createServiceNetwork(
 		args.ExecutionInstanceId,
 		args.TestName,
 		args.SuiteExecutionVolumeName,
+		testExecutionDirectory,
 		dockerManager,
 		freeIpAddrTracker,
 		args.NetworkId,
@@ -128,6 +136,7 @@ func createServiceNetwork(
 		executionInstanceId string,
 		testName string,
 		suiteExecutionVolName string,
+		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
@@ -138,9 +147,6 @@ func createServiceNetwork(
 		dockerManager,
 		dockerNetworkId,
 		freeIpAddrTracker)
-
-	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(
-		api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		executionInstanceId,
@@ -160,7 +166,7 @@ func createServiceNetwork(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
-		suiteExecutionVolume,
+		testExecutionDirectory,
 		userServiceLauncher,
 		networkingSidecarManager)
 

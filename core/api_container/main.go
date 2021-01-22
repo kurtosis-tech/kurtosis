@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 const (
@@ -31,7 +32,10 @@ func main() {
 	logLevelArg := flag.String(
 		"log-level",
 		"info",
-		fmt.Sprintf("Log level to use for the API container (%v)", logrus_log_levels.AcceptableLogLevels),
+		fmt.Sprintf(
+			"Log level to use for the API container (%v)",
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+		),
 	)
 
 	modeArg := flag.String(

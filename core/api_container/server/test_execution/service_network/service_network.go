@@ -46,7 +46,7 @@ type ServiceNetwork struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume
+	testExecutionDirectory *suite_execution_volume.TestExecutionDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -66,7 +66,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
-		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
+		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -75,7 +75,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker: freeIpAddrTracker,
 		dockerManager: dockerManager,
-		suiteExecutionVolume: suiteExecutionVolume,
+		testExecutionDirectory: testExecutionDirectory,
 		userServiceLauncher: userServiceLauncher,
 		mutex:               &sync.Mutex{},
 		topology:            partition_topology.NewPartitionTopology(
@@ -154,7 +154,7 @@ func (network ServiceNetwork) RegisterService(
 	}
 
 	// TODO Move this stuff into the UserServiceLauncher???
-	serviceDirectory, err := network.suiteExecutionVolume.CreateServiceDirectory(string(serviceId))
+	serviceDirectory, err := network.testExecutionDirectory.CreateServiceDirectory(string(serviceId))
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the service directory for service with ID '%v'", serviceId)
 	}

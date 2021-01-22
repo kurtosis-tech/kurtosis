@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_suite_constants
+package test_suite_env_vars
 
 /*
 A package to contain the contract of Docker environment variables that will be passed by the initializer to
@@ -17,9 +17,9 @@ const (
 	// When you change these, make sure to update the docs at:
 	// 	https://github.com/kurtosis-tech/kurtosis-docs/blob/develop/testsuite-details.md#dockerfile
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	debuggerPortEnvVar            = "DEBUGGER_PORT"
-	kurtosisApiSocketEnvVar		  = "KURTOSIS_API_SOCKET"
-	logLevelEnvVar                = "LOG_LEVEL"
-	customParamsJson			  = "CUSTOM_PARAMS_JSON"
+	DebuggerPortEnvVar      = "DEBUGGER_PORT"
+	KurtosisApiSocketEnvVar = "KURTOSIS_API_SOCKET"
+	LogLevelEnvVar          = "LOG_LEVEL"
+	customParamsJson        = "CUSTOM_PARAMS_JSON"
 )
 
