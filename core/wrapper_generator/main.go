@@ -146,6 +146,7 @@ var wrapperArgs = []WrapperArg{
 		Action:     StoreValue,
 	},
 	{
+		// TODO Rename this to --suite-log-level to be less of a pain to type
 		Flag:       "--test-suite-log-level",
 		Variable:   "test_suite_log_level",
 		DefaultVal: "info",
