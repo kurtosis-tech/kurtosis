@@ -157,8 +157,9 @@ if "${do_run}"; then
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
     go_suite_params_json='{
-        "API_SERVICE_IMAGE" :"'${api_service_image}'",
-        "DATASTORE_SERVICE_IMAGE": "'${datastore_service_image}'"
+        "apiServiceImage" :"'${api_service_image}'",
+        "datastoreServiceImage": "'${datastore_service_image}'",
+        "isKurtosisCoreDevMode": true
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
 

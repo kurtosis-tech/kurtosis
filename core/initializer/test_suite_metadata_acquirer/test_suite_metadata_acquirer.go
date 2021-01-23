@@ -8,6 +8,7 @@ package test_suite_metadata_acquirer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -47,6 +48,21 @@ func GetTestSuiteMetadata(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred running the metadata-acquiring containers")
 	}
+	// Safeguard to ensure we don't ever leak containers
+	defer func() {
+		if err := dockerManager.KillContainer(parentContext, testsuiteContainerId); err != nil {
+			logrus.Errorf("An error occurred killing the suite metadata-gathering testsuite container:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", testsuiteContainerId)
+		}
+	}()
+	defer func() {
+		if err := dockerManager.KillContainer(parentContext, apiContainerId); err != nil {
+			logrus.Errorf("An error occurred killing the suite metadata-gathering Kurtosis API container:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", testsuiteContainerId)
+		}
+	}()
 	logrus.Infof(
 		"Metadata-acquiring containers launched, with testsuite debugger port bound to host port %v:%v (if a debugger " +
 			"is running in the testsuite, you may need to connect to this port to allow execution to proceed)",
@@ -57,11 +73,11 @@ func GetTestSuiteMetadata(
 		parentContext,
 		apiContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
+		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the suite metadata-serializing API container")
 	}
 	if apiContainerExitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
+		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
 		return nil, stacktrace.NewError("The API container for serializing suite metadata exited with a nonzero exit code")
 	}
 
@@ -70,11 +86,11 @@ func GetTestSuiteMetadata(
 		parentContext,
 		testsuiteContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testsuiteContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
+		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container that sends suite metadata to the API container")
 	}
 	if testsuiteContainerExitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
+		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
 		return nil, stacktrace.NewError("The testsuite container that sends suite metadata to the API container exited with a nonzero exit code")
 	}
 
@@ -103,4 +119,13 @@ func GetTestSuiteMetadata(
 	}
 
 	return &suiteMetadata, nil
+}
+
+func printBothContainerLogs(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		apiContainerId string,
+		testsuiteContainerId string) {
+	banner_printer.PrintContainerLogsWithBanners(dockerManager, ctx, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
+	banner_printer.PrintContainerLogsWithBanners(dockerManager, ctx, testsuiteContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
 }

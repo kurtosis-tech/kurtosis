@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -319,7 +320,7 @@ func (manager DockerManager) StopContainer(context context.Context, containerId 
 }
 
 /*
-Kills the container with the given ID, giving it no opportunity to gracefully exit
+Kills the container with the given ID if it's running, giving it no opportunity to gracefully exit
 
 Args:
 	context: The context that the kill runs in
@@ -328,6 +329,11 @@ Args:
 func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerKill(context, containerId, dockerKillSignal)
 	if err != nil {
+		// For some stupid reason, ContainerKill throws an error if the container isn't running (even though
+		//  ContainerStop does not)
+		if strings.Contains(err.Error(), "is not running") {
+			return nil
+		}
 		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
 	return nil
