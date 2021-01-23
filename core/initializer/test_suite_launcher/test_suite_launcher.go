@@ -111,7 +111,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container env vars")
 	}
 
-	logrus.Info("Launching Kurtosis API container...")
+	logrus.Debug("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_server_consts.ListenPort, api_container_server_consts.ListenProtocol))
 	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
@@ -138,7 +138,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		dockerManager,
 		kurtosisApiContainerId,
 		func() bool { return functionCompletedSuccessfully })
-	logrus.Infof("Successfully launched the Kurtosis API container")
+	logrus.Debug("Successfully launched the Kurtosis API container")
 
 	apiContainerIp, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, kurtosisApiContainerId)
 	if err != nil {
@@ -150,7 +150,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
 
-	logrus.Infof("Launching testsuite container to send metadata to Kurtosis API container...")
+	logrus.Debug("Launching testsuite container to send metadata to Kurtosis API container...")
 	testsuiteContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
@@ -175,7 +175,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		dockerManager,
 		testsuiteContainerId,
 		func() bool { return functionCompletedSuccessfully})
-	logrus.Infof("Successfully launched testsuite container to send metadata to Kurtosis API container")
+	logrus.Debug("Successfully launched testsuite container to send metadata to Kurtosis API container")
 
 	functionCompletedSuccessfully = true
 	return testsuiteContainerId, kurtosisApiContainerId, nil
