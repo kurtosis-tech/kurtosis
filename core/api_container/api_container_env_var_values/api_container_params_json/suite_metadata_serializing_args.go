@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package server_core_creator
+package api_container_params_json
 
 // Fields are public for JSON de/serialization
 type SuiteMetadataSerializationArgs struct {

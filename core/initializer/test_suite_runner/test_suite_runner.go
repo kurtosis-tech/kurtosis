@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -64,7 +64,7 @@ func RunTests(
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {

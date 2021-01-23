@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -81,7 +81,7 @@ func RunTest(
 		log *logrus.Logger,
 		dockerClient *client.Client,
 		subnetMask string,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		testsuiteDebuggerHostPortBinding nat.PortBinding,
 		testName string,
 		testMetadata test_suite_metadata_acquirer.TestMetadata) (bool, error) {

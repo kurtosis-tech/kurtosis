@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_suite_constants
+package test_suite_launcher
 
 import (
 	"context"
@@ -12,12 +12,13 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants/test_suite_env_vars"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -39,7 +40,7 @@ const (
 //   - Inspect the API container after starting in the bridge network to get its IP (requires adding a new function to DockerManager)
 //   - Using a hostname rather than an IP for the API container (requires adding a new function argument to CreateAndStartContainer)
 //   - Creating a separate network for the metadata-acquiring testsuite & API containers
-var metadataAcquiringApiContainerIp net.IP = []byte{172, 17, 256, 256}
+var metadataAcquiringApiContainerIp net.IP = []byte{172, 17, 255, 255}
 
 type TestsuiteContainerLauncher struct {
 	executionInstanceId uuid.UUID
@@ -147,7 +148,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		testsuiteEnvVars,
 		map[string]string{},
 		map[string]string{
-			suiteExecutionVolume: TestsuiteContainerSuiteExVolMountpoint,
+			suiteExecutionVolume: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
 		})
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to send metadata to the Kurtosis API container")
@@ -197,7 +198,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testSuiteEnvVars,
 		map[string]string{},
 		map[string]string{
-			launcher.suiteExecutionVolName: TestsuiteContainerSuiteExVolMountpoint,
+			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
 		})
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
@@ -289,7 +290,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		isPartitioningEnabled bool) (map[string]string, error) {
-	args := server_core_creator.NewTestExecutionArgs(
+	args := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
 		networkId,
 		subnetMask,
@@ -312,7 +313,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 }
 
 func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiContainerEnvVars() (map[string]string, error) {
-	args := server_core_creator.NewSuiteMetadataSerializationArgs()
+	args := api_container_params_json.NewSuiteMetadataSerializationArgs()
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing API container suite metadata-serializing args to JSON")

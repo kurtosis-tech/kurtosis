@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -46,7 +46,7 @@ func RunInParallelAndPrintResults(
 		dockerClient *client.Client,
 		parallelism uint,
 		allTestParams map[string]ParallelTestParams,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) bool {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -99,7 +99,7 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 		/*
 		    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
@@ -135,7 +135,7 @@ func runTestWorkerGoroutine(
 			testParamsChan chan ParallelTestParams,
 			outputManager *ParallelTestOutputManager,
 			dockerClient *client.Client,
-			testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 

@@ -17,7 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/palantir/stacktrace"
@@ -217,8 +217,9 @@ func main() {
 	}
 
 	executionInstanceId := uuid.New()
+	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
-	testsuiteLauncher, err := test_suite_constants.NewTestsuiteContainerLauncher(
+	testsuiteLauncher, err := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
 		parsedFlags.GetString(suiteExecutionVolumeNameArg),
 		parsedFlags.GetString(kurtosisApiImageArg),
@@ -238,9 +239,10 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
+
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		parsedFlags.GetString(suiteExecutionVolumeNameArg),
-		initializerContainerSuiteExVolMountDirpath,
+		suiteExecutionVolume,
 		dockerClient,
 		testsuiteLauncher,
 		metadataAcquisitionHostPortBinding)
@@ -261,7 +263,6 @@ func main() {
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
-	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 	artifactCache, err := suiteExecutionVolume.CreateArtifactCache()
 	if err != nil {
 		logrus.Errorf("An error occurred getting the artifact cache: %v", err)

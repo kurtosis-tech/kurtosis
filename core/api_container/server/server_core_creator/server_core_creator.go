@@ -8,8 +8,9 @@ package server_core_creator
 import (
 	"encoding/json"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/suite_metadata_serialization"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution"
@@ -32,7 +33,7 @@ func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (serve
 	logrus.Debugf("Creating server core by parsing params JSON '%v' using mode '%v'...", paramsJson, mode)
 	switch mode {
 	case api_container_modes.SuiteMetadataSerializingMode:
-		var args SuiteMetadataSerializationArgs
+		var args api_container_params_json.SuiteMetadataSerializationArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the suite metadata serializing args JSON")
 		}
@@ -41,7 +42,7 @@ func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (serve
 		logrus.Debugf("Successfully created suite metadata-serializing server core")
 		return result,  nil
 	case api_container_modes.TestExecutionMode:
-		var args TestExecutionArgs
+		var args api_container_params_json.TestExecutionArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the test execution args JSON")
 		}
@@ -61,7 +62,7 @@ func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (serve
 // ===============================================================================================
 func createTestExecutionCore(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-		args TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
+		args api_container_params_json.TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
@@ -81,10 +82,16 @@ func createTestExecutionCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution directory for test '%v'", args.TestName)
 	}
 
+	artifactCache, err := suiteExecutionVolume.CreateArtifactCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache for test '%v'", args.TestName)
+	}
+
 	serviceNetwork := createServiceNetwork(
 		args.ExecutionInstanceId,
 		args.TestName,
 		args.SuiteExecutionVolumeName,
+		artifactCache,
 		testExecutionDirectory,
 		dockerManager,
 		freeIpAddrTracker,
@@ -136,6 +143,7 @@ func createServiceNetwork(
 		executionInstanceId string,
 		testName string,
 		suiteExecutionVolName string,
+		artifactCache *suite_execution_volume.ArtifactCache,
 		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
@@ -153,6 +161,7 @@ func createServiceNetwork(
 		testName,
 		dockerManager,
 		freeIpAddrTracker,
+		artifactCache,
 		filesArtifactExpander,
 		dockerNetworkId,
 		suiteExecutionVolName)

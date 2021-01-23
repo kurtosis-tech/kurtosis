@@ -41,7 +41,7 @@ func newArtifactCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *
 }
 
 func (cache ArtifactCache) AddArtifact(artifactUrl string) error {
-	logrus.Debug("Downloading artifacts from URL: %v", artifactUrl)
+	logrus.Debugf("Downloading artifacts from URL: %v", artifactUrl)
 
 	artifactUrlHash, err := hashArtifactUrl(artifactUrl)
 	if err != nil {
@@ -55,7 +55,7 @@ func (cache ArtifactCache) AddArtifact(artifactUrl string) error {
 	if _, err := os.Stat(absoluteFilepath); err == nil {
 		// NOTE: we could just make this a no-op; we chose to throw an error here to make sure the user
 		//  isn't double-adding things
-		return stacktrace.NewError("Cannot download artifact with URL '%v'; artifact already exists")
+		return stacktrace.NewError("Cannot download artifact with URL '%v'; artifact already exists", artifactUrl)
 	}
 
 	if err := downloadArtifactToFilepath(artifactUrl, absoluteFilepath); err != nil {

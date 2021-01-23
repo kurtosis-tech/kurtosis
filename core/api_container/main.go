@@ -9,9 +9,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_modes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/server_core_creator"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -55,7 +55,7 @@ func main() {
 
 	logLevel, err := logrus.ParseLevel(*logLevelArg)
 	if err != nil {
-		logrus.Errorf("An error occurred parsing the log level string '%v':")
+		logrus.Errorf("An error occurred parsing the log level string '%v':", *logLevelArg)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
 	}
@@ -74,7 +74,7 @@ func main() {
 
 	logrus.Info("Running server...")
 	exitCode := server.Run()
-	logrus.Info("Server exited with exit code '%v'", exitCode)
+	logrus.Infof("Server exited with exit code '%v'", exitCode)
 	os.Exit(int(exitCode))
 }
 

@@ -140,7 +140,7 @@ func (network ServiceNetwork) RegisterService(
 
 	_, found := network.serviceIps[serviceId]
 	if found {
-		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists")
+		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
 	if partitionId == "" {
@@ -171,7 +171,7 @@ func (network ServiceNetwork) RegisterService(
 
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 	network.serviceIps[serviceId] = ip
@@ -185,7 +185,11 @@ func (network ServiceNetwork) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred adding service with ID '%v' to partition '%v' in the topology")
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+			serviceId,
+			partitionId)
 	}
 	shouldUndoServiceIpAdd = false
 
@@ -212,10 +216,10 @@ func (network *ServiceNetwork) StartService(
 
 	serviceIpAddr, foundIp := network.serviceIps[serviceId]
 	if !foundIp {
-		return stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been reigstered")
+		return stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
 	}
 	if _, found := network.serviceContainerIds[serviceId]; found {
-		return stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has a container associated with it")
+		return stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has a container associated with it", serviceId)
 	}
 
 	// When partitioning is enabled, there's a race condition where:
@@ -304,7 +308,7 @@ func (network *ServiceNetwork) RemoveService(
 	}
 
 	if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 	return nil
 }

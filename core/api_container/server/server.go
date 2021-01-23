@@ -100,8 +100,10 @@ func waitForExitCondition(
 		return api_container_exit_codes.NoTestSuiteRegisteredExitCode
 	// We don't technically have to catch this, but it'll help catch code bugs (it indicates that a service is sending
 	//  a shutdown event before a testsuite is even registered)
-	case <- shutdownChan:
-		logrus.Errorf("Received shutdown event with exit code '%v' before testsuite is even registered; this is a code bug")
+	case exitCode := <- shutdownChan:
+		logrus.Errorf(
+			"Received shutdown event with exit code '%v' before testsuite is even registered; this is a code bug",
+			exitCode)
 		return api_container_exit_codes.ShutdownEventBeforeSuiteRegistration
 	case termSignal := <-termSignalChan:
 		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)

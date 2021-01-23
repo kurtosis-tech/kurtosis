@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_suite_constants
+package test_suite_container_mountpoints
 
 /*
 The dirpath on the TESTSUITE container where the execution volume will be mounted

@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -31,7 +31,7 @@ func GetTestSuiteMetadata(
 		suiteExecutionVolName string,
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		dockerClient *client.Client,
-		launcher *test_suite_constants.TestsuiteContainerLauncher,
+		launcher *test_suite_launcher.TestsuiteContainerLauncher,
 		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
