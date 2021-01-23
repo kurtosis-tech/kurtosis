@@ -26,21 +26,12 @@ import (
 )
 
 const (
+	bridgeNetworkName = "bridge"
+
 	debuggerPortProtocol = "tcp"
 
 	dockerSocket = "/var/run/docker.sock"
 )
-
-// TODO TODO this is a hack! The metadata-acquiring testsuite container needs to know the IP of the corresponding
-//  API container, but because both testsuite & API containers will be started in the bridge network (so that we
-//  don't have to burn the time to create a network just for them), we don't know what IPs are free so we can't
-//  use the freeIpAddrProvider to give a static IP for the API container. We hack around this by picking
-//  a hardcoded IP for the API container, and praying that nobody else is using it.
-//  The correct fix would be one of:
-//   - Inspect the API container after starting in the bridge network to get its IP (requires adding a new function to DockerManager)
-//   - Using a hostname rather than an IP for the API container (requires adding a new function argument to CreateAndStartContainer)
-//   - Creating a separate network for the metadata-acquiring testsuite & API containers
-var metadataAcquiringApiContainerIp net.IP = []byte{172, 17, 255, 255}
 
 type TestsuiteContainerLauncher struct {
 	executionInstanceId uuid.UUID
@@ -93,12 +84,28 @@ func NewTestsuiteContainerLauncher(
 /*
 Launches a new testsuite container to acquire testsuite metadata
  */
-func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
+func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
-		bridgeNetworkId string,
 		suiteExecutionVolume string,
 		debuggerPortBinding nat.PortBinding) (testsuiteContainerId string, kurtosisApiContainerId string, err error) {
+	functionCompletedSuccessfully := false
+
+	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(ctx, bridgeNetworkName)
+	if err != nil {
+		return "", "", stacktrace.Propagate(
+			err,
+			"An error occurred getting the network IDs matching the '%v' network",
+			bridgeNetworkName)
+	}
+	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
+		return "", "", stacktrace.NewError(
+			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
+			len(bridgeNetworkIds),
+			bridgeNetworkName)
+	}
+	bridgeNetworkId := bridgeNetworkIds[0]
+
 	apiContainerEnvVars, err := launcher.genSuiteMetadataSerializationApiContainerEnvVars()
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container env vars")
@@ -110,7 +117,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		ctx,
 		launcher.kurtosisApiImage,
 		bridgeNetworkId,
-		metadataAcquiringApiContainerIp,
+		nil,	// We're connecting to the bridge network, which will assign an IP automatically
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
@@ -126,9 +133,19 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
 	}
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		dockerManager,
+		kurtosisApiContainerId,
+		func() bool { return functionCompletedSuccessfully })
 	logrus.Infof("Successfully launched the Kurtosis API container")
 
-	testsuiteEnvVars, err := launcher.generateTestSuiteEnvVars(metadataAcquiringApiContainerIp)
+	apiContainerIp, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, kurtosisApiContainerId)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error occurred getting the API container's IP on the bridge network")
+	}
+
+	testsuiteEnvVars, err := launcher.generateTestSuiteEnvVars(apiContainerIp)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
@@ -153,15 +170,21 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to send metadata to the Kurtosis API container")
 	}
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		dockerManager,
+		testsuiteContainerId,
+		func() bool { return functionCompletedSuccessfully})
 	logrus.Infof("Successfully launched testsuite container to send metadata to Kurtosis API container")
 
+	functionCompletedSuccessfully = true
 	return testsuiteContainerId, kurtosisApiContainerId, nil
 }
 
 /*
 Launches a new testsuite container to run a test
 */
-func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
+func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		ctx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
@@ -178,7 +201,9 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testsuiteContainerIp.String(),
 		kurtosisApiContainerIp.String())
 
-	testSuiteEnvVars, err := launcher.generateTestSuiteEnvVars(kurtosisApiContainerIp)
+	functionCompletedSuccessfully := false
+
+	testSuiteEnvVars, err := launcher.generateTestSuiteEnvVars(kurtosisApiContainerIp.String())
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
 	}
@@ -203,6 +228,11 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
 	}
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		dockerManager,
+		suiteContainerId,
+		func() bool { return functionCompletedSuccessfully })
 	log.Infof("Successfully created test-running testsuite container with debugger port bound to host port %v", debuggerPortBinding)
 
 
@@ -240,11 +270,17 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
 	)
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		dockerManager,
+		kurtosisApiContainerId,
+		func() bool { return functionCompletedSuccessfully })
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
 	}
 	log.Infof("Successfully launched the Kurtosis API container")
 
+	functionCompletedSuccessfully = true
 	return suiteContainerId, kurtosisApiContainerId, nil
 }
 
@@ -256,7 +292,7 @@ Generates the map of environment variables needed to run a test suite container
 
 NOTE: exactly one of metadata_filepath or test_name must be non-empty!
 */
-func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiIp net.IP) (map[string]string, error) {
+func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiIp string) (map[string]string, error) {
 	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPort.Int())
 	// TODO Use ListenProtocol
 	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
@@ -324,4 +360,23 @@ func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiConta
 		api_container_modes.SuiteMetadataSerializingMode,
 		argsStr), nil
 
+}
+
+// This function is intended to be run as a deferred function, to kill a container that was started if the
+//  outer function exits with an error
+func killContainerIfNotFunctionSuccess(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		containerId string,
+		// This needs to be a function so that it gets evaluated at time of killContainer... function
+		didFunctionCompleteSuccessfully func() bool) {
+	if !didFunctionCompleteSuccessfully() {
+		if err := dockerManager.KillContainer(ctx, containerId); err != nil {
+			logrus.Errorf("A container was started but the function that started it exited with an error. The container needed " +
+				"to be stopped to avoid leaking a running container, but the following error occurred when attempting to stop the " +
+				"container:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			logrus.Errorf("ACTION REQUIRED: You will need to stop the testsuite container with ID '%v' manually!", containerId)
+		}
+	}
 }

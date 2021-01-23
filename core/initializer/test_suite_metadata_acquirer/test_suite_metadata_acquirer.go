@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	bridgeNetworkName = "bridge"
-
 	metadataAcquiringApiContainerTitle     = "Suite Metadata-Acquiring API Container"
 	metadataSendingTestsuiteContainerTitle = "Suite Metadata-Sending Testsuite Container"
 )
@@ -40,34 +38,17 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(parentContext, bridgeNetworkName)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting the network IDs matching the '%v' network",
-			bridgeNetworkName)
-	}
-	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
-		return nil, stacktrace.NewError(
-			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
-			len(bridgeNetworkIds),
-			bridgeNetworkName)
-	}
-	bridgeNetworkId := bridgeNetworkIds[0]
-
-
-	logrus.Info("Launching metadata-acquiring testsuite container...")
-	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainer(
+	logrus.Info("Launching metadata-acquiring containers...")
+	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainers(
 		parentContext,
 		dockerManager,
-		bridgeNetworkId,
 		suiteExecutionVolName,
 		debuggerHostPortBinding)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred running the metadta-acquiring testsuite & API container")
+		return nil, stacktrace.Propagate(err, "An error occurred running the metadata-acquiring containers")
 	}
 	logrus.Infof(
-		"Metadata-acquiring testsuite container launched, with debugger port bound to host port %v:%v (if a debugger " +
+		"Metadata-acquiring containers launched, with testsuite debugger port bound to host port %v:%v (if a debugger " +
 			"is running in the testsuite, you may need to connect to this port to allow execution to proceed)",
 		debuggerHostPortBinding.HostIP,
 		debuggerHostPortBinding.HostPort)

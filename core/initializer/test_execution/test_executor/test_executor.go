@@ -142,7 +142,7 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
-	testsuiteContainerId, kurtosisApiContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
+	testsuiteContainerId, kurtosisApiContainerId, err := testsuiteLauncher.LaunchTestRunningContainers(
 		testSetupContext,
 		log,
 		dockerManager,

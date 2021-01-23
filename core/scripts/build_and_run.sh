@@ -7,7 +7,8 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
+# TODO CHANGE BACK BEFORE MERGE TO DEVELOP
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:mieubrisse_extracting-client-2"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
@@ -162,5 +163,5 @@ if "${do_run}"; then
     # --------------------- End Kurtosis Go environment variables ---------------------
 
     # The generated wrapper will come hardcoded the correct version of the initializer/API images
-    bash "${WRAPPER_FILEPATH}" --custom-params"${go_suite_params_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
+    bash "${WRAPPER_FILEPATH}" --custom-params "${go_suite_params_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
