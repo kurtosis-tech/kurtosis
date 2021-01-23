@@ -11,40 +11,25 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"path"
 )
 
 const (
 	bridgeNetworkName = "bridge"
 
-	// The name of the directory that will be created inside the suite execution volume for storing files related
-	//  to acquiring test suite metadata
-	metadataAcquirerDirname = "metadata-acquirer"
-
-	metadataAcquiringContainerDescription = "Testsuite Metadata-Acquiring Container"
-	testSuiteMetadataFilename             = "test-suite-metadata.json"
+	metadataAcquiringApiContainerTitle     = "Suite Metadata-Acquiring API Container"
+	metadataSendingTestsuiteContainerTitle = "Suite Metadata-Sending Testsuite Container"
 )
 
-/*
-Spins up a testsuite container in metadata-acquiring mode and returns the metadata that the suite returns
-
-Args:
-	testSuiteImage: The name of the Docker image containing the test suite
-	suiteExecutionVolume: The name of the Docker volume dedicated for storing file IO for the suite execution
-	initializerContainerSuiteExVolDirpath: The dirpath on the INITIALIZER container where the suite execution volume is mounted
-	dockerClient: The Docker client with which Docker requests will be made
-	launcher: Launcher for creating test suite containers
-	debuggerHostPortBinding: The host port binding to use for binding to the testsuite debugger port
-*/
 func GetTestSuiteMetadata(
-		suiteExecutionVolume string,
-		initializerContainerSuiteExVolDirpath string,
+		suiteExecutionVolName string,
+		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		dockerClient *client.Client,
 		launcher *test_suite_constants.TestsuiteContainerLauncher,
 		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
@@ -70,25 +55,16 @@ func GetTestSuiteMetadata(
 	}
 	bridgeNetworkId := bridgeNetworkIds[0]
 
-	metadataAcquirerDirpathOnInitializer := path.Join(initializerContainerSuiteExVolDirpath, metadataAcquirerDirname)
-	if err := os.Mkdir(metadataAcquirerDirpathOnInitializer, os.ModeDir); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a directory in the suite execution volume to " +
-			"store data for the acquisition of test suite metadata")
-	}
-	metadataAcquirerDirpathOnSuite := path.Join(test_suite_constants.TestsuiteContainerSuiteExVolMountpoint, metadataAcquirerDirname)
-
-	metadataFilepathOnSuite := path.Join(metadataAcquirerDirpathOnSuite, testSuiteMetadataFilename)
 
 	logrus.Info("Launching metadata-acquiring testsuite container...")
-	containerId, err := launcher.LaunchMetadataAcquiringContainer(
+	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainer(
 		parentContext,
 		dockerManager,
 		bridgeNetworkId,
-		suiteExecutionVolume,
-		metadataFilepathOnSuite,
+		suiteExecutionVolName,
 		debuggerHostPortBinding)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring testsuite container")
+		return nil, stacktrace.Propagate(err, "An error occurred running the metadta-acquiring testsuite & API container")
 	}
 	logrus.Infof(
 		"Metadata-acquiring testsuite container launched, with debugger port bound to host port %v:%v (if a debugger " +
@@ -96,30 +72,44 @@ func GetTestSuiteMetadata(
 		debuggerHostPortBinding.HostIP,
 		debuggerHostPortBinding.HostPort)
 
-	exitCode, err := dockerManager.WaitForExit(
+	apiContainerExitCode, err := dockerManager.WaitForExit(
 		parentContext,
-		containerId)
+		apiContainerId)
 	if err != nil {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, containerId, logrus.StandardLogger(), metadataAcquiringContainerDescription)
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container to return test metadata")
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the suite metadata-serializing API container")
 	}
-	if exitCode != 0 {
-		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, containerId, logrus.StandardLogger(), metadataAcquiringContainerDescription)
-		return nil, stacktrace.NewError("The testsuite container for acquiring suite metadata exited with a nonzero exit code")
+	if apiContainerExitCode != 0 {
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
+		return nil, stacktrace.NewError("The API container for serializing suite metadata exited with a nonzero exit code")
 	}
 
-	metadataFilepathOnInitializer := path.Join(metadataAcquirerDirpathOnInitializer, testSuiteMetadataFilename)
-	testSuiteMetadataReaderFp, err := os.Open(metadataFilepathOnInitializer)
+	// At this point we expect the testsuite container to already have exited
+	testsuiteContainerExitCode, err := dockerManager.WaitForExit(
+		parentContext,
+		testsuiteContainerId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening the temp filename containing test suite metadata for reading")
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, testsuiteContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container that sends suite metadata to the API container")
 	}
-	defer testSuiteMetadataReaderFp.Close()
+	if testsuiteContainerExitCode != 0 {
+		banner_printer.PrintContainerLogsWithBanners(*dockerManager, parentContext, apiContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
+		return nil, stacktrace.NewError("The testsuite container that sends suite metadata to the API container exited with a nonzero exit code")
+	}
 
-	jsonBytes, err := ioutil.ReadAll(testSuiteMetadataReaderFp)
+	suiteMetadataFile := suiteExecutionVolume.GetSuiteMetadataFile()
+	suiteMetadataFilepath := suiteMetadataFile.GetAbsoluteFilepath()
+
+	suiteMetadataReaderFp, err := os.Open(suiteMetadataFilepath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading the test suite metadata JSON string from file")
+		return nil, stacktrace.Propagate(err, "An error occurred opening the testsuite metadata file at '%v' for reading", suiteMetadataFilepath)
 	}
+	defer suiteMetadataReaderFp.Close()
 
+	jsonBytes, err := ioutil.ReadAll(suiteMetadataReaderFp)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred reading the testsuite metadata JSON string from file")
+	}
 	logrus.Debugf("Test suite metadata JSON: " + string(jsonBytes))
 
 	var suiteMetadata TestSuiteMetadata

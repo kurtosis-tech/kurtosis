@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -71,7 +72,24 @@ func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 	}
 	logrus.Debugf("Successfully serialized suite metadata to file")
 
+	defer func() {
+		service.shutdownChan <- api_container_exit_codes.SuccessExitCode
+	}()
+
 	return &emptypb.Empty{}, nil
+}
+
+func validateMetadata(suiteMetadata *bindings.TestSuiteMetadata) error {
+	if suiteMetadata.NetworkWidthBits == 0 {
+		return stacktrace.NewError("Network width bits must be > 0")
+	}
+
+	for testName, _ := range suiteMetadata.TestMetadata {
+		if strings.TrimSpace(testName) == "" {
+			return stacktrace.NewError("Found a test name which was empty or whitespace")
+		}
+	}
+	return nil
 }
 
 func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) test_suite_metadata_acquirer.TestSuiteMetadata {

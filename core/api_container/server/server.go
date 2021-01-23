@@ -73,8 +73,9 @@ func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExit
 
 	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan)
 
-	// We use Stop rather than GracefulStop here because a stop condition means everything should shut down immediately
-	grpcServer.Stop()
+	// NOTE: If we see weirdness with graceful stop, we could use the hard Stop though then we'd need to consider that
+	//  RPC calls which send the shutdown signal might get killed before they can return a response to the client
+	grpcServer.GracefulStop()
 
 	if err := mainService.HandlePostShutdownEvent(); err != nil {
 		logrus.Errorf("Post-shutdown hook on service returned an error:")

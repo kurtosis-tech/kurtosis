@@ -132,7 +132,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
 
-	logrus.Infof("Launching testsuite container to send metadata to Kurotsis API container...")
+	logrus.Infof("Launching testsuite container to send metadata to Kurtosis API container...")
 	testsuiteContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
@@ -182,7 +182,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
 	}
 
-	log.Info("Launching test-running testsuite container with debugger port bound to host port %v....", debuggerPortBinding)
+	log.Info("Launching test-running testsuite container....")
 	suiteContainerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
@@ -202,7 +202,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
 	}
-	log.Infof("Successfully created test-running testsuite container")
+	log.Infof("Successfully created test-running testsuite container with debugger port bound to host port %v", debuggerPortBinding)
 
 
 	apiContainerEnvVars, err := launcher.genTestExecutionApiContainerEnvVars(
@@ -247,6 +247,9 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	return suiteContainerId, kurtosisApiContainerId, nil
 }
 
+// ===============================================================================================
+//                                 Privat helper functions
+// ===============================================================================================
 /*
 Generates the map of environment variables needed to run a test suite container
 
