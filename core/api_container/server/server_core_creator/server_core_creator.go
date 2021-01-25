@@ -101,6 +101,7 @@ func createTestExecutionCore(
 	core := test_execution.NewTestExecutionServerCore(
 		dockerManager,
 		serviceNetwork,
+		args.TestName,
 		args.TestSuiteContainerId)
 
 	return core, nil

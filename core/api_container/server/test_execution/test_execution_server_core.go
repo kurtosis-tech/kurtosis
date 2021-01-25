@@ -17,12 +17,14 @@ import (
 type TestExecutionServerCore struct {
 	dockerManager *docker_manager.DockerManager
 	serviceNetwork *service_network.ServiceNetwork
+	testName string
 	testSuiteContainerId string
 }
 
-func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testSuiteContainerId string) *TestExecutionServerCore {
-	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testSuiteContainerId: testSuiteContainerId}
+func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testName string, testSuiteContainerId string) *TestExecutionServerCore {
+	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testSuiteContainerId: testSuiteContainerId}
 }
+
 
 func (core TestExecutionServerCore) GetSuiteAction() bindings.SuiteAction {
 	return bindings.SuiteAction_EXECUTE_TEST
@@ -32,6 +34,7 @@ func (core TestExecutionServerCore) CreateAndRegisterService(shutdownChan chan a
 	service := newTestExecutionService(
 		core.dockerManager,
 		core.serviceNetwork,
+		core.testName,
 		core.testSuiteContainerId,
 		shutdownChan)
 	bindings.RegisterTestExecutionServiceServer(grpcServer, service)

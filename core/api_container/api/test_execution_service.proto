@@ -4,6 +4,10 @@ package api_container_api;
 import "google/protobuf/empty.proto";
 
 service TestExecutionService {
+  // Returns detailed information to the testsuite about what it should do during test execution -
+  //  what test it should run, etc.
+  rpc GetTestExecutionInfo(google.protobuf.Empty) returns (TestExecutionInfo) {};
+
   rpc RegisterTestExecution(RegisterTestExecutionArgs) returns (google.protobuf.Empty) {};
 
   // Registers a service but doesn't start the container for it
@@ -15,6 +19,14 @@ service TestExecutionService {
   rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
 
   rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
+}
+
+// ==============================================================================================
+//                                  Get Test Execution Info
+// ==============================================================================================
+message TestExecutionInfo {
+  // Name of the test that the testsuite container should execute
+  string test_name = 1;
 }
 
 // ==============================================================================================

@@ -35,6 +35,7 @@ const (
 type testExecutionService struct {
 	dockerManager *docker_manager.DockerManager
 	serviceNetwork *service_network.ServiceNetwork
+	testName string
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
 	shutdownChan chan api_container_exit_codes.ApiContainerExitCode
@@ -43,10 +44,13 @@ type testExecutionService struct {
 func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
+		testName string,
 		testSuiteContainerId string,
 		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) *testExecutionService {
-	return &testExecutionService{dockerManager: dockerManager,
+	return &testExecutionService{
+		dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
+		testName: testName,
 		testSuiteContainerId: testSuiteContainerId,
 		stateMachine: newTestExecutionServiceStateMachine(),
 		shutdownChan: shutdownChan,
@@ -80,6 +84,13 @@ func (service *testExecutionService) HandlePostShutdownEvent() error {
 	}
 	logrus.Info("Service network destroyed successfully")
 	return nil
+}
+
+func (service *testExecutionService) GetTestExecutionInfo(ctx context.Context, empty *emptypb.Empty) (*bindings.TestExecutionInfo, error) {
+	result := &bindings.TestExecutionInfo{
+		TestName: service.testName,
+	}
+	return result, nil
 }
 
 func (service *testExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
