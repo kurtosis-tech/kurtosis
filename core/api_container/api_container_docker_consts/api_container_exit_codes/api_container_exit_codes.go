@@ -14,37 +14,34 @@ const (
 	ShutdownEventBeforeSuiteRegistration	   // Service sends a shutdown exit code before the testsuite is registered
 	StartupError                       // The API container hit an error while starting up
 	ShutdownError                      // The API container encountered errors during shutodwn
+	ReceivedTermSignal
 	// =============================== Test Execution exit codes ================================================
 	// NOTE: If you add new test execution exit codes, make sure to modify the test_executor who consumes them!!
 	NoTestExecutionRegistered	// A testsuite registered itself, but then didn't register a test execution
 	TestHitTimeout
-	ReceivedTermSignal
 	ErrWaitingForSuiteContainerExit // An error occurred waiting for the testsuite container to exit
-	OutOfOrderTestStatus
 )
-var AcceptVisitorFuncs = map[int]func(visitor ErrorRenderingVisitor) error {
-	SuccessfulExit:  func(visitor ErrorRenderingVisitor) error { return visitor.VisitSuccessfulExit() },
-	NoTestSuiteRegistered: func(visitor ErrorRenderingVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
-	ShutdownEventBeforeSuiteRegistration: func(visitor ErrorRenderingVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
-	StartupError: func(visitor ErrorRenderingVisitor) error { return visitor.VisitStartupError() },
-	ShutdownError: func(visitor ErrorRenderingVisitor) error { return visitor.VisitShutdownError() },
-	NoTestExecutionRegistered: func(visitor ErrorRenderingVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
-	TestHitTimeout: func(visitor ErrorRenderingVisitor) error { return visitor.VisitTestHitTimeout() },
-	ReceivedTermSignal: func(visitor ErrorRenderingVisitor) error { return visitor.VisitReceivedTermSignal() },
-	ErrWaitingForSuiteContainerExit: func(visitor ErrorRenderingVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
-	OutOfOrderTestStatus: func(visitor ErrorRenderingVisitor) error { return visitor.VisitOutOfOrderTestStatus() },
+var ExitCodeErrorVisitorAcceptFuncs = map[int]func(visitor ExitCodeErrorVisitor) error {
+	SuccessfulExit:  func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSuccessfulExit() },
+	NoTestSuiteRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
+	ShutdownEventBeforeSuiteRegistration: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
+	StartupError: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitStartupError() },
+	ShutdownError: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitShutdownError() },
+	ReceivedTermSignal: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitReceivedTermSignal() },
+	NoTestExecutionRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
+	TestHitTimeout: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitTimeout() },
+	ErrWaitingForSuiteContainerExit: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
 }
 
 // Translates exit codes into Go 'error' types
-type ErrorRenderingVisitor interface {
+type ExitCodeErrorVisitor interface {
 	VisitSuccessfulExit() error
 	VisitNoTestSuiteRegistered() error
 	VisitShutdownEventBeforeSuiteRegistration() error
 	VisitStartupError() error
 	VisitShutdownError() error
+	VisitReceivedTermSignal() error
 	VisitNoTestExecutionRegistered() error
 	VisitTestHitTimeout() error
-	VisitReceivedTermSignal() error
 	VisitErrWaitingForSuiteContainerExit() error
-	VisitOutOfOrderTestStatus() error
 }

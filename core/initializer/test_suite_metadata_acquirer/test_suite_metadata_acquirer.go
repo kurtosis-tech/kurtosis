@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -69,16 +70,27 @@ func GetTestSuiteMetadata(
 		debuggerHostPortBinding.HostIP,
 		debuggerHostPortBinding.HostPort)
 
-	apiContainerExitCode, err := dockerManager.WaitForExit(
+	apiContainerExitCodeInt64, err := dockerManager.WaitForExit(
 		parentContext,
 		apiContainerId)
 	if err != nil {
 		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the suite metadata-serializing API container")
 	}
-	if apiContainerExitCode != 0 {
+	apiContainerExitCode := int(apiContainerExitCodeInt64)
+
+	acceptExitCodeVisitor, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[apiContainerExitCode]
+	if !found {
+		return nil, stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
+			"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
+			apiContainerExitCode)
+	}
+	visitor := metadataSerializationExitCodeErrorVisitor{}
+	if err := acceptExitCodeVisitor(visitor); err != nil {
 		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.NewError("The API container for serializing suite metadata exited with a nonzero exit code")
+		return nil, stacktrace.Propagate(
+			err,
+			"The API container responsible for serializing suite metadata exited with an error")
 	}
 
 	// At this point we expect the testsuite container to already have exited
@@ -87,11 +99,13 @@ func GetTestSuiteMetadata(
 		testsuiteContainerId)
 	if err != nil {
 		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container that sends suite metadata to the API container")
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container that " +
+			"sends suite metadata to the API container")
 	}
 	if testsuiteContainerExitCode != 0 {
 		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.NewError("The testsuite container that sends suite metadata to the API container exited with a nonzero exit code")
+		return nil, stacktrace.NewError("The testsuite container that sends suite metadata to the API container exited " +
+			"with a nonzero exit code")
 	}
 
 	suiteMetadataFile := suiteExecutionVolume.GetSuiteMetadataFile()

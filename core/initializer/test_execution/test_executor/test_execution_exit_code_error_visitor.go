@@ -33,6 +33,11 @@ func (t testExecutionExitCodeErrorVisitor) VisitShutdownError() error {
 		"shutting down; this is a bug in Kurtosis itself")
 }
 
+func (t testExecutionExitCodeErrorVisitor) VisitReceivedTermSignal() error {
+	return stacktrace.NewError("The Kurtosis API container exited due to receiving " +
+		"a shutdown signal; if this is not expected, it indicates a bug in Kurtosis itself")
+}
+
 func (t testExecutionExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return stacktrace.NewError("The Kurtosis API container timed out waiting for registration of a test execution; " +
 		"this is a bug in Kurtosis itself")
@@ -43,11 +48,6 @@ func (t testExecutionExitCodeErrorVisitor) VisitTestHitTimeout() error {
 		"timeout (setup_buffer + test_execution_timeout), which most likely means the testnet setup took " +
 		"too long (because if the test execution took too long, the test execution timeout" +
 		"would have been tripped instead)")
-}
-
-func (t testExecutionExitCodeErrorVisitor) VisitReceivedTermSignal() error {
-	return stacktrace.NewError("The Kurtosis API container exited due to receiving " +
-		"a shutdown signal; if this is not expected, it indicates a bug in Kurtosis itself")
 }
 
 func (t testExecutionExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {

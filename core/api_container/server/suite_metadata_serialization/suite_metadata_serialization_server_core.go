@@ -7,7 +7,6 @@ package suite_metadata_serialization
 
 import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"google.golang.org/grpc"
 )
@@ -24,7 +23,9 @@ func (core SuiteMetadataSerializationServerCore) GetSuiteAction() bindings.Suite
 	return bindings.SuiteAction_SERIALIZE_SUITE_METADATA
 }
 
-func (core SuiteMetadataSerializationServerCore) CreateAndRegisterService(shutdownChan chan api_container_exit_codes.ApiContainerExitCode, grpcServer *grpc.Server) server.ApiContainerServerService {
+func (core SuiteMetadataSerializationServerCore) CreateAndRegisterService(
+		shutdownChan chan int,
+		grpcServer *grpc.Server) server.ApiContainerServerService {
 	service := newSuiteMetadataSerializationService(core.serializationOutputFilepath, shutdownChan)
 	bindings.RegisterSuiteMetadataSerializationServiceServer(grpcServer, service)
 	return service
