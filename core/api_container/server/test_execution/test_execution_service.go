@@ -38,7 +38,7 @@ type testExecutionService struct {
 	testName string
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
-	shutdownChan chan api_container_exit_codes.ApiContainerExitCode
+	shutdownChan chan int
 }
 
 func newTestExecutionService(
@@ -46,7 +46,7 @@ func newTestExecutionService(
 		serviceNetwork *service_network.ServiceNetwork,
 		testName string,
 		testSuiteContainerId string,
-		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) *testExecutionService {
+		shutdownChan chan int) *testExecutionService {
 	return &testExecutionService{
 		dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
@@ -68,7 +68,7 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	go func() {
 		time.Sleep(testExecutionRegistrationTimeout)
 		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
-			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegisteredExitCode
+			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
 		}
 	}()
 
@@ -106,7 +106,7 @@ func (service *testExecutionService) RegisterTestExecution(ctx context.Context, 
 	go func() {
 		time.Sleep(timeout)
 		if err := service.stateMachine.assert(waitingForExecutionCompletion); err == nil {
-			service.shutdownChan <- api_container_exit_codes.TestHitTimeoutExitCode
+			service.shutdownChan <- api_container_exit_codes.TestHitTimeout
 		}
 	}()
 
@@ -116,14 +116,14 @@ func (service *testExecutionService) RegisterTestExecution(ctx context.Context, 
 		if _, err := service.dockerManager.WaitForExit(context.Background(), service.testSuiteContainerId); err != nil {
 			logrus.Errorf("An error occurred waiting for the testsuite container to exit:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			service.shutdownChan <- api_container_exit_codes.ErrWaitingForSuiteContainerExitExitCode
+			service.shutdownChan <- api_container_exit_codes.ErrWaitingForSuiteContainerExit
 			return
 		}
 		if err := service.stateMachine.assertAndAdvance(waitingForExecutionCompletion); err != nil {
 			logrus.Warnf("The testsuite container exited, but an error occurred advancing the state machine to its final state")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
-		service.shutdownChan <- api_container_exit_codes.SuccessExitCode // TODO Rename this to "testsuite exited within timeout"
+		service.shutdownChan <- api_container_exit_codes.SuccessfulExit
 	}()
 
 	return &emptypb.Empty{}, nil

@@ -28,7 +28,7 @@ type serverConfigForMode struct {
 	// The action the testsuite should take when the API container is in the given mode
 	suiteAction bindings.SuiteAction
 
-	serviceFactory func(shutdownChan chan api_container_exit_codes.ApiContainerExitCode) ApiContainerServerService
+	serviceFactory func(shutdownChan chan int) ApiContainerServerService
 }
 
 type ApiContainerServer struct {
@@ -39,10 +39,10 @@ func NewApiContainerServer(core ApiContainerServerCore) *ApiContainerServer {
 	return &ApiContainerServer{core: core}
 }
 
-func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExitCode {
+func (server ApiContainerServer) Run() int {
 	grpcServer := grpc.NewServer()
 
-	shutdownChan := make(chan api_container_exit_codes.ApiContainerExitCode, 1)
+	shutdownChan := make(chan int, 1)
 	mainService := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
 
 	suiteRegistrationChan := make(chan interface{}, 1)
@@ -57,7 +57,7 @@ func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExit
 			api_container_server_consts.ListenProtocol,
 			listenAddressStr)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		return api_container_exit_codes.StartupErrorExitCode
+		return api_container_exit_codes.StartupError
 	}
 
 	// Docker will send SIGTERM to end the process, and we need to catch it to stop gracefully
@@ -80,7 +80,7 @@ func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExit
 	if err := mainService.HandlePostShutdownEvent(); err != nil {
 		logrus.Errorf("Post-shutdown hook on service returned an error:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		exitCode = api_container_exit_codes.ShutdownErrorExitCode
+		exitCode = api_container_exit_codes.ShutdownError
 	}
 
 	return exitCode
@@ -89,7 +89,7 @@ func (server ApiContainerServer) Run() api_container_exit_codes.ApiContainerExit
 func waitForExitCondition(
 		suiteRegistrationChan chan interface{},
 		termSignalChan chan os.Signal,
-		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) api_container_exit_codes.ApiContainerExitCode {
+		shutdownChan chan int) int {
 	select {
 	case <- suiteRegistrationChan:
 		logrus.Debugf("Suite registered")
@@ -97,7 +97,7 @@ func waitForExitCondition(
 	//  a certain amount of time else the API container will kill itself with an error
 	case <- time.After(suiteRegistrationTimeout):
 		logrus.Errorf("No test suite registered itself after waiting for %v", suiteRegistrationTimeout)
-		return api_container_exit_codes.NoTestSuiteRegisteredExitCode
+		return api_container_exit_codes.NoTestSuiteRegistered
 	// We don't technically have to catch this, but it'll help catch code bugs (it indicates that a service is sending
 	//  a shutdown event before a testsuite is even registered)
 	case exitCode := <- shutdownChan:
@@ -107,7 +107,7 @@ func waitForExitCondition(
 		return api_container_exit_codes.ShutdownEventBeforeSuiteRegistration
 	case termSignal := <-termSignalChan:
 		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)
-		return api_container_exit_codes.ReceivedTermSignalExitCode
+		return api_container_exit_codes.ReceivedTermSignal
 	}
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
@@ -118,6 +118,6 @@ func waitForExitCondition(
 		return exitCode
 	case termSignal := <-termSignalChan:
 		logrus.Infof("Received term signal '%v' while waiting for exit condition", termSignal)
-		return api_container_exit_codes.ReceivedTermSignalExitCode
+		return api_container_exit_codes.ReceivedTermSignal
 	}
 }

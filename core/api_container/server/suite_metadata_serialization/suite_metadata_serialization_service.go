@@ -24,12 +24,12 @@ type suiteMetadataSerializationService struct {
 	mutex                                 *sync.Mutex
 	hasSerializeBeenCalled                bool
 	serializedSuiteMetadataOutputFilepath string
-	shutdownChan chan api_container_exit_codes.ApiContainerExitCode
+	shutdownChan chan int
 }
 
 func newSuiteMetadataSerializationService(
 		serializedSuiteMetadataOutputFilepath string,
-		shutdownChan chan api_container_exit_codes.ApiContainerExitCode) *suiteMetadataSerializationService {
+		shutdownChan chan int) *suiteMetadataSerializationService {
 	return &suiteMetadataSerializationService{
 		mutex: &sync.Mutex{},
 		hasSerializeBeenCalled: false,
@@ -73,7 +73,7 @@ func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 	logrus.Debugf("Successfully serialized suite metadata to file")
 
 	defer func() {
-		service.shutdownChan <- api_container_exit_codes.SuccessExitCode
+		service.shutdownChan <- api_container_exit_codes.SuccessfulExit
 	}()
 
 	return &emptypb.Empty{}, nil

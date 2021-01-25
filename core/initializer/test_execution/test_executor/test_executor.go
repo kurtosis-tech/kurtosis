@@ -173,36 +173,15 @@ func RunTest(
 	//  gets more information about what's going on, and the user will learn the exact error below
 	banner_printer.PrintContainerLogsWithBanners(dockerManager, testTeardownContext, testsuiteContainerId, log, testRunningContainerDescription)
 
-	// TODO Switch to visitor pattern so that we guarantee we handle each
-	var testStatusRetrievalError error
-	switch kurtosisApiExitCode {
-	case api_container_exit_codes.SuccessExitCode:
-		testStatusRetrievalError = nil
-	case api_container_exit_codes.StartupErrorExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error while " +
-			"starting up and wasn't able to start the JSON RPC server")
-	case api_container_exit_codes.ShutdownErrorExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container encountered an error during " +
-			"shutdown that prevented it from stopping cleanly")
-	case api_container_exit_codes.OutOfOrderTestStatusExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container received an out-of-order " +
-			"test execution status update; this is a Kurtosis code bug")
-	case api_container_exit_codes.TestHitTimeoutExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The test failed to complete within the hard test " +
-			"timeout (setup_buffer + test_execution_timeout), which most likely means the testnet setup took " +
-			"too long (because if the test execution took too long, the test execution timeout" +
-			"would have been tripped instead)")
-	case api_container_exit_codes.NoTestSuiteRegisteredExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The test suite failed to register itself with the " +
-			"Kurtosis API container; this is a bug with the test suite")
-	case api_container_exit_codes.ReceivedTermSignalExitCode:
-		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited due to receiving " +
-			"a shutdown signal; if this is not expected, it's a Kurtosis bug")
-	default:
-		testStatusRetrievalError = stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
-			"exit code %v; this is a code bug in Kurtosis indicating that the new exit code needs to be mapped " +
-			"for the initializer", kurtosisApiExitCode)
+	exitCodeAcceptVisitorFunc, found := api_container_exit_codes.AcceptVisitorFuncs[kurtosisApiExitCode]
+	if !found {
+		return false, stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
+				"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
+			kurtosisApiExitCode)
 	}
+
+	// TODO visitor
+
 	if testStatusRetrievalError != nil {
 		log.Error("An error occurred that prevented retrieval of the test completion status")
 		return false, testStatusRetrievalError

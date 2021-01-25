@@ -57,7 +57,7 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred parsing the log level string '%v':", *logLevelArg)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
+		os.Exit(int(api_container_exit_codes.StartupError))
 	}
 	logrus.SetLevel(logLevel)
 
@@ -67,7 +67,7 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred creating the service core for mode '%v' with params JSON '%v':", mode, paramsJson)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(api_container_exit_codes.StartupErrorExitCode))
+		os.Exit(int(api_container_exit_codes.StartupError))
 	}
 
 	server := server.NewApiContainerServer(serverCore)
