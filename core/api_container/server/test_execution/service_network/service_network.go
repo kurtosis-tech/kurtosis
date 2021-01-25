@@ -166,6 +166,7 @@ func (network ServiceNetwork) RegisterService(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
 		}
 		generatedFilesRelativeFilepaths[userCreatedFileKey] = file.GetFilepathRelativeToVolRoot()
+		logrus.Debugf("Created generated file '%v' at '%v'", userCreatedFileKey, file.GetFilepathRelativeToVolRoot())
 	}
 
 

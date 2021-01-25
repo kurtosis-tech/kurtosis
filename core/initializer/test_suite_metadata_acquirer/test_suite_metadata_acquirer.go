@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	metadataAcquiringApiContainerTitle     = "Suite Metadata-Acquiring API Container"
-	metadataSendingTestsuiteContainerTitle = "Suite Metadata-Sending Testsuite Container"
+	metadataAcquiringApiContainerTitle     = "Metadata-Acquiring Kurtosis API Container"
+	metadataSendingTestsuiteContainerTitle = "Metadata-Sending Testsuite Container"
 )
 
 func GetTestSuiteMetadata(

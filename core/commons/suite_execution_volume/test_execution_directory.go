@@ -36,7 +36,7 @@ func (executionDir TestExecutionDirectory) CreateServiceDirectory(serviceId stri
 
 	uniqueId := uuid.New()
 	serviceDirname := fmt.Sprintf("%v_%v", serviceId, uniqueId.String())
-	absoluteServiceDirpath := path.Join(executionDir.absoluteDirpath, serviceDirname)
+	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, serviceDirname)
 	if err := ensureDirpathExists(absoluteServiceDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring service dirpath '%v' exists inside test execution dir", absoluteServiceDirpath)
 	}

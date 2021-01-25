@@ -50,6 +50,7 @@ func (cache ArtifactCache) AddArtifact(artifactUrl string) error {
 			"An error occurred hashing artifact URL '%v' to get a filename for the artifact",
 			artifactUrl)
 	}
+	logrus.Debugf("AddArtifact: URL '%v' hashes to '%v'", artifactUrl, artifactUrlHash)
 
 	absoluteFilepath := path.Join(cache.absoluteDirpath, artifactUrlHash)
 	if _, err := os.Stat(absoluteFilepath); err == nil {
@@ -77,6 +78,8 @@ func (cache ArtifactCache) GetArtifact(artifactUrl string) (*Artifact, error) {
 			"An error occurred hashing artifact URL '%v' to get a filename for the artifact",
 			artifactUrl)
 	}
+	logrus.Debugf("GetArtifact: URL '%v' hashes to '%v'", artifactUrl, artifactUrlHash)
+
 	absoluteFilepath := path.Join(cache.absoluteDirpath, artifactUrlHash)
 	relativeFilepath := path.Join(cache.dirpathRelativeToVolRoot, artifactUrlHash)
 	file := newFile(absoluteFilepath, relativeFilepath)

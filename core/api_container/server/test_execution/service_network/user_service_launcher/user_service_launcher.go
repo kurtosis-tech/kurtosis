@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"time"
 )
@@ -68,6 +69,7 @@ func (launcher UserServiceLauncher) Launch(
 	artifactToVolName := map[suite_execution_volume.Artifact]string{}
 	artifactVolToMountpoint := map[string]string{}
 	for artifactUrl, mountDirpath := range artifactUrlToMountDirpath {
+		logrus.Debugf("Hashing artifact URL '%v' to be mounted at '%v'...", artifactUrl, mountDirpath)
 		artifact, err := launcher.artifactCache.GetArtifact(artifactUrl)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)

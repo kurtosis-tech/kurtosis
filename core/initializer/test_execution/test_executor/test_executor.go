@@ -34,12 +34,7 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
  */
 
 const (
-	apiContainerLogFilename = "api-container.log"
-
-	// The name of the directory inside a test execution directory where service file IO will be stored
-	servicesDirname = "services"
-
-	testRunningContainerDescription = "Test-Running Container"
+	testsuiteContainerDescription = "Testsuite Container"
 
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
 )
@@ -171,7 +166,7 @@ func RunTest(
 	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
 	//  still-running container that's exceeded the hard test timeout. Regardless, we want to print these so the user
 	//  gets more information about what's going on, and the user will learn the exact error below
-	banner_printer.PrintContainerLogsWithBanners(dockerManager, testTeardownContext, testsuiteContainerId, log, testRunningContainerDescription)
+	banner_printer.PrintContainerLogsWithBanners(dockerManager, testTeardownContext, testsuiteContainerId, log, testsuiteContainerDescription)
 
 	acceptExitCodeVisitor, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[kurtosisApiExitCode]
 	if !found {
