@@ -92,7 +92,8 @@ func (server ApiContainerServer) Run() int {
 func waitForExitCondition(
 		suiteRegistrationChan chan interface{},
 		termSignalChan chan os.Signal,
-		shutdownChan chan int) int {
+		shutdownChan chan int,
+		mainService ApiContainerServerService) int {
 	select {
 	case <- suiteRegistrationChan:
 		logrus.Debugf("Suite registered")
@@ -113,7 +114,11 @@ func waitForExitCondition(
 		return api_container_exit_codes.ReceivedTermSignal
 	}
 
-	// TODO Move post-suite registration event to here
+	if err := mainService.HandleSuiteRegistrationEvent(); err != nil {
+		logrus.Errorf("Encountered an error sending the testsuite registration event to the main service:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		return api_container_exit_codes.StartupError
+	}
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
 	//  If this becomes problematic, we could add a very long timeout here

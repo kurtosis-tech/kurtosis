@@ -8,9 +8,7 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sync"
 )
@@ -46,12 +44,6 @@ func (service *suiteRegistrationService) RegisterSuite(_ context.Context, _ *emp
 	if service.suiteRegistered {
 		// Don't use stacktrace so we don't leak internal info
 		return nil, errors.New("suite has already been registered")
-	}
-
-	if err := service.mainService.HandleSuiteRegistrationEvent(); err != nil {
-		logrus.Errorf("An error occurred while the main service was handling the suite registration event:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		return nil, errors.New("an internal error occurred while registering the suite")
 	}
 
 	service.suiteRegistered = true
