@@ -1,8 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
 # TBD
-* Refactor ServiceNetwork into several smaller components, and add tests for them
-* Switch API container to new mode-based operation, in preparation for multiple language clients
 * Add protobufs to API container as Git submodule
 * Split the adding of services into two steps:
     1. Register the service and get back the IP and filepaths of generated files
@@ -11,6 +9,13 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Removed the `--custom-env-vars` flag to `kurtosis.sh`/`build_and_run` in favor of `--custom-params`
     * The old way meant that the JSON must be in key-value format, and every time the user added a new custom envvar they'd need to modify their Dockerfile to receive it
     * The new way allows users to pass in arbitrary JSON, and their testsuite 
+
+# 1.6.5
+* Refactor ServiceNetwork into several smaller components, and add tests for them
+* Switch API container to new mode-based operation, in preparation for multiple language clients
+* Make the "Supported Languages" docs page send users to the master branch of language client repos
+* Fix `build_and_run` breaking on empty `"${@}"` variable for Zsh/old Bash users
+* Added explicit quickstart instruction to check out `master` on the client language repo
 
 # 1.6.4
 * Modify CI to fail the build when `ERRO` shows up, to catch bugs that may not present in the exit code

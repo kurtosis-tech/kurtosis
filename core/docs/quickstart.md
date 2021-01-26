@@ -10,6 +10,7 @@ Bootstrap your testsuite
 ------------------------
 1. Visit [the list of supported language clients](https://github.com/kurtosis-tech/kurtosis-docs/blob/master/supported-languages.md)
 1. Pick your favorite, and clone the repo to your local machine
+1. Run `git checkout master`
 1. Run the `bootstrap/bootstrap.sh` script from inside the cloned repo
 1. Follow the language-specific instructions in the new `README.md` file
 

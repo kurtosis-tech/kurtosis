@@ -162,7 +162,8 @@ if "${do_run}"; then
         "isKurtosisCoreDevMode": true
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
-
-    # The generated wrapper will come hardcoded the correct version of the initializer/API images
-    bash "${WRAPPER_FILEPATH}" --custom-params "${go_suite_params_json}" "${@}" "${GO_EXAMPLE_SUITE_IMAGE}"
+    # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
+    # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
+    #  ${1} exists, evaluate ${@}"
+    bash "${WRAPPER_FILEPATH}" --custom-params "${go_suite_params_json}" ${1+"${@}"} "${GO_EXAMPLE_SUITE_IMAGE}"
 fi
