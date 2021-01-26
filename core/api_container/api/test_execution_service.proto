@@ -5,19 +5,23 @@ import "google/protobuf/empty.proto";
 
 service TestExecutionService {
   // Returns detailed information to the testsuite about what it should do during test execution -
-  //  what test it should run, etc.
+  //  namely, what test it should run
+  // This method should be called first by the testsuite
   rpc GetTestExecutionInfo(google.protobuf.Empty) returns (TestExecutionInfo) {};
 
+  // Registers that the testsuite is about to start executing test logic
   rpc RegisterTestExecution(RegisterTestExecutionArgs) returns (google.protobuf.Empty) {};
 
-  // Registers a service but doesn't start the container for it
+  // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
   // Starts a previously-registered service by creating a Docker container for it
   rpc StartService(StartServiceArgs) returns (google.protobuf.Empty) {};
 
+  // Instructs the API container to remove the given service
   rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
 
+  // Instructs the API container to repartition the test network
   rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
 }
 
@@ -48,16 +52,17 @@ message RegisterServiceArgs {
   // If emptystring, the default partition ID will be used
   string partition_id = 2;
 
-  // "Set" of files to generate, identified by a user-created key
+  // "Set" of files that the service needs and the API container should make available upon service start
+  // The key of the map is a user-meaningful identifier
   map<string, bool> files_to_generate = 3;
 }
 
 message RegisterServiceResponse {
-  // Mapping of user-created key in the request -> filepath relative to the suite execution volume root where
+  // Mapping of user-created key in the request -> filepath (RELATIVE to the suite execution volume root!) where
   //  the file was created
   map<string, string> generated_files_relative_filepaths = 1;
 
-  // The IP address that was allocated for the service
+  // The IP address that the service will receive when it starts
   string ip_addr = 2;
 }
 
@@ -74,10 +79,13 @@ message StartServiceArgs {
   // This is a string because it's Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
   map<string, bool> used_ports = 3;
 
+  // String array indicating the command that should be run inside the sevice's container on startup
   repeated string start_cmd_args = 4;
 
+  // Docker environment variables that should be set in the service's container
   map<string, string> docker_env_vars = 5;
 
+  // The full path where the API container should execute the suite execution volume on the service container
   string suite_execution_vol_mnt_dirpath = 6;
 
   // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
@@ -90,6 +98,7 @@ message StartServiceArgs {
 message RemoveServiceArgs {
   string service_id = 1;
 
+  // How long to wait for the service to gracefully stop before hard killing it
   uint64 container_stop_timeout_seconds = 2;
 }
 
@@ -97,10 +106,14 @@ message RemoveServiceArgs {
 //                                          Repartition
 // ==============================================================================================
 message RepartitionArgs {
+  // Definition of partitionId -> services that should be inside the partition after repartitioning
   map<string, PartitionServices> partition_services = 1;
 
+  // Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
   map<string, PartitionConnections> partition_connections = 2;
 
+  // Information about the default inter-partition connection to set up if one is not defined in the
+  //  partition connections map
   PartitionConnectionInfo default_connection = 3;
 }
 
@@ -114,5 +127,6 @@ message PartitionConnections {
 }
 
 message PartitionConnectionInfo {
+  // Whether network traffic is allowed between the two partitions
   bool is_blocked = 1;
 }

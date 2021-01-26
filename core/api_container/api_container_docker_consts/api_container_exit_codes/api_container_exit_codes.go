@@ -16,7 +16,6 @@ const (
 	ShutdownError                      // The API container encountered errors during shutodwn
 	ReceivedTermSignal
 	// =============================== Test Execution exit codes ================================================
-	// NOTE: If you add new test execution exit codes, make sure to modify the test_executor who consumes them!!
 	NoTestExecutionRegistered	// A testsuite registered itself, but then didn't register a test execution
 	TestHitTimeout
 	ErrWaitingForSuiteContainerExit // An error occurred waiting for the testsuite container to exit

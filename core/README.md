@@ -13,9 +13,6 @@ Development Prerequisites
 
 Developer Notes
 ---------------
-### Submodules
-This project uses Git submodules! You must either a) clone this project with `git clone --recurse-submodules` or b) run `git submodule init` and `git submodule update` after you clone. 
-
 ### Docker-in-Docker & MacOS Users
 **High-level:** If you're using MacOS, make sure that your Docker engine's `Resources > File Sharing` preferences are set to allow `/var/folders`
 **Details:** The Kurtosis controller is a Docker image that needs to access the Docker engine it's running in to create other Docker images. This is done via creating "sibling" containers, as detailed in the "Solution" section at the bottom of [this blog post](https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/). However, this requires your Docker engine's communication socket to be bind-mounted inside the controller container. Kurtosis will do this for you, but you'll need to give Docker permission for the Docker socket (which lives at `/var/run/docker.sock`) to be bind-mounted inside the controller container.

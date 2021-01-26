@@ -326,7 +326,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		isPartitioningEnabled bool) (map[string]string, error) {
-	args := api_container_params_json.NewTestExecutionArgs(
+	args, err := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
 		networkId,
 		subnetMask,
@@ -337,6 +337,9 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr.String(),
 		apiContainerIpAddr.String(),
 		isPartitioningEnabled)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
+	}
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing API container test execution args to JSON")
@@ -349,7 +352,10 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 }
 
 func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiContainerEnvVars() (map[string]string, error) {
-	args := api_container_params_json.NewSuiteMetadataSerializationArgs()
+	args, err := api_container_params_json.NewSuiteMetadataSerializationArgs()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the suite metadata serialization args")
+	}
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing API container suite metadata-serializing args to JSON")

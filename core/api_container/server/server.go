@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
+	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"
@@ -23,13 +24,6 @@ const (
 	// If no suite registers within this time, the API container will exit with an error
 	suiteRegistrationTimeout = 10 * time.Second
 )
-
-type serverConfigForMode struct {
-	// The action the testsuite should take when the API container is in the given mode
-	suiteAction bindings.SuiteAction
-
-	serviceFactory func(shutdownChan chan int) ApiContainerServerService
-}
 
 type ApiContainerServer struct {
 	core ApiContainerServerCore
@@ -64,11 +58,14 @@ func (server ApiContainerServer) Run() int {
 	termSignalChan := make(chan os.Signal, 1)
 	signal.Notify(termSignalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
+	grpcServerResultChan := make(chan error)
+
 	go func() {
+		var resultErr error = nil
 		if err := grpcServer.Serve(listener); err != nil {
-			logrus.Errorf("gRPC server returned an error after it was done serving:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			resultErr = stacktrace.Propagate(err, "The gRPC server exited with an error")
 		}
+		grpcServerResultChan <- resultErr
 	}()
 
 	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan)
@@ -76,6 +73,11 @@ func (server ApiContainerServer) Run() int {
 	// NOTE: If we see weirdness with graceful stop, we could use the hard Stop though then we'd need to consider that
 	//  RPC calls which send the shutdown signal might get killed before they can return a response to the client
 	grpcServer.GracefulStop()
+
+	if err := <- grpcServerResultChan; err != nil {
+		logrus.Errorf("gRPC server returned an error after it was done serving:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+	}
 
 	if err := mainService.HandlePostShutdownEvent(); err != nil {
 		logrus.Errorf("Post-shutdown hook on service returned an error:")
