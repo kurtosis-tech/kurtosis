@@ -12,7 +12,7 @@ import (
 
 func ensureDirpathExists(absoluteDirpath string) error {
 	if _, err := os.Stat(absoluteDirpath); os.IsNotExist(err) {
-		if err := os.Mkdir(absoluteDirpath, os.ModeDir); err != nil {
+		if err := os.Mkdir(absoluteDirpath, 0777); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"Directory '%v' in the suite execution volume didn't exist, and an error occurred trying to create it",
