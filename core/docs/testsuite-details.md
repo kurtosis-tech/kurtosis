@@ -25,6 +25,8 @@ Your Kurtosis testsuite CLI in your repo will be a `main` function that does the
 ### Dockerfile
 To package the CLI into a Docker image, your repo will have a Dockerfile under the example implementation folder that defines how to build the image (and if Dockerfiles are alien to you, we recommend [the official Docker docs](https://docs.docker.com/get-started/) as a great place to start). Kurtosis testsuite Dockerfiles are very simple, and simply compile and run the CLI. 
 
+<!-- TODO TODO Update this to reflect the new world order of custom JSON -->
+
 The only bit of complexity is that the Dockerfile will receive Kurtosis-specific parameters as magic environment variables, which will then be passed to your testsuite CLI in the form of flag args. These environment variables are as follows:
 
 * `DEBUGGER_PORT`
