@@ -77,6 +77,7 @@ func (server ApiContainerServer) Run() int {
 	if err := <- grpcServerResultChan; err != nil {
 		logrus.Errorf("gRPC server returned an error after it was done serving:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		exitCode = api_container_exit_codes.ShutdownError
 	}
 
 	if err := mainService.HandlePostShutdownEvent(); err != nil {
@@ -111,6 +112,8 @@ func waitForExitCondition(
 		logrus.Infof("Received term signal '%v' while waiting for suite registration", termSignal)
 		return api_container_exit_codes.ReceivedTermSignal
 	}
+
+	// TODO Move post-suite registration event to here
 
 	// NOTE: We intentionally don't set a timeout here, so the API container could run forever
 	//  If this becomes problematic, we could add a very long timeout here

@@ -30,11 +30,10 @@ func NewSuiteMetadataSerializationArgs() (*SuiteMetadataSerializationArgs, error
 func (args SuiteMetadataSerializationArgs) validate() error {
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()
-	reflectValElem := reflectVal.Elem()
 	for i := 0; i < reflectValType.NumField(); i++ {
 		field := reflectValType.Field(i);
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
-		strVal := reflectValElem.Field(i).String()
+		strVal := reflectVal.Field(i).String()
 		if strings.TrimSpace(strVal) == "" {
 			return stacktrace.NewError("JSON field '%s' is whitespace or empty string", jsonFieldName)
 		}

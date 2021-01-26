@@ -38,6 +38,11 @@ func (m metadataSerializationExitCodeErrorVisitor) VisitReceivedTermSignal() err
 		"a shutdown signal; if this is not expected, it indicates a bug in Kurtosis itself")
 }
 
+func (m metadataSerializationExitCodeErrorVisitor) VisitSerializeNotCalled() error {
+	return stacktrace.NewError("The testsuite container registered itself with the API container, but " +
+		"didn't call serialize; this is a bug in Kurtosis itself")
+}
+
 func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return getWrongModeError("no test execution registered")
 }

@@ -38,6 +38,11 @@ func (t testExecutionExitCodeErrorVisitor) VisitReceivedTermSignal() error {
 		"a shutdown signal; if this is not expected, it indicates a bug in Kurtosis itself")
 }
 
+func (t testExecutionExitCodeErrorVisitor) VisitSerializeNotCalled() error {
+	return stacktrace.NewError("The Kurtosis API exited with a 'serialize not called' error, indicating that " +
+		"the Kurtosis API was in the wrong mode; this is a bug with Kurtosis itself")
+}
+
 func (t testExecutionExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return stacktrace.NewError("The Kurtosis API container timed out waiting for registration of a test execution; " +
 		"this is a bug in Kurtosis itself")

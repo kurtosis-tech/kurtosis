@@ -16,11 +16,17 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
-	"strings"
 	"sync"
+	"time"
+)
+
+const (
+	// Time after which registration that a testsuite must call metadata serialization else an error will be thrown
+	serializationTimeout = 10 * time.Second
 )
 
 type suiteMetadataSerializationService struct {
+	// Mutex guarding hasSerializeBeenCalled
 	mutex                                 *sync.Mutex
 	hasSerializeBeenCalled                bool
 	serializedSuiteMetadataOutputFilepath string
@@ -39,7 +45,14 @@ func newSuiteMetadataSerializationService(
 }
 
 func (service *suiteMetadataSerializationService) HandleSuiteRegistrationEvent() error {
-	// Nothing to do here
+	go func() {
+		time.Sleep(serializationTimeout)
+		service.mutex.Lock()
+		defer service.mutex.Unlock()
+		if !service.hasSerializeBeenCalled {
+			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
+		}
+	}()
 	return nil
 }
 
@@ -79,19 +92,6 @@ func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 	return &emptypb.Empty{}, nil
 }
 
-func validateMetadata(suiteMetadata *bindings.TestSuiteMetadata) error {
-	if suiteMetadata.NetworkWidthBits == 0 {
-		return stacktrace.NewError("Network width bits must be > 0")
-	}
-
-	for testName, _ := range suiteMetadata.TestMetadata {
-		if strings.TrimSpace(testName) == "" {
-			return stacktrace.NewError("Found a test name which was empty or whitespace")
-		}
-	}
-	return nil
-}
-
 func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) test_suite_metadata_acquirer.TestSuiteMetadata {
 	allInitializerAcceptableTestMetadata := map[string]test_suite_metadata_acquirer.TestMetadata{}
 	for testName, apiTestMetadata := range apiSuiteMetadata.TestMetadata {
@@ -127,9 +127,4 @@ func printSuiteMetadataToFile(suiteMetadata test_suite_metadata_acquirer.TestSui
 	}
 
 	return nil
-}
-
-// TODO replace with proper aritfact ID-generating function from kurt-go
-func generateArtifactId(artifactUrl string) string {
-	return artifactUrl
 }
