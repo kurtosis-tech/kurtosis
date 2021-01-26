@@ -91,12 +91,6 @@ api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 if "${do_build}"; then
-    echo "Generating API container code from protobufs..."
-    if ! "${script_dirpath}/regenerate-protobuf-output.sh"; then
-        echo "Error: An error occurred regenerating the protobuf output" >&2
-    fi
-    echo "Successfully generated API container code from protobufs"
-
     echo "Running tests..."
     if ! go test "${root_dirpath}/..."; then
         echo 'Tests failed!'
