@@ -68,7 +68,7 @@ func (server ApiContainerServer) Run() int {
 		grpcServerResultChan <- resultErr
 	}()
 
-	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan)
+	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
 
 	// NOTE: If we see weirdness with graceful stop, we could use the hard Stop though then we'd need to consider that
 	//  RPC calls which send the shutdown signal might get killed before they can return a response to the client

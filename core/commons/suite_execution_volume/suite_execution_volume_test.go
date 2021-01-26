@@ -37,14 +37,14 @@ func TestGetSuiteMetadataFile(t *testing.T) {
 	assert.Equal(t, testStr, string(fileBytes))
 }
 
-func TestCreateSuiteExecutionDirectory(t *testing.T) {
+func TestGetSuiteExecutionDirectory(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
 	testId := "someTest"
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.CreateTestExecutionDirectory(testId)
+	testExDir, err := suiteExVol.GetTestExecutionDirectory(testId)
 	assert.Nil(t, err)
 
 	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId)
@@ -55,12 +55,12 @@ func TestCreateSuiteExecutionDirectory(t *testing.T) {
 	assert.Equal(t, testId, testExDir.dirpathRelativeToVolRoot)
 }
 
-func TestCreateArtifactCache(t *testing.T) {
+func TestGetArtifactCache(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	artifactCache, err := suiteExVol.CreateArtifactCache()
+	artifactCache, err := suiteExVol.GetArtifactCache()
 	assert.Nil(t, err)
 
 	expectedAbsDirpath := path.Join(suiteExVolDirpath, artifactCacheDirname)

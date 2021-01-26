@@ -263,7 +263,7 @@ func main() {
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
-	artifactCache, err := suiteExecutionVolume.CreateArtifactCache()
+	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
 		logrus.Errorf("An error occurred getting the artifact cache: %v", err)
 		os.Exit(failureExitCode)

@@ -154,14 +154,14 @@ func (network ServiceNetwork) RegisterService(
 	}
 
 	// TODO Move this stuff into the UserServiceLauncher???
-	serviceDirectory, err := network.testExecutionDirectory.CreateServiceDirectory(string(serviceId))
+	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the service directory for service with ID '%v'", serviceId)
 	}
 
 	generatedFilesRelativeFilepaths := map[string]string{}
 	for userCreatedFileKey := range filesToGenerate {
-		file, err := serviceDirectory.CreateFile(userCreatedFileKey)
+		file, err := serviceDirectory.GetFile(userCreatedFileKey)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
 		}

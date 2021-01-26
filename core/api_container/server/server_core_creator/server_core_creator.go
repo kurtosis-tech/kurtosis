@@ -77,12 +77,12 @@ func createTestExecutionCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
-	testExecutionDirectory, err := suiteExecutionVolume.CreateTestExecutionDirectory(args.TestName)
+	testExecutionDirectory, err := suiteExecutionVolume.GetTestExecutionDirectory(args.TestName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution directory for test '%v'", args.TestName)
 	}
 
-	artifactCache, err := suiteExecutionVolume.CreateArtifactCache()
+	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache for test '%v'", args.TestName)
 	}

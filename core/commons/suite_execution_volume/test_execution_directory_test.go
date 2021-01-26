@@ -14,19 +14,19 @@ import (
 	"testing"
 )
 
-func TestCreateServiceDirectory(t *testing.T) {
+func TestGetServiceDirectory(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
 	testId := "someTest"
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.CreateTestExecutionDirectory(testId)
+	testExDir, err := suiteExVol.GetTestExecutionDirectory(testId)
 	assert.Nil(t, err)
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.CreateServiceDirectory(serviceId)
+	svcDir, err := testExDir.GetServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	allSvcsDirpath := path.Join(suiteExVolDirpath, testId, allServicesDirname)

@@ -33,7 +33,7 @@ func (volume SuiteExecutionVolume) GetSuiteMetadataFile() *File {
 	return newFile(absoluteFilepath, relativeFilepath)
 }
 
-func (volume SuiteExecutionVolume) CreateTestExecutionDirectory(testExecutionId string) (*TestExecutionDirectory, error) {
+func (volume SuiteExecutionVolume) GetTestExecutionDirectory(testExecutionId string) (*TestExecutionDirectory, error) {
 	relativeDirpath := testExecutionId
 	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
@@ -42,7 +42,7 @@ func (volume SuiteExecutionVolume) CreateTestExecutionDirectory(testExecutionId 
 	return newTestExecutionDirectory(absoluteDirpath, relativeDirpath), nil
 }
 
-func (volume SuiteExecutionVolume) CreateArtifactCache() (*ArtifactCache, error) {
+func (volume SuiteExecutionVolume) GetArtifactCache() (*ArtifactCache, error) {
 	relativeDirpath := artifactCacheDirname
 	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {

@@ -24,7 +24,7 @@ func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 }
 
 
-func (directory ServiceDirectory) CreateFile(filename string) (*File, error) {
+func (directory ServiceDirectory) GetFile(filename string) (*File, error) {
 	uniqueId := uuid.New()
 	uniqueFilename := fmt.Sprintf("%v-%v", filename, uniqueId)
 

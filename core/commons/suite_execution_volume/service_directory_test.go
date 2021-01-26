@@ -13,19 +13,19 @@ import (
 	"testing"
 )
 
-func TestCreateFile(t *testing.T) {
+func TestGetFile(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
 	testId := "someTest"
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.CreateTestExecutionDirectory(testId)
+	testExDir, err := suiteExVol.GetTestExecutionDirectory(testId)
 	assert.Nil(t, err)
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.CreateServiceDirectory(serviceId)
+	svcDir, err := testExDir.GetServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
@@ -33,7 +33,7 @@ func TestCreateFile(t *testing.T) {
 
 	filename := "someFile"
 
-	file, err := svcDir.CreateFile(filename)
+	file, err := svcDir.GetFile(filename)
 	assert.Nil(t, err)
 
 	// Check file was actually created

@@ -2,7 +2,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 # TBD
 * Add protobufs to API container as Git submodule
-* Split the adding of services into two steps:
+* Split the adding of services into two steps, which removes the need for an "IP placeholder" in the start command:
     1. Register the service and get back the IP and filepaths of generated files
     2. Start the service container
 * Modified API container to do both test execution AND suite metadata-printing

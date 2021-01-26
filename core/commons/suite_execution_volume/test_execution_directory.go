@@ -27,7 +27,7 @@ func newTestExecutionDirectory(absoluteDirpath string, dirpathRelativeToVolRoot 
 
 // TODO change types to be ServiceID type
 // Creates a new, unique service directory for a service with the given service ID
-func (executionDir TestExecutionDirectory) CreateServiceDirectory(serviceId string) (*ServiceDirectory, error) {
+func (executionDir TestExecutionDirectory) GetServiceDirectory(serviceId string) (*ServiceDirectory, error) {
 	allServicesAbsoluteDirpath := path.Join(executionDir.absoluteDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside test execution dir", allServicesAbsoluteDirpath)
