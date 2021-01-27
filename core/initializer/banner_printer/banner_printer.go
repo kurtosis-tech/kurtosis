@@ -26,7 +26,7 @@ Args:
 	logFilepath: Filepath of the file containing the container's logs
 */
 func PrintContainerLogsWithBanners(
-		dockerManager docker_manager.DockerManager,
+		dockerManager *docker_manager.DockerManager,
 		context context.Context,
 		containerId string,
 		log *logrus.Logger,
@@ -58,6 +58,6 @@ func PrintContainerLogsWithBanners(
 		log.Errorf("Could not print the test suite container's logs due to the following error when copying log contents:")
 		fmt.Fprintln(log.Out, err)
 	}
-	log.Info("- - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
+	log.Info("- - - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
 }
 

@@ -18,6 +18,13 @@ type TestSuiteMetadata struct {
 	TestMetadata map[string]TestMetadata `json:"testMetadata"`
 }
 
+// Even though the struct's fields must be public for JSON, we create a constructor so that we don't forget
+//  to initialize any fields
+func NewTestSuiteMetadata(networkWidthBits uint32, testMetadata map[string]TestMetadata) *TestSuiteMetadata {
+	return &TestSuiteMetadata{NetworkWidthBits: networkWidthBits, TestMetadata: testMetadata}
+}
+
+// TODO switch to member function?
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
 func validateTestSuiteMetadata(suiteMetadata TestSuiteMetadata) error {
 	if suiteMetadata.NetworkWidthBits == 0 {

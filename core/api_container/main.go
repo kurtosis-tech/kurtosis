@@ -6,17 +6,20 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/execution_codepath"
-	"github.com/kurtosis-tech/kurtosis/api_container/exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/print_suite_metadata_mode"
-	"github.com/kurtosis-tech/kurtosis/api_container/test_execution_mode"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
+	"github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/server_core_creator"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/sirupsen/logrus"
 	"os"
+	"strings"
+)
+
+const (
+	listenProtocol = "tcp"
 )
 
 func main() {
@@ -29,7 +32,10 @@ func main() {
 	logLevelArg := flag.String(
 		"log-level",
 		"info",
-		fmt.Sprintf("Log level to use for the API container (%v)", logrus_log_levels.AcceptableLogLevels),
+		fmt.Sprintf(
+			"Log level to use for the API container (%v)",
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+		),
 	)
 
 	modeArg := flag.String(
@@ -38,6 +44,7 @@ func main() {
 		"Mode that the API container should run in",
 	)
 
+	// NOTE: We take this in as JSON so that each mode can have their own independent args
 	paramsJsonArg := flag.String(
 		"params-json",
 		"",
@@ -48,41 +55,26 @@ func main() {
 
 	logLevel, err := logrus.ParseLevel(*logLevelArg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "An error occurred parsing the log level string: %v\n", err)
-		os.Exit(exit_codes.StartupErrorExitCode)
+		logrus.Errorf("An error occurred parsing the log level string '%v':", *logLevelArg)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(int(api_container_exit_codes.StartupError))
 	}
 	logrus.SetLevel(logLevel)
 
-	paramsJsonBytes := []byte(*paramsJsonArg)
-	mode := *modeArg
-
-	var codepath execution_codepath.ExecutionCodepath
-	switch mode {
-	case api_container_env_vars.SuiteMetadataPrintingMode:
-		var args print_suite_metadata_mode.PrintSuiteMetadataArgs
-		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-			logrus.Errorf("An error occurred deserializing the suite metadata printer args:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(exit_codes.StartupErrorExitCode)
-		}
-		codepath = print_suite_metadata_mode.NewPrintSuiteMetadataCodepath(args)
-	case api_container_env_vars.TestExecutionMode:
-		var args test_execution_mode.TestExecutionArgs
-		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-			logrus.Errorf("An error occurred deserializing the test execution args:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			os.Exit(exit_codes.StartupErrorExitCode)
-		}
-		codepath = test_execution_mode.NewTestExecutionCodepath(args)
-	}
-
-	exitCode, err := codepath.Execute()
+	mode := api_container_modes.ApiContainerMode(*modeArg)
+	paramsJson := *paramsJsonArg
+	serverCore, err := server_core_creator.Create(mode, paramsJson)
 	if err != nil {
-		logrus.Errorf("An error occurred running the codepath for mode '%v':", mode)
+		logrus.Errorf("An error occurred creating the service core for mode '%v' with params JSON '%v':", mode, paramsJson)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-	} else {
-		logrus.Infof("Successfully ran codepath for mode '%v'", mode)
+		os.Exit(int(api_container_exit_codes.StartupError))
 	}
-	os.Exit(exitCode)
+
+	server := server.NewApiContainerServer(serverCore)
+
+	logrus.Info("Running server...")
+	exitCode := server.Run()
+	logrus.Infof("Server exited with exit code '%v'", exitCode)
+	os.Exit(int(exitCode))
 }
 

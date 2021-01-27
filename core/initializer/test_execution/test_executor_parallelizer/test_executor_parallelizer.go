@@ -8,17 +8,16 @@ package test_executor_parallelizer
 import (
 	"context"
 	"fmt"
-	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_constants"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"path"
 	"strings"
 	"sync"
 	"syscall"
@@ -32,13 +31,8 @@ Runs the given tests in parallel, printing:
 Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
-	suiteExecutionVolume: The name of the Docker volume that will be used for all file I/O during test suite execution
-	suiteExecutionVolumeMountDirpath: The mount dirpath, ON THE INITIALIZER, where the suite execution volume is
-		mounted.
 	parallelism: The number of tests to run concurrently
 	allTestParams: A mapping of test_name -> parameters for running the test
-	kurtosisApiImageName: The name of the Docker image that will run the Kurtosis API container
-	apiContainerLogLevel: The log level to use for the Kurtosis API container
 	testSuiteImageName: The name of the Docker image that will be used to run the test controller
 	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
 	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
@@ -50,13 +44,9 @@ Returns:
 func RunInParallelAndPrintResults(
 		executionId uuid.UUID,
 		dockerClient *client.Client,
-		suiteExecutionVolume string,
-		suiteExecutionVolumeMountDirpath string,
 		parallelism uint,
 		allTestParams map[string]ParallelTestParams,
-		kurtosisApiImageName string,
-		apiContainerLogLevel string,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) bool {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -93,10 +83,6 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		dockerClient,
-		suiteExecutionVolume,
-		suiteExecutionVolumeMountDirpath,
-		kurtosisApiImageName,
-		apiContainerLogLevel,
 		testsuiteLauncher)
 
 	logrus.Info("All tests exited")
@@ -113,11 +99,7 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
-		suiteExecutionVolume string,
-		suiteExecutionVolumeMountDirpath string,
-		kurtosisApiImageName string,
-		apiContainerLogLevel string,
-		testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 		/*
 		    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
     sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
@@ -137,10 +119,6 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
-			suiteExecutionVolume,
-			suiteExecutionVolumeMountDirpath,
-			kurtosisApiImageName,
-			apiContainerLogLevel,
 			testsuiteLauncher)
 	}
 	waitGroup.Wait()
@@ -157,26 +135,12 @@ func runTestWorkerGoroutine(
 			testParamsChan chan ParallelTestParams,
 			outputManager *ParallelTestOutputManager,
 			dockerClient *client.Client,
-			suiteExecutionVolume string,
-			suiteExecutionVolumeMountDirpath string,
-			kurtosisApiImageName string,
-			apiContainerLogLevel string,
-			testsuiteLauncher *test_suite_constants.TestsuiteContainerLauncher) {
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
-
-		// The path, relative to the root of the suite execution volume, where the file IO for this test should be stored
-		testExecutionRelativeDirpath := testName
-		testExecutionDirpathOnInitializer := path.Join(suiteExecutionVolumeMountDirpath, testExecutionRelativeDirpath)
-		if err := os.Mkdir(testExecutionDirpathOnInitializer, os.ModeDir); err != nil {
-			emptyOutputReader := &strings.Reader{}
-			executionErr := stacktrace.Propagate(err, "An error occurred creating the directory to contain file IO of test %v", testName)
-			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
-			continue
-		}
 
 		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
 		writingTempFp, err := ioutil.TempFile("", tempFilename)
@@ -202,12 +166,7 @@ func runTestWorkerGoroutine(
 			parentContext,
 			log,
 			dockerClient,
-			suiteExecutionVolume,
-			suiteExecutionVolumeMountDirpath,
-			testExecutionRelativeDirpath,
 			testParams.SubnetMask,
-			kurtosisApiImageName,
-			apiContainerLogLevel,
 			testsuiteLauncher,
 			testsuiteDebuggerHostPortBinding,
 			testName,

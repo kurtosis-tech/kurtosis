@@ -4,6 +4,13 @@ Kurtosis is a framework on top of Docker for writing test suites for any network
 
 Official docs found [here](https://docs.kurtosistech.com) (created from Github Pages on the `docs` directory contents).
 
+Development Prerequisites
+-------------------------
+* Docker engine installed on your machine
+* `protoc` installed (can be installed on Mac with `brew install protobuf`)
+* The Golang extension to `protoc` installed (can be installed on Mac with `brew install protoc-gen-go`)
+* The Golang gRPC extension to `protoc` installed (can be installed on Mac with `brew install protoc-gen-go-grpc`)
+
 Developer Notes
 ---------------
 ### Docker-in-Docker & MacOS Users

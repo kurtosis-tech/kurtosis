@@ -5,11 +5,13 @@
 
 package logrus_log_levels
 
-var AcceptableLogLevels = []string{
-	"trace",
-	"debug",
-	"info",
-	"warn",
-	"error",
-	"fatal",
+import "github.com/sirupsen/logrus"
+
+func GetAcceptableLogLevelStrs() []string {
+	result := []string{}
+	for _, level := range logrus.AllLevels {
+		levelStr := level.String()
+		result = append(result, levelStr)
+	}
+	return result
 }

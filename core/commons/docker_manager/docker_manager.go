@@ -21,6 +21,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -286,6 +287,22 @@ func (manager DockerManager) CreateAndStartContainer(
 	return containerId, nil
 }
 
+// Gets the container's ID on a given network
+// NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we need to use network name here even though
+//  everywhere else in the Docker API uses network ID
+func (manager DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
+	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
+	}
+	allNetworkInfo := resp.NetworkSettings.Networks
+	networkInfo, found := allNetworkInfo[networkName]
+	if !found {
+		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
+	}
+	return networkInfo.IPAddress, nil
+}
+
 /*
 Stops the container with the given container ID, waiting for the provided timeout before forcefully terminating the container
 
@@ -303,7 +320,7 @@ func (manager DockerManager) StopContainer(context context.Context, containerId 
 }
 
 /*
-Kills the container with the given ID, giving it no opportunity to gracefully exit
+Kills the container with the given ID if it's running, giving it no opportunity to gracefully exit
 
 Args:
 	context: The context that the kill runs in
@@ -312,6 +329,11 @@ Args:
 func (manager DockerManager) KillContainer(context context.Context, containerId string) error {
 	err := manager.dockerClient.ContainerKill(context, containerId, dockerKillSignal)
 	if err != nil {
+		// For some stupid reason, ContainerKill throws an error if the container isn't running (even though
+		//  ContainerStop does not)
+		if strings.Contains(err.Error(), "is not running") {
+			return nil
+		}
 		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 	}
 	return nil

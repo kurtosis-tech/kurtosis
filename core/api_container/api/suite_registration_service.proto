@@ -1,0 +1,22 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service SuiteRegistrationService {
+  rpc RegisterSuite(google.protobuf.Empty) returns (SuiteRegistrationResponse) {};
+}
+
+message SuiteRegistrationResponse {
+  SuiteAction suite_action = 1;
+}
+
+// Tells the suite what action it should perform, based on the args that the API container received
+enum SuiteAction {
+  // Indicates that the testsuite should operate in metadata-serializing mode, sending suite metadata to the
+  //  API container
+  SERIALIZE_SUITE_METADATA = 0;
+
+  // Indicates that the testsuite should operate in test-executing mode, running a test
+  EXECUTE_TEST = 1;
+}
