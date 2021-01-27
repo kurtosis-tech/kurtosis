@@ -1,5 +1,18 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+* Refactor API container's API to be defined via Protobuf
+* Split the adding of services into two steps, which removes the need for an "IP placeholder" in the start command:
+    1. Register the service and get back the IP and filepaths of generated files
+    2. Start the service container
+* Modified API container to do both test execution AND suite metadata-printing, so that the API container handles as much logic as possible (and the Kurtosis libraries, written in various languages, handle as little as possible)
+* Modified the contract between Kurtosis Core and the testsuite, such that the testsuite only takes in four Docker environment variables now (notably, all the user-custom params are now passed in via `CUSTOM_PARAMS_JSON` so that they don't need to modify their Dockerfile to pass in more params)
+    * `DEBUGGER_PORT`
+    * `KURTOSIS_API_SOCKET`
+    * `LOG_LEVEL`
+    * `CUSTOM_PARAMS_JSON`
+* To match the new `CUSTOM_PARAMS_JSON`, the `--custom-env-vars` flag to `kurtosis.sh`/`build_and_run` has been replaced with `--custom-params`
+
 # 1.6.5
 * Refactor ServiceNetwork into several smaller components, and add tests for them
 * Switch API container to new mode-based operation, in preparation for multiple language clients

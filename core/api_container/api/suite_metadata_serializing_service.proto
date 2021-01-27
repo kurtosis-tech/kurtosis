@@ -1,0 +1,22 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service SuiteMetadataSerializationService {
+  rpc SerializeSuiteMetadata(TestSuiteMetadata) returns (google.protobuf.Empty) {};
+}
+
+message TestSuiteMetadata {
+  // Mapping of testName -> testMetadata
+  map<string, TestMetadata> test_metadata = 1;
+
+  uint32 network_width_bits = 2;
+}
+
+message TestMetadata {
+  bool is_partitioning_enabled = 1;
+
+  // "Set" of artifact URLs used by the test
+  map<string, bool> used_artifact_urls = 2;
+}

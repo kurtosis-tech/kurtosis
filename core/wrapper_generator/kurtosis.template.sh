@@ -145,7 +145,7 @@ docker run \
     `# Keep these sorted alphabetically` \
     --env CLIENT_ID="${client_id}" \
     --env CLIENT_SECRET="${client_secret}" \
-    --env CUSTOM_ENV_VARS_JSON="${custom_env_vars_json}" \
+    --env CUSTOM_PARAMS_JSON="${custom_params_json}" \
     --env DO_LIST="${do_list}" \
     --env KURTOSIS_API_IMAGE="${API_IMAGE}" \
     --env KURTOSIS_LOG_LEVEL="${kurtosis_log_level}" \
