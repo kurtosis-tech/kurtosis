@@ -47,7 +47,7 @@ func GetTestSuiteMetadata(
 		suiteExecutionVolName,
 		debuggerHostPortBinding)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred running the metadata-acquiring containers")
+		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring containers")
 	}
 	// Safeguard to ensure we don't ever leak containers
 	defer func() {
