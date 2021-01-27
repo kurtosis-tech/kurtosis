@@ -90,6 +90,8 @@ jobs:
           from: build/kurtosis.sh
           to: "s3://${PUBLIC_ACCESS_BUCKET}/wrapper-script/${X_Y_VERSION}/kurtosis.sh"
 
+      # TODO add a step here for uploading the .proto files to the S3 public-access bucket!!! This will be necessary for making Kurtosis upgrades simple
+
 workflows:
   build:
     jobs:

@@ -7,6 +7,7 @@ package networking_sidecar
 
 import (
 	"context"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"reflect"
@@ -33,21 +34,49 @@ func TestGenerateUpdateCmd(t *testing.T) {
 		service2Ip.String() + "," + service1Ip.String(),
 	}
 
-	expectedCommands := [][]string{}
+	expectedCmdsCartesianProduct := [][]string{}
 	for _, ipStrVersion := range ipStrVersions {
 		backgroundChainStr := string(backgroundChain)
 		firstRuleIdxStr := strconv.Itoa(ipTablesFirstRuleIndex)
-		expected := []string{
+
+		expectedCmdPrefix := []string{
 			"iptables", "-F", backgroundChainStr, "&&",
 			"iptables", "-A", backgroundChainStr, "-s", ipStrVersion, "-j", "DROP", "&&",
 			"iptables", "-A", backgroundChainStr, "-d", ipStrVersion, "-j", "DROP", "&&",
-			"iptables", "-R", ipTablesInputChain, firstRuleIdxStr, "-j", backgroundChainStr, "&&",
-			"iptables", "-R", ipTablesOutputChain, firstRuleIdxStr, "-j", backgroundChainStr,
 		}
-		expectedCommands = append(expectedCommands, expected)
+
+		// The order in which the chains show up is also nondeterministic
+		inputChainFirstCmd := make([]string, len(expectedCmdPrefix))
+		copy(inputChainFirstCmd, expectedCmdPrefix)
+		inputChainFirstCmd = append(
+			inputChainFirstCmd,
+			[]string{
+				"iptables", "-R", ipTablesInputChain, firstRuleIdxStr, "-j", backgroundChainStr, "&&",
+				"iptables", "-R", ipTablesOutputChain, firstRuleIdxStr, "-j", backgroundChainStr,
+			}...,
+		)
+		expectedCmdsCartesianProduct = append(expectedCmdsCartesianProduct, inputChainFirstCmd)
+
+		outputChainFirstCmd := make([]string, len(expectedCmdPrefix))
+		copy(outputChainFirstCmd, expectedCmdPrefix)
+		outputChainFirstCmd = append(
+			outputChainFirstCmd,
+			[]string{
+				"iptables", "-R", ipTablesOutputChain, firstRuleIdxStr, "-j", backgroundChainStr, "&&",
+				"iptables", "-R", ipTablesInputChain, firstRuleIdxStr, "-j", backgroundChainStr,
+			}...,
+		)
+		expectedCmdsCartesianProduct = append(expectedCmdsCartesianProduct, outputChainFirstCmd)
 	}
-	matches := reflect.DeepEqual(expectedCommands[0], actual) || reflect.DeepEqual(expectedCommands[1], actual)
-	assert.True(t, matches, "Expected command doesn't match either IP string combination")
+
+	fmt.Println(actual)
+
+	matches := false
+	for _, expectedCmd := range expectedCmdsCartesianProduct {
+		fmt.Println(expectedCmd)
+		matches = matches || reflect.DeepEqual(expectedCmd, actual)
+	}
+	assert.True(t, matches, "Expected command doesn't match any IP/chain Cartesian combo combination")
 }
 
 func TestInitializationDoesAllNecessaryChains(t *testing.T) {

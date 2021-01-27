@@ -35,6 +35,7 @@ INFO[2020-10-15T18:43:27Z] - fixedSizeExampleTest: PASSED
 
 (This output is from the Kurtosis Go client; other languages might be slightly different)
 
+
 If you don't see success messages, check out [the guide for debugging failed tests](./debugging-failed-tests.md) which contains solutions to common issues. If this still doesn't resolve your issue, you can ask for help in [the Kurtosis Discord server](https://discord.gg/6Jjp9c89z9).
 
 Customize your testsuite
@@ -71,36 +72,37 @@ It's not very useful to test just one service at a time; we're using Kurtosis be
 Then, when instantiating the network in `Test.setup`, simply instantiate the dependency first and the dependent second, [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/basic_datastore_and_api_test/basic_datastore_and_api_test_.go#L39).
 
 ### Test Suite
-Now that you have a test, your last step is to package it into a testsuite. A testsuite is simply an implementation of the `TestSuite` interface that yields a set of named tests, [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/testsuite.go). This is also where you'll thread through parameterization, like what Docker image the tests should run with.
+Now that you have a test, you'll need to package it into a testsuite. A testsuite is simply an implementation of the `TestSuite` interface that yields a set of named tests, [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/example_testsuite.go). This is also where you'll thread through parameterization, like what Docker image the tests should run with.
+
+### Test Suite Executor & Configurator
+Finally, you'll need to tell Kurtosis how to initialize your testsuite. All test suites are run via the `TestSuiteExecutor` class, which is configured at construction time with an instance of the `TestSuiteConfigurator` interface. This configurator class is responsible for doing things like setting the log level and constructing the instance of your testsuite from custom params (more on these later), so you'll need to create your own implementation [like this](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/execution_impl/example_testsuite_configurator.go).
 
 ### Main Function
-<!-- TODO TODO Update docs to reflect that users no longer really have to modify their main.go or Dockerfile -->
+With your testsuite configurator complete, your only remaining step is to make sure it's getting used. When you bootstrapped your testsuite repo, you will have received an entrypoint main function that runs the testsuite executor [like this Go example](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/main.go). You will also have received a Dockerfile, for packaging that main CLI into a Docker image ([Go example](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/Dockerfile)). 
 
-With your testsuite complete, your only remaining step is to make sure it's getting used. When you bootstrapped your testsuite repo, you will have received an entrypoint main function that receives several flags, instantiates a testsuite, and passes that to the Kurtosis client [like this Go example](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/main.go). You will also have received a Dockerfile, for packaging that main CLI into a Docker image ([Go example](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/Dockerfile)). What `build_and_run.sh` actually does during its "build" phase is compile the main entrypoint CLI and package it into an executable Docker image. In order for your testsuite to get run, you just need to make sure the main entrypoint CLI is using your testsuite.
+What `build_and_run.sh` actually does during its "build" phase is compile the main entrypoint CLI and package it into an executable Docker image. In order for your testsuite to get run, you just need to make sure this main entrypoint CLI is using your `TestsuiteConfigurator` by slotting in your configurator where indicated.
 
-You now have a custom testsuite running using Kurtosis!
+Congratulations - you now have your custom testsuite running using Kurtosis!
 
 ### Custom Networks
 So far your `Test.setup` method has returned the Kurtosis-provided `NetworkContext`, and your `Test.run` method has consumed it. This can be enough for basic tests, but you'll often want to centralize the network setup logic into a custom object that all your tests will use. Kurtosis allows this by letting your `Test.setup` method return any implementation of the `Network` marker interface; the `Test.run` will then receive that same `Network` object as an argument. To see this in action, the Go example testsuite has [this custom `Network` object](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/networks_impl/test_network.go), which makes the `Test.setup` of complex networks [a whole lot simpler](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/advanced_network_test/advanced_network_test_.go#L34) by encapsulating all the `DockerContainerInitializer` instantiation and waiting-for-availability.
 
 ### Custom Parameterization
-<!-- TODO TODO TODO TODO Update to reflect that custom parameters are now arbitrary JSON -->
+You'll notice that the `TestsuiteConfigurator.parseParamsAndCreateSuite` method takes in a "params JSON" argument. This is arbitrary data that you can pass in to customize your testsuite's behaviour (e.g. which tests get run, or which Docker images get used). The data you pass in here is up to you, and is set via the `--custom-params` flag when calling `build_and_run.sh`. To see this in action, look at how [the example parses the args to a custom object that it uses to instantiate the testsuite](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/execution_impl/example_testsuite_configurator.go).
 
-You'll notice that one of the flags that the example entrypoint CLI above receives is `serviceImageArg`, which defines the name of the Docker image to use in the services in the network. This a **custom parameter** - a parameter not used by Kurtosis itself but by the testsuite. Your testsuite might also need additional parameters. To pipe these through, you'll need to:
+### Visual Overview
+To provide a visual recap of everything you've done, here's a diagram showing the control flow between components:
 
-1. Add another flag to the main CLI and pass it to your `TestSuite` object's constructor
-1. Modify the Dockerfile to set the flag value using an environment variable
-
-These environment variables in the Dockerfile might seem like magic, but they're just set by Kurtosis when it launches the Docker image containing your testsuite. You'll need to tell Kurtosis what values to use for your custom flags, which can be done at time of running `build_and_run` with the `--custom-env-vars` flag to `build_and_run.sh`. For example, if your Dockerfile uses the `MY_CUSTOM_VAR` environment variable then you might call `build_and_run.sh all --custom-env-vars '{"MY_CUSTOM_ENV_VAR": 5}'`.
+![](./images/testsuite-architecture.png)
 
 Next steps
 ----------
 Now that you have your own custom testsuite running, you can:
 
 * Visit [the "advanced usage" page](./advanced-usage.md) to learn about writing more complicated tests
+* Head over to [the "Building & Running" documentation](./building-and-running.md) to see detailed information about building and running your testsuite
 * [Learn about debugging failed tests](./debugging-failed-tests.md)
 * Take a look at [the testsuite for the Avalanche (AVAX) token](https://github.com/ava-labs/avalanche-testing), a real-world Kurtosis use-case 
-* Visit [the Kurtosis testsuite docs](./testsuite-details.md) to learn more about what's in a testsuite and how to customize it to your needs
 * Check out [the CI documentation](./running-in-ci.md) to learn how to run Kurtosis in your CI environment
 * Take a step back and visit [the Kurtosis architecture docs](./architecture.md) to get the big picture
 * Pop into [the Kurtosis Discord](https://discord.gg/6Jjp9c89z9) to join the community!
