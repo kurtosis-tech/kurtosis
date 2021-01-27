@@ -35,6 +35,7 @@ INFO[2020-10-15T18:43:27Z] - fixedSizeExampleTest: PASSED
 
 (This output is from the Kurtosis Go client; other languages might be slightly different)
 
+
 If you don't see success messages, check out [the guide for debugging failed tests](./debugging-failed-tests.md) which contains solutions to common issues. If this still doesn't resolve your issue, you can ask for help in [the Kurtosis Discord server](https://discord.gg/6Jjp9c89z9).
 
 Customize your testsuite
@@ -81,7 +82,7 @@ With your testsuite configurator complete, your only remaining step is to make s
 
 What `build_and_run.sh` actually does during its "build" phase is compile the main entrypoint CLI and package it into an executable Docker image. In order for your testsuite to get run, you just need to make sure this main entrypoint CLI is using your `TestsuiteConfigurator` by slotting in your configurator where indicated.
 
-You now have a custom testsuite running using Kurtosis!
+Congratulations - you now have your custom testsuite running using Kurtosis!
 
 ### Custom Networks
 So far your `Test.setup` method has returned the Kurtosis-provided `NetworkContext`, and your `Test.run` method has consumed it. This can be enough for basic tests, but you'll often want to centralize the network setup logic into a custom object that all your tests will use. Kurtosis allows this by letting your `Test.setup` method return any implementation of the `Network` marker interface; the `Test.run` will then receive that same `Network` object as an argument. To see this in action, the Go example testsuite has [this custom `Network` object](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/networks_impl/test_network.go), which makes the `Test.setup` of complex networks [a whole lot simpler](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/advanced_network_test/advanced_network_test_.go#L34) by encapsulating all the `DockerContainerInitializer` instantiation and waiting-for-availability.
@@ -89,14 +90,19 @@ So far your `Test.setup` method has returned the Kurtosis-provided `NetworkConte
 ### Custom Parameterization
 You'll notice that the `TestsuiteConfigurator.parseParamsAndCreateSuite` method takes in a "params JSON" argument. This is arbitrary data that you can pass in to customize your testsuite's behaviour (e.g. which tests get run, or which Docker images get used). The data you pass in here is up to you, and is set via the `--custom-params` flag when calling `build_and_run.sh`. To see this in action, look at how [the example parses the args to a custom object that it uses to instantiate the testsuite](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/execution_impl/example_testsuite_configurator.go).
 
+### Visual Overview
+To provide a visual recap of everything you've done, here's a diagram showing the control flow between components:
+
+![](./images/testsuite-architecture.png)
+
 Next steps
 ----------
 Now that you have your own custom testsuite running, you can:
 
 * Visit [the "advanced usage" page](./advanced-usage.md) to learn about writing more complicated tests
+* Head over to [the "Building & Running" documentation](./building-and-running.md) to see detailed information about building and running your testsuite
 * [Learn about debugging failed tests](./debugging-failed-tests.md)
 * Take a look at [the testsuite for the Avalanche (AVAX) token](https://github.com/ava-labs/avalanche-testing), a real-world Kurtosis use-case 
-* Visit [the Kurtosis testsuite docs](./testsuite-details.md) to learn more about what's in a testsuite and how to customize it to your needs
 * Check out [the CI documentation](./running-in-ci.md) to learn how to run Kurtosis in your CI environment
 * Take a step back and visit [the Kurtosis architecture docs](./architecture.md) to get the big picture
 * Pop into [the Kurtosis Discord](https://discord.gg/6Jjp9c89z9) to join the community!
