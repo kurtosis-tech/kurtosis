@@ -7,8 +7,7 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-# TODO CHANGE BACK BEFORE MERGE TO DEVELOP
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:mieubrisse_extracting-client-2"
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
