@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.7.0
 * Refactor API container's API to be defined via Protobuf
 * Split the adding of services into two steps, which removes the need for an "IP placeholder" in the start command:
     1. Register the service and get back the IP and filepaths of generated files
