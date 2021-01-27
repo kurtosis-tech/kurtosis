@@ -23,21 +23,7 @@ Your Kurtosis testsuite CLI in your repo will be a `main` function that does the
 4. **Test Execution:** Calling `Client.run` with the Kurtosis arguments and `TestSuite` object.
 
 ### Dockerfile
-To package the CLI into a Docker image, your repo will have a Dockerfile under the example implementation folder that defines how to build the image (and if Dockerfiles are alien to you, we recommend [the official Docker docs](https://docs.docker.com/get-started/) as a great place to start). Kurtosis testsuite Dockerfiles are very simple, and simply compile and run the CLI. 
-
-<!-- TODO TODO Update this to reflect the new world order of custom JSON -->
-
-The only bit of complexity is that the Dockerfile will receive Kurtosis-specific parameters as magic environment variables, which will then be passed to your testsuite CLI in the form of flag args. These environment variables are as follows:
-
-* `DEBUGGER_PORT`
-* `KURTOSIS_API_IP`
-* `LOG_LEVEL`
-* `METADATA_FILEPATH`
-* `MODE`
-* `SERVICES_RELATIVE_DIRPATH`
-* `TEST`
-
-With the exception of the log level and debugger port, all of these will be passed as-is to the `Client.run` call. If you modify the Dockerfile, you will need to make sure that you continue to receive these variables as flags in your CLI main function.
+To package the CLI into a Docker image, your repo will have a Dockerfile under the example implementation folder that defines how to build the image (and if Dockerfiles are alien to you, we recommend [the official Docker docs](https://docs.docker.com/get-started/) as a great place to start). Kurtosis testsuite Dockerfiles are very simple, and simply compile and run the CLI; you'll likely only ever need to modify the Dockerfile when adding extra build logic or when [running your testsuite with a debugger](./debugging-failed-tests.md).
 
 ### TestSuite
 Every Kurtosis client's `Client.Run` function requires a `TestSuite` object that contains details about:
@@ -72,9 +58,9 @@ As the script's help text mentions, the execution of the testsuite can be modifi
 
 Customizing Testsuite Execution
 -------------------------------
-TODO TODO TODO Update to reflect that custom parameters are now passed in as arbitrary JSON
-
 You'll very likely want to customize the behaviour of your testsuite based on information passed in when you execute Kurtosis (e.g. have a `--fast-tests-only` flag to your CLI's main function that runs a subset of the tests in your suite). To do so, you'll need to:
+
+<!-- TODO TODO TODO update to reflect that Kurtosis Go & friends now take in custom params JSON! -->
 
 1. Add the appropriate flags to your CLI's main function
 1. Edit the `Dockerfile` that wraps your testsuite CLI to set the flag using a Docker environment variable (e.g. `--fast-tests-only=${FAST_TESTS_ONLY}`)

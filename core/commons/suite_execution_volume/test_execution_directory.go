@@ -25,7 +25,6 @@ func newTestExecutionDirectory(absoluteDirpath string, dirpathRelativeToVolRoot 
 	return &TestExecutionDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
-// TODO change types to be ServiceID type
 // Creates a new, unique service directory for a service with the given service ID
 func (executionDir TestExecutionDirectory) GetServiceDirectory(serviceId string) (*ServiceDirectory, error) {
 	allServicesAbsoluteDirpath := path.Join(executionDir.absoluteDirpath, allServicesDirname)

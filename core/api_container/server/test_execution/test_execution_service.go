@@ -26,9 +26,10 @@ const (
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
-	// When shutting down the service network, the maximum amount of time we'll give a container to stop gracefully
+	// TODO Don't bother gracefully shutting down - just kill
+	// When destroying the service network, the maximum amount of time we'll give a container to stop gracefully
 	//  before hard-killing it
-	containerStopTimeout = 10 * time.Second
+	postShutdownContainerStopTimeout = 10 * time.Second
 )
 
 
@@ -79,14 +80,14 @@ func (service *testExecutionService) HandlePostShutdownEvent() error {
 	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
 	//  the service network hangs forever trying to shutdown
 	logrus.Info("gRPC server is shut down; destroying service network...")
-	if err := service.serviceNetwork.Destroy(context.Background(), containerStopTimeout); err != nil {
+	if err := service.serviceNetwork.Destroy(context.Background(), postShutdownContainerStopTimeout); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the service network on shutdown")
 	}
 	logrus.Info("Service network destroyed successfully")
 	return nil
 }
 
-func (service *testExecutionService) GetTestExecutionInfo(ctx context.Context, empty *emptypb.Empty) (*bindings.TestExecutionInfo, error) {
+func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *emptypb.Empty) (*bindings.TestExecutionInfo, error) {
 	result := &bindings.TestExecutionInfo{
 		TestName: service.testName,
 	}
@@ -208,6 +209,7 @@ func (service *testExecutionService) RemoveService(ctx context.Context, args *bi
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
 
 	if err := service.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
+		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 	return &emptypb.Empty{}, nil

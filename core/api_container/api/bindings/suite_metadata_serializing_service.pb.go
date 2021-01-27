@@ -35,6 +35,7 @@ type TestSuiteMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Mapping of testName -> testMetadata
 	TestMetadata     map[string]*TestMetadata `protobuf:"bytes,1,rep,name=test_metadata,json=testMetadata,proto3" json:"test_metadata,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	NetworkWidthBits uint32                   `protobuf:"varint,2,opt,name=network_width_bits,json=networkWidthBits,proto3" json:"network_width_bits,omitempty"`
 }

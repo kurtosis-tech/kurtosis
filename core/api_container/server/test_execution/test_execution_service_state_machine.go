@@ -27,20 +27,11 @@ var stateOrder = []serviceState{
 	testsuiteExited,
 }
 
-type stateAssertion func(expected serviceState, actual serviceState) bool
-var inStateAssertion = func(a serviceState, b serviceState) bool {
-	return a == b
-}
-var notInStateAssertion = func(a serviceState, b serviceState) bool {
-	return a != b
-}
-
 type testExecutionServiceStateMachine struct {
 	mutex *sync.Mutex
 	stateIdx int
 }
 
-// TODO Write tests for me!!!
 func newTestExecutionServiceStateMachine() *testExecutionServiceStateMachine {
 	if len(stateOrder) == 0 {
 		panic("Cannot construct state machine with no states!")

@@ -137,12 +137,13 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		ctx,
 		dockerManager,
 		kurtosisApiContainerId,
-		func() bool { return functionCompletedSuccessfully })
+		func() bool { return functionCompletedSuccessfully },
+	)
 	logrus.Debug("Successfully launched the Kurtosis API container")
 
 	apiContainerIp, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, kurtosisApiContainerId)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred getting the API container's IP on the bridge network")
+		return "", "", stacktrace.Propagate(err, "An error occurred getting the API container's IP on network '%v'", bridgeNetworkName)
 	}
 
 	testsuiteEnvVars, err := launcher.generateTestSuiteEnvVars(apiContainerIp)
@@ -174,7 +175,8 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		ctx,
 		dockerManager,
 		testsuiteContainerId,
-		func() bool { return functionCompletedSuccessfully})
+		func() bool { return functionCompletedSuccessfully},
+	)
 	logrus.Debug("Successfully launched testsuite container to send metadata to Kurtosis API container")
 
 	functionCompletedSuccessfully = true
@@ -232,7 +234,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		ctx,
 		dockerManager,
 		suiteContainerId,
-		func() bool { return functionCompletedSuccessfully })
+		func() bool { return functionCompletedSuccessfully },
+	)
 	log.Infof("Successfully created test-running testsuite container with debugger port bound to host port %v", debuggerPortBinding)
 
 
@@ -294,8 +297,8 @@ NOTE: exactly one of metadata_filepath or test_name must be non-empty!
 */
 func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiIp string) (map[string]string, error) {
 	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPort.Int())
-	// TODO Use ListenProtocol
 	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
+	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
 		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
 		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
@@ -340,10 +343,12 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
 	}
+
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing API container test execution args to JSON")
 	}
+
 	argsStr := string(argsBytes)
 	return genApiContainerEnvVars(
 		launcher.kurtosisApiLogLevel,
@@ -356,10 +361,12 @@ func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiConta
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the suite metadata serialization args")
 	}
+
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing API container suite metadata-serializing args to JSON")
 	}
+
 	argsStr := string(argsBytes)
 	return genApiContainerEnvVars(
 		launcher.kurtosisApiLogLevel,
@@ -384,5 +391,7 @@ func killContainerIfNotFunctionSuccess(
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You will need to stop the testsuite container with ID '%v' manually!", containerId)
 		}
+	} else {
+		logrus.Debugf("Skipping killing container '%v' because function completed successfully", containerId)
 	}
 }

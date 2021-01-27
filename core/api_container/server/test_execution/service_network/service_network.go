@@ -363,7 +363,7 @@ func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout
 func (network *ServiceNetwork) removeServiceWithoutMutex(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
-		// TODO allow choice between Kill and Stop
+		// TODO PERF: allow choice between Kill and Stop so that destroy can kill everything immediately
 		containerStopTimeout time.Duration) error {
 	serviceIp, foundIpAddr := network.serviceIps[serviceId]
 	if !foundIpAddr {

@@ -34,8 +34,11 @@ const _ = proto.ProtoPackageIsVersion4
 type SuiteAction int32
 
 const (
+	// Indicates that the testsuite should operate in metadata-serializing mode, sending suite metadata to the
+	//  API container
 	SuiteAction_SERIALIZE_SUITE_METADATA SuiteAction = 0
-	SuiteAction_EXECUTE_TEST             SuiteAction = 1
+	// Indicates that the testsuite should operate in test-executing mode, running a test
+	SuiteAction_EXECUTE_TEST SuiteAction = 1
 )
 
 // Enum value maps for SuiteAction.

@@ -145,7 +145,8 @@ type RegisterServiceArgs struct {
 	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	// If emptystring, the default partition ID will be used
 	PartitionId string `protobuf:"bytes,2,opt,name=partition_id,json=partitionId,proto3" json:"partition_id,omitempty"`
-	// "Set" of files to generate, identified by a user-created key
+	// "Set" of files that the service needs and the API container should make available upon service start
+	// The key of the map is a user-meaningful identifier
 	FilesToGenerate map[string]bool `protobuf:"bytes,3,rep,name=files_to_generate,json=filesToGenerate,proto3" json:"files_to_generate,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 }
 
@@ -207,10 +208,10 @@ type RegisterServiceResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Mapping of user-created key in the request -> filepath relative to the suite execution volume root where
+	// Mapping of user-created key in the request -> filepath (RELATIVE to the suite execution volume root!) where
 	//  the file was created
 	GeneratedFilesRelativeFilepaths map[string]string `protobuf:"bytes,1,rep,name=generated_files_relative_filepaths,json=generatedFilesRelativeFilepaths,proto3" json:"generated_files_relative_filepaths,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// The IP address that was allocated for the service
+	// The IP address that the service will receive when it starts
 	IpAddr string `protobuf:"bytes,2,opt,name=ip_addr,json=ipAddr,proto3" json:"ip_addr,omitempty"`
 }
 
@@ -273,10 +274,13 @@ type StartServiceArgs struct {
 	DockerImage string `protobuf:"bytes,2,opt,name=docker_image,json=dockerImage,proto3" json:"docker_image,omitempty"`
 	// "Set" of ports that the running service will listen on
 	// This is a string because it's Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
-	UsedPorts                   map[string]bool   `protobuf:"bytes,3,rep,name=used_ports,json=usedPorts,proto3" json:"used_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
-	StartCmdArgs                []string          `protobuf:"bytes,4,rep,name=start_cmd_args,json=startCmdArgs,proto3" json:"start_cmd_args,omitempty"`
-	DockerEnvVars               map[string]string `protobuf:"bytes,5,rep,name=docker_env_vars,json=dockerEnvVars,proto3" json:"docker_env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	SuiteExecutionVolMntDirpath string            `protobuf:"bytes,6,opt,name=suite_execution_vol_mnt_dirpath,json=suiteExecutionVolMntDirpath,proto3" json:"suite_execution_vol_mnt_dirpath,omitempty"`
+	UsedPorts map[string]bool `protobuf:"bytes,3,rep,name=used_ports,json=usedPorts,proto3" json:"used_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	// String array indicating the command that should be run inside the sevice's container on startup
+	StartCmdArgs []string `protobuf:"bytes,4,rep,name=start_cmd_args,json=startCmdArgs,proto3" json:"start_cmd_args,omitempty"`
+	// Docker environment variables that should be set in the service's container
+	DockerEnvVars map[string]string `protobuf:"bytes,5,rep,name=docker_env_vars,json=dockerEnvVars,proto3" json:"docker_env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// The full path where the API container should execute the suite execution volume on the service container
+	SuiteExecutionVolMntDirpath string `protobuf:"bytes,6,opt,name=suite_execution_vol_mnt_dirpath,json=suiteExecutionVolMntDirpath,proto3" json:"suite_execution_vol_mnt_dirpath,omitempty"`
 	// Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
 	FilesArtifactMountDirpaths map[string]string `protobuf:"bytes,7,rep,name=files_artifact_mount_dirpaths,json=filesArtifactMountDirpaths,proto3" json:"files_artifact_mount_dirpaths,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
@@ -370,7 +374,8 @@ type RemoveServiceArgs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ServiceId                   string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	ServiceId string `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
+	// How long to wait for the service to gracefully stop before hard killing it
 	ContainerStopTimeoutSeconds uint64 `protobuf:"varint,2,opt,name=container_stop_timeout_seconds,json=containerStopTimeoutSeconds,proto3" json:"container_stop_timeout_seconds,omitempty"`
 }
 
@@ -428,9 +433,13 @@ type RepartitionArgs struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PartitionServices    map[string]*PartitionServices    `protobuf:"bytes,1,rep,name=partition_services,json=partitionServices,proto3" json:"partition_services,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// Definition of partitionId -> services that should be inside the partition after repartitioning
+	PartitionServices map[string]*PartitionServices `protobuf:"bytes,1,rep,name=partition_services,json=partitionServices,proto3" json:"partition_services,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
 	PartitionConnections map[string]*PartitionConnections `protobuf:"bytes,2,rep,name=partition_connections,json=partitionConnections,proto3" json:"partition_connections,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	DefaultConnection    *PartitionConnectionInfo         `protobuf:"bytes,3,opt,name=default_connection,json=defaultConnection,proto3" json:"default_connection,omitempty"`
+	// Information about the default inter-partition connection to set up if one is not defined in the
+	//  partition connections map
+	DefaultConnection *PartitionConnectionInfo `protobuf:"bytes,3,opt,name=default_connection,json=defaultConnection,proto3" json:"default_connection,omitempty"`
 }
 
 func (x *RepartitionArgs) Reset() {
@@ -586,6 +595,7 @@ type PartitionConnectionInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Whether network traffic is allowed between the two partitions
 	IsBlocked bool `protobuf:"varint,1,opt,name=is_blocked,json=isBlocked,proto3" json:"is_blocked,omitempty"`
 }
 
@@ -1061,14 +1071,18 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TestExecutionServiceClient interface {
 	// Returns detailed information to the testsuite about what it should do during test execution -
-	//  what test it should run, etc.
+	//  namely, what test it should run
+	// This method should be called first by the testsuite
 	GetTestExecutionInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestExecutionInfo, error)
+	// Registers that the testsuite is about to start executing test logic
 	RegisterTestExecution(ctx context.Context, in *RegisterTestExecutionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Registers a service but doesn't start the container for it
+	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(ctx context.Context, in *RegisterServiceArgs, opts ...grpc.CallOption) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
 	StartService(ctx context.Context, in *StartServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Instructs the API container to remove the given service
 	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Instructs the API container to repartition the test network
 	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -1137,14 +1151,18 @@ func (c *testExecutionServiceClient) Repartition(ctx context.Context, in *Repart
 // TestExecutionServiceServer is the server API for TestExecutionService service.
 type TestExecutionServiceServer interface {
 	// Returns detailed information to the testsuite about what it should do during test execution -
-	//  what test it should run, etc.
+	//  namely, what test it should run
+	// This method should be called first by the testsuite
 	GetTestExecutionInfo(context.Context, *emptypb.Empty) (*TestExecutionInfo, error)
+	// Registers that the testsuite is about to start executing test logic
 	RegisterTestExecution(context.Context, *RegisterTestExecutionArgs) (*emptypb.Empty, error)
-	// Registers a service but doesn't start the container for it
+	// Registers a service with the API container but doesn't start the container for it
 	RegisterService(context.Context, *RegisterServiceArgs) (*RegisterServiceResponse, error)
 	// Starts a previously-registered service by creating a Docker container for it
 	StartService(context.Context, *StartServiceArgs) (*emptypb.Empty, error)
+	// Instructs the API container to remove the given service
 	RemoveService(context.Context, *RemoveServiceArgs) (*emptypb.Empty, error)
+	// Instructs the API container to repartition the test network
 	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 }
 
