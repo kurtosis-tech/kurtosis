@@ -3,6 +3,8 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 # TBD
 * Update docs to reflect the changes that came with v1.7.0
 * Remove "Testsuite Details" doc (which contained a bunch of redundant information) in favor of "Building & Running" (which now distills the unique information that "Testsuite Details" used to contain)
+* Remove the `isPortFree` check in `FreeHostPortProvider` because it doesn't actually do what we thought - it runs on the initializer, so `isPortFree` had actually been checking if a port was free on the _initializer_ rather than the host
+    * More details are available in https://github.com/kurtosis-tech/kurtosis-core/issues/152
 
 # 1.7.0
 * Refactor API container's API to be defined via Protobuf

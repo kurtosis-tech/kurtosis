@@ -8,7 +8,6 @@ package test_suite_runner
 import (
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
-	"net"
 	"strconv"
 )
 
@@ -58,14 +57,18 @@ func NewFreeHostPortBindingSupplier(interfaceIpAddr string, protocol string, por
 func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
 	for portInt := tracker.portRangeStart; portInt < tracker.portRangeEnd; portInt++ {
 		if _, found := tracker.takenPorts[portInt]; !found {
-			if isPortFree(tracker.interfaceIpAddr, tracker.protocol, portInt) {
-				binding := nat.PortBinding{
-					HostIP:   tracker.interfaceIpAddr,  // I guess TCP is the default???
-					HostPort: strconv.Itoa(portInt),
-				}
-				tracker.takenPorts[portInt] = true
-				return binding, nil
+			/*
+			NOTE: we don't do a net.Listen check to see if the port is actually free before returning because this code
+			runs on the INITIALIZER, so we'd only be checking if that port is free on the initializer (not
+			the host). Using the host networking ( https://docs.docker.com/network/host/ ) might seem like
+			an option, but it's not available on Docker for Mac and it might mess up other things besides.
+			 */
+			binding := nat.PortBinding{
+				HostIP:   tracker.interfaceIpAddr,  // I guess TCP is the default???
+				HostPort: strconv.Itoa(portInt),
 			}
+			tracker.takenPorts[portInt] = true
+			return binding, nil
 		}
 	}
 
@@ -86,13 +89,4 @@ func (hostPortTracker FreeHostPortBindingSupplier) ReleasePort(port int) {
 
 func isPortValid(port int) bool {
 	return port >= validPortRangeStart && port <= validPortRangeEnd
-}
-
-func isPortFree(interfaceIpAddr string, protocol string, port int) bool {
-	ln, err := net.Listen(protocol, interfaceIpAddr + ":" + strconv.Itoa(port))
-	if err != nil {
-		return false
-	}
-	_ = ln.Close()
-	return true
 }
