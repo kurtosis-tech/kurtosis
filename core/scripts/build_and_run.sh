@@ -146,6 +146,13 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
+    echo "Pulling latest version of example Go testsuite image..."
+    if ! docker pull "${GO_EXAMPLE_SUITE_IMAGE}"; then
+        echo "WARN: An error occurred pulling the latest version of the example Go testsuite image (${GO_EXAMPLE_SUITE_IMAGE}); you may be running an out-of-date version" >&2
+    else
+        echo "Successfully pulled latest version of example Go testsuite image"
+    fi
+
     # --------------------- Kurtosis Go environment variables ---------------------
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
