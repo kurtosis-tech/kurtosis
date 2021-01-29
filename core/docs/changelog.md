@@ -4,6 +4,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 * Update docs to reflect the changes that came with v1.7.0
 * Remove "Testsuite Details" doc (which contained a bunch of redundant information) in favor of "Building & Running" (which now distills the unique information that "Testsuite Details" used to contain)
 * Pull down latest version of Go suite, so we're not using stale versions when running
+* Remove the `isPortFree` check in `FreeHostPortProvider` because it doesn't actually do what we thought - it runs on the initializer, so `isPortFree` had actually been checking if a port was free on the _initializer_ rather than the host
 
 # 1.7.0
 * Refactor API container's API to be defined via Protobuf
