@@ -21,6 +21,10 @@ const (
 	PASSED  testStatus = "PASSED"
 	FAILED  testStatus = "FAILED"
 	ERRORED testStatus = "ERRORED" // Indicates an error during setup that prevented the test from running
+
+	ansiGoodResultColor = "\u001b[32;1m"
+	ansiBadResultColor = "\u001b[31;1m"
+	ansiResetColor = "\u001b[0m"
 )
 
 // =============================== Parallel Test Output =========================================
@@ -159,12 +163,12 @@ func (manager *ParallelTestOutputManager) logTestOutput(
 	status := getTestStatusFromResult(executionErr, testPassed)
 	switch status {
 	case ERRORED:
-		outputLogger.Errorf("Test %v %v", testName, status)
-		outputLogger.Errorf("Error reason: %v", executionErr)
+		outputLogger.Error("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
+		outputLogger.Error(executionErr)
 	case PASSED:
-		outputLogger.Infof("Test %v %v", testName, status)
+		outputLogger.Infof("Test " + testName + " " + colorizeStr(string(status), ansiGoodResultColor))
 	case FAILED:
-		outputLogger.Errorf("Test %v %v", testName, status)
+		outputLogger.Errorf("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
 	}
 }
 
@@ -238,12 +242,16 @@ func (manager *ParallelTestOutputManager) printSummary() {
 		executionErr := output.executionErr
 		status := getTestStatusFromResult(executionErr, passed)
 
-		logStr := fmt.Sprintf("- %v: %v", testName, status)
+		var colorStr string
+		var logFunc func(args ...interface{})
 		if status == ERRORED || status == FAILED {
-			outputLogger.Error(logStr)
+			colorStr = ansiBadResultColor
+			logFunc = outputLogger.Error
 		} else {
-			outputLogger.Info(logStr)
+			colorStr = ansiGoodResultColor
+			logFunc = outputLogger.Info
 		}
+		logFunc("- " + testName + ": " + colorizeStr(string(status), colorStr))
 	}
 
 	erroneousSystemLogs := manager.interceptor.getCapturedMessages()
@@ -328,3 +336,6 @@ func logErroneousSystemLogging(log *logrus.Logger, capturedErroneousMessages []e
 	}
 }
 
+func colorizeStr(str string, ansiColorStr string) string {
+	return ansiColorStr + str + ansiResetColor
+}
