@@ -95,14 +95,14 @@ To provide a visual recap of everything you've done, here's a diagram showing th
 
 ![](./images/testsuite-architecture.png)
 
-Next steps
-----------
-Now that you have your own custom testsuite running, you can:
-
-* Visit [the "advanced usage" page](./advanced-usage.md) to learn about writing more complicated tests
-* Head over to [the "Building & Running" documentation](./building-and-running.md) to see detailed information about building and running your testsuite
-* [Learn about debugging failed tests](./debugging-failed-tests.md)
-* Take a look at [the testsuite for the Avalanche (AVAX) token](https://github.com/ava-labs/avalanche-testing), a real-world Kurtosis use-case 
-* Check out [the CI documentation](./running-in-ci.md) to learn how to run Kurtosis in your CI environment
-* Take a step back and visit [the Kurtosis architecture docs](./architecture.md) to get the big picture
-* Pop into [the Kurtosis Discord](https://discord.gg/6Jjp9c89z9) to join the community!
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 

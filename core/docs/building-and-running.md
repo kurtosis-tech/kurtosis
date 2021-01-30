@@ -13,11 +13,14 @@ Building the testsuite image and running it is such a common task that calling `
 
 Because `build_and_run.sh` will call down to `kurtosis.sh` and `kurtosis.sh` has arguments of its own, any additional arguments after the arg telling `build_and_run.sh` what to do will be passed as-is to `kurtosis.sh`. As an example, you can call `build_and_run.sh all --help` to signify that a) `build_and_run.sh` should do both build and run steps and b) you want to see the extra flags that the inner call to `kurtosis.sh` receives. As a second example, `build_and_run.sh run --parallelism 2` would execute only the run step (no build) and call `kurtosis.sh` with parallelism set to 2.
 
-Next Steps
-----------
-Now that you understand more about the internals of a testsuite, you can:
-
-* Head over to [the quickstart instructions](./quickstart.md) to bootstrap your own testsuite (if you haven't already)
-* Visit [the architecture docs](./architecture.md) to learn more about the Kurtosis platform at a high level.
-* Check out [the instructions for running in CI](./running-in-ci.md) to see what's necessary to get Kurtosis running in your CI environment
-* Pop into [the Kurtosis Discord](https://discord.gg/6Jjp9c89z9) to join the community!
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 

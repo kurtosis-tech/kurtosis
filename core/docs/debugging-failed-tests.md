@@ -1,6 +1,6 @@
 Debugging Failed Tests
 ======================
-Tests will of course fail over the course of your development. Here you'll find instructions for attaching a debugger to your testsuite, as well as some common error scenarios that you might encounter.
+Tests will of course fail over the course of your development. Here you'll find instructions for attaching a debugger to your testsuite, as well as some common error scenarios that you might encounter. If you still can't find the answer to your question, you can ask in the [Kurtosis Discord](https://discord.gg/6Jjp9c89z9).
 
 Attaching a debugger to your testsuite
 -------------------------------------
@@ -43,3 +43,15 @@ Each test has a timeout by which its execution must complete. A test's execution
 
 ### Hard test timeout
 In addition to the test execution timeout and in order to prevent any test from hanging forever, the entire test - including network setup, test execution, and network teardown - are subject to an additional "hard test timeout". This timeout is equal to the test execution timeout (configured in `GetExecutionTimeout`) plus the setup buffer (configured in `GetSetupBuffer`). If your test is hitting the hard test timeout but NOT the execution timeout, it likely means that some element of network setup is taking longer than expected. The initializers and availability checkers for your services should be examined for problems as a first step, and - if no issues are found - then the last fix should be increasing the setup buffer.
+
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 
