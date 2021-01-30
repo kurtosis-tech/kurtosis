@@ -31,3 +31,15 @@ Then, whenever an untrusted PR is submitted to your repo, a repo owner should:
 1. If the third-party contributor pushes any more changes, re-review them for any secret-leaking and re-post the same saved reply to update the trusted PR
 
 This allows you to require untrusted code to pass a review before it runs (thereby securing your secrets) while still preserving the safety of CI.
+
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 
