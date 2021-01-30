@@ -26,10 +26,16 @@ Documentation Index
 * [Versioning & upgrading](./versioning-and-upgrading.md)
 * [Changelog](./changelog.md) 
 
-Developer Tips
----------------
+Local Development Tips
+----------------------
+### Docker Volumes
+Kurtosis will create several Docker volumes during the course of normal operation. These are intentionally not deleted after testsuite execution finishes, so that you can explore the volumes for debugging information. This means Docker volumes will slowly accumulate on your system, and you'll want to periodically clear them out. To do so, you can use `docker volume ls` to view existing volumes and identify the ones you'd like to remove, then `docker volume rm THE_VOLUME_ID` to remove them.
+
+### Docker Containers
+Much like Docker volumes, Kurtosis will create Docker containers on your system but won't delete them so it doesn't destroy debugging information. This means you'll also need to clear these out periodically. You can use `docker container ls -a` to view all containers (including stopped ones), and `docker container rm THE_CONTAINER_ID` to remove the ones you'd prefer to get rid of.
+
 ### Stop all running containers
-Run the following, replacing `YOUR-IMAGE-NAME` with the name of the image of the containers you want to remove:
+A handy tip to stop all running containers of a certain image (replace `YOUR-IMAGE-NAME` with the name of the image of the containers you want to remove):
 
 ```
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
