@@ -108,8 +108,6 @@ func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) 
 	return *initializerAcceptableSuiteMetadata
 }
 
-// TODO Write tests for this by splitting it into metadata-generating function and writing function
-//  then testing the metadata-generating
 func printSuiteMetadataToFile(suiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata, filepath string) error {
 	fp, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
