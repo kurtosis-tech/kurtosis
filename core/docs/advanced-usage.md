@@ -20,3 +20,15 @@ External files can be mounted inside a Docker container running inside a Kurtosi
 1. In the `getFilesArtifactMountpoints` function of your `DockerContainerInitializer` implementation, use the artifact IDs to declare where to mount the files inside the artifacts
 
 For an example test using this functionality, see [here](https://github.com/kurtosis-tech/kurtosis-go/blob/develop/testsuite/testsuite_impl/files_artifact_mounting_test/files_artifact_mounting_test_.go).
+
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 

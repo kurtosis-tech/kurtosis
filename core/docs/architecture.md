@@ -60,11 +60,14 @@ Key features:
 * Testsuites run as Docker containers, so developers can write tests in any language they please
 * The Kurtosis client library and API container automate the gruntwork of network setup, manipulation, and teardown so tests are easy to write
 
-Next Steps
-----------
-From here, you can:
-
-* Visit [the quickstart instructions](./quickstart.md) to get started writing your own Kurtosis test suite
-* Head over to the [the testsuite deep dive](./testsuite-details.md) to learn more about what's in a testsuite and how to customize it
-* Check out [the CI documentation](./running-in-ci.md) to see how Kurtosis runs inside of CI
-* Pop into [the Kurtosis Discord](https://discord.gg/6Jjp9c89z9) to join the community!
+Further Reading
+---------------
+* [Quickstart](./quickstart.md)
+* [Building & Running](./building-and-running.md)
+* [Debugging common failure scenarios](./debugging-failed-tests.md)
+* [Architecture](./architecture.md)
+* [Advanced Usage](./advanced-usage.md)
+* [Running Kurtosis in CI](./running-in-ci.md)
+* [Supported languages](./supported-languages.md)
+* [Versioning & upgrading](./versioning-and-upgrading.md)
+* [Changelog](./changelog.md) 
