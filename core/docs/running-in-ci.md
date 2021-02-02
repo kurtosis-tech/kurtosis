@@ -12,7 +12,7 @@ The client ID and secret are created by the Kurtosis team on the backend, so if 
 
 Using Client Credentials
 ------------------------
-Now that you have your client credentials, you'll need to pass them in to your CI environment as environment variables. The route for doing so will be particular to your CI server, so do a Google search for "define YOUR_CI_TOOL secrets". Once done, you'll need to pass the appropriate environment variables to Kurtosis. The `kurtosis.sh` script has parameters for receiving the client ID and credentials, so run `kurtosis.sh --help` to see what flags you need to pass in (or `build_and_run.sh all --help` if it's wrapping `kurtosis.sh` in your instance).
+Now that you have your client credentials, you'll need to pass them in to your CI environment as environment variables. The route for doing so will be particular to your CI server, so do a Google search for "define YOUR_CI_TOOL secrets". Once done, you'll need to pass the appropriate environment variables to Kurtosis. The `kurtosis.sh` script has parameters for receiving the client ID and credentials, so run `kurtosis.sh --help` to see what flags you need to pass in (or `build-and-run.sh all --help` if it's wrapping `kurtosis.sh` in your instance).
 
 Client Credentials & Untrusted PRs
 ----------------------------------
