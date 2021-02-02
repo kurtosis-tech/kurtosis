@@ -1,7 +1,16 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
 # TBD
-* Update docs to reflect new, simplified bootstrap process
+### Added
+* New `testsuite-customization.md` and corresponding docs page, to contain explicit instructions on customizing testsuites
+* A link `testsuite-customization.md` to the bottom of every other docs page
+
+### Changed
+* All "quickstart" links to `https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart`
+* All docs to reflect that the script is now called `build-and-run.sh` (hyphens), rather than `build_and_run.sh` (underscores)
+
+### Removed
+* `quickstart.md` docs page in favor of pointing to [the Kurtosis libs quickstart instructions](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
 
 # 1.7.1
 * Update docs to reflect the changes that came with v1.7.0
