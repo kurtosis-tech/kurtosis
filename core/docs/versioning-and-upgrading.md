@@ -8,7 +8,19 @@ To minimize bugs and keep Kurtosis users running the latest patch version, the k
 
 Upgrading
 ---------
-The version of Kurtosis is encapsulated in the `kurtosis.sh` script that you use to launch it. To upgrade Kurtosis, simply download the latest version of the wrapper script from [the public Kurtosis S3 bucket](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=wrapper-script/) and replace the version you have in your repo.
+### Kurtosis Core
+The version of Kurtosis Core is encapsulated in the `kurtosis.sh` script that you use to launch it that lives inside the `.kurtosis` directory in the root of your testsuite. To upgrade Kurtosis Core:
+
+1. Review [the changelog](./changelog.md) for breaking changes between your current Kurtosis Core version and your desired version
+1. Replace all files in your `.kurtosis` directory with [the files of the version you're upgrading to](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=dist/)
+1. Fix any breaks
+
+### Kurtosis Lib
+Your testsuite will also depend on a language-specific Kurtosis Lib, which lets your testsuite interact with Kurtosis Core. When upgrading Kurtosis Core, you'll need to upgrade your Kurtosis Lib to match the newly-updated Core version. 
+
+These versions move independently - a single version of Kurtosis Lib might be compatible with multiple versions of Kurtosis Core and vice versa - so we aim to put out an upgrade script that will navigate the compatibility chart transparently for the user. 
+
+Until then, we recommend always upgrading to the latest Kurtosis Core & Lib versions (as the latest versions of both will always be compatible).
 
 Further Reading
 ---------------

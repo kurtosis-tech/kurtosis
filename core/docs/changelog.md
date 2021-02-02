@@ -12,6 +12,7 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 ### Changed
 * All "quickstart" links to `https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart`
 * All docs to reflect that the script is now called `build-and-run.sh` (hyphens), rather than `build_and_run.sh` (underscores)
+* "Versioning & Upgrading" docs to reflect the new world with `kurtosis.sh` and `build-and-run-core.sh`
 
 ### Removed
 * `quickstart.md` docs page in favor of pointing to [the Kurtosis libs quickstart instructions](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
