@@ -2,6 +2,10 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
+# 1.7.4
+### Changed
+* Swapped all `kurtosis-go` link references to point to `kurtosis-libs`
+
 # 1.7.3
 ### Fixed
 * Issue where `kurtosis.sh` errors with unset variable when `--help` flag is passed in
