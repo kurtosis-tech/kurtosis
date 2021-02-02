@@ -88,7 +88,13 @@ jobs:
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
           from: build/kurtosis.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/wrapper-script/${X_Y_VERSION}/kurtosis.sh"
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${X_Y_VERSION}/kurtosis.sh"
+      - aws-s3/copy:
+          aws-access-key-id: S3_ACCESS_KEY
+          aws-region: S3_REGION
+          aws-secret-access-key: S3_SECRET_KEY
+          from: testsuite_scripts/build-and-run-core.sh
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${X_Y_VERSION}/build-and-run-core.sh"
 
       # TODO add a step here for uploading the .proto files to the S3 public-access bucket!!! This will be necessary for making Kurtosis upgrades simple
 

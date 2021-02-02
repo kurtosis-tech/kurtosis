@@ -8,21 +8,21 @@ Getting Started
 ---------------
 You have two paths you can start with:
 
-* For those who like to jump in and see things running, head over to [the quickstart instructions](./quickstart.md)
-* For those who prefer to start at a high level, check out [the Kurtosis architecture docs](./architecture.md)
+* For those who like to jump in and see things running, head over to [the quickstart instructions][1]
+* For those who prefer to start at a high level, check out [the Kurtosis architecture docs][2]
 
 For Q&A, head over to the [Kurtosis Discord](https://discord.gg/6Jjp9c89z9) server.
 
 Documentation Index
 ------------------------
 
-* [Quickstart](./quickstart.md)
+* [Quickstart][1]
 * [Building & Running](./building-and-running.md)
+* [Testsuite Customization](./testsuite-customization.md)
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
-* [Architecture](./architecture.md)
+* [Architecture][2]
 * [Advanced Usage](./advanced-usage.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
-* [Supported languages](./supported-languages.md)
 * [Versioning & upgrading](./versioning-and-upgrading.md)
 * [Changelog](./changelog.md) 
 
@@ -41,3 +41,6 @@ A handy tip to stop all running containers of a certain image (replace `YOUR-IMA
 docker container ls    # See which Docker containers are left around - these will depend on the containers spun up
 docker stop $(docker ps -a --quiet --filter ancestor="YOUR-IMAGE-NAME" --format="{{.ID}}")
 ```
+
+[1]: https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart
+[2]: ./architecture.md
