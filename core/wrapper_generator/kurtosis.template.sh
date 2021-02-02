@@ -70,14 +70,15 @@ while [ ${#} -gt 0 ]; do
     esac
 done
 
-# Restore positional parameters and assign them to variables
-set -- "${POSITIONAL[@]}"
-{{range $idx, $variable := .PositionalArgAssignment}}{{$variable}}="${{$idx}}"
-{{end}}
-
 if "${show_help}"; then
     print_help_and_exit
 fi
+
+# Restore positional parameters and assign them to variables
+set -- "${POSITIONAL[@]}"
+{{range $idx, $variable := .PositionalArgAssignment}}{{$variable}}="${{"{"}}{{$idx}}:-{{"}"}}"
+{{end}}
+
 
 
 
