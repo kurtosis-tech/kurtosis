@@ -12,7 +12,7 @@ The client ID and secret are created by the Kurtosis team on the backend, so if 
 
 Using Client Credentials
 ------------------------
-Now that you have your client credentials, you'll need to pass them in to your CI environment as environment variables. The route for doing so will be particular to your CI server, so do a Google search for "define YOUR_CI_TOOL secrets". Once done, you'll need to pass the appropriate environment variables to Kurtosis. The `kurtosis.sh` script has parameters for receiving the client ID and credentials, so run `kurtosis.sh --help` to see what flags you need to pass in (or `build_and_run.sh all --help` if it's wrapping `kurtosis.sh` in your instance).
+Now that you have your client credentials, you'll need to pass them in to your CI environment as environment variables. The route for doing so will be particular to your CI server, so do a Google search for "define YOUR_CI_TOOL secrets". Once done, you'll need to pass the appropriate environment variables to Kurtosis. The `kurtosis.sh` script has parameters for receiving the client ID and credentials, so run `kurtosis.sh --help` to see what flags you need to pass in (or `build-and-run.sh all --help` if it's wrapping `kurtosis.sh` in your instance).
 
 Client Credentials & Untrusted PRs
 ----------------------------------
@@ -34,12 +34,12 @@ This allows you to require untrusted code to pass a review before it runs (there
 
 Further Reading
 ---------------
-* [Quickstart](./quickstart.md)
+* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
 * [Building & Running](./building-and-running.md)
+* [Testsuite Customization](./testsuite-customization.md)
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
 * [Architecture](./architecture.md)
 * [Advanced Usage](./advanced-usage.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
-* [Supported languages](./supported-languages.md)
 * [Versioning & upgrading](./versioning-and-upgrading.md)
 * [Changelog](./changelog.md) 
