@@ -1,5 +1,7 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+_This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
+
 # TBD
 ### Added
 * New `testsuite-customization.md` and corresponding docs page, to contain explicit instructions on customizing testsuites
