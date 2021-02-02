@@ -6,6 +6,8 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 ### Added
 * New `testsuite-customization.md` and corresponding docs page, to contain explicit instructions on customizing testsuites
 * A link `testsuite-customization.md` to the bottom of every other docs page
+* `build-and-run-core.sh` under the `testsuite_scripts` directory
+* Publishing of `build-and-run-core.sh` to the public-access S3 bucket via the CircleCI config
 
 ### Changed
 * All "quickstart" links to `https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart`
