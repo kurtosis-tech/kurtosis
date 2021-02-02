@@ -1,45 +1,9 @@
-Quickstart
-==========
+Testsuite Customization
+=======================
+### Prerequisites
+* Bootstrapped testsuite from following the quickstart instructions [here](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
 
-Prerequisites
--------------
-* A [Kurtosis user account](https://www.kurtosistech.com/sign-up)
-* A [Docker engine](https://docs.docker.com/get-started/) with version >= 2.3.0.0
-
-Bootstrap your testsuite
-------------------------
-1. Visit [the list of supported language clients](https://github.com/kurtosis-tech/kurtosis-docs/blob/master/supported-languages.md)
-1. Pick your favorite, and clone the repo to your local machine
-1. Run `git checkout master`
-1. Run the `bootstrap/bootstrap.sh` script from inside the cloned repo
-1. Follow the language-specific instructions in the new `README.md` file
-
-Run your testsuite
-------------------
-From the root directory of your bootstrapped repo: 
-
-1. `git init` to initialize your new repo
-1. `git add .` to stage all the files you've changed
-1. `git commit -m "Init commit"` to commit the files (don't skip this - it's needed to run the testsuite!)
-1. Run `scripts/build_and_run.sh all` to run the testsuite
-
-If everything worked, you should see an output that looks something like this:
-
-```
-INFO[2020-10-15T18:43:27Z] ==================================================================================================
-INFO[2020-10-15T18:43:27Z]                                      TEST RESULTS
-INFO[2020-10-15T18:43:27Z] ==================================================================================================
-INFO[2020-10-15T18:43:27Z] - singleNodeExampleTest: PASSED
-INFO[2020-10-15T18:43:27Z] - fixedSizeExampleTest: PASSED
-```
-
-(This output is from the Kurtosis Go client; other languages might be slightly different)
-
-
-If you don't see success messages, check out [the guide for debugging failed tests](./debugging-failed-tests.md) which contains solutions to common issues. If this still doesn't resolve your issue, you can ask for help in [the Kurtosis Discord server](https://discord.gg/6Jjp9c89z9).
-
-Customize your testsuite
-------------------------
+### Testsuite Customization
 Now that you have a running testsuite, you'll want to start customizing the testsuite to your needs. Here we'll walk through the components inside a testsuite, as well as how to customize them.
 
 **NOTE:** This tutorial will avoid language-specific idioms and use a Java-like pseudocode notation in this documentation, but will reference the example in [the Go implementation](https://github.com/kurtosis-tech/kurtosis-go) to illustrate. All object names and methods will be more or less the same in your language of choice, and [all language repos](./supported-languages.md) come with an example.
@@ -97,12 +61,12 @@ To provide a visual recap of everything you've done, here's a diagram showing th
 
 Further Reading
 ---------------
-* [Quickstart](./quickstart.md)
+* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
 * [Building & Running](./building-and-running.md)
+* [Testsuite Customization](./testsuite-customization.md)
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
 * [Architecture](./architecture.md)
 * [Advanced Usage](./advanced-usage.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
-* [Supported languages](./supported-languages.md)
 * [Versioning & upgrading](./versioning-and-upgrading.md)
 * [Changelog](./changelog.md) 

@@ -16,13 +16,13 @@ For Q&A, head over to the [Kurtosis Discord](https://discord.gg/6Jjp9c89z9) serv
 Documentation Index
 ------------------------
 
-* [Quickstart](./quickstart.md)
+* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
 * [Building & Running](./building-and-running.md)
+* [Testsuite Customization](./testsuite-customization.md)
 * [Debugging common failure scenarios](./debugging-failed-tests.md)
 * [Architecture](./architecture.md)
 * [Advanced Usage](./advanced-usage.md)
 * [Running Kurtosis in CI](./running-in-ci.md)
-* [Supported languages](./supported-languages.md)
 * [Versioning & upgrading](./versioning-and-upgrading.md)
 * [Changelog](./changelog.md) 
 
