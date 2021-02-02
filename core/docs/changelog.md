@@ -2,7 +2,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
-# TBD
+# 1.7.3
 ### Fixed
 * Issue where `kurtosis.sh` errors with unset variable when `--help` flag is passed in
 
