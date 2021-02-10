@@ -10,6 +10,9 @@ service TestExecutionService {
   rpc GetTestExecutionInfo(google.protobuf.Empty) returns (TestExecutionInfo) {};
 
   // Registers that the testsuite is about to start executing test logic
+  rpc RegisterTestSetup(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+
+  // Registers that the testsuite is about to start executing test logic
   rpc RegisterTestExecution(google.protobuf.Empty) returns (google.protobuf.Empty) {};
 
   // Registers a service with the API container but doesn't start the container for it
