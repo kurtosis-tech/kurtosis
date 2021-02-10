@@ -7,6 +7,7 @@ package test_suite_metadata_acquirer
 
 import (
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -43,6 +44,7 @@ func validateTestSuiteMetadata(suiteMetadata TestSuiteMetadata) error {
 		if err := validateTestMetadata(testMetadata); err != nil {
 			return stacktrace.Propagate(err, "An error occurred validating metadata for test '%v'", testName)
 		}
+		logrus.Infof("Test metadata: %+v", testMetadata)
 	}
 	return nil
 }
