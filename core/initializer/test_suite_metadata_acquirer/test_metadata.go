@@ -24,8 +24,12 @@ type TestMetadata struct {
 
 // Even though the struct's fields must be public for JSON, we create a constructor so that we don't forget
 //  to initialize any fields
-func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool) *TestMetadata {
-	return &TestMetadata{IsPartitioningEnabled: isPartitioningEnabled, UsedArtifacts: usedArtifacts}
+func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool, testSetupTimeout uint32, testExecutionTimeout uint32) *TestMetadata {
+	return &TestMetadata{
+		IsPartitioningEnabled: isPartitioningEnabled,
+		UsedArtifacts: usedArtifacts,
+		TestSetupTimeout: testSetupTimeout,
+		TestExecutionTimeout: testExecutionTimeout}
 }
 
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it

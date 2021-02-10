@@ -7,7 +7,7 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:gmarchetti_time-tracking-logic-in-kurtosis-api"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
