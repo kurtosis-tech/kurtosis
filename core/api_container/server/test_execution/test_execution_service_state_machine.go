@@ -13,15 +13,18 @@ import (
 const (
 	// These form a linear state machine, where progress is one-way
 	waitingForSuiteRegistration         serviceState = "WAITING_FOR_SUITE_REGISTRATION"
+	waitingForTestSetupRegistration		serviceState = "WAITING_FOR_TEST_SETUP_REGISTRATION"
+	waitingForTestSetupCompletion		serviceState = "WAITING_FOR_TEST_SETUP_COMPLETION"
 	waitingForTestExecutionRegistration serviceState = "WAITING_FOR_TEST_EXECUTION_REGISTRATION"
 	waitingForExecutionCompletion       serviceState = "WAITING_FOR_TEST_EXECUTION_COMPLETION"
 	testsuiteExited                     serviceState = "TESTSUITE_EXITED"
-
 )
 
 type serviceState string
 var stateOrder = []serviceState{
 	waitingForSuiteRegistration,
+	waitingForTestSetupRegistration,
+	waitingForTestSetupCompletion,
 	waitingForTestExecutionRegistration,
 	waitingForExecutionCompletion,
 	testsuiteExited,

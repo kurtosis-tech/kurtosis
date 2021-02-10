@@ -9,8 +9,11 @@ service TestExecutionService {
   // This method should be called first by the testsuite
   rpc GetTestExecutionInfo(google.protobuf.Empty) returns (TestExecutionInfo) {};
 
-  // Registers that the testsuite is about to start executing test logic
+  // Registers that the testsuite is about to setup a test
   rpc RegisterTestSetup(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+
+  // Registers that the testsuite has completed test setup
+  rpc RegisterTestSetupCompletion(google.protobuf.Empty) returns (google.protobuf.Empty) {};
 
   // Registers that the testsuite is about to start executing test logic
   rpc RegisterTestExecution(google.protobuf.Empty) returns (google.protobuf.Empty) {};

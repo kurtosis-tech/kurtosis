@@ -101,6 +101,10 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 	return nil, nil
 }
 
+func (service *testExecutionService) RegisterTestSetupCompletion(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, nil
+}
+
 func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestExecutionRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
