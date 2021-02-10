@@ -94,13 +94,13 @@ func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *
 	return result, nil
 }
 
-func (service *testExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestExecutionRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
-	timeoutSeconds := args.TimeoutSeconds
+	timeoutSeconds := 60
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
