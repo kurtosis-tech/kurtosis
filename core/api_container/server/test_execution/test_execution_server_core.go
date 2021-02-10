@@ -22,7 +22,7 @@ type TestExecutionServerCore struct {
 }
 
 func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testExecutionTimeout uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
-	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testExecutionTimeout: testExecutionTimeout testSuiteContainerId: testSuiteContainerId}
+	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testExecutionTimeout: testExecutionTimeout, testSuiteContainerId: testSuiteContainerId}
 }
 
 

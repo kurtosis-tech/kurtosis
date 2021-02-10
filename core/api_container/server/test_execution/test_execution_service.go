@@ -54,7 +54,7 @@ func newTestExecutionService(
 		dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
 		testName: testName,
-		testExecutionTimeout: testExecutionTimeout,,
+		testExecutionTimeout: testExecutionTimeout,
 		testSuiteContainerId: testSuiteContainerId,
 		stateMachine: newTestExecutionServiceStateMachine(),
 		shutdownChan: shutdownChan,
