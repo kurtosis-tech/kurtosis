@@ -16,6 +16,9 @@ type TestMetadata struct {
 	// A "set" of all the artifact URLs that the test wants, which the initializer will
 	//  download and make ready for the test at runtime
 	UsedArtifacts map[string]bool `json:"usedArtifacts"`
+
+	TestSetupTimeout uint32
+	TestExecutionTimeout uint32
 }
 
 
