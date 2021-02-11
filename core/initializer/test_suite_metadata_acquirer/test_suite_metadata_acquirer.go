@@ -127,7 +127,6 @@ func GetTestSuiteMetadata(
 	if err := json.Unmarshal(jsonBytes, &suiteMetadata); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the testsuite metadata JSON")
 	}
-	logrus.Infof("Test Suite Metadata inside of initializer: %+v", suiteMetadata)
 
 	if err := validateTestSuiteMetadata(suiteMetadata); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
