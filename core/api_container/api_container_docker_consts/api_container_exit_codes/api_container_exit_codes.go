@@ -18,6 +18,7 @@ const (
 	// ======================== Suite metadata serialization exit codes ================================================
 	SerializeNotCalled		// A testsuite registered itself, but then didn't call serialize within the timeout
 	// =============================== Test Execution exit codes ================================================
+	NoTestSetupRegistered	// A testsuite registered itself, but then didn't register a test setup within the timeout
 	NoTestExecutionRegistered	// A testsuite registered itself, but then didn't register a test execution within the timeout
 	TestHitTimeout
 	ErrWaitingForSuiteContainerExit // An error occurred waiting for the testsuite container to exit
@@ -30,6 +31,7 @@ var ExitCodeErrorVisitorAcceptFuncs = map[int]func(visitor ExitCodeErrorVisitor)
 	ShutdownError: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitShutdownError() },
 	ReceivedTermSignal: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitReceivedTermSignal() },
 	SerializeNotCalled: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSerializeNotCalled() },
+	NoTestSetupRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSetupRegistered() },
 	NoTestExecutionRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
 	TestHitTimeout: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitTimeout() },
 	ErrWaitingForSuiteContainerExit: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
@@ -44,6 +46,7 @@ type ExitCodeErrorVisitor interface {
 	VisitShutdownError() error
 	VisitReceivedTermSignal() error
 	VisitSerializeNotCalled() error
+	VisitNoTestSetupRegistered() error
 	VisitNoTestExecutionRegistered() error
 	VisitTestHitTimeout() error
 	VisitErrWaitingForSuiteContainerExit() error

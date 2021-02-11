@@ -17,12 +17,13 @@ type TestExecutionServerCore struct {
 	dockerManager *docker_manager.DockerManager
 	serviceNetwork *service_network.ServiceNetwork
 	testName string
+	testSetupTimeout uint32
 	testExecutionTimeout uint32
 	testSuiteContainerId string
 }
 
-func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testExecutionTimeout uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
-	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testExecutionTimeout: testExecutionTimeout, testSuiteContainerId: testSuiteContainerId}
+func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testSetupTimeout uint32, testExecutionTimeout uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
+	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testSetupTimeout: testSetupTimeout, testExecutionTimeout: testExecutionTimeout, testSuiteContainerId: testSuiteContainerId}
 }
 
 
@@ -38,6 +39,7 @@ func (core TestExecutionServerCore) CreateAndRegisterService(
 		core.serviceNetwork,
 		core.testName,
 		core.testExecutionTimeout,
+		core.testSetupTimeout,
 		core.testSuiteContainerId,
 		shutdownChan)
 	bindings.RegisterTestExecutionServiceServer(grpcServer, service)

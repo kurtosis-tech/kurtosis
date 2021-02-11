@@ -24,6 +24,10 @@ import (
 const (
 	// The amount of time a testsuite container has after registering itself with the API container to register
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
+	testSetupRegistrationTimeout = 10 * time.Second
+
+	// The amount of time a testsuite container has after registering itself with the API container to register
+	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
 	// TODO Don't bother gracefully shutting down - just kill
@@ -37,6 +41,7 @@ type testExecutionService struct {
 	dockerManager *docker_manager.DockerManager
 	serviceNetwork *service_network.ServiceNetwork
 	testName string
+	testSetupTimeout uint32
 	testExecutionTimeout uint32
 	testSuiteContainerId string
 	stateMachine *testExecutionServiceStateMachine
@@ -47,6 +52,7 @@ func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
 		testName string,
+		testSetupTimeout uint32,
 		testExecutionTimeout uint32,
 		testSuiteContainerId string,
 		shutdownChan chan int) *testExecutionService {
@@ -54,6 +60,7 @@ func newTestExecutionService(
 		dockerManager: dockerManager,
 		serviceNetwork: serviceNetwork,
 		testName: testName,
+		testSetupTimeout: testSetupTimeout,
 		testExecutionTimeout: testExecutionTimeout,
 		testSuiteContainerId: testSuiteContainerId,
 		stateMachine: newTestExecutionServiceStateMachine(),
@@ -68,11 +75,11 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 			"Cannot register test suite; an error occurred advancing the state machine")
 	}
 
-	// Launch timeout thread that will error if a test execution isn't registered soon
+	// Launch timeout thread that will error if a test setup isn't registered soon
 	go func() {
-		time.Sleep(testExecutionRegistrationTimeout)
-		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
-			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
+		time.Sleep(testSetupRegistrationTimeout)
+		if err := service.stateMachine.assert(waitingForTestSetupRegistration); err == nil {
+			service.shutdownChan <- api_container_exit_codes.NoTestSetupRegistered
 		}
 	}()
 
@@ -98,11 +105,40 @@ func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *
 }
 
 func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	return nil, nil
+	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupRegistration); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
+	}
+
+	timeoutSeconds := service.testSetupTimeout
+	timeout := time.Duration(timeoutSeconds) * time.Second
+
+	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
+	go func() {
+		time.Sleep(timeout)
+		if err := service.stateMachine.assert(waitingForTestSetupCompletion); err == nil {
+			service.shutdownChan <- api_container_exit_codes.TestHitTimeout
+		}
+	}()
+
+	return &emptypb.Empty{}, nil
 }
 
 func (service *testExecutionService) RegisterTestSetupCompletion(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
-	return nil, nil
+	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupCompletion); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
+	}
+
+	// Launch timeout thread that will error if a test execution isn't registered soon
+	go func() {
+		time.Sleep(testExecutionRegistrationTimeout)
+		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
+			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
+		}
+	}()
+
+	return &emptypb.Empty{}, nil
 }
 
 func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
