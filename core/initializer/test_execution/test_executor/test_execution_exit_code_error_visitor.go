@@ -43,6 +43,11 @@ func (t testExecutionExitCodeErrorVisitor) VisitSerializeNotCalled() error {
 		"the Kurtosis API was in the wrong mode; this is a bug with Kurtosis itself")
 }
 
+func (t testExecutionExitCodeErrorVisitor) VisitNoTestSetupRegistered() error {
+	return stacktrace.NewError("The Kurtosis API container timed out waiting for registration of a test setup; " +
+		"this is a bug in Kurtosis itself")
+}
+
 func (t testExecutionExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return stacktrace.NewError("The Kurtosis API container timed out waiting for registration of a test execution; " +
 		"this is a bug in Kurtosis itself")
