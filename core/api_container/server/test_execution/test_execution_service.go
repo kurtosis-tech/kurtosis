@@ -113,7 +113,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 	timeoutSeconds := service.testSetupTimeout
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
-	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
+	// Launch timeout thread that will error if the test setup doesn't complete within the allotted time limit
 	go func() {
 		time.Sleep(timeout)
 		if err := service.stateMachine.assert(waitingForTestSetupCompletion); err == nil {
