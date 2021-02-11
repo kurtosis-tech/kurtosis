@@ -113,6 +113,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 	timeoutSeconds := service.testSetupTimeout
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
+	logrus.Infof("Sleeping for %+v seconds", timeout)
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
 	go func() {
 		time.Sleep(timeout)
