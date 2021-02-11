@@ -38,8 +38,8 @@ func (core TestExecutionServerCore) CreateAndRegisterService(
 		core.dockerManager,
 		core.serviceNetwork,
 		core.testName,
-		core.testExecutionTimeout,
 		core.testSetupTimeout,
+		core.testExecutionTimeout,
 		core.testSuiteContainerId,
 		shutdownChan)
 	bindings.RegisterTestExecutionServiceServer(grpcServer, service)
