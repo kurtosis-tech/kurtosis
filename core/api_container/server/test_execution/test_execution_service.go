@@ -118,7 +118,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 	go func() {
 		time.Sleep(timeout)
 		if err := service.stateMachine.assert(waitingForTestSetupCompletion); err == nil {
-			service.shutdownChan <- api_container_exit_codes.TestHitTimeout
+			service.shutdownChan <- api_container_exit_codes.TestHitSetupTimeout
 		}
 	}()
 
@@ -155,7 +155,7 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 	go func() {
 		time.Sleep(timeout)
 		if err := service.stateMachine.assert(waitingForExecutionCompletion); err == nil {
-			service.shutdownChan <- api_container_exit_codes.TestHitTimeout
+			service.shutdownChan <- api_container_exit_codes.TestHitExecutionTimeout
 		}
 	}()
 

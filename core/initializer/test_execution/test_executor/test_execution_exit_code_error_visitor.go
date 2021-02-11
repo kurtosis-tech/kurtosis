@@ -53,11 +53,12 @@ func (t testExecutionExitCodeErrorVisitor) VisitNoTestExecutionRegistered() erro
 		"this is a bug in Kurtosis itself")
 }
 
-func (t testExecutionExitCodeErrorVisitor) VisitTestHitTimeout() error {
-	return stacktrace.NewError("The test failed to complete within the hard test " +
-		"timeout (setup_buffer + test_execution_timeout), which most likely means the testnet setup took " +
-		"too long (because if the test execution took too long, the test execution timeout" +
-		"would have been tripped instead)")
+func (t testExecutionExitCodeErrorVisitor) VisitTestHitSetupTimeout() error {
+	return stacktrace.NewError("The test failed to get set up within the test setup timeout")
+}
+
+func (t testExecutionExitCodeErrorVisitor) VisitTestHitExecutionTimeout() error {
+	return stacktrace.NewError("The test failed to complete within the test execution timeout")
 }
 
 func (t testExecutionExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {

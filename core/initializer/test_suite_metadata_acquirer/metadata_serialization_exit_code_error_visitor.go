@@ -51,8 +51,12 @@ func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestExecutionRegistere
 	return getWrongModeError("no test execution registered")
 }
 
-func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitTimeout() error {
-	return getWrongModeError("test hit timeout")
+func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitSetupTimeout() error {
+	return getWrongModeError("test hit setup timeout")
+}
+
+func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitExecutionTimeout() error {
+	return getWrongModeError("test hit execution timeout")
 }
 
 func (m metadataSerializationExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {

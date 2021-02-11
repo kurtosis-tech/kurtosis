@@ -20,21 +20,23 @@ const (
 	// =============================== Test Execution exit codes ================================================
 	NoTestSetupRegistered	// A testsuite registered itself, but then didn't register a test setup within the timeout
 	NoTestExecutionRegistered	// A testsuite registered itself, but then didn't register a test execution within the timeout
-	TestHitTimeout
+	TestHitSetupTimeout
+	TestHitExecutionTimeout
 	ErrWaitingForSuiteContainerExit // An error occurred waiting for the testsuite container to exit
 )
 var ExitCodeErrorVisitorAcceptFuncs = map[int]func(visitor ExitCodeErrorVisitor) error {
-	SuccessfulExit:  func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSuccessfulExit() },
-	NoTestSuiteRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
+	SuccessfulExit:                       func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSuccessfulExit() },
+	NoTestSuiteRegistered:                func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
 	ShutdownEventBeforeSuiteRegistration: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSuiteRegistered() },
-	StartupError: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitStartupError() },
-	ShutdownError: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitShutdownError() },
-	ReceivedTermSignal: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitReceivedTermSignal() },
-	SerializeNotCalled: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSerializeNotCalled() },
-	NoTestSetupRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSetupRegistered() },
-	NoTestExecutionRegistered: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
-	TestHitTimeout: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitTimeout() },
-	ErrWaitingForSuiteContainerExit: func(visitor ExitCodeErrorVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
+	StartupError:                         func(visitor ExitCodeErrorVisitor) error { return visitor.VisitStartupError() },
+	ShutdownError:                        func(visitor ExitCodeErrorVisitor) error { return visitor.VisitShutdownError() },
+	ReceivedTermSignal:                   func(visitor ExitCodeErrorVisitor) error { return visitor.VisitReceivedTermSignal() },
+	SerializeNotCalled:                   func(visitor ExitCodeErrorVisitor) error { return visitor.VisitSerializeNotCalled() },
+	NoTestSetupRegistered:                func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestSetupRegistered() },
+	NoTestExecutionRegistered:            func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
+	TestHitSetupTimeout:              	  func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitSetupTimeout() },
+	TestHitExecutionTimeout:              func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitExecutionTimeout() },
+	ErrWaitingForSuiteContainerExit:      func(visitor ExitCodeErrorVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
 }
 
 // Translates exit codes into Go 'error' types
@@ -48,6 +50,7 @@ type ExitCodeErrorVisitor interface {
 	VisitSerializeNotCalled() error
 	VisitNoTestSetupRegistered() error
 	VisitNoTestExecutionRegistered() error
-	VisitTestHitTimeout() error
+	VisitTestHitSetupTimeout() error
+	VisitTestHitExecutionTimeout() error
 	VisitErrWaitingForSuiteContainerExit() error
 }
