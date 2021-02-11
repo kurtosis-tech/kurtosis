@@ -43,6 +43,10 @@ func (m metadataSerializationExitCodeErrorVisitor) VisitSerializeNotCalled() err
 		"didn't call serialize; this is a bug in Kurtosis itself")
 }
 
+func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestSetupRegistered() error {
+	return getWrongModeError("no test setup registered")
+}
+
 func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return getWrongModeError("no test execution registered")
 }
