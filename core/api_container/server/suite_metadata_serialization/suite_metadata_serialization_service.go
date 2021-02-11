@@ -100,7 +100,6 @@ func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) 
 			apiTestMetadata.UsedArtifactUrls,
 			apiTestMetadata.TestSetupTimeout,
 			apiTestMetadata.TestExecutionTimeout)
-		logrus.Infof("Test timeouts in API Container: Setup %v, Execution %v", initializerAcceptableTestMetadata.TestSetupTimeout, initializerAcceptableTestMetadata.TestExecutionTimeout)
 		allInitializerAcceptableTestMetadata[testName] = *initializerAcceptableTestMetadata
 	}
 
