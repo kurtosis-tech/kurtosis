@@ -178,9 +178,10 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 }
 
 func (service *testExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	expectedStateSet := []serviceState{waitingForTestSetupCompletion, waitingForExecutionCompletion};
+	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
 	serviceId := service_network_types.ServiceID(args.ServiceId)
@@ -200,9 +201,10 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 }
 
 func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	expectedStateSet := []serviceState{waitingForTestSetupCompletion, waitingForExecutionCompletion};
+	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
 	usedPorts := map[nat.Port]bool{}
