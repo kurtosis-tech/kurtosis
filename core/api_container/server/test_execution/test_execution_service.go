@@ -23,7 +23,7 @@ import (
 
 const (
 	// The amount of time a testsuite container has after registering itself with the API container to register
-	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
+	//  a test setup (there should be no reason that registering test setup doesn't happen immediately)
 	testSetupRegistrationTimeout = 10 * time.Second
 
 	// The amount of time a testsuite container has after registering itself with the API container to register
