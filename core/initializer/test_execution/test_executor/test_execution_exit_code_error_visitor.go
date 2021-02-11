@@ -54,7 +54,7 @@ func (t testExecutionExitCodeErrorVisitor) VisitNoTestExecutionRegistered() erro
 }
 
 func (t testExecutionExitCodeErrorVisitor) VisitTestHitSetupTimeout() error {
-	return stacktrace.NewError("The test failed to get set up within the test setup timeout")
+	return stacktrace.NewError("The test failed to set up within the test setup timeout")
 }
 
 func (t testExecutionExitCodeErrorVisitor) VisitTestHitExecutionTimeout() error {
