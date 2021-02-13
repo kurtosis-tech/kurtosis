@@ -178,7 +178,7 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 }
 
 func (service *testExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
-	expectedStateSet := map[serviceState]{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
+	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
 	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
@@ -201,7 +201,7 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 }
 
 func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
-	expectedStateSet := map[serviceState]{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
+	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
 	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
