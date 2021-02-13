@@ -45,17 +45,6 @@ func newTestExecutionServiceStateMachine() *testExecutionServiceStateMachine {
 	}
 }
 
-func (machine *testExecutionServiceStateMachine) assert(expectedState serviceState) error {
-	machine.mutex.Lock()
-	defer machine.mutex.Unlock()
-
-	if err := machine.throwErrorIfStatesDontMatch(expectedState); err != nil {
-		return stacktrace.Propagate(err, "Actual state doesn't match expected state")
-	}
-
-	return nil
-}
-
 func (machine *testExecutionServiceStateMachine) assertOneOfSet(expectedStates map[serviceState]bool) error {
 	machine.mutex.Lock()
 	defer machine.mutex.Unlock()
@@ -71,7 +60,8 @@ func (machine *testExecutionServiceStateMachine) assertAndAdvance(expectedState 
 	machine.mutex.Lock()
 	defer machine.mutex.Unlock()
 
-	if err := machine.throwErrorIfStatesDontMatch(expectedState); err != nil {
+	expectedStateSet := map[serviceState]bool{expectedState: true}
+	if err := machine.throwErrorIfNotInStateSet(expectedStateSet); err != nil {
 		return stacktrace.Propagate(err, "Couldn't advance state machine; actual state doesn't match expected state")
 	}
 
@@ -80,17 +70,6 @@ func (machine *testExecutionServiceStateMachine) assertAndAdvance(expectedState 
 	}
 	machine.stateIdx++
 
-	return nil
-}
-
-func (machine testExecutionServiceStateMachine) throwErrorIfStatesDontMatch(expectedState serviceState) error {
-	actualState := stateOrder[machine.stateIdx]
-	if actualState != expectedState {
-		return stacktrace.NewError(
-			"Actual state '%v' doesn't match expected state '%v'",
-			actualState,
-			expectedState)
-	}
 	return nil
 }
 
