@@ -26,7 +26,7 @@ const (
 	//  a test setup (there should be no reason that registering test setup doesn't happen immediately)
 	testSetupRegistrationTimeout = 10 * time.Second
 
-	// The amount of time a testsuite container has after registering itself with the API container to register
+	// The amount of time a testsuite container has after completing test setup to register
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
@@ -38,33 +38,33 @@ const (
 
 
 type testExecutionService struct {
-	dockerManager *docker_manager.DockerManager
-	serviceNetwork *service_network.ServiceNetwork
-	testName string
-	testSetupTimeout uint32
-	testExecutionTimeout uint32
-	testSuiteContainerId string
-	stateMachine *testExecutionServiceStateMachine
-	shutdownChan chan int
+	dockerManager                 *docker_manager.DockerManager
+	serviceNetwork                *service_network.ServiceNetwork
+	testName                      string
+	testSetupTimeoutInSeconds     uint32
+	testExecutionTimeoutInSeconds uint32
+	testSuiteContainerId          string
+	stateMachine                  *testExecutionServiceStateMachine
+	shutdownChan                  chan int
 }
 
 func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
 		testName string,
-		testSetupTimeout uint32,
-		testExecutionTimeout uint32,
+		testSetupTimeoutInSeconds uint32,
+		testExecutionTimeoutInSeconds uint32,
 		testSuiteContainerId string,
 		shutdownChan chan int) *testExecutionService {
 	return &testExecutionService{
-		dockerManager: dockerManager,
-		serviceNetwork: serviceNetwork,
-		testName: testName,
-		testSetupTimeout: testSetupTimeout,
-		testExecutionTimeout: testExecutionTimeout,
-		testSuiteContainerId: testSuiteContainerId,
-		stateMachine: newTestExecutionServiceStateMachine(),
-		shutdownChan: shutdownChan,
+		dockerManager:                 dockerManager,
+		serviceNetwork:                serviceNetwork,
+		testName:                      testName,
+		testSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
+		testExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds,
+		testSuiteContainerId:          testSuiteContainerId,
+		stateMachine:                  newTestExecutionServiceStateMachine(),
+		shutdownChan:                  shutdownChan,
 	}
 }
 
@@ -110,7 +110,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
-	timeoutSeconds := service.testSetupTimeout
+	timeoutSeconds := service.testSetupTimeoutInSeconds
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	// Launch timeout thread that will error if the test setup doesn't complete within the allotted time limit
@@ -147,7 +147,7 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
-	timeoutSeconds := service.testExecutionTimeout
+	timeoutSeconds := service.testExecutionTimeoutInSeconds
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
