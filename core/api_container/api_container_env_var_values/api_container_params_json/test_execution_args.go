@@ -30,8 +30,8 @@ type TestExecutionArgs struct {
 	TestSuiteContainerIpAddr string	`json:"testSuiteContainerIpAddr"`
 	ApiContainerIpAddr       string	`json:"apiContainerIpAddr"`
 
-	TestSetupTimeout uint32 `json:"testSetupTimeout"`
-	TestExecutionTimeout uint32 `json:"testExecutionTimeout"`
+	TestSetupTimeoutInSeconds     uint32 `json:"testSetupTimeout"`
+	TestExecutionTimeoutInSeconds uint32 `json:"testExecutionTimeout"`
 
 	// TODO remove this by passing over the test metadata as one of the params, so that the API container
 	//  knows about the metadata
@@ -50,22 +50,22 @@ func NewTestExecutionArgs(
 		testSuiteContainerId string,
 		testSuiteContainerIpAddr string,
 		apiContainerIpAddr string,
-		testSetupTimeout uint32,
-		testExecutionTimeout uint32,
+		testSetupTimeoutInSeconds uint32,
+		testExecutionTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (*TestExecutionArgs, error) {
 	result := TestExecutionArgs{
-		ExecutionInstanceId: executionInstanceId,
-		NetworkId: networkId,
-		SubnetMask: subnetMask,
-		GatewayIpAddr: gatewayIpAddr,
-		TestName: testName,
-		SuiteExecutionVolumeName: suiteExecutionVolumeName,
-		TestSuiteContainerId: testSuiteContainerId,
-		TestSuiteContainerIpAddr: testSuiteContainerIpAddr,
-		ApiContainerIpAddr: apiContainerIpAddr,
-		TestSetupTimeout: testSetupTimeout,
-		TestExecutionTimeout: testExecutionTimeout,
-		IsPartitioningEnabled: isPartitioningEnabled,
+		ExecutionInstanceId:           executionInstanceId,
+		NetworkId:                     networkId,
+		SubnetMask:                    subnetMask,
+		GatewayIpAddr:                 gatewayIpAddr,
+		TestName:                      testName,
+		SuiteExecutionVolumeName:      suiteExecutionVolumeName,
+		TestSuiteContainerId:          testSuiteContainerId,
+		TestSuiteContainerIpAddr:      testSuiteContainerIpAddr,
+		ApiContainerIpAddr:            apiContainerIpAddr,
+		TestSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
+		TestExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds,
+		IsPartitioningEnabled:         isPartitioningEnabled,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
