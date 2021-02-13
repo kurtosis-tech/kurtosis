@@ -107,7 +107,7 @@ func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *
 func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
+		return nil, stacktrace.Propagate(err, "Cannot register test setup; an error occurred advancing the state machine")
 	}
 
 	timeoutSeconds := service.testSetupTimeoutInSeconds
@@ -127,7 +127,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 func (service *testExecutionService) RegisterTestSetupCompletion(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupCompletion); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
+		return nil, stacktrace.Propagate(err, "Cannot register test setup completion; an error occurred advancing the state machine")
 	}
 
 	// Launch timeout thread that will error if a test execution isn't registered soon
@@ -204,7 +204,7 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 	expectedStateSet := []serviceState{waitingForTestSetupCompletion, waitingForExecutionCompletion};
 	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
+		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
 	usedPorts := map[nat.Port]bool{}
