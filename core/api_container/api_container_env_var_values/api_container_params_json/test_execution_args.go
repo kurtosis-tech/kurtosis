@@ -13,6 +13,8 @@ import (
 
 const (
 	jsonFieldTag = "json"
+	setupTimeoutFieldname = "testSetupTimeout"
+	executionTimeoutFieldname = "testExecutionTimeout"
 )
 
 // Fields are public for JSON de/serialization
@@ -79,6 +81,12 @@ func (args TestExecutionArgs) validate() error {
 	for i := 0; i < reflectValType.NumField(); i++ {
 		field := reflectValType.Field(i);
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
+		if jsonFieldName == setupTimeoutFieldname || jsonFieldName == executionTimeoutFieldname {
+			intVal := reflectVal.Field(i).Int()
+			if intVal <= 0 {
+				return stacktrace.NewError("JSON field '%s' representing a timeout is not greater than 0", jsonFieldName)
+			}
+		}
 		strVal := reflectVal.Field(i).String()
 		if strings.TrimSpace(strVal) == "" {
 			return stacktrace.NewError("JSON field '%s' is whitespace or empty string", jsonFieldName)
