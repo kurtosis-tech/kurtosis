@@ -78,7 +78,7 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	// Launch timeout thread that will error if a test setup isn't registered soon
 	go func() {
 		time.Sleep(testSetupRegistrationTimeout)
-		if err := service.stateMachine.assert(waitingForTestSetupRegistration); err == nil {
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestSetupRegistration: true}); err == nil {
 			service.shutdownChan <- api_container_exit_codes.NoTestSetupRegistered
 		}
 	}()
@@ -116,7 +116,7 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 	// Launch timeout thread that will error if the test setup doesn't complete within the allotted time limit
 	go func() {
 		time.Sleep(timeout)
-		if err := service.stateMachine.assert(waitingForTestSetupCompletion); err == nil {
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestSetupCompletion: true}); err == nil {
 			service.shutdownChan <- api_container_exit_codes.TestHitSetupTimeout
 		}
 	}()
@@ -133,7 +133,7 @@ func (service *testExecutionService) RegisterTestSetupCompletion(_ context.Conte
 	// Launch timeout thread that will error if a test execution isn't registered soon
 	go func() {
 		time.Sleep(testExecutionRegistrationTimeout)
-		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestExecutionRegistration: true}); err == nil {
 			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
 		}
 	}()
@@ -153,7 +153,7 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
 	go func() {
 		time.Sleep(timeout)
-		if err := service.stateMachine.assert(waitingForExecutionCompletion); err == nil {
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForExecutionCompletion: true}); err == nil {
 			service.shutdownChan <- api_container_exit_codes.TestHitExecutionTimeout
 		}
 	}()
@@ -247,7 +247,7 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 }
 
 func (service *testExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForExecutionCompletion: true}); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot remove service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
 	}
