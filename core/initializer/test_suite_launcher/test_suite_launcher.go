@@ -332,8 +332,8 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerId string,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		testSetupTimeout uint32,
-		testExecutionTimeout uint32,
+		testSetupTimeoutInSeconds uint32,
+		testExecutionTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	args, err := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
@@ -345,8 +345,8 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerId,
 		testSuiteContainerIpAddr.String(),
 		apiContainerIpAddr.String(),
-		testSetupTimeout,
-		testExecutionTimeout,
+		testSetupTimeoutInSeconds,
+		testExecutionTimeoutInSeconds,
 		isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
