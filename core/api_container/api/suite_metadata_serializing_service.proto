@@ -20,6 +20,6 @@ message TestMetadata {
   // "Set" of artifact URLs used by the test
   map<string, bool> used_artifact_urls = 2;
 
-  uint32 test_setup_timeout = 3;
-  uint32 test_execution_timeout = 4;
+  uint32 test_setup_timeout_in_seconds = 3;
+  uint32 test_execution_timeout_in_seconds = 4;
 }
