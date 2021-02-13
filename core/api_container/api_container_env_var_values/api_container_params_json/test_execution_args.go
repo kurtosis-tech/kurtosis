@@ -84,7 +84,7 @@ func (args TestExecutionArgs) validate() error {
 		if jsonFieldName == setupTimeoutFieldname || jsonFieldName == executionTimeoutFieldname {
 			intVal := reflectVal.Field(i).Int()
 			if intVal <= 0 {
-				return stacktrace.NewError("JSON field '%s' representing a timeout is not greater than 0", jsonFieldName)
+				return stacktrace.NewError("JSON field '%s' representing a timeout has value %v, but it must be greater than 0", jsonFieldName, intVal)
 			}
 		}
 		strVal := reflectVal.Field(i).String()

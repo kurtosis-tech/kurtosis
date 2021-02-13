@@ -39,5 +39,11 @@ func validateTestMetadata(testMetadata TestMetadata) error {
 			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)
 		}
 	}
+	if testMetadata.TestSetupTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test setup timeout is %v, but must be greater than 0.", testMetadata.TestSetupTimeoutInSeconds)
+	}
+	if testMetadata.TestExecutionTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test execution timeout is %v, but must be greater than 0.", testMetadata.TestExecutionTimeoutInSeconds)
+	}
 	return nil
 }
