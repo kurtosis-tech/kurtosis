@@ -56,7 +56,7 @@ func (machine *testExecutionServiceStateMachine) assert(expectedState serviceSta
 	return nil
 }
 
-func (machine *testExecutionServiceStateMachine) assertOneOfSet(expectedStates []serviceState) error {
+func (machine *testExecutionServiceStateMachine) assertOneOfSet(expectedStates map[serviceState]bool) error {
 	machine.mutex.Lock()
 	defer machine.mutex.Unlock()
 
@@ -94,16 +94,15 @@ func (machine testExecutionServiceStateMachine) throwErrorIfStatesDontMatch(expe
 	return nil
 }
 
-func (machine testExecutionServiceStateMachine) throwErrorIfNotInStateSet(expectedStates []serviceState) error {
+func (machine testExecutionServiceStateMachine) throwErrorIfNotInStateSet(expectedStates map[serviceState]bool) error {
 	actualState := stateOrder[machine.stateIdx]
-	for _, expectedState := range expectedStates {
-		if actualState == expectedState {
-			return nil
-		}
+	if _, ok := expectedStates[actualState]; ok {
+		return nil
+	} else {
+		return stacktrace.NewError(
+			"Actual state '%v' is not in expected state set '%+v'",
+			actualState,
+			expectedStates)
 	}
-	return stacktrace.NewError(
-		"Actual state '%v' is not in expected state set '%+v'",
-		actualState,
-		expectedStates)
 }
 
