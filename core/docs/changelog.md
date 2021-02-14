@@ -3,6 +3,9 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
 # TBD
+### Changed
+
+# 1.8.1
 ### Fixed
 * Issue where unsigned int was being validated as an int in timeout API
 
