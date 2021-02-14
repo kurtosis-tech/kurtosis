@@ -3,11 +3,12 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
 # TBD
-### Changed
+### Fixed
+* Issue where unsigned int was being validated as an int in timeout API
 
 # 1.8.0
 ### Changed
-* * Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
+* Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
 
 # 1.7.4
 ### Changed
