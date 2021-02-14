@@ -16,13 +16,20 @@ type TestMetadata struct {
 	// A "set" of all the artifact URLs that the test wants, which the initializer will
 	//  download and make ready for the test at runtime
 	UsedArtifacts map[string]bool `json:"usedArtifacts"`
+
+	TestSetupTimeoutInSeconds     uint32
+	TestExecutionTimeoutInSeconds uint32
 }
 
 
 // Even though the struct's fields must be public for JSON, we create a constructor so that we don't forget
 //  to initialize any fields
-func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool) *TestMetadata {
-	return &TestMetadata{IsPartitioningEnabled: isPartitioningEnabled, UsedArtifacts: usedArtifacts}
+func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool, testSetupTimeoutInSeconds uint32, testExecutionTimeoutInSeconds uint32) *TestMetadata {
+	return &TestMetadata{
+		IsPartitioningEnabled:         isPartitioningEnabled,
+		UsedArtifacts:                 usedArtifacts,
+		TestSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
+		TestExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds}
 }
 
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
@@ -31,6 +38,12 @@ func validateTestMetadata(testMetadata TestMetadata) error {
 		if len(strings.TrimSpace(artifactUrl)) == 0 {
 			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)
 		}
+	}
+	if testMetadata.TestSetupTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test setup timeout is %v, but must be greater than 0.", testMetadata.TestSetupTimeoutInSeconds)
+	}
+	if testMetadata.TestExecutionTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test execution timeout is %v, but must be greater than 0.", testMetadata.TestExecutionTimeoutInSeconds)
 	}
 	return nil
 }

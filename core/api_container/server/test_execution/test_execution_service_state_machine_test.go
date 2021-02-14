@@ -15,14 +15,20 @@ func TestStartingState(t *testing.T) {
 	assert.Equal(t, machine.stateIdx, 0)
 }
 
-func TestAssertState(t *testing.T) {
+func TestAssertOneOfStateSet(t *testing.T) {
 	machine := newTestExecutionServiceStateMachine()
 
 	expectedStartState := stateOrder[0]
-	assert.Nil(t, machine.assert(expectedStartState))
+	assert.Nil(t, machine.assertOneOfSet(map[serviceState]bool{expectedStartState: true}))
+
+	inclusiveStateSet := map[serviceState]bool{
+		expectedStartState: true,
+		stateOrder[1]: true,
+	}
+	assert.Nil(t, machine.assertOneOfSet(inclusiveStateSet))
 
 	wrongState := testsuiteExited
-	assert.NotNil(t, machine.assert(wrongState))
+	assert.NotNil(t, machine.assertOneOfSet(map[serviceState]bool{wrongState: true}))
 }
 
 func TestRegularAssertAndAdvance(t *testing.T) {

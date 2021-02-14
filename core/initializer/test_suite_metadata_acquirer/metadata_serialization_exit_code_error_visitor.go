@@ -43,12 +43,20 @@ func (m metadataSerializationExitCodeErrorVisitor) VisitSerializeNotCalled() err
 		"didn't call serialize; this is a bug in Kurtosis itself")
 }
 
+func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestSetupRegistered() error {
+	return getWrongModeError("no test setup registered")
+}
+
 func (m metadataSerializationExitCodeErrorVisitor) VisitNoTestExecutionRegistered() error {
 	return getWrongModeError("no test execution registered")
 }
 
-func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitTimeout() error {
-	return getWrongModeError("test hit timeout")
+func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitSetupTimeout() error {
+	return getWrongModeError("test hit setup timeout")
+}
+
+func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitExecutionTimeout() error {
+	return getWrongModeError("test hit execution timeout")
 }
 
 func (m metadataSerializationExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {
