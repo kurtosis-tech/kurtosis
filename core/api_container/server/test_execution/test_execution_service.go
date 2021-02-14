@@ -23,6 +23,10 @@ import (
 
 const (
 	// The amount of time a testsuite container has after registering itself with the API container to register
+	//  a test setup (there should be no reason that registering test setup doesn't happen immediately)
+	testSetupRegistrationTimeout = 10 * time.Second
+
+	// The amount of time a testsuite container has after completing test setup to register
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
@@ -34,27 +38,33 @@ const (
 
 
 type testExecutionService struct {
-	dockerManager *docker_manager.DockerManager
-	serviceNetwork *service_network.ServiceNetwork
-	testName string
-	testSuiteContainerId string
-	stateMachine *testExecutionServiceStateMachine
-	shutdownChan chan int
+	dockerManager                 *docker_manager.DockerManager
+	serviceNetwork                *service_network.ServiceNetwork
+	testName                      string
+	testSetupTimeoutInSeconds     uint32
+	testExecutionTimeoutInSeconds uint32
+	testSuiteContainerId          string
+	stateMachine                  *testExecutionServiceStateMachine
+	shutdownChan                  chan int
 }
 
 func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
 		serviceNetwork *service_network.ServiceNetwork,
 		testName string,
+		testSetupTimeoutInSeconds uint32,
+		testExecutionTimeoutInSeconds uint32,
 		testSuiteContainerId string,
 		shutdownChan chan int) *testExecutionService {
 	return &testExecutionService{
-		dockerManager: dockerManager,
-		serviceNetwork: serviceNetwork,
-		testName: testName,
-		testSuiteContainerId: testSuiteContainerId,
-		stateMachine: newTestExecutionServiceStateMachine(),
-		shutdownChan: shutdownChan,
+		dockerManager:                 dockerManager,
+		serviceNetwork:                serviceNetwork,
+		testName:                      testName,
+		testSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
+		testExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds,
+		testSuiteContainerId:          testSuiteContainerId,
+		stateMachine:                  newTestExecutionServiceStateMachine(),
+		shutdownChan:                  shutdownChan,
 	}
 }
 
@@ -65,11 +75,11 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 			"Cannot register test suite; an error occurred advancing the state machine")
 	}
 
-	// Launch timeout thread that will error if a test execution isn't registered soon
+	// Launch timeout thread that will error if a test setup isn't registered soon
 	go func() {
-		time.Sleep(testExecutionRegistrationTimeout)
-		if err := service.stateMachine.assert(waitingForTestExecutionRegistration); err == nil {
-			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
+		time.Sleep(testSetupRegistrationTimeout)
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestSetupRegistration: true}); err == nil {
+			service.shutdownChan <- api_container_exit_codes.NoTestSetupRegistered
 		}
 	}()
 
@@ -94,20 +104,57 @@ func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *
 	return result, nil
 }
 
-func (service *testExecutionService) RegisterTestExecution(ctx context.Context, args *bindings.RegisterTestExecutionArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupRegistration); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot register test setup; an error occurred advancing the state machine")
+	}
+
+	timeoutSeconds := service.testSetupTimeoutInSeconds
+	timeout := time.Duration(timeoutSeconds) * time.Second
+
+	// Launch timeout thread that will error if the test setup doesn't complete within the allotted time limit
+	go func() {
+		time.Sleep(timeout)
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestSetupCompletion: true}); err == nil {
+			service.shutdownChan <- api_container_exit_codes.TestHitSetupTimeout
+		}
+	}()
+
+	return &emptypb.Empty{}, nil
+}
+
+func (service *testExecutionService) RegisterTestSetupCompletion(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupCompletion); err != nil {
+		// TODO IP: Leaks internal information about the API container
+		return nil, stacktrace.Propagate(err, "Cannot register test setup completion; an error occurred advancing the state machine")
+	}
+
+	// Launch timeout thread that will error if a test execution isn't registered soon
+	go func() {
+		time.Sleep(testExecutionRegistrationTimeout)
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestExecutionRegistration: true}); err == nil {
+			service.shutdownChan <- api_container_exit_codes.NoTestExecutionRegistered
+		}
+	}()
+
+	return &emptypb.Empty{}, nil
+}
+
+func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestExecutionRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
-	timeoutSeconds := args.TimeoutSeconds
+	timeoutSeconds := service.testExecutionTimeoutInSeconds
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
 	go func() {
 		time.Sleep(timeout)
-		if err := service.stateMachine.assert(waitingForExecutionCompletion); err == nil {
-			service.shutdownChan <- api_container_exit_codes.TestHitTimeout
+		if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForExecutionCompletion: true}); err == nil {
+			service.shutdownChan <- api_container_exit_codes.TestHitExecutionTimeout
 		}
 	}()
 
@@ -131,9 +178,10 @@ func (service *testExecutionService) RegisterTestExecution(ctx context.Context, 
 }
 
 func (service *testExecutionService) RegisterService(_ context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
+	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
 	serviceId := service_network_types.ServiceID(args.ServiceId)
@@ -153,9 +201,10 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 }
 
 func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
+	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
+		return nil, stacktrace.Propagate(err, "Cannot start service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
 	usedPorts := map[nat.Port]bool{}
@@ -198,7 +247,7 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 }
 
 func (service *testExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
-	if err := service.stateMachine.assert(waitingForExecutionCompletion); err != nil {
+	if err := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForExecutionCompletion: true}); err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "Cannot remove service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
 	}

@@ -97,8 +97,9 @@ func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) 
 	for testName, apiTestMetadata := range apiSuiteMetadata.TestMetadata {
 		initializerAcceptableTestMetadata := test_suite_metadata_acquirer.NewTestMetadata(
 			apiTestMetadata.IsPartitioningEnabled,
-			apiTestMetadata.UsedArtifactUrls)
-
+			apiTestMetadata.UsedArtifactUrls,
+			apiTestMetadata.TestSetupTimeoutInSeconds,
+			apiTestMetadata.TestExecutionTimeoutInSeconds)
 		allInitializerAcceptableTestMetadata[testName] = *initializerAcceptableTestMetadata
 	}
 
