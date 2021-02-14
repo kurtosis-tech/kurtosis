@@ -4,6 +4,9 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 
 # TBD
 ### Changed
+
+# 1.8.0
+### Changed
 * * Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
 
 # 1.7.4
