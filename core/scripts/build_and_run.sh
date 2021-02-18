@@ -7,7 +7,12 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-go-example:develop"
+# NOTE: We build against a specific version of the Golang testsuite (rather than an evergreen 'develop' version) to minimize the circular dependencies 
+# going on (since Kurt Libs depends on this repo depends on Kurt Lib). 
+# However, this *does* mean that we'll be testing Kurt Core against a probably-outdated version of Kurt Libs - we're alright doing this, 
+# because some bit of sanity-checking is better than none and we'll test Kurt Core against the latest Kurt Libs when we upgrade the Core version in Libs
+# TODO The ideal would be having an extensive testsuite, specific to this repo, that runs all the this-repos-specific tests so that we don't have to depend on Kurt Libs anymore
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-golang-example:1.10.3"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
