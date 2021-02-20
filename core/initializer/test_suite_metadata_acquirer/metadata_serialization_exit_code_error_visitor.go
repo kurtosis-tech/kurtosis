@@ -59,6 +59,10 @@ func (m metadataSerializationExitCodeErrorVisitor) VisitTestHitExecutionTimeout(
 	return getWrongModeError("test hit execution timeout")
 }
 
+func (m metadataSerializationExitCodeErrorVisitor) VisitTestsuiteExitedDuringSetup() error {
+	return getWrongModeError("testsuite exited during setup")
+}
+
 func (m metadataSerializationExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {
 	return getWrongModeError("error waiting for testsuite container to exit")
 }

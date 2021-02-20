@@ -86,6 +86,7 @@ Launches a new testsuite container to acquire testsuite metadata
  */
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		ctx context.Context,
+		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		suiteExecutionVolume string,
 		debuggerPortBinding nat.PortBinding) (testsuiteContainerId string, kurtosisApiContainerId string, err error) {
@@ -111,7 +112,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container env vars")
 	}
 
-	logrus.Debug("Launching Kurtosis API container...")
+	log.Debug("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_server_consts.ListenPort, api_container_server_consts.ListenProtocol))
 	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
@@ -135,11 +136,12 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
+		log,
 		dockerManager,
 		kurtosisApiContainerId,
 		func() bool { return functionCompletedSuccessfully },
 	)
-	logrus.Debug("Successfully launched the Kurtosis API container")
+	log.Debug("Successfully launched the Kurtosis API container")
 
 	apiContainerIp, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, kurtosisApiContainerId)
 	if err != nil {
@@ -151,7 +153,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
 
-	logrus.Debug("Launching testsuite container to send metadata to Kurtosis API container...")
+	log.Debug("Launching testsuite container to send metadata to Kurtosis API container...")
 	testsuiteContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
@@ -173,11 +175,12 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
+		log,
 		dockerManager,
 		testsuiteContainerId,
 		func() bool { return functionCompletedSuccessfully},
 	)
-	logrus.Debug("Successfully launched testsuite container to send metadata to Kurtosis API container")
+	log.Debug("Successfully launched testsuite container to send metadata to Kurtosis API container")
 
 	functionCompletedSuccessfully = true
 	return testsuiteContainerId, kurtosisApiContainerId, nil
@@ -234,6 +237,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
+		log,
 		dockerManager,
 		suiteContainerId,
 		func() bool { return functionCompletedSuccessfully },
@@ -279,6 +283,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 	)
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
+		log,
 		dockerManager,
 		kurtosisApiContainerId,
 		func() bool { return functionCompletedSuccessfully })
@@ -387,19 +392,20 @@ func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiConta
 //  outer function exits with an error
 func killContainerIfNotFunctionSuccess(
 		ctx context.Context,
+		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		containerId string,
 		// This needs to be a function so that it gets evaluated at time of killContainer... function
 		didFunctionCompleteSuccessfully func() bool) {
 	if !didFunctionCompleteSuccessfully() {
 		if err := dockerManager.KillContainer(ctx, containerId); err != nil {
-			logrus.Errorf("A container was started but the function that started it exited with an error. The container needed " +
+			log.Errorf("A container was started but the function that started it exited with an error. The container needed " +
 				"to be stopped to avoid leaking a running container, but the following error occurred when attempting to stop the " +
 				"container:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			logrus.Errorf("ACTION REQUIRED: You will need to stop the testsuite container with ID '%v' manually!", containerId)
+			fmt.Fprintln(log.Out, err)
+			log.Errorf("ACTION REQUIRED: You will need to stop the testsuite container with ID '%v' manually!", containerId)
 		}
 	} else {
-		logrus.Debugf("Skipping killing container '%v' because function completed successfully", containerId)
+		log.Debugf("Skipping killing container '%v' because function completed successfully", containerId)
 	}
 }

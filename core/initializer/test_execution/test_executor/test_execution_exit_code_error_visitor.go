@@ -61,6 +61,10 @@ func (t testExecutionExitCodeErrorVisitor) VisitTestHitExecutionTimeout() error 
 	return stacktrace.NewError("The test failed to complete within the test execution timeout")
 }
 
+func (t testExecutionExitCodeErrorVisitor) VisitTestsuiteExitedDuringSetup() error {
+	return stacktrace.NewError("The testsuite exited during the setup phase, which should never happen")
+}
+
 func (t testExecutionExitCodeErrorVisitor) VisitErrWaitingForSuiteContainerExit() error {
 	return stacktrace.NewError("The Kurtosis API container encountered an error waiting for the testsuite " +
 		"container to exit; this is a bug in Kurtosis itself")
