@@ -6,6 +6,7 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 ### Changed
 * Update the name of the Kurtosis Go example testsuite image (now `kurtosis-golang-example` rather than `kurtosis-go-example`)
 * Use a pinned version of `kurtosis-go-example` when doing the "make sure testsuites still work" sanity check, so that we don't have to build a `develop` version of the Kurt Libs testsuites
+* Added extra monitoring inside the API container such that if a testsuite exits during the test setup phase (which should never happen), the API container will exit with an error immediately (rather than the user needing to wait for the test setup timeout)
 
 # 1.8.0
 ### Changed
