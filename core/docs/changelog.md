@@ -2,7 +2,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
-# TBD
+# 1.8.1
 ### Changed
 * Update the name of the Kurtosis Go example testsuite image (now `kurtosis-golang-example` rather than `kurtosis-go-example`)
 * Use a pinned version of `kurtosis-go-example` when doing the "make sure testsuites still work" sanity check, so that we don't have to build a `develop` version of the Kurt Libs testsuites
