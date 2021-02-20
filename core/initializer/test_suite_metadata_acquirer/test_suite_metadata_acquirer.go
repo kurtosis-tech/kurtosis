@@ -43,6 +43,7 @@ func GetTestSuiteMetadata(
 	logrus.Info("Launching metadata-acquiring containers...")
 	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainers(
 		parentContext,
+		logrus.StandardLogger(),
 		dockerManager,
 		suiteExecutionVolName,
 		debuggerHostPortBinding)

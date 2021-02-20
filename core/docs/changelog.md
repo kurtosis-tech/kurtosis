@@ -8,6 +8,9 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 * Use a pinned version of `kurtosis-go-example` when doing the "make sure testsuites still work" sanity check, so that we don't have to build a `develop` version of the Kurt Libs testsuites
 * Added extra monitoring inside the API container such that if a testsuite exits during the test setup phase (which should never happen), the API container will exit with an error immediately (rather than the user needing to wait for the test setup timeout)
 
+### Fixed
+* Error with `TestsuiteLauncher` printing log messages to the standard logger when it should be printing them to the test-specific logger
+
 # 1.8.0
 ### Changed
 * * Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
