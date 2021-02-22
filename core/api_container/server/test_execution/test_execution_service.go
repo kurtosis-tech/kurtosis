@@ -30,10 +30,9 @@ const (
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
-	// TODO Don't bother gracefully shutting down - just kill
-	// When destroying the service network, the maximum amount of time we'll give a container to stop gracefully
-	//  before hard-killing it
-	postShutdownContainerStopTimeout = 10 * time.Second
+	// We don't give any time for containers to gracefully stop because we're definitely not going to use the
+	//  services again when we're destroying a network
+	postShutdownContainerStopTimeout = 0 * time.Second
 )
 
 

@@ -2,6 +2,10 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
 
+# TBD
+### Changed
+* Don't give any grace time for containers to stop when tearing down a test network because we know we're not going to use those services again (since we're tearing down the entire test network)
+
 # 1.8.1
 ### Changed
 * Update the name of the Kurtosis Go example testsuite image (now `kurtosis-golang-example` rather than `kurtosis-go-example`)
