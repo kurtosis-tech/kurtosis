@@ -70,9 +70,9 @@ func (server ApiContainerServer) Run() int {
 
 	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
 
-	// NOTE: If we see weirdness with graceful stop, we could use the hard Stop though then we'd need to consider that
-	//  RPC calls which send the shutdown signal might get killed before they can return a response to the client
-	grpcServer.GracefulStop()
+	// Use force-stop rather than graceful stop so that a hung RPC call to the server (e.g. "AddService" that's
+	// pulling a super-huge image) doesn't prevent the API container from shutting down
+	grpcServer.Stop()
 
 	if err := <- grpcServerResultChan; err != nil {
 		logrus.Errorf("gRPC server returned an error after it was done serving:")

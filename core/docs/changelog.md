@@ -6,6 +6,9 @@ _This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.
 ### Changed
 * Don't give any grace time for containers to stop when tearing down a test network because we know we're not going to use those services again (since we're tearing down the entire test network)
 
+### Fixed
+* Use hard-stop, rather than graceful stop, on the API container's gRPC server when it receives an exit code, so that a hung, in-progress RPC call to the API container (e.g. AddService with a super-huge Docker image) doesn't prevent the API container from shutting down
+
 # 1.8.1
 ### Changed
 * Update the name of the Kurtosis Go example testsuite image (now `kurtosis-golang-example` rather than `kurtosis-go-example`)
