@@ -328,4 +328,9 @@ func (service *testExecutionService) Repartition(ctx context.Context, args *bind
 	return &emptypb.Empty{}, nil
 }
 
+func (service *testExecutionService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
+	panic("implement me")
+}
+
+
 
