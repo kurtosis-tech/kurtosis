@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.8.2
 _NOTE: Changelog entries from this point on will abandon the KeepAChangelog format, as it has done a poor job of highlighting the truly important things - features, fixes, and breaking changes_
 
 ### Features
