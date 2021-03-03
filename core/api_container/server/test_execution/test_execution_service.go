@@ -329,7 +329,21 @@ func (service *testExecutionService) Repartition(ctx context.Context, args *bind
 }
 
 func (service *testExecutionService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
-	panic("implement me")
+	serviceIdStr := args.ServiceId
+	serviceId := service_network_types.ServiceID(serviceIdStr)
+	command := args.CommandArgs
+	exitCode, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred running exec command '%v' against service '%v' in the service network",
+			command,
+			serviceId)
+	}
+	resp := &bindings.ExecCommandResponse{
+		ExitCode: exitCode,
+	}
+	return resp, nil
 }
 
 

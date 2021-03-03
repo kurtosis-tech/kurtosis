@@ -318,7 +318,7 @@ func (network *ServiceNetwork) RemoveService(
 func (network *ServiceNetwork) ExecCommand(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
-		command []string) (int, error) {
+		command []string) (int32, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()

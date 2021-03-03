@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"math"
 	"net"
 	"strings"
 	"time"
@@ -386,11 +387,7 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 /*
 Executes the given command inside the container with the given ID, blocking until the command completes
  */
-func (manager DockerManager) RunExecCommand(
-		context context.Context,
-		containerId string,
-		command []string,
-		logOutput io.Writer) (int, error) {
+func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		Cmd:          command,
@@ -451,7 +448,12 @@ func (manager DockerManager) RunExecCommand(
 	if inspectResponse.Running {
 		return 0, stacktrace.NewError("Expected exec to have stopped, but it's still running!")
 	}
-	return inspectResponse.ExitCode, nil
+	unsizedExitCode := inspectResponse.ExitCode
+	if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
+		return 0, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode)
+	}
+	int32ExitCode := int32(unsizedExitCode)
+	return int32ExitCode, nil
 }
 
 
