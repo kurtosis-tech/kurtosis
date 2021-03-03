@@ -5,6 +5,7 @@
 package service_network
 
 import (
+	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
@@ -312,6 +313,41 @@ func (network *ServiceNetwork) RemoveService(
 		return stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
 	}
 	return nil
+}
+
+func (network *ServiceNetwork) ExecCommand(
+		ctx context.Context,
+		serviceId service_network_types.ServiceID,
+		command []string) (int32, error) {
+	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
+	// asynchronous
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return 0, stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
+	}
+
+	containerId, found := network.serviceContainerIds[serviceId]
+	if !found {
+		return 0, stacktrace.NewError(
+			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
+			command,
+			serviceId)
+	}
+
+	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
+	// In the future, this will likely be insufficient
+
+	execOutputBuf := &bytes.Buffer{}
+	exitCode, err := network.dockerManager.RunExecCommand(ctx, containerId, command, execOutputBuf)
+	if err != nil {
+		return 0, stacktrace.Propagate(
+			err,
+			"An error occurred running exec command '%v' against service '%v'",
+			command,
+			serviceId)
+	}
+	return exitCode, nil
 }
 
 // Stops all services that have been created by the API container, and renders the service network unusable

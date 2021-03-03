@@ -29,6 +29,9 @@ service TestExecutionService {
 
   // Instructs the API container to repartition the test network
   rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
+
+  // Executes the given command inside a running container
+  rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
 }
 
 // ==============================================================================================
@@ -126,4 +129,18 @@ message PartitionConnections {
 message PartitionConnectionInfo {
   // Whether network traffic is allowed between the two partitions
   bool is_blocked = 1;
+}
+
+// ==============================================================================================
+//                                          Exec Command
+// ==============================================================================================
+message ExecCommandArgs {
+  // The service ID of the container that the command should be executed in
+  string service_id = 1;
+
+  repeated string command_args = 2;
+}
+
+message ExecCommandResponse {
+  int32 exit_code = 1;
 }
