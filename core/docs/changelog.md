@@ -1,6 +1,14 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-_This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
+# 1.8.2
+_NOTE: Changelog entries from this point on will abandon the KeepAChangelog format, as it has done a poor job of highlighting the truly important things - features, fixes, and breaking changes_
+
+### Features
+* Add a new endpoint to the Kurtosis API container, `ExecCommand`, to provide the ability for testsuite authors to run commands against running containers via `docker exec`
+    * NOTE: As currently written, this is a synchronous operation - no other changes to the network will be possible while an `ExecCommand` is running!
+
+### Fixes
+* Don't give any grace time for containers to stop when tearing down a test network because we know we're not going to use those services again (since we're tearing down the entire test network)
 
 # 1.8.1
 ### Changed
