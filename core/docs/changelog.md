@@ -1,5 +1,9 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+### Fixes
+* If the API container's gRPC server doesn't gracefully stop after 10s, hard-stop it to prevent hung calls to the server from hanging the API container exit (e.g. AddService with a super-huge Docker image)
+
 # 1.9.0
 ### Features
 * Added the ability to override a Docker image's `ENTRYPOINT` directive via the new `entrypoint_args` field to the API container's `StartServiceArgs` object
@@ -16,6 +20,7 @@ _NOTE: Changelog entries from this point on will abandon the KeepAChangelog form
 
 ### Fixes
 * Don't give any grace time for containers to stop when tearing down a test network because we know we're not going to use those services again (since we're tearing down the entire test network)
+
 
 # 1.8.1
 ### Changed

@@ -23,6 +23,7 @@ import (
 const (
 	// If no suite registers within this time, the API container will exit with an error
 	suiteRegistrationTimeout = 10 * time.Second
+	grpcServerStopGracePeriod = 10 * time.Second
 )
 
 type ApiContainerServer struct {
@@ -70,9 +71,21 @@ func (server ApiContainerServer) Run() int {
 
 	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
 
-	// NOTE: If we see weirdness with graceful stop, we could use the hard Stop though then we'd need to consider that
-	//  RPC calls which send the shutdown signal might get killed before they can return a response to the client
-	grpcServer.GracefulStop()
+	// Use force-stop rather than graceful stop so that a hung RPC call to the server (e.g. "AddService" that's
+	// pulling a super-huge image) doesn't prevent the API container from shutting down
+	serverStoppedChan := make(chan interface{})
+	go func() {
+		grpcServer.GracefulStop()
+		serverStoppedChan <- nil
+	}()
+	select {
+	case <- serverStoppedChan:
+		logrus.Info("gRPC server has exited gracefully")
+	case <- time.After(grpcServerStopGracePeriod):
+		logrus.Warnf("gRPC server failed to stop gracefully after %v; hard-stopping now...", grpcServerStopGracePeriod)
+		grpcServer.Stop()
+		logrus.Info("gRPC server was forcefully stopped")
+	}
 
 	if err := <- grpcServerResultChan; err != nil {
 		logrus.Errorf("gRPC server returned an error after it was done serving:")
