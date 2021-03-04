@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
+	"math"
 	"net"
 	"strings"
 	"time"
@@ -203,7 +204,8 @@ Args:
 	networkMode: When a non-empty string, sets the Docker --network flag to be this given string
 	usedPorts: A map of (ports that the container will listen on) -> (an *optional* IP/port on the host that
 		will get bound to the container port); set the binding to nil to exclude it
-	startCmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
+	entrypointArgs: The args that will be used to override the ENTRYPOINT of the image (leave as nil to not override)
+	cmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
 	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) to mount during container launch
@@ -219,7 +221,8 @@ func (manager DockerManager) CreateAndStartContainer(
 			addedCapabilities map[ContainerCapability]bool,
 			networkMode DockerManagerNetworkMode,
 			usedPortsWithHostBindings map[nat.Port]*nat.PortBinding,
-			startCmdArgs []string,
+			entrypointArgs []string,
+			cmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
 			volumeMounts map[string]string) (containerId string, err error) {
@@ -255,7 +258,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, entrypointArgs, cmdArgs, envVariables)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -385,14 +388,8 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 
 /*
 Executes the given command inside the container with the given ID, blocking until the command completes
-
-If the command has a non-zero exit code, an error will be returned
  */
-func (manager DockerManager) RunExecCommand(
-		context context.Context,
-		containerId string,
-		command []string,
-		logOutput io.Writer) error {
+func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
 	dockerClient := manager.dockerClient
 	execConfig := types.ExecConfig{
 		Cmd:          command,
@@ -403,14 +400,14 @@ func (manager DockerManager) RunExecCommand(
 
 	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
 	if err != nil {
-		return stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred creating the exec process")
 	}
 
 	execId := createResp.ID
 	if execId == "" {
-		return stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
+		return 0, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
 	}
 
 	execStartConfig := types.ExecStartCheck{
@@ -424,14 +421,14 @@ func (manager DockerManager) RunExecCommand(
 	//  error saying "Exec proc 123451312321321 has already finished"
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
-		return stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred attaching to the exec command")
 	}
 	defer attachResp.Close()
 
 	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
-		return stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred starting the exec command")
 	}
@@ -439,24 +436,26 @@ func (manager DockerManager) RunExecCommand(
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
 	if _, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader); err != nil {
-		return stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred copying the exec command output to the given output writer")
 	}
 
 	inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 	if err != nil {
-		return stacktrace.Propagate(
+		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred inspecting the exec to get the response code")
 	}
 	if inspectResponse.Running {
-		return stacktrace.NewError("Expected exec to have stopped, but it's still running!")
+		return 0, stacktrace.NewError("Expected exec to have stopped, but it's still running!")
 	}
-	if inspectResponse.ExitCode != 0 {
-		return stacktrace.NewError("Expected exit code 0 but exec exit code was '%v'", inspectResponse.ExitCode)
+	unsizedExitCode := inspectResponse.ExitCode
+	if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
+		return 0, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode)
 	}
-	return  nil
+	int32ExitCode := int32(unsizedExitCode)
+	return int32ExitCode, nil
 }
 
 
@@ -582,7 +581,8 @@ func (manager *DockerManager) getContainerHostConfig(
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			usedPorts map[nat.Port]bool,
-			startCmdArgs []string,
+			entrypointArgs []string,
+			cmdArgs []string,
 			envVariables map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
@@ -595,11 +595,12 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		Tty: false,
-		Image: dockerImage,
+		Tty:          false,
+		Image:        dockerImage,
 		ExposedPorts: portSet,
-		Cmd: startCmdArgs,
-		Env: envVariablesSlice,
+		Cmd:          cmdArgs,
+		Entrypoint:   entrypointArgs,
+		Env:          envVariablesSlice,
 	}
 	return nodeConfigPtr, nil
 }

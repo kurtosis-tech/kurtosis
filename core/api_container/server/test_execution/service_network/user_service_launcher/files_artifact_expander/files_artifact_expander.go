@@ -103,6 +103,7 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{},
+		nil, // No ENTRYPOINT overriding needed
 		containerCmd,
 		map[string]string{}, // No env variables
 		map[string]string{}, // No bind mounts
