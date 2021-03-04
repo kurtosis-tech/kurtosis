@@ -1,5 +1,12 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+### Features
+* Added the ability to override a Docker image's `ENTRYPOINT` directive via the new `entrypoint_args` field to the API container's `StartServiceArgs` object
+ 
+### Breaking Changes
+* Renamed the `start_cmd_args` field on the API container's `StartServiceArgs` Protobuf object to `cmd_args`
+
 # 1.8.2
 _NOTE: Changelog entries from this point on will abandon the KeepAChangelog format, as it has done a poor job of highlighting the truly important things - features, fixes, and breaking changes_
 

@@ -124,7 +124,8 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
-		nil,
+		nil, // No ENTRYPOINT overriding needed because the API container is launched via env vars
+		nil, // No CMD overriding needed for the same reason
 		apiContainerEnvVars,
 		map[string]string{},   // We don't need to bind mount the Docker socket because this API container won't interact with Docker
 		map[string]string{
@@ -164,7 +165,8 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
-		nil, // Nil start command args because we expect the test suite image to be parameterized with variables
+		nil, // Nil ENTRYPOINT args because we expect the test suite image to be parameterized with variables
+		nil, // Nil CMD args because we expect the test suite image to be parameterized with variables
 		testsuiteEnvVars,
 		map[string]string{},
 		map[string]string{
@@ -226,7 +228,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		map[nat.Port]*nat.PortBinding{
 			launcher.debuggerPort: &debuggerPortBinding,
 		},
-		nil,
+		nil, // Nil ENTRYPOINT args because the testsuite is launched by setting env vars
+		nil, // Nil CMD args because the testsuite is launched by setting env vars
 		testSuiteEnvVars,
 		map[string]string{},
 		map[string]string{
@@ -272,7 +275,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		map[nat.Port]*nat.PortBinding{
 			kurtosisApiPort: nil,
 		},
-		nil,
+		nil, // Nil ENTRYPOINT args because the API container is launched by setting env vars
+		nil, // Nil CMD args because the API container is launched by setting env vars
 		apiContainerEnvVars,
 		map[string]string{
 			dockerSocket: dockerSocket,

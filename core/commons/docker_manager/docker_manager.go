@@ -204,7 +204,8 @@ Args:
 	networkMode: When a non-empty string, sets the Docker --network flag to be this given string
 	usedPorts: A map of (ports that the container will listen on) -> (an *optional* IP/port on the host that
 		will get bound to the container port); set the binding to nil to exclude it
-	startCmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
+	entrypointArgs: The args that will be used to override the ENTRYPOINT of the image (leave as nil to not override)
+	cmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
 	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) to mount during container launch
@@ -220,7 +221,8 @@ func (manager DockerManager) CreateAndStartContainer(
 			addedCapabilities map[ContainerCapability]bool,
 			networkMode DockerManagerNetworkMode,
 			usedPortsWithHostBindings map[nat.Port]*nat.PortBinding,
-			startCmdArgs []string,
+			entrypointArgs []string,
+			cmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
 			volumeMounts map[string]string) (containerId string, err error) {
@@ -256,7 +258,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, startCmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, entrypointArgs, cmdArgs, envVariables)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -579,7 +581,8 @@ func (manager *DockerManager) getContainerHostConfig(
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			usedPorts map[nat.Port]bool,
-			startCmdArgs []string,
+			entrypointArgs []string,
+			cmdArgs []string,
 			envVariables map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
@@ -592,11 +595,12 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		Tty: false,
-		Image: dockerImage,
+		Tty:          false,
+		Image:        dockerImage,
 		ExposedPorts: portSet,
-		Cmd: startCmdArgs,
-		Env: envVariablesSlice,
+		Cmd:          cmdArgs,
+		Entrypoint:   entrypointArgs,
+		Env:          envVariablesSlice,
 	}
 	return nodeConfigPtr, nil
 }
