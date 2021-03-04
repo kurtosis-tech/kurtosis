@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.9.1
 ### Fixes
 * If the API container's gRPC server doesn't gracefully stop after 10s, hard-stop it to prevent hung calls to the server from hanging the API container exit (e.g. AddService with a super-huge Docker image)
 
