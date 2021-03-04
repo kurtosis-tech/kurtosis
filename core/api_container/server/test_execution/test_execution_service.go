@@ -252,7 +252,8 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 			serviceId,
 			args.DockerImage,
 			usedPorts,
-			args.StartCmdArgs,
+			args.EntrypointArgs,
+			args.CmdArgs,
 			args.DockerEnvVars,
 			args.SuiteExecutionVolMntDirpath,
 			args.FilesArtifactMountDirpaths); err != nil {

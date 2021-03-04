@@ -58,7 +58,8 @@ func (launcher UserServiceLauncher) Launch(
 		ipAddr net.IP,
 		imageName string,
 		usedPorts map[nat.Port]bool,
-		startCmd []string,
+		entrypointArgs []string,
+		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		suiteExecutionVolMntDirpath string,
 		// Mapping artifactUrl -> mountpoint
@@ -108,7 +109,8 @@ func (launcher UserServiceLauncher) Launch(
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		portBindings,
-		startCmd,
+		entrypointArgs,
+		cmdArgs,
 		dockerEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		volumeMounts,

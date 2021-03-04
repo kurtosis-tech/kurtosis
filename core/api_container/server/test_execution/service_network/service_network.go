@@ -205,7 +205,8 @@ func (network *ServiceNetwork) StartService(
 		serviceId service_network_types.ServiceID,
 		imageName string,
 		usedPorts map[nat.Port]bool,
-		startCmd []string,
+		entrypointArgs []string,
+		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		suiteExecutionVolMntDirpath string,
 		filesArtifactMountDirpaths map[string]string) error {
@@ -256,7 +257,8 @@ func (network *ServiceNetwork) StartService(
 		serviceIpAddr,
 		imageName,
 		usedPorts,
-		startCmd,
+		entrypointArgs,
+		cmdArgs,
 		dockerEnvVars,
 		suiteExecutionVolMntDirpath,
 		filesArtifactMountDirpaths)

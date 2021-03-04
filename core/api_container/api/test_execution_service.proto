@@ -79,17 +79,20 @@ message StartServiceArgs {
   // This is a string because it's Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
   map<string, bool> used_ports = 3;
 
-  // String array indicating the command that should be run inside the sevice's container on startup
-  repeated string start_cmd_args = 4;
+  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
+  repeated string entrypoint_args = 4;
+
+  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
+  repeated string cmd_args = 5;
 
   // Docker environment variables that should be set in the service's container
-  map<string, string> docker_env_vars = 5;
+  map<string, string> docker_env_vars = 6;
 
   // The full path where the API container should execute the suite execution volume on the service container
-  string suite_execution_vol_mnt_dirpath = 6;
+  string suite_execution_vol_mnt_dirpath = 7;
 
   // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
-  map<string, string> files_artifact_mount_dirpaths = 7;
+  map<string, string> files_artifact_mount_dirpaths = 8;
 }
 
 // ==============================================================================================
