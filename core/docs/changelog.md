@@ -1,6 +1,6 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-# TBD
+# 1.9.0
 ### Features
 * Added the ability to override a Docker image's `ENTRYPOINT` directive via the new `entrypoint_args` field to the API container's `StartServiceArgs` object
  
