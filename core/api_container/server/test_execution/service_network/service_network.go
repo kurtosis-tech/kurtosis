@@ -340,6 +340,9 @@ func (network *ServiceNetwork) ExecCommand(
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
 	// In the future, this will likely be insufficient
 
+	// TODO TODO TODO Return this to caller
+	// Questions: what is the gRPC return type for bytes?
+	// We'll have to modify the protobuf.
 	execOutputBuf := &bytes.Buffer{}
 	exitCode, err := network.dockerManager.RunExecCommand(ctx, containerId, command, execOutputBuf)
 	if err != nil {
