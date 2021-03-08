@@ -22,6 +22,7 @@ const (
 	NoTestExecutionRegistered	// A testsuite registered itself, but then didn't register a test execution within the timeout
 	TestHitSetupTimeout
 	TestHitExecutionTimeout
+	TestsuiteExitedDuringSetup	//
 	ErrWaitingForSuiteContainerExit // An error occurred waiting for the testsuite container to exit
 )
 var ExitCodeErrorVisitorAcceptFuncs = map[int]func(visitor ExitCodeErrorVisitor) error {
@@ -36,6 +37,7 @@ var ExitCodeErrorVisitorAcceptFuncs = map[int]func(visitor ExitCodeErrorVisitor)
 	NoTestExecutionRegistered:            func(visitor ExitCodeErrorVisitor) error { return visitor.VisitNoTestExecutionRegistered() },
 	TestHitSetupTimeout:              	  func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitSetupTimeout() },
 	TestHitExecutionTimeout:              func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestHitExecutionTimeout() },
+	TestsuiteExitedDuringSetup:           func(visitor ExitCodeErrorVisitor) error { return visitor.VisitTestsuiteExitedDuringSetup() },
 	ErrWaitingForSuiteContainerExit:      func(visitor ExitCodeErrorVisitor) error { return visitor.VisitErrWaitingForSuiteContainerExit() },
 }
 
@@ -52,5 +54,6 @@ type ExitCodeErrorVisitor interface {
 	VisitNoTestExecutionRegistered() error
 	VisitTestHitSetupTimeout() error
 	VisitTestHitExecutionTimeout() error
+	VisitTestsuiteExitedDuringSetup() error
 	VisitErrWaitingForSuiteContainerExit() error
 }

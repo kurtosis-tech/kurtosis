@@ -30,10 +30,9 @@ const (
 	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
 	testExecutionRegistrationTimeout = 10 * time.Second
 
-	// TODO Don't bother gracefully shutting down - just kill
-	// When destroying the service network, the maximum amount of time we'll give a container to stop gracefully
-	//  before hard-killing it
-	postShutdownContainerStopTimeout = 10 * time.Second
+	// We don't give any time for containers to gracefully stop because we're definitely not going to use the
+	//  services again when we're destroying a network
+	postShutdownContainerStopTimeout = 0 * time.Second
 )
 
 
@@ -112,6 +111,24 @@ func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emp
 
 	timeoutSeconds := service.testSetupTimeoutInSeconds
 	timeout := time.Duration(timeoutSeconds) * time.Second
+
+	// If the testsuite throws an error during setup and exits, the user would have to wait for the setup
+	// timeout (which can be very long). To speed things up, we'll monitor the testsuite container to
+	// ensure that an error is thrown if the testsuite exits during the setup phase
+	go func() {
+		// We use the background context so that waiting continues even when the request finishes
+		_, waitForSuiteExitErr := service.dockerManager.WaitForExit(context.Background(), service.testSuiteContainerId)
+		if assertIsSetupPhaseErr := service.stateMachine.assertOneOfSet(map[serviceState]bool{waitingForTestSetupCompletion: true}); assertIsSetupPhaseErr == nil {
+			if waitForSuiteExitErr != nil {
+				logrus.Warnf("The testsuite container was determined to have exited while execution was still in the " +
+					"test setup phase which should never happen, but the following error occurred while waiting for " +
+					"the testsuite container to exit so the determination that the testsuite exited may be spurious:")
+				fmt.Fprintln(logrus.StandardLogger().Out, waitForSuiteExitErr)
+			}
+			logrus.Errorf("The testsuite container exited during the test setup phase, which should never happen")
+			service.shutdownChan <- api_container_exit_codes.TestsuiteExitedDuringSetup
+		}
+	}()
 
 	// Launch timeout thread that will error if the test setup doesn't complete within the allotted time limit
 	go func() {
@@ -235,7 +252,8 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 			serviceId,
 			args.DockerImage,
 			usedPorts,
-			args.StartCmdArgs,
+			args.EntrypointArgs,
+			args.CmdArgs,
 			args.DockerEnvVars,
 			args.SuiteExecutionVolMntDirpath,
 			args.FilesArtifactMountDirpaths); err != nil {
@@ -310,5 +328,24 @@ func (service *testExecutionService) Repartition(ctx context.Context, args *bind
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (service *testExecutionService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
+	serviceIdStr := args.ServiceId
+	serviceId := service_network_types.ServiceID(serviceIdStr)
+	command := args.CommandArgs
+	exitCode, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred running exec command '%v' against service '%v' in the service network",
+			command,
+			serviceId)
+	}
+	resp := &bindings.ExecCommandResponse{
+		ExitCode: exitCode,
+	}
+	return resp, nil
+}
+
 
 

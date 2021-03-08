@@ -87,6 +87,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 		},
 		docker_manager.NewContainerNetworkMode(serviceContainerId),
 		map[nat.Port]*nat.PortBinding{},
+		nil, // No entrypoint overriding needed
 		sidecarContainerCommand,
 		map[string]string{}, // No environment variables
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API

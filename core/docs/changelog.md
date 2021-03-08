@@ -1,8 +1,37 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
-_This changelog is in [KeepAChangelog format](https://keepachangelog.com/en/1.0.0/)_
+# 1.9.1
+### Fixes
+* If the API container's gRPC server doesn't gracefully stop after 10s, hard-stop it to prevent hung calls to the server from hanging the API container exit (e.g. AddService with a super-huge Docker image)
 
-# TBD
+# 1.9.0
+### Features
+* Added the ability to override a Docker image's `ENTRYPOINT` directive via the new `entrypoint_args` field to the API container's `StartServiceArgs` object
+ 
+### Breaking Changes
+* Renamed the `start_cmd_args` field on the API container's `StartServiceArgs` Protobuf object to `cmd_args`
+
+# 1.8.2
+_NOTE: Changelog entries from this point on will abandon the KeepAChangelog format, as it has done a poor job of highlighting the truly important things - features, fixes, and breaking changes_
+
+### Features
+* Add a new endpoint to the Kurtosis API container, `ExecCommand`, to provide the ability for testsuite authors to run commands against running containers via `docker exec`
+    * NOTE: As currently written, this is a synchronous operation - no other changes to the network will be possible while an `ExecCommand` is running!
+
+### Fixes
+* Don't give any grace time for containers to stop when tearing down a test network because we know we're not going to use those services again (since we're tearing down the entire test network)
+
+
+# 1.8.1
+### Changed
+* Update the name of the Kurtosis Go example testsuite image (now `kurtosis-golang-example` rather than `kurtosis-go-example`)
+* Use a pinned version of `kurtosis-go-example` when doing the "make sure testsuites still work" sanity check, so that we don't have to build a `develop` version of the Kurt Libs testsuites
+* Added extra monitoring inside the API container such that if a testsuite exits during the test setup phase (which should never happen), the API container will exit with an error immediately (rather than the user needing to wait for the test setup timeout)
+
+### Fixed
+* Error with `TestsuiteLauncher` printing log messages to the standard logger when it should be printing them to the test-specific logger
+
+# 1.8.0
 ### Changed
 
 # 1.8.1

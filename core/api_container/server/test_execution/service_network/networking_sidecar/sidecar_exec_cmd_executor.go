@@ -14,6 +14,10 @@ import (
 	"io"
 )
 
+const (
+	succesfulExecCmdExitCode = 0
+)
+
 // ==========================================================================================
 //                                  Interface
 // ==========================================================================================
@@ -47,18 +51,29 @@ func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, unwrapp
 	shWrappedCmd := executor.shWrappingCmd(unwrappedCmd)
 
 	execOutputBuf := &bytes.Buffer{}
-	err := executor.dockerManager.RunExecCommand(
+	exitCode, err := executor.dockerManager.RunExecCommand(
 			ctx,
 			executor.sidecarContainerId,
 			shWrappedCmd,
 			execOutputBuf)
-	if err !=  nil {
+	if err != nil || exitCode != succesfulExecCmdExitCode {
 		logrus.Errorf("------------------ Exec command output for command '%v' --------------------", shWrappedCmd)
 		if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
 			logrus.Errorf("An error occurred printing the exec logs: %v", err)
 		}
 		logrus.Errorf("------------------ END Exec command output for command '%v' --------------------", shWrappedCmd)
-		return stacktrace.Propagate(err, "An error occurred running exec command '%v'", shWrappedCmd)
+		var resultErr error
+		if err != nil {
+			resultErr = stacktrace.Propagate(err, "An error occurred running exec command '%v'", shWrappedCmd)
+		}
+		if exitCode != succesfulExecCmdExitCode {
+			resultErr = stacktrace.NewError(
+				"Expected exit code '%v' when running exec command '%v', but got exit code '%v' instead",
+				succesfulExecCmdExitCode,
+				shWrappedCmd,
+				exitCode)
+		}
+		return resultErr
 	}
 	return nil
 }
