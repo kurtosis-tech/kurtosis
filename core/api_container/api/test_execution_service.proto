@@ -146,8 +146,6 @@ message ExecCommandArgs {
 
 message ExecCommandResponse {
   int32 exit_code = 1;
-  // TODO TODO TODO Add some type here to represent logs (string, bytes, what should it be)
-  // Messing around with string encodings is a quiet error.
-  // Most likely, we'll want to send back bytes. We should send bytes, how to do this in protobuf?
+  bytes log_output = 2;
   // Then, copy this to libs repo, regenerate bindings, and patch up Rust and Golang
 }
