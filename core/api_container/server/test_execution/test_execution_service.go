@@ -333,7 +333,7 @@ func (service *testExecutionService) ExecCommand(ctx context.Context, args *bind
 	serviceIdStr := args.ServiceId
 	serviceId := service_network_types.ServiceID(serviceIdStr)
 	command := args.CommandArgs
-	exitCode, _, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
+	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -343,6 +343,7 @@ func (service *testExecutionService) ExecCommand(ctx context.Context, args *bind
 	}
 	resp := &bindings.ExecCommandResponse{
 		ExitCode: exitCode,
+		LogOutput: logOutput.Bytes(),
 	}
 	return resp, nil
 }
