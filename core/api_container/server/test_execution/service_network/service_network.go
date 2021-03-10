@@ -320,18 +320,18 @@ func (network *ServiceNetwork) RemoveService(
 func (network *ServiceNetwork) ExecCommand(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
-		command []string) (int32, error) {
+		command []string) (int32, *bytes.Buffer, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return 0, stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
+		return 0, nil, stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
 	}
 
 	containerId, found := network.serviceContainerIds[serviceId]
 	if !found {
-		return 0, stacktrace.NewError(
+		return 0, nil, stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
 			command,
 			serviceId)
@@ -343,13 +343,13 @@ func (network *ServiceNetwork) ExecCommand(
 	execOutputBuf := &bytes.Buffer{}
 	exitCode, err := network.dockerManager.RunExecCommand(ctx, containerId, command, execOutputBuf)
 	if err != nil {
-		return 0, stacktrace.Propagate(
+		return 0, nil, stacktrace.Propagate(
 			err,
 			"An error occurred running exec command '%v' against service '%v'",
 			command,
 			serviceId)
 	}
-	return exitCode, nil
+	return exitCode, execOutputBuf, nil
 }
 
 // Stops all services that have been created by the API container, and renders the service network unusable

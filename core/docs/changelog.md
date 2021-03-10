@@ -1,4 +1,7 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
+# TBD
+### Features
+* Added Docker exec log output to protobuf response for ExecCommand, with a limit of 10MB for size of logs returned
 
 # 1.9.1
 ### Fixes
