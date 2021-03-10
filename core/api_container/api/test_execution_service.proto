@@ -147,5 +147,4 @@ message ExecCommandArgs {
 message ExecCommandResponse {
   int32 exit_code = 1;
   bytes log_output = 2;
-  // Then, copy this to libs repo, regenerate bindings, and patch up Rust and Golang
 }
