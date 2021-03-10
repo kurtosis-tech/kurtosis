@@ -54,9 +54,8 @@ func (cache ArtifactCache) AddArtifact(artifactUrl string) error {
 
 	absoluteFilepath := path.Join(cache.absoluteDirpath, artifactUrlHash)
 	if _, err := os.Stat(absoluteFilepath); err == nil {
-		// NOTE: we could just make this a no-op; we chose to throw an error here to make sure the user
-		//  isn't double-adding things
-		return stacktrace.NewError("Cannot download artifact with URL '%v'; artifact already exists", artifactUrl)
+		// If the artifact already exists, no need to do anything
+		return nil
 	}
 
 	if err := downloadArtifactToFilepath(artifactUrl, absoluteFilepath); err != nil {
