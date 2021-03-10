@@ -36,14 +36,7 @@ _NOTE: Changelog entries from this point on will abandon the KeepAChangelog form
 
 # 1.8.0
 ### Changed
-
-# 1.8.1
-### Fixed
-* Issue where unsigned int was being validated as an int in timeout API
-
-# 1.8.0
-### Changed
-* Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
+* * Modified API container API to control test setup and execution timeouts in Kurtosis Core instead of kurtosis libs
 
 # 1.7.4
 ### Changed
