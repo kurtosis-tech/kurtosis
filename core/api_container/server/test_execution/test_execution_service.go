@@ -22,6 +22,12 @@ import (
 )
 
 const (
+	// Custom-set max size for logs coming back from docker exec.
+	// Protobuf sets a maximum of 2GB for responses, in interest of keeping performance sane
+	// we pick a reasonable limit of 10MB on log responses for docker exec.
+	// See: https://stackoverflow.com/questions/34128872/google-protobuf-maximum-size/34186672
+	maxLogOutputSizeBytes = 10 * 1024 * 1024
+
 	// The amount of time a testsuite container has after registering itself with the API container to register
 	//  a test setup (there should be no reason that registering test setup doesn't happen immediately)
 	testSetupRegistrationTimeout = 10 * time.Second
@@ -340,6 +346,14 @@ func (service *testExecutionService) ExecCommand(ctx context.Context, args *bind
 			"An error occurred running exec command '%v' against service '%v' in the service network",
 			command,
 			serviceId)
+	}
+	logOutputSize := logOutput.Len()
+	if logOutputSize > maxLogOutputSizeBytes {
+		return nil, stacktrace.NewError("Log output from docker exec command %+v was %v bytes, but maximum size allowed by Kurtosis is %v",
+				command,
+				logOutputSize,
+				maxLogOutputSizeBytes,
+			)
 	}
 	resp := &bindings.ExecCommandResponse{
 		ExitCode: exitCode,
