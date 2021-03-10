@@ -1,5 +1,5 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
-# TBD
+# 1.10.1
 ### Fixes
 * Don't throw an error when adding the same artifact to the artifact cache multiple times
 
