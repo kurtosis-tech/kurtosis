@@ -334,6 +334,7 @@ func (service *testExecutionService) ExecCommand(ctx context.Context, args *bind
 	serviceId := service_network_types.ServiceID(serviceIdStr)
 	command := args.CommandArgs
 	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
+	logrus.Infof("In test execution service, ran %+v and got log output %+v", command, logOutput)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
