@@ -1,5 +1,5 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
-# TBD
+# 1.10.2
 ### Features
 * `build-and-run-core.sh` will now set a Docker build arg called `BUILD_TIMESTAMP` that can be used to intentionally bust Docker's cache in cases where it's incorrectly caching steps (see also: https://stackoverflow.com/questions/31782220/how-can-i-prevent-a-dockerfile-instruction-from-being-cached )
 
