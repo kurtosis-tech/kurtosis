@@ -61,14 +61,6 @@ Key features:
 * Testsuites run as Docker containers, so developers can write tests in any language they please
 * The Kurtosis client library and API container automate the gruntwork of network setup, manipulation, and teardown so tests are easy to write
 
-Further Reading
----------------
-* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
-* [Building & Running](./building-and-running.md)
-* [Testsuite Customization](./testsuite-customization.md)
-* [Debugging common failure scenarios](./debugging-failed-tests.md)
-* [Architecture](./architecture.md)
-* [Advanced Usage](./advanced-usage.md)
-* [Running Kurtosis in CI](./running-in-ci.md)
-* [Versioning & upgrading](./versioning-and-upgrading.md)
-* [Changelog](./changelog.md) 
+---
+
+[Back to index](https://docs.kurtosistech.com)

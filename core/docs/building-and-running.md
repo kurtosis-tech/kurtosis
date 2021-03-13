@@ -15,14 +15,6 @@ Building the testsuite image and running it is such a common task that calling `
 
 Because `build-and-run.sh` calls `build-and-run-core.sh` which calls `kurtosis.sh`, and because `kurtosis.sh` has arguments of its own, any additional arguments after the arg telling `build-and-run.sh` what to do will be passed as-is to `kurtosis.sh`. As an example, you can call `build-and-run.sh all --help` to signify that a) `build-and-run.sh` should do both build and run steps and b) you want to see the extra flags that the inner call to `kurtosis.sh` receives. As a second example, `build-and-run.sh run --parallelism 2` would execute only the run step (no build) and call `kurtosis.sh` with parallelism set to 2.
 
-Further Reading
----------------
-* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
-* [Building & Running](./building-and-running.md)
-* [Testsuite Customization](./testsuite-customization.md)
-* [Debugging common failure scenarios](./debugging-failed-tests.md)
-* [Architecture](./architecture.md)
-* [Advanced Usage](./advanced-usage.md)
-* [Running Kurtosis in CI](./running-in-ci.md)
-* [Versioning & upgrading](./versioning-and-upgrading.md)
-* [Changelog](./changelog.md) 
+---
+
+[Back to index](https://docs.kurtosistech.com)
