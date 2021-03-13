@@ -22,14 +22,6 @@ These versions move independently - a single version of Kurtosis Lib might be co
 
 Until then, we recommend always upgrading to the latest Kurtosis Core & Lib versions (as the latest versions of both will always be compatible).
 
-Further Reading
----------------
-* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
-* [Building & Running](./building-and-running.md)
-* [Testsuite Customization](./testsuite-customization.md)
-* [Debugging common failure scenarios](./debugging-failed-tests.md)
-* [Architecture](./architecture.md)
-* [Advanced Usage](./advanced-usage.md)
-* [Running Kurtosis in CI](./running-in-ci.md)
-* [Versioning & upgrading](./versioning-and-upgrading.md)
-* [Changelog](./changelog.md) 
+---
+
+[Back to index](https://docs.kurtosistech.com)
