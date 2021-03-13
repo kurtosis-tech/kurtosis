@@ -1,5 +1,6 @@
 Kurtosis Architecture
 =====================
+
 Background
 ----------
 Every test in existence goes through four phases:
