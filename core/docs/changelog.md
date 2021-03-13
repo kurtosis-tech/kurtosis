@@ -1,4 +1,9 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
+# 1.10.3
+### Changes
+* Switched the log messages pertaining to test params and work queues to debug, as they provide no useful information for the lay user
+* Removed `docs.kurtosistech.com` CNAME record, in preparation for an org-wide Github Pages docs account
+
 # 1.10.2
 ### Features
 * `build-and-run-core.sh` will now set a Docker build arg called `BUILD_TIMESTAMP` that can be used to intentionally bust Docker's cache in cases where it's incorrectly caching steps (see also: https://stackoverflow.com/questions/31782220/how-can-i-prevent-a-dockerfile-instruction-from-being-cached )
