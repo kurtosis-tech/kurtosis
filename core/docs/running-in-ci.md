@@ -32,14 +32,6 @@ Then, whenever an untrusted PR is submitted to your repo, a repo owner should:
 
 This allows you to require untrusted code to pass a review before it runs (thereby securing your secrets) while still preserving the safety of CI.
 
-Further Reading
----------------
-* [Quickstart](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
-* [Building & Running](./building-and-running.md)
-* [Testsuite Customization](./testsuite-customization.md)
-* [Debugging common failure scenarios](./debugging-failed-tests.md)
-* [Architecture](./architecture.md)
-* [Advanced Usage](./advanced-usage.md)
-* [Running Kurtosis in CI](./running-in-ci.md)
-* [Versioning & upgrading](./versioning-and-upgrading.md)
-* [Changelog](./changelog.md) 
+---
+
+[Back to index](https://docs.kurtosistech.com)
