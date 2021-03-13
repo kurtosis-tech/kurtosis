@@ -65,12 +65,12 @@ func RunInParallelAndPrintResults(
 	// These need to be buffered else sending to the channel will be blocking
 	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
 
-	logrus.Info("Loading test params into work queue...")
+	logrus.Debug("Loading test params into work queue...")
 	for _, testParams := range allTestParams {
 		testParamsChan <- testParams
 	}
 	close(testParamsChan) // We close the channel so that when all params are consumed, the worker threads won't block on waiting for more params
-	logrus.Info("All test params loaded into work queue")
+	logrus.Debug("All test params loaded into work queue")
 
 	outputManager := newParallelTestOutputManager()
 
