@@ -59,7 +59,7 @@ jobs:
             sudo npm install -g markdown-link-check
             bash .circleci/check-markdown-links.sh
 
-  push_docker_images:
+  push_artifacts:
     environment:
       API_IMAGE_REPO: "kurtosistech/kurtosis-core_api"
       INITIALIZER_IMAGE_REPO: "kurtosistech/kurtosis-core_initializer"
@@ -120,7 +120,7 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      - push_docker_images:
+      - push_artifacts:
           context:
             - docker-user
             - kurtosis-user
