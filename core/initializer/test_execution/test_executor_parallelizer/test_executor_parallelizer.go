@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/google/uuid"
+	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
@@ -23,6 +24,10 @@ import (
 	"syscall"
 )
 
+const (
+	logErroneousSystemLogsAsError = true
+)
+
 /*
 Runs the given tests in parallel, printing:
 1) the output of tests as they finish
@@ -32,6 +37,7 @@ Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
 	parallelism: The number of tests to run concurrently
+	numTestsToRun: The number of tests that will be run
 	allTestParams: A mapping of test_name -> parameters for running the test
 	testSuiteImageName: The name of the Docker image that will be used to run the test controller
 	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
@@ -45,6 +51,7 @@ func RunInParallelAndPrintResults(
 		executionId uuid.UUID,
 		dockerClient *client.Client,
 		parallelism uint,
+		numTestsToRun uint,
 		allTestParams map[string]ParallelTestParams,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -72,22 +79,29 @@ func RunInParallelAndPrintResults(
 	close(testParamsChan) // We close the channel so that when all params are consumed, the worker threads won't block on waiting for more params
 	logrus.Debug("All test params loaded into work queue")
 
+	// This is where erroneous usages of the system-wide logger will be captured so we can warn the user about them
+	// (e.g. using logrus.Info, when testSpecificLogger.Info should have been used)
+	erroneousSystemLogCaptureWriter := newErroneousSystemLogCaptureWriter()
 	outputManager := newParallelTestOutputManager()
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
-
+	shouldStreamToStdout := numTestsToRun == 1 || parallelism == 1
 	disableSystemLogAndRunTestThreads(
 		executionId,
 		ctx,
-		outputManager,
+		erroneousSystemLogCaptureWriter,
 		testParamsChan,
 		parallelism,
 		dockerClient,
-		testsuiteLauncher)
-
+		testsuiteLauncher,
+		shouldStreamToStdout)
 	logrus.Info("All tests exited")
 
 	outputManager.printSummary()
+
+	capturedMessages := erroneousSystemLogCaptureWriter.getCapturedMessages()
+	logErroneousSystemLogging(capturedMessages)
+
 	return outputManager.getAllTestsPassed()
 }
 
@@ -95,19 +109,21 @@ func RunInParallelAndPrintResults(
 func disableSystemLogAndRunTestThreads(
 		executionId uuid.UUID,
 		parentContext context.Context,
-		outputManager *ParallelTestOutputManager,
+		erroneousSystemLogWriter *erroneousSystemLogCaptureWriter,
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
-		/*
-		    Because each test needs to have its logs written to an independent file to avoid getting logs all mixed up, we need to make
-    sure that all code below this point uses the per-test logger rather than the systemwide logger. However, it's very difficult for
-    a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'. To enforce this, we capture any systemwide logger usages
-	during this function so we can show them later.
-	*/
-	outputManager.startInterceptingStdLogger()
-	defer outputManager.stopInterceptingStdLogger()
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		shouldStreamToStdout bool) {
+	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
+	// We therefore need to make sure that all code beyond this point uses the per-test logger rather than the systemwide logger.
+	// However, it's very difficult for  a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'.
+	// To enforce this, we capture any systemwide logger usages during this function so we can show them later.
+	standardLoggerOut := logrus.StandardLogger().Out
+	logrus.StandardLogger().SetOutput(erroneousSystemLogWriter)
+	defer func() {
+		logrus.StandardLogger().SetOutput(standardLoggerOut)
+	}()
 
 	var waitGroup sync.WaitGroup
 	for i := uint(0); i < parallelism; i++ {
@@ -119,7 +135,8 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
-			testsuiteLauncher)
+			testsuiteLauncher,
+			shouldStreamToStdout)
 	}
 	waitGroup.Wait()
 }
@@ -135,7 +152,8 @@ func runTestWorkerGoroutine(
 			testParamsChan chan ParallelTestParams,
 			outputManager *ParallelTestOutputManager,
 			dockerClient *client.Client,
-			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+			shouldStreamToStdout bool) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -184,5 +202,37 @@ func runTestWorkerGoroutine(
 			testOutputReader = readingTempFp
 		}
 		outputManager.logTestOutput(testName, executionErr, passed, testOutputReader)
+	}
+}
+
+/*
+Helper function to print a big warning if there was logging to the system-level logging when there should only have been
+ logging to the test-specific logger
+*/
+func logErroneousSystemLogging(capturedErroneousMessages []erroneousSystemLogInfo) {
+	if len(capturedErroneousMessages) == 0 {
+		return
+	}
+
+	banner_printer.PrintBanner(logrus.StandardLogger(), "Erroneous Logs", logErroneousSystemLogsAsError)
+	logrus.Error("There were log messages printed to the system-level logger during parallel test execution!")
+	logrus.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
+	logrus.Error(" attributed to any specific test. This is:")
+	logrus.Error("   1) A bug in Kurtosis, and a system-level logger call was used when a test-specific logger")
+	logrus.Error("       should have been used (likely)")
+	logrus.Error("   2) Third-party code calling logrus independently, and there's nothing we can do (unlikely, but possible)")
+	logrus.Error("")
+	logrus.Error("The log message(s) attempted, and the stacktrace(s) of origination, are as follows in the order they were logged:")
+	logrus.Error("")
+
+	for i, messageInfo := range capturedErroneousMessages {
+		logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
+		logrus.Error("Message:")
+		logrus.StandardLogger().Out.Write(messageInfo.message)
+		logrus.StandardLogger().Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it
+		logrus.Error("")
+		logrus.Error("Stacktrace:")
+		logrus.StandardLogger().Out.Write(messageInfo.stacktrace)
+		logrus.StandardLogger().Out.Write([]byte("\n")) // The stacktrace likely won't end with a newline so we add it
 	}
 }

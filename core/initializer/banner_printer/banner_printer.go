@@ -15,6 +15,24 @@ import (
 	"strings"
 )
 
+func PrintBanner(log *logrus.Logger, contents string, isError bool) {
+	bannerString := "=================================================================================================="
+	contentString := fmt.Sprintf("                                     %v", contents)
+	if !isError {
+		log.Info("")
+		log.Info(bannerString)
+		log.Info(contentString)
+		log.Info(bannerString)
+	} else {
+		log.Error("")
+		log.Error(bannerString)
+		log.Error(contentString)
+		log.Error(bannerString)
+	}
+}
+
+
+// TODO THIS DOESN'T BELONG HERE!!
 /*
 Little helper function to print a container's logs with with banners indicating the start and end of the logs
 

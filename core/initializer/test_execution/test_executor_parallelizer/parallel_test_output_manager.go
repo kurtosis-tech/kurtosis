@@ -46,7 +46,6 @@ type parallelTestOutput struct {
 const (
 	logTestNameBannerAsError = false
 	logAllTestResultsAsError = false
-	logErroneousSystemLogsAsError = true
 )
 
 /*
@@ -62,9 +61,6 @@ type ParallelTestOutputManager struct {
 	interceptor             *erroneousSystemLogCaptureWriter
 	writerBeforeManagement  io.Writer
 
-	// Whether log messages written to logrus standard out are being intercepted or not
-	isInterceptingStdLogger bool
-
 	// Mutex gating access to the internal state and the logger, to ensure that tests trying to log at the same time
 	//  don't get their messages jumbled
 	mutex *sync.Mutex
@@ -77,23 +73,36 @@ type ParallelTestOutputManager struct {
 
 	// Captures all test output sent through the output manager
 	testOutputs  		   map[string]parallelTestOutput
+
+	// The number of tests that we expect to run
+	numTestsToRun uint
+
+	// The parallelism being used
+	parallelism uint
 }
 
 /*
 Creates a new output manager to handle the display of parallel test results.
  */
-func newParallelTestOutputManager() *ParallelTestOutputManager {
+func newParallelTestOutputManager(numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
+
 	return &ParallelTestOutputManager{
 		interceptor:             newErroneousSystemLogCaptureWriter(),
 		writerBeforeManagement:  nil,
-		isInterceptingStdLogger: false,
-		mutex:                   &sync.Mutex{},
 		sideChannelLogger:       nil,
 		testOutputs:             make(map[string]parallelTestOutput),
+		numTestsToRun: numTestsToRun,
+		parallelism: parallelism,
 	}
 }
 
-/*
+func (manager *ParallelTestOutputManager) logTestLaunch(
+		testName string,
+		debuggerHostPortBinding nat.PortBinding) *logrus.Logger {
+
+}
+
+	/*
 Logs the launching of a new test, including any host-bound ports that the testsuite is using
 
 Args:
@@ -172,45 +181,7 @@ func (manager *ParallelTestOutputManager) logTestOutput(
 	}
 }
 
-/*
-Starts intercepting any system-level logging for later display, rather than sending straight to STDOUT
- */
-func (manager *ParallelTestOutputManager) startInterceptingStdLogger() {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
 
-	if manager.isInterceptingStdLogger {
-		return
-	}
-
-	stdLogger := logrus.StandardLogger()
-	manager.writerBeforeManagement = stdLogger.Out
-
-	// No copy constructor :(
-	manager.sideChannelLogger = logrus.New()
-	manager.sideChannelLogger.SetOutput(stdLogger.Out)
-	manager.sideChannelLogger.SetFormatter(stdLogger.Formatter)
-	manager.sideChannelLogger.SetLevel(stdLogger.Level)
-	// NOTE: we don't copy hooks here because we don't use them - if we ever use hooks, copy them here!
-
-	logrus.SetOutput(manager.interceptor)
-	manager.isInterceptingStdLogger = true
-}
-
-/*
-Stops intercepting system-level logging
- */
-func (manager *ParallelTestOutputManager) stopInterceptingStdLogger() {
-	manager.mutex.Lock()
-	manager.mutex.Unlock()
-
-	if !manager.isInterceptingStdLogger {
-		return
-	}
-
-	logrus.SetOutput(manager.writerBeforeManagement)
-	manager.isInterceptingStdLogger = false
-}
 
 /*
 Prints a summary of:
@@ -253,9 +224,6 @@ func (manager *ParallelTestOutputManager) printSummary() {
 		}
 		logFunc("- " + testName + ": " + colorizeStr(string(status), colorStr))
 	}
-
-	erroneousSystemLogs := manager.interceptor.getCapturedMessages()
-	logErroneousSystemLogging(outputLogger, erroneousSystemLogs)
 }
 
 /*
@@ -274,22 +242,6 @@ func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
 }
 
 // ================================== Private helper messages ==========================================
-func printBanner(log *logrus.Logger, contents string, isError bool) {
-	bannerString := "=================================================================================================="
-	contentString := fmt.Sprintf("                                     %v", contents)
-	if !isError {
-		log.Info("")
-		log.Info(bannerString)
-		log.Info(contentString)
-		log.Info(bannerString)
-	} else {
-		log.Error("")
-		log.Error(bannerString)
-		log.Error(contentString)
-		log.Error(bannerString)
-	}
-}
-
 func getTestStatusFromResult(executionErr error, testPassed bool) testStatus {
 	var result testStatus
 	if executionErr != nil {
@@ -304,37 +256,6 @@ func getTestStatusFromResult(executionErr error, testPassed bool) testStatus {
 	return result
 }
 
-/*
-Helper function to print a big warning if there was logging to the system-level logging when there should only have been
- logging to the test-specific logger
-*/
-func logErroneousSystemLogging(log *logrus.Logger, capturedErroneousMessages []erroneousSystemLogInfo) {
-	if len(capturedErroneousMessages) == 0 {
-		return
-	}
-
-	printBanner(log, "Erroneous Logs", logErroneousSystemLogsAsError)
-	log.Error("There were log messages printed to the system-level logger during parallel test execution!")
-	log.Error("Because the system-level logger is shared and the tests run in parallel, the messages cannot be")
-	log.Error(" attributed to any specific test. This is:")
-	log.Error("   1) A bug in Kurtosis, and a system-level logger call was used when a test-specific logger")
-	log.Error("       should have been used (likely)")
-	log.Error("   2) Third-party code calling logrus independently, and there's nothing we can do (unlikely, but possible)")
-	log.Error("")
-	log.Error("The log message(s) attempted, and the stacktrace(s) of origination, are as follows in the order they were logged:")
-	log.Error("")
-
-	for i, messageInfo := range capturedErroneousMessages {
-		log.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
-		log.Error("Message:")
-		log.Out.Write(messageInfo.message)
-		log.Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it
-		log.Error("")
-		log.Error("Stacktrace:")
-		log.Out.Write(messageInfo.stacktrace)
-		log.Out.Write([]byte("\n")) // The stacktrace likely won't end with a newline so we add it
-	}
-}
 
 func colorizeStr(str string, ansiColorStr string) string {
 	return ansiColorStr + str + ansiResetColor
