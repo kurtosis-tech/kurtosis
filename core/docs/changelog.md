@@ -5,6 +5,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 ### Fixes
 * Actually abort tests & shut everything down when the user presses Ctrl-C
+* Fixed issue where hung calls to the API container (e.g. a long-running Docker exec command) could prevent the API container from shutting down
 
 # 1.10.4
 ### Fixes

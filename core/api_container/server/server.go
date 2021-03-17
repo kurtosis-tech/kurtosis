@@ -93,12 +93,6 @@ func (server ApiContainerServer) Run() int {
 		exitCode = api_container_exit_codes.ShutdownError
 	}
 
-	if err := mainService.HandlePostShutdownEvent(); err != nil {
-		logrus.Errorf("Post-shutdown hook on service returned an error:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		exitCode = api_container_exit_codes.ShutdownError
-	}
-
 	return exitCode
 }
 
