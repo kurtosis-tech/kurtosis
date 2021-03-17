@@ -56,11 +56,6 @@ func (service *suiteMetadataSerializationService) HandleSuiteRegistrationEvent()
 	return nil
 }
 
-func (service *suiteMetadataSerializationService) HandlePostShutdownEvent() error {
-	// No cleanup needed
-	return nil
-}
-
 func (service *suiteMetadataSerializationService) SerializeSuiteMetadata(
 		ctx context.Context,
 		apiSuiteMetadata *bindings.TestSuiteMetadata) (*emptypb.Empty, error) {
