@@ -37,6 +37,11 @@ const (
 	testsuiteContainerDescription = "Testsuite Container"
 
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
+
+	// When the user presses Ctrl-C on the initializer, we need to forward that on to the API container and tell
+	// it to stop. When that happens, this is how long we'll give the API container to gracefully exit before we
+	// hard-kill the container.
+	apiContainerStopTimeoutAfterParentCtxCancellation = 10 * time.Second
 )
 
 /*
@@ -57,6 +62,7 @@ Runs a single test with the given name
 
 Args:
 	executionInstanceId: The UUID representing an execution of the user's test suite, to which this test execution belongs
+	testSetupExecutionCtx: The context in which test setup & execution runs, which can potentially be cancelled on a Ctrl-C
 	ctx: The Context that the test execution is happening in
 	log: the logger to which all logging events during test execution will be sent
 	dockerClient: The Docker client to use to manipulate the Docker engine
@@ -72,7 +78,7 @@ Returns:
 */
 func RunTest(
 		executionInstanceId uuid.UUID,
-		testSetupContext context.Context,
+		testSetupExecutionCtx context.Context,
 		log *logrus.Logger,
 		dockerClient *client.Client,
 		subnetMask string,
@@ -112,7 +118,7 @@ func RunTest(
 		time.Now().Format(networkNameTimestampFormat),
 		executionInstanceId.String(),
 		testName)
-	networkId, err := dockerManager.CreateNetwork(testSetupContext, networkName, subnetMask, gatewayIp)
+	networkId, err := dockerManager.CreateNetwork(testSetupExecutionCtx, networkName, subnetMask, gatewayIp)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
 		//  that the Context was cancelled as expected, but *the Docker engine will still create the networks!!! We'll
@@ -138,7 +144,7 @@ func RunTest(
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
 	testsuiteContainerId, kurtosisApiContainerId, err := testsuiteLauncher.LaunchTestRunningContainers(
-		testSetupContext,
+		testSetupExecutionCtx,
 		log,
 		dockerManager,
 		networkId,
@@ -157,41 +163,71 @@ func RunTest(
 
 	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
 	log.Info("Waiting for Kurtosis API container to exit...")
-	kurtosisApiExitCodeInt64, err := dockerManager.WaitForExit(
-		testTeardownContext,
+	var kurtosisApiExitCodeInt64 int64
+	kurtosisApiExitCodeInt64, err = dockerManager.WaitForExit(
+		testSetupExecutionCtx,
 		kurtosisApiContainerId)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred waiting for the exit of the Kurtosis API container: %v", err)
+		if testSetupExecutionCtx.Err() != context.Canceled {
+			return false, stacktrace.Propagate(err, "An unexpected error occurred waiting for the exit of the Kurtosis API container")
+		}
+
+		// The parent context was cancelled, indicating that the user pressed Ctrl-C. The API container will have no idea
+		//  that this happened, so we need to stop it (which will result in an error code, in the same way as if
+		//  the user had killed the API container) so the code below can work as expected
+		if err := dockerManager.StopContainer(
+				testTeardownContext,
+				kurtosisApiContainerId,
+				apiContainerStopTimeoutAfterParentCtxCancellation); err != nil {
+			return false, stacktrace.Propagate(err, "The test execution context was cancelled (likely due to Ctrl-C), which we forwarded to the API container " +
+				"by requesting that it stop so that it would register the termination signal. However, the below error occurred stopping " +
+				"the API container. This should never happen, and indicates a bug in Kurtosis.")
+		}
+
+		// The API container will be stopped at this point, so grab the exit code (which should be TERM)
+		//  so that all the code below here works as normal
+		kurtosisApiExitCodeInt64, err = dockerManager.WaitForExit(
+			testTeardownContext,
+			kurtosisApiContainerId)
+		if err != nil {
+			return false, stacktrace.Propagate(
+				err,
+				"An error occurred waiting for the API container to exit AFTER we'd successfully stopped it; this is very" +
+					"unexpected and likely indicates a bug in Kurtosis",
+			)
+		}
 	}
 	kurtosisApiExitCode := int(kurtosisApiExitCodeInt64)
 
 	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
-	//  still-running container that's exceeded the hard test timeout. Regardless, we want to print these so the user
-	//  gets more information about what's going on, and the user will learn the exact error below
+	//  still-running container because the test exceeded the hard test timeout or we've received a Ctrl-C. Regardless,
+	//  we want to print these so the user gets more information about what's going on, and the user will learn the exact error below
 	banner_printer.PrintContainerLogsWithBanners(dockerManager, testTeardownContext, testsuiteContainerId, log, testsuiteContainerDescription)
 
-	acceptExitCodeVisitor, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[kurtosisApiExitCode]
+	apiExitCodeVisitorAcceptFunc, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[kurtosisApiExitCode]
 	if !found {
 		return false, stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
 				"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
 			kurtosisApiExitCode)
 	}
 	visitor := testExecutionExitCodeErrorVisitor{}
-	testStatusRetrievalError := acceptExitCodeVisitor(visitor)
+	testStatusRetrievalError := apiExitCodeVisitorAcceptFunc(visitor)
 
 	if testStatusRetrievalError != nil {
 		log.Error("An error occurred that prevented retrieval of the test completion status")
 		return false, testStatusRetrievalError
 	}
-	log.Info("The test suite container running the test exited before the hard test timeout")
+	log.Info("The test suite container exited as expected")
 
-	// If we get here, the test suite container is guaranteed to have stopped so now we get the exit code
+	// If we got here, then the testsuite container exited as the API container expected, meaning the testsuite
+	//  container is stopped, meaning it's okay to WaitForExit using testTeardownContext to get the testsuite
+	//  container's exit code
 	testSuiteExitCode, err := dockerManager.WaitForExit(
 		testTeardownContext,
 		testsuiteContainerId)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
-	}
+			  return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
+			  }
 	return testSuiteExitCode == 0, nil
 }
 

@@ -3,6 +3,9 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 ### Changes
 * Removed now-unused `index.md` and `images/horizontal-logo.png` from the `docs` folder (has been superseded by https://github.com/kurtosis-tech/kurtosis-tech.github.io )
 
+### Fixes
+* Actually abort tests & shut everything down when the user presses Ctrl-C
+
 # 1.10.4
 ### Fixes
 * Broken links since we combined this repo's docs with Kurtosis Libs
