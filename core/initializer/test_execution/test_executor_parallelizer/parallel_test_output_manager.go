@@ -85,23 +85,19 @@ type ParallelTestOutputManager struct {
 	testOutputs  		   map[string]parallelTestOutput
 
 	// vvvvvvvvvvvvvvvvvvv Only one test running concurrently vvvvvvvvvvvvvvvvvvvvvvv
-	// Manager for managing a background thread that will stream logs to system out
+	// Streamer that is currently streaming the test's logs
 	// This is ONLY used when a single test is running at a time
-	streamerManager *logStreamerManager
-
-	// If an error occurs when creating the streamer, we'll fall back to non-streaming log
-	// printing
-	didErrorOccurCreatingStreamer bool
+	logStreamer *logStreamer
 	// ^^^^^^^^^^^^^^^^^^^ Only one test running concurrently ^^^^^^^^^^^^^^^^^^^^^^^
 }
 
 /*
 Creates a new output manager to handle the display of parallel test results.
  */
-func newParallelTestOutputManager(output io.Writer, testsToRun uint, parallelism uint) *ParallelTestOutputManager {
+func newParallelTestOutputManager(output io.Writer, numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
 	var maxConcurrentTestsRunning uint
-	if testsToRun < parallelism {
-		maxConcurrentTestsRunning = testsToRun
+	if numTestsToRun < parallelism {
+		maxConcurrentTestsRunning = numTestsToRun
 	} else {
 		maxConcurrentTestsRunning = parallelism
 	}
@@ -121,7 +117,8 @@ func newParallelTestOutputManager(output io.Writer, testsToRun uint, parallelism
 /*
 Logs the launching of a new test, including any host-bound ports that the testsuite is using.
 
-NOTE: logTestCompletion
+NOTE: This method panics, rather than returning an error, because any errors here aren't recoverable and
+	instead indicate a bug in Kurtosis
 
 Args:
 	testName: Name of test being launched
@@ -132,7 +129,7 @@ Returns:
  */
 func (manager *ParallelTestOutputManager) registerTestLaunch(
 			testName string,
-			debuggerHostPortBinding nat.PortBinding) (*logrus.Logger, error) {
+			debuggerHostPortBinding nat.PortBinding) *logrus.Logger {
 	manager.internalStateLock.Lock()
 	defer manager.internalStateLock.Unlock()
 
@@ -178,20 +175,6 @@ func (manager *ParallelTestOutputManager) registerTestLaunch(
 	}
 	manager.runningTestInfo[testName] = runningTestInfo
 
-	if manager.maxConcurrentTestsRunning == 1 {
-		if err := manager.streamerManager.startStreamer(testOutputFp.Name()); err != nil {
-			manager.threadSafeOutputLogger.Warn(
-				"The following error occurred starting a thread to stream logs of test '%v' in realtime, meaning that test logs " +
-					"will only be printed after the test returns: %v",
-				testName,
-				err,
-			)
-			manager.didErrorOccurCreatingStreamer = true
-		} else {
-			manager.didErrorOccurCreatingStreamer = false
-		}
-	}
-
 	// It's safe to just do this logging because the underlying writer is thread-safe
 	message := fmt.Sprintf(
 		"Launching test %v ... (testsuite debugger port binding on host: %v:%v)",
@@ -200,14 +183,31 @@ func (manager *ParallelTestOutputManager) registerTestLaunch(
 		debuggerHostPortBinding.HostPort)
 	manager.threadSafeOutputLogger.Info(message)
 
-	banner_printer.PrintBanner(testOutputLog, testName, false)
-	return testOutputLog, nil
+	if manager.maxConcurrentTestsRunning == 1 {
+		streamer := newLogStreamer(testOutputFp.Name(), manager.threadSafeOutputLogger)
+		if err := streamer.startStreaming(); err != nil {
+			// An error occurred starting the streamer, so we'll fall back to non-streaming log-printing
+			manager.threadSafeOutputLogger.Warn(
+				"The following error occurred starting a streamer to print logs of test '%v' in realtime, meaning that test logs " +
+					"will only be printed after the test returns: %v",
+				testName,
+				err,
+			)
+			manager.logStreamer = nil
+		} else {
+			// We started the streamer successfully, so print the test name banner before any log messages get outputted
+			banner_printer.PrintBanner(testOutputLog, testName, logTestNameBannerAsError)
+			manager.logStreamer = streamer
+		}
+	}
+
+	return testOutputLog
 }
 
 func (manager *ParallelTestOutputManager) registerTestCompletion(
 			testName string,
 			executionErr error,
-			testPassed bool) error {
+			testPassed bool) {
 	manager.internalStateLock.Lock()
 	defer manager.internalStateLock.Unlock()
 
@@ -225,28 +225,36 @@ func (manager *ParallelTestOutputManager) registerTestCompletion(
 		executionErr: executionErr,
 		testPassed:   testPassed,
 	}
+	delete(manager.runningTestInfo, testName)
 
 	// Since method registers test completion, no more output should be written to the test logs so we're
 	// safe to close the test log fp (and thereby flush any remaining bytes to disk before we print the output)
 	testLogFp := runningTestInfo.fp
 	testLogFp.Close()
 
-	if manager.maxConcurrentTestsRunning == 1 && !manager.didErrorOccurCreatingStreamer {
-		if err := manager.streamerManager.stopStreamer(); err != nil {
-			manager.threadSafeOutputLogger.Error(
-				"The following error occurred stopping the streamer reading logs for test '%v'; this likely means that log-streamign "
-				)
-			return stacktrace.Propagate(err, "An error occurred stopping the streamer reading logs for test '%v'", testName)
+	if manager.maxConcurrentTestsRunning == 1 && manager.logStreamer != nil {
+		if err := manager.logStreamer.stopStreaming(); err != nil {
+			manager.threadSafeOutputLogger.Warnf(
+				"The following error occurred stopping the streamer reading logs for test '%v': %v",
+				testName,
+				err,
+			)
+			manager.logStreamer = nil
 		}
 	} else {
-		// If we've had more than one test running at once, we need to copy all the output
+		banner_printer.PrintBanner(manager.threadSafeOutputLogger, testName, logTestNameBannerAsError)
+
+		// If we've had more than one test running at once (or we couldn't set up a log streamer), we need to copy
+		//  all the test output at once
 		// We can do this in a single call because the underlying output is thread-safe
 		readerFp, err := os.Open(testLogFp.Name())
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred opening the test log for reading")
-		}
-		if _, err := io.Copy(manager.threadSafeOutputLogger.Out, readerFp); err != nil {
-			return stacktrace.Propagate(err, "An error occurred copying the test logs from the temporary file to the system log")
+			// Need to print the banner because it's contained in the logs
+			manager.threadSafeOutputLogger.Error("Cannot print test logs; the following error occurred opening the test log for reading: %v", err)
+		} else {
+			if _, err := io.Copy(manager.threadSafeOutputLogger.Out, readerFp); err != nil {
+				manager.threadSafeOutputLogger.Error("Cannot print test logs; the following error occurred copying the test log to system out: %v", err)
+			}
 		}
 	}
 
@@ -266,12 +274,21 @@ func (manager *ParallelTestOutputManager) registerTestCompletion(
 
 /*
 Prints a summary of:
-1) the status of all the tests that have been logged to the logger so far
+1) the status of all the tests that have completed
 2) any erroneous log messages that were captured while the standard logger was being intercepted
+
+Returns:
+	allTestsPassed: True if all tests passed, false otherwise
+	resultErr: An error (if any) that occurred during summary-printing
  */
-func (manager *ParallelTestOutputManager) printSummary() {
-	manager.mutex.Lock()
-	manager.mutex.Unlock()
+func (manager *ParallelTestOutputManager) printSummary() (allTestsPassed bool, resultErr error) {
+	manager.internalStateLock.Lock()
+	defer manager.internalStateLock.Unlock()
+
+	// Any still-running tests at time of summary-printing indicates a bug in Kurtosis
+	if len(manager.runningTestInfo) > 0 {
+		return false, stacktrace.NewError("Could not print test summary; not all tests have finished (this is a Kurtosis bug)")
+	}
 
 	// We sort tests by name because we want normalized output between runs of the suite
 	testPrintOrder := []string{}
@@ -280,14 +297,8 @@ func (manager *ParallelTestOutputManager) printSummary() {
 	}
 	sort.Strings(testPrintOrder)
 
-	var outputLogger *logrus.Logger
-	if !manager.isInterceptingStdLogger {
-		outputLogger = logrus.StandardLogger()
-	} else {
-		outputLogger = manager.threadSafeOutputLogger
-	}
-
-	printBanner(outputLogger, "TEST RESULTS", logAllTestResultsAsError)
+	banner_printer.PrintBanner(manager.threadSafeOutputLogger, "TEST RESULTS", logAllTestResultsAsError)
+	allTestsPassed = true
 	for _, testName := range testPrintOrder {
 		output := manager.testOutputs[testName]
 		passed := output.testPassed
@@ -298,28 +309,15 @@ func (manager *ParallelTestOutputManager) printSummary() {
 		var logFunc func(args ...interface{})
 		if status == ERRORED || status == FAILED {
 			colorStr = ansiBadResultColor
-			logFunc = outputLogger.Error
+			logFunc = manager.threadSafeOutputLogger.Error
+			allTestsPassed = false
 		} else {
 			colorStr = ansiGoodResultColor
-			logFunc = outputLogger.Info
+			logFunc = manager.threadSafeOutputLogger.Info
 		}
 		logFunc("- " + testName + ": " + colorizeStr(string(status), colorStr))
 	}
-}
-
-/*
-Returns true if all tests captured so far have passed, false otherwise
- */
-func (manager *ParallelTestOutputManager) getAllTestsPassed() bool {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
-
-	allTestsPassed := true
-	for _, output := range manager.testOutputs {
-		testHadNoIssues := PASSED == getTestStatusFromResult(output.executionErr, output.testPassed)
-		allTestsPassed = allTestsPassed && testHadNoIssues
-	}
-	return allTestsPassed
+	return allTestsPassed, nil
 }
 
 // ================================== Private helper messages ==========================================

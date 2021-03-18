@@ -82,7 +82,7 @@ func RunInParallelAndPrintResults(
 	// This is where erroneous usages of the system-wide logger will be captured so we can warn the user about them
 	// (e.g. using logrus.Info, when testSpecificLogger.Info should have been used)
 	erroneousSystemLogCaptureWriter := newErroneousSystemLogCaptureWriter()
-	outputManager := newParallelTestOutputManager()
+	outputManager := newParallelTestOutputManager(logrus.StandardLogger().Out, numTestsToRun, parallelism)
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	shouldStreamToStdout := numTestsToRun == 1 || parallelism == 1
@@ -90,6 +90,7 @@ func RunInParallelAndPrintResults(
 		executionId,
 		ctx,
 		erroneousSystemLogCaptureWriter,
+		outputManager,
 		testParamsChan,
 		parallelism,
 		dockerClient,
@@ -97,12 +98,16 @@ func RunInParallelAndPrintResults(
 		shouldStreamToStdout)
 	logrus.Info("All tests exited")
 
-	outputManager.printSummary()
+	allTestsPassed, err := outputManager.printSummary()
+	if err != nil {
+		logrus.Error("An error occurred printing the test summary: %v", err)
+		return false
+	}
 
 	capturedMessages := erroneousSystemLogCaptureWriter.getCapturedMessages()
 	logErroneousSystemLogging(capturedMessages)
 
-	return outputManager.getAllTestsPassed()
+	return allTestsPassed
 }
 
 
@@ -110,6 +115,7 @@ func disableSystemLogAndRunTestThreads(
 		executionId uuid.UUID,
 		parentContext context.Context,
 		erroneousSystemLogWriter *erroneousSystemLogCaptureWriter,
+		outputManager *ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
