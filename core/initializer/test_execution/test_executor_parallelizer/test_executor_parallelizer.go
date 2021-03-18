@@ -13,13 +13,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 )
@@ -51,7 +47,6 @@ func RunInParallelAndPrintResults(
 		executionId uuid.UUID,
 		dockerClient *client.Client,
 		parallelism uint,
-		numTestsToRun uint,
 		allTestParams map[string]ParallelTestParams,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
@@ -82,10 +77,9 @@ func RunInParallelAndPrintResults(
 	// This is where erroneous usages of the system-wide logger will be captured so we can warn the user about them
 	// (e.g. using logrus.Info, when testSpecificLogger.Info should have been used)
 	erroneousSystemLogCaptureWriter := newErroneousSystemLogCaptureWriter()
-	outputManager := newParallelTestOutputManager(logrus.StandardLogger().Out, numTestsToRun, parallelism)
+	outputManager := newParallelTestOutputManager(logrus.StandardLogger().Out, uint(len(allTestParams)), parallelism)
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
-	shouldStreamToStdout := numTestsToRun == 1 || parallelism == 1
 	disableSystemLogAndRunTestThreads(
 		executionId,
 		ctx,
@@ -94,13 +88,12 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		dockerClient,
-		testsuiteLauncher,
-		shouldStreamToStdout)
+		testsuiteLauncher)
 	logrus.Info("All tests exited")
 
 	allTestsPassed, err := outputManager.printSummary()
 	if err != nil {
-		logrus.Error("An error occurred printing the test summary: %v", err)
+		logrus.Errorf("An error occurred printing the test summary: %v", err)
 		return false
 	}
 
@@ -119,8 +112,7 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		shouldStreamToStdout bool) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
 	// We therefore need to make sure that all code beyond this point uses the per-test logger rather than the systemwide logger.
 	// However, it's very difficult for  a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'.
@@ -141,8 +133,7 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
-			testsuiteLauncher,
-			shouldStreamToStdout)
+			testsuiteLauncher)
 	}
 	waitGroup.Wait()
 }
@@ -158,56 +149,25 @@ func runTestWorkerGoroutine(
 			testParamsChan chan ParallelTestParams,
 			outputManager *ParallelTestOutputManager,
 			dockerClient *client.Client,
-			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-			shouldStreamToStdout bool) {
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
-
-		tempFilename := fmt.Sprintf("%v-%v", executionId, testName)
-		writingTempFp, err := ioutil.TempFile("", tempFilename)
-		if err != nil {
-			emptyOutputReader := &strings.Reader{}
-			executionErr := stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
-			outputManager.registerTestCompletion(testName, executionErr, false, emptyOutputReader)
-			continue
-		}
-		defer writingTempFp.Close()
-
-		// Create a separate logger just for this test that writes to the test execution logfile
-		log := logrus.New()
-		log.SetLevel(logrus.GetLevel())
-		log.SetOutput(writingTempFp)
-		log.SetFormatter(logrus.StandardLogger().Formatter)
-
 		testsuiteDebuggerHostPortBinding := testParams.DebuggerHostPortBinding
-
-		outputManager.registerTestLaunch(testName, testsuiteDebuggerHostPortBinding)
+		testLog := outputManager.registerTestLaunch(testName, testsuiteDebuggerHostPortBinding)
 		passed, executionErr := test_executor.RunTest(
 			executionId,
 			parentContext,
-			log,
+			testLog,
 			dockerClient,
 			testParams.SubnetMask,
 			testsuiteLauncher,
 			testsuiteDebuggerHostPortBinding,
 			testName,
 			testParams.TestMetadata)
-		writingTempFp.Close() // Close to flush out anything remaining in the buffer
-
-		// Create a new FP to read the logfile from the start
-		var testOutputReader io.Reader
-		readingTempFp, err := os.Open(writingTempFp.Name())
-		if err != nil {
-			errorMsg := fmt.Sprintf("An error occurred opening the test's logfile for reading; logs for this test are unavailable:\n%s", err)
-			testOutputReader = strings.NewReader(errorMsg)
-		} else {
-			defer readingTempFp.Close()
-			testOutputReader = readingTempFp
-		}
-		outputManager.registerTestCompletion(testName, executionErr, passed, testOutputReader)
+		outputManager.registerTestCompletion(testName, executionErr, passed)
 	}
 }
 

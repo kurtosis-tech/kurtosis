@@ -6,7 +6,6 @@
 package test_executor_parallelizer
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -16,9 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
-	"strings"
 	"sync"
-	"time"
 )
 
 // =============================== "enum" for test result =========================================
@@ -49,7 +46,7 @@ type parallelTestOutput struct {
 }
 
 
-// =============================== Parallel Test Output =========================================
+// =============================== Running Test Info =========================================
 type runningTestInfo struct {
 	fp *os.File
 
@@ -95,22 +92,25 @@ type ParallelTestOutputManager struct {
 Creates a new output manager to handle the display of parallel test results.
  */
 func newParallelTestOutputManager(output io.Writer, numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
+	// maxConcurrentTestsRunning = min(numTests, parallelism)
 	var maxConcurrentTestsRunning uint
 	if numTestsToRun < parallelism {
 		maxConcurrentTestsRunning = numTestsToRun
 	} else {
 		maxConcurrentTestsRunning = parallelism
 	}
+
 	// We wrap the output in a thread-safe wrapper, to ensure that we can safely log to it
 	threadSafeWriter := newThreadSafeWriter(output)
 	logger := stdLoggerCloneWithOutput(threadSafeWriter)
+
 	return &ParallelTestOutputManager{
 		threadSafeOutputLogger:    logger,
 		maxConcurrentTestsRunning: maxConcurrentTestsRunning,
-		testOutputFilepaths:       map[string]string{},
-		streamerShutdownChan:      nil,
 		internalStateLock:         &sync.Mutex{},
+		runningTestInfo: map[string]runningTestInfo{},
 		testOutputs:               make(map[string]parallelTestOutput),
+		logStreamer: nil,
 	}
 }
 
@@ -250,10 +250,10 @@ func (manager *ParallelTestOutputManager) registerTestCompletion(
 		readerFp, err := os.Open(testLogFp.Name())
 		if err != nil {
 			// Need to print the banner because it's contained in the logs
-			manager.threadSafeOutputLogger.Error("Cannot print test logs; the following error occurred opening the test log for reading: %v", err)
+			manager.threadSafeOutputLogger.Errorf("Cannot print test logs; the following error occurred opening the test log for reading: %v", err)
 		} else {
 			if _, err := io.Copy(manager.threadSafeOutputLogger.Out, readerFp); err != nil {
-				manager.threadSafeOutputLogger.Error("Cannot print test logs; the following error occurred copying the test log to system out: %v", err)
+				manager.threadSafeOutputLogger.Errorf("Cannot print test logs; the following error occurred copying the test log to system out: %v", err)
 			}
 		}
 	}
