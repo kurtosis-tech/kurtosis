@@ -6,13 +6,19 @@
 package test_executor_parallelizer
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
+	"os"
 	"sort"
+	"strings"
 	"sync"
+	"time"
 )
 
 // =============================== "enum" for test result =========================================
@@ -42,6 +48,14 @@ type parallelTestOutput struct {
 	testPassed bool
 }
 
+
+// =============================== Parallel Test Output =========================================
+type runningTestInfo struct {
+	fp *os.File
+
+	logger *logrus.Logger
+}
+
 // ================================ Output Manager ==================================================
 const (
 	logTestNameBannerAsError = false
@@ -49,135 +63,202 @@ const (
 )
 
 /*
-A SINGLE-USE struct for managing the output of tests during parallel execution, such that:
-- Once activated, any system logs will get captured by the given interceptor (system logging should never be used while parallel test execution is happening)
-- Logging of test output is done synchronously, as tests finish
-
-NOTE: ONLY the logTestOutput method is thread-safe!!
+A struct for managing the output of tests during parallel execution, so that we don't get jumbled log messages.
+When possible, this struct will try to stream logs in realtime.
  */
 type ParallelTestOutputManager struct {
-	// Capture writer that will store any erroneous system logs during (all test logs should be printed through the
-	//  test-specific logger)
-	interceptor             *erroneousSystemLogCaptureWriter
-	writerBeforeManagement  io.Writer
+	// A logger that will write to the output source, but which doesn't use the system-wide logger (e.g. logrus.Info)
+	// so won't trigger the erroneous system logger capturer
+	threadSafeOutputLogger *logrus.Logger
 
-	// Mutex gating access to the internal state and the logger, to ensure that tests trying to log at the same time
-	//  don't get their messages jumbled
-	mutex *sync.Mutex
+	// The maximum number of tests that can be running at a single time. This number will be
+	// min(num_tests, parallelism)
+	maxConcurrentTestsRunning uint
 
-	// During management, the the system-level logs - e.g. logrus.Info, logrus.Debug, etc. - will get disabled. However,
-	//  we need to log test output in realtime so we still need to log to the same output source. Thus, we
-	//  create a new logger with the same characteristics as the logrus standard logger and use that for printing test
-	//  information.
-	sideChannelLogger	   *logrus.Logger
+	// Lock to guard the internal state of this struct
+	internalStateLock *sync.Mutex
 
-	// Captures all test output sent through the output manager
+	// Map of currently-running tests to information about the test
+	runningTestInfo map[string]runningTestInfo
+
+	// Captures the output of all finished tests
 	testOutputs  		   map[string]parallelTestOutput
 
-	// The number of tests that we expect to run
-	numTestsToRun uint
+	// vvvvvvvvvvvvvvvvvvv Only one test running concurrently vvvvvvvvvvvvvvvvvvvvvvv
+	// Manager for managing a background thread that will stream logs to system out
+	// This is ONLY used when a single test is running at a time
+	streamerManager *logStreamerManager
 
-	// The parallelism being used
-	parallelism uint
+	// If an error occurs when creating the streamer, we'll fall back to non-streaming log
+	// printing
+	didErrorOccurCreatingStreamer bool
+	// ^^^^^^^^^^^^^^^^^^^ Only one test running concurrently ^^^^^^^^^^^^^^^^^^^^^^^
 }
 
 /*
 Creates a new output manager to handle the display of parallel test results.
  */
-func newParallelTestOutputManager(numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
-
+func newParallelTestOutputManager(output io.Writer, testsToRun uint, parallelism uint) *ParallelTestOutputManager {
+	var maxConcurrentTestsRunning uint
+	if testsToRun < parallelism {
+		maxConcurrentTestsRunning = testsToRun
+	} else {
+		maxConcurrentTestsRunning = parallelism
+	}
+	// We wrap the output in a thread-safe wrapper, to ensure that we can safely log to it
+	threadSafeWriter := newThreadSafeWriter(output)
+	logger := stdLoggerCloneWithOutput(threadSafeWriter)
 	return &ParallelTestOutputManager{
-		interceptor:             newErroneousSystemLogCaptureWriter(),
-		writerBeforeManagement:  nil,
-		sideChannelLogger:       nil,
-		testOutputs:             make(map[string]parallelTestOutput),
-		numTestsToRun: numTestsToRun,
-		parallelism: parallelism,
+		threadSafeOutputLogger:    logger,
+		maxConcurrentTestsRunning: maxConcurrentTestsRunning,
+		testOutputFilepaths:       map[string]string{},
+		streamerShutdownChan:      nil,
+		internalStateLock:         &sync.Mutex{},
+		testOutputs:               make(map[string]parallelTestOutput),
 	}
 }
 
-func (manager *ParallelTestOutputManager) logTestLaunch(
-		testName string,
-		debuggerHostPortBinding nat.PortBinding) *logrus.Logger {
+/*
+Logs the launching of a new test, including any host-bound ports that the testsuite is using.
 
-}
-
-	/*
-Logs the launching of a new test, including any host-bound ports that the testsuite is using
+NOTE: logTestCompletion
 
 Args:
 	testName: Name of test being launched
 	debuggerHostPortBinding: Binding on the host that the testsuite debugger port will have
- */
-func (manager *ParallelTestOutputManager) logTestLaunch(
-			testName string,
-			debuggerHostPortBinding nat.PortBinding) {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
 
-	var outputLogger *logrus.Logger
-	if !manager.isInterceptingStdLogger {
-		outputLogger = logrus.StandardLogger()
-	} else {
-		outputLogger = manager.sideChannelLogger
+Returns:
+	The logger that the test should write to when doing logging
+ */
+func (manager *ParallelTestOutputManager) registerTestLaunch(
+			testName string,
+			debuggerHostPortBinding nat.PortBinding) (*logrus.Logger, error) {
+	manager.internalStateLock.Lock()
+	defer manager.internalStateLock.Unlock()
+
+	if uint(len(manager.runningTestInfo)) >= manager.maxConcurrentTestsRunning {
+		panic(
+			stacktrace.NewError(
+				"Cannot register test launch because there are already %v tests running " +
+					"in parallel, which is the maximum allowed. This is a bug with Kurtosis, where Kurtosis is trying to " +
+					"start too many tests!",
+				manager.maxConcurrentTestsRunning,
+			),
+		)
+	}
+	if _, found := manager.runningTestInfo[testName]; found {
+		panic(
+			stacktrace.NewError("Cannot register launch of test %v because it is already running", testName),
+		)
+	}
+	if _, found := manager.testOutputs[testName]; found {
+		panic(
+			stacktrace.NewError(
+				"Cannot register launch of test %v because it's already completed running, indicating it's being " +
+					"run twice; this is a bug in Kurtosis",
+				testName,
+			),
+		)
 	}
 
+	testOutputFp, err := ioutil.TempFile("", testName)
+	if err != nil {
+		panic(
+			stacktrace.Propagate(
+				err,
+				"An error occurred creating temporary file to contain logs of test %v",
+				testName,
+			),
+		)
+	}
+	testOutputLog := stdLoggerCloneWithOutput(testOutputFp)
+	runningTestInfo := runningTestInfo{
+		fp:     testOutputFp,
+		logger: testOutputLog,
+	}
+	manager.runningTestInfo[testName] = runningTestInfo
+
+	if manager.maxConcurrentTestsRunning == 1 {
+		if err := manager.streamerManager.startStreamer(testOutputFp.Name()); err != nil {
+			manager.threadSafeOutputLogger.Warn(
+				"The following error occurred starting a thread to stream logs of test '%v' in realtime, meaning that test logs " +
+					"will only be printed after the test returns: %v",
+				testName,
+				err,
+			)
+			manager.didErrorOccurCreatingStreamer = true
+		} else {
+			manager.didErrorOccurCreatingStreamer = false
+		}
+	}
+
+	// It's safe to just do this logging because the underlying writer is thread-safe
 	message := fmt.Sprintf(
 		"Launching test %v ... (testsuite debugger port binding on host: %v:%v)",
 		testName,
 		debuggerHostPortBinding.HostIP,
 		debuggerHostPortBinding.HostPort)
-	outputLogger.Info(message)
+	manager.threadSafeOutputLogger.Info(message)
+
+	banner_printer.PrintBanner(testOutputLog, testName, false)
+	return testOutputLog, nil
 }
 
-/*
-Thread-safe method to log test output, to provide parallel tests a way to print their log messages in real time as
-	they finish.
- */
-func (manager *ParallelTestOutputManager) logTestOutput(
+func (manager *ParallelTestOutputManager) registerTestCompletion(
 			testName string,
 			executionErr error,
-			testPassed bool,
-			testLogs io.Reader) {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
+			testPassed bool) error {
+	manager.internalStateLock.Lock()
+	defer manager.internalStateLock.Unlock()
 
-	if _, found := manager.testOutputs[testName]; found {
-		// We hijack whatever the actual test output was to ensure that the user gets notification of the test failing
+	runningTestInfo, found := manager.runningTestInfo[testName]
+	if !found {
+		// We hijack whatever the actual test result was to ensure that the user gets notified of the error
 		executionErr = stacktrace.NewError(
-			"Test %v is logged twice, indicating that it was run twice! This is a bug in Kurtosis that should be fixed!",
+			"Completion of test %v is registered twice, indicating that it was run twice! This is a bug in Kurtosis that should be fixed!",
 			testName)
 		testPassed = false
 	}
+
 	manager.testOutputs[testName] = parallelTestOutput{
 		testName:     testName,
 		executionErr: executionErr,
 		testPassed:   testPassed,
 	}
 
-	var outputLogger *logrus.Logger
-	if !manager.isInterceptingStdLogger {
-		outputLogger = logrus.StandardLogger()
-	} else {
-		outputLogger = manager.sideChannelLogger
-	}
+	// Since method registers test completion, no more output should be written to the test logs so we're
+	// safe to close the test log fp (and thereby flush any remaining bytes to disk before we print the output)
+	testLogFp := runningTestInfo.fp
+	testLogFp.Close()
 
-	printBanner(outputLogger, testName, logTestNameBannerAsError)
-	_, err := io.Copy(outputLogger.Out, testLogs)
-	if err != nil {
-		outputLogger.Error("An error occurred copying the test's logfile to STDOUT; the logs above may not be complete!")
-		fmt.Fprintln(outputLogger.Out, err) // Logrus will escape newlines so we don't actually log this
+	if manager.maxConcurrentTestsRunning == 1 && !manager.didErrorOccurCreatingStreamer {
+		if err := manager.streamerManager.stopStreamer(); err != nil {
+			manager.threadSafeOutputLogger.Error(
+				"The following error occurred stopping the streamer reading logs for test '%v'; this likely means that log-streamign "
+				)
+			return stacktrace.Propagate(err, "An error occurred stopping the streamer reading logs for test '%v'", testName)
+		}
+	} else {
+		// If we've had more than one test running at once, we need to copy all the output
+		// We can do this in a single call because the underlying output is thread-safe
+		readerFp, err := os.Open(testLogFp.Name())
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred opening the test log for reading")
+		}
+		if _, err := io.Copy(manager.threadSafeOutputLogger.Out, readerFp); err != nil {
+			return stacktrace.Propagate(err, "An error occurred copying the test logs from the temporary file to the system log")
+		}
 	}
 
 	status := getTestStatusFromResult(executionErr, testPassed)
 	switch status {
 	case ERRORED:
-		outputLogger.Error("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
-		outputLogger.Error(executionErr)
+		manager.threadSafeOutputLogger.Error("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
+		manager.threadSafeOutputLogger.Error(executionErr)
 	case PASSED:
-		outputLogger.Infof("Test " + testName + " " + colorizeStr(string(status), ansiGoodResultColor))
+		manager.threadSafeOutputLogger.Infof("Test " + testName + " " + colorizeStr(string(status), ansiGoodResultColor))
 	case FAILED:
-		outputLogger.Errorf("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
+		manager.threadSafeOutputLogger.Errorf("Test " + testName + " " + colorizeStr(string(status), ansiBadResultColor))
 	}
 }
 
@@ -203,7 +284,7 @@ func (manager *ParallelTestOutputManager) printSummary() {
 	if !manager.isInterceptingStdLogger {
 		outputLogger = logrus.StandardLogger()
 	} else {
-		outputLogger = manager.sideChannelLogger
+		outputLogger = manager.threadSafeOutputLogger
 	}
 
 	printBanner(outputLogger, "TEST RESULTS", logAllTestResultsAsError)
@@ -256,6 +337,17 @@ func getTestStatusFromResult(executionErr error, testPassed bool) testStatus {
 	return result
 }
 
+// Returns a new logger cloned from the standard logger, but with a different output
+func stdLoggerCloneWithOutput(output io.Writer) *logrus.Logger {
+	// Sadly no copy constructor on this :(
+	result := logrus.New()
+	result.SetOutput(output)
+	result.SetFormatter(logrus.StandardLogger().Formatter)
+	result.SetLevel(logrus.StandardLogger().Level)
+	// NOTE: we don't copy hooks here because we don't use them - if we ever use hooks, copy them here!
+
+	return result
+}
 
 func colorizeStr(str string, ansiColorStr string) string {
 	return ansiColorStr + str + ansiResetColor

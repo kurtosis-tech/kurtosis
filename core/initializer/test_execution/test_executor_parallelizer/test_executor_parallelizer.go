@@ -165,7 +165,7 @@ func runTestWorkerGoroutine(
 		if err != nil {
 			emptyOutputReader := &strings.Reader{}
 			executionErr := stacktrace.Propagate(err, "An error occurred creating temporary file to contain logs of test %v", testName)
-			outputManager.logTestOutput(testName, executionErr, false, emptyOutputReader)
+			outputManager.registerTestCompletion(testName, executionErr, false, emptyOutputReader)
 			continue
 		}
 		defer writingTempFp.Close()
@@ -178,7 +178,7 @@ func runTestWorkerGoroutine(
 
 		testsuiteDebuggerHostPortBinding := testParams.DebuggerHostPortBinding
 
-		outputManager.logTestLaunch(testName, testsuiteDebuggerHostPortBinding)
+		outputManager.registerTestLaunch(testName, testsuiteDebuggerHostPortBinding)
 		passed, executionErr := test_executor.RunTest(
 			executionId,
 			parentContext,
@@ -201,7 +201,7 @@ func runTestWorkerGoroutine(
 			defer readingTempFp.Close()
 			testOutputReader = readingTempFp
 		}
-		outputManager.logTestOutput(testName, executionErr, passed, testOutputReader)
+		outputManager.registerTestCompletion(testName, executionErr, passed, testOutputReader)
 	}
 }
 
