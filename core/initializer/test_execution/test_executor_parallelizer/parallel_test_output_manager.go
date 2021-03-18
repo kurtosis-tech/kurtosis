@@ -227,13 +227,15 @@ func (manager *ParallelTestOutputManager) registerTestCompletion(
 	}
 	delete(manager.runningTestInfo, testName)
 
-	// Since method registers test completion, no more output should be written to the test logs so we're
+	// Since this method registers test completion, no more output should be written to the test logs so we're
 	// safe to close the test log fp (and thereby flush any remaining bytes to disk before we print the output)
 	testLogFp := runningTestInfo.fp
 	testLogFp.Close()
 
 	if manager.maxConcurrentTestsRunning == 1 && manager.logStreamer != nil {
 		if err := manager.logStreamer.stopStreaming(); err != nil {
+			// This isn't a huge deal if the streamer throws an error when stopping, because the file that the
+			// streamer is reading from is already closed and we recreate a new streamer on every new test
 			manager.threadSafeOutputLogger.Warnf(
 				"The following error occurred stopping the streamer reading logs for test '%v': %v",
 				testName,
