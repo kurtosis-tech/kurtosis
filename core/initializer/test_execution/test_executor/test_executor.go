@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
@@ -42,6 +43,8 @@ const (
 	// it to stop. When that happens, this is how long we'll give the API container to gracefully exit before we
 	// hard-kill the container.
 	apiContainerStopTimeoutAfterParentCtxCancellation = 10 * time.Second
+
+	printTestsuiteLogSectionAsError = false
 )
 
 /*
@@ -161,61 +164,40 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
 	}
 
-	// The Kurtosis API will be our indication of whether the test suite container stopped within the timeout or not
-	log.Info("Waiting for Kurtosis API container to exit...")
-	var kurtosisApiExitCodeInt64 int64
-	kurtosisApiExitCodeInt64, err = dockerManager.WaitForExit(
-		testSetupExecutionCtx,
-		kurtosisApiContainerId)
+	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
+	var logStreamer *test_executor_parallelizer.LogStreamer = nil
+	readCloser, err := dockerManager.GetContainerLogs(testTeardownContext, testsuiteContainerId)
 	if err != nil {
-		if testSetupExecutionCtx.Err() != context.Canceled {
-			return false, stacktrace.Propagate(err, "An unexpected error occurred waiting for the exit of the Kurtosis API container")
-		}
+		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
+	} else {
+		newStreamer := test_executor_parallelizer.NewLogStreamer(log)
+		if startStreamingErr := newStreamer.StartStreamingFromReader(readCloser); err != nil {
+			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
+		} else {
+			logStreamer = newStreamer
 
-		// The parent context was cancelled, indicating that the user pressed Ctrl-C. The API container will have no idea
-		//  that this happened, so we need to stop it (which will result in an error code, in the same way as if
-		//  the user had killed the API container) so the code below can work as expected
-		if err := dockerManager.StopContainer(
-				testTeardownContext,
-				kurtosisApiContainerId,
-				apiContainerStopTimeoutAfterParentCtxCancellation); err != nil {
-			return false, stacktrace.Propagate(err, "The test execution context was cancelled (likely due to Ctrl-C), which we forwarded to the API container " +
-				"by requesting that it stop so that it would register the termination signal. However, the below error occurred stopping " +
-				"the API container. This should never happen, and indicates a bug in Kurtosis.")
-		}
-
-		// The API container will be stopped at this point, so grab the exit code (which should be TERM)
-		//  so that all the code below here works as normal
-		kurtosisApiExitCodeInt64, err = dockerManager.WaitForExit(
-			testTeardownContext,
-			kurtosisApiContainerId)
-		if err != nil {
-			return false, stacktrace.Propagate(
-				err,
-				"An error occurred waiting for the API container to exit AFTER we'd successfully stopped it; this is very" +
-					"unexpected and likely indicates a bug in Kurtosis",
-			)
+			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
+			defer logStreamer.StopStreaming()
 		}
 	}
-	kurtosisApiExitCode := int(kurtosisApiExitCodeInt64)
+	defer readCloser.Close()
 
-	// At this point, we may be printing the logs of a stopped test suite container, or we may be printing the logs of
-	//  still-running container because the test exceeded the hard test timeout or we've received a Ctrl-C. Regardless,
-	//  we want to print these so the user gets more information about what's going on, and the user will learn the exact error below
-	banner_printer.PrintContainerLogsWithBanners(dockerManager, testTeardownContext, testsuiteContainerId, log, testsuiteContainerDescription)
-
-	apiExitCodeVisitorAcceptFunc, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[kurtosisApiExitCode]
-	if !found {
-		return false, stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
-				"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
-			kurtosisApiExitCode)
+	kurtosisApiContainerExitError := waitForApiContainerExit(
+			dockerManager,
+			kurtosisApiContainerId,
+			testSetupExecutionCtx,
+			testTeardownContext)
+	var stopLogStreamerErr error = nil
+	if logStreamer != nil {
+		stopLogStreamerErr = logStreamer.StopStreaming()
 	}
-	visitor := testExecutionExitCodeErrorVisitor{}
-	testStatusRetrievalError := apiExitCodeVisitorAcceptFunc(visitor)
-
-	if testStatusRetrievalError != nil {
-		log.Error("An error occurred that prevented retrieval of the test completion status")
-		return false, testStatusRetrievalError
+	banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
+	if stopLogStreamerErr != nil {
+		log.Warnf("An error occurred stopping the log streamer: %v", stopLogStreamerErr)
+	}
+	if kurtosisApiContainerExitError != nil {
+		// NOTE: We haven't stopped the testsuite at this point, but that's okay - it'll get torn down
+		return false, stacktrace.Propagate(err, "An error occurred that prevented retrieval of the test completion status")
 	}
 	log.Info("The test suite container exited as expected")
 
@@ -233,6 +215,65 @@ func RunTest(
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
+// Waits for the API container to exit, and returns an error (if any) describing the problem with API container exiting
+func waitForApiContainerExit(
+		dockerManager *docker_manager.DockerManager,
+		kurtosisApiContainerId string,
+		testSetupExecutionCtx context.Context,
+		testTeardownCtx context.Context) error {
+	var kurtosisApiExitCodeInt64 int64
+	kurtosisApiExitCodeInt64, err := dockerManager.WaitForExit(testSetupExecutionCtx, kurtosisApiContainerId)
+	if err != nil {
+		if testSetupExecutionCtx.Err() != context.Canceled {
+			return stacktrace.Propagate(err, "An unexpected error occurred waiting for the exit of the Kurtosis API container")
+		}
+
+		// The parent context was cancelled, indicating that the user pressed Ctrl-C. The API container will have no idea
+		//  that this happened, so we need to stop it (which will result in an error code, in the same way as if
+		//  the user had killed the API container) so the code below can work as expected
+		if err := dockerManager.StopContainer(
+			testTeardownCtx,
+			kurtosisApiContainerId,
+			apiContainerStopTimeoutAfterParentCtxCancellation); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"The test execution context was cancelled (likely due to Ctrl-C), which we forwarded to the API container " +
+					"by requesting that it stop so that it would register the termination signal. However, the below error occurred stopping " +
+					"the API container. This should never happen, and indicates a bug in Kurtosis.",
+			)
+		}
+
+		// The API container will be stopped at this point, so grab the exit code (which should be TERM)
+		//  so that all the code below here works as normal
+		kurtosisApiExitCodeInt64, err = dockerManager.WaitForExit(
+			testTeardownCtx,
+			kurtosisApiContainerId)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred waiting for the API container to exit AFTER we'd successfully stopped it; this is very" +
+					"unexpected and likely indicates a bug in Kurtosis",
+			)
+		}
+	}
+
+	// The Kurtosis API will be our indication of whether the test suite container stopped happily or not
+	kurtosisApiExitCode := int(kurtosisApiExitCodeInt64)
+
+	apiExitCodeVisitorAcceptFunc, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[kurtosisApiExitCode]
+	if !found {
+		return stacktrace.NewError(
+			"The Kurtosis API container exited with an unrecognized " +
+				"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
+			kurtosisApiExitCode,
+		)
+	}
+	visitor := testExecutionExitCodeErrorVisitor{}
+	if err := apiExitCodeVisitorAcceptFunc(visitor); err != nil {
+		return stacktrace.Propagate(err, "The API container exit code indicated an error")
+	}
+	return nil
+}
 
 
 /*

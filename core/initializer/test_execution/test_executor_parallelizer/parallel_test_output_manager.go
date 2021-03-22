@@ -84,7 +84,7 @@ type ParallelTestOutputManager struct {
 	// vvvvvvvvvvvvvvvvvvv Only one test running concurrently vvvvvvvvvvvvvvvvvvvvvvv
 	// Streamer that is currently streaming the test's logs
 	// This is ONLY used when a single test is running at a time
-	logStreamer *logStreamer
+	logStreamer *LogStreamer
 	// ^^^^^^^^^^^^^^^^^^^ Only one test running concurrently ^^^^^^^^^^^^^^^^^^^^^^^
 }
 
@@ -184,8 +184,8 @@ func (manager *ParallelTestOutputManager) registerTestLaunch(
 	manager.threadSafeOutputLogger.Info(message)
 
 	if manager.maxConcurrentTestsRunning == 1 {
-		streamer := newLogStreamer(testOutputFp.Name(), manager.threadSafeOutputLogger)
-		if err := streamer.startStreaming(); err != nil {
+		streamer := NewLogStreamer(manager.threadSafeOutputLogger)
+		if err := streamer.StartStreamingFromFilepath(testOutputFp.Name()); err != nil {
 			// An error occurred starting the streamer, so we'll fall back to non-streaming log-printing
 			manager.threadSafeOutputLogger.Warn(
 				"The following error occurred starting a streamer to print logs of test '%v' in realtime, meaning that test logs " +
@@ -233,7 +233,7 @@ func (manager *ParallelTestOutputManager) registerTestCompletion(
 	testLogFp.Close()
 
 	if manager.maxConcurrentTestsRunning == 1 && manager.logStreamer != nil {
-		if err := manager.logStreamer.stopStreaming(); err != nil {
+		if err := manager.logStreamer.StopStreaming(); err != nil {
 			// This isn't a huge deal if the streamer throws an error when stopping, because the file that the
 			// streamer is reading from is already closed and we recreate a new streamer on every new test
 			manager.threadSafeOutputLogger.Warnf(
