@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_executor_parallelizer
+package output
 
 import (
 	"fmt"
@@ -91,7 +91,7 @@ type ParallelTestOutputManager struct {
 /*
 Creates a new output manager to handle the display of parallel test results.
  */
-func newParallelTestOutputManager(output io.Writer, numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
+func NewParallelTestOutputManager(output io.Writer, numTestsToRun uint, parallelism uint) *ParallelTestOutputManager {
 	// maxConcurrentTestsRunning = min(numTests, parallelism)
 	var maxConcurrentTestsRunning uint
 	if numTestsToRun < parallelism {
@@ -127,7 +127,7 @@ Args:
 Returns:
 	The logger that the test should write to when doing logging
  */
-func (manager *ParallelTestOutputManager) registerTestLaunch(
+func (manager *ParallelTestOutputManager) RegisterTestLaunch(
 			testName string,
 			debuggerHostPortBinding nat.PortBinding) *logrus.Logger {
 	manager.internalStateLock.Lock()
@@ -204,7 +204,7 @@ func (manager *ParallelTestOutputManager) registerTestLaunch(
 	return testOutputLog
 }
 
-func (manager *ParallelTestOutputManager) registerTestCompletion(
+func (manager *ParallelTestOutputManager) RegisterTestCompletion(
 			testName string,
 			executionErr error,
 			testPassed bool) {
@@ -283,7 +283,7 @@ Returns:
 	allTestsPassed: True if all tests passed, false otherwise
 	resultErr: An error (if any) that occurred during summary-printing
  */
-func (manager *ParallelTestOutputManager) printSummary() (allTestsPassed bool, resultErr error) {
+func (manager *ParallelTestOutputManager) PrintSummary() (allTestsPassed bool, resultErr error) {
 	manager.internalStateLock.Lock()
 	defer manager.internalStateLock.Unlock()
 

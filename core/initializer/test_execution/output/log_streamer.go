@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_executor_parallelizer
+package output
 
 import (
 	"github.com/palantir/stacktrace"
@@ -48,7 +48,7 @@ type LogStreamer struct {
 
 func NewLogStreamer(outputLogger *logrus.Logger) *LogStreamer {
 	return &LogStreamer{
-		state: notStarted,
+		state:                    notStarted,
 		streamThreadShutdownChan: nil,
 		streamThreadStoppedChan:  nil,
 		outputLogger:             outputLogger,

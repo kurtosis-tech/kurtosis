@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/sirupsen/logrus"
@@ -76,8 +77,8 @@ func RunInParallelAndPrintResults(
 
 	// This is where erroneous usages of the system-wide logger will be captured so we can warn the user about them
 	// (e.g. using logrus.Info, when testSpecificLogger.Info should have been used)
-	erroneousSystemLogCaptureWriter := newErroneousSystemLogCaptureWriter()
-	outputManager := newParallelTestOutputManager(logrus.StandardLogger().Out, uint(len(allTestParams)), parallelism)
+	erroneousSystemLogCaptureWriter := output.NewErroneousSystemLogCaptureWriter()
+	outputManager := output.NewParallelTestOutputManager(logrus.StandardLogger().Out, uint(len(allTestParams)), parallelism)
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
@@ -91,13 +92,13 @@ func RunInParallelAndPrintResults(
 		testsuiteLauncher)
 	logrus.Info("All tests exited")
 
-	allTestsPassed, err := outputManager.printSummary()
+	allTestsPassed, err := outputManager.PrintSummary()
 	if err != nil {
 		logrus.Errorf("An error occurred printing the test summary: %v", err)
 		return false
 	}
 
-	capturedMessages := erroneousSystemLogCaptureWriter.getCapturedMessages()
+	capturedMessages := erroneousSystemLogCaptureWriter.GetCapturedMessages()
 	logErroneousSystemLogging(capturedMessages)
 
 	return allTestsPassed
@@ -107,8 +108,8 @@ func RunInParallelAndPrintResults(
 func disableSystemLogAndRunTestThreads(
 		executionId uuid.UUID,
 		parentContext context.Context,
-		erroneousSystemLogWriter *erroneousSystemLogCaptureWriter,
-		outputManager *ParallelTestOutputManager,
+		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
+		outputManager *output.ParallelTestOutputManager,
 		testParamsChan chan ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
@@ -147,7 +148,7 @@ func runTestWorkerGoroutine(
 			parentContext context.Context,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
-			outputManager *ParallelTestOutputManager,
+			outputManager *output.ParallelTestOutputManager,
 			dockerClient *client.Client,
 			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
@@ -156,7 +157,7 @@ func runTestWorkerGoroutine(
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
 		testsuiteDebuggerHostPortBinding := testParams.DebuggerHostPortBinding
-		testLog := outputManager.registerTestLaunch(testName, testsuiteDebuggerHostPortBinding)
+		testLog := outputManager.RegisterTestLaunch(testName, testsuiteDebuggerHostPortBinding)
 		passed, executionErr := test_executor.RunTest(
 			executionId,
 			parentContext,
@@ -167,7 +168,7 @@ func runTestWorkerGoroutine(
 			testsuiteDebuggerHostPortBinding,
 			testName,
 			testParams.TestMetadata)
-		outputManager.registerTestCompletion(testName, executionErr, passed)
+		outputManager.RegisterTestCompletion(testName, executionErr, passed)
 	}
 }
 
@@ -175,7 +176,7 @@ func runTestWorkerGoroutine(
 Helper function to print a big warning if there was logging to the system-level logging when there should only have been
  logging to the test-specific logger
 */
-func logErroneousSystemLogging(capturedErroneousMessages []erroneousSystemLogInfo) {
+func logErroneousSystemLogging(capturedErroneousMessages []output.ErroneousSystemLogInfo) {
 	if len(capturedErroneousMessages) == 0 {
 		return
 	}
@@ -194,11 +195,11 @@ func logErroneousSystemLogging(capturedErroneousMessages []erroneousSystemLogInf
 	for i, messageInfo := range capturedErroneousMessages {
 		logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
 		logrus.Error("Message:")
-		logrus.StandardLogger().Out.Write(messageInfo.message)
+		logrus.StandardLogger().Out.Write(messageInfo.GetMessage())
 		logrus.StandardLogger().Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it
 		logrus.Error("")
 		logrus.Error("Stacktrace:")
-		logrus.StandardLogger().Out.Write(messageInfo.stacktrace)
+		logrus.StandardLogger().Out.Write(messageInfo.GetStacktrace())
 		logrus.StandardLogger().Out.Write([]byte("\n")) // The stacktrace likely won't end with a newline so we add it
 	}
 }

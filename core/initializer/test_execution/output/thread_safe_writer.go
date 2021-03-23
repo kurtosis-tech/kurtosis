@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_executor_parallelizer
+package output
 
 import (
 	"io"

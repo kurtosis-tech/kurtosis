@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/palantir/stacktrace"
@@ -165,12 +165,12 @@ func RunTest(
 	}
 
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
-	var logStreamer *test_executor_parallelizer.LogStreamer = nil
+	var logStreamer *output.LogStreamer = nil
 	readCloser, err := dockerManager.GetContainerLogs(testTeardownContext, testsuiteContainerId)
 	if err != nil {
 		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
 	} else {
-		newStreamer := test_executor_parallelizer.NewLogStreamer(log)
+		newStreamer := output.NewLogStreamer(log)
 		if startStreamingErr := newStreamer.StartStreamingFromReader(readCloser); err != nil {
 			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 		} else {

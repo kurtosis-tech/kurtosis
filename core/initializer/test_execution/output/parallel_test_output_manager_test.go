@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_executor_parallelizer
+package output
 
 import (
 	"github.com/palantir/stacktrace"
