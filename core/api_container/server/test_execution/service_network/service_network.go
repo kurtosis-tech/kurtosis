@@ -352,49 +352,6 @@ func (network *ServiceNetwork) ExecCommand(
 	return exitCode, execOutputBuf, nil
 }
 
-// Stops all services that have been created by the API container, and renders the service network unusable
-func (network *ServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
-	// TODO wrap this in wrapper method
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot destroy the service network; it has already been destroyed")
-	}
-
-	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
-	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
-	for serviceId := range network.serviceIps {
-		serviceIdsToRemove[serviceId] = true
-	}
-
-	containerStopErrors := []error{}
-	for serviceId := range serviceIdsToRemove {
-		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing service with ID '%v'",
-				serviceId)
-			containerStopErrors = append(containerStopErrors, wrappedErr)
-		}
-	}
-	network.isDestroyed = true
-
-	if len(containerStopErrors) > 0 {
-		errorStrs := []string{}
-		for _, err := range containerStopErrors {
-			errStr := err.Error()
-			errorStrs = append(errorStrs, errStr)
-		}
-		joinedErrStrings := strings.Join(errorStrs, "\n")
-		return stacktrace.NewError(
-			"One or more error(s) occurred stopping the services in the test network " +
-				"during service network destruction:\n%s",
-			joinedErrStrings)
-	}
-
-	return nil
-}
-
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

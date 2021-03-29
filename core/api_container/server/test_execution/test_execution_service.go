@@ -91,17 +91,6 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	return nil
 }
 
-func (service *testExecutionService) HandlePostShutdownEvent() error {
-	// NOTE: Might need to kick off a timeout thread to separately close the context if it's taking too long or if
-	//  the service network hangs forever trying to shutdown
-	logrus.Info("gRPC server is shut down; destroying service network...")
-	if err := service.serviceNetwork.Destroy(context.Background(), postShutdownContainerStopTimeout); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the service network on shutdown")
-	}
-	logrus.Info("Service network destroyed successfully")
-	return nil
-}
-
 func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *emptypb.Empty) (*bindings.TestExecutionInfo, error) {
 	result := &bindings.TestExecutionInfo{
 		TestName: service.testName,
