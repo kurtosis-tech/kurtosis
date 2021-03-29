@@ -1,5 +1,9 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
+# TBD
+### Changes
+* Refactored `PrintContainerLogs` function out of `banner_printer` module (where it didn't belong)
+
 # 1.10.5
 ### Features
 * Whenenever a single test is running (either because one test is specified or parallelism == 1), test logs will stream in realtime
