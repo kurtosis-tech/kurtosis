@@ -15,6 +15,43 @@ import (
 	"strings"
 )
 
+const (
+	bannerWidth = 100
+	bannerChar = "="
+	sectionChar = "-"
+)
+
+func PrintBanner(log *logrus.Logger, contents string, isError bool) {
+	bannerString := strings.Repeat(bannerChar, bannerWidth)
+	numPaddingSpaces := (bannerWidth - len(contents)) / 2
+	contentString := strings.Repeat(" ", numPaddingSpaces) + contents
+	if !isError {
+		log.Info("")
+		log.Info(bannerString)
+		log.Info(contentString)
+		log.Info(bannerString)
+	} else {
+		log.Error("")
+		log.Error(bannerString)
+		log.Error(contentString)
+		log.Error(bannerString)
+	}
+}
+
+func PrintSection(log *logrus.Logger, contents string, isError bool) {
+	contentsPlusBuffer := fmt.Sprintf(" %v ", contents)
+	numLeadingDashes := (bannerWidth - len(contentsPlusBuffer)) / 2
+	numTrailingDashes := bannerWidth - (numLeadingDashes + len(contentsPlusBuffer))
+	logStr := strings.Repeat(sectionChar, numLeadingDashes) + contentsPlusBuffer + strings.Repeat(sectionChar, numTrailingDashes)
+	if isError {
+		log.Error(logStr)
+	} else {
+		log.Info(logStr)
+	}
+}
+
+
+// TODO THIS DOESN'T BELONG HERE!!
 /*
 Little helper function to print a container's logs with with banners indicating the start and end of the logs
 
@@ -45,7 +82,7 @@ func PrintContainerLogsWithBanners(
 	}
 
 	containerDescUppercase := strings.ToUpper(containerDescription)
-	log.Info("- - - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
+	PrintSection(log, containerDescUppercase + " LOGS", false)
 	var copyErr error
 	if useDockerLogDemultiplexing {
 		// Docker logs multiplex STDOUT and STDERR into a single stream, and need to be demultiplexed
@@ -58,6 +95,6 @@ func PrintContainerLogsWithBanners(
 		log.Errorf("Could not print the test suite container's logs due to the following error when copying log contents:")
 		fmt.Fprintln(log.Out, err)
 	}
-	log.Info("- - - - - - - - - - - - - " + containerDescUppercase + " LOGS - - - - - - - - - - - - -")
+	PrintSection(log, "END " + containerDescUppercase + " LOGS", false)
 }
 
