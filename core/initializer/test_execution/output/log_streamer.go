@@ -99,7 +99,7 @@ func (streamer *LogStreamer) StopStreaming() error {
 
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamerLogPrefix)
 	streamer.streamThreadShutdownChan <- true
-	streamer.outputLogger.Trace("%vSuccessfully sent signal to stop streaming thread", streamerLogPrefix)
+	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamerLogPrefix)
 
 	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamerLogPrefix, streamerStopTimeout)
 	select {
