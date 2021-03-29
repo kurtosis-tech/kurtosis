@@ -17,7 +17,7 @@ import (
 type streamerState string
 
 const (
-	// How long for the streamer to wait between copying the latest test output to system output
+	// How long the streamer will pause between each cycle of copying input -> output
 	timeBetweenStreamerCopies = 500 * time.Millisecond
 
 	// If we ask the streamer to stop and it hasn't after this time, throw an error
@@ -27,6 +27,11 @@ const (
 	streaming streamerState = "STREAMING"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
+
+	// This is a prefix that will be attached to log messages to identify that they're coming from the streamer
+	// This is necessary because these log messages will likely be outputted in the section labelled "testsuite logs",
+	// so we need to distinguish streamer logs (which come from the initializer) from logs that come from the testsuite
+	streamerLogPrefix = "[STREAMER] "
 )
 
 // Single-use, non-thread-safe streamer that will read data and pump it to the given output log
@@ -83,27 +88,27 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.Reader) error
 
 func (streamer *LogStreamer) StopStreaming() error {
 	// Stop is idempotent
-	streamer.outputLogger.Tracef("[STREAMER] Received 'stop streaming' command while in state '%v'...", streamer.state)
+	streamer.outputLogger.Tracef("%vReceived 'stop streaming' command while in state '%v'...", streamerLogPrefix, streamer.state)
 	if streamer.state == terminated || streamer.state == failedToStop {
-		streamer.outputLogger.Tracef("[STREAMER] Short-circuiting stop; streamer state is already '%v' state", streamer.state)
+		streamer.outputLogger.Tracef("%vShort-circuiting stop; streamer state is already '%v' state", streamerLogPrefix, streamer.state)
 		return nil
 	}
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
 
-	streamer.outputLogger.Trace("[STREAMER] Sending signal to stop streaming thread...")
+	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamerLogPrefix)
 	streamer.streamThreadShutdownChan <- true
-	streamer.outputLogger.Trace("[STREAMER] Successfully sent signal to stop streaming thread")
+	streamer.outputLogger.Trace("%vSuccessfully sent signal to stop streaming thread", streamerLogPrefix)
 
-	streamer.outputLogger.Tracef("[STREAMER] Waiting until thread reports stopped, or %v timeout is hit...", streamerStopTimeout)
+	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamerLogPrefix, streamerStopTimeout)
 	select {
 	case <- streamer.streamThreadStoppedChan:
-		streamer.outputLogger.Tracef("[STREAMER] Thread reported stop")
+		streamer.outputLogger.Tracef("%vThread reported stop", streamerLogPrefix)
 		streamer.state = terminated
 		return nil
 	case <- time.After(streamerStopTimeout):
-		streamer.outputLogger.Tracef("[STREAMER] %v timeout was hit", streamerStopTimeout)
+		streamer.outputLogger.Tracef("%v%v timeout was hit", streamerLogPrefix, streamerStopTimeout)
 		streamer.state = failedToStop
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
@@ -137,6 +142,7 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 				}
 			}
 		}
+		// Do a final copy, to capture any non-copied output
 		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
 			streamer.outputLogger.Error("An error occurred copying the final output from the test logs")
 		}

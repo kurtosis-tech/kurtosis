@@ -6,6 +6,7 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 
 ### Changes
 * Removed now-unused `index.md` and `images/horizontal-logo.png` from the `docs` folder (has been superseded by https://github.com/kurtosis-tech/kurtosis-tech.github.io )
+* Pushed the logline "Attempting to remove Docker network with ID ...." down to "debug" level (was "info")
 
 ### Fixes
 * Actually abort tests & shut everything down when the user presses Ctrl-C

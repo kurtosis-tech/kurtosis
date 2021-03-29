@@ -34,7 +34,6 @@ Args:
 	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
 	parallelism: The number of tests to run concurrently
-	numTestsToRun: The number of tests that will be run
 	allTestParams: A mapping of test_name -> parameters for running the test
 	testSuiteImageName: The name of the Docker image that will be used to run the test controller
 	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
@@ -193,7 +192,7 @@ func logErroneousSystemLogging(capturedErroneousMessages []output.ErroneousSyste
 	logrus.Error("")
 
 	for i, messageInfo := range capturedErroneousMessages {
-		logrus.Errorf("----------------- Erroneous Message #%d -------------------", i+1)
+		banner_printer.PrintSection(logrus.StandardLogger(), fmt.Sprintf("Erroneous Message #%d", i+1), logErroneousSystemLogsAsError)
 		logrus.Error("Message:")
 		logrus.StandardLogger().Out.Write(messageInfo.GetMessage())
 		logrus.StandardLogger().Out.Write([]byte("\n")) // The message likely won't come with a newline so we add it

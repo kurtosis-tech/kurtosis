@@ -35,8 +35,6 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
  */
 
 const (
-	testsuiteContainerDescription = "Testsuite Container"
-
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
 
 	// When the user presses Ctrl-C on the initializer, we need to forward that on to the API container and tell
@@ -45,20 +43,12 @@ const (
 	apiContainerStopTimeoutAfterParentCtxCancellation = 10 * time.Second
 
 	printTestsuiteLogSectionAsError = false
+
+	// For debugging, we'll sometimes want to print logs from the initializer during the section labelled "testsuite logs"
+	// To distinguish initializer logs from testsuite logs, we add this prefix to loglines that come from the initializer
+	//  rather than the testsuite
+	initializerLogPrefix = "[INITIALIZER] "
 )
-
-/*
-Because a test is run in its own goroutine to allow us to time it out, we need to pass the results back
-	via a channel. This struct is what's passed over the channel.
- */
-type testResult struct {
-	// Whether the test passed or not (undefined if an error occurred that prevented us from retrieving test results)
-	testPassed   bool
-
-	// If not nil, the error that prevented us from retrieving the test result
-	executionErr error
-}
-
 
 /*
 Runs a single test with the given name
@@ -164,6 +154,7 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
 	}
 
+	// From this point on, all loglines should be from the testsuite
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	var logStreamer *output.LogStreamer = nil
 	readCloser, err := dockerManager.GetContainerLogs(testTeardownContext, testsuiteContainerId)
@@ -174,7 +165,7 @@ func RunTest(
 		if startStreamingErr := newStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
 			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 		} else {
-			log.Tracef("[INITIALIZER] Testsuite container log streamer started successfully")
+			log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
 			logStreamer = newStreamer
 
 			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
@@ -183,19 +174,20 @@ func RunTest(
 	}
 	defer readCloser.Close()
 
-	log.Tracef("[INITIALIZER] Waiting for API container exit...")
+	log.Tracef("%vWaiting for API container exit...", initializerLogPrefix)
 	kurtosisApiContainerExitError := waitForApiContainerExit(
 			dockerManager,
 			kurtosisApiContainerId,
 			testSetupExecutionCtx,
 			testTeardownContext)
-	log.Tracef("[INITIALIZER] API container exited; resulting err is: %v", kurtosisApiContainerExitError)
+	log.Tracef("%vAPI container exited; resulting err is: %v", initializerLogPrefix, kurtosisApiContainerExitError)
 	var stopLogStreamerErr error = nil
 	if logStreamer != nil {
-		log.Tracef("[INITIALIZER] Stopping testsuite container log streamer...")
+		log.Tracef("%vStopping testsuite container log streamer...", initializerLogPrefix)
 		stopLogStreamerErr = logStreamer.StopStreaming()
-		log.Tracef("[INITIALIZER] Stopped testsuite container log streamer")
+		log.Tracef("%vStopped testsuite container log streamer", initializerLogPrefix)
 	}
+	// After this point, we can go back to printing initializer logs
 	banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
 	if stopLogStreamerErr != nil {
 		log.Warnf("An error occurred stopping the log streamer: %v", stopLogStreamerErr)
@@ -293,12 +285,12 @@ func removeNetworkDeferredFunc(
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		networkId string) {
-	log.Infof("Attempting to remove Docker network with id %v...", networkId)
+	log.Debugf("Attempting to remove Docker network with ID %v...", networkId)
 	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
 		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
 		log.Error(err.Error())
 		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
 	} else {
-		log.Infof("Successfully removed Docker network with ID %v", networkId)
+		log.Debugf("Successfully removed Docker network with ID %v", networkId)
 	}
 }

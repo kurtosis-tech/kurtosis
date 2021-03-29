@@ -338,6 +338,8 @@ func getTestStatusFromResult(executionErr error, testPassed bool) testStatus {
 }
 
 // Returns a new logger cloned from the standard logger, but with a different output
+// The reason we clone the standard logger is that this will be the one the user configures with
+//  their logging level, format, etc. preferences
 func stdLoggerCloneWithOutput(output io.Writer) *logrus.Logger {
 	// Sadly no copy constructor on this :(
 	result := logrus.New()
