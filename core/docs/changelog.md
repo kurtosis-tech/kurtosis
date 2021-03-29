@@ -1,12 +1,16 @@
 _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
 
 # TBD
+### Features
+* Whenenever a single test is running (either because one test is specified or parallelism == 1), test logs will stream in realtime
+
 ### Changes
 * Removed now-unused `index.md` and `images/horizontal-logo.png` from the `docs` folder (has been superseded by https://github.com/kurtosis-tech/kurtosis-tech.github.io )
 
 ### Fixes
 * Actually abort tests & shut everything down when the user presses Ctrl-C
 * Fixed issue where hung calls to the API container (e.g. a long-running Docker exec command) could prevent the API container from shutting down
+* Normalized test name and testsuite log banner widths
 
 # 1.10.4
 ### Fixes

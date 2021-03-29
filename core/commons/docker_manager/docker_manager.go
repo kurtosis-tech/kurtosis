@@ -378,6 +378,7 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
+		Follow: true,
 	}
 	readCloser, err := manager.dockerClient.ContainerLogs(context, containerId, containerLogOpts)
 	if err != nil {

@@ -6,6 +6,7 @@
 package output
 
 import (
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -13,18 +14,19 @@ import (
 	"time"
 )
 
-type streamerState int
+type streamerState string
 
 const (
 	// How long for the streamer to wait between copying the latest test output to system output
-	timeBetweenStreamerCopies = 1 * time.Second
+	timeBetweenStreamerCopies = 500 * time.Millisecond
 
 	// If we ask the streamer to stop and it hasn't after this time, throw an error
 	streamerStopTimeout = 5 * time.Second
 
-	notStarted streamerState = iota
-	streaming
-	terminated
+	notStarted streamerState = "NOT_STARTED"
+	streaming streamerState = "STREAMING"
+	terminated streamerState = "TERMINATED"
+	failedToStop streamerState = "FAILED_TO_STOP"
 )
 
 // Single-use, non-thread-safe streamer that will read data and pump it to the given output log
@@ -65,15 +67,15 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 		input.Close()
 	}
 
-	if err := streamer.startStreamingThread(input, threadShutdownHook); err != nil {
+	if err := streamer.startStreamingThread(input, false, threadShutdownHook); err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the streaming thread from filepath '%v'", inputFilepath)
 	}
 	return nil
 }
 
-func (streamer *LogStreamer) StartStreamingFromReader(input io.Reader) error {
+func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.Reader) error {
 	threadShutdownHook := func() {}
-	if err := streamer.startStreamingThread(input, threadShutdownHook); err != nil {
+	if err := streamer.startStreamingThread(input, true, threadShutdownHook); err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
 	}
 	return nil
@@ -81,31 +83,38 @@ func (streamer *LogStreamer) StartStreamingFromReader(input io.Reader) error {
 
 func (streamer *LogStreamer) StopStreaming() error {
 	// Stop is idempotent
-	if streamer.state == terminated {
+	streamer.outputLogger.Tracef("[STREAMER] Received 'stop streaming' command while in state '%v'...", streamer.state)
+	if streamer.state == terminated || streamer.state == failedToStop {
+		streamer.outputLogger.Tracef("[STREAMER] Short-circuiting stop; streamer state is already '%v' state", streamer.state)
 		return nil
 	}
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
 
+	streamer.outputLogger.Trace("[STREAMER] Sending signal to stop streaming thread...")
 	streamer.streamThreadShutdownChan <- true
+	streamer.outputLogger.Trace("[STREAMER] Successfully sent signal to stop streaming thread")
 
+	streamer.outputLogger.Tracef("[STREAMER] Waiting until thread reports stopped, or %v timeout is hit...", streamerStopTimeout)
 	select {
 	case <- streamer.streamThreadStoppedChan:
+		streamer.outputLogger.Tracef("[STREAMER] Thread reported stop")
+		streamer.state = terminated
 		return nil
 	case <- time.After(streamerStopTimeout):
+		streamer.outputLogger.Tracef("[STREAMER] %v timeout was hit", streamerStopTimeout)
+		streamer.state = failedToStop
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
-	streamer.state = terminated
-	return nil
 }
 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func (streamer *LogStreamer) startStreamingThread(input io.Reader, threadShutdownHook func()) error {
+func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemultiplexing bool, threadShutdownHook func()) error {
 	if streamer.state != notStarted {
-		return stacktrace.NewError("Cannot start streaming with this log streamer; streamer is not in the 'not started' state")
+		return stacktrace.NewError("Cannot start streaming with this log streamer; streamer is not in the '%v' state", notStarted)
 	}
 
 	streamThreadShutdownChan := make(chan bool)
@@ -123,17 +132,27 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, threadShutdow
 			case <- streamer.streamThreadShutdownChan:
 				keepGoing = false
 			case <- time.After(timeBetweenStreamerCopies):
-				if _, err := io.Copy(streamer.outputLogger.Out, input); err != nil {
-					streamer.outputLogger.Error("An error occurred copying the output from the test logs")
+				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+					streamer.outputLogger.Errorf("An error occurred copying the output from the test logs: %v", err)
 				}
 			}
 		}
-		if _, err := io.Copy(streamer.outputLogger.Out, input); err != nil {
+		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
 			streamer.outputLogger.Error("An error occurred copying the final output from the test logs")
 		}
 		streamer.streamThreadStoppedChan <- true
 	}()
 	streamer.state = streaming
 	return nil
+}
+
+func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing bool) error {
+	var result error
+	if useDockerDemultiplexing {
+		_, result = stdcopy.StdCopy(output, output, input)
+	} else {
+		_, result = io.Copy(output, input)
+	}
+	return result
 }
 

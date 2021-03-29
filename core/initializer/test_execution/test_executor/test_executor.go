@@ -171,9 +171,10 @@ func RunTest(
 		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
 	} else {
 		newStreamer := output.NewLogStreamer(log)
-		if startStreamingErr := newStreamer.StartStreamingFromReader(readCloser); err != nil {
+		if startStreamingErr := newStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
 			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 		} else {
+			log.Tracef("[INITIALIZER] Testsuite container log streamer started successfully")
 			logStreamer = newStreamer
 
 			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
@@ -182,14 +183,18 @@ func RunTest(
 	}
 	defer readCloser.Close()
 
+	log.Tracef("[INITIALIZER] Waiting for API container exit...")
 	kurtosisApiContainerExitError := waitForApiContainerExit(
 			dockerManager,
 			kurtosisApiContainerId,
 			testSetupExecutionCtx,
 			testTeardownContext)
+	log.Tracef("[INITIALIZER] API container exited; resulting err is: %v", kurtosisApiContainerExitError)
 	var stopLogStreamerErr error = nil
 	if logStreamer != nil {
+		log.Tracef("[INITIALIZER] Stopping testsuite container log streamer...")
 		stopLogStreamerErr = logStreamer.StopStreaming()
+		log.Tracef("[INITIALIZER] Stopped testsuite container log streamer")
 	}
 	banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
 	if stopLogStreamerErr != nil {
@@ -204,12 +209,15 @@ func RunTest(
 	// If we got here, then the testsuite container exited as the API container expected, meaning the testsuite
 	//  container is stopped, meaning it's okay to WaitForExit using testTeardownContext to get the testsuite
 	//  container's exit code
+	log.Tracef("Waiting for testsuite container to exit...")
 	testSuiteExitCode, err := dockerManager.WaitForExit(
 		testTeardownContext,
 		testsuiteContainerId)
 	if err != nil {
-			  return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
-			  }
+		log.Tracef("Received an error waiting for the testsuite container to exit: %v", err)
+		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
+	}
+	log.Tracef("Testsuite container exited with exit code '%v'", testSuiteExitCode)
 	return testSuiteExitCode == 0, nil
 }
 

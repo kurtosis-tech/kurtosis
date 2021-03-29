@@ -15,9 +15,16 @@ import (
 	"strings"
 )
 
+const (
+	bannerWidth = 100
+	bannerChar = "="
+	sectionChar = "-"
+)
+
 func PrintBanner(log *logrus.Logger, contents string, isError bool) {
-	bannerString := "=================================================================================================="
-	contentString := fmt.Sprintf("                                     %v", contents)
+	bannerString := strings.Repeat(bannerChar, bannerWidth)
+	numPaddingSpaces := (bannerWidth - len(contents)) / 2
+	contentString := strings.Repeat(" ", numPaddingSpaces) + contents
 	if !isError {
 		log.Info("")
 		log.Info(bannerString)
@@ -32,7 +39,10 @@ func PrintBanner(log *logrus.Logger, contents string, isError bool) {
 }
 
 func PrintSection(log *logrus.Logger, contents string, isError bool) {
-	logStr := fmt.Sprintf("- - - - - - - - - - - - - %v - - - - - - - - - - - - -", contents)
+	contentsPlusBuffer := fmt.Sprintf(" %v ", contents)
+	numLeadingDashes := (bannerWidth - len(contentsPlusBuffer)) / 2
+	numTrailingDashes := bannerWidth - (numLeadingDashes + len(contentsPlusBuffer))
+	logStr := strings.Repeat(sectionChar, numLeadingDashes) + contentsPlusBuffer + strings.Repeat(sectionChar, numTrailingDashes)
 	if isError {
 		log.Error(logStr)
 	} else {
