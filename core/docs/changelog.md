@@ -4,6 +4,9 @@ _For details about Kurtosis' versioning scheme, as well as how to upgrade, see [
 ### Changes
 * Refactored `PrintContainerLogs` function out of `banner_printer` module (where it didn't belong)
 
+### Fixes
+* Fixed an issue where a testsuite that hangs forever could hang the initializer because the log streamer's `io.Copy` operation is blocking
+
 # 1.10.5
 ### Features
 * Whenenever a single test is running (either because one test is specified or parallelism == 1), test logs will stream in realtime

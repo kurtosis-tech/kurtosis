@@ -154,10 +154,16 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
 	}
 
-	// From this point on, all loglines should be from the testsuite
+	// ====================================== TRICKY CODE WARNING =====================================================
+	// The code from this point on is very tricky! It is trying to stream the testsuite logs while still responding
+	//  to what the API container is doing. Be VERY careful with editing it - there are a lot of things happening
+	//  in parallel and it's easy to cause subtle bugs!
+	// ====================================== TRICKY CODE WARNING =====================================================
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	var logStreamer *output.LogStreamer = nil
-	readCloser, err := dockerManager.GetContainerLogs(testTeardownContext, testsuiteContainerId)
+	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
+	// if the user presses Ctrl-C.
+	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId)
 	if err != nil {
 		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
 	} else {
@@ -197,6 +203,7 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred that prevented retrieval of the test completion status")
 	}
 	log.Info("The test suite container exited as expected")
+	// ====================================== END TRICKY CODE WARNING =================================================
 
 	// If we got here, then the testsuite container exited as the API container expected, meaning the testsuite
 	//  container is stopped, meaning it's okay to WaitForExit using testTeardownContext to get the testsuite
