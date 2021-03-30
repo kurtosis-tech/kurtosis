@@ -128,23 +128,28 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	streamer.streamThreadShutdownChan = streamThreadShutdownChan
 	streamer.streamThreadStoppedChan = streamThreadStoppedChan
 
+	// TODO TODO This entire thing needs to be rewritten!!!! This was written when we thought io.Copy was non-blocking,
+	//  and would just copy as much as was available! Instead, io.Copy will block until an EOF, so the "keepGoing" loop
+	//  here doesn't actually get run more than once!
 	go func() {
 		defer threadShutdownHook()
 
 		keepGoing := true
 		for keepGoing {
+			streamer.outputLogger.Tracef("%vRunning log-copy cycle...", streamerLogPrefix)
 			select {
 			case <- streamer.streamThreadShutdownChan:
 				keepGoing = false
 			case <- time.After(timeBetweenStreamerCopies):
 				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-					streamer.outputLogger.Errorf("An error occurred copying the output from the test logs: %v", err)
+					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamerLogPrefix, err)
 				}
 			}
+			streamer.outputLogger.Tracef("%vLog copy cycle completed", streamerLogPrefix)
 		}
 		// Do a final copy, to capture any non-copied output
 		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-			streamer.outputLogger.Error("An error occurred copying the final output from the test logs")
+			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamerLogPrefix, err)
 		}
 		streamer.streamThreadStoppedChan <- true
 	}()
