@@ -1,5 +1,3 @@
-_For details about Kurtosis' versioning scheme, as well as how to upgrade, see [the versioning & upgrading page](./versioning-and-upgrading.md)_
-
 # 1.10.6
 ### Changes
 * Refactored `PrintContainerLogs` function out of `banner_printer` module (where it didn't belong)
