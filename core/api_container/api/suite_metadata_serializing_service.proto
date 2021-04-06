@@ -21,5 +21,7 @@ message TestMetadata {
   map<string, bool> used_artifact_urls = 2;
 
   uint32 test_setup_timeout_in_seconds = 3;
+
+  // TODO Rename this to test_run_timeout_in_seconds on the next API break
   uint32 test_execution_timeout_in_seconds = 4;
 }
