@@ -198,17 +198,27 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
-	filesToGenerate := args.FilesToGenerate
 
-	ip, generatedFilesRelativeFilepaths, err := service.serviceNetwork.RegisterService(serviceId, partitionId, filesToGenerate)
+	ip, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
 	return &bindings.RegisterServiceResponse{
-		GeneratedFilesRelativeFilepaths: generatedFilesRelativeFilepaths,
 		IpAddr:                          ip.String(),
+	}, nil
+}
+
+func (service *testExecutionService) GenerateFiles(_ context.Context, args *bindings.GenerateFilesArgs) (*bindings.GenerateFilesResponse, error) {
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	filesToGenerate := args.FilesToGenerate
+	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating files for service '%v'", serviceId)
+	}
+	return &bindings.GenerateFilesResponse{
+		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
 	}, nil
 }
 

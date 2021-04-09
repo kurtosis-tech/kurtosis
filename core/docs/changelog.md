@@ -1,3 +1,15 @@
+# TBD
+### Features
+* Allowed files to be generated for a service at any point during the service's lifecycle
+
+### Changes
+* Renamed `test_execution_timeout_in_seconds` to `test_run_timeout_in_seconds` on the testsuite metadata serialization call, to better reflect the actual value purpose
+
+### Breaking Changes
+* The `RegisterService` API container function no longer takes in a set of files to generate, nor does it return the relative filepaths of generated files
+* Added a new API container function, `GenerateFiles`, that generates files inside the suite execution volume of a specified service
+* Renamed the `test_execution_timeout_in_seconds` arg to `SerializeSuiteMetadata` API container function to `test_run_timeout_in_seconds`
+
 # 1.10.6
 ### Changes
 * Refactored `PrintContainerLogs` function out of `banner_printer` module (where it didn't belong)

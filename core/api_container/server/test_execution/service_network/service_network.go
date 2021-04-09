@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
@@ -126,54 +127,36 @@ func (network *ServiceNetwork) Repartition(
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetwork) RegisterService(
 		serviceId service_network_types.ServiceID,
-		partitionId service_network_types.PartitionID,
-		filesToGenerate map[string]bool) (net.IP, map[string]string, error) {
+		partitionId service_network_types.PartitionID) (net.IP, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if strings.TrimSpace(string(serviceId)) == "" {
-		return nil, nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
+		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
 	_, found := network.serviceIps[serviceId]
 	if found {
-		return nil, nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, nil, stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
 	}
 
-	// TODO Move this stuff into the UserServiceLauncher???
-	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the service directory for service with ID '%v'", serviceId)
-	}
-
-	generatedFilesRelativeFilepaths := map[string]string{}
-	for userCreatedFileKey := range filesToGenerate {
-		file, err := serviceDirectory.GetFile(userCreatedFileKey)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
-		}
-		generatedFilesRelativeFilepaths[userCreatedFileKey] = file.GetFilepathRelativeToVolRoot()
-		logrus.Debugf("Created generated file '%v' at '%v'", userCreatedFileKey, file.GetFilepathRelativeToVolRoot())
-	}
-
-
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 	network.serviceIps[serviceId] = ip
@@ -187,7 +170,7 @@ func (network ServiceNetwork) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, nil, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
@@ -195,7 +178,45 @@ func (network ServiceNetwork) RegisterService(
 	}
 	shouldUndoServiceIpAdd = false
 
-	return ip, generatedFilesRelativeFilepaths, nil
+	return ip, nil
+}
+
+// Generates files in a location in the suite execution volume allocated to the given service
+func (network *ServiceNetwork) GenerateFiles(
+		serviceId service_network_types.ServiceID,
+		filesToGenerate map[string]*bindings.FileGenerationOptions) (map[string]string, error) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+	}
+
+	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service directory inside the test execution volume for service with ID '%v'", serviceId)
+	}
+
+	generatedFilesRelativeFilepaths := map[string]string{}
+	for userCreatedFileKey, fileGenerationOptions := range filesToGenerate {
+		fileTypeToGenerate := fileGenerationOptions.GetFileTypeToGenerate()
+		switch fileTypeToGenerate {
+		case bindings.FileGenerationOptions_FILE:
+			file, err := serviceDirectory.GetFile(userCreatedFileKey)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
+			}
+			generatedFilesRelativeFilepaths[userCreatedFileKey] = file.GetFilepathRelativeToVolRoot()
+			logrus.Debugf("Created generated file '%v' at '%v'", userCreatedFileKey, file.GetFilepathRelativeToVolRoot())
+		default:
+			return nil, stacktrace.NewError(
+				"Could not generate file '%v'; unrecognized file type '%v'; this is a bug in Kurtosis",
+				userCreatedFileKey,
+				fileTypeToGenerate,
+			)
+		}
+	}
+	return generatedFilesRelativeFilepaths, nil
 }
 
 // TODO add tests for this
