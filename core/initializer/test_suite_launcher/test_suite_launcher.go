@@ -203,7 +203,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		testsuiteContainerIp net.IP,
 		debuggerPortBinding nat.PortBinding,
 		testSetupTimeoutInSeconds uint32,
-		testExecutionTimeoutInSeconds uint32,
+		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (testsuiteContainerId string, kurtosisApiContainerId string, resultErr error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
@@ -257,7 +257,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		testsuiteContainerIp,
 		kurtosisApiContainerIp,
 		testSetupTimeoutInSeconds,
-		testExecutionTimeoutInSeconds,
+		testRunTimeoutInSeconds,
 		isPartitioningEnabled)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
@@ -342,7 +342,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		testSetupTimeoutInSeconds uint32,
-		testExecutionTimeoutInSeconds uint32,
+		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	args, err := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
@@ -355,7 +355,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSuiteContainerIpAddr.String(),
 		apiContainerIpAddr.String(),
 		testSetupTimeoutInSeconds,
-		testExecutionTimeoutInSeconds,
+		testRunTimeoutInSeconds,
 		isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")

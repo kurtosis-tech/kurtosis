@@ -43,14 +43,14 @@ const (
 
 
 type testExecutionService struct {
-	dockerManager                 *docker_manager.DockerManager
-	serviceNetwork                *service_network.ServiceNetwork
-	testName                      string
-	testSetupTimeoutInSeconds     uint32
-	testExecutionTimeoutInSeconds uint32
-	testSuiteContainerId          string
-	stateMachine                  *testExecutionServiceStateMachine
-	shutdownChan                  chan int
+	dockerManager             *docker_manager.DockerManager
+	serviceNetwork            *service_network.ServiceNetwork
+	testName                  string
+	testSetupTimeoutInSeconds uint32
+	testRunTimeoutInSeconds   uint32
+	testSuiteContainerId      string
+	stateMachine              *testExecutionServiceStateMachine
+	shutdownChan              chan int
 }
 
 func newTestExecutionService(
@@ -58,18 +58,18 @@ func newTestExecutionService(
 		serviceNetwork *service_network.ServiceNetwork,
 		testName string,
 		testSetupTimeoutInSeconds uint32,
-		testExecutionTimeoutInSeconds uint32,
+		testRunTimeoutInSeconds uint32,
 		testSuiteContainerId string,
 		shutdownChan chan int) *testExecutionService {
 	return &testExecutionService{
-		dockerManager:                 dockerManager,
-		serviceNetwork:                serviceNetwork,
-		testName:                      testName,
-		testSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
-		testExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds,
-		testSuiteContainerId:          testSuiteContainerId,
-		stateMachine:                  newTestExecutionServiceStateMachine(),
-		shutdownChan:                  shutdownChan,
+		dockerManager:             dockerManager,
+		serviceNetwork:            serviceNetwork,
+		testName:                  testName,
+		testSetupTimeoutInSeconds: testSetupTimeoutInSeconds,
+		testRunTimeoutInSeconds:   testRunTimeoutInSeconds,
+		testSuiteContainerId:      testSuiteContainerId,
+		stateMachine:              newTestExecutionServiceStateMachine(),
+		shutdownChan:              shutdownChan,
 	}
 }
 
@@ -159,7 +159,7 @@ func (service *testExecutionService) RegisterTestExecution(_ context.Context, _ 
 		return nil, stacktrace.Propagate(err, "Cannot register test execution; an error occurred advancing the state machine")
 	}
 
-	timeoutSeconds := service.testExecutionTimeoutInSeconds
+	timeoutSeconds := service.testRunTimeoutInSeconds
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	// Launch timeout thread that will error if the test execution doesn't complete within the allotted time limit
@@ -198,17 +198,27 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
-	filesToGenerate := args.FilesToGenerate
 
-	ip, generatedFilesRelativeFilepaths, err := service.serviceNetwork.RegisterService(serviceId, partitionId, filesToGenerate)
+	ip, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
 	return &bindings.RegisterServiceResponse{
-		GeneratedFilesRelativeFilepaths: generatedFilesRelativeFilepaths,
 		IpAddr:                          ip.String(),
+	}, nil
+}
+
+func (service *testExecutionService) GenerateFiles(_ context.Context, args *bindings.GenerateFilesArgs) (*bindings.GenerateFilesResponse, error) {
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	filesToGenerate := args.FilesToGenerate
+	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating files for service '%v'", serviceId)
+	}
+	return &bindings.GenerateFilesResponse{
+		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
 	}, nil
 }
 
