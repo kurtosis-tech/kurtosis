@@ -94,7 +94,7 @@ func convertToInitializerMetadata(apiSuiteMetadata *bindings.TestSuiteMetadata) 
 			apiTestMetadata.IsPartitioningEnabled,
 			apiTestMetadata.UsedArtifactUrls,
 			apiTestMetadata.TestSetupTimeoutInSeconds,
-			apiTestMetadata.TestExecutionTimeoutInSeconds)
+			apiTestMetadata.TestRunTimeoutInSeconds)
 		allInitializerAcceptableTestMetadata[testName] = *initializerAcceptableTestMetadata
 	}
 

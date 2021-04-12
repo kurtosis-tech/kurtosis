@@ -17,19 +17,19 @@ type TestMetadata struct {
 	//  download and make ready for the test at runtime
 	UsedArtifacts map[string]bool `json:"usedArtifacts"`
 
-	TestSetupTimeoutInSeconds     uint32
-	TestExecutionTimeoutInSeconds uint32
+	TestSetupTimeoutInSeconds uint32	`json:"testSetupTimeoutInSeconds"`
+	TestRunTimeoutInSeconds   uint32	`json:"testRunTimeoutInSeconds"`
 }
 
 
 // Even though the struct's fields must be public for JSON, we create a constructor so that we don't forget
 //  to initialize any fields
-func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool, testSetupTimeoutInSeconds uint32, testExecutionTimeoutInSeconds uint32) *TestMetadata {
+func NewTestMetadata(isPartitioningEnabled bool, usedArtifacts map[string]bool, testSetupTimeoutInSeconds uint32, testRunTimeoutInSeconds uint32) *TestMetadata {
 	return &TestMetadata{
-		IsPartitioningEnabled:         isPartitioningEnabled,
-		UsedArtifacts:                 usedArtifacts,
-		TestSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
-		TestExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds}
+		IsPartitioningEnabled:     isPartitioningEnabled,
+		UsedArtifacts:             usedArtifacts,
+		TestSetupTimeoutInSeconds: testSetupTimeoutInSeconds,
+		TestRunTimeoutInSeconds:   testRunTimeoutInSeconds}
 }
 
 // Go stupidly doesn't have any way to require JSON fields, so we have to manually do it
@@ -42,8 +42,8 @@ func validateTestMetadata(testMetadata TestMetadata) error {
 	if testMetadata.TestSetupTimeoutInSeconds <= 0 {
 		return stacktrace.NewError("Test setup timeout is %v, but must be greater than 0.", testMetadata.TestSetupTimeoutInSeconds)
 	}
-	if testMetadata.TestExecutionTimeoutInSeconds <= 0 {
-		return stacktrace.NewError("Test execution timeout is %v, but must be greater than 0.", testMetadata.TestExecutionTimeoutInSeconds)
+	if testMetadata.TestRunTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test run timeout is %v, but must be greater than 0.", testMetadata.TestRunTimeoutInSeconds)
 	}
 	return nil
 }

@@ -148,7 +148,7 @@ func RunTest(
 		testRunningContainerIp,
 		testsuiteDebuggerHostPortBinding,
 		testMetadata.TestSetupTimeoutInSeconds,
-		testMetadata.TestExecutionTimeoutInSeconds,
+		testMetadata.TestRunTimeoutInSeconds,
 		testMetadata.IsPartitioningEnabled)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")

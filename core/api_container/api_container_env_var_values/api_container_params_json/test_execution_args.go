@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	jsonFieldTag = "json"
+	jsonFieldTag          = "json"
 	setupTimeoutFieldname = "testSetupTimeout"
-	executionTimeoutFieldname = "testExecutionTimeout"
+	runTimeoutFieldname   = "testRunTimeout"
 )
 
 // Fields are public for JSON de/serialization
@@ -32,8 +32,8 @@ type TestExecutionArgs struct {
 	TestSuiteContainerIpAddr string	`json:"testSuiteContainerIpAddr"`
 	ApiContainerIpAddr       string	`json:"apiContainerIpAddr"`
 
-	TestSetupTimeoutInSeconds     uint32 `json:"testSetupTimeout"`
-	TestExecutionTimeoutInSeconds uint32 `json:"testExecutionTimeout"`
+	TestSetupTimeoutInSeconds uint32 `json:"testSetupTimeout"`
+	TestRunTimeoutInSeconds   uint32 `json:"testRunTimeout"`
 
 	// TODO remove this by passing over the test metadata as one of the params, so that the API container
 	//  knows about the metadata
@@ -53,21 +53,21 @@ func NewTestExecutionArgs(
 		testSuiteContainerIpAddr string,
 		apiContainerIpAddr string,
 		testSetupTimeoutInSeconds uint32,
-		testExecutionTimeoutInSeconds uint32,
+		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (*TestExecutionArgs, error) {
 	result := TestExecutionArgs{
-		ExecutionInstanceId:           executionInstanceId,
-		NetworkId:                     networkId,
-		SubnetMask:                    subnetMask,
-		GatewayIpAddr:                 gatewayIpAddr,
-		TestName:                      testName,
-		SuiteExecutionVolumeName:      suiteExecutionVolumeName,
-		TestSuiteContainerId:          testSuiteContainerId,
-		TestSuiteContainerIpAddr:      testSuiteContainerIpAddr,
-		ApiContainerIpAddr:            apiContainerIpAddr,
-		TestSetupTimeoutInSeconds:     testSetupTimeoutInSeconds,
-		TestExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds,
-		IsPartitioningEnabled:         isPartitioningEnabled,
+		ExecutionInstanceId:       executionInstanceId,
+		NetworkId:                 networkId,
+		SubnetMask:                subnetMask,
+		GatewayIpAddr:             gatewayIpAddr,
+		TestName:                  testName,
+		SuiteExecutionVolumeName:  suiteExecutionVolumeName,
+		TestSuiteContainerId:      testSuiteContainerId,
+		TestSuiteContainerIpAddr:  testSuiteContainerIpAddr,
+		ApiContainerIpAddr:        apiContainerIpAddr,
+		TestSetupTimeoutInSeconds: testSetupTimeoutInSeconds,
+		TestRunTimeoutInSeconds:   testRunTimeoutInSeconds,
+		IsPartitioningEnabled:     isPartitioningEnabled,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
@@ -81,7 +81,7 @@ func (args TestExecutionArgs) validate() error {
 	for i := 0; i < reflectValType.NumField(); i++ {
 		field := reflectValType.Field(i);
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
-		if jsonFieldName == setupTimeoutFieldname || jsonFieldName == executionTimeoutFieldname {
+		if jsonFieldName == setupTimeoutFieldname || jsonFieldName == runTimeoutFieldname {
 			intVal := reflectVal.Field(i).Uint()
 			if intVal <= 0 {
 				return stacktrace.NewError("JSON field '%s' representing a timeout has value %v, but it must be greater than 0", jsonFieldName, intVal)

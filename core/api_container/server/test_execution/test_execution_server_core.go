@@ -14,16 +14,16 @@ import (
 )
 
 type TestExecutionServerCore struct {
-	dockerManager                 *docker_manager.DockerManager
-	serviceNetwork                *service_network.ServiceNetwork
-	testName                      string
-	testSetupTimeoutInSeconds     uint32
-	testExecutionTimeoutInSeconds uint32
-	testSuiteContainerId          string
+	dockerManager             *docker_manager.DockerManager
+	serviceNetwork            *service_network.ServiceNetwork
+	testName                  string
+	testSetupTimeoutInSeconds uint32
+	testRunTimeoutInSeconds   uint32
+	testSuiteContainerId      string
 }
 
-func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testSetupTimeoutInSeconds uint32, testExecutionTimeoutInSeconds uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
-	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testSetupTimeoutInSeconds: testSetupTimeoutInSeconds, testExecutionTimeoutInSeconds: testExecutionTimeoutInSeconds, testSuiteContainerId: testSuiteContainerId}
+func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testSetupTimeoutInSeconds uint32, testRunTimeoutInSeconds uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
+	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testSetupTimeoutInSeconds: testSetupTimeoutInSeconds, testRunTimeoutInSeconds: testRunTimeoutInSeconds, testSuiteContainerId: testSuiteContainerId}
 }
 
 
@@ -39,7 +39,7 @@ func (core TestExecutionServerCore) CreateAndRegisterService(
 		core.serviceNetwork,
 		core.testName,
 		core.testSetupTimeoutInSeconds,
-		core.testExecutionTimeoutInSeconds,
+		core.testRunTimeoutInSeconds,
 		core.testSuiteContainerId,
 		shutdownChan)
 	bindings.RegisterTestExecutionServiceServer(grpcServer, service)

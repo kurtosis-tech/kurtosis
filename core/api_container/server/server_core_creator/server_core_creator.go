@@ -102,7 +102,7 @@ func createTestExecutionCore(
 		dockerManager,
 		serviceNetwork,
 		args.TestSetupTimeoutInSeconds,
-		args.TestExecutionTimeoutInSeconds,
+		args.TestRunTimeoutInSeconds,
 		args.TestName,
 		args.TestSuiteContainerId)
 
