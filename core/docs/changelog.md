@@ -1,3 +1,7 @@
+# TBD
+### Fixes
+* Fixed issue with `kurtosis.sh` in `zsh` throwing `POSITIONAL[@] unbound`
+
 # 1.11.0
 ### Features
 * Allowed files to be generated for a service at any point during the service's lifecycle
