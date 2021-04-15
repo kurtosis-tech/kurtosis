@@ -1,3 +1,8 @@
+# TBD
+### Fixes
+* Fixed issue with `kurtosis.sh` in `zsh` throwing `POSITIONAL[@] unbound`
+* Upgraded example Go testsuite being used for CI checks to `1.20.0`
+
 # 1.11.0
 ### Features
 * Allowed files to be generated for a service at any point during the service's lifecycle

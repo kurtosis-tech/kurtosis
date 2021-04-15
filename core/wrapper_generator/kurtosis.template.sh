@@ -75,7 +75,8 @@ if "${show_help}"; then
 fi
 
 # Restore positional parameters and assign them to variables
-set -- "${POSITIONAL[@]}"
+# NOTE: This incantation is the only cross-shell compatiable expansion: https://stackoverflow.com/questions/7577052/bash-empty-array-expansion-with-set-u 
+set -- "${POSITIONAL[@]+"${POSITIONAL[@]}"}"
 {{range $idx, $variable := .PositionalArgAssignment}}{{$variable}}="${{"{"}}{{$idx}}:-{{"}"}}"
 {{end}}
 
