@@ -6,9 +6,14 @@
 package test_suite_runner
 
 import (
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
+	"net"
 	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -17,7 +22,14 @@ const (
 
 	// This is the domain name of the host machine from inside the Docker container
 	// See: https://stackoverflow.com/questions/31324981/how-to-access-host-port-from-docker-container
-	hostIpFromInsideDocker = "host.docker.internal"
+	hostMachineDomainInsideDocker = "host.docker.internal"
+
+	// How long we'll wait in trying to dial the host machine's port to see if it's available (though
+	// the timeout shouldn't usually be hit unless there are firewall rules in place - instead, we should
+	// get an immediate "connection refused")
+	dialTimeout = 100 * time.Millisecond
+
+	connectionRefusedErrorSubstring = "connection refused"
 )
 
 type FreeHostPortBindingSupplier struct {
@@ -60,14 +72,36 @@ func NewFreeHostPortBindingSupplier(interfaceIpAddr string, protocol string, por
 
 func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
 	for portInt := tracker.portRangeStart; portInt < tracker.portRangeEnd; portInt++ {
-		if _, found := tracker.takenPorts[portInt]; !found {
-			binding := nat.PortBinding{
-				HostIP:   hostIpFromInsideDocker,
-				HostPort: strconv.Itoa(portInt),
-			}
-			tracker.takenPorts[portInt] = true
-			return binding, nil
+		if _, found := tracker.takenPorts[portInt]; found {
+			continue
 		}
+
+		// NOTE: We'll need to change this to support UDP
+		hostAndPort := fmt.Sprintf("%v:%v", hostMachineDomainInsideDocker, portInt)
+		conn, err := net.DialTimeout("tcp", hostAndPort, dialTimeout)
+		if err == nil {
+			// NOTE: When we detect a port that's taken but not one of ours, this will PERMANENTLY blacklist that port
+			// We *could* check it every time (in case the third party releases it)... but then we'd need to check it every time
+			tracker.takenPorts[portInt] = true
+			if conn != nil {
+				conn.Close()
+			}
+			continue
+		}
+
+		// This is janky, but I tried a bunch of different ways to detect if the error is connection-refused, and this is the only
+		// one that actually worked ~ ktoday, 2021-04-15
+		if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(connectionRefusedErrorSubstring)) {
+			logrus.Debugf("Unrecognized error '%v' when dialing %v", err, hostAndPort)
+			continue
+		}
+
+		binding := nat.PortBinding{
+			HostIP:   tracker.interfaceIpAddr,
+			HostPort: strconv.Itoa(portInt),
+		}
+		tracker.takenPorts[portInt] = true
+		return binding, nil
 	}
 
 	return nat.PortBinding{}, stacktrace.NewError(
