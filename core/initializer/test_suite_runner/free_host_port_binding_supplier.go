@@ -14,6 +14,10 @@ import (
 const (
 	validPortRangeStart = 1024
 	validPortRangeEnd   = 65535
+
+	// This is the domain name of the host machine from inside the Docker container
+	// See: https://stackoverflow.com/questions/31324981/how-to-access-host-port-from-docker-container
+	hostIpFromInsideDocker = "host.docker.internal"
 )
 
 type FreeHostPortBindingSupplier struct {
@@ -57,14 +61,8 @@ func NewFreeHostPortBindingSupplier(interfaceIpAddr string, protocol string, por
 func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
 	for portInt := tracker.portRangeStart; portInt < tracker.portRangeEnd; portInt++ {
 		if _, found := tracker.takenPorts[portInt]; !found {
-			/*
-			NOTE: we don't do a net.Listen check to see if the port is actually free before returning because this code
-			runs on the INITIALIZER, so we'd only be checking if that port is free on the initializer (not
-			the host). Using the host networking ( https://docs.docker.com/network/host/ ) might seem like
-			an option, but it's not available on Docker for Mac and it might mess up other things besides.
-			 */
 			binding := nat.PortBinding{
-				HostIP:   tracker.interfaceIpAddr,  // I guess TCP is the default???
+				HostIP:   hostIpFromInsideDocker,
 				HostPort: strconv.Itoa(portInt),
 			}
 			tracker.takenPorts[portInt] = true
