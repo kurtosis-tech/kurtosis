@@ -144,6 +144,10 @@ docker run \
     `# The Kurtosis initializer image requires the volume for storing suite execution data to be mounted at the special "/suite-execution" path` \
     --mount "type=volume,source=${suite_execution_volume},target=/suite-execution" \
     \
+    `# The initializer container needs to access the host machine, so it can test for free ports` \
+    `# The host machine's IP is available at 'host.docker.internal' in Docker for Windows & Mac by default, but in Linux we need to add this flag to enable it` \
+    --add-host=host.docker.internal:host-gateway \
+    \
     `# Keep these sorted alphabetically` \
     --env CLIENT_ID="${client_id}" \
     --env CLIENT_SECRET="${client_secret}" \
