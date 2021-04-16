@@ -56,7 +56,6 @@ const (
 	clientSecretArg             = "CLIENT_SECRET"
 	customParamsJson            = "CUSTOM_PARAMS_JSON"
 	doListArg                   = "DO_LIST"
-	isInteractiveModeArg    	= "IS_INTERACTIVE_MODE"
 	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
 	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
 	parallelismArg              = "PARALLELISM"
@@ -97,12 +96,6 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Default:  false,
 		HelpText: "Rather than running the tests, lists the tests available to run",
 		Type:     docker_flag_parser.BoolFlagType,
-	},
-	isInteractiveModeArg: {
-		Required: true,
-		Default: false,
-		HelpText: "Indicates whether Kurtosis should be run in interactive mode, as certain features (e.g. host port binding) only make sense in interactive mode",
-		Type: 	docker_flag_parser.BoolFlagType,
 	},
 	kurtosisApiImageArg: {
 		Required: true,
@@ -178,9 +171,11 @@ func main() {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
+	clientId := parsedFlags.GetString(clientIdArg)
+	clientSecret := parsedFlags.GetString(clientSecretArg)
 	accessController := getAccessController(
-		parsedFlags.GetString(clientIdArg),
-		parsedFlags.GetString(clientSecretArg),
+		clientId,
+		clientSecret,
 	)
 	permissions, err := accessController.Authenticate()
 	if err != nil {
@@ -199,6 +194,10 @@ func main() {
 	executionInstanceId := uuid.New()
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
+	// There are several features which only make sense to enable when an actual human is at the controls (e.g. host port binding),
+	//  so we detect whether the client ID/secret are passed in, since these should only be used in CI
+	isInteractiveMode := clientId == "" && clientSecret == ""
+
 	testsuiteLauncher, err := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
 		parsedFlags.GetString(suiteExecutionVolumeNameArg),
@@ -207,7 +206,7 @@ func main() {
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		parsedFlags.GetString(customParamsJson),
-		parsedFlags.GetBool(isInteractiveModeArg),
+		isInteractiveMode,
 	)
 	if err != nil {
 		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)

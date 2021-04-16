@@ -132,16 +132,12 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
     exit 1
 fi
 
-# An empty value for the interactive mode indicates that the value should be read from the shell, so we test whether STDIN is attached to a TTY
-if [ -z "${is_interactive_mode}" ]; then
-    if [ -t 0 ]; then
-        is_interactive_mode="true"
-    else
-        is_interactive_mode="false"
-    fi
+# The client ID & secret should only be used within CI, i.e. non-interactive
+if [ -z "${client_id}" ] && [ -z "${client_secret}" ]; then
+    is_interactive=true
+else
+    is_interactive=false
 fi
-
-echo "Interactive mode: ${is_interactive_mode}"
 
 docker run \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
@@ -165,7 +161,6 @@ docker run \
     --env CLIENT_SECRET="${client_secret}" \
     --env CUSTOM_PARAMS_JSON="${custom_params_json}" \
     --env DO_LIST="${do_list}" \
-    --env IS_INTERACTIVE_MODE="${is_interactive_mode}" \
     --env KURTOSIS_API_IMAGE="${API_IMAGE}" \
     --env KURTOSIS_LOG_LEVEL="${kurtosis_log_level}" \
     --env PARALLELISM="${parallelism}" \
