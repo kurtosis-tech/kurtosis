@@ -115,6 +115,12 @@ var wrapperArgs = []WrapperArg{
 		Action:     StoreTrue,
 	},
 	{
+		Flag:		"--interactive",
+		Variable:	"is_interactive_mode",
+		DefaultVal: "",  // An empty value here indicates that the value should be pulled from the Bash shell
+		HelpText:	"When false, things that only make sense when an human is running Kurtosis (e.g. host-port bindings) are disabled (default: read from shell)",
+	},
+	{
 		Flag:       "--kurtosis-log-level",
 		Variable:   "kurtosis_log_level",
 		DefaultVal: "info",

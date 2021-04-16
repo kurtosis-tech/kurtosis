@@ -64,8 +64,7 @@ func RunTests(
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		freeHostPortBindingSupplier *FreeHostPortBindingSupplier) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
 		return false, stacktrace.Propagate(
@@ -126,7 +125,7 @@ func RunTests(
 	}
 	logrus.Debugf("Using network width bits: %v", networkWidthBits)
 
-	testParams, err := buildTestParams(testNamesToRun, networkWidthBits, freeHostPortBindingSupplier, testSuiteMetadata)
+	testParams, err := buildTestParams(testNamesToRun, networkWidthBits, testSuiteMetadata)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -168,7 +167,6 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		networkWidthBits uint32,
-		freeHostPortBindingSupplier *FreeHostPortBindingSupplier,
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
@@ -196,22 +194,16 @@ func buildTestParams(
 		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
 		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
 
-		freeHostPortBinding, err := freeHostPortBindingSupplier.GetFreePortBinding()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for test '%v'", testName)
-		}
-
 		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
 		if !found {
 			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
 		}
 
-		testParamsForTest := *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, freeHostPortBinding, testMetadata)
+		testParamsForTest := *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, testMetadata)
 		logrus.Debugf(
-			"Built parallel test param for test '%v' with subnet CIDR string '%v', free host port binding '%v', and test metadata '%v'",
+			"Built parallel test param for test '%v' with subnet CIDR string '%v', and test metadata '%v'",
 			testName,
 			subnetCidrStr,
-			freeHostPortBinding,
 			testMetadata)
 
 		testParams[testName] = testParamsForTest

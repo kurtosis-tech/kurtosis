@@ -7,7 +7,6 @@ package output
 
 import (
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -127,9 +126,7 @@ Args:
 Returns:
 	The logger that the test should write to when doing logging
  */
-func (manager *ParallelTestOutputManager) RegisterTestLaunch(
-			testName string,
-			debuggerHostPortBinding nat.PortBinding) *logrus.Logger {
+func (manager *ParallelTestOutputManager) RegisterTestLaunch(testName string) *logrus.Logger {
 	manager.internalStateLock.Lock()
 	defer manager.internalStateLock.Unlock()
 
@@ -176,11 +173,7 @@ func (manager *ParallelTestOutputManager) RegisterTestLaunch(
 	manager.runningTestInfo[testName] = runningTestInfo
 
 	// It's safe to just do this logging because the underlying writer is thread-safe
-	message := fmt.Sprintf(
-		"Launching test %v ... (testsuite debugger port binding on host: %v:%v)",
-		testName,
-		debuggerHostPortBinding.HostIP,
-		debuggerHostPortBinding.HostPort)
+	message := fmt.Sprintf("Launching test %v ...", testName)
 	manager.threadSafeOutputLogger.Info(message)
 
 	if manager.maxConcurrentTestsRunning == 1 {

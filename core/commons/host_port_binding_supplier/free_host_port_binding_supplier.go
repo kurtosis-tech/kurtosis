@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_suite_runner
+package host_port_binding_supplier
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -38,6 +39,7 @@ type FreeHostPortBindingSupplier struct {
 	portRangeStart int
 	portRangeEnd   int
 	takenPorts     map[int]bool
+	mutex		*sync.Mutex
 }
 
 /*
@@ -67,10 +69,14 @@ func NewFreeHostPortBindingSupplier(interfaceIpAddr string, protocol string, por
 		portRangeStart: portRangeStart,
 		portRangeEnd:   portRangeEnd,
 		takenPorts:     portMap,
+		mutex: &sync.Mutex{},
 	}, nil
 }
 
-func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
+func (tracker *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
+
 	for portInt := tracker.portRangeStart; portInt < tracker.portRangeEnd; portInt++ {
 		if _, found := tracker.takenPorts[portInt]; found {
 			continue
@@ -105,7 +111,7 @@ func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat
 	}
 
 	return nat.PortBinding{}, stacktrace.NewError(
-		"There are no more free ports available on interface '%v' on protcol '%v' in range %v-%v",
+		"There are no more free ports available on interface '%v' on protocol '%v' in range %v-%v",
 		tracker.interfaceIpAddr,
 		tracker.protocol,
 		tracker.portRangeStart,

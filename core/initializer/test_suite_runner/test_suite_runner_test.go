@@ -25,7 +25,6 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		suiteMetadata,
 		map[string]bool{},
 		1,
-		nil,
 		nil)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
@@ -44,7 +43,6 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		suiteMetadata,
 		map[string]bool{},
 		1,
-		nil,
 		nil)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)

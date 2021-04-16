@@ -48,30 +48,22 @@ const (
 	sessionCacheFilename = "session-cache"
 	sessionCacheFileMode os.FileMode = 0600
 
-	// Can make these configurable if needed
-	hostPortTrackerInterfaceIp = "127.0.0.1"
-	hostPortTrackerStartRange = 8000
-	hostPortTrackerEndRange = 10000
-
-	defaultDebuggerPort = 2778
-	debuggerPortProtocol = "tcp"
-
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	doListArg                   = "DO_LIST"
-	testSuiteImageArg           = "TEST_SUITE_IMAGE"
-	testNamesArg                = "TEST_NAMES"
-	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
-	testSuiteLogLevelArg        = "TEST_SUITE_LOG_LEVEL"
 	clientIdArg                 = "CLIENT_ID"
 	clientSecretArg             = "CLIENT_SECRET"
-	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
-	parallelismArg              = "PARALLELISM"
 	customParamsJson            = "CUSTOM_PARAMS_JSON"
+	doListArg                   = "DO_LIST"
+	isInteractiveModeArg    	= "IS_INTERACTIVE_MODE"
+	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
+	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
+	parallelismArg              = "PARALLELISM"
 	suiteExecutionVolumeNameArg = "SUITE_EXECUTION_VOLUME"
-	testSuiteDebuggerPortArg    = "DEBUGGER_PORT"
+	testNamesArg                = "TEST_NAMES"
+	testSuiteImageArg           = "TEST_SUITE_IMAGE"
+	testSuiteLogLevelArg        = "TEST_SUITE_LOG_LEVEL"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                     If you change the above, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -106,6 +98,12 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "Rather than running the tests, lists the tests available to run",
 		Type:     docker_flag_parser.BoolFlagType,
 	},
+	isInteractiveModeArg: {
+		Required: true,
+		Default: false,
+		HelpText: "Indicates whether Kurtosis should be run in interactive mode, as certain features (e.g. host port binding) only make sense in interactive mode",
+		Type: 	docker_flag_parser.BoolFlagType,
+	},
 	kurtosisApiImageArg: {
 		Required: true,
 		Default:  "",
@@ -138,13 +136,6 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Default:  "",
 		HelpText: "List of test names to run, separated by '" + initializer_container_constants.TestNameArgSeparator + "' (default or empty: run all tests)",
 		Type:     docker_flag_parser.StringFlagType,
-	},
-	testSuiteDebuggerPortArg: {
-		Required: false,
-		Default: defaultDebuggerPort,
-		HelpText: "The port that debuggers running inside the testsuite should listen on, which Kurtosis will expose" +
-			"to the host machine",
-		Type:   docker_flag_parser.IntFlagType,
 	},
 	testSuiteImageArg: {
 		Required: true,
@@ -205,17 +196,6 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-
-	freeHostPortBindingSupplier, err := test_suite_runner.NewFreeHostPortBindingSupplier(
-		hostPortTrackerInterfaceIp,
-		debuggerPortProtocol,
-		hostPortTrackerStartRange,
-		hostPortTrackerEndRange)
-	if err != nil {
-		logrus.Errorf("An error occurred creating the free host port binding supplier: %v", err)
-		os.Exit(failureExitCode)
-	}
-
 	executionInstanceId := uuid.New()
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
@@ -227,25 +207,18 @@ func main() {
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		parsedFlags.GetString(customParamsJson),
-		parsedFlags.GetInt(testSuiteDebuggerPortArg))
+		parsedFlags.GetBool(isInteractiveModeArg),
+	)
 	if err != nil {
 		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)
 		os.Exit(failureExitCode)
 	}
 
-	metadataAcquisitionHostPortBinding, err := freeHostPortBindingSupplier.GetFreePortBinding()
-	if err != nil {
-		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
-		os.Exit(failureExitCode)
-	}
-
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		parsedFlags.GetString(suiteExecutionVolumeNameArg),
 		suiteExecutionVolume,
 		dockerClient,
-		testsuiteLauncher,
-		metadataAcquisitionHostPortBinding)
+		testsuiteLauncher)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
@@ -278,8 +251,7 @@ func main() {
 		*suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
-		testsuiteLauncher,
-		freeHostPortBindingSupplier)
+		testsuiteLauncher)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
