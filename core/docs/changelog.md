@@ -5,6 +5,10 @@
 * Fixed broken links in `testsuite-customization` documentation
 * Fixed issue with free host port checker not accurately detecting free host ports
 
+### Changes
+* Removed the `--debugger-port` arg, which was exposed in `kurtosis.sh` but didn't actually do anything
+* Upped the time for testsuites to register themselves from 10s to 20s, to give users more time to connect to the testsuite when running inside a debugger
+
 # 1.11.0
 ### Features
 * Allowed files to be generated for a service at any point during the service's lifecycle
