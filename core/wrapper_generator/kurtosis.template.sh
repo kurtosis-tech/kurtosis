@@ -141,6 +141,8 @@ if [ -z "${is_interactive_mode}" ]; then
     fi
 fi
 
+echo "Interactive mode: ${is_interactive_mode}"
+
 docker run \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
     `# For more info, see the bottom of: http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/` \
