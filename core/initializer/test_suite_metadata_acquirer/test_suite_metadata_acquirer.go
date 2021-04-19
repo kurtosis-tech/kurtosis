@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
@@ -31,11 +30,9 @@ const (
 )
 
 func GetTestSuiteMetadata(
-		suiteExecutionVolName string,
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		dockerClient *client.Client,
-		launcher *test_suite_launcher.TestsuiteContainerLauncher,
-		debuggerHostPortBinding nat.PortBinding) (*TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -47,9 +44,7 @@ func GetTestSuiteMetadata(
 	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainers(
 		parentContext,
 		logrus.StandardLogger(),
-		dockerManager,
-		suiteExecutionVolName,
-		debuggerHostPortBinding)
+		dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring containers")
 	}
@@ -68,11 +63,7 @@ func GetTestSuiteMetadata(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", testsuiteContainerId)
 		}
 	}()
-	logrus.Infof(
-		"Metadata-acquiring containers launched, with testsuite debugger port bound to host port %v:%v (if a debugger " +
-			"is running in the testsuite, you may need to connect to this port to allow execution to proceed)",
-		debuggerHostPortBinding.HostIP,
-		debuggerHostPortBinding.HostPort)
+	logrus.Infof("Metadata-acquiring containers launched")
 
 	apiContainerExitCodeInt64, err := dockerManager.WaitForExit(
 		parentContext,

@@ -155,8 +155,7 @@ func runTestWorkerGoroutine(
 
 	for testParams := range testParamsChan {
 		testName := testParams.TestName
-		testsuiteDebuggerHostPortBinding := testParams.DebuggerHostPortBinding
-		testLog := outputManager.RegisterTestLaunch(testName, testsuiteDebuggerHostPortBinding)
+		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
 			executionId,
 			parentContext,
@@ -164,7 +163,6 @@ func runTestWorkerGoroutine(
 			dockerClient,
 			testParams.SubnetMask,
 			testsuiteLauncher,
-			testsuiteDebuggerHostPortBinding,
 			testName,
 			testParams.TestMetadata)
 		outputManager.RegisterTestCompletion(testName, executionErr, passed)

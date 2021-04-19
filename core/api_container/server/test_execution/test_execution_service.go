@@ -32,9 +32,11 @@ const (
 	//  a test setup (there should be no reason that registering test setup doesn't happen immediately)
 	testSetupRegistrationTimeout = 10 * time.Second
 
+	// TODO Implement a formalized debug mode that doesn't use this timeout
 	// The amount of time a testsuite container has after completing test setup to register
-	//  a test execution (there should be no reason that registering test execution doesn't happen immediately)
-	testExecutionRegistrationTimeout = 10 * time.Second
+	//  a test execution (the only reason registration wouldn't happen immediately is if the testsuite
+	//  is running inside a debugger that's waiting for a connection)
+	testExecutionRegistrationTimeout = 20 * time.Second
 
 	// We don't give any time for containers to gracefully stop because we're definitely not going to use the
 	//  services again when we're destroying a network
