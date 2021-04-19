@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -76,7 +75,6 @@ func RunTest(
 		dockerClient *client.Client,
 		subnetMask string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		testsuiteDebuggerHostPortBinding nat.PortBinding,
 		testName string,
 		testMetadata test_suite_metadata_acquirer.TestMetadata) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
@@ -146,7 +144,6 @@ func RunTest(
 		testName,
 		kurtosisApiIp,
 		testRunningContainerIp,
-		testsuiteDebuggerHostPortBinding,
 		testMetadata.TestSetupTimeoutInSeconds,
 		testMetadata.TestRunTimeoutInSeconds,
 		testMetadata.IsPartitioningEnabled)

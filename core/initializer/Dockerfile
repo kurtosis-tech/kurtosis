@@ -25,11 +25,9 @@ COPY --from=builder /build/kurtosis-initializer .
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #  1. Keep these flags sorted alphabetically, to avoid duplicates (which will cause subtle problems)
-#  2. Keep the flag name the exact same as the Docker environment variable, so main.go's usage function
-#       continues to make sense for users
-#  3. If you change any of these:
+#  2. If you change any of these:
 #       a. Update the flag-parsing in main.go
-#       b. Update the build_and_run.sh script, which passes in these environment variables
+#       b. Update the template wrapper script, which passes in these environment variables
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # vvvvvvvvvvvvv Read the IMPORTANT section before modifying this! vvvvvvvvvvvvvvvvvvvvvvvv
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \

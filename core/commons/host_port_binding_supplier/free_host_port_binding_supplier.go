@@ -1,19 +1,36 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
  * All Rights Reserved.
  */
 
-package test_suite_runner
+package host_port_binding_supplier
 
 import (
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
+	"net"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 const (
 	validPortRangeStart = 1024
 	validPortRangeEnd   = 65535
+
+	// This is the domain name of the host machine from inside the Docker container
+	// See: https://stackoverflow.com/questions/31324981/how-to-access-host-port-from-docker-container
+	hostMachineDomainInsideDocker = "host.docker.internal"
+
+	// How long we'll wait in trying to dial the host machine's port to see if it's available (though
+	// the timeout shouldn't usually be hit unless there are firewall rules in place - instead, we should
+	// get an immediate "connection refused")
+	dialTimeout = 100 * time.Millisecond
+
+	connectionRefusedErrorSubstring = "connection refused"
 )
 
 type FreeHostPortBindingSupplier struct {
@@ -22,6 +39,7 @@ type FreeHostPortBindingSupplier struct {
 	portRangeStart int
 	portRangeEnd   int
 	takenPorts     map[int]bool
+	mutex		*sync.Mutex
 }
 
 /*
@@ -51,29 +69,49 @@ func NewFreeHostPortBindingSupplier(interfaceIpAddr string, protocol string, por
 		portRangeStart: portRangeStart,
 		portRangeEnd:   portRangeEnd,
 		takenPorts:     portMap,
+		mutex: &sync.Mutex{},
 	}, nil
 }
 
-func (tracker FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
+func (tracker *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
+	tracker.mutex.Lock()
+	defer tracker.mutex.Unlock()
+
 	for portInt := tracker.portRangeStart; portInt < tracker.portRangeEnd; portInt++ {
-		if _, found := tracker.takenPorts[portInt]; !found {
-			/*
-			NOTE: we don't do a net.Listen check to see if the port is actually free before returning because this code
-			runs on the INITIALIZER, so we'd only be checking if that port is free on the initializer (not
-			the host). Using the host networking ( https://docs.docker.com/network/host/ ) might seem like
-			an option, but it's not available on Docker for Mac and it might mess up other things besides.
-			 */
-			binding := nat.PortBinding{
-				HostIP:   tracker.interfaceIpAddr,  // I guess TCP is the default???
-				HostPort: strconv.Itoa(portInt),
-			}
-			tracker.takenPorts[portInt] = true
-			return binding, nil
+		if _, found := tracker.takenPorts[portInt]; found {
+			continue
 		}
+
+		// NOTE: We'll need to change this to support UDP
+		hostAndPort := fmt.Sprintf("%v:%v", hostMachineDomainInsideDocker, portInt)
+		conn, err := net.DialTimeout("tcp", hostAndPort, dialTimeout)
+		if err == nil {
+			// NOTE: When we detect a port that's taken but not one of ours, this will PERMANENTLY blacklist that port
+			// We *could* check it every time (in case the third party releases it)... but then we'd need to check it every time
+			tracker.takenPorts[portInt] = true
+			if conn != nil {
+				conn.Close()
+			}
+			continue
+		}
+
+		// This is janky, but I tried a bunch of different ways to detect if the error is connection-refused, and this is the only
+		// one that actually worked ~ ktoday, 2021-04-15
+		if !strings.Contains(strings.ToLower(err.Error()), strings.ToLower(connectionRefusedErrorSubstring)) {
+			logrus.Debugf("Unrecognized error '%v' when dialing %v", err, hostAndPort)
+			continue
+		}
+
+		binding := nat.PortBinding{
+			HostIP:   tracker.interfaceIpAddr,
+			HostPort: strconv.Itoa(portInt),
+		}
+		tracker.takenPorts[portInt] = true
+		return binding, nil
 	}
 
 	return nat.PortBinding{}, stacktrace.NewError(
-		"There are no more free ports available on interface '%v' on protcol '%v' in range %v-%v",
+		"There are no more free ports available on interface '%v' on protocol '%v' in range %v-%v",
 		tracker.interfaceIpAddr,
 		tracker.protocol,
 		tracker.portRangeStart,
