@@ -68,7 +68,7 @@ func NewFreeHostPortBindingSupplier(
 		portRangeEnd uint32,
 		takenPorts map[uint32]bool) (freeHostPortTracker *FreeHostPortBindingSupplier, err error) {
 	if portRangeEnd <= portRangeStart {
-		return nil, stacktrace.NewError("Port range end '%v' is <= port rnage start '%v'", portRangeEnd, portRangeStart)
+		return nil, stacktrace.NewError("Port range end '%v' is <= port range start '%v'", portRangeEnd, portRangeStart)
 	}
 	if !isPortValid(portRangeStart) || !isPortValid(portRangeEnd - 1) {
 		return nil, stacktrace.NewError("Port range start and end must be in range [%v, %v)", validPortRangeStart, validPortRangeEnd)

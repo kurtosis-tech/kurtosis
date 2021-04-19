@@ -228,6 +228,8 @@ func (service *testExecutionService) GenerateFiles(_ context.Context, args *bind
 }
 
 func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*bindings.StartServiceResponse, error) {
+	logrus.Debugf("Received request to start service with the following args: %+v", args)
+
 	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
 	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -291,6 +293,12 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 	response := bindings.StartServiceResponse{
 		UsedPortsHostPortBindings: responseHostPortBindings,
 	}
+
+	serviceStartLoglineSuffix := ""
+	if len(responseHostPortBindings) > 0 {
+		serviceStartLoglineSuffix = fmt.Sprintf(" with the following service-port-to-host-port bindings: %+v", responseHostPortBindings)
+	}
+	logrus.Infof("Started service '%v'%v", serviceStartLoglineSuffix)
 
 	return &response, nil
 }
