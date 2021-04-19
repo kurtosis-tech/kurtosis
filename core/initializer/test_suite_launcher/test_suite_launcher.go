@@ -64,10 +64,10 @@ type TestsuiteContainerLauncher struct {
 	//  a debugger if desired
 	debuggerPortObj nat.Port
 
-	// Indicates whether Kurtosis is running in interactive mode, meaning interactive mode features should be enabled
-	isInteractiveMode bool
+	// Indicates whether the testsuite container should have a host port bound to a debugger port inside the testsuite
+	doDebuggerHostPortBinding bool
 
-	// Supplier for getting free host ports, which will only be non-nil if interactive mode is set to true
+	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true
 	hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
@@ -79,9 +79,9 @@ func NewTestsuiteContainerLauncher(
 		testsuiteImage string,
 		testsuiteLogLevel string,
 		customParamsJson string,
-		isInteractiveMode bool) (*TestsuiteContainerLauncher, error) {
+		doDebuggerHostPortBinding bool) (*TestsuiteContainerLauncher, error) {
 	var hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier = nil
-	if isInteractiveMode {
+	if doDebuggerHostPortBinding {
 		supplier, err := host_port_binding_supplier.NewFreeHostPortBindingSupplier(
 			hostPortTrackerInterfaceIp,
 			protocolForDebuggersRunningOnTestsuite,
@@ -93,15 +93,15 @@ func NewTestsuiteContainerLauncher(
 		hostPortBindingSupplier = supplier
 	}
 	return &TestsuiteContainerLauncher{
-		executionInstanceId:   executionInstanceId,
-		suiteExecutionVolName: suiteExecutionVolName,
-		kurtosisApiImage:      kurtosisApiImage,
-		kurtosisApiLogLevel:   kurtosisApiLogLevel,
-		testsuiteImage:        testsuiteImage,
-		suiteLogLevel:         testsuiteLogLevel,
-		customParamsJson:      customParamsJson,
-		isInteractiveMode: isInteractiveMode,
-		hostPortBindingSupplier: hostPortBindingSupplier,
+		executionInstanceId:       executionInstanceId,
+		suiteExecutionVolName:     suiteExecutionVolName,
+		kurtosisApiImage:          kurtosisApiImage,
+		kurtosisApiLogLevel:       kurtosisApiLogLevel,
+		testsuiteImage:            testsuiteImage,
+		suiteLogLevel:             testsuiteLogLevel,
+		customParamsJson:          customParamsJson,
+		doDebuggerHostPortBinding: doDebuggerHostPortBinding,
+		hostPortBindingSupplier:   hostPortBindingSupplier,
 	}, nil
 }
 
@@ -305,7 +305,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
-// NOTE: The debuggingPortBindingOnHost will be nil if interactive mode is disabled
 func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -316,10 +315,10 @@ func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingP
 
 	hostPortBindings := map[nat.Port]*nat.PortBinding{}
 	var debuggerPortBinding *nat.PortBinding = nil
-	if launcher.isInteractiveMode {
+	if launcher.doDebuggerHostPortBinding {
 		if launcher.hostPortBindingSupplier == nil {
 			return "", nil, stacktrace.NewError(
-				"Kurtosis is running in interactive mode but the test suite launcher doesn't have a host port binding supplier; this is a Kurtosis bug",
+				"Kurtosis is set to do debugger host port bindings for testsuites, but the test suite launcher doesn't have a host port binding supplier; this is a Kurtosis bug",
 			)
 		}
 		freePortBinding, err := launcher.hostPortBindingSupplier.GetFreePortBinding()
