@@ -16,8 +16,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/host_port_binding_supplier"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
@@ -68,7 +69,7 @@ type TestsuiteContainerLauncher struct {
 	doDebuggerHostPortBinding bool
 
 	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true
-	hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier
+	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
 func NewTestsuiteContainerLauncher(
@@ -80,13 +81,16 @@ func NewTestsuiteContainerLauncher(
 		testsuiteLogLevel string,
 		customParamsJson string,
 		doDebuggerHostPortBinding bool) (*TestsuiteContainerLauncher, error) {
-	var hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier = nil
+	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
 	if doDebuggerHostPortBinding {
-		supplier, err := host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+			docker_constants.HostMachineDomainInsideContainer,
 			hostPortTrackerInterfaceIp,
 			protocolForDebuggersRunningOnTestsuite,
 			hostPortTrackerStartRange,
-			hostPortTrackerEndRange)
+			hostPortTrackerEndRange,
+			map[uint32]bool{}, // We don't know of any taken ports at this point
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred instantiating the free host port binding supplier")
 		}
@@ -420,6 +424,17 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSetupTimeoutInSeconds uint32,
 		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (map[string]string, error) {
+	var hostPortBindingSupplierParams *api_container_params_json.HostPortBindingSupplierParams = nil
+	hostPortBindingSupplier := launcher.hostPortBindingSupplier
+	if hostPortBindingSupplier != nil {
+		hostPortBindingSupplierParams = &api_container_params_json.HostPortBindingSupplierParams{
+			InterfaceIp:    hostPortBindingSupplier.GetInterfaceIp(),
+			Protocol:       hostPortBindingSupplier.GetProtocol(),
+			PortRangeStart: hostPortBindingSupplier.GetPortRangeStart(),
+			PortRangeEnd:   hostPortBindingSupplier.GetPortRangeEnd(),
+		}
+	}
+
 	args, err := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
 		networkId,
@@ -432,7 +447,8 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		apiContainerIpAddr.String(),
 		testSetupTimeoutInSeconds,
 		testRunTimeoutInSeconds,
-		isPartitioningEnabled)
+		isPartitioningEnabled,
+		hostPortBindingSupplierParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
 	}

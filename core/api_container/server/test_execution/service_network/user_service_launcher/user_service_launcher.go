@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
@@ -33,6 +34,9 @@ type UserServiceLauncher struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
+	// A nil value for this field indicates that no service port <-> host port bindings should be done
+	freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
+
 	artifactCache *suite_execution_volume.ArtifactCache
 
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
@@ -43,14 +47,16 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
+func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, freeHostPortBindingSupplier: freeHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
 
 /**
 Launches a testnet service with the given parameters
 
-Returns: The container ID of the newly-launched service
+Returns:
+	* The container ID of the newly-launched service
+	* The mapping of used_port -> host_port_binding (if any)
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
@@ -63,7 +69,7 @@ func (launcher UserServiceLauncher) Launch(
 		dockerEnvVars map[string]string,
 		suiteExecutionVolMntDirpath string,
 		// Mapping artifactUrl -> mountpoint
-		artifactUrlToMountDirpath map[string]string) (string, error) {
+		artifactUrlToMountDirpath map[string]string) (string, map[nat.Port]*nat.PortBinding, error) {
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
@@ -73,7 +79,7 @@ func (launcher UserServiceLauncher) Launch(
 		logrus.Debugf("Hashing artifact URL '%v' to be mounted at '%v'...", artifactUrl, mountDirpath)
 		artifact, err := launcher.artifactCache.GetArtifact(artifactUrl)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)
+			return "", nil, stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)
 		}
 		artifactUrlHash := artifact.GetUrlHash()
 		destVolName := launcher.getExpandedFilesArtifactVolName(
@@ -83,15 +89,27 @@ func (launcher UserServiceLauncher) Launch(
 		artifactVolToMountpoint[destVolName] = mountDirpath
 	}
 	if err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, artifactToVolName); err != nil {
-		return "", stacktrace.Propagate(
+		return "", nil, stacktrace.Propagate(
 			err,
 			"An error occurred expanding the requested artifacts for service '%v' into Docker volumes",
 			serviceId)
 	}
 
-	portBindings := map[nat.Port]*nat.PortBinding{}
+	hostPortBindings := map[nat.Port]*nat.PortBinding{}
 	for port, _ := range usedPorts {
-		portBindings[port] = nil
+		var bindingPtr *nat.PortBinding = nil
+		if launcher.freeHostPortBindingSupplier != nil {
+			binding, err := launcher.freeHostPortBindingSupplier.GetFreePortBinding()
+			if err != nil {
+				return "", nil, stacktrace.Propagate(
+					err,
+					"Host port binding was requested, but an error occurred getting a free host port to bind to service port %v",
+					port.Port(),
+				)
+			}
+			bindingPtr = &binding
+		}
+		hostPortBindings[port] = bindingPtr
 	}
 
 	volumeMounts := map[string]string{
@@ -108,7 +126,7 @@ func (launcher UserServiceLauncher) Launch(
 		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
-		portBindings,
+		hostPortBindings,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -116,9 +134,9 @@ func (launcher UserServiceLauncher) Launch(
 		volumeMounts,
 	)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
+		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
-	return containerId, nil
+	return containerId, hostPortBindings, nil
 }
 
 // ==================================================================================================

@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -37,10 +38,6 @@ const (
 	//  a test execution (the only reason registration wouldn't happen immediately is if the testsuite
 	//  is running inside a debugger that's waiting for a connection)
 	testExecutionRegistrationTimeout = 20 * time.Second
-
-	// We don't give any time for containers to gracefully stop because we're definitely not going to use the
-	//  services again when we're destroying a network
-	postShutdownContainerStopTimeout = 0 * time.Second
 )
 
 
@@ -53,6 +50,10 @@ type testExecutionService struct {
 	testSuiteContainerId      string
 	stateMachine              *testExecutionServiceStateMachine
 	shutdownChan              chan int
+	doHostPortBindings		  bool
+
+	// Will only be non-nil if doHostPortBindings is set to true
+	hostPortBindingSupplier   *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
 func newTestExecutionService(
@@ -62,7 +63,9 @@ func newTestExecutionService(
 		testSetupTimeoutInSeconds uint32,
 		testRunTimeoutInSeconds uint32,
 		testSuiteContainerId string,
-		shutdownChan chan int) *testExecutionService {
+		shutdownChan chan int,
+		doHostPortBindings bool) *testExecutionService {
+
 	return &testExecutionService{
 		dockerManager:             dockerManager,
 		serviceNetwork:            serviceNetwork,
@@ -224,7 +227,7 @@ func (service *testExecutionService) GenerateFiles(_ context.Context, args *bind
 	}, nil
 }
 
-func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*emptypb.Empty, error) {
+func (service *testExecutionService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*bindings.StartServiceResponse, error) {
 	expectedStateSet := map[serviceState]bool{waitingForTestSetupCompletion: true, waitingForExecutionCompletion: true};
 	if err := service.stateMachine.assertOneOfSet(expectedStateSet); err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -232,6 +235,7 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 	}
 
 	usedPorts := map[nat.Port]bool{}
+	portObjToPortSpecStr := map[nat.Port]string{}
 	for portSpecStr := range args.UsedPorts {
 		// NOTE: this function, frustratingly, doesn't return an error on failure - just emptystring
 		protocol, portNumberStr := nat.SplitProtoPort(portSpecStr)
@@ -250,11 +254,12 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 				portNumberStr)
 		}
 		usedPorts[portObj] = true
+		portObjToPortSpecStr[portObj] = portSpecStr
 	}
 
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 
-	if err := service.serviceNetwork.StartService(
+	hostPortBindings, err := service.serviceNetwork.StartService(
 			ctx,
 			serviceId,
 			args.DockerImage,
@@ -263,12 +268,31 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 			args.CmdArgs,
 			args.DockerEnvVars,
 			args.SuiteExecutionVolMntDirpath,
-			args.FilesArtifactMountDirpaths); err != nil {
+			args.FilesArtifactMountDirpaths)
+	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
 
-	return &emptypb.Empty{}, nil
+	responseHostPortBindings := map[string]*bindings.PortBinding{}
+	for portObj, hostPortBinding := range hostPortBindings {
+		portSpecStr, found := portObjToPortSpecStr[portObj]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Found a port object, %v, that doesn't correspond to a spec string as passed in via the args; this is very strange!",
+			)
+		}
+		responseBinding := &bindings.PortBinding{
+			InterfaceIp:   hostPortBinding.HostIP,
+			InterfacePort: hostPortBinding.HostPort,
+		}
+		responseHostPortBindings[portSpecStr] = responseBinding
+	}
+	response := bindings.StartServiceResponse{
+		UsedPortsHostPortBindings: responseHostPortBindings,
+	}
+
+	return &response, nil
 }
 
 func (service *testExecutionService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {

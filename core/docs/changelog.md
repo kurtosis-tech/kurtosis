@@ -1,3 +1,13 @@
+# TBD
+### Features
+* Allow for ports exposed in the API container's `StartService` call to be bound to host ports for debugging purposes
+
+### Fixes
+* Fixed `FreeHostPortBindingSupplier` using the `tcp` protocol to check ports, regardless of what protocol it was configured with
+
+### Breaking Changes
+* The API container's `StartService` call now returns a `StartServiceResponse` object containing debugging port info rather than an empty object
+
 # 1.11.1
 ### Fixes
 * Fixed issue with `kurtosis.sh` in `zsh` throwing `POSITIONAL[@] unbound`
