@@ -250,6 +250,7 @@ func main() {
 
 	var parallelismUint uint
 	if isDebugMode {
+		logrus.Infof("NOTE: Due to debug mode being set to true, parallelism is set to %v", debugModeParallelism)
 		parallelismUint = debugModeParallelism
 	} else {
 		parallelismUint = uint(parsedFlags.GetInt(parallelismArg))
