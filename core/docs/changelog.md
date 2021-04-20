@@ -4,6 +4,7 @@
 
 ### Fixes
 * Fixed `FreeHostPortBindingSupplier` using the `tcp` protocol to check ports, regardless of what protocol it was configured with
+* Fixed `docker build` on initializer & API images not writing output to file, since Docker Buildkit (which is now enabled by default) writes everything to STDERR
 
 ### Breaking Changes
 * The API container's `StartService` call now returns a `StartServiceResponse` object containing debugging port info rather than an empty object

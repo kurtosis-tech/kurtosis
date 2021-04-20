@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -50,10 +49,6 @@ type testExecutionService struct {
 	testSuiteContainerId      string
 	stateMachine              *testExecutionServiceStateMachine
 	shutdownChan              chan int
-	doHostPortBindings		  bool
-
-	// Will only be non-nil if doHostPortBindings is set to true
-	hostPortBindingSupplier   *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
 func newTestExecutionService(
@@ -63,9 +58,7 @@ func newTestExecutionService(
 		testSetupTimeoutInSeconds uint32,
 		testRunTimeoutInSeconds uint32,
 		testSuiteContainerId string,
-		shutdownChan chan int,
-		doHostPortBindings bool) *testExecutionService {
-
+		shutdownChan chan int) *testExecutionService {
 	return &testExecutionService{
 		dockerManager:             dockerManager,
 		serviceNetwork:            serviceNetwork,
@@ -281,7 +274,8 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 		portSpecStr, found := portObjToPortSpecStr[portObj]
 		if !found {
 			return nil, stacktrace.NewError(
-				"Found a port object, %v, that doesn't correspond to a spec string as passed in via the args; this is very strange!",
+				"Found a port object, %+v, that doesn't correspond to a spec string as passed in via the args; this is very strange!",
+				portObj,
 			)
 		}
 		responseBinding := &bindings.PortBinding{
@@ -296,9 +290,12 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 
 	serviceStartLoglineSuffix := ""
 	if len(responseHostPortBindings) > 0 {
-		serviceStartLoglineSuffix = fmt.Sprintf(" with the following service-port-to-host-port bindings: %+v", responseHostPortBindings)
+		serviceStartLoglineSuffix = fmt.Sprintf(
+			" with the following service-port-to-host-port bindings: %+v",
+			responseHostPortBindings,
+		)
 	}
-	logrus.Infof("Started service '%v'%v", serviceStartLoglineSuffix)
+	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
 
 	return &response, nil
 }
