@@ -97,7 +97,6 @@ func (launcher UserServiceLauncher) Launch(
 
 	hostPortBindings := map[nat.Port]*nat.PortBinding{}
 	for port, _ := range usedPorts {
-		var bindingPtr *nat.PortBinding = nil
 		if launcher.freeHostPortBindingSupplier != nil {
 			binding, err := launcher.freeHostPortBindingSupplier.GetFreePortBinding()
 			if err != nil {
@@ -107,9 +106,8 @@ func (launcher UserServiceLauncher) Launch(
 					port.Port(),
 				)
 			}
-			bindingPtr = &binding
+			hostPortBindings[port] = &binding
 		}
-		hostPortBindings[port] = bindingPtr
 	}
 
 	volumeMounts := map[string]string{

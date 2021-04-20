@@ -65,10 +65,8 @@ type TestsuiteContainerLauncher struct {
 	//  a debugger if desired
 	debuggerPortObj nat.Port
 
-	// Indicates whether the testsuite container should have a host port bound to a debugger port inside the testsuite
-	doDebuggerHostPortBinding bool
-
-	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true
+	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true in
+	//  the constructor
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
@@ -104,7 +102,6 @@ func NewTestsuiteContainerLauncher(
 		testsuiteImage:            testsuiteImage,
 		suiteLogLevel:             testsuiteLogLevel,
 		customParamsJson:          customParamsJson,
-		doDebuggerHostPortBinding: doDebuggerHostPortBinding,
 		hostPortBindingSupplier:   hostPortBindingSupplier,
 	}, nil
 }
@@ -319,12 +316,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingP
 
 	hostPortBindings := map[nat.Port]*nat.PortBinding{}
 	var debuggerPortBinding *nat.PortBinding = nil
-	if launcher.doDebuggerHostPortBinding {
-		if launcher.hostPortBindingSupplier == nil {
-			return "", nil, stacktrace.NewError(
-				"Kurtosis is set to do debugger host port bindings for testsuites, but the test suite launcher doesn't have a host port binding supplier; this is a Kurtosis bug",
-			)
-		}
+	if launcher.hostPortBindingSupplier != nil {
 		freePortBinding, err := launcher.hostPortBindingSupplier.GetFreePortBinding()
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for the testsuite container")

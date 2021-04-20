@@ -48,6 +48,8 @@ const (
 	sessionCacheFilename = "session-cache"
 	sessionCacheFileMode os.FileMode = 0600
 
+	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
+	debugModeParallelism = 1
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
@@ -56,6 +58,7 @@ const (
 	clientSecretArg             = "CLIENT_SECRET"
 	customParamsJson            = "CUSTOM_PARAMS_JSON"
 	doListArg                   = "DO_LIST"
+	isDebugModeArg 				= "IS_DEBUG_MODE"
 	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
 	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
 	parallelismArg              = "PARALLELISM"
@@ -95,6 +98,12 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Required: false,
 		Default:  false,
 		HelpText: "Rather than running the tests, lists the tests available to run",
+		Type:     docker_flag_parser.BoolFlagType,
+	},
+	isDebugModeArg: {
+		Required: false,
+		Default:  false,
+		HelpText: "Turns on debug mode, which will: 1) set parallelism == 1 (overriding any other parallelism argument) 2) connect a port on the local machine a port on the testsuite container, for use in running a debugger in the testsuite container 3) bind every used port for every service to a port on the local machine, for making requests to the services",
 		Type:     docker_flag_parser.BoolFlagType,
 	},
 	kurtosisApiImageArg: {
@@ -194,9 +203,7 @@ func main() {
 	executionInstanceId := uuid.New()
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
-	// There are several features which only make sense to enable when an actual human is at the controls (e.g. host port binding),
-	//  so we detect whether the client ID/secret are passed in, since these should only be used in CI
-	isInteractiveMode := clientId == "" && clientSecret == ""
+	isDebugMode := parsedFlags.GetBool(isDebugModeArg)
 
 	testsuiteLauncher, err := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
@@ -206,7 +213,7 @@ func main() {
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		parsedFlags.GetString(customParamsJson),
-		isInteractiveMode,
+		isDebugMode,
 	)
 	if err != nil {
 		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)
@@ -241,7 +248,13 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	parallelismUint := uint(parsedFlags.GetInt(parallelismArg))
+	var parallelismUint uint
+	if isDebugMode {
+		parallelismUint = debugModeParallelism
+	} else {
+		parallelismUint = uint(parsedFlags.GetInt(parallelismArg))
+	}
+
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		executionInstanceId,

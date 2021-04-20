@@ -132,13 +132,6 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
     exit 1
 fi
 
-# The client ID & secret should only be used within CI, i.e. non-interactive
-if [ -z "${client_id}" ] && [ -z "${client_secret}" ]; then
-    is_interactive=true
-else
-    is_interactive=false
-fi
-
 docker run \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
     `# For more info, see the bottom of: http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/` \
@@ -153,14 +146,15 @@ docker run \
     \
     `# The initializer container needs to access the host machine, so it can test for free ports` \
     `# The host machine's IP is available at 'host.docker.internal' in Docker for Windows & Mac by default, but in Linux we need to add this flag to enable it` \
-    `# However, non-interactive shells (e.g. CI) will choke on this so we only set it with interactive shells` \
-    $(if "${is_interactive_mode}"; then echo -n "--add-host=host.docker.internal:host-gateway"; fi) \
+    `# However, non-interactive shells (e.g. CI) will choke on this so we only set it when the user's using debug mode` \
+    $(if "${is_debug_mode}"; then echo -n "--add-host=host.docker.internal:host-gateway"; fi) \
     \
     `# Keep these sorted alphabetically` \
     --env CLIENT_ID="${client_id}" \
     --env CLIENT_SECRET="${client_secret}" \
     --env CUSTOM_PARAMS_JSON="${custom_params_json}" \
     --env DO_LIST="${do_list}" \
+    --env IS_DEBUG_MODE="${is_debug_mode}" \
     --env KURTOSIS_API_IMAGE="${API_IMAGE}" \
     --env KURTOSIS_LOG_LEVEL="${kurtosis_log_level}" \
     --env PARALLELISM="${parallelism}" \
