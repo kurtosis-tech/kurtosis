@@ -6,6 +6,7 @@
 package output
 
 import (
+	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -27,15 +28,13 @@ const (
 	streaming streamerState = "STREAMING"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
-
-	// This is a prefix that will be attached to log messages to identify that they're coming from the streamer
-	// This is necessary because these log messages will likely be outputted in the section labelled "testsuite logs",
-	// so we need to distinguish streamer logs (which come from the initializer) from logs that come from the testsuite
-	streamerLogPrefix = "[STREAMER] "
 )
 
 // Single-use, non-thread-safe streamer that will read data and pump it to the given output log
 type LogStreamer struct {
+	// The label to give loglines originating from inside this logger
+	loglineLabel string
+
 	state streamerState
 
 	// A channel to tell the streaming thread to stop
@@ -53,8 +52,9 @@ type LogStreamer struct {
 	threadShutdownHook func()
 }
 
-func NewLogStreamer(outputLogger *logrus.Logger) *LogStreamer {
+func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStreamer {
 	return &LogStreamer{
+		loglineLabel:             loglineLabel,
 		state:                    notStarted,
 		streamThreadShutdownChan: nil,
 		streamThreadStoppedChan:  nil,
@@ -88,27 +88,27 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.Reader) error
 
 func (streamer *LogStreamer) StopStreaming() error {
 	// Stop is idempotent
-	streamer.outputLogger.Tracef("%vReceived 'stop streaming' command while in state '%v'...", streamerLogPrefix, streamer.state)
+	streamer.outputLogger.Tracef("%vReceived 'stop streaming' command while in state '%v'...", streamer.getLoglinePrefix(), streamer.state)
 	if streamer.state == terminated || streamer.state == failedToStop {
-		streamer.outputLogger.Tracef("%vShort-circuiting stop; streamer state is already '%v' state", streamerLogPrefix, streamer.state)
+		streamer.outputLogger.Tracef("%vShort-circuiting stop; streamer state is already '%v' state", streamer.getLoglinePrefix(), streamer.state)
 		return nil
 	}
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
 
-	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamerLogPrefix)
+	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 	streamer.streamThreadShutdownChan <- true
-	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamerLogPrefix)
+	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
 
-	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamerLogPrefix, streamerStopTimeout)
+	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamer.getLoglinePrefix(), streamerStopTimeout)
 	select {
 	case <- streamer.streamThreadStoppedChan:
-		streamer.outputLogger.Tracef("%vThread reported stop", streamerLogPrefix)
+		streamer.outputLogger.Tracef("%vThread reported stop", streamer.getLoglinePrefix())
 		streamer.state = terminated
 		return nil
 	case <- time.After(streamerStopTimeout):
-		streamer.outputLogger.Tracef("%v%v timeout was hit", streamerLogPrefix, streamerStopTimeout)
+		streamer.outputLogger.Tracef("%v%v timeout was hit", streamer.getLoglinePrefix(), streamerStopTimeout)
 		streamer.state = failedToStop
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
@@ -136,20 +136,22 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 
 		keepGoing := true
 		for keepGoing {
-			streamer.outputLogger.Tracef("%vRunning log-copy cycle...", streamerLogPrefix)
+			streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
 			select {
 			case <- streamer.streamThreadShutdownChan:
+				streamer.outputLogger.Tracef("%vReceived signal on stream thread shutdown chan; setting keepGoing to false", streamer.getLoglinePrefix())
 				keepGoing = false
 			case <- time.After(timeBetweenStreamerCopies):
+				streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
 				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamerLogPrefix, err)
+					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
 				}
 			}
-			streamer.outputLogger.Tracef("%vLog copy cycle completed", streamerLogPrefix)
+			streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
 		}
 		// Do a final copy, to capture any non-copied output
 		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamerLogPrefix, err)
+			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
 		}
 		streamer.streamThreadStoppedChan <- true
 	}()
@@ -165,5 +167,12 @@ func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing boo
 		_, result = io.Copy(output, input)
 	}
 	return result
+}
+
+// This is a prefix that will be attached to log messages to identify that they're coming from the streamer
+// This is necessary because these log messages will likely be outputted in the section labelled "testsuite logs",
+// so we need to distinguish streamer logs (which come from the initializer) from logs that come from the testsuite
+func (streamer LogStreamer) getLoglinePrefix() string {
+	return fmt.Sprintf("[%v] ", streamer.loglineLabel)
 }
 

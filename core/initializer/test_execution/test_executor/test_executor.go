@@ -164,7 +164,7 @@ func RunTest(
 	if err != nil {
 		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
 	} else {
-		newStreamer := output.NewLogStreamer(log)
+		newStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
 		if startStreamingErr := newStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
 			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 		} else {

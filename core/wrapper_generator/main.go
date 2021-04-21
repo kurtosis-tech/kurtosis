@@ -108,6 +108,13 @@ var wrapperArgs = []WrapperArg{
 		Action:     StoreValue,
 	},
 	{
+		Flag:       "--debug",
+		Variable:   "is_debug_mode",
+		DefaultVal: "false",
+		HelpText:   "Turns on debug mode, which will: 1) set parallelism == 1 (overriding any other parallelism argument) 2) connect a port on the local machine a port on the testsuite container, for use in running a debugger in the testsuite container 3) bind every used port for every service to a port on the local machine, for making requests to the services",
+		Action:     StoreTrue,
+	},
+	{
 		Flag:       "--help",
 		Variable:   "show_help",
 		DefaultVal: "false",

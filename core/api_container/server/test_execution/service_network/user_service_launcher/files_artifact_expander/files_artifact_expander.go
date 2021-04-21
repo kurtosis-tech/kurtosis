@@ -108,6 +108,7 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		map[string]string{}, // No env variables
 		map[string]string{}, // No bind mounts
 		volumeMounts,
+		false,		// Files artifact expander doesn't need access to the Docker host machine
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the artifact into the volume")

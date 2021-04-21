@@ -19,7 +19,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -87,6 +89,26 @@ func createTestExecutionCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache for test '%v'", args.TestName)
 	}
 
+	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
+	if args.HostPortBindingSupplierParams != nil {
+		hostPortSupplierParams := args.HostPortBindingSupplierParams
+		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+			docker_constants.HostMachineDomainInsideContainer,
+			hostPortSupplierParams.InterfaceIp,
+			hostPortSupplierParams.Protocol,
+			hostPortSupplierParams.PortRangeStart,
+			hostPortSupplierParams.PortRangeEnd,
+			hostPortSupplierParams.TakenPorts,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
+			)
+		}
+		hostPortBindingSupplier = supplier
+	}
+
 	serviceNetwork := createServiceNetwork(
 		args.ExecutionInstanceId,
 		args.TestName,
@@ -96,7 +118,8 @@ func createTestExecutionCore(
 		dockerManager,
 		freeIpAddrTracker,
 		args.NetworkId,
-		args.IsPartitioningEnabled)
+		args.IsPartitioningEnabled,
+		hostPortBindingSupplier)
 
 	core := test_execution.NewTestExecutionServerCore(
 		dockerManager,
@@ -151,7 +174,8 @@ func createServiceNetwork(
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
-		isPartitioningEnabled bool) *service_network.ServiceNetwork {
+		isPartitioningEnabled bool,
+		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *service_network.ServiceNetwork {
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
@@ -164,6 +188,7 @@ func createServiceNetwork(
 		testName,
 		dockerManager,
 		freeIpAddrTracker,
+		hostPortBindingSupplier,
 		artifactCache,
 		filesArtifactExpander,
 		dockerNetworkId,

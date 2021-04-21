@@ -177,7 +177,7 @@ func (manager *ParallelTestOutputManager) RegisterTestLaunch(testName string) *l
 	manager.threadSafeOutputLogger.Info(message)
 
 	if manager.maxConcurrentTestsRunning == 1 {
-		streamer := NewLogStreamer(manager.threadSafeOutputLogger)
+		streamer := NewLogStreamer("TEST LOG STREAMER", manager.threadSafeOutputLogger)
 		if err := streamer.StartStreamingFromFilepath(testOutputFp.Name()); err != nil {
 			// An error occurred starting the streamer, so we'll fall back to non-streaming log-printing
 			manager.threadSafeOutputLogger.Warn(
