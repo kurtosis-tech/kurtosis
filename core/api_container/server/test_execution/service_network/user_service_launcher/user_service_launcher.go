@@ -130,6 +130,7 @@ func (launcher UserServiceLauncher) Launch(
 		dockerEnvVars,
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		volumeMounts,
+		false,		// User services definitely shouldn't be able to access the Docker host machine
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)

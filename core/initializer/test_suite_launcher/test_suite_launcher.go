@@ -154,6 +154,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		map[string]string{
 			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
+		false,	// During metadata-acquisition, the API container doesn't need access to the Docker host machine
 	)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
@@ -179,7 +180,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 
 	suiteContainerDesc := "metadata-reporting testsuite container"
 	log.Infof("Launching %v...", suiteContainerDesc)
-	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartContainerWithDebuggingPortIfNecessary(
+	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		bridgeNetworkId,
@@ -232,7 +233,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Infof("Launching %v....", suiteContainerDesc)
-	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartContainerWithDebuggingPortIfNecessary(
+	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		networkId,
@@ -287,6 +288,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		map[string]string{
 			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
+		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
 	)
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
@@ -306,7 +308,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
-func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingPortIfNecessary(
+func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		networkId string,
@@ -350,7 +352,9 @@ func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingP
 		map[string]string{}, 		// No bind mounts for a testsuite container
 		map[string]string{
 			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
-		})
+		},
+		false, // The testsuite container should never be able to access the machine hosting Docker
+	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating and starting the testsuite container")
 	}
