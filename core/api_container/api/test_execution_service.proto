@@ -25,7 +25,7 @@ service TestExecutionService {
   rpc GenerateFiles(GenerateFilesArgs) returns (GenerateFilesResponse) {};
 
   // Starts a previously-registered service by creating a Docker container for it
-  rpc StartService(StartServiceArgs) returns (google.protobuf.Empty) {};
+  rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
 
   // Instructs the API container to remove the given service
   rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
@@ -116,6 +116,19 @@ message StartServiceArgs {
 
   // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
   map<string, string> files_artifact_mount_dirpaths = 8;
+}
+
+message StartServiceResponse {
+  // Mapping of used_ports_provided_in_input_args -> ip_and_port_on_host_where_port_is_bound (in ip:port form)
+  // Ports will only be in this map if they were successfully bound to a host port; if no ports were bound, then
+  // this map will be empty
+  map<string, PortBinding> used_ports_host_port_bindings = 1;
+}
+
+message PortBinding {
+  string interface_ip = 1;
+
+  string interface_port = 2;
 }
 
 // ==============================================================================================

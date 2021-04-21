@@ -114,9 +114,9 @@ if "${do_build}"; then
     echo "Successfully generated wrapper script"
 
     echo "Launching builds of initializer & API images in parallel threads..."
-    docker build -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" 2>&1 > "${initializer_log_filepath}" &
+    docker build --progress=plain -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
     initializer_build_pid="${!}"
-    docker build -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" 2>&1 > "${api_log_filepath}" &
+    docker build --progress=plain -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
     api_build_pid="${!}"
     echo "Build threads launched successfully:"
     echo " - Initializer thread PID: ${initializer_build_pid}"

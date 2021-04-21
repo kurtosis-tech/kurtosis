@@ -92,6 +92,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 		map[string]string{}, // No environment variables
 		map[string]string{}, // no bind mounts for services created via the Kurtosis API
 		map[string]string{}, // No volume mounts either
+		false, // The sidecar images definitely don't need to access the Docker host machine
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

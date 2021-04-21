@@ -16,6 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -209,6 +210,9 @@ Args:
 	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
 	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) to mount during container launch
+	needsAccessToDockerHostMachine: Will provide the container with a magic "host.docker.internal" domain name
+		that it can use to access ports of the machine running Docker itself (useful if, e.g., the container
+		needs to check the host machine's free ports)
 
 Returns:
 	The Docker container ID of the newly-created container
@@ -225,7 +229,8 @@ func (manager DockerManager) CreateAndStartContainer(
 			cmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
-			volumeMounts map[string]string) (containerId string, err error) {
+			volumeMounts map[string]string,
+			needsAccessToDockerHostMachine bool) (containerId string, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
@@ -267,7 +272,8 @@ func (manager DockerManager) CreateAndStartContainer(
 		networkMode,
 		bindMounts,
 		volumeMounts,
-		usedPortsWithHostBindingsDeref)
+		usedPortsWithHostBindingsDeref,
+		needsAccessToDockerHostMachine)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -538,13 +544,17 @@ Args:
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
 	hostPortBindings: Mapping of (container port) -> (IP/port on host to bind to)
+	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
+		for machines that will need to access the machine hosting Docker itself.
+
  */
 func (manager *DockerManager) getContainerHostConfig(
 		addedCapabilities map[ContainerCapability]bool,
 		networkMode DockerManagerNetworkMode,
 		bindMounts map[string]string,
 		volumeMounts map[string]string,
-		hostPortBindings map[nat.Port]nat.PortBinding) (hostConfig *container.HostConfig, err error) {
+		hostPortBindings map[nat.Port]nat.PortBinding,
+		needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
 	for hostFilepath, containerFilepath := range bindMounts {
@@ -569,11 +579,22 @@ func (manager *DockerManager) getContainerHostConfig(
 		addedCapabilitiesSlice = append(addedCapabilitiesSlice, capabilityStr)
 	}
 
+	extraHosts := []string{}
+	if needsToAccessDockerHostMachine {
+		// This explicit specification is necessary because in Docker-for-Linux, the magic "host.docker.internal"
+		//  domain name isn't automatically available inside a container
+		extraHosts = append(
+			extraHosts,
+			fmt.Sprintf("%v:%v", docker_constants.HostMachineDomainInsideContainer, docker_constants.HostGatewayName),
+		)
+	}
+
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		CapAdd: addedCapabilitiesSlice,
 		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
+		ExtraHosts: extraHosts,
 	}
 	return containerHostConfigPtr, nil
 }

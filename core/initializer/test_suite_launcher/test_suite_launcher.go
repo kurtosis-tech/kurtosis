@@ -16,8 +16,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/host_port_binding_supplier"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
@@ -64,11 +65,9 @@ type TestsuiteContainerLauncher struct {
 	//  a debugger if desired
 	debuggerPortObj nat.Port
 
-	// Indicates whether the testsuite container should have a host port bound to a debugger port inside the testsuite
-	doDebuggerHostPortBinding bool
-
-	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true
-	hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier
+	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true in
+	//  the constructor
+	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
 func NewTestsuiteContainerLauncher(
@@ -80,13 +79,16 @@ func NewTestsuiteContainerLauncher(
 		testsuiteLogLevel string,
 		customParamsJson string,
 		doDebuggerHostPortBinding bool) (*TestsuiteContainerLauncher, error) {
-	var hostPortBindingSupplier *host_port_binding_supplier.FreeHostPortBindingSupplier = nil
+	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
 	if doDebuggerHostPortBinding {
-		supplier, err := host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+			docker_constants.HostMachineDomainInsideContainer,
 			hostPortTrackerInterfaceIp,
 			protocolForDebuggersRunningOnTestsuite,
 			hostPortTrackerStartRange,
-			hostPortTrackerEndRange)
+			hostPortTrackerEndRange,
+			map[uint32]bool{}, // We don't know of any taken ports at this point
+		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred instantiating the free host port binding supplier")
 		}
@@ -100,7 +102,6 @@ func NewTestsuiteContainerLauncher(
 		testsuiteImage:            testsuiteImage,
 		suiteLogLevel:             testsuiteLogLevel,
 		customParamsJson:          customParamsJson,
-		doDebuggerHostPortBinding: doDebuggerHostPortBinding,
 		hostPortBindingSupplier:   hostPortBindingSupplier,
 	}, nil
 }
@@ -153,6 +154,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		map[string]string{
 			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
+		false,	// During metadata-acquisition, the API container doesn't need access to the Docker host machine
 	)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
@@ -178,7 +180,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 
 	suiteContainerDesc := "metadata-reporting testsuite container"
 	log.Infof("Launching %v...", suiteContainerDesc)
-	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartContainerWithDebuggingPortIfNecessary(
+	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		bridgeNetworkId,
@@ -231,7 +233,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Infof("Launching %v....", suiteContainerDesc)
-	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartContainerWithDebuggingPortIfNecessary(
+	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		networkId,
@@ -286,6 +288,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		map[string]string{
 			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
 		},
+		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
 	)
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
@@ -305,7 +308,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
-func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingPortIfNecessary(
+func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		networkId string,
@@ -315,12 +318,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingP
 
 	hostPortBindings := map[nat.Port]*nat.PortBinding{}
 	var debuggerPortBinding *nat.PortBinding = nil
-	if launcher.doDebuggerHostPortBinding {
-		if launcher.hostPortBindingSupplier == nil {
-			return "", nil, stacktrace.NewError(
-				"Kurtosis is set to do debugger host port bindings for testsuites, but the test suite launcher doesn't have a host port binding supplier; this is a Kurtosis bug",
-			)
-		}
+	if launcher.hostPortBindingSupplier != nil {
 		freePortBinding, err := launcher.hostPortBindingSupplier.GetFreePortBinding()
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for the testsuite container")
@@ -354,7 +352,9 @@ func (launcher TestsuiteContainerLauncher) createAndStartContainerWithDebuggingP
 		map[string]string{}, 		// No bind mounts for a testsuite container
 		map[string]string{
 			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
-		})
+		},
+		false, // The testsuite container should never be able to access the machine hosting Docker
+	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating and starting the testsuite container")
 	}
@@ -420,6 +420,18 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		testSetupTimeoutInSeconds uint32,
 		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (map[string]string, error) {
+	var hostPortBindingSupplierParams *api_container_params_json.HostPortBindingSupplierParams = nil
+	hostPortBindingSupplier := launcher.hostPortBindingSupplier
+	if hostPortBindingSupplier != nil {
+		hostPortBindingSupplierParams = api_container_params_json.NewHostPortBindingSupplierParams(
+			hostPortBindingSupplier.GetInterfaceIp(),
+			hostPortBindingSupplier.GetProtocol(),
+			hostPortBindingSupplier.GetPortRangeStart(),
+			hostPortBindingSupplier.GetPortRangeEnd(),
+			hostPortBindingSupplier.GetTakenPorts(),
+		)
+	}
+
 	args, err := api_container_params_json.NewTestExecutionArgs(
 		launcher.executionInstanceId.String(),
 		networkId,
@@ -432,7 +444,8 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 		apiContainerIpAddr.String(),
 		testSetupTimeoutInSeconds,
 		testRunTimeoutInSeconds,
-		isPartitioningEnabled)
+		isPartitioningEnabled,
+		hostPortBindingSupplierParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
 	}
