@@ -1,4 +1,4 @@
-# TBD
+# 1.12.0
 ### Features
 * Added a `--debug` flag to `kurtosis.sh` that will:
     1. Set parallelism to 1, so test logs are streamed in realtime
