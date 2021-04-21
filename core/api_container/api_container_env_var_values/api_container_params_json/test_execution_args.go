@@ -33,7 +33,14 @@ type HostPortBindingSupplierParams struct {
 	PortRangeEnd 	uint32	`json:"portRangeEnd"`
 
 	// "Set" of ports that are already taken and shouldn't be doled out by the free host port binding supplier
+	// NOTE: This is more a hint, rather than a requirement, since the FreeHostPortBindingSupplier that's constructed
+	//  from these params will test if a port is free regardless
 	TakenPorts map[uint32]bool	`json:"takenPorts"`
+}
+
+// Even though the fields are public, we create & use this constructor so that new fields will cause an API break
+func NewHostPortBindingSupplierParams(interfaceIp string, protocol string, portRangeStart uint32, portRangeEnd uint32, takenPorts map[uint32]bool) *HostPortBindingSupplierParams {
+	return &HostPortBindingSupplierParams{InterfaceIp: interfaceIp, Protocol: protocol, PortRangeStart: portRangeStart, PortRangeEnd: portRangeEnd, TakenPorts: takenPorts}
 }
 
 // Fields are public for JSON de/serialization

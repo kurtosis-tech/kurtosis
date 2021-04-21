@@ -220,7 +220,13 @@ func (network *ServiceNetwork) GenerateFiles(
 }
 
 // TODO add tests for this
-// Starts a previously-registered but not-started service by creating it in a container
+/*
+Starts a previously-registered but not-started service by creating it in a container
+
+Returns:
+	Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
+		to access the port. This will be empty if no ports are bound.
+ */
 func (network *ServiceNetwork) StartService(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,

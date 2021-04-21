@@ -1,9 +1,9 @@
 # TBD
 ### Features
-* Added a `--debug` flag that will:
+* Added a `--debug` flag to `kurtosis.sh` that will:
     1. Set parallelism to 1, so test logs are streamed in realtime
     1. Bind a port on the user's local machine to a port on the testsuite container, so a debugger can be run
-    1. Bind every port that a service uses to the user's local machine, so they can make requests to the services for debugging
+    1. Bind every port that a service uses to a port on the user's local machine, so they can make requests to the services for debugging
 
 ### Fixes
 * Fixed `FreeHostPortBindingSupplier` using the `tcp` protocol to check ports, regardless of what protocol it was configured with

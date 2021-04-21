@@ -28,8 +28,6 @@ const (
 	streaming streamerState = "STREAMING"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
-
-	// streamerLogPrefix = "[STREAMER] "
 )
 
 // Single-use, non-thread-safe streamer that will read data and pump it to the given output log

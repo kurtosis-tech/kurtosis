@@ -423,12 +423,13 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 	var hostPortBindingSupplierParams *api_container_params_json.HostPortBindingSupplierParams = nil
 	hostPortBindingSupplier := launcher.hostPortBindingSupplier
 	if hostPortBindingSupplier != nil {
-		hostPortBindingSupplierParams = &api_container_params_json.HostPortBindingSupplierParams{
-			InterfaceIp:    hostPortBindingSupplier.GetInterfaceIp(),
-			Protocol:       hostPortBindingSupplier.GetProtocol(),
-			PortRangeStart: hostPortBindingSupplier.GetPortRangeStart(),
-			PortRangeEnd:   hostPortBindingSupplier.GetPortRangeEnd(),
-		}
+		hostPortBindingSupplierParams = api_container_params_json.NewHostPortBindingSupplierParams(
+			hostPortBindingSupplier.GetInterfaceIp(),
+			hostPortBindingSupplier.GetProtocol(),
+			hostPortBindingSupplier.GetPortRangeStart(),
+			hostPortBindingSupplier.GetPortRangeEnd(),
+			hostPortBindingSupplier.GetTakenPorts(),
+		)
 	}
 
 	args, err := api_container_params_json.NewTestExecutionArgs(

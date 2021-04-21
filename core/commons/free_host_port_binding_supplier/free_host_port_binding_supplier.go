@@ -20,10 +20,6 @@ const (
 	validPortRangeStart = 1024
 	validPortRangeEnd   = 65535
 
-	// This is the domain name of the host machine from inside the Docker container
-	// See: https://stackoverflow.com/questions/31324981/how-to-access-host-port-from-docker-container
-	hostMachineDomainInsideDocker = "host.docker.internal"
-
 	// How long we'll wait in trying to dial the host machine's port to see if it's available (though
 	// the timeout shouldn't usually be hit unless there are firewall rules in place - instead, we should
 	// get an immediate "connection refused")
