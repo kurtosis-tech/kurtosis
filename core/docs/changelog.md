@@ -1,13 +1,16 @@
 # TBD
 ### Features
-* Allow for ports exposed in the API container's `StartService` call to be bound to host ports for debugging purposes
+* Added a `--debug` flag that will:
+    1. Set parallelism to 1, so test logs are streamed in realtime
+    1. Bind a port on the user's local machine to a port on the testsuite container, so a debugger can be run
+    1. Bind every port that a service uses to the user's local machine, so they can make requests to the services for debugging
 
 ### Fixes
 * Fixed `FreeHostPortBindingSupplier` using the `tcp` protocol to check ports, regardless of what protocol it was configured with
 * Fixed `docker build` on initializer & API images not writing output to file, since Docker Buildkit (which is now enabled by default) writes everything to STDERR
 
 ### Breaking Changes
-* The API container's `StartService` call now returns a `StartServiceResponse` object containing debugging port info rather than an empty object
+* The API container's `StartService` call now returns a `StartServiceResponse` object containing ports that were bound on the local machine (if any) rather than an empty object
 
 # 1.11.1
 ### Fixes
