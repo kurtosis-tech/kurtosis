@@ -1,3 +1,6 @@
+# Copyright (c) 2020 - present Kurtosis Technologies LLC.
+# All Rights Reserved.
+
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 #      Do not modify this file! It will get overwritten when you upgrade Kurtosis!

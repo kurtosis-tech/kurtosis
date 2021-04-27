@@ -1,7 +1,13 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# This script is intended to be wrapped with a thin script passing in testsuite-specific
-#  variables (e.g. the name of the testsuite image)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Copyright (c) 2020 - present Kurtosis Technologies LLC.
+# All Rights Reserved.
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#      Do not modify this file! It will get overwritten when you upgrade Kurtosis!
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# USAGE: This script is intended to be wrapped with a thin script passing in testsuite-specific variables (e.g. the name of the testsuite image)
 set -euo pipefail
 
 # ====================== CONSTANTS =======================================================

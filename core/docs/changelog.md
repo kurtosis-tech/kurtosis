@@ -1,3 +1,8 @@
+# TBD
+### Changes
+* Added a big comment to the top of `build-and-run-core.sh` warning users not to modify it, as it'll be overridden by Kurtosis upgrades
+* Added copyright notices to the top of `kurtosis.sh` and `build-and-run-core.sh`
+
 # 1.12.0
 ### Features
 * Added a `--debug` flag to `kurtosis.sh` that will:
