@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -53,7 +52,7 @@ const (
 Runs a single test with the given name
 
 Args:
-	executionInstanceId: The UUID representing an execution of the user's test suite, to which this test execution belongs
+	executionInstanceUuid: The UUID representing an execution of the user's test suite, to which this test execution belongs
 	testSetupExecutionCtx: The context in which test setup & execution runs, which can potentially be cancelled on a Ctrl-C
 	ctx: The Context that the test execution is happening in
 	log: the logger to which all logging events during test execution will be sent
@@ -69,7 +68,7 @@ Returns:
 	error: Non-nil if an error occurred that prevented the test pass/fail status from being retrieved
 */
 func RunTest(
-		executionInstanceId uuid.UUID,
+		executionInstanceUuid string,
 		testSetupExecutionCtx context.Context,
 		log *logrus.Logger,
 		dockerClient *client.Client,
@@ -107,7 +106,7 @@ func RunTest(
 	networkName := fmt.Sprintf(
 		"%v_%v_%v",
 		time.Now().Format(networkNameTimestampFormat),
-		executionInstanceId.String(),
+		executionInstanceUuid,
 		testName)
 	networkId, err := dockerManager.CreateNetwork(testSetupExecutionCtx, networkName, subnetMask, gatewayIp)
 	if err != nil {
