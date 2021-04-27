@@ -12,8 +12,6 @@ import (
 const (
 	networkingSidecarNameSuffix = "networking-sidecar"
 	artifactExpanderNameLabel   = "files-artifact-expander"
-
-	nameElementSeparator = "__"
 )
 
 type ContainerNameElementsProvider struct {
