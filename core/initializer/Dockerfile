@@ -35,6 +35,7 @@ CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
     --CLIENT_SECRET=\"${CLIENT_SECRET}\" \
     --CUSTOM_PARAMS_JSON=\"${CUSTOM_PARAMS_JSON}\" \
     --DO_LIST=\"${DO_LIST}\" \
+    --EXECUTION_UUID=\"${EXECUTION_UUID}\" \
     --IS_DEBUG_MODE=\"${IS_DEBUG_MODE}\" \
     --KURTOSIS_API_IMAGE=\"${KURTOSIS_API_IMAGE}\" \
     --KURTOSIS_LOG_LEVEL=\"${KURTOSIS_LOG_LEVEL}\" \
