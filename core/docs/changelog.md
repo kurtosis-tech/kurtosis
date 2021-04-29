@@ -1,3 +1,6 @@
+# 1.13.1
+NOTE: Empty release to get `master` back on track after the reverting
+
 # 1.13.0
 NOTE: Contains the changes in 1.12.1, which were incorrectly released as a patch version bump
 
