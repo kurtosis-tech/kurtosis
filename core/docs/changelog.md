@@ -1,3 +1,6 @@
+# 1.12.1
+NOTE: Undoes 1.12.0, which should have been pushed as a minor version bump
+
 # 1.12.0
 ### Features
 * Added a `--debug` flag to `kurtosis.sh` that will:
