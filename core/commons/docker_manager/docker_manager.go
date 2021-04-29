@@ -51,6 +51,8 @@ const (
 	// During network removal, how long to wait after issuing the kill command to the containers and before
 	//  trying to remove the network (which will fail if there are running containers)
 	networkTeardownWaitTime = 2 * time.Second
+
+	containerNameElementSeparator = "__"
 )
 
 /*
@@ -197,7 +199,8 @@ Creates a Docker container with the given args and starts it.
 
 Args:
 	context: The Context that this request is running in (useful for cancellation)
-	dockerImage: image to start
+	dockerImage: Image to start
+	nameElements: The separate components of the container name, which will be joined by the standard container separator
 	networkId: The ID of the Docker network that this container should be attached to
 	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
 	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
@@ -220,6 +223,7 @@ Returns:
 func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
+			nameElements []string,
 			networkId string,
 			staticIp net.IP,
 			addedCapabilities map[ContainerCapability]bool,
@@ -277,7 +281,8 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, "")
+	containerName := strings.Join(nameElements, containerNameElementSeparator)
+	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, containerName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Could not create Docker container from image %v.", dockerImage)
 	}

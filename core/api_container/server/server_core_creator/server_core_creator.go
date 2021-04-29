@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/suite_metadata_serialization"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/user_service_launcher/files_artifact_expander"
@@ -70,6 +71,11 @@ func createTestExecutionCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
+	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(
+		args.ExecutionInstanceId,
+		args.TestName,
+	)
+
 	freeIpAddrTracker, err := createFreeIpAddrTracker(
 		args.SubnetMask,
 		args.GatewayIpAddr,
@@ -113,6 +119,7 @@ func createTestExecutionCore(
 		args.ExecutionInstanceId,
 		args.TestName,
 		args.SuiteExecutionVolumeName,
+		containerNameElemsProvider,
 		artifactCache,
 		testExecutionDirectory,
 		dockerManager,
@@ -169,6 +176,7 @@ func createServiceNetwork(
 		executionInstanceId string,
 		testName string,
 		suiteExecutionVolName string,
+		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
 		dockerManager *docker_manager.DockerManager,
@@ -180,6 +188,7 @@ func createServiceNetwork(
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
 		dockerManager,
+		containerNameElemsProvider,
 		dockerNetworkId,
 		freeIpAddrTracker)
 
@@ -187,6 +196,7 @@ func createServiceNetwork(
 		executionInstanceId,
 		testName,
 		dockerManager,
+		containerNameElemsProvider,
 		freeIpAddrTracker,
 		hostPortBindingSupplier,
 		artifactCache,
@@ -196,6 +206,7 @@ func createServiceNetwork(
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
+		containerNameElemsProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
