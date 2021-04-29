@@ -6,6 +6,7 @@
 package test_suite_runner
 
 import (
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 	perms := permissions.FromPermissionsSet(map[string]bool{})
 	result, err := RunTests(
 		perms,
-		"1234-abcd",
+		uuid.New(),
 		nil,
 		nil,
 		suiteMetadata,
@@ -36,7 +37,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	})
 	result, err := RunTests(
 		perms,
-		"1234-abcd",
+		uuid.New(),
 		nil,
 		nil,
 		suiteMetadata,

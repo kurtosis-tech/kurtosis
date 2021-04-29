@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
@@ -38,7 +39,7 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 
 Args:
 	permissions: The permissions the user is running the test suite with
-	executionInstanceUuid: The UUID  uniquely identifying this testsuite execution
+	executionInstanceId: The UUID  uniquely identifying this testsuite execution
 	dockerClient: Docker client to use when interacting with the Docker engine
 	artifactCache: The artifact cache where artifacts needed by the tests-to-run will be downloaded
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
@@ -57,7 +58,7 @@ Returns:
  */
 func RunTests(
 		permissions *permissions.Permissions,
-		executionInstanceUuid string,
+		executionInstanceId uuid.UUID,
 		dockerClient *client.Client,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
@@ -92,7 +93,7 @@ func RunTests(
 	}
 	sort.Strings(orderedTestNames)
 
-	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceUuid)
+	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceId.String())
 	for _, testName := range orderedTestNames {
 		logrus.Infof(" - %v", testName)
 	}
@@ -130,7 +131,7 @@ func RunTests(
 	}
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
-		executionInstanceUuid,
+		executionInstanceId,
 		dockerClient,
 		testParallelism,
 		testParams,

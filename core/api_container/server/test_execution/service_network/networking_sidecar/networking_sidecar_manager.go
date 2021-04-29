@@ -8,7 +8,6 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -56,16 +55,15 @@ type NetworkingSidecarManager interface {
 type StandardNetworkingSidecarManager struct {
 	dockerManager *docker_manager.DockerManager
 
-	containerNameProvider *container_name_provider.ContainerNameElementsProvider
-
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, containerNameProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, containerNameProvider: containerNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
+
 
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Create(
@@ -82,7 +80,6 @@ func (manager *StandardNetworkingSidecarManager) Create(
 	sidecarContainerId, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
 		networkingSidecarImageName,
-		manager.containerNameProvider.GetForNetworkingSidecar(serviceId),
 		manager.dockerNetworkId,
 		sidecarIp,
 		map[docker_manager.ContainerCapability]bool{

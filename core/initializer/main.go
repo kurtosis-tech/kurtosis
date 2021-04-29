@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
@@ -57,7 +58,6 @@ const (
 	clientSecretArg             = "CLIENT_SECRET"
 	customParamsJson            = "CUSTOM_PARAMS_JSON"
 	doListArg                   = "DO_LIST"
-	executionUuid				= "EXECUTION_UUID"
 	isDebugModeArg 				= "IS_DEBUG_MODE"
 	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
 	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
@@ -99,12 +99,6 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Default:  false,
 		HelpText: "Rather than running the tests, lists the tests available to run",
 		Type:     docker_flag_parser.BoolFlagType,
-	},
-	executionUuid: {
-		Required: true,
-		Default:  "",
-		HelpText: "UUID used for identifying everything associated with this run of Kurtosis",
-		Type:     docker_flag_parser.StringFlagType,
 	},
 	isDebugModeArg: {
 		Required: false,
@@ -206,7 +200,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	executionInstanceId := parsedFlags.GetString(executionUuid)
+	executionInstanceId := uuid.New()
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
 	isDebugMode := parsedFlags.GetBool(isDebugModeArg)

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
@@ -40,17 +41,10 @@ const (
 	hostPortTrackerInterfaceIp = "127.0.0.1"
 	hostPortTrackerStartRange = 8000
 	hostPortTrackerEndRange = 10000
-
-	// Identifier included in hostnames of containers running for metadata acquisition
-	metadataAcquisitionContainerNameLabel = "metadata-acquisition"
-
-	// Suffix to give API container hostnames
-	apiContainerNameSuffix       = "kurtosis-api"
-	testsuiteContainerNameSuffix = "testsuite"
 )
 
 type TestsuiteContainerLauncher struct {
-	executionInstanceUuid string
+	executionInstanceId uuid.UUID
 
 	suiteExecutionVolName string
 
@@ -77,7 +71,7 @@ type TestsuiteContainerLauncher struct {
 }
 
 func NewTestsuiteContainerLauncher(
-		executionInstanceUuid string,
+		executionInstanceId uuid.UUID,
 		suiteExecutionVolName string,
 		kurtosisApiImage string,
 		kurtosisApiLogLevel logrus.Level,
@@ -101,14 +95,14 @@ func NewTestsuiteContainerLauncher(
 		hostPortBindingSupplier = supplier
 	}
 	return &TestsuiteContainerLauncher{
-		executionInstanceUuid:   executionInstanceUuid,
-		suiteExecutionVolName:   suiteExecutionVolName,
-		kurtosisApiImage:        kurtosisApiImage,
-		kurtosisApiLogLevel:     kurtosisApiLogLevel,
-		testsuiteImage:          testsuiteImage,
-		suiteLogLevel:           testsuiteLogLevel,
-		customParamsJson:        customParamsJson,
-		hostPortBindingSupplier: hostPortBindingSupplier,
+		executionInstanceId:       executionInstanceId,
+		suiteExecutionVolName:     suiteExecutionVolName,
+		kurtosisApiImage:          kurtosisApiImage,
+		kurtosisApiLogLevel:       kurtosisApiLogLevel,
+		testsuiteImage:            testsuiteImage,
+		suiteLogLevel:             testsuiteLogLevel,
+		customParamsJson:          customParamsJson,
+		hostPortBindingSupplier:   hostPortBindingSupplier,
 	}, nil
 }
 
@@ -143,15 +137,9 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 
 	log.Debug("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_server_consts.ListenPort, api_container_server_consts.ListenProtocol))
-	kurtosisApiContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		metadataAcquisitionContainerNameLabel,
-		apiContainerNameSuffix,
-	}
 	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.kurtosisApiImage,
-		kurtosisApiContainerNameElems,
 		bridgeNetworkId,
 		nil,	// We're connecting to the bridge network, which will assign an IP automatically
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
@@ -192,15 +180,9 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 
 	suiteContainerDesc := "metadata-reporting testsuite container"
 	log.Infof("Launching %v...", suiteContainerDesc)
-	testsuiteContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		metadataAcquisitionContainerNameLabel,
-		testsuiteContainerNameSuffix,
-	}
 	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
-		testsuiteContainerNameElems,
 		bridgeNetworkId,
 		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		testsuiteEnvVars,
@@ -251,15 +233,9 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Infof("Launching %v....", suiteContainerDesc)
-	suiteContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		testName,
-		testsuiteContainerNameSuffix,
-	}
 	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
-		suiteContainerNameElems,
 		networkId,
 		testsuiteContainerIp,
 		testSuiteEnvVars)
@@ -293,15 +269,9 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 
 	log.Info("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_server_consts.ListenPort, api_container_server_consts.ListenProtocol))
-	kurtosisApiContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		testName,
-		apiContainerNameSuffix,
-	}
 	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.kurtosisApiImage,
-		kurtosisApiContainerNameElems,
 		networkId,
 		kurtosisApiContainerIp,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
@@ -341,7 +311,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
-		containerNameElems []string,
 		networkId string,
 		containerIpAddr net.IP,
 		envVars map[string]string,
@@ -372,7 +341,6 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 	containerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
-		containerNameElems,
 		networkId,
 		containerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers
@@ -465,7 +433,7 @@ func (launcher TestsuiteContainerLauncher) genTestExecutionApiContainerEnvVars(
 	}
 
 	args, err := api_container_params_json.NewTestExecutionArgs(
-		launcher.executionInstanceUuid,
+		launcher.executionInstanceId.String(),
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),

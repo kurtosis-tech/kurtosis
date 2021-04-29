@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
@@ -30,7 +31,7 @@ Runs the given tests in parallel, printing:
 2) a summary of all tests once all tests have finished
 
 Args:
-	executionUuid: The UUID uniquely identifying this execution of the tests
+	executionId: The UUID uniquely identifying this execution of the tests
 	dockerClient: The handle to manipulating the Docker environment
 	parallelism: The number of tests to run concurrently
 	allTestParams: A mapping of test_name -> parameters for running the test
@@ -43,7 +44,7 @@ Returns:
 	True if all tests passed, false otherwise
  */
 func RunInParallelAndPrintResults(
-		executionUuid string,
+		executionId uuid.UUID,
 		dockerClient *client.Client,
 		parallelism uint,
 		allTestParams map[string]ParallelTestParams,
@@ -80,7 +81,7 @@ func RunInParallelAndPrintResults(
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
-		executionUuid,
+		executionId,
 		ctx,
 		erroneousSystemLogCaptureWriter,
 		outputManager,
@@ -104,7 +105,7 @@ func RunInParallelAndPrintResults(
 
 
 func disableSystemLogAndRunTestThreads(
-		executionUuid string,
+		executionId uuid.UUID,
 		parentContext context.Context,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
 		outputManager *output.ParallelTestOutputManager,
@@ -126,7 +127,7 @@ func disableSystemLogAndRunTestThreads(
 	for i := uint(0); i < parallelism; i++ {
 		waitGroup.Add(1)
 		go runTestWorkerGoroutine(
-			executionUuid,
+			executionId,
 			parentContext,
 			&waitGroup,
 			testParamsChan,
@@ -142,7 +143,7 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func runTestWorkerGoroutine(
-			executionUuid string,
+			executionId uuid.UUID,
 			parentContext context.Context,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan ParallelTestParams,
@@ -156,7 +157,7 @@ func runTestWorkerGoroutine(
 		testName := testParams.TestName
 		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
-			executionUuid,
+			executionId,
 			parentContext,
 			testLog,
 			dockerClient,

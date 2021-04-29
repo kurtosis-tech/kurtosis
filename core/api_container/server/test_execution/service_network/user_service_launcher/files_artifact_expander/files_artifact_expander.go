@@ -8,8 +8,6 @@ package files_artifact_expander
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/container_name_provider"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
@@ -41,21 +39,18 @@ type FilesArtifactExpander struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
-
 	testNetworkId string
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 }
 
-func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker) *FilesArtifactExpander {
-	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker}
+func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker) *FilesArtifactExpander {
+	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker}
 }
 
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		ctx context.Context,
-		serviceId service_network_types.ServiceID,  // Service ID for whom the artifacts are being expanded into volumes
 		artifactToVolName map[suite_execution_volume.Artifact]string) error {
 	// TODO PERF: parallelize this to increase speed
 	for artifact, volumeName := range artifactToVolName {
@@ -67,8 +62,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToVolRoot()
 		artifactFilepathOnExpanderContainer := path.Join(
 			suiteExVolMntDirpathOnExpander,
-			artifactRelativeFilepath,
-		)
+			artifactRelativeFilepath)
 
 		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
 
@@ -77,8 +71,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			volumeName:                        destVolMntDirpathOnExpander,
 		}
 
-		containerNameElems := expander.containerNameElemsProvider.GetForFilesArtifactExpander(serviceId, artifact.GetUrlHash())
-		if err := expander.runExpanderContainer(ctx, containerNameElems, containerCmd, volumeMounts); err != nil {
+		if err := expander.runExpanderContainer(ctx, containerCmd, volumeMounts); err != nil {
 			return stacktrace.Propagate(err, "An error occurred running the expander container")
 		}
 	}
@@ -90,7 +83,6 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 //  goes back into the IP pool
 func (expander *FilesArtifactExpander) runExpanderContainer(
 		ctx context.Context,
-		containerNameElems []string,
 		containerCmd []string,
 		volumeMounts map[string]string) error {
 	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a container
@@ -106,7 +98,6 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 	containerId, err := expander.dockerManager.CreateAndStartContainer(
 		ctx,
 		dockerImage,
-		containerNameElems,
 		expander.testNetworkId,
 		containerIp,
 		map[docker_manager.ContainerCapability]bool{},
