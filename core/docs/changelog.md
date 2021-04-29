@@ -1,3 +1,9 @@
+# 1.13.0
+NOTE: Contains the changes in 1.12.1, which were incorrectly released as a patch version bump
+
+# 1.12.2
+NOTE: Undoes 1.12.1, which should have been released as a minor version bump
+
 # 1.12.1
 NOTE: Undoes 1.12.0, which should have been pushed as a minor version bump
 
