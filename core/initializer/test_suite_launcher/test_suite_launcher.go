@@ -113,18 +113,18 @@ Launches a new testsuite container for providing testsuite metadata to the initi
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		ctx context.Context,
 		log *logrus.Logger,
-		dockerManager *docker_manager.DockerManager) (containerId string, err error) {
+		dockerManager *docker_manager.DockerManager) (containerId string, containerIpAddr string, err error) {
 	functionCompletedSuccessfully := false
 
 	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(ctx, bridgeNetworkName)
 	if err != nil {
-		return "", stacktrace.Propagate(
+		return "", "", stacktrace.Propagate(
 			err,
 			"An error occurred getting the network IDs matching the '%v' network",
 			bridgeNetworkName)
 	}
 	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
-		return "", stacktrace.NewError(
+		return "", "", stacktrace.NewError(
 			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
 			len(bridgeNetworkIds),
 			bridgeNetworkName)
@@ -133,7 +133,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 
 	testsuiteEnvVars, err := launcher.generateMetadataProvidingEnvVars()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
+		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
 
 	suiteContainerDesc := "metadata-providing testsuite container"
@@ -152,7 +152,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		testsuiteEnvVars,
 	)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
+		return "", "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
@@ -163,8 +163,13 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	)
 	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, debuggerPortHostBinding)
 
+	ipAddr, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, testsuiteContainerId)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error occurred getting the metadata-providing testsuite IP addr on network '%v'", bridgeNetworkName)
+	}
+
 	functionCompletedSuccessfully = true
-	return testsuiteContainerId, nil
+	return testsuiteContainerId, ipAddr, nil
 }
 
 /*

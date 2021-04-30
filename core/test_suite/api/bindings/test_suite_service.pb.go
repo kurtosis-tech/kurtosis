@@ -314,19 +314,19 @@ var file_test_suite_service_proto_rawDesc = []byte{
 	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61,
 	0x6d, 0x65, 0x22, 0x2a, 0x0a, 0x0b, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x41, 0x72, 0x67,
 	0x73, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x32, 0xb1,
-	0x01, 0x0a, 0x14, 0x54, 0x65, 0x73, 0x74, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x65,
-	0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12,
-	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x21, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73,
-	0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69,
-	0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x09,
-	0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x74, 0x65, 0x73, 0x74,
-	0x5f, 0x73, 0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x75, 0x70,
-	0x54, 0x65, 0x73, 0x74, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
-	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
-	0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x32, 0xad,
+	0x01, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75,
+	0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x16, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
+	0x70, 0x74, 0x79, 0x1a, 0x21, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x75, 0x69, 0x74, 0x65,
+	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65,
+	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x09, 0x53, 0x65, 0x74, 0x75,
+	0x70, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x75, 0x69,
+	0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73, 0x74,
+	0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -355,10 +355,10 @@ var file_test_suite_service_proto_depIdxs = []int32{
 	4, // 0: test_suite_api.TestSuiteMetadata.test_metadata:type_name -> test_suite_api.TestSuiteMetadata.TestMetadataEntry
 	5, // 1: test_suite_api.TestMetadata.used_artifact_urls:type_name -> test_suite_api.TestMetadata.UsedArtifactUrlsEntry
 	1, // 2: test_suite_api.TestSuiteMetadata.TestMetadataEntry.value:type_name -> test_suite_api.TestMetadata
-	6, // 3: test_suite_api.TestExecutionService.GetTestSuiteMetadata:input_type -> google.protobuf.Empty
-	2, // 4: test_suite_api.TestExecutionService.SetupTest:input_type -> test_suite_api.SetupTestArgs
-	0, // 5: test_suite_api.TestExecutionService.GetTestSuiteMetadata:output_type -> test_suite_api.TestSuiteMetadata
-	6, // 6: test_suite_api.TestExecutionService.SetupTest:output_type -> google.protobuf.Empty
+	6, // 3: test_suite_api.TestSuiteService.GetTestSuiteMetadata:input_type -> google.protobuf.Empty
+	2, // 4: test_suite_api.TestSuiteService.SetupTest:input_type -> test_suite_api.SetupTestArgs
+	0, // 5: test_suite_api.TestSuiteService.GetTestSuiteMetadata:output_type -> test_suite_api.TestSuiteMetadata
+	6, // 6: test_suite_api.TestSuiteService.SetupTest:output_type -> google.protobuf.Empty
 	5, // [5:7] is the sub-list for method output_type
 	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -449,108 +449,108 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// TestExecutionServiceClient is the client API for TestExecutionService service.
+// TestSuiteServiceClient is the client API for TestSuiteService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type TestExecutionServiceClient interface {
+type TestSuiteServiceClient interface {
 	GetTestSuiteMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestSuiteMetadata, error)
 	SetupTest(ctx context.Context, in *SetupTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type testExecutionServiceClient struct {
+type testSuiteServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewTestExecutionServiceClient(cc grpc.ClientConnInterface) TestExecutionServiceClient {
-	return &testExecutionServiceClient{cc}
+func NewTestSuiteServiceClient(cc grpc.ClientConnInterface) TestSuiteServiceClient {
+	return &testSuiteServiceClient{cc}
 }
 
-func (c *testExecutionServiceClient) GetTestSuiteMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestSuiteMetadata, error) {
+func (c *testSuiteServiceClient) GetTestSuiteMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestSuiteMetadata, error) {
 	out := new(TestSuiteMetadata)
-	err := c.cc.Invoke(ctx, "/test_suite_api.TestExecutionService/GetTestSuiteMetadata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/test_suite_api.TestSuiteService/GetTestSuiteMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *testExecutionServiceClient) SetupTest(ctx context.Context, in *SetupTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *testSuiteServiceClient) SetupTest(ctx context.Context, in *SetupTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/test_suite_api.TestExecutionService/SetupTest", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/test_suite_api.TestSuiteService/SetupTest", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// TestExecutionServiceServer is the server API for TestExecutionService service.
-type TestExecutionServiceServer interface {
+// TestSuiteServiceServer is the server API for TestSuiteService service.
+type TestSuiteServiceServer interface {
 	GetTestSuiteMetadata(context.Context, *emptypb.Empty) (*TestSuiteMetadata, error)
 	SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error)
 }
 
-// UnimplementedTestExecutionServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedTestExecutionServiceServer struct {
+// UnimplementedTestSuiteServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedTestSuiteServiceServer struct {
 }
 
-func (*UnimplementedTestExecutionServiceServer) GetTestSuiteMetadata(context.Context, *emptypb.Empty) (*TestSuiteMetadata, error) {
+func (*UnimplementedTestSuiteServiceServer) GetTestSuiteMetadata(context.Context, *emptypb.Empty) (*TestSuiteMetadata, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTestSuiteMetadata not implemented")
 }
-func (*UnimplementedTestExecutionServiceServer) SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error) {
+func (*UnimplementedTestSuiteServiceServer) SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetupTest not implemented")
 }
 
-func RegisterTestExecutionServiceServer(s *grpc.Server, srv TestExecutionServiceServer) {
-	s.RegisterService(&_TestExecutionService_serviceDesc, srv)
+func RegisterTestSuiteServiceServer(s *grpc.Server, srv TestSuiteServiceServer) {
+	s.RegisterService(&_TestSuiteService_serviceDesc, srv)
 }
 
-func _TestExecutionService_GetTestSuiteMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TestSuiteService_GetTestSuiteMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TestExecutionServiceServer).GetTestSuiteMetadata(ctx, in)
+		return srv.(TestSuiteServiceServer).GetTestSuiteMetadata(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/test_suite_api.TestExecutionService/GetTestSuiteMetadata",
+		FullMethod: "/test_suite_api.TestSuiteService/GetTestSuiteMetadata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestExecutionServiceServer).GetTestSuiteMetadata(ctx, req.(*emptypb.Empty))
+		return srv.(TestSuiteServiceServer).GetTestSuiteMetadata(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TestExecutionService_SetupTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TestSuiteService_SetupTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetupTestArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TestExecutionServiceServer).SetupTest(ctx, in)
+		return srv.(TestSuiteServiceServer).SetupTest(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/test_suite_api.TestExecutionService/SetupTest",
+		FullMethod: "/test_suite_api.TestSuiteService/SetupTest",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestExecutionServiceServer).SetupTest(ctx, req.(*SetupTestArgs))
+		return srv.(TestSuiteServiceServer).SetupTest(ctx, req.(*SetupTestArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _TestExecutionService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "test_suite_api.TestExecutionService",
-	HandlerType: (*TestExecutionServiceServer)(nil),
+var _TestSuiteService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "test_suite_api.TestSuiteService",
+	HandlerType: (*TestSuiteServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetTestSuiteMetadata",
-			Handler:    _TestExecutionService_GetTestSuiteMetadata_Handler,
+			Handler:    _TestSuiteService_GetTestSuiteMetadata_Handler,
 		},
 		{
 			MethodName: "SetupTest",
-			Handler:    _TestExecutionService_SetupTest_Handler,
+			Handler:    _TestSuiteService_SetupTest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -3,7 +3,7 @@ package test_suite_api;
 
 import "google/protobuf/empty.proto";
 
-service TestExecutionService {
+service TestSuiteService {
   rpc GetTestSuiteMetadata(google.protobuf.Empty) returns (TestSuiteMetadata) {};
 
   rpc SetupTest(SetupTestArgs) returns (google.protobuf.Empty) {};

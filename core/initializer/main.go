@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
+	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -228,7 +229,6 @@ func main() {
 
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		suiteExecutionVolume,
 		dockerClient,
 		testsuiteLauncher)
 	if err != nil {
@@ -313,7 +313,7 @@ func getAccessController(
 	return accessController
 }
 
-func verifyNoDelimiterCharInTestNames(suiteMetadata *test_suite_metadata_acquirer.TestSuiteMetadata) error {
+func verifyNoDelimiterCharInTestNames(suiteMetadata *bindings.TestSuiteMetadata) error {
 	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
 	//  error and loudly alert the user
 	for testName, _ := range suiteMetadata.TestMetadata {
@@ -327,7 +327,7 @@ func verifyNoDelimiterCharInTestNames(suiteMetadata *test_suite_metadata_acquire
 	return nil
 }
 
-func printTestsInSuite(suiteMetadata *test_suite_metadata_acquirer.TestSuiteMetadata) {
+func printTestsInSuite(suiteMetadata *bindings.TestSuiteMetadata) {
 	testNames := []string{}
 	for name := range suiteMetadata.TestMetadata {
 		testNames = append(testNames, name)
