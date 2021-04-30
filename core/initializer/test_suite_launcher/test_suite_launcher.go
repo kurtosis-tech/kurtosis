@@ -7,19 +7,14 @@ package test_suite_launcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	test_suite_container_mountpoints2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_container_mountpoints"
-	test_suite_env_vars2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_env_vars"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -112,13 +107,123 @@ func NewTestsuiteContainerLauncher(
 	}, nil
 }
 
-func (launcher TestsuiteContainerLauncher) LaunchSuiteContainer() {
+/*
+Launches a new testsuite container for providing testsuite metadata to the initializer
+*/
+func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
+		ctx context.Context,
+		log *logrus.Logger,
+		dockerManager *docker_manager.DockerManager) (containerId string, err error) {
+	functionCompletedSuccessfully := false
 
+	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(ctx, bridgeNetworkName)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting the network IDs matching the '%v' network",
+			bridgeNetworkName)
+	}
+	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
+		return "", stacktrace.NewError(
+			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
+			len(bridgeNetworkIds),
+			bridgeNetworkName)
+	}
+	bridgeNetworkId := bridgeNetworkIds[0]
+
+	testsuiteEnvVars, err := launcher.generateMetadataProvidingEnvVars()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
+	}
+
+	suiteContainerDesc := "metadata-providing testsuite container"
+	log.Infof("Launching %v...", suiteContainerDesc)
+	testsuiteContainerNameElems := []string{
+		launcher.executionInstanceUuid,
+		metadataAcquisitionContainerNameLabel,
+		testsuiteContainerNameSuffix,
+	}
+	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+		ctx,
+		dockerManager,
+		testsuiteContainerNameElems,
+		bridgeNetworkId,
+		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
+		testsuiteEnvVars,
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
+	}
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		log,
+		dockerManager,
+		testsuiteContainerId,
+		func() bool { return functionCompletedSuccessfully},
+	)
+	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, debuggerPortHostBinding)
+
+	functionCompletedSuccessfully = true
+	return testsuiteContainerId, nil
+}
+
+/*
+Launches a new testsuite container to run a test
+*/
+func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
+		ctx context.Context,
+		log *logrus.Logger,
+		dockerManager *docker_manager.DockerManager,
+		networkId string,
+		testName string,
+		kurtosisApiContainerIp net.IP,
+		testsuiteContainerIp net.IP) (containerId string, resultErr error){
+	log.Debugf(
+		"Test suite container IP: %v; kurtosis API container IP: %v",
+		testsuiteContainerIp.String(),
+		kurtosisApiContainerIp.String())
+
+	functionCompletedSuccessfully := false
+
+	testSuiteEnvVars, err := launcher.generateTestRunningEnvVars(kurtosisApiContainerIp.String(), testName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
+	}
+
+	suiteContainerDesc := "test-running testsuite container"
+	log.Infof("Launching %v....", suiteContainerDesc)
+	suiteContainerNameElems := []string{
+		launcher.executionInstanceUuid,
+		testName,
+		testsuiteContainerNameSuffix,
+	}
+	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+		ctx,
+		dockerManager,
+		suiteContainerNameElems,
+		networkId,
+		testsuiteContainerIp,
+		testSuiteEnvVars)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
+	}
+	defer killContainerIfNotFunctionSuccess(
+		ctx,
+		log,
+		dockerManager,
+		suiteContainerId,
+		func() bool { return functionCompletedSuccessfully },
+	)
+	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, debuggerPortHostBinding)
+
+	functionCompletedSuccessfully = true
+	return suiteContainerId, nil
 }
 
 /*
 Launches a new testsuite container to acquire testsuite metadata
  */
+/*
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 		ctx context.Context,
 		log *logrus.Logger,
@@ -224,10 +329,12 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainers(
 	functionCompletedSuccessfully = true
 	return testsuiteContainerId, kurtosisApiContainerId, nil
 }
+ */
 
 /*
 Launches a new testsuite container to run a test
 */
+/*
 func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 		ctx context.Context,
 		log *logrus.Logger,
@@ -338,6 +445,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 	functionCompletedSuccessfully = true
 	return suiteContainerId, kurtosisApiContainerId, nil
 }
+ */
 
 // ===============================================================================================
 //                                 Private helper functions
@@ -387,7 +495,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		envVars,
 		map[string]string{}, 		// No bind mounts for a testsuite container
 		map[string]string{
-			launcher.suiteExecutionVolName: test_suite_container_mountpoints2.TestsuiteContainerSuiteExVolMountpoint,
+			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
 		},
 		false, // The testsuite container should never be able to access the machine hosting Docker
 	)
@@ -414,25 +522,49 @@ func logSuccessfulSuiteContainerLaunch(
 
 }
 
+func (launcher TestsuiteContainerLauncher) generateMetadataProvidingEnvVars() (map[string]string, error) {
+	result, err := launcher.generateTestSuiteEnvVars(test_suite_env_vars.MetadataProvidingMode, "", "")
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating the metadata-providing env vars")
+	}
+	return result, nil
+}
+
+func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(
+		kurtosisApiIp string,
+		testName string) (map[string]string, error) {
+	result, err := launcher.generateTestSuiteEnvVars(test_suite_env_vars.TestRunningMode, kurtosisApiIp, testName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating the test-running env vars")
+	}
+	return result, nil
+}
 
 /*
 Generates the map of environment variables needed to run a test suite container
-
-NOTE: exactly one of metadata_filepath or test_name must be non-empty!
 */
-func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiIp string) (map[string]string, error) {
+func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(
+		mode test_suite_env_vars.TestSuiteMode,
+		kurtosisApiIp string,
+		testName string) (map[string]string, error) {
 	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPortObj.Int())
-	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
+	kurtosisApiSocket := ""
+	if mode == test_suite_env_vars.TestRunningMode {
+		kurtosisApiSocket = fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
+	}
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
-		test_suite_env_vars2.KurtosisApiSocketEnvVar: kurtosisApiSocket,
-		test_suite_env_vars2.LogLevelEnvVar:          launcher.suiteLogLevel,
-		test_suite_env_vars2.DebuggerPortEnvVar:      debuggerPortIntStr,
-		test_suite_env_vars2.CustomParamsJson:        launcher.customParamsJson,
+		test_suite_env_vars.CustomParamsJson:        launcher.customParamsJson,
+		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
+		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
+		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
+		test_suite_env_vars.ModeEnvVar: 			 string(mode),
+		test_suite_env_vars.TestNameEnvVar:          testName,
 	}
 	return standardVars, nil
 }
 
+/*
 func genApiContainerEnvVars(
 		logLevel logrus.Level,
 		mode api_container_modes.ApiContainerMode,
@@ -516,6 +648,8 @@ func (launcher TestsuiteContainerLauncher) genSuiteMetadataSerializationApiConta
 		argsStr), nil
 
 }
+
+ */
 
 // This function is intended to be run as a deferred function, to kill a container that was started if the
 //  outer function exits with an error

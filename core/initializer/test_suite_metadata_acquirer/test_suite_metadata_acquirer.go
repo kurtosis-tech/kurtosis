@@ -7,20 +7,12 @@ package test_suite_metadata_acquirer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
-	"os"
 	"strings"
 )
 
@@ -29,6 +21,11 @@ const (
 	metadataSendingTestsuiteContainerTitle = "Metadata-Sending Testsuite Container"
 )
 
+func GetTestSuiteMetadata() {
+
+}
+
+/*
 func GetTestSuiteMetadata(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		dockerClient *client.Client,
@@ -129,6 +126,8 @@ func GetTestSuiteMetadata(
 
 	return &suiteMetadata, nil
 }
+
+ */
 
 func printBothContainerLogs(
 		ctx context.Context,

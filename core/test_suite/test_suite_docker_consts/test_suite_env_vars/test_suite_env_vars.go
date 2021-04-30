@@ -10,10 +10,17 @@ A package to contain the contract of Docker environment variables that will be p
 	the testsuite to run it
  */
 
+type TestSuiteMode string
 const (
-	DebuggerPortEnvVar      = "DEBUGGER_PORT"
-	KurtosisApiSocketEnvVar = "KURTOSIS_API_SOCKET"
-	LogLevelEnvVar          = "LOG_LEVEL"
 	CustomParamsJson        = "CUSTOM_PARAMS_JSON"
+	DebuggerPortEnvVar      = "DEBUGGER_PORT"
+	KurtosisApiSocketEnvVar = "KURTOSIS_API_SOCKET" // Only populated if in test-running mode
+	LogLevelEnvVar          = "LOG_LEVEL"
+	ModeEnvVar				= "MODE" // Whether the testsuite is in metadata-providing mode or test-running mode
+	TestNameEnvVar			= "TEST_NAME" // Only populated if in test-running mode
+
+	// Mode values
+	MetadataProvidingMode TestSuiteMode = "METADATA_PROVIDING_MODE"
+	TestRunningMode TestSuiteMode = "TEST_RUNNING_MODE"
 )
 
