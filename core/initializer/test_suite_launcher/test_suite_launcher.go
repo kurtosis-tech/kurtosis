@@ -18,8 +18,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_docker_consts/test_suite_env_vars"
+	test_suite_container_mountpoints2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_container_mountpoints"
+	test_suite_env_vars2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_env_vars"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -110,6 +110,10 @@ func NewTestsuiteContainerLauncher(
 		customParamsJson:        customParamsJson,
 		hostPortBindingSupplier: hostPortBindingSupplier,
 	}, nil
+}
+
+func (launcher TestsuiteContainerLauncher) LaunchSuiteContainer() {
+
 }
 
 /*
@@ -383,7 +387,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		envVars,
 		map[string]string{}, 		// No bind mounts for a testsuite container
 		map[string]string{
-			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
+			launcher.suiteExecutionVolName: test_suite_container_mountpoints2.TestsuiteContainerSuiteExVolMountpoint,
 		},
 		false, // The testsuite container should never be able to access the machine hosting Docker
 	)
@@ -421,10 +425,10 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiI
 	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
-		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
-		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
-		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
-		test_suite_env_vars.CustomParamsJson: launcher.customParamsJson,
+		test_suite_env_vars2.KurtosisApiSocketEnvVar: kurtosisApiSocket,
+		test_suite_env_vars2.LogLevelEnvVar:          launcher.suiteLogLevel,
+		test_suite_env_vars2.DebuggerPortEnvVar:      debuggerPortIntStr,
+		test_suite_env_vars2.CustomParamsJson:        launcher.customParamsJson,
 	}
 	return standardVars, nil
 }
