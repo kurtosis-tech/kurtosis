@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package api_container_params_json
+package api_container_env_var_values
 
 import (
 	"github.com/palantir/stacktrace"
@@ -78,7 +78,7 @@ func NewTestExecutionArgs(
 		// testName string,
 		suiteExecutionVolumeName string,
 		// testSuiteContainerId string,
-		takenIpAddrs []string,
+		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
 		hostPortBindingSupplierParams *HostPortBindingSupplierParams) (*TestExecutionArgs, error) {
 	result := TestExecutionArgs{

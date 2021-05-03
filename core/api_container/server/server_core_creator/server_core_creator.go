@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
@@ -45,7 +46,7 @@ func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (serve
 		logrus.Debugf("Successfully created suite metadata-serializing server core")
 		return result,  nil
 	case api_container_modes.TestExecutionMode:
-		var args api_container_params_json.TestExecutionArgs
+		var args api_container_env_var_values.TestExecutionArgs
 		if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred deserializing the test execution args JSON")
 		}
@@ -65,7 +66,7 @@ func Create(mode api_container_modes.ApiContainerMode, paramsJson string) (serve
 // ===============================================================================================
 func createTestExecutionCore(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-		args api_container_params_json.TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
+		args api_container_env_var_values.TestExecutionArgs) (*test_execution.TestExecutionServerCore, error) {
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")

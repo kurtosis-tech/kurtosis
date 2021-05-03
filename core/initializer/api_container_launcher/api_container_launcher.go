@@ -12,7 +12,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
@@ -332,10 +332,10 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		isPartitioningEnabled bool) (map[string]string, error) {
-	var hostPortBindingSupplierParams *api_container_params_json.HostPortBindingSupplierParams = nil
+	var hostPortBindingSupplierParams *api_container_env_var_values.HostPortBindingSupplierParams = nil
 	hostPortBindingSupplier := launcher.hostPortBindingSupplier
 	if hostPortBindingSupplier != nil {
-		hostPortBindingSupplierParams = api_container_params_json.NewHostPortBindingSupplierParams(
+		hostPortBindingSupplierParams = api_container_env_var_values.NewHostPortBindingSupplierParams(
 			hostPortBindingSupplier.GetInterfaceIp(),
 			hostPortBindingSupplier.GetProtocol(),
 			hostPortBindingSupplier.GetPortRangeStart(),
@@ -344,7 +344,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		)
 	}
 
-	args, err := api_container_params_json.NewTestExecutionArgs(
+	args, err := api_container_env_var_values.NewTestExecutionArgs(
 		launcher.executionInstanceUuid,
 		networkId,
 		subnetMask,

@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	container_name_provider2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/container_name_provider"
@@ -92,7 +92,7 @@ func createApiContainerService(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		paramsJsonStr string) (*server.ApiContainerService, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_params_json.TestExecutionArgs
+	var args api_container_env_var_values.TestExecutionArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
