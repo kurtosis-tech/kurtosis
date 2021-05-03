@@ -44,11 +44,6 @@ type testExecutionService struct {
 	dockerManager             *docker_manager.DockerManager
 	serviceNetwork            *service_network.ServiceNetwork
 	testName                  string
-	testSetupTimeoutInSeconds uint32
-	testRunTimeoutInSeconds   uint32
-	testSuiteContainerId      string
-	stateMachine              *testExecutionServiceStateMachine
-	shutdownChan              chan int
 }
 
 func newTestExecutionService(

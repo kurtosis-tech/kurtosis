@@ -20,6 +20,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -27,9 +28,8 @@ import (
 Convenience struct whose only purpose is launching user services
  */
 type UserServiceLauncher struct {
-	executionInstanceId string
-
-	testName string
+	// Elements which will get prefixed to the volume name when doing files artifact expansion
+	filesArtifactExpansionVolumeNamePrefixElems []string
 
 	dockerManager *docker_manager.DockerManager
 
@@ -50,9 +50,11 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(executionInstanceId string, testName string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{executionInstanceId: executionInstanceId, testName: testName, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, freeHostPortBindingSupplier: freeHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
+func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, freeHostPortBindingSupplier: freeHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
+
+
 
 /**
 Launches a testnet service with the given parameters
@@ -149,11 +151,11 @@ func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
 		serviceId service_network_types.ServiceID,
 		artifactUrlHash string) string {
 	timestampStr := time.Now().Format(volume_naming_consts.GoTimestampFormat)
+	prefix := strings.Join(launcher.filesArtifactExpansionVolumeNamePrefixElems, "_")
 	return fmt.Sprintf(
-		"%v_%v_%v_%v_%v",
+		"%v_%v_%v_%v",
 		timestampStr,
-		launcher.executionInstanceId,
-		launcher.testName,
+		prefix,
 		serviceId,
 		artifactUrlHash)
 }

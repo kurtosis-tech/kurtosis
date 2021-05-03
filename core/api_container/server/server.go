@@ -41,7 +41,6 @@ func (server ApiContainerServer) Run() int {
 	mainService := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
 
 	suiteRegistrationChan := make(chan interface{}, 1)
-	suiteAction := server.core.GetSuiteAction()
 	suiteRegistrationSvc := newSuiteRegistrationService(suiteAction, mainService, suiteRegistrationChan)
 	bindings.RegisterSuiteRegistrationServiceServer(grpcServer, suiteRegistrationSvc)
 
