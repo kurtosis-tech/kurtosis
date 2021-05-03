@@ -7,8 +7,6 @@ package server
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -21,8 +19,6 @@ import (
 )
 
 const (
-	// If no suite registers within this time, the API container will exit with an error
-	suiteRegistrationTimeout = 10 * time.Second
 	grpcServerStopGracePeriod = 10 * time.Second
 )
 

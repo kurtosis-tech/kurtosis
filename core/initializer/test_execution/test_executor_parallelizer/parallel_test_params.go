@@ -6,7 +6,7 @@
 package test_executor_parallelizer
 
 import (
-	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
 )
 
 /*

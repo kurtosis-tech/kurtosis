@@ -15,8 +15,8 @@ BINDINGS_OUTPUT_DIRNAME="bindings"
 # Dirpaths, relative to the repo root, where protobuf files live
 # The bindings for the Protobuf files will be generated inside a 'bindings' directory in this directory
 PROTOBUF_RELATIVE_DIRPATHS=(
-    "api_container/api"
-    "test_suite/api"
+    "api_container/rpc_api"
+    "test_suite/rpc_api"
 )
 
 # =============================== MAIN LOGIC =======================================================

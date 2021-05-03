@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/bindings"
 	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	partition_topology2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
 	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
