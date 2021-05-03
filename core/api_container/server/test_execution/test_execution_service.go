@@ -84,13 +84,6 @@ func (service *testExecutionService) HandleSuiteRegistrationEvent() error {
 	return nil
 }
 
-func (service *testExecutionService) GetTestExecutionInfo(_ context.Context, _ *emptypb.Empty) (*bindings.TestExecutionInfo, error) {
-	result := &bindings.TestExecutionInfo{
-		TestName: service.testName,
-	}
-	return result, nil
-}
-
 func (service *testExecutionService) RegisterTestSetup(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
 	if err := service.stateMachine.assertAndAdvance(waitingForTestSetupRegistration); err != nil {
 		// TODO IP: Leaks internal information about the API container

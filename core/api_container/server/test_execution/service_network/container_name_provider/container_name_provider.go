@@ -15,13 +15,11 @@ const (
 )
 
 type ContainerNameElementsProvider struct {
-	executionInstanceUuid string
-
-	testName string
+	prefixElems []string
 }
 
-func NewContainerNameElementsProvider(executionInstanceUuid string, testName string) *ContainerNameElementsProvider {
-	return &ContainerNameElementsProvider{executionInstanceUuid: executionInstanceUuid, testName: testName}
+func NewContainerNameElementsProvider(prefixElems []string) *ContainerNameElementsProvider {
+	return &ContainerNameElementsProvider{prefixElems: prefixElems}
 }
 
 func (provider ContainerNameElementsProvider) GetForUserService(serviceId service_network_types.ServiceID) []string {
@@ -46,5 +44,5 @@ func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(servic
 }
 
 func (provider ContainerNameElementsProvider) addPrefix(toElems []string) []string {
-	return append([]string{provider.executionInstanceUuid, provider.testName}, toElems...)
+	return append(provider.prefixElems, toElems...)
 }

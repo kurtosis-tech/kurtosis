@@ -27,12 +27,6 @@ func NewSuiteExecutionVolume(mountDirpath string) *SuiteExecutionVolume {
 	return &SuiteExecutionVolume{mountDirpath: mountDirpath}
 }
 
-func (volume SuiteExecutionVolume) GetSuiteMetadataFile() *File {
-	relativeFilepath := suiteMetadataFilename
-	absoluteFilepath := path.Join(volume.mountDirpath, relativeFilepath)
-	return newFile(absoluteFilepath, relativeFilepath)
-}
-
 func (volume SuiteExecutionVolume) GetTestExecutionDirectory(testExecutionId string) (*TestExecutionDirectory, error) {
 	relativeDirpath := testExecutionId
 	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)

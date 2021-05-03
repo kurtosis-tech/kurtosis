@@ -27,31 +27,25 @@ const (
 )
 
 type ApiContainerServer struct {
-	core ApiContainerServerCore
+	core *ApiContainerService
 }
 
-func NewApiContainerServer(core ApiContainerServerCore) *ApiContainerServer {
+func NewApiContainerServer(core *ApiContainerService) *ApiContainerServer {
 	return &ApiContainerServer{core: core}
 }
 
-func (server ApiContainerServer) Run() int {
+func (server ApiContainerServer) Run() error {
 	grpcServer := grpc.NewServer()
-
-	shutdownChan := make(chan int, 1)
-	mainService := server.core.CreateAndRegisterService(shutdownChan, grpcServer)
-
-	suiteRegistrationChan := make(chan interface{}, 1)
-	suiteRegistrationSvc := newSuiteRegistrationService(suiteAction, mainService, suiteRegistrationChan)
-	bindings.RegisterSuiteRegistrationServiceServer(grpcServer, suiteRegistrationSvc)
 
 	listenAddressStr := fmt.Sprintf(":%v", api_container_server_consts.ListenPort)
 	listener, err := net.Listen(api_container_server_consts.ListenProtocol, listenAddressStr)
 	if err != nil {
-		logrus.Errorf("An error occurred creating the listener on %v/%v",
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating the listener on %v/%v",
 			api_container_server_consts.ListenProtocol,
-			listenAddressStr)
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		return api_container_exit_codes.StartupError
+			listenAddressStr,
+		)
 	}
 
 	// Docker will send SIGTERM to end the process, and we need to catch it to stop gracefully
@@ -68,10 +62,9 @@ func (server ApiContainerServer) Run() int {
 		grpcServerResultChan <- resultErr
 	}()
 
-	exitCode := waitForExitCondition(suiteRegistrationChan, termSignalChan, shutdownChan, mainService)
+	// Wait until we get a shutdown signal
+	<- termSignalChan
 
-	// Use force-stop rather than graceful stop so that a hung RPC call to the server (e.g. "AddService" that's
-	// pulling a super-huge image) doesn't prevent the API container from shutting down
 	serverStoppedChan := make(chan interface{})
 	go func() {
 		grpcServer.GracefulStop()
@@ -85,16 +78,15 @@ func (server ApiContainerServer) Run() int {
 		grpcServer.Stop()
 		logrus.Info("gRPC server was forcefully stopped")
 	}
-
 	if err := <- grpcServerResultChan; err != nil {
-		logrus.Errorf("gRPC server returned an error after it was done serving:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		exitCode = api_container_exit_codes.ShutdownError
+		// Technically this doesn't need to be an error, but we make it so to fail loudly
+		return stacktrace.Propagate(err, "gRPC server returned an error after it was done serving")
 	}
 
-	return exitCode
+	return nil
 }
 
+/*
 func waitForExitCondition(
 		suiteRegistrationChan chan interface{},
 		termSignalChan chan os.Signal,
@@ -137,3 +129,5 @@ func waitForExitCondition(
 		return api_container_exit_codes.ReceivedTermSignal
 	}
 }
+
+ */

@@ -5,14 +5,7 @@
 
 package server
 
-import (
-	"context"
-	"errors"
-	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"sync"
-)
-
+/*
 // Service that allows for a testsuite container to register itself exactly once
 type suiteRegistrationService struct {
 	mutex *sync.Mutex
@@ -51,3 +44,4 @@ func (service *suiteRegistrationService) RegisterSuite(_ context.Context, _ *emp
 	response := &bindings.SuiteRegistrationResponse{SuiteAction: service.suiteAction}
 	return response, nil
 }
+ */

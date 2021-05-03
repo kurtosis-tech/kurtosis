@@ -53,8 +53,12 @@ type TestExecutionArgs struct {
 	SuiteExecutionVolumeName string	`json:"suiteExecutionVolumeName"`
 	// TestSuiteContainerId     string	`json:"testSuiteContainerId"`
 
-	// These IP addrs tell the API container that it shouldn't use these IPs
-	TakenIpAddrs			 []string `json:"takenIpAddrs"`
+	// Name elements used for identifying the enclave in which this instance of the API container is
+	//  running. For example, when running a test, this will be [execution_instance_uuid, test_name]
+	EnclaveNameElems []string `json:"enclaveNameElems"`
+
+	// Instructs the API container that these IP addrs are already taken and shouldn't be used
+	TakenIpAddrs			 map[string]bool `json:"takenIpAddrsSet"`
 
 	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
 

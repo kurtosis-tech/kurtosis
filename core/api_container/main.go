@@ -74,7 +74,7 @@ func main() {
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 	paramsJson := *paramsJsonArg
 
-	testExecutionCore, err := setup(suiteExecutionVolume, paramsJson)
+	testExecutionCore, err := createServerCore(suiteExecutionVolume, paramsJson)
 	if err != nil {
 		logrus.Errorf("An error occurred setting up the server with params JSON '%v':", paramsJson)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -89,9 +89,9 @@ func main() {
 	os.Exit(int(exitCode))
 }
 
-func setup(
+func createServerCore(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-		paramsJsonStr string) (*test_execution.TestExecutionServerCore, error) {
+		paramsJsonStr string) (*server.ApiContainerService, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_params_json.TestExecutionArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
@@ -103,16 +103,13 @@ func setup(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(
-		args.ExecutionInstanceId,
-		args.TestName,
-	)
+	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
 
-	freeIpAddrTracker, err := createFreeIpAddrTracker(
+	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
+		logrus.StandardLogger(),
 		args.SubnetMask,
-		args.GatewayIpAddr,
-		args.ApiContainerIpAddr,
-		args.TestSuiteContainerIpAddr)
+		args.TakenIpAddrs,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
@@ -186,10 +183,11 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createFreeIpAddrTracker(
-	networkSubnetMask string,
-	gatewayIp string,
-	apiContainerIp string,
-	testSuiteContainerIp string) (*commons.FreeIpAddrTracker, error){
+		networkSubnetMask string,
+		gatewayIp string,
+		takenIpAddrs
+		apiContainerIp string,
+		testSuiteContainerIp string) (*commons.FreeIpAddrTracker, error){
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		networkSubnetMask,
