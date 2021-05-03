@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
 	test_suite_server_consts2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_server_consts"
@@ -76,8 +77,10 @@ func RunTest(
 		subnetMask string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		apiContainerLauncher *api_container_launcher.ApiContainerLauncher,
-		testName string,
-		testMetadata bindings.TestMetadata) (bool, error) {
+		testParams parallel_test_params.ParallelTestParams) (bool, error) {
+
+	testName := testParams.TestName
+
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
@@ -145,7 +148,7 @@ func RunTest(
 		gatewayIp,
 		testRunningContainerIp,
 		kurtosisApiIp,
-		testMetadata.IsPartitioningEnabled,
+		testParams.IsPartitioningEnabled,
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
@@ -216,7 +219,7 @@ func RunTest(
 	log.Tracef("%vSetting up test...", initializerLogPrefix)
 	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
-		time.Duration(testMetadata.TestSetupTimeoutInSeconds) * time.Second,
+		time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second,
 	)
 	defer testSetupCtxCancelFunc()
 	setupArgs := &bindings.SetupTestArgs{
@@ -230,7 +233,7 @@ func RunTest(
 	log.Tracef("%vRunning test...", initializerLogPrefix)
 	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
-		time.Duration(testMetadata.TestSetupTimeoutInSeconds) * time.Second,
+		time.Duration(testParams.TestRunTimeoutSeconds) * time.Second,
 	)
 	defer testRunCtxCancelFunc()
 	runArgs := &bindings.RunTestArgs{

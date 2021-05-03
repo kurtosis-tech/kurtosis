@@ -8,8 +8,11 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
+	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -51,6 +54,14 @@ const (
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
 
+	// Can make these configurable if needed
+	hostPortTrackerInterfaceIp = "127.0.0.1"
+	hostPortTrackerStartRange = 8000
+	hostPortTrackerEndRange = 10000
+	// TODO This is wrong - we shouldn't actually specify the protocol at FreeHostPortBindingSupplier construction
+	//  time, but instead as a parameter to GetFreePort (so the protocol matches)
+	protocolForDebuggerPorts = "tcp"
+
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -58,8 +69,8 @@ const (
 	clientSecretArg             = "CLIENT_SECRET"
 	customParamsJson            = "CUSTOM_PARAMS_JSON"
 	doListArg                   = "DO_LIST"
-	executionUuid				= "EXECUTION_UUID"
-	isDebugModeArg 				= "IS_DEBUG_MODE"
+	executionUuidArg            = "EXECUTION_UUID"
+	isDebugModeArg              = "IS_DEBUG_MODE"
 	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
 	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
 	parallelismArg              = "PARALLELISM"
@@ -101,7 +112,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "Rather than running the tests, lists the tests available to run",
 		Type:     docker_flag_parser.BoolFlagType,
 	},
-	executionUuid: {
+	executionUuidArg: {
 		Required: true,
 		Default:  "",
 		HelpText: "UUID used for identifying everything associated with this run of Kurtosis",
@@ -207,26 +218,49 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	executionInstanceId := parsedFlags.GetString(executionUuid)
+	executionInstanceId := parsedFlags.GetString(executionUuidArg)
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
 
 	isDebugMode := parsedFlags.GetBool(isDebugModeArg)
 
-	testsuiteLauncher, err := test_suite_launcher.NewTestsuiteContainerLauncher(
+	suiteExecutionVolName := parsedFlags.GetString(suiteExecutionVolumeNameArg)
+
+	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
+	if isDebugMode {
+		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
+			docker_constants.HostMachineDomainInsideContainer,
+			hostPortTrackerInterfaceIp,
+			protocolForDebuggerPorts,
+			hostPortTrackerStartRange,
+			hostPortTrackerEndRange,
+			map[uint32]bool{}, // We don't know of any taken ports at this point
+		)
+		if err != nil {
+			logrus.Fatalf(
+				"An error occurred instanting the free host port binding supplier: %v",
+				err,
+			)
+			os.Exit(failureExitCode)
+		}
+		hostPortBindingSupplier = supplier
+	}
+
+	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
-		parsedFlags.GetString(suiteExecutionVolumeNameArg),
-		parsedFlags.GetString(kurtosisApiImageArg),
-		kurtosisLogLevel,
+		suiteExecutionVolName,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		parsedFlags.GetString(customParamsJson),
-		isDebugMode,
+		hostPortBindingSupplier,
 	)
-	if err != nil {
-		logrus.Errorf("An error occurred creating the testsuite launcher: %v", err)
-		os.Exit(failureExitCode)
-	}
 
+	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
+		executionInstanceId,
+		parsedFlags.GetString(kurtosisApiImageArg),
+		suiteExecutionVolName,
+		kurtosisLogLevel,
+		hostPortBindingSupplier,
+	)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
@@ -267,10 +301,12 @@ func main() {
 		executionInstanceId,
 		dockerClient,
 		artifactCache,
-		*suiteMetadata,
+		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
-		testsuiteLauncher)
+		testsuiteLauncher,
+		apiContainerLauncher,
+	)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)

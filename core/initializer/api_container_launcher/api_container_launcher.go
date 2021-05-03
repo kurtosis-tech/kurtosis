@@ -35,7 +35,9 @@ type ApiContainerLauncher struct {
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
-// TODO Constructor
+func NewApiContainerLauncher(executionInstanceUuid string, containerImage string, suiteExecutionVolName string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
+	return &ApiContainerLauncher{executionInstanceUuid: executionInstanceUuid, containerImage: containerImage, suiteExecutionVolName: suiteExecutionVolName, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
+}
 
 func (launcher ApiContainerLauncher) Launch(
 		ctx context.Context,
@@ -54,6 +56,7 @@ func (launcher ApiContainerLauncher) Launch(
 		gatewayIpAddr,
 		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
+		testName,
 		isPartitioningEnabled,
 	)
 	if err != nil {
@@ -331,6 +334,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		gatewayIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
+		testName string,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	var hostPortBindingSupplierParams *api_container_env_var_values2.HostPortBindingSupplierParams = nil
 	hostPortBindingSupplier := launcher.hostPortBindingSupplier
@@ -351,8 +355,12 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		gatewayIpAddr.String(),
 		launcher.suiteExecutionVolName,
 		[]string{
-			testSuiteContainerIpAddr.String(),
-			apiContainerIpAddr.String(),
+			launcher.executionInstanceUuid,
+			testName,
+		},
+		map[string]bool{
+			testSuiteContainerIpAddr.String(): true,
+			apiContainerIpAddr.String(): true,
 		},
 		isPartitioningEnabled,
 		hostPortBindingSupplierParams)

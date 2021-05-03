@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
@@ -60,10 +62,11 @@ func RunTests(
 		executionInstanceUuid string,
 		dockerClient *client.Client,
 		artifactCache *suite_execution_volume.ArtifactCache,
-		testSuiteMetadata bindings.TestSuiteMetadata,
+		testSuiteMetadata *bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
 		return false, stacktrace.Propagate(
@@ -134,7 +137,8 @@ func RunTests(
 		dockerClient,
 		testParallelism,
 		testParams,
-		testsuiteLauncher)
+		testsuiteLauncher,
+		apiContainerLauncher)
 	return allTestsPassed, nil
 }
 
@@ -143,7 +147,7 @@ func RunTests(
 func downloadUsedArtifacts(
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testNames map[string]bool,
-		suiteMetadata bindings.TestSuiteMetadata) error {
+		suiteMetadata *bindings.TestSuiteMetadata) error {
 	allTestMetadata := suiteMetadata.TestMetadata
 	// TODO PERF: parallelize to speed this up
 	for testName := range testNames {
@@ -166,7 +170,7 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		networkWidthBits uint32,
-		testSuiteMetadata bindings.TestSuiteMetadata) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
+		testSuiteMetadata *bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
@@ -185,7 +189,7 @@ func buildTestParams(
 	}
 
 	testIndex := 0
-	testParams := make(map[string]test_executor_parallelizer.ParallelTestParams)
+	testParams := make(map[string]parallel_test_params.ParallelTestParams)
 	for testName, _ := range testNamesToRun {
 		// Pick the next free available subnet IP, considering all the tests we've started previously
 		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, float64(networkWidthBits)))
@@ -198,7 +202,14 @@ func buildTestParams(
 			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
 		}
 
-		testParamsForTest := *test_executor_parallelizer.NewParallelTestParams(testName, subnetCidrStr, testMetadata)
+		testParamsForTest := *parallel_test_params.NewParallelTestParams(
+			testName,
+			subnetCidrStr,
+			testMetadata.TestSetupTimeoutInSeconds,
+			testMetadata.TestRunTimeoutInSeconds,
+			testMetadata.UsedArtifactUrls,
+			testMetadata.IsPartitioningEnabled,
+		)
 		logrus.Debugf(
 			"Built parallel test param for test '%v' with subnet CIDR string '%v', and test metadata '%v'",
 			testName,

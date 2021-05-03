@@ -13,30 +13,6 @@ import (
 	"testing"
 )
 
-func TestGetSuiteMetadataFile(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
-	assert.Nil(t, err)
-
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	metadataFile := suiteExVol.GetSuiteMetadataFile()
-
-	assert.Equal(t, suiteMetadataFilename, metadataFile.GetFilepathRelativeToVolRoot())
-
-	writeFp, err := os.Create(metadataFile.absoluteFilepath)
-	assert.Nil(t, err)
-	testStr := "this is a test string"
-	writeFp.WriteString(testStr)
-	assert.Nil(t, writeFp.Close())
-
-	expectedFilepath := path.Join(suiteExVolDirpath, suiteMetadataFilename)
-	readFp, err := os.Open(expectedFilepath)
-	assert.Nil(t, err)
-	fileBytes, err := ioutil.ReadAll(readFp)
-	assert.Nil(t, err)
-
-	assert.Equal(t, testStr, string(fileBytes))
-}
-
 func TestGetSuiteExecutionDirectory(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
@@ -44,7 +20,7 @@ func TestGetSuiteExecutionDirectory(t *testing.T) {
 	testId := "someTest"
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory(testId)
+	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
 	assert.Nil(t, err)
 
 	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId)

@@ -7,7 +7,7 @@ package test_suite_runner
 
 import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
@@ -24,6 +24,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		suiteMetadata,
 		map[string]bool{},
 		1,
+		nil,
 		nil)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
@@ -42,21 +43,22 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		suiteMetadata,
 		map[string]bool{},
 		1,
+		nil,
 		nil)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
 }
 
-func getTestingSuiteMetadata(numTests int) test_suite_metadata_acquirer.TestSuiteMetadata {
-	testMetadata := map[string]test_suite_metadata_acquirer.TestMetadata{}
+func getTestingSuiteMetadata(numTests int) *bindings.TestSuiteMetadata {
+	testMetadata := map[string]*bindings.TestMetadata{}
 	for i := 0; i < numTests; i++ {
-		testMetadata["test" + strconv.Itoa(i)] = test_suite_metadata_acquirer.TestMetadata{
-		IsPartitioningEnabled: false,
-			UsedArtifacts:         nil,
+		testMetadata["test" + strconv.Itoa(i)] = &bindings.TestMetadata{
+			IsPartitioningEnabled: 		false,
+			UsedArtifactUrls:        	map[string]bool{},
 		}
 	}
-	return test_suite_metadata_acquirer.TestSuiteMetadata{
+	return &bindings.TestSuiteMetadata{
+		TestMetadata: testMetadata,
 		NetworkWidthBits: 0,
-		TestMetadata:     testMetadata,
 	}
 }

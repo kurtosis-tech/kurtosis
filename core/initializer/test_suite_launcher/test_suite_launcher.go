@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_container_mountpoints"
@@ -29,11 +28,6 @@ const (
 	portForDebuggersRunningOnTestsuite     = 2778
 	protocolForDebuggersRunningOnTestsuite = "tcp"
 
-	// Can make these configurable if needed
-	hostPortTrackerInterfaceIp = "127.0.0.1"
-	hostPortTrackerStartRange = 8000
-	hostPortTrackerEndRange = 10000
-
 	// Identifier included in hostnames of containers running for metadata acquisition
 	metadataAcquisitionContainerNameLabel = "metadata-acquisition"
 
@@ -44,10 +38,6 @@ type TestsuiteContainerLauncher struct {
 	executionInstanceUuid string
 
 	suiteExecutionVolName string
-
-	kurtosisApiImage string
-
-	kurtosisApiLogLevel logrus.Level
 
 	testsuiteImage string
 
@@ -62,7 +52,7 @@ type TestsuiteContainerLauncher struct {
 	//  a debugger if desired
 	debuggerPortObj nat.Port
 
-	// Supplier for getting free host ports, which will only be non-nil if doDebuggerHostPortBinding is set to true in
+	// Supplier for getting free host ports, which will only be active if non-nil
 	//  the constructor
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
@@ -70,37 +60,18 @@ type TestsuiteContainerLauncher struct {
 func NewTestsuiteContainerLauncher(
 		executionInstanceUuid string,
 		suiteExecutionVolName string,
-		kurtosisApiImage string,
-		kurtosisApiLogLevel logrus.Level,
 		testsuiteImage string,
 		testsuiteLogLevel string,
 		customParamsJson string,
-		doDebuggerHostPortBinding bool) (*TestsuiteContainerLauncher, error) {
-	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
-	if doDebuggerHostPortBinding {
-		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
-			docker_constants.HostMachineDomainInsideContainer,
-			hostPortTrackerInterfaceIp,
-			protocolForDebuggersRunningOnTestsuite,
-			hostPortTrackerStartRange,
-			hostPortTrackerEndRange,
-			map[uint32]bool{}, // We don't know of any taken ports at this point
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred instantiating the free host port binding supplier")
-		}
-		hostPortBindingSupplier = supplier
-	}
+		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *TestsuiteContainerLauncher {
 	return &TestsuiteContainerLauncher{
 		executionInstanceUuid:   executionInstanceUuid,
 		suiteExecutionVolName:   suiteExecutionVolName,
-		kurtosisApiImage:        kurtosisApiImage,
-		kurtosisApiLogLevel:     kurtosisApiLogLevel,
 		testsuiteImage:          testsuiteImage,
 		suiteLogLevel:           testsuiteLogLevel,
 		customParamsJson:        customParamsJson,
 		hostPortBindingSupplier: hostPortBindingSupplier,
-	}, nil
+	}
 }
 
 /*
