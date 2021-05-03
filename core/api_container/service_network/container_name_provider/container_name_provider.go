@@ -6,7 +6,7 @@
 package container_name_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
+	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
 )
 
 const (
@@ -22,20 +22,20 @@ func NewContainerNameElementsProvider(prefixElems []string) *ContainerNameElemen
 	return &ContainerNameElementsProvider{prefixElems: prefixElems}
 }
 
-func (provider ContainerNameElementsProvider) GetForUserService(serviceId service_network_types.ServiceID) []string {
+func (provider ContainerNameElementsProvider) GetForUserService(serviceId service_network_types2.ServiceID) []string {
 	return provider.addPrefix([]string{
 		string(serviceId),
 	})
 }
 
-func (provider ContainerNameElementsProvider) GetForNetworkingSidecar(serviceIdSidecarAttachedTo service_network_types.ServiceID) []string {
+func (provider ContainerNameElementsProvider) GetForNetworkingSidecar(serviceIdSidecarAttachedTo service_network_types2.ServiceID) []string {
 	return provider.addPrefix([]string{
 		string(serviceIdSidecarAttachedTo),
 		networkingSidecarNameSuffix,
 	})
 }
 
-func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(serviceId service_network_types.ServiceID, artifactUrlHash string) []string {
+func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(serviceId service_network_types2.ServiceID, artifactUrlHash string) []string {
 	return provider.addPrefix([]string{
 		string(serviceId),
 		artifactExpanderNameLabel,

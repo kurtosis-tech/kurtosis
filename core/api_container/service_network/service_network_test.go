@@ -7,8 +7,8 @@ package service_network
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
+	networking_sidecar2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
+	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"strconv"
@@ -19,16 +19,16 @@ func TestUpdateIpTables(t *testing.T) {
 	numServices := 10
 	ctx := context.Background()
 
-	sidecars := map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{}
-	mockSidecars := map[service_network_types.ServiceID]*networking_sidecar.MockNetworkingSidecar{}
+	sidecars := map[service_network_types2.ServiceID]networking_sidecar2.NetworkingSidecar{}
+	mockSidecars := map[service_network_types2.ServiceID]*networking_sidecar2.MockNetworkingSidecar{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		sidecar := networking_sidecar.NewMockNetworkingSidecar()
+		sidecar := networking_sidecar2.NewMockNetworkingSidecar()
 		sidecars[serviceId] = sidecar
 		mockSidecars[serviceId] = sidecar
 	}
 
-	serviceIps := map[service_network_types.ServiceID]net.IP{}
+	serviceIps := map[service_network_types2.ServiceID]net.IP{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
 		ip := testIpFromInt(i)
@@ -36,10 +36,10 @@ func TestUpdateIpTables(t *testing.T) {
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
-	targetBlocklists := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
+	targetBlocklists := map[service_network_types2.ServiceID]*service_network_types2.ServiceIDSet{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		blockedSet := service_network_types.NewServiceIDSet()
+		blockedSet := service_network_types2.NewServiceIDSet()
 		for j := 0; j < numServices; j++ {
 			if j < i - 1 || j > i + 1 {
 				blockedServiceId := testServiceIdFromInt(j)
@@ -81,6 +81,6 @@ func testIpFromInt(i int) net.IP {
 	return []byte{1, 1, 1, byte(i)}
 }
 
-func testServiceIdFromInt(i int) service_network_types.ServiceID {
-	return service_network_types.ServiceID("service-" + strconv.Itoa(i))
+func testServiceIdFromInt(i int) service_network_types2.ServiceID {
+	return service_network_types2.ServiceID("service-" + strconv.Itoa(i))
 }

@@ -7,7 +7,7 @@ package networking_sidecar
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
+	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -66,7 +66,7 @@ type StandardNetworkingSidecar struct {
 	mutex *sync.Mutex
 
 	// ID of the service this sidecar container is attached to
-	serviceId service_network_types.ServiceID
+	serviceId service_network_types2.ServiceID
 
 	// Tracks which Kurtosis chain is the primary chain, so we know
 	//  which chain is in the background that we can flush and rebuild
@@ -80,7 +80,7 @@ type StandardNetworkingSidecar struct {
 	execCmdExecutor sidecarExecCmdExecutor
 }
 
-func NewStandardNetworkingSidecar(serviceId service_network_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
+func NewStandardNetworkingSidecar(serviceId service_network_types2.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
 	return &StandardNetworkingSidecar{
 		mutex:           &sync.Mutex{},
 		serviceId:       serviceId,

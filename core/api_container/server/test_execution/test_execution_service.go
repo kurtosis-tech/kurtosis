@@ -11,9 +11,9 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
+	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
+	partition_topology2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
+	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -42,13 +42,13 @@ const (
 
 type testExecutionService struct {
 	dockerManager             *docker_manager.DockerManager
-	serviceNetwork            *service_network.ServiceNetwork
+	serviceNetwork            *service_network2.ServiceNetwork
 	testName                  string
 }
 
 func newTestExecutionService(
 		dockerManager *docker_manager.DockerManager,
-		serviceNetwork *service_network.ServiceNetwork,
+		serviceNetwork *service_network2.ServiceNetwork,
 		testName string,
 		testSetupTimeoutInSeconds uint32,
 		testRunTimeoutInSeconds uint32,
@@ -182,8 +182,8 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 		return nil, stacktrace.Propagate(err, "Cannot register service; test execution service wasn't in one of the expected states '%+v'", expectedStateSet)
 	}
 
-	serviceId := service_network_types.ServiceID(args.ServiceId)
-	partitionId := service_network_types.PartitionID(args.PartitionId)
+	serviceId := service_network_types2.ServiceID(args.ServiceId)
+	partitionId := service_network_types2.PartitionID(args.PartitionId)
 
 	ip, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
@@ -197,7 +197,7 @@ func (service *testExecutionService) RegisterService(_ context.Context, args *bi
 }
 
 func (service *testExecutionService) GenerateFiles(_ context.Context, args *bindings.GenerateFilesArgs) (*bindings.GenerateFilesResponse, error) {
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := service_network_types2.ServiceID(args.ServiceId)
 	filesToGenerate := args.FilesToGenerate
 	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
 	if err != nil {
@@ -240,7 +240,7 @@ func (service *testExecutionService) StartService(ctx context.Context, args *bin
 		portObjToPortSpecStr[portObj] = portSpecStr
 	}
 
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := service_network_types2.ServiceID(args.ServiceId)
 
 	hostPortBindings, err := service.serviceNetwork.StartService(
 			ctx,
@@ -294,7 +294,7 @@ func (service *testExecutionService) RemoveService(ctx context.Context, args *bi
 		return nil, stacktrace.Propagate(err, "Cannot remove service; test execution service wasn't in expected state '%v'", waitingForExecutionCompletion)
 	}
 
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := service_network_types2.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
@@ -308,30 +308,30 @@ func (service *testExecutionService) RemoveService(ctx context.Context, args *bi
 
 func (service *testExecutionService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
+	partitionServices := map[service_network_types2.PartitionID]*service_network_types2.ServiceIDSet{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
-		partitionId := service_network_types.PartitionID(partitionIdStr)
-		serviceIdSet := service_network_types.NewServiceIDSet()
+		partitionId := service_network_types2.PartitionID(partitionIdStr)
+		serviceIdSet := service_network_types2.NewServiceIDSet()
 		for serviceIdStr := range servicesInPartition.ServiceIdSet {
-			serviceId := service_network_types.ServiceID(serviceIdStr)
+			serviceId := service_network_types2.ServiceID(serviceIdStr)
 			serviceIdSet.AddElem(serviceId)
 		}
 		partitionServices[partitionId] = serviceIdSet
 	}
 
-	partitionConnections := map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection{}
+	partitionConnections := map[service_network_types2.PartitionConnectionID]partition_topology2.PartitionConnection{}
 	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
-		partitionAId := service_network_types.PartitionID(partitionAStr)
+		partitionAId := service_network_types2.PartitionID(partitionAStr)
 		for partitionBStr, connectionInfo := range partitionBToConnection.ConnectionInfo {
-			partitionBId := service_network_types.PartitionID(partitionBStr)
-			partitionConnectionId := *service_network_types.NewPartitionConnectionID(partitionAId, partitionBId)
+			partitionBId := service_network_types2.PartitionID(partitionBStr)
+			partitionConnectionId := *service_network_types2.NewPartitionConnectionID(partitionAId, partitionBId)
 			if _, found := partitionConnections[partitionConnectionId]; found {
 				return nil, stacktrace.NewError(
 					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
 					partitionAId,
 					partitionBId)
 			}
-			partitionConnection := partition_topology.PartitionConnection{
+			partitionConnection := partition_topology2.PartitionConnection{
 				IsBlocked: connectionInfo.IsBlocked,
 			}
 			partitionConnections[partitionConnectionId] = partitionConnection
@@ -339,7 +339,7 @@ func (service *testExecutionService) Repartition(ctx context.Context, args *bind
 	}
 
 	defaultConnectionInfo := args.DefaultConnection
-	defaultConnection := partition_topology.PartitionConnection{
+	defaultConnection := partition_topology2.PartitionConnection{
 		IsBlocked: defaultConnectionInfo.IsBlocked,
 	}
 
@@ -355,7 +355,7 @@ func (service *testExecutionService) Repartition(ctx context.Context, args *bind
 
 func (service *testExecutionService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
-	serviceId := service_network_types.ServiceID(serviceIdStr)
+	serviceId := service_network_types2.ServiceID(serviceIdStr)
 	command := args.CommandArgs
 	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
 	if err != nil {

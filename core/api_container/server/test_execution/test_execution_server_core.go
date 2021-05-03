@@ -8,21 +8,21 @@ package test_execution
 import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
+	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"google.golang.org/grpc"
 )
 
 type TestExecutionServerCore struct {
 	dockerManager             *docker_manager.DockerManager
-	serviceNetwork            *service_network.ServiceNetwork
+	serviceNetwork            *service_network2.ServiceNetwork
 	testName                  string
 	testSetupTimeoutInSeconds uint32
 	testRunTimeoutInSeconds   uint32
 	testSuiteContainerId      string
 }
 
-func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, testSetupTimeoutInSeconds uint32, testRunTimeoutInSeconds uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
+func NewTestExecutionServerCore(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network2.ServiceNetwork, testSetupTimeoutInSeconds uint32, testRunTimeoutInSeconds uint32, testName string, testSuiteContainerId string) *TestExecutionServerCore {
 	return &TestExecutionServerCore{dockerManager: dockerManager, serviceNetwork: serviceNetwork, testName: testName, testSetupTimeoutInSeconds: testSetupTimeoutInSeconds, testRunTimeoutInSeconds: testRunTimeoutInSeconds, testSuiteContainerId: testSuiteContainerId}
 }
 

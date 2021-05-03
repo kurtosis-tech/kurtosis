@@ -8,8 +8,8 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/container_name_provider"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/service_network_types"
+	container_name_provider2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/container_name_provider"
+	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
@@ -41,7 +41,7 @@ var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
 //                                        Interface
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Create(ctx context.Context, serviceId service_network_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
+	Create(ctx context.Context, serviceId service_network_types2.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
 	Destroy(ctx context.Context, sidecar NetworkingSidecar) error
 }
 
@@ -56,21 +56,21 @@ type NetworkingSidecarManager interface {
 type StandardNetworkingSidecarManager struct {
 	dockerManager *docker_manager.DockerManager
 
-	containerNameProvider *container_name_provider.ContainerNameElementsProvider
+	containerNameProvider *container_name_provider2.ContainerNameElementsProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, containerNameProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, containerNameProvider *container_name_provider2.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
 	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, containerNameProvider: containerNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Create(
 		ctx context.Context,
-		serviceId service_network_types.ServiceID,
+		serviceId service_network_types2.ServiceID,
 		serviceContainerId string) (NetworkingSidecar, error) {
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
