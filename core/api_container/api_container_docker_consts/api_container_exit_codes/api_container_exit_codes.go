@@ -5,6 +5,7 @@
 
 package api_container_exit_codes
 
+/*
 // Thanks to Go's absolutely stupid decision not to have enums, this is our best way to
 //  have an enum value that also enforces handling all values at compile-time
 const (
@@ -57,3 +58,6 @@ type ExitCodeErrorVisitor interface {
 	VisitTestsuiteExitedDuringSetup() error
 	VisitErrWaitingForSuiteContainerExit() error
 }
+
+
+ */

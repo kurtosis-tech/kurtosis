@@ -10,13 +10,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/server_core_creator"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/test_execution/service_network/networking_sidecar"
@@ -35,7 +31,8 @@ import (
 )
 
 const (
-	listenProtocol = "tcp"
+	successExitCode = 0
+	failureExitCode = 1
 )
 
 func main() {
@@ -67,35 +64,37 @@ func main() {
 	if err != nil {
 		logrus.Errorf("An error occurred parsing the log level string '%v':", *logLevelArg)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(api_container_exit_codes.StartupError))
+		os.Exit(failureExitCode)
 	}
 	logrus.SetLevel(logLevel)
 
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 	paramsJson := *paramsJsonArg
 
-	testExecutionCore, err := createServerCore(suiteExecutionVolume, paramsJson)
+	apiContainerService, err := createApiContainerService(suiteExecutionVolume, paramsJson)
 	if err != nil {
-		logrus.Errorf("An error occurred setting up the server with params JSON '%v':", paramsJson)
+		logrus.Errorf("An error occurred creating the API container service using params JSON '%v':", paramsJson)
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(int(api_container_exit_codes.StartupError))
+		os.Exit(failureExitCode)
 	}
-
-	server := server.NewApiContainerServer(serverCore)
+	apiContainerServer := server.NewApiContainerServer(apiContainerService)
 
 	logrus.Info("Running server...")
-	exitCode := server.Run()
-	logrus.Infof("Server exited with exit code '%v'", exitCode)
-	os.Exit(int(exitCode))
+	if err := apiContainerServer.Run(); err != nil {
+		logrus.Errorf("An error occurred running the server:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(failureExitCode)
+	}
+	os.Exit(successExitCode)
 }
 
-func createServerCore(
+func createApiContainerService(
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		paramsJsonStr string) (*server.ApiContainerService, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_params_json.TestExecutionArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing the test execution args JSON")
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
 
 	dockerManager, err := createDockerManager()
@@ -114,14 +113,15 @@ func createServerCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
-	testExecutionDirectory, err := suiteExecutionVolume.GetTestExecutionDirectory(args.TestName)
+	testExecutionDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution directory for test '%v'", args.TestName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
 	}
 
+	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache for test '%v'", args.TestName)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -145,8 +145,7 @@ func createServerCore(
 	}
 
 	serviceNetwork := createServiceNetwork(
-		args.ExecutionInstanceId,
-		args.TestName,
+		args.EnclaveNameElems,
 		args.SuiteExecutionVolumeName,
 		containerNameElemsProvider,
 		artifactCache,
@@ -157,15 +156,9 @@ func createServerCore(
 		args.IsPartitioningEnabled,
 		hostPortBindingSupplier)
 
-	core := test_execution.NewTestExecutionServerCore(
-		dockerManager,
-		serviceNetwork,
-		args.TestSetupTimeoutInSeconds,
-		args.TestRunTimeoutInSeconds,
-		args.TestName,
-		args.TestSuiteContainerId)
+	result := server.NewApiContainerService(dockerManager, serviceNetwork)
 
-	return core, nil
+	return result, nil
 }
 
 func createDockerManager() (*docker_manager.DockerManager, error) {
@@ -180,26 +173,6 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	}
 
 	return dockerManager, nil
-}
-
-func createFreeIpAddrTracker(
-		networkSubnetMask string,
-		gatewayIp string,
-		takenIpAddrs
-		apiContainerIp string,
-		testSuiteContainerIp string) (*commons.FreeIpAddrTracker, error){
-	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
-		logrus.StandardLogger(),
-		networkSubnetMask,
-		map[string]bool{
-			gatewayIp:      true,
-			apiContainerIp: true,
-			testSuiteContainerIp: true,
-		})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
-	}
-	return freeIpAddrTracker, nil
 }
 
 func createServiceNetwork(

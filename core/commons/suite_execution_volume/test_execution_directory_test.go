@@ -21,7 +21,7 @@ func TestGetServiceDirectory(t *testing.T) {
 	testId := "someTest"
 
 	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetTestExecutionDirectory(testId)
+	testExDir, err := suiteExVol.GetEnclaveDirectory(testId)
 	assert.Nil(t, err)
 
 	serviceId := "someService"

@@ -85,7 +85,7 @@ func createTestExecutionCore(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
-	testExecutionDirectory, err := suiteExecutionVolume.GetTestExecutionDirectory(args.TestName)
+	testExecutionDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.TestName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution directory for test '%v'", args.TestName)
 	}
