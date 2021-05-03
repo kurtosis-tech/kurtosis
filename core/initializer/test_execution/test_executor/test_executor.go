@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
@@ -75,6 +76,7 @@ func RunTest(
 		dockerClient *client.Client,
 		subnetMask string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		apiContainerLauncher *api_container_launcher.ApiContainerLauncher,
 		testName string,
 		testMetadata bindings.TestMetadata) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
@@ -133,6 +135,22 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
+
+	apiContainerId, err := apiContainerLauncher.Launch(
+		testSetupExecutionCtx,
+		log,
+		dockerManager,
+		testName,
+		networkId,
+		subnetMask,
+		gatewayIp,
+		testRunningContainerIp,
+		kurtosisApiIp,
+		testMetadata.IsPartitioningEnabled,
+	)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
+	}
 
 	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
