@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_server_consts"
+	test_suite_server_consts2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_server_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -176,7 +176,7 @@ func RunTest(
 		}
 	}()
 
-	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), test_suite_server_consts.ListenPort)
+	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), test_suite_server_consts2.ListenPort)
 	// TODO SECURITY: Use HTTPS
 	conn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
 	if err != nil {

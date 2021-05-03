@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_server_consts"
+	test_suite_server_consts2 "github.com/kurtosis-tech/kurtosis/test_suite/test_suite_server_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -59,7 +59,7 @@ func GetTestSuiteMetadata(
 	}()
 	logrus.Infof("Metadata-providing testsuite container launched")
 
-	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, test_suite_server_consts.ListenPort)
+	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, test_suite_server_consts2.ListenPort)
 	conn, err := grpc.Dial(
 		testsuiteSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct testsuite
