@@ -6,12 +6,12 @@
 package api_container_launcher
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_modes"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_env_var_values/api_container_params_json"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -21,29 +21,43 @@ import (
 	"net"
 )
 
+const (
+	apiContainerNameSuffix       = "kurtosis-api"
+
+	dockerSocket = "/var/run/docker.sock"
+)
+
 type ApiContainerLauncher struct {
 	executionInstanceUuid string
+	containerImage string
 	suiteExecutionVolName string
-	kurtosisLogLevel string
+	kurtosisLogLevel logrus.Level
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
 // TODO Constructor
 
-func (launcher ApiContainerLauncher) Launch() {
-	apiContainerEnvVars, err := launcher.genTestExecutionApiContainerEnvVars(
+func (launcher ApiContainerLauncher) Launch(
+		ctx context.Context,
+		log *logrus.Logger,
+		dockerManager *docker_manager.DockerManager,
+		testName string,
+		networkId string,
+		subnetMask string,
+		gatewayIpAddr net.IP,
+		testSuiteContainerIpAddr net.IP,
+		apiContainerIpAddr net.IP,
+		isPartitioningEnabled bool) (string, error){
+	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
-		testName,
-		suiteContainerId,
-		testsuiteContainerIp,
-		kurtosisApiContainerIp,
-		testSetupTimeoutInSeconds,
-		testRunTimeoutInSeconds,
-		isPartitioningEnabled)
+		testSuiteContainerIpAddr,
+		apiContainerIpAddr,
+		isPartitioningEnabled,
+	)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
+		return "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
 
 	log.Info("Launching Kurtosis API container...")
@@ -53,12 +67,12 @@ func (launcher ApiContainerLauncher) Launch() {
 		testName,
 		apiContainerNameSuffix,
 	}
-	kurtosisApiContainerId, err = dockerManager.CreateAndStartContainer(
+	containerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
-		launcher.kurtosisApiImage,
+		launcher.containerImage,
 		kurtosisApiContainerNameElems,
 		networkId,
-		kurtosisApiContainerIp,
+		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
@@ -75,19 +89,12 @@ func (launcher ApiContainerLauncher) Launch() {
 		},
 		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
 	)
-	defer killContainerIfNotFunctionSuccess(
-		ctx,
-		log,
-		dockerManager,
-		kurtosisApiContainerId,
-		func() bool { return functionCompletedSuccessfully })
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
+		return "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
 	}
 	log.Infof("Successfully launched the Kurtosis API container")
 
-	functionCompletedSuccessfully = true
-	return suiteContainerId, kurtosisApiContainerId, nil
+	return containerId, nil
 
 }
 
@@ -318,28 +325,12 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainers(
 }
 */
 
-func genApiContainerEnvVars(
-		logLevel logrus.Level,
-		mode api_container_modes.ApiContainerMode,
-		paramsJsonStr string) map[string]string {
-	// TODO switch to the envVars requiring a visitor to hit, so we get them all
-	return map[string]string{
-		api_container_env_vars.LogLevelEnvVar: logLevel.String(),
-		api_container_env_vars.ModeEnvVar: string(mode),
-		api_container_env_vars.ParamsJsonEnvVar: paramsJsonStr,
-	}
-}
-
-func (launcher ApiContainerLauncher) genTestExecutionApiContainerEnvVars(
+func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		testName string,
-		testSuiteContainerId string,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		testSetupTimeoutInSeconds uint32,
-		testRunTimeoutInSeconds uint32,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	var hostPortBindingSupplierParams *api_container_params_json.HostPortBindingSupplierParams = nil
 	hostPortBindingSupplier := launcher.hostPortBindingSupplier
@@ -358,13 +349,11 @@ func (launcher ApiContainerLauncher) genTestExecutionApiContainerEnvVars(
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),
-		testName,
 		launcher.suiteExecutionVolName,
-		testSuiteContainerId,
-		testSuiteContainerIpAddr.String(),
-		apiContainerIpAddr.String(),
-		testSetupTimeoutInSeconds,
-		testRunTimeoutInSeconds,
+		[]string{
+			testSuiteContainerIpAddr.String(),
+			apiContainerIpAddr.String(),
+		},
 		isPartitioningEnabled,
 		hostPortBindingSupplierParams)
 	if err != nil {
@@ -377,8 +366,10 @@ func (launcher ApiContainerLauncher) genTestExecutionApiContainerEnvVars(
 	}
 
 	argsStr := string(argsBytes)
-	return genApiContainerEnvVars(
-		launcher.kurtosisLogLevel,
-		api_container_modes.TestExecutionMode,
-		argsStr), nil
+
+	// TODO switch to the envVars requiring a visitor to hit, so we get them all
+	return map[string]string{
+		api_container_env_vars.LogLevelEnvVar: launcher.kurtosisLogLevel.String(),
+		api_container_env_vars.ParamsJsonEnvVar: argsStr,
+	}, nil
 }

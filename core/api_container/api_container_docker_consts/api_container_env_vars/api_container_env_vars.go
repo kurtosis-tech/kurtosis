@@ -8,7 +8,6 @@ package api_container_env_vars
 // Constants for the environment variables that are used in the Dockerfile, made available to Go code
 const (
 	LogLevelEnvVar                 = "LOG_LEVEL"
-	ModeEnvVar					   = "MODE"
 
 	// JSON-serialized string containing all the parameters that the API container needs to start
 	// We JSON-serilaize these values rather than passing them in individually as separate env vars so that

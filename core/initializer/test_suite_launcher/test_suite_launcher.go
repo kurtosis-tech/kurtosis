@@ -24,8 +24,6 @@ import (
 const (
 	bridgeNetworkName = "bridge"
 
-	dockerSocket = "/var/run/docker.sock"
-
 	// When a debugger is used inside a testsuite, these are the port & protocol that the debugger inside the container
 	// will be told to listen on
 	portForDebuggersRunningOnTestsuite     = 2778
@@ -39,8 +37,6 @@ const (
 	// Identifier included in hostnames of containers running for metadata acquisition
 	metadataAcquisitionContainerNameLabel = "metadata-acquisition"
 
-	// Suffix to give API container hostnames
-	apiContainerNameSuffix       = "kurtosis-api"
 	testsuiteContainerNameSuffix = "testsuite"
 )
 

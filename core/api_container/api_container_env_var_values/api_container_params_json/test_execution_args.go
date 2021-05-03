@@ -49,20 +49,13 @@ type TestExecutionArgs struct {
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
 	GatewayIpAddr            string	`json:"gatewayIpAddr"`
-	TestName                 string	`json:"testName"`
+	// TestName                 string	`json:"testName"`
 	SuiteExecutionVolumeName string	`json:"suiteExecutionVolumeName"`
-	TestSuiteContainerId     string	`json:"testSuiteContainerId"`
+	// TestSuiteContainerId     string	`json:"testSuiteContainerId"`
 
-	// It seems weird that we require this given that the test suite container doesn't run a server, but it's only so
-	//  that our free IP address tracker knows not to dole out the test suite container's IP address
-	TestSuiteContainerIpAddr string	`json:"testSuiteContainerIpAddr"`
-	ApiContainerIpAddr       string	`json:"apiContainerIpAddr"`
+	// These IP addrs tell the API container that it shouldn't use these IPs
+	TakenIpAddrs			 []string `json:"takenIpAddrs"`
 
-	TestSetupTimeoutInSeconds uint32 `json:"testSetupTimeout"`
-	TestRunTimeoutInSeconds   uint32 `json:"testRunTimeout"`
-
-	// TODO remove this by passing over the test metadata as one of the params, so that the API container
-	//  knows about the metadata
 	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
 
 	// A non-nil value indicates that the Kurtosis API container should bind service ports to ports on the
@@ -78,28 +71,22 @@ func NewTestExecutionArgs(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr string,
-		testName string,
+		// testName string,
 		suiteExecutionVolumeName string,
-		testSuiteContainerId string,
-		testSuiteContainerIpAddr string,
-		apiContainerIpAddr string,
-		testSetupTimeoutInSeconds uint32,
-		testRunTimeoutInSeconds uint32,
+		// testSuiteContainerId string,
+		takenIpAddrs []string,
 		isPartitioningEnabled bool,
 		hostPortBindingSupplierParams *HostPortBindingSupplierParams) (*TestExecutionArgs, error) {
 	result := TestExecutionArgs{
-		ExecutionInstanceId:       executionInstanceId,
-		NetworkId:                 networkId,
-		SubnetMask:                subnetMask,
-		GatewayIpAddr:             gatewayIpAddr,
-		TestName:                  testName,
-		SuiteExecutionVolumeName:  suiteExecutionVolumeName,
-		TestSuiteContainerId:      testSuiteContainerId,
-		TestSuiteContainerIpAddr:  testSuiteContainerIpAddr,
-		ApiContainerIpAddr:        apiContainerIpAddr,
-		TestSetupTimeoutInSeconds: testSetupTimeoutInSeconds,
-		TestRunTimeoutInSeconds:   testRunTimeoutInSeconds,
-		IsPartitioningEnabled:     isPartitioningEnabled,
+		ExecutionInstanceId:           executionInstanceId,
+		NetworkId:                     networkId,
+		SubnetMask:                    subnetMask,
+		GatewayIpAddr:                 gatewayIpAddr,
+		// TestName:                      testName,
+		SuiteExecutionVolumeName:      suiteExecutionVolumeName,
+		// TestSuiteContainerId:          testSuiteContainerId,
+		TakenIpAddrs:                  takenIpAddrs,
+		IsPartitioningEnabled:         isPartitioningEnabled,
 		HostPortBindingSupplierParams: hostPortBindingSupplierParams,
 	}
 	if err := result.validate(); err != nil {
