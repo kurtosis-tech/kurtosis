@@ -3,9 +3,9 @@
  * All Rights Reserved.
  */
 
-package rpc_api_consts
+package test_suite_rpc_api_consts
 
 const (
 	ListenProtocol = "tcp"
-	ListenPort = 7718
+	ListenPort = 7718 // NOTE: Must match what's in the kurtosis-libs repo!
 )

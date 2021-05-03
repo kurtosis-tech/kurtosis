@@ -7,7 +7,8 @@ package server
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -30,16 +31,19 @@ func NewApiContainerServer(core *ApiContainerService) *ApiContainerServer {
 	return &ApiContainerServer{core: core}
 }
 
+// TODO All the code here is almost duplicated with Kurtosis Libs - extract as a library!
 func (server ApiContainerServer) Run() error {
 	grpcServer := grpc.NewServer()
 
-	listenAddressStr := fmt.Sprintf(":%v", rpc_api_consts.ListenPort)
-	listener, err := net.Listen(rpc_api_consts.ListenProtocol, listenAddressStr)
+	bindings.RegisterApiContainerServiceServer(grpcServer, server.core)
+
+	listenAddressStr := fmt.Sprintf(":%v", api_container_rpc_api_consts.ListenPort)
+	listener, err := net.Listen(api_container_rpc_api_consts.ListenProtocol, listenAddressStr)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred creating the listener on %v/%v",
-			rpc_api_consts.ListenProtocol,
+			api_container_rpc_api_consts.ListenProtocol,
 			listenAddressStr,
 		)
 	}

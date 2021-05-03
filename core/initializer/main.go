@@ -22,7 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
-	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"

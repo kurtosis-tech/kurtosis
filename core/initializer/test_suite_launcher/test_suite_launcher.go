@@ -9,11 +9,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_env_vars"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -157,7 +158,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	functionCompletedSuccessfully := false
 
-	testSuiteEnvVars, err := launcher.generateTestRunningEnvVars(kurtosisApiContainerIp.String(), testName)
+	testSuiteEnvVars, err := launcher.generateTestRunningEnvVars(kurtosisApiContainerIp.String())
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
 	}
@@ -202,9 +203,22 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		networkId string,
 		containerIpAddr net.IP,
 		envVars map[string]string,
-	) (containerId string, debuggingPortBindingOnHost *nat.PortBinding, resultErr error) {
+	) (string, *nat.PortBinding, error) {
 
-	hostPortBindings := map[nat.Port]*nat.PortBinding{}
+	testsuiteRpcPort, err := nat.NewPort(test_suite_rpc_api_consts.ListenProtocol, strconv.Itoa(test_suite_rpc_api_consts.ListenPort))
+	if err != nil {
+		return "", nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the port object on '%v/%v' to represent the testsuite RPC API",
+			test_suite_rpc_api_consts.ListenProtocol,
+			test_suite_rpc_api_consts.ListenPort,
+		)
+	}
+	hostPortBindings := map[nat.Port]*nat.PortBinding{
+		// Could expose the testsuite RPC API to the user's host machine if we really wanted
+		testsuiteRpcPort: nil,
+	}
+
 	var debuggerPortBinding *nat.PortBinding = nil
 	if launcher.hostPortBindingSupplier != nil {
 		freePortBinding, err := launcher.hostPortBindingSupplier.GetFreePortBinding()
@@ -268,17 +282,16 @@ func logSuccessfulSuiteContainerLaunch(
 }
 
 func (launcher TestsuiteContainerLauncher) generateMetadataProvidingEnvVars() (map[string]string, error) {
-	result, err := launcher.generateTestSuiteEnvVars(test_suite_env_vars.MetadataProvidingMode, "", "")
+	result, err := launcher.generateTestSuiteEnvVars("")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the metadata-providing env vars")
 	}
 	return result, nil
 }
 
-func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(
-		kurtosisApiIp string,
-		testName string) (map[string]string, error) {
-	result, err := launcher.generateTestSuiteEnvVars(test_suite_env_vars.TestRunningMode, kurtosisApiIp, testName)
+func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(kurtosisApiIp string) (map[string]string, error) {
+	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_rpc_api_consts.ListenPort)
+	result, err := launcher.generateTestSuiteEnvVars(kurtosisApiSocket)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the test-running env vars")
 	}
@@ -288,23 +301,14 @@ func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(
 /*
 Generates the map of environment variables needed to run a test suite container
 */
-func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(
-		mode test_suite_env_vars.TestSuiteMode,
-		kurtosisApiIp string,
-		testName string) (map[string]string, error) {
+func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiSocket string) (map[string]string, error) {
 	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPortObj.Int())
-	kurtosisApiSocket := ""
-	if mode == test_suite_env_vars.TestRunningMode {
-		kurtosisApiSocket = fmt.Sprintf("%v:%v", kurtosisApiIp, rpc_api_consts.ListenPort)
-	}
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
 		test_suite_env_vars.CustomParamsJson:        launcher.customParamsJson,
 		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
 		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
 		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
-		test_suite_env_vars.ModeEnvVar: 			 string(mode),
-		test_suite_env_vars.TestNameEnvVar:          testName,
 	}
 	return standardVars, nil
 }

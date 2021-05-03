@@ -13,7 +13,7 @@ import (
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/palantir/stacktrace"
@@ -64,7 +64,7 @@ func (launcher ApiContainerLauncher) Launch(
 	}
 
 	log.Info("Launching Kurtosis API container...")
-	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", rpc_api_consts.ListenPort, rpc_api_consts.ListenProtocol))
+	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_rpc_api_consts.ListenPort, api_container_rpc_api_consts.ListenProtocol))
 	kurtosisApiContainerNameElems := []string{
 		launcher.executionInstanceUuid,
 		testName,

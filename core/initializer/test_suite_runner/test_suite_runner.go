@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/test_suite/rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"

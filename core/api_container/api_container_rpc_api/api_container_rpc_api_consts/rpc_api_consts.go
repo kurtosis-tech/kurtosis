@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package rpc_api_consts
+package api_container_rpc_api_consts
 
 const (
 	// Protocol that the API container will listen on
