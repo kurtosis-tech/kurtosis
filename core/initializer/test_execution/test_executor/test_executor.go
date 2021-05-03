@@ -9,17 +9,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_docker_consts/test_suite_server_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"time"
 )
 
@@ -37,10 +37,9 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
 const (
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
 
-	// When the user presses Ctrl-C on the initializer, we need to forward that on to the API container and tell
-	// it to stop. When that happens, this is how long we'll give the API container to gracefully exit before we
-	// hard-kill the container.
-	apiContainerStopTimeoutAfterParentCtxCancellation = 10 * time.Second
+	// How long we'll give the API container & testsuite container to gracefully stop after we're done trying to run the test
+	//  (either through success or error)
+	containerTeardownTimeout = 10 * time.Second
 
 	printTestsuiteLogSectionAsError = false
 
@@ -151,6 +150,12 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
+	defer func() {
+		if err := dockerManager.StopContainer(testTeardownContext, apiContainerId, containerTeardownTimeout); err !=  nil {
+			// This is a warning because the network teardown will try again
+			log.Warnf("An error occurred stopping the API container during teardown; stopping & removal will be attmepted again during network teardown")
+		}
+	}()
 
 	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
@@ -164,6 +169,21 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
 	}
+	defer func() {
+		if err := dockerManager.StopContainer(testTeardownContext, testsuiteContainerId, containerTeardownTimeout); err !=  nil {
+			// This is a warning because the network teardown will try again
+			log.Warnf("An error occurred stopping the testsuite container during teardown; stopping & removal will be attmepted again during network teardown")
+		}
+	}()
+
+	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), test_suite_server_consts.ListenPort)
+	// TODO SECURITY: Use HTTPS
+	conn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred dialing the testsuite container endpoint")
+	}
+	defer conn.Close()
+	testsuiteServiceClient := bindings.NewTestSuiteServiceClient(conn)
 
 	// ====================================== TRICKY CODE WARNING =====================================================
 	// The code from this point on is very tricky! It is trying to stream the testsuite logs while still responding
@@ -191,6 +211,37 @@ func RunTest(
 	}
 	defer readCloser.Close()
 
+	// TODO Probably need to connect the initializer container inside the testnet
+
+	log.Tracef("%vSetting up test...", initializerLogPrefix)
+	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
+		testSetupExecutionCtx,
+		time.Duration(testMetadata.TestSetupTimeoutInSeconds) * time.Second,
+	)
+	defer testSetupCtxCancelFunc()
+	setupArgs := &bindings.SetupTestArgs{
+		TestName: testName,
+	}
+	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
+	}
+	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
+
+	log.Tracef("%vRunning test...", initializerLogPrefix)
+	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
+		testSetupExecutionCtx,
+		time.Duration(testMetadata.TestSetupTimeoutInSeconds) * time.Second,
+	)
+	defer testRunCtxCancelFunc()
+	runArgs := &bindings.RunTestArgs{
+		TestName: testName,
+	}
+	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred running the test")
+	}
+	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
+
+	/*
 	log.Tracef("%vWaiting for API container exit...", initializerLogPrefix)
 	kurtosisApiContainerExitError := waitForApiContainerExit(
 			dockerManager,
@@ -198,6 +249,9 @@ func RunTest(
 			testSetupExecutionCtx,
 			testTeardownContext)
 	log.Tracef("%vAPI container exited; resulting err is: %v", initializerLogPrefix, kurtosisApiContainerExitError)
+	 */
+
+
 	var stopLogStreamerErr error = nil
 	if logStreamer != nil {
 		log.Tracef("%vStopping testsuite container log streamer...", initializerLogPrefix)
@@ -209,13 +263,9 @@ func RunTest(
 	if stopLogStreamerErr != nil {
 		log.Warnf("An error occurred stopping the log streamer: %v", stopLogStreamerErr)
 	}
-	if kurtosisApiContainerExitError != nil {
-		// NOTE: We haven't stopped the testsuite at this point, but that's okay - it'll get torn down
-		return false, stacktrace.Propagate(err, "An error occurred that prevented retrieval of the test completion status")
-	}
-	log.Info("The test suite container exited as expected")
 	// ====================================== END TRICKY CODE WARNING =================================================
 
+	/*
 	// If we got here, then the testsuite container exited as the API container expected, meaning the testsuite
 	//  container is stopped, meaning it's okay to WaitForExit using testTeardownContext to get the testsuite
 	//  container's exit code
@@ -229,10 +279,14 @@ func RunTest(
 	}
 	log.Tracef("Testsuite container exited with exit code '%v'", testSuiteExitCode)
 	return testSuiteExitCode == 0, nil
+
+	 */
+	return true, nil
 }
 
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
+/*
 // Waits for the API container to exit, and returns an error (if any) describing the problem with API container exiting
 func waitForApiContainerExit(
 		dockerManager *docker_manager.DockerManager,
@@ -292,6 +346,7 @@ func waitForApiContainerExit(
 	}
 	return nil
 }
+ */
 
 
 /*

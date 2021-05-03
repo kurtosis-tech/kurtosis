@@ -314,7 +314,7 @@ var file_test_suite_service_proto_rawDesc = []byte{
 	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61,
 	0x6d, 0x65, 0x22, 0x2a, 0x0a, 0x0b, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x41, 0x72, 0x67,
 	0x73, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x32, 0xad,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x32, 0xef,
 	0x01, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76,
 	0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75,
 	0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x16, 0x2e, 0x67, 0x6f,
@@ -325,8 +325,12 @@ var file_test_suite_service_proto_rawDesc = []byte{
 	0x70, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x75, 0x69,
 	0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73, 0x74,
 	0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x40,
+	0x0a, 0x07, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x2e, 0x74, 0x65, 0x73, 0x74,
+	0x5f, 0x73, 0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x75, 0x6e, 0x54, 0x65,
+	0x73, 0x74, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00,
+	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -357,10 +361,12 @@ var file_test_suite_service_proto_depIdxs = []int32{
 	1, // 2: test_suite_api.TestSuiteMetadata.TestMetadataEntry.value:type_name -> test_suite_api.TestMetadata
 	6, // 3: test_suite_api.TestSuiteService.GetTestSuiteMetadata:input_type -> google.protobuf.Empty
 	2, // 4: test_suite_api.TestSuiteService.SetupTest:input_type -> test_suite_api.SetupTestArgs
-	0, // 5: test_suite_api.TestSuiteService.GetTestSuiteMetadata:output_type -> test_suite_api.TestSuiteMetadata
-	6, // 6: test_suite_api.TestSuiteService.SetupTest:output_type -> google.protobuf.Empty
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	3, // 5: test_suite_api.TestSuiteService.RunTest:input_type -> test_suite_api.RunTestArgs
+	0, // 6: test_suite_api.TestSuiteService.GetTestSuiteMetadata:output_type -> test_suite_api.TestSuiteMetadata
+	6, // 7: test_suite_api.TestSuiteService.SetupTest:output_type -> google.protobuf.Empty
+	6, // 8: test_suite_api.TestSuiteService.RunTest:output_type -> google.protobuf.Empty
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -455,6 +461,7 @@ const _ = grpc.SupportPackageIsVersion6
 type TestSuiteServiceClient interface {
 	GetTestSuiteMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestSuiteMetadata, error)
 	SetupTest(ctx context.Context, in *SetupTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RunTest(ctx context.Context, in *RunTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type testSuiteServiceClient struct {
@@ -483,10 +490,20 @@ func (c *testSuiteServiceClient) SetupTest(ctx context.Context, in *SetupTestArg
 	return out, nil
 }
 
+func (c *testSuiteServiceClient) RunTest(ctx context.Context, in *RunTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/test_suite_api.TestSuiteService/RunTest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TestSuiteServiceServer is the server API for TestSuiteService service.
 type TestSuiteServiceServer interface {
 	GetTestSuiteMetadata(context.Context, *emptypb.Empty) (*TestSuiteMetadata, error)
 	SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error)
+	RunTest(context.Context, *RunTestArgs) (*emptypb.Empty, error)
 }
 
 // UnimplementedTestSuiteServiceServer can be embedded to have forward compatible implementations.
@@ -498,6 +515,9 @@ func (*UnimplementedTestSuiteServiceServer) GetTestSuiteMetadata(context.Context
 }
 func (*UnimplementedTestSuiteServiceServer) SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetupTest not implemented")
+}
+func (*UnimplementedTestSuiteServiceServer) RunTest(context.Context, *RunTestArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RunTest not implemented")
 }
 
 func RegisterTestSuiteServiceServer(s *grpc.Server, srv TestSuiteServiceServer) {
@@ -540,6 +560,24 @@ func _TestSuiteService_SetupTest_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestSuiteService_RunTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunTestArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestSuiteServiceServer).RunTest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/test_suite_api.TestSuiteService/RunTest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestSuiteServiceServer).RunTest(ctx, req.(*RunTestArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _TestSuiteService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "test_suite_api.TestSuiteService",
 	HandlerType: (*TestSuiteServiceServer)(nil),
@@ -551,6 +589,10 @@ var _TestSuiteService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetupTest",
 			Handler:    _TestSuiteService_SetupTest_Handler,
+		},
+		{
+			MethodName: "RunTest",
+			Handler:    _TestSuiteService_RunTest_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
