@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package test_suite_server_consts
+package rpc_api_consts
 
 const (
 	ListenProtocol = "tcp"

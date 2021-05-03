@@ -13,11 +13,11 @@ import (
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
-	container_name_provider2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/container_name_provider"
-	networking_sidecar2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/networking_sidecar"
-	user_service_launcher2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher"
-	files_artifact_expander2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -102,7 +102,7 @@ func createApiContainerService(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	containerNameElemsProvider := container_name_provider2.NewContainerNameElementsProvider(args.EnclaveNameElems)
+	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
 
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
@@ -178,23 +178,23 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 func createServiceNetwork(
 		filesArtifactExpansionVolumeNamePrefixElems []string,
 		suiteExecutionVolName string,
-		containerNameElemsProvider *container_name_provider2.ContainerNameElementsProvider,
+		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
 		isPartitioningEnabled bool,
-		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *service_network2.ServiceNetwork {
+		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *service_network.ServiceNetwork {
 
-	filesArtifactExpander := files_artifact_expander2.NewFilesArtifactExpander(
+	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
 		dockerManager,
 		containerNameElemsProvider,
 		dockerNetworkId,
 		freeIpAddrTracker)
 
-	userServiceLauncher := user_service_launcher2.NewUserServiceLauncher(
+	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		filesArtifactExpansionVolumeNamePrefixElems,
 		dockerManager,
 		containerNameElemsProvider,
@@ -205,13 +205,13 @@ func createServiceNetwork(
 		dockerNetworkId,
 		suiteExecutionVolName)
 
-	networkingSidecarManager := networking_sidecar2.NewStandardNetworkingSidecarManager(
+	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
 		containerNameElemsProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
-	serviceNetwork := service_network2.NewServiceNetwork(
+	serviceNetwork := service_network.NewServiceNetwork(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,

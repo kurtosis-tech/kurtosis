@@ -7,7 +7,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -33,13 +33,13 @@ func NewApiContainerServer(core *ApiContainerService) *ApiContainerServer {
 func (server ApiContainerServer) Run() error {
 	grpcServer := grpc.NewServer()
 
-	listenAddressStr := fmt.Sprintf(":%v", api_container_server_consts.ListenPort)
-	listener, err := net.Listen(api_container_server_consts.ListenProtocol, listenAddressStr)
+	listenAddressStr := fmt.Sprintf(":%v", rpc_api_consts.ListenPort)
+	listener, err := net.Listen(rpc_api_consts.ListenProtocol, listenAddressStr)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred creating the listener on %v/%v",
-			api_container_server_consts.ListenProtocol,
+			rpc_api_consts.ListenProtocol,
 			listenAddressStr,
 		)
 	}

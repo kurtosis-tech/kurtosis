@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/bindings"
-	service_network2 "github.com/kurtosis-tech/kurtosis/api_container/service_network"
-	partition_topology2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/partition_topology"
-	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -30,16 +30,16 @@ const (
 
 type ApiContainerService struct {
 	dockerManager             *docker_manager.DockerManager
-	serviceNetwork            *service_network2.ServiceNetwork
+	serviceNetwork            *service_network.ServiceNetwork
 }
 
-func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network2.ServiceNetwork) *ApiContainerService {
+func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork) *ApiContainerService {
 	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
-	serviceId := service_network_types2.ServiceID(args.ServiceId)
-	partitionId := service_network_types2.PartitionID(args.PartitionId)
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	partitionId := service_network_types.PartitionID(args.PartitionId)
 
 	ip, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
@@ -53,7 +53,7 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *bi
 }
 
 func (service ApiContainerService) GenerateFiles(ctx context.Context, args *bindings.GenerateFilesArgs) (*bindings.GenerateFilesResponse, error) {
-	serviceId := service_network_types2.ServiceID(args.ServiceId)
+	serviceId := service_network_types.ServiceID(args.ServiceId)
 	filesToGenerate := args.FilesToGenerate
 	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
 	if err != nil {
@@ -90,7 +90,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 		portObjToPortSpecStr[portObj] = portSpecStr
 	}
 
-	serviceId := service_network_types2.ServiceID(args.ServiceId)
+	serviceId := service_network_types.ServiceID(args.ServiceId)
 
 	hostPortBindings, err := service.serviceNetwork.StartService(
 		ctx,
@@ -139,7 +139,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 }
 
 func (service ApiContainerService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
-	serviceId := service_network_types2.ServiceID(args.ServiceId)
+	serviceId := service_network_types.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
@@ -153,30 +153,30 @@ func (service ApiContainerService) RemoveService(ctx context.Context, args *bind
 
 func (service ApiContainerService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[service_network_types2.PartitionID]*service_network_types2.ServiceIDSet{}
+	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
-		partitionId := service_network_types2.PartitionID(partitionIdStr)
-		serviceIdSet := service_network_types2.NewServiceIDSet()
+		partitionId := service_network_types.PartitionID(partitionIdStr)
+		serviceIdSet := service_network_types.NewServiceIDSet()
 		for serviceIdStr := range servicesInPartition.ServiceIdSet {
-			serviceId := service_network_types2.ServiceID(serviceIdStr)
+			serviceId := service_network_types.ServiceID(serviceIdStr)
 			serviceIdSet.AddElem(serviceId)
 		}
 		partitionServices[partitionId] = serviceIdSet
 	}
 
-	partitionConnections := map[service_network_types2.PartitionConnectionID]partition_topology2.PartitionConnection{}
+	partitionConnections := map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection{}
 	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
-		partitionAId := service_network_types2.PartitionID(partitionAStr)
+		partitionAId := service_network_types.PartitionID(partitionAStr)
 		for partitionBStr, connectionInfo := range partitionBToConnection.ConnectionInfo {
-			partitionBId := service_network_types2.PartitionID(partitionBStr)
-			partitionConnectionId := *service_network_types2.NewPartitionConnectionID(partitionAId, partitionBId)
+			partitionBId := service_network_types.PartitionID(partitionBStr)
+			partitionConnectionId := *service_network_types.NewPartitionConnectionID(partitionAId, partitionBId)
 			if _, found := partitionConnections[partitionConnectionId]; found {
 				return nil, stacktrace.NewError(
 					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
 					partitionAId,
 					partitionBId)
 			}
-			partitionConnection := partition_topology2.PartitionConnection{
+			partitionConnection := partition_topology.PartitionConnection{
 				IsBlocked: connectionInfo.IsBlocked,
 			}
 			partitionConnections[partitionConnectionId] = partitionConnection
@@ -184,7 +184,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *bindin
 	}
 
 	defaultConnectionInfo := args.DefaultConnection
-	defaultConnection := partition_topology2.PartitionConnection{
+	defaultConnection := partition_topology.PartitionConnection{
 		IsBlocked: defaultConnectionInfo.IsBlocked,
 	}
 
@@ -200,7 +200,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *bindin
 
 func (service ApiContainerService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
-	serviceId := service_network_types2.ServiceID(serviceIdStr)
+	serviceId := service_network_types.ServiceID(serviceIdStr)
 	command := args.CommandArgs
 	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
 	if err != nil {

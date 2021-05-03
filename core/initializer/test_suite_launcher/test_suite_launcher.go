@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/api_container_server_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_container_mountpoints"
@@ -295,7 +295,7 @@ func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(
 	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPortObj.Int())
 	kurtosisApiSocket := ""
 	if mode == test_suite_env_vars.TestRunningMode {
-		kurtosisApiSocket = fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_server_consts.ListenPort)
+		kurtosisApiSocket = fmt.Sprintf("%v:%v", kurtosisApiIp, rpc_api_consts.ListenPort)
 	}
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{

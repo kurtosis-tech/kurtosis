@@ -9,9 +9,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	container_name_provider2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/container_name_provider"
-	service_network_types2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/service_network_types"
-	files_artifact_expander2 "github.com/kurtosis-tech/kurtosis/api_container/service_network/user_service_launcher/files_artifact_expander"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
@@ -33,7 +33,7 @@ type UserServiceLauncher struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	containerNameElemsProvider *container_name_provider2.ContainerNameElementsProvider
+	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
@@ -42,7 +42,7 @@ type UserServiceLauncher struct {
 
 	artifactCache *suite_execution_volume.ArtifactCache
 
-	filesArtifactExpander *files_artifact_expander2.FilesArtifactExpander
+	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
 	dockerNetworkId string
 
@@ -50,7 +50,7 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider2.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander2.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
 	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, freeHostPortBindingSupplier: freeHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
 
@@ -65,7 +65,7 @@ Returns:
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
-		serviceId service_network_types2.ServiceID,
+		serviceId service_network_types.ServiceID,
 		ipAddr net.IP,
 		imageName string,
 		usedPorts map[nat.Port]bool,
@@ -148,7 +148,7 @@ func (launcher UserServiceLauncher) Launch(
 //                                     Private helper functions
 // ==================================================================================================
 func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
-		serviceId service_network_types2.ServiceID,
+		serviceId service_network_types.ServiceID,
 		artifactUrlHash string) string {
 	timestampStr := time.Now().Format(volume_naming_consts.GoTimestampFormat)
 	prefix := strings.Join(launcher.filesArtifactExpansionVolumeNamePrefixElems, "_")
