@@ -6,7 +6,7 @@
 package test_executor_parallelizer
 
 import (
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
 )
 
 /*
@@ -20,9 +20,10 @@ type ParallelTestParams struct {
 	SubnetMask          string
 
 	// Special options declared by the test itself
-	TestMetadata test_suite_metadata_acquirer.TestMetadata
+	TestMetadata bindings.TestMetadata
 }
 
-func NewParallelTestParams(testName string, subnetMask string, testMetadata test_suite_metadata_acquirer.TestMetadata) *ParallelTestParams {
+func NewParallelTestParams(testName string, subnetMask string, testMetadata bindings.TestMetadata) *ParallelTestParams {
 	return &ParallelTestParams{TestName: testName, SubnetMask: subnetMask, TestMetadata: testMetadata}
 }
+

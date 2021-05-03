@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -60,7 +60,7 @@ func RunTests(
 		executionInstanceUuid string,
 		dockerClient *client.Client,
 		artifactCache *suite_execution_volume.ArtifactCache,
-		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata,
+		testSuiteMetadata bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
@@ -143,12 +143,12 @@ func RunTests(
 func downloadUsedArtifacts(
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testNames map[string]bool,
-		suiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) error {
+		suiteMetadata bindings.TestSuiteMetadata) error {
 	allTestMetadata := suiteMetadata.TestMetadata
 	// TODO PERF: parallelize to speed this up
 	for testName := range testNames {
 		testMetadata := allTestMetadata[testName]
-		for artifactUrl := range testMetadata.UsedArtifacts {
+		for artifactUrl := range testMetadata.UsedArtifactUrls {
 			if err := artifactCache.AddArtifact(artifactUrl); err != nil {
 				return stacktrace.Propagate(err, "An error occurred adding artifact with URL '%v' to the artifact cache", artifactUrl)
 			}
@@ -166,7 +166,7 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		networkWidthBits uint32,
-		testSuiteMetadata test_suite_metadata_acquirer.TestSuiteMetadata) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
+		testSuiteMetadata bindings.TestSuiteMetadata) (map[string]test_executor_parallelizer.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)

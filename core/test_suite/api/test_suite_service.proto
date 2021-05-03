@@ -7,6 +7,8 @@ service TestSuiteService {
   rpc GetTestSuiteMetadata(google.protobuf.Empty) returns (TestSuiteMetadata) {};
 
   rpc SetupTest(SetupTestArgs) returns (google.protobuf.Empty) {};
+
+  rpc RunTest(RunTestArgs) returns (google.protobuf.Empty) {};
 }
 
 // ====================================================================================================

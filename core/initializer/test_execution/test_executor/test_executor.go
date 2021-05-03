@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/test_suite/api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -75,7 +76,7 @@ func RunTest(
 		subnetMask string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		testName string,
-		testMetadata test_suite_metadata_acquirer.TestMetadata) (bool, error) {
+		testMetadata bindings.TestMetadata) (bool, error) {
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
@@ -133,19 +134,15 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
-	testsuiteContainerId, kurtosisApiContainerId, err := testsuiteLauncher.LaunchTestRunningContainers(
+	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
 		log,
 		dockerManager,
 		networkId,
-		subnetMask,
-		gatewayIp,
 		testName,
 		kurtosisApiIp,
 		testRunningContainerIp,
-		testMetadata.TestSetupTimeoutInSeconds,
-		testMetadata.TestRunTimeoutInSeconds,
-		testMetadata.IsPartitioningEnabled)
+	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
 	}
