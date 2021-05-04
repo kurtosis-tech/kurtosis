@@ -54,6 +54,9 @@ const (
 	// During network removal, how long to wait after issuing the kill command to the containers and before
 	//  trying to remove the network (which will fail if there are running containers)
 	networkTeardownWaitTime = 2 * time.Second
+
+	// How much time we'll give the testsuite to stop gracefully before killing it
+	testsuiteGracefulStopTimeout = 10 * time.Second
 )
 
 /*
@@ -208,6 +211,7 @@ func RunTest(
 
 	if err := streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx,
+		testTeardownContext,
 		log,
 		dockerManager,
 		testsuiteContainerId,
@@ -223,6 +227,7 @@ func RunTest(
 // NOTE: This function makes heavy use of deferred functions, to simplify the code
 func streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx context.Context,
+		testTeardownCtx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
@@ -285,6 +290,16 @@ func streamTestsuiteLogsWhileRunningTest(
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
+
+	// TODO This shouldn't be necessary (the network cleanup should stop all containers) BUT we have a bug
+	//  where the call to LogStreamer.Stop will hang while the container is still running
+	//  See also: https://github.com/kurtosis-tech/kurtosis-core/issues/222
+	if err := dockerManager.StopContainer(testTeardownCtx, testsuiteContainerId, testsuiteGracefulStopTimeout); err != nil {
+		// Warning level because we'll tear down the testsuite container as we tear down the network
+		log.Warnf("An error occurred stopping the testsuite container:")
+		fmt.Fprintln(log.Out, err.Error())
+	}
+
 	return nil
 }
 
@@ -387,6 +402,9 @@ func removeNetworkDeferredFunc(
 			}
 		}
 	}
+
+	// Give a tiny bit of time for the container-kills to complete before removing the network
+	time.Sleep(networkTeardownWaitTime)
 
 	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
 		errorDesc := fmt.Sprintf("An error occurred removing Docker network with ID %v:", networkId)
