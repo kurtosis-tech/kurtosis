@@ -8,7 +8,9 @@ service TestSuiteService {
 
   rpc SetupTest(SetupTestArgs) returns (google.protobuf.Empty) {};
 
-  rpc RunTest(RunTestArgs) returns (google.protobuf.Empty) {};
+  // We don't need args dictating what test to run because SetupTest already indicates it (and it wouldn't make
+  //  sense to setup one test and run another)
+  rpc RunTest(google.protobuf.Empty) returns (google.protobuf.Empty) {};
 }
 
 // ====================================================================================================
@@ -39,14 +41,5 @@ message TestMetadata {
 //                                       SetupTest
 // ====================================================================================================
 message SetupTestArgs {
-  string test_name = 1;
-}
-
-// ====================================================================================================
-//                                        RunTest
-// ====================================================================================================
-message RunTestArgs {
-  // Not strictly required since we *must* setup a test before running and setup specifies the name
-  //  of the test to setup, but we include it here for consistency
   string test_name = 1;
 }

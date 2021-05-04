@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -63,7 +64,7 @@ const (
 Runs a single test with the given name
 
 Args:
-	ctx: The Context that the test execution is happening in
+	testSetupExecutionCtx: The Context that the test setup & execution is happening in, which can be canclled via Ctrl-C
 	executionInstanceUuid: The UUID representing an execution of the user's test suite, to which this test execution belongs
 	initializerContainerId: The ID of the intiializer container
 	testSetupExecutionCtx: The context in which test setup & execution runs, which can potentially be cancelled on a Ctrl-C
@@ -133,7 +134,6 @@ func RunTest(
 		//  networks with our network name and delete them
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
 	}
-	// TODO Have whitelist of IDs that won't get removed
 	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
 	log.Infof("Docker network %v created successfully", networkId)
 
@@ -174,7 +174,7 @@ func RunTest(
 	defer func() {
 		if err := dockerManager.StopContainer(testTeardownContext, apiContainerId, containerTeardownTimeout); err !=  nil {
 			// This is a warning because the network teardown will try again
-			log.Warnf("An error occurred stopping the API container during teardown; stopping & removal will be attmepted again during network teardown")
+			log.Warnf("An error occurred stopping the API container during teardown; stopping & removal will be attempted again during network teardown")
 		}
 	}()
 
@@ -257,9 +257,6 @@ func streamTestsuiteLogsWhileRunningTest(
 		}
 	}
 
-
-	// TODO Probably need to connect the initializer container inside the testnet
-
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
 	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
@@ -282,10 +279,7 @@ func streamTestsuiteLogsWhileRunningTest(
 		runTimeout,
 	)
 	defer testRunCtxCancelFunc()
-	runArgs := &bindings.RunTestArgs{
-		TestName: testParams.TestName,
-	}
-	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
+	if _, err := testsuiteServiceClient.RunTest(testRunCtx, &empty.Empty{}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
@@ -295,7 +289,7 @@ func streamTestsuiteLogsWhileRunningTest(
 	//  See also: https://github.com/kurtosis-tech/kurtosis-core/issues/222
 	if err := dockerManager.StopContainer(testTeardownCtx, testsuiteContainerId, testsuiteGracefulStopTimeout); err != nil {
 		// Warning level because we'll tear down the testsuite container as we tear down the network
-		log.Warnf("An error occurred stopping the testsuite container:")
+		log.Warnf("%vAn error occurred stopping the testsuite container:", initializerLogPrefix)
 		fmt.Fprintln(log.Out, err.Error())
 	}
 
@@ -324,7 +318,8 @@ func removeNetworkDeferredFunc(
 
 	for _, containerId := range containerIds {
 		if containerId == initializerContainerId {
-			// We don't want to kill the initializer, but we need it gone from the network before we can delete the network
+			// We don't want to kill the initializer since it could be coordinating other tests, but we need it gone
+			//  from the network before we can delete the network
 			if err := dockerManager.DisconnectContainerFromNetwork(testTeardownContext, initializerContainerId, networkId); err != nil {
 				errorDesc := fmt.Sprintf("An error occurred disconnecting the initializer container from the network, which prevents the network from being deleted:")
 				logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
@@ -353,5 +348,5 @@ func removeNetworkDeferredFunc(
 func logErrorAndRecommendManualIntervention(log *logrus.Logger, humanReadableErrorDesc string, err error, networkId string) {
 	log.Errorf(humanReadableErrorDesc)
 	log.Error(err.Error())
-	log.Errorf("ACTION REQUIRED: You'll need to delete network with ID '%v' manually!!!", networkId)
+	log.Errorf("ACTION REQUIRED: You'll need to delete any remaining containers and the network with ID '%v' manually!!!", networkId)
 }

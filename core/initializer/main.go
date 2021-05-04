@@ -275,9 +275,6 @@ func main() {
 		hostPortBindingSupplier,
 	)
 
-
-	// Important that we get the
-
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher)

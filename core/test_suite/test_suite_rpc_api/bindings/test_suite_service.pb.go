@@ -211,58 +211,6 @@ func (x *SetupTestArgs) GetTestName() string {
 	return ""
 }
 
-// ====================================================================================================
-//                                        RunTest
-// ====================================================================================================
-type RunTestArgs struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Not strictly required since we *must* setup a test before running and setup specifies the name
-	//  of the test to setup, but we include it here for consistency
-	TestName string `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
-}
-
-func (x *RunTestArgs) Reset() {
-	*x = RunTestArgs{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_test_suite_service_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *RunTestArgs) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RunTestArgs) ProtoMessage() {}
-
-func (x *RunTestArgs) ProtoReflect() protoreflect.Message {
-	mi := &file_test_suite_service_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RunTestArgs.ProtoReflect.Descriptor instead.
-func (*RunTestArgs) Descriptor() ([]byte, []int) {
-	return file_test_suite_service_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *RunTestArgs) GetTestName() string {
-	if x != nil {
-		return x.TestName
-	}
-	return ""
-}
-
 var File_test_suite_service_proto protoreflect.FileDescriptor
 
 var file_test_suite_service_proto_rawDesc = []byte{
@@ -312,25 +260,22 @@ var file_test_suite_service_proto_rawDesc = []byte{
 	0x3a, 0x02, 0x38, 0x01, 0x22, 0x2c, 0x0a, 0x0d, 0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73,
 	0x74, 0x41, 0x72, 0x67, 0x73, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6e, 0x61,
 	0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61,
-	0x6d, 0x65, 0x22, 0x2a, 0x0a, 0x0b, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x41, 0x72, 0x67,
-	0x73, 0x12, 0x1b, 0x0a, 0x09, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x74, 0x65, 0x73, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x32, 0xef,
-	0x01, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75,
-	0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12, 0x16, 0x2e, 0x67, 0x6f,
-	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d,
-	0x70, 0x74, 0x79, 0x1a, 0x21, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x75, 0x69, 0x74, 0x65,
-	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x09, 0x53, 0x65, 0x74, 0x75,
-	0x70, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73, 0x75, 0x69,
-	0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73, 0x74,
-	0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x40,
-	0x0a, 0x07, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1b, 0x2e, 0x74, 0x65, 0x73, 0x74,
-	0x5f, 0x73, 0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x75, 0x6e, 0x54, 0x65,
-	0x73, 0x74, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x65, 0x32, 0xea, 0x01, 0x0a, 0x10, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x53, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x54, 0x65,
+	0x73, 0x74, 0x53, 0x75, 0x69, 0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x12,
+	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
+	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x21, 0x2e, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x73,
+	0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x54, 0x65, 0x73, 0x74, 0x53, 0x75, 0x69,
+	0x74, 0x65, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x22, 0x00, 0x12, 0x44, 0x0a, 0x09,
+	0x53, 0x65, 0x74, 0x75, 0x70, 0x54, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x2e, 0x74, 0x65, 0x73, 0x74,
+	0x5f, 0x73, 0x75, 0x69, 0x74, 0x65, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x65, 0x74, 0x75, 0x70,
+	0x54, 0x65, 0x73, 0x74, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
+	0x22, 0x00, 0x12, 0x3b, 0x0a, 0x07, 0x52, 0x75, 0x6e, 0x54, 0x65, 0x73, 0x74, 0x12, 0x16, 0x2e,
+	0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e,
+	0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -345,26 +290,25 @@ func file_test_suite_service_proto_rawDescGZIP() []byte {
 	return file_test_suite_service_proto_rawDescData
 }
 
-var file_test_suite_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_test_suite_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_test_suite_service_proto_goTypes = []interface{}{
 	(*TestSuiteMetadata)(nil), // 0: test_suite_api.TestSuiteMetadata
 	(*TestMetadata)(nil),      // 1: test_suite_api.TestMetadata
 	(*SetupTestArgs)(nil),     // 2: test_suite_api.SetupTestArgs
-	(*RunTestArgs)(nil),       // 3: test_suite_api.RunTestArgs
-	nil,                       // 4: test_suite_api.TestSuiteMetadata.TestMetadataEntry
-	nil,                       // 5: test_suite_api.TestMetadata.UsedArtifactUrlsEntry
-	(*emptypb.Empty)(nil),     // 6: google.protobuf.Empty
+	nil,                       // 3: test_suite_api.TestSuiteMetadata.TestMetadataEntry
+	nil,                       // 4: test_suite_api.TestMetadata.UsedArtifactUrlsEntry
+	(*emptypb.Empty)(nil),     // 5: google.protobuf.Empty
 }
 var file_test_suite_service_proto_depIdxs = []int32{
-	4, // 0: test_suite_api.TestSuiteMetadata.test_metadata:type_name -> test_suite_api.TestSuiteMetadata.TestMetadataEntry
-	5, // 1: test_suite_api.TestMetadata.used_artifact_urls:type_name -> test_suite_api.TestMetadata.UsedArtifactUrlsEntry
+	3, // 0: test_suite_api.TestSuiteMetadata.test_metadata:type_name -> test_suite_api.TestSuiteMetadata.TestMetadataEntry
+	4, // 1: test_suite_api.TestMetadata.used_artifact_urls:type_name -> test_suite_api.TestMetadata.UsedArtifactUrlsEntry
 	1, // 2: test_suite_api.TestSuiteMetadata.TestMetadataEntry.value:type_name -> test_suite_api.TestMetadata
-	6, // 3: test_suite_api.TestSuiteService.GetTestSuiteMetadata:input_type -> google.protobuf.Empty
+	5, // 3: test_suite_api.TestSuiteService.GetTestSuiteMetadata:input_type -> google.protobuf.Empty
 	2, // 4: test_suite_api.TestSuiteService.SetupTest:input_type -> test_suite_api.SetupTestArgs
-	3, // 5: test_suite_api.TestSuiteService.RunTest:input_type -> test_suite_api.RunTestArgs
+	5, // 5: test_suite_api.TestSuiteService.RunTest:input_type -> google.protobuf.Empty
 	0, // 6: test_suite_api.TestSuiteService.GetTestSuiteMetadata:output_type -> test_suite_api.TestSuiteMetadata
-	6, // 7: test_suite_api.TestSuiteService.SetupTest:output_type -> google.protobuf.Empty
-	6, // 8: test_suite_api.TestSuiteService.RunTest:output_type -> google.protobuf.Empty
+	5, // 7: test_suite_api.TestSuiteService.SetupTest:output_type -> google.protobuf.Empty
+	5, // 8: test_suite_api.TestSuiteService.RunTest:output_type -> google.protobuf.Empty
 	6, // [6:9] is the sub-list for method output_type
 	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -414,18 +358,6 @@ func file_test_suite_service_proto_init() {
 				return nil
 			}
 		}
-		file_test_suite_service_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RunTestArgs); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -433,7 +365,7 @@ func file_test_suite_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_test_suite_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -461,7 +393,9 @@ const _ = grpc.SupportPackageIsVersion6
 type TestSuiteServiceClient interface {
 	GetTestSuiteMetadata(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TestSuiteMetadata, error)
 	SetupTest(ctx context.Context, in *SetupTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	RunTest(ctx context.Context, in *RunTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// We don't need args dictating what test to run because SetupTest already indicates it (and it wouldn't make
+	//  sense to setup one test and run another)
+	RunTest(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type testSuiteServiceClient struct {
@@ -490,7 +424,7 @@ func (c *testSuiteServiceClient) SetupTest(ctx context.Context, in *SetupTestArg
 	return out, nil
 }
 
-func (c *testSuiteServiceClient) RunTest(ctx context.Context, in *RunTestArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *testSuiteServiceClient) RunTest(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/test_suite_api.TestSuiteService/RunTest", in, out, opts...)
 	if err != nil {
@@ -503,7 +437,9 @@ func (c *testSuiteServiceClient) RunTest(ctx context.Context, in *RunTestArgs, o
 type TestSuiteServiceServer interface {
 	GetTestSuiteMetadata(context.Context, *emptypb.Empty) (*TestSuiteMetadata, error)
 	SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error)
-	RunTest(context.Context, *RunTestArgs) (*emptypb.Empty, error)
+	// We don't need args dictating what test to run because SetupTest already indicates it (and it wouldn't make
+	//  sense to setup one test and run another)
+	RunTest(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }
 
 // UnimplementedTestSuiteServiceServer can be embedded to have forward compatible implementations.
@@ -516,7 +452,7 @@ func (*UnimplementedTestSuiteServiceServer) GetTestSuiteMetadata(context.Context
 func (*UnimplementedTestSuiteServiceServer) SetupTest(context.Context, *SetupTestArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetupTest not implemented")
 }
-func (*UnimplementedTestSuiteServiceServer) RunTest(context.Context, *RunTestArgs) (*emptypb.Empty, error) {
+func (*UnimplementedTestSuiteServiceServer) RunTest(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunTest not implemented")
 }
 
@@ -561,7 +497,7 @@ func _TestSuiteService_SetupTest_Handler(srv interface{}, ctx context.Context, d
 }
 
 func _TestSuiteService_RunTest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RunTestArgs)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -573,7 +509,7 @@ func _TestSuiteService_RunTest_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: "/test_suite_api.TestSuiteService/RunTest",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestSuiteServiceServer).RunTest(ctx, req.(*RunTestArgs))
+		return srv.(TestSuiteServiceServer).RunTest(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
