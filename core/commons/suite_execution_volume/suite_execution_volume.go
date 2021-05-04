@@ -32,14 +32,14 @@ func NewSuiteExecutionVolume(mountDirpath string) *SuiteExecutionVolume {
 
 // TODO Refactor this entire thing so that there's one volume per enclave, which requires pushing the artifact cache
 //  into a separate volume (or better yet, on the local filesystem)
-func (volume SuiteExecutionVolume) GetEnclaveDirectory(enclaveNameElems []string) (*TestExecutionDirectory, error) {
+func (volume SuiteExecutionVolume) GetEnclaveDirectory(enclaveNameElems []string) (*EnclaveDirectory, error) {
 	enclaveName := strings.Join(enclaveNameElems, enclaveNameJoinChar)
 	relativeDirpath := enclaveName
 	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring test execution dirpath '%v' exists", absoluteDirpath)
 	}
-	return newTestExecutionDirectory(absoluteDirpath, relativeDirpath), nil
+	return newEnclaveDirectory(absoluteDirpath, relativeDirpath), nil
 }
 
 func (volume SuiteExecutionVolume) GetArtifactCache() (*ArtifactCache, error) {

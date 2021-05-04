@@ -10,6 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
@@ -24,15 +26,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
 	successExitCode = 0
 	failureExitCode = 1
+
+	grpcServerStopGracePeriod = 5 * time.Second
 )
 
 func main() {
@@ -77,7 +84,17 @@ func main() {
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		os.Exit(failureExitCode)
 	}
-	apiContainerServer := server.NewApiContainerServer(apiContainerService)
+	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
+		bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
+	}
+	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
+		api_container_rpc_api_consts.ListenPort,
+		api_container_rpc_api_consts.ListenProtocol,
+		grpcServerStopGracePeriod,
+		[]func(*grpc.Server){
+			apiContainerServiceRegistrationFunc,
+		},
+	)
 
 	logrus.Info("Running server...")
 	if err := apiContainerServer.Run(); err != nil {
@@ -89,10 +106,11 @@ func main() {
 }
 
 func createApiContainerService(
+		// TODO Rename this so it's not tied to testing
 		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		paramsJsonStr string) (*server.ApiContainerService, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_env_var_values2.TestExecutionArgs
+	var args api_container_env_var_values2.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
@@ -113,7 +131,7 @@ func createApiContainerService(
 		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
 	}
 
-	testExecutionDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
+	enclaveDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
 	}
@@ -149,7 +167,7 @@ func createApiContainerService(
 		args.SuiteExecutionVolumeName,
 		containerNameElemsProvider,
 		artifactCache,
-		testExecutionDirectory,
+		enclaveDirectory,
 		dockerManager,
 		freeIpAddrTracker,
 		args.NetworkId,
@@ -180,7 +198,7 @@ func createServiceNetwork(
 		suiteExecutionVolName string,
 		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		artifactCache *suite_execution_volume.ArtifactCache,
-		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
+		enclaveDirectory *suite_execution_volume.EnclaveDirectory,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
@@ -215,7 +233,7 @@ func createServiceNetwork(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
-		testExecutionDirectory,
+		enclaveDirectory,
 		userServiceLauncher,
 		networkingSidecarManager)
 

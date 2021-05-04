@@ -16,17 +16,20 @@ const (
 	allServicesDirname = "services"
 )
 
-type TestExecutionDirectory struct {
+// A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
+// In testing, this will correspond to the name of the test
+// In interactive mode, this will be the enclave in which the user's test network is running
+type EnclaveDirectory struct {
 	absoluteDirpath          string
 	dirpathRelativeToVolRoot string
 }
 
-func newTestExecutionDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string) *TestExecutionDirectory {
-	return &TestExecutionDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
+func newEnclaveDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string) *EnclaveDirectory {
+	return &EnclaveDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
 // Creates a new, unique service directory for a service with the given service ID
-func (executionDir TestExecutionDirectory) GetServiceDirectory(serviceId string) (*ServiceDirectory, error) {
+func (executionDir EnclaveDirectory) GetServiceDirectory(serviceId string) (*ServiceDirectory, error) {
 	allServicesAbsoluteDirpath := path.Join(executionDir.absoluteDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside test execution dir", allServicesAbsoluteDirpath)

@@ -124,7 +124,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		)
 	}
 
-	args, err := api_container_env_var_values2.NewTestExecutionArgs(
+	args, err := api_container_env_var_values2.NewApiContainerArgs(
 		launcher.executionInstanceUuid,
 		networkId,
 		subnetMask,

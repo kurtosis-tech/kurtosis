@@ -48,7 +48,7 @@ type ServiceNetwork struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	testExecutionDirectory *suite_execution_volume.TestExecutionDirectory
+	testExecutionDirectory *suite_execution_volume.EnclaveDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -68,7 +68,7 @@ func NewServiceNetwork(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
-		testExecutionDirectory *suite_execution_volume.TestExecutionDirectory,
+		testExecutionDirectory *suite_execution_volume.EnclaveDirectory,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetwork {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
