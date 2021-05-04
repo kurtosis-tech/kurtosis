@@ -41,6 +41,7 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 Args:
 	permissions: The permissions the user is running the test suite with
 	executionInstanceUuid: The UUID  uniquely identifying this testsuite execution
+	initializerContainerId: The ID of the initializer contianer
 	dockerClient: Docker client to use when interacting with the Docker engine
 	artifactCache: The artifact cache where artifacts needed by the tests-to-run will be downloaded
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
@@ -60,6 +61,7 @@ Returns:
 func RunTests(
 		permissions *permissions.Permissions,
 		executionInstanceUuid string,
+		initializerContainerId string,
 		dockerClient *client.Client,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testSuiteMetadata *bindings.TestSuiteMetadata,
@@ -134,6 +136,7 @@ func RunTests(
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		executionInstanceUuid,
+		initializerContainerId,
 		dockerClient,
 		testParallelism,
 		testParams,

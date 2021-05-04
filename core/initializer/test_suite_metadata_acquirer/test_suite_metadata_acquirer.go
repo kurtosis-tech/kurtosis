@@ -8,7 +8,6 @@ package test_suite_metadata_acquirer
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -18,6 +17,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"strings"
 	"time"
@@ -29,17 +29,14 @@ const (
 	metadataAcquisitionTimeout = 20 * time.Second
 
 	containerStopTimeout = 10 * time.Second
+
+	shouldFollowTestsuiteLogsOnErr = false
 )
 
 func GetTestSuiteMetadata(
-		dockerClient *client.Client,
+		dockerManager *docker_manager.DockerManager,
 		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
-
-	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
-	}
 
 	logrus.Info("Launching metadata-providing testsuite...")
 	containerId, ipAddr, err := launcher.LaunchMetadataAcquiringContainer(
@@ -69,9 +66,10 @@ func GetTestSuiteMetadata(
 	}
 	testsuiteClient := bindings.NewTestSuiteServiceClient(conn)
 
+	logrus.Debugf("Getting testsuite metadata...")
 	ctxWithTimeout, cancelFunc := context.WithTimeout(parentContext, metadataAcquisitionTimeout)
 	defer cancelFunc() // Safeguard to ensure we don't leak resources
-	suiteMetadata, err := testsuiteClient.GetTestSuiteMetadata(ctxWithTimeout, nil)
+	suiteMetadata, err := testsuiteClient.GetTestSuiteMetadata(ctxWithTimeout, &emptypb.Empty{})
 	if err != nil {
 		printContainerLogsWithBanners(
 			dockerManager,
@@ -82,6 +80,7 @@ func GetTestSuiteMetadata(
 		)
 		return nil, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
+	logrus.Debugf("Successfully retrieved testsuite metadata")
 
 	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
@@ -112,7 +111,7 @@ func printContainerLogsWithBanners(
 		containerDescription string) {
 	var logReader io.Reader
 	var useDockerLogDemultiplexing bool
-	logReadCloser, err := dockerManager.GetContainerLogs(context, containerId)
+	logReadCloser, err := dockerManager.GetContainerLogs(context, containerId, shouldFollowTestsuiteLogsOnErr)
 	if err != nil {
 		errStr := fmt.Sprintf("Could not print container's logs due to the following error: %v", err)
 		logReader = strings.NewReader(errStr)

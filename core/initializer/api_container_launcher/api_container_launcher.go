@@ -10,10 +10,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/palantir/stacktrace"
@@ -47,6 +47,7 @@ func (launcher ApiContainerLauncher) Launch(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
+		initializerContainerIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		isPartitioningEnabled bool) (string, error){
@@ -54,6 +55,7 @@ func (launcher ApiContainerLauncher) Launch(
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
+		initializerContainerIpAddr,
 		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
 		testName,
@@ -332,6 +334,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
+		initializerContainerIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		testName string,
@@ -359,8 +362,10 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 			testName,
 		},
 		map[string]bool{
-			testSuiteContainerIpAddr.String(): true,
+			gatewayIpAddr.String(): true,
+			initializerContainerIpAddr.String(): true,
 			apiContainerIpAddr.String(): true,
+			testSuiteContainerIpAddr.String(): true,
 		},
 		isPartitioningEnabled,
 		hostPortBindingSupplierParams)

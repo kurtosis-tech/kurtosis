@@ -19,6 +19,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 	result, err := RunTests(
 		perms,
 		"1234-abcd",
+		"5678-efgh",
 		nil,
 		nil,
 		suiteMetadata,
@@ -38,6 +39,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	result, err := RunTests(
 		perms,
 		"1234-abcd",
+		"5678-efgh",
 		nil,
 		nil,
 		suiteMetadata,

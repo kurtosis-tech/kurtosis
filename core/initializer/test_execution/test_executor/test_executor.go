@@ -48,15 +48,22 @@ const (
 	// To distinguish initializer logs from testsuite logs, we add this prefix to loglines that come from the initializer
 	//  rather than the testsuite
 	initializerLogPrefix = "[INITIALIZER] "
+
+	shouldFollowTestsuiteLogs = true
+
+	// During network removal, how long to wait after issuing the kill command to the containers and before
+	//  trying to remove the network (which will fail if there are running containers)
+	networkTeardownWaitTime = 2 * time.Second
 )
 
 /*
 Runs a single test with the given name
 
 Args:
-	executionInstanceUuid: The UUID representing an execution of the user's test suite, to which this test execution belongs
-	testSetupExecutionCtx: The context in which test setup & execution runs, which can potentially be cancelled on a Ctrl-C
 	ctx: The Context that the test execution is happening in
+	executionInstanceUuid: The UUID representing an execution of the user's test suite, to which this test execution belongs
+	initializerContainerId: The ID of the intiializer container
+	testSetupExecutionCtx: The context in which test setup & execution runs, which can potentially be cancelled on a Ctrl-C
 	log: the logger to which all logging events during test execution will be sent
 	dockerClient: The Docker client to use to manipulate the Docker engine
 	subnetMask: The subnet mask of the Docker network that has been spun up for this test
@@ -70,8 +77,9 @@ Returns:
 	error: Non-nil if an error occurred that prevented the test pass/fail status from being retrieved
 */
 func RunTest(
-		executionInstanceUuid string,
 		testSetupExecutionCtx context.Context,
+		executionInstanceUuid string,
+		initializerContainerId string,
 		log *logrus.Logger,
 		dockerClient *client.Client,
 		subnetMask string,
@@ -108,6 +116,10 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for the gateway for test %v", testName)
 	}
+	initializerContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting the initializer container in the test network")
+	}
 	networkName := fmt.Sprintf(
 		"%v_%v_%v",
 		time.Now().Format(networkNameTimestampFormat),
@@ -121,8 +133,13 @@ func RunTest(
 		//  networks with our network name and delete them
 		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
 	}
-	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId)
+	// TODO Have whitelist of IDs that won't get removed
+	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
 	log.Infof("Docker network %v created successfully", networkId)
+
+	if err := dockerManager.ConnectContainerToNetwork(testSetupExecutionCtx, networkId, initializerContainerId, initializerContainerIp); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred connecting the initializer container to the test network, which is required to communicate with the testsuite")
+	}
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
@@ -146,6 +163,7 @@ func RunTest(
 		networkId,
 		subnetMask,
 		gatewayIp,
+		initializerContainerIp,
 		testRunningContainerIp,
 		kurtosisApiIp,
 		testParams.IsPartitioningEnabled,
@@ -188,31 +206,55 @@ func RunTest(
 	defer conn.Close()
 	testsuiteServiceClient := bindings.NewTestSuiteServiceClient(conn)
 
-	// ====================================== TRICKY CODE WARNING =====================================================
-	// The code from this point on is very tricky! It is trying to stream the testsuite logs while still responding
-	//  to what the API container is doing. Be VERY careful with editing it - there are a lot of things happening
-	//  in parallel and it's easy to cause subtle bugs!
-	// ====================================== TRICKY CODE WARNING =====================================================
+	if err := streamTestsuiteLogsWhileRunningTest(
+		testSetupExecutionCtx,
+		log,
+		dockerManager,
+		testsuiteContainerId,
+		testParams,
+		testsuiteServiceClient,
+	); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred running the test")
+	}
+
+	return true, nil
+}
+
+// NOTE: This function makes heavy use of deferred functions, to simplify the code
+func streamTestsuiteLogsWhileRunningTest(
+		testSetupExecutionCtx context.Context,
+		log *logrus.Logger,
+		dockerManager *docker_manager.DockerManager,
+		testsuiteContainerId string,
+		testParams parallel_test_params.ParallelTestParams,
+		testsuiteServiceClient bindings.TestSuiteServiceClient) error {
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
-	var logStreamer *output.LogStreamer = nil
+	// After this point, we can go back to printing initializer logs
+	defer banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
+
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
-	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId)
+	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
 	if err != nil {
-		log.Errorf("An error occurred getting the testsuite container logs: %v", err)
+		log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
 	} else {
-		newStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
-		if startStreamingErr := newStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
+		defer readCloser.Close()
+
+		logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
+		if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
 			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 		} else {
 			log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
-			logStreamer = newStreamer
 
 			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
-			defer logStreamer.StopStreaming()
+			defer func() {
+				if err := logStreamer.StopStreaming(); err != nil {
+					log.Warnf("An error occurred stopping the log streamer: %v", err)
+				}
+			}()
 		}
 	}
-	defer readCloser.Close()
+
 
 	// TODO Probably need to connect the initializer container inside the testnet
 
@@ -223,10 +265,10 @@ func RunTest(
 	)
 	defer testSetupCtxCancelFunc()
 	setupArgs := &bindings.SetupTestArgs{
-		TestName: testName,
+		TestName: testParams.TestName,
 	}
 	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
+		return stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
 	}
 	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
 
@@ -237,54 +279,13 @@ func RunTest(
 	)
 	defer testRunCtxCancelFunc()
 	runArgs := &bindings.RunTestArgs{
-		TestName: testName,
+		TestName: testParams.TestName,
 	}
 	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred running the test")
+		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
-
-	/*
-	log.Tracef("%vWaiting for API container exit...", initializerLogPrefix)
-	kurtosisApiContainerExitError := waitForApiContainerExit(
-			dockerManager,
-			kurtosisApiContainerId,
-			testSetupExecutionCtx,
-			testTeardownContext)
-	log.Tracef("%vAPI container exited; resulting err is: %v", initializerLogPrefix, kurtosisApiContainerExitError)
-	 */
-
-
-	var stopLogStreamerErr error = nil
-	if logStreamer != nil {
-		log.Tracef("%vStopping testsuite container log streamer...", initializerLogPrefix)
-		stopLogStreamerErr = logStreamer.StopStreaming()
-		log.Tracef("%vStopped testsuite container log streamer", initializerLogPrefix)
-	}
-	// After this point, we can go back to printing initializer logs
-	banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
-	if stopLogStreamerErr != nil {
-		log.Warnf("An error occurred stopping the log streamer: %v", stopLogStreamerErr)
-	}
-	// ====================================== END TRICKY CODE WARNING =================================================
-
-	/*
-	// If we got here, then the testsuite container exited as the API container expected, meaning the testsuite
-	//  container is stopped, meaning it's okay to WaitForExit using testTeardownContext to get the testsuite
-	//  container's exit code
-	log.Tracef("Waiting for testsuite container to exit...")
-	testSuiteExitCode, err := dockerManager.WaitForExit(
-		testTeardownContext,
-		testsuiteContainerId)
-	if err != nil {
-		log.Tracef("Received an error waiting for the testsuite container to exit: %v", err)
-		return false, stacktrace.Propagate(err, "An error occurred retrieving the test suite container exit code")
-	}
-	log.Tracef("Testsuite container exited with exit code '%v'", testSuiteExitCode)
-	return testSuiteExitCode == 0, nil
-
-	 */
-	return true, nil
+	return nil
 }
 
 
@@ -360,13 +361,43 @@ func removeNetworkDeferredFunc(
 		testTeardownContext context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
-		networkId string) {
+		networkId string,
+		initializerContainerId string) {
 	log.Debugf("Attempting to remove Docker network with ID %v...", networkId)
-	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
-		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
-		log.Error(err.Error())
-		log.Error("NOTE: This means you will need to clean up the Docker network manually!!")
-	} else {
-		log.Debugf("Successfully removed Docker network with ID %v", networkId)
+	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(testTeardownContext, networkId)
+	if err != nil {
+		errorDesc := fmt.Sprintf("An error occurred getting the containers connected to network '%v' so we can stop them:", networkId)
+		logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
+		return
 	}
+
+	for _, containerId := range containerIds {
+		if containerId == initializerContainerId {
+			// We don't want to kill the initializer, but we need it gone from the network before we can delete the network
+			if err := dockerManager.DisconnectContainerFromNetwork(testTeardownContext, initializerContainerId, networkId); err != nil {
+				errorDesc := fmt.Sprintf("An error occurred disconnecting the initializer container from the network, which prevents the network from being deleted:")
+				logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
+				return
+			}
+		} else {
+			if err := dockerManager.KillContainer(testTeardownContext, containerId); err != nil {
+				errorDesc := fmt.Sprintf("An error occurred killing container '%v', which prevents the network from being deleted:", containerId)
+				logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
+				return
+			}
+		}
+	}
+
+	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
+		errorDesc := fmt.Sprintf("An error occurred removing Docker network with ID %v:", networkId)
+		logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
+		return
+	}
+	log.Debugf("Successfully removed Docker network with ID %v", networkId)
+}
+
+func logErrorAndRecommendManualIntervention(log *logrus.Logger, humanReadableErrorDesc string, err error, networkId string) {
+	log.Errorf(humanReadableErrorDesc)
+	log.Error(err.Error())
+	log.Errorf("ACTION REQUIRED: You'll need to delete network with ID '%v' manually!!!", networkId)
 }
