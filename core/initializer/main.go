@@ -222,18 +222,11 @@ func main() {
 
 	executionInstanceId := parsedFlags.GetString(executionUuidArg)
 
-	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	if err != nil {
-		logrus.Errorf("An error occurred creating the Docker manager for manipulating the bridge network: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-
 	// We need the initializer container's ID so that we can connect it to the subnetworks so that it can
 	//  call the testsuite containers, and the least fragile way we have to find it is to use the execution UUID
 	// We must do this before starting any other containers though, else we won't know which one is the initializer
 	//  (since using the image name is very fragile)
-	initializerContainerId, err := getInitializerContainerId(dockerManager, executionInstanceId)
+	initializerContainerId, err := getInitializerContainerId(dockerClient, executionInstanceId)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the initializer container's ID: %v", err)
 		os.Exit(failureExitCode)
@@ -286,7 +279,7 @@ func main() {
 	// Important that we get the
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		dockerManager,
+		dockerClient,
 		testsuiteLauncher)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
@@ -346,7 +339,8 @@ func main() {
 	os.Exit(exitCode)
 }
 
-func getInitializerContainerId(dockerManager *docker_manager.DockerManager, executionInstanceId string) (string, error) {
+func getInitializerContainerId(dockerClient *client.Client, executionInstanceId string) (string, error) {
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	matchingIds, err := dockerManager.GetContainerIdsByName(context.Background(), executionInstanceId)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting container IDs matching execution ID '%v'", executionInstanceId)

@@ -50,6 +50,8 @@ const (
 
 
 	containerNameElementSeparator = "__"
+
+	nameFilterKey = "name"
 )
 
 /*
@@ -70,11 +72,11 @@ Args:
 	log: The logger that this Docker manager will write all its log messages to.
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
+func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) *DockerManager {
 	return &DockerManager{
 		log: log,
 		dockerClient:        dockerClient,
-	}, nil
+	}
 }
 
 /*
@@ -119,7 +121,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 Returns the Docker network IDs of the networks matching the given name (if any).
  */
 func (manager DockerManager) GetNetworkIdsByName(context context.Context, name string) ([]string, error) {
-	networks, err := manager.getNetworksByFilter(context, "name", name)
+	networks, err := manager.getNetworksByFilter(context, nameFilterKey, name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
@@ -145,7 +147,7 @@ func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.C
 
 
 /*
-Removes the Docker network with the given id, killing all containers connected to the network first
+Removes the Docker network with the given id
 
 NOTE: All containers attached to the network must be shut off or disconnected, else the call will fail!
 	otherwise, the remove call will fail)
@@ -501,7 +503,7 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 }
 
 func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
-	filterArg := filters.Arg("name", nameStr)
+	filterArg := filters.Arg(nameFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
 	opts := types.ContainerListOptions{
 		Filters: nameFilterList,

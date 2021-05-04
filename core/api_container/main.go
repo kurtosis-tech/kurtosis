@@ -185,11 +185,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
 	}
 
-	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
-	}
-
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 	return dockerManager, nil
 }
 

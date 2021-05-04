@@ -1,6 +1,6 @@
 # TBD
 ### Changes
-* Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being a simple script that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly
+* Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being linear code that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly
     * This sets the stage for Kurtosis Modules, where modules run servers that receive calls just like a library
     * This necessitated the initializer container now being mounted inside the test subnetwork
 * Significantly simplified the API container by removing all notion of test-tracking, e.g.:

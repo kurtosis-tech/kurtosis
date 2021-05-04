@@ -8,6 +8,7 @@ package test_suite_metadata_acquirer
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -34,9 +35,11 @@ const (
 )
 
 func GetTestSuiteMetadata(
-		dockerManager *docker_manager.DockerManager,
+		dockerClient *client.Client,
 		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
+
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
 	logrus.Info("Launching metadata-providing testsuite...")
 	containerId, ipAddr, err := launcher.LaunchMetadataAcquiringContainer(

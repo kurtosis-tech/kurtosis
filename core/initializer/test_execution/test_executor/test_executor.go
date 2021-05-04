@@ -95,10 +95,7 @@ func RunTest(
 	log.Info("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
-	dockerManager, err := docker_manager.NewDockerManager(log, dockerClient)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting the Docker manager for test %v", testName)
-	}
+	dockerManager := docker_manager.NewDockerManager(log, dockerClient)
 	log.Info("Docker manager created successfully")
 
 	// We'll use the test setup context for setting stuff up so that a cancellation (e.g. Ctrl-C)
