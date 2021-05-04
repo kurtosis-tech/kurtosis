@@ -1,3 +1,17 @@
+# TBD
+### Changes
+* Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being a simple script that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly
+    * This sets the stage for Kurtosis Modules, where modules run servers that receive calls just like a library
+    * This necessitated the initializer container now being mounted inside the test subnetwork
+* Significantly simplified the API container by removing all notion of test-tracking, e.g.:
+    * Removed the `suite_registration` API entirely
+    * Removed the concept of "modes" from the API container
+    * Pushed the burden for timeout-tracking to the initializer itself, so the API container is a fairly simple proxy for Docker itself and doesn't do any test lifecycle tracking
+
+### Breaking Changes
+* Completely reworked the API container Protobuf API
+* Added a new testsuite container API
+
 # 1.13.1
 NOTE: Empty release to get `master` back on track after the reverting
 

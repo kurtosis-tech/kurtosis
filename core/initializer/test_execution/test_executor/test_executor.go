@@ -263,10 +263,11 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// TODO Probably need to connect the initializer container inside the testnet
 
-	log.Tracef("%vSetting up test...", initializerLogPrefix)
+	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
+	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
 	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
-		time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second,
+		setupTimeout,
 	)
 	defer testSetupCtxCancelFunc()
 	setupArgs := &bindings.SetupTestArgs{
@@ -277,10 +278,11 @@ func streamTestsuiteLogsWhileRunningTest(
 	}
 	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
 
-	log.Tracef("%vRunning test...", initializerLogPrefix)
+	runTimeout := time.Duration(testParams.TestRunTimeoutSeconds) * time.Second
+	log.Tracef("%vRunning test with run timeout of %v...", initializerLogPrefix, runTimeout)
 	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
-		time.Duration(testParams.TestRunTimeoutSeconds) * time.Second,
+		runTimeout,
 	)
 	defer testRunCtxCancelFunc()
 	runArgs := &bindings.RunTestArgs{
