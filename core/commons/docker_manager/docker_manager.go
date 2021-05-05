@@ -48,11 +48,10 @@ const (
 	//  kill signal"
 	dockerKillSignal = "KILL"
 
-	// During network removal, how long to wait after issuing the kill command to the containers and before
-	//  trying to remove the network (which will fail if there are running containers)
-	networkTeardownWaitTime = 2 * time.Second
 
 	containerNameElementSeparator = "__"
+
+	nameFilterKey = "name"
 )
 
 /*
@@ -73,11 +72,11 @@ Args:
 	log: The logger that this Docker manager will write all its log messages to.
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) (dockerManager *DockerManager, err error) {
+func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) *DockerManager {
 	return &DockerManager{
 		log: log,
 		dockerClient:        dockerClient,
-	}, nil
+	}
 }
 
 /*
@@ -122,7 +121,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 Returns the Docker network IDs of the networks matching the given name (if any).
  */
 func (manager DockerManager) GetNetworkIdsByName(context context.Context, name string) ([]string, error) {
-	networks, err := manager.getNetworksByFilter(context, "name", name)
+	networks, err := manager.getNetworksByFilter(context, nameFilterKey, name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
@@ -134,9 +133,23 @@ func (manager DockerManager) GetNetworkIdsByName(context context.Context, name s
 	return result, nil
 }
 
+func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
+	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get network information for network with ID '%v'", networkId)
+	}
+	result := []string{}
+	for containerId := range inspectResponse.Containers {
+		result = append(result, containerId)
+	}
+	return result, nil
+}
+
 
 /*
-Removes the Docker network with the given id, killing all containers connected to the network first (because
+Removes the Docker network with the given id
+
+NOTE: All containers attached to the network must be shut off or disconnected, else the call will fail!
 	otherwise, the remove call will fail)
 
 Args:
@@ -144,21 +157,6 @@ Args:
 	networkId: ID of Docker network to remove
  */
 func (manager DockerManager) RemoveNetwork(context context.Context, networkId string) error {
-
-	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to get network information for network with ID %v", networkId)
-	}
-
-	for containerId, endpointInfo := range inspectResponse.Containers {
-		manager.log.Debugf("Killing container '%v' with container ID '%v'...", endpointInfo.Name, containerId)
-		// We ignore any errors because the only real indicator of an error is if the network remove call fails
-		//  and it will fail if the containers attached to the network aren't stopped
-		_ = manager.KillContainer(context, containerId)
-	}
-
-	time.Sleep(networkTeardownWaitTime)
-
 	if err := manager.dockerClient.NetworkRemove(context, networkId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the Docker network with ID %v", networkId)
 	}
@@ -290,7 +288,7 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
-		if err := manager.connectToNetwork(context, networkId, containerId, staticIp); err != nil {
+		if err := manager.ConnectContainerToNetwork(context, networkId, containerId, staticIp); err != nil {
 			return "", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
@@ -385,11 +383,11 @@ Gets the logs for the given container as a io.ReadCloser. The caller is responsi
 NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' package needs to be used to
 	demultiplex them per https://github.com/moby/moby/issues/32794
  */
-func (manager DockerManager) GetContainerLogs(context context.Context, containerId string) (io.ReadCloser, error) {
+func (manager DockerManager) GetContainerLogs(context context.Context, containerId string, shouldFollowLogs bool) (io.ReadCloser, error) {
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
-		Follow: true,
+		Follow: shouldFollowLogs,
 	}
 	readCloser, err := manager.dockerClient.ContainerLogs(context, containerId, containerLogOpts)
 	if err != nil {
@@ -470,6 +468,57 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 	return int32ExitCode, nil
 }
 
+/*
+Connects the container with the given container ID to the network with the given network ID, using the given IP address
+*/
+func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP) (err error) {
+	manager.log.Tracef(
+		"Connecting container ID %v to network ID %v using static IP %v",
+		containerId,
+		networkId,
+		staticIpAddr.String())
+
+	ipamConfig := &network.EndpointIPAMConfig{
+		IPv4Address:  staticIpAddr.String(),
+	}
+
+	err = manager.dockerClient.NetworkConnect(
+		ctx,
+		networkId,
+		containerId,
+		&network.EndpointSettings{
+			IPAMConfig: ipamConfig,
+		})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
+	}
+	return nil
+}
+
+func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context, containerId string, networkId string) error {
+	if err := manager.dockerClient.NetworkDisconnect(ctx, networkId, containerId, true); err != nil {
+		return stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from network '%v'", containerId, networkId)
+	}
+	return nil
+}
+
+func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
+	filterArg := filters.Arg(nameFilterKey, nameStr)
+	nameFilterList := filters.NewArgs(filterArg)
+	opts := types.ContainerListOptions{
+		Filters: nameFilterList,
+	}
+	containers, err := manager.dockerClient.ContainerList(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with names matching string '%v'", nameStr)
+	}
+	result := []string{}
+	for _, container := range containers {
+		result = append(result, container.ID)
+	}
+	return result, nil
+}
+
 
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
@@ -501,30 +550,6 @@ func (manager DockerManager) getNetworksByFilter(ctx context.Context, filterKey 
 		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search for %v = %v", filterKey, filterValue)
 	}
 	return networks, nil
-}
-
-func (manager DockerManager) connectToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP) (err error) {
-	manager.log.Tracef(
-		"Connecting container ID %v to network ID %v using static IP %v",
-		containerId,
-		networkId,
-		staticIpAddr.String())
-
-	ipamConfig := &network.EndpointIPAMConfig{
-		IPv4Address:  staticIpAddr.String(),
-	}
-
-	err = manager.dockerClient.NetworkConnect(
-		ctx,
-		networkId,
-		containerId,
-		&network.EndpointSettings{
-			IPAMConfig: ipamConfig,
-		})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
-	}
-	return nil
 }
 
 func (manager DockerManager) pullImage(context context.Context, imageName string) (err error) {

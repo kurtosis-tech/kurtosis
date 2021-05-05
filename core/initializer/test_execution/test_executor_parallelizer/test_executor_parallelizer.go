@@ -9,8 +9,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
+	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/sirupsen/logrus"
@@ -31,6 +33,7 @@ Runs the given tests in parallel, printing:
 
 Args:
 	executionUuid: The UUID uniquely identifying this execution of the tests
+	initializerContainerId: The container ID of the initializer container, which will need to be connected to the test networks
 	dockerClient: The handle to manipulating the Docker environment
 	parallelism: The number of tests to run concurrently
 	allTestParams: A mapping of test_name -> parameters for running the test
@@ -44,10 +47,12 @@ Returns:
  */
 func RunInParallelAndPrintResults(
 		executionUuid string,
+		initializerContainerId string,
 		dockerClient *client.Client,
 		parallelism uint,
-		allTestParams map[string]ParallelTestParams,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
+		allTestParams map[string]parallel_test_params.ParallelTestParams,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -64,7 +69,7 @@ func RunInParallelAndPrintResults(
 		// TODO send message to all the parallel threads that they should tear down immediately
 	}()
 	// These need to be buffered else sending to the channel will be blocking
-	testParamsChan := make(chan ParallelTestParams, len(allTestParams))
+	testParamsChan := make(chan parallel_test_params.ParallelTestParams, len(allTestParams))
 
 	logrus.Debug("Loading test params into work queue...")
 	for _, testParams := range allTestParams {
@@ -80,14 +85,16 @@ func RunInParallelAndPrintResults(
 
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
-		executionUuid,
 		ctx,
+		executionUuid,
+		initializerContainerId,
 		erroneousSystemLogCaptureWriter,
 		outputManager,
 		testParamsChan,
 		parallelism,
 		dockerClient,
-		testsuiteLauncher)
+		testsuiteLauncher,
+		apiContainerLauncher)
 	logrus.Info("All tests exited")
 
 	allTestsPassed, err := outputManager.PrintSummary()
@@ -104,14 +111,16 @@ func RunInParallelAndPrintResults(
 
 
 func disableSystemLogAndRunTestThreads(
-		executionUuid string,
 		parentContext context.Context,
+		executionUuid string,
+		initializerContainerId string,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
 		outputManager *output.ParallelTestOutputManager,
-		testParamsChan chan ParallelTestParams,
+		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
 	// We therefore need to make sure that all code beyond this point uses the per-test logger rather than the systemwide logger.
 	// However, it's very difficult for  a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'.
@@ -126,13 +135,15 @@ func disableSystemLogAndRunTestThreads(
 	for i := uint(0); i < parallelism; i++ {
 		waitGroup.Add(1)
 		go runTestWorkerGoroutine(
-			executionUuid,
 			parentContext,
+			executionUuid,
+			initializerContainerId,
 			&waitGroup,
 			testParamsChan,
 			outputManager,
 			dockerClient,
-			testsuiteLauncher)
+			testsuiteLauncher,
+			apiContainerLauncher)
 	}
 	waitGroup.Wait()
 }
@@ -142,13 +153,15 @@ A function, designed to be run inside a worker thread, that will pull test param
 push the result to the test results channel
  */
 func runTestWorkerGoroutine(
-			executionUuid string,
 			parentContext context.Context,
+			executionUuid string,
+			initializerContainerId string,
 			waitGroup *sync.WaitGroup,
-			testParamsChan chan ParallelTestParams,
+			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
 			dockerClient *client.Client,
-			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+			apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -156,14 +169,15 @@ func runTestWorkerGoroutine(
 		testName := testParams.TestName
 		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
-			executionUuid,
 			parentContext,
+			executionUuid,
+			initializerContainerId,
 			testLog,
 			dockerClient,
 			testParams.SubnetMask,
 			testsuiteLauncher,
-			testName,
-			testParams.TestMetadata)
+			apiContainerLauncher,
+			testParams)
 		outputManager.RegisterTestCompletion(testName, executionErr, passed)
 	}
 }
