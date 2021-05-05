@@ -31,6 +31,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 )
 
 const (
@@ -63,6 +64,9 @@ const (
 	// TODO This is wrong - we shouldn't actually specify the protocol at FreeHostPortBindingSupplier construction
 	//  time, but instead as a parameter to GetFreePort (so the protocol matches)
 	protocolForDebuggerPorts = "tcp"
+
+	maxTimesTryingToFindInitializerContainerId = 5
+	timeBetweenTryingToFindInitializerContainerId = 1 * time.Second
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
@@ -337,15 +341,31 @@ func main() {
 }
 
 func getInitializerContainerId(dockerClient *client.Client, executionInstanceId string) (string, error) {
+	logrus.Debugf("Getting initializer container ID...")
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	matchingIds, err := dockerManager.GetContainerIdsByName(context.Background(), executionInstanceId)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting container IDs matching execution ID '%v'", executionInstanceId)
+
+	// For some reason, Docker very occasionally will report 0 containers matching the execution instance ID even
+	//  though this container definitely has the right name, so we therefore retry a couple times as a workaround
+	// See: https://github.com/moby/moby/issues/42354)
+	timesTried := 0
+	for timesTried < maxTimesTryingToFindInitializerContainerId {
+		matchingIds, err := dockerManager.GetContainerIdsByName(context.Background(), executionInstanceId)
+		if err != nil {
+			logrus.Debugf("Got an error while trying to get the initializer container ID: %v", err)
+		} else if len(matchingIds) != 1 {
+			logrus.Debugf("Expected exactly 1 container ID matching execution instance ID '%v' but got %v", executionInstanceId, len(matchingIds))
+		} else {
+			result := matchingIds[0]
+			logrus.Debugf("Got initializer container ID: %v", result)
+			return result, nil
+		}
+		timesTried = timesTried + 1
+		if timesTried < maxTimesTryingToFindInitializerContainerId {
+			logrus.Debugf("Sleeping for %v then trying to get initializer container ID again...", timeBetweenTryingToFindInitializerContainerId)
+			time.Sleep(timeBetweenTryingToFindInitializerContainerId)
+		}
 	}
-	if len(matchingIds) != 1 {
-		return "", stacktrace.NewError("Expected exactly one container matching execution ID '%v' but got %v", executionInstanceId, len(matchingIds))
-	}
-	return matchingIds[0], nil
+	return "", stacktrace.NewError("Couldn't get the ID of the initializer container despite trying %v times with %v between tries", maxTimesTryingToFindInitializerContainerId, timeBetweenTryingToFindInitializerContainerId)
 }
 
 func getAccessController(

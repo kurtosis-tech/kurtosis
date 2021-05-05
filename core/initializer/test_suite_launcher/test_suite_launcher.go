@@ -225,7 +225,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for the testsuite container")
 		}
-		debuggerPortBinding = &freePortBinding
+		debuggerPortBinding = freePortBinding
 
 		debuggerPortInsideTestsuite, err := nat.NewPort(protocolForDebuggersRunningOnTestsuite, strconv.Itoa(portForDebuggersRunningOnTestsuite))
 		if err != nil {

@@ -61,7 +61,7 @@ Launches a testnet service with the given parameters
 
 Returns:
 	* The container ID of the newly-launched service
-	* The mapping of used_port -> host_port_binding (if any)
+	* The mapping of used_port -> host_port_binding (if no host port binding is available, then the map will be empty)
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
@@ -100,10 +100,12 @@ func (launcher UserServiceLauncher) Launch(
 			serviceId)
 	}
 
-	hostPortBindings := map[nat.Port]*nat.PortBinding{}
+	hostPortBindingsForDocker := map[nat.Port]*nat.PortBinding{} // Docker requires a present key to declare a used port, and a possibly-optional nil value
+	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
 	for port, _ := range usedPorts {
+		var dockerBindingToUse *nat.PortBinding = nil
 		if launcher.freeHostPortBindingSupplier != nil {
-			binding, err := launcher.freeHostPortBindingSupplier.GetFreePortBinding()
+			freeBinding, err := launcher.freeHostPortBindingSupplier.GetFreePortBinding()
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
 					err,
@@ -111,9 +113,13 @@ func (launcher UserServiceLauncher) Launch(
 					port.Port(),
 				)
 			}
-			hostPortBindings[port] = &binding
+			dockerBindingToUse = freeBinding
+			resultHostPortBindings[port] = freeBinding
 		}
+		hostPortBindingsForDocker[port] = dockerBindingToUse
 	}
+
+	logrus.Debugf("Service host port bindings: %+v", hostPortBindingsForDocker)
 
 	volumeMounts := map[string]string{
 		launcher.suiteExecutionVolName: suiteExecutionVolMntDirpath,
@@ -130,7 +136,7 @@ func (launcher UserServiceLauncher) Launch(
 		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
-		hostPortBindings,
+		hostPortBindingsForDocker,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -141,7 +147,7 @@ func (launcher UserServiceLauncher) Launch(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
-	return containerId, hostPortBindings, nil
+	return containerId, resultHostPortBindings, nil
 }
 
 // ==================================================================================================
