@@ -7,136 +7,93 @@ package test_suite_metadata_acquirer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_docker_consts/api_container_exit_codes"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"io/ioutil"
-	"os"
 	"strings"
+	"time"
 )
 
 const (
-	metadataAcquiringApiContainerTitle     = "Metadata-Acquiring Kurtosis API Container"
-	metadataSendingTestsuiteContainerTitle = "Metadata-Sending Testsuite Container"
+	metadataProvidingTestsuiteContainerTitle = "Metadata-Providing Testsuite Container"
+
+	metadataAcquisitionTimeout = 20 * time.Second
+
+	containerStopTimeout = 10 * time.Second
+
+	shouldFollowTestsuiteLogsOnErr = false
 )
 
 func GetTestSuiteMetadata(
-		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
 		dockerClient *client.Client,
-		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
-	dockerManager, err := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
-	}
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	logrus.Info("Launching metadata-acquiring containers...")
-	testsuiteContainerId, apiContainerId, err := launcher.LaunchMetadataAcquiringContainers(
+	logrus.Info("Launching metadata-providing testsuite...")
+	containerId, ipAddr, err := launcher.LaunchMetadataAcquiringContainer(
 		parentContext,
 		logrus.StandardLogger(),
 		dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-acquiring containers")
+		return nil, stacktrace.Propagate(err, "An error occurred launching the metadata-providing testsuite container")
 	}
 	// Safeguard to ensure we don't ever leak containers
 	defer func() {
-		if err := dockerManager.KillContainer(parentContext, testsuiteContainerId); err != nil {
-			logrus.Errorf("An error occurred killing the suite metadata-gathering testsuite container:")
+		if err := dockerManager.KillContainer(parentContext, containerId); err != nil {
+			logrus.Errorf("An error occurred killing the suite metadata-providing testsuite container:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", testsuiteContainerId)
+			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", containerId)
 		}
 	}()
-	defer func() {
-		if err := dockerManager.KillContainer(parentContext, apiContainerId); err != nil {
-			logrus.Errorf("An error occurred killing the suite metadata-gathering Kurtosis API container:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", testsuiteContainerId)
-		}
-	}()
-	logrus.Infof("Metadata-acquiring containers launched")
+	logrus.Infof("Metadata-providing testsuite container launched")
 
-	apiContainerExitCodeInt64, err := dockerManager.WaitForExit(
-		parentContext,
-		apiContainerId)
+	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, test_suite_rpc_api_consts.ListenPort)
+	conn, err := grpc.Dial(
+		testsuiteSocket,
+		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct testsuite
+	)
 	if err != nil {
-		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the suite metadata-serializing API container")
+		return nil, stacktrace.Propagate(err, "Couldn't dial testsuite container at %v to get testsuite metadata", testsuiteSocket)
 	}
-	apiContainerExitCode := int(apiContainerExitCodeInt64)
+	testsuiteClient := bindings.NewTestSuiteServiceClient(conn)
 
-	acceptExitCodeVisitor, found := api_container_exit_codes.ExitCodeErrorVisitorAcceptFuncs[apiContainerExitCode]
-	if !found {
-		return nil, stacktrace.NewError("The Kurtosis API container exited with an unrecognized " +
-			"exit code '%v' that doesn't have an accept listener; this is a code bug in Kurtosis",
-			apiContainerExitCode)
-	}
-	visitor := metadataSerializationExitCodeErrorVisitor{}
-	if err := acceptExitCodeVisitor(visitor); err != nil {
-		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.Propagate(
-			err,
-			"The API container responsible for serializing suite metadata exited with an error")
-	}
-
-	// At this point we expect the testsuite container to already have exited
-	testsuiteContainerExitCode, err := dockerManager.WaitForExit(
-		parentContext,
-		testsuiteContainerId)
+	logrus.Debugf("Getting testsuite metadata...")
+	ctxWithTimeout, cancelFunc := context.WithTimeout(parentContext, metadataAcquisitionTimeout)
+	defer cancelFunc() // Safeguard to ensure we don't leak resources
+	suiteMetadata, err := testsuiteClient.GetTestSuiteMetadata(ctxWithTimeout, &emptypb.Empty{})
 	if err != nil {
-		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the exit of the testsuite container that " +
-			"sends suite metadata to the API container")
+		printContainerLogsWithBanners(
+			dockerManager,
+			parentContext,
+			containerId,
+			logrus.StandardLogger(),
+			metadataProvidingTestsuiteContainerTitle,
+		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
-	if testsuiteContainerExitCode != 0 {
-		printBothContainerLogs(parentContext, dockerManager, apiContainerId, testsuiteContainerId)
-		return nil, stacktrace.NewError("The testsuite container that sends suite metadata to the API container exited " +
-			"with a nonzero exit code")
-	}
+	logrus.Debugf("Successfully retrieved testsuite metadata")
 
-	suiteMetadataFile := suiteExecutionVolume.GetSuiteMetadataFile()
-	suiteMetadataFilepath := suiteMetadataFile.GetAbsoluteFilepath()
-
-	suiteMetadataReaderFp, err := os.Open(suiteMetadataFilepath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred opening the testsuite metadata file at '%v' for reading", suiteMetadataFilepath)
-	}
-	defer suiteMetadataReaderFp.Close()
-
-	jsonBytes, err := ioutil.ReadAll(suiteMetadataReaderFp)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading the testsuite metadata JSON string from file")
-	}
-	logrus.Debugf("Test suite metadata JSON: " + string(jsonBytes))
-
-	var suiteMetadata TestSuiteMetadata
-	if err := json.Unmarshal(jsonBytes, &suiteMetadata); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing the testsuite metadata JSON")
+	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
 	}
 
 	if err := validateTestSuiteMetadata(suiteMetadata); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
 	}
 
-	return &suiteMetadata, nil
-}
-
-func printBothContainerLogs(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		apiContainerId string,
-		testsuiteContainerId string) {
-	printContainerLogsWithBanners(dockerManager, ctx, apiContainerId, logrus.StandardLogger(), metadataAcquiringApiContainerTitle)
-	printContainerLogsWithBanners(dockerManager, ctx, testsuiteContainerId, logrus.StandardLogger(), metadataSendingTestsuiteContainerTitle)
+	return suiteMetadata, nil
 }
 
 /*
@@ -157,7 +114,7 @@ func printContainerLogsWithBanners(
 		containerDescription string) {
 	var logReader io.Reader
 	var useDockerLogDemultiplexing bool
-	logReadCloser, err := dockerManager.GetContainerLogs(context, containerId)
+	logReadCloser, err := dockerManager.GetContainerLogs(context, containerId, shouldFollowTestsuiteLogsOnErr)
 	if err != nil {
 		errStr := fmt.Sprintf("Could not print container's logs due to the following error: %v", err)
 		logReader = strings.NewReader(errStr)
@@ -184,3 +141,38 @@ func printContainerLogsWithBanners(
 	banner_printer.PrintSection(log, "End " + containerDescription + " Logs", false)
 }
 
+func validateTestSuiteMetadata(suiteMetadata *bindings.TestSuiteMetadata) error {
+	if suiteMetadata.NetworkWidthBits == 0 {
+		return stacktrace.NewError("Test suite metadata has a network width bits == 0")
+	}
+	if suiteMetadata.TestMetadata == nil {
+		return stacktrace.NewError("Test metadata map is nil")
+	}
+	if len(suiteMetadata.TestMetadata) == 0 {
+		return stacktrace.NewError("Test suite doesn't declare any tests")
+	}
+	for testName, testMetadata := range suiteMetadata.TestMetadata {
+		if len(strings.TrimSpace(testName)) == 0 {
+			return stacktrace.NewError("Test name '%v' is empty", testName)
+		}
+		if err := validateTestMetadata(testMetadata); err != nil {
+			return stacktrace.Propagate(err, "An error occurred validating metadata for test '%v'", testName)
+		}
+	}
+	return nil
+}
+
+func validateTestMetadata(testMetadata *bindings.TestMetadata) error {
+	for artifactUrl := range testMetadata.UsedArtifactUrls {
+		if len(strings.TrimSpace(artifactUrl)) == 0 {
+			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)
+		}
+	}
+	if testMetadata.TestSetupTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test setup timeout is %v, but must be greater than 0.", testMetadata.TestSetupTimeoutInSeconds)
+	}
+	if testMetadata.TestRunTimeoutInSeconds <= 0 {
+		return stacktrace.NewError("Test run timeout is %v, but must be greater than 0.", testMetadata.TestRunTimeoutInSeconds)
+	}
+	return nil
+}

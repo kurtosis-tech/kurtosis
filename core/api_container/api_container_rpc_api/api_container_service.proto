@@ -1,0 +1,164 @@
+syntax = "proto3";
+package api_container_api;
+
+import "google/protobuf/empty.proto";
+
+service ApiContainerService {
+  // Registers a service with the API container but doesn't start the container for it
+  rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
+
+  // Generates files inside the test volume on the filesystem for a container
+  rpc GenerateFiles(GenerateFilesArgs) returns (GenerateFilesResponse) {};
+
+  // Starts a previously-registered service by creating a Docker container for it
+  rpc StartService(StartServiceArgs) returns (StartServiceResponse) {};
+
+  // Instructs the API container to remove the given service
+  rpc RemoveService(RemoveServiceArgs) returns (google.protobuf.Empty) {};
+
+  // Instructs the API container to repartition the test network
+  rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
+
+  // Executes the given command inside a running container
+  rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
+}
+
+// ==============================================================================================
+//                                     Register Service
+// ==============================================================================================
+message RegisterServiceArgs {
+  // ID that will be used to identify the service going forward
+  string service_id = 1;
+
+  // If emptystring, the default partition ID will be used
+  string partition_id = 2;
+}
+
+message RegisterServiceResponse {
+  // The IP address that the service will receive when it starts
+  string ip_addr = 1;
+}
+
+
+// ==============================================================================================
+//                                     Generate Files
+// ==============================================================================================
+message GenerateFilesArgs {
+  // The service ID for which the files will be generated
+  string service_id = 1;
+
+  // Mapping of meaningful-to-user string ID -> options controlling how the file gets generated
+  map<string, FileGenerationOptions> files_to_generate = 2;
+}
+
+message FileGenerationOptions {
+  enum FileTypeToGenerate {
+    FILE = 0;
+    // TODO Uncomment and generate directories too
+    // DIRECTORY = 1;
+  }
+
+  FileTypeToGenerate file_type_to_generate = 1;
+}
+
+message GenerateFilesResponse {
+  // Mapping of meaningful-to-user string ID (as passed in via the request) to the filepath (RELATIVE to the suite
+  //  execution volume root!) where the file was generated
+  map<string, string> generated_file_relative_filepaths = 1;
+}
+
+// ==============================================================================================
+//                                        Start Service
+// ==============================================================================================
+message StartServiceArgs {
+  // ID of the previously-registered service that should be started
+  string service_id = 1;
+
+  string docker_image = 2;
+
+  // "Set" of ports that the running service will listen on
+  // This is a string because it's Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
+  map<string, bool> used_ports = 3;
+
+  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
+  repeated string entrypoint_args = 4;
+
+  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
+  repeated string cmd_args = 5;
+
+  // Docker environment variables that should be set in the service's container
+  map<string, string> docker_env_vars = 6;
+
+  // The full path where the API container should execute the suite execution volume on the service container
+  string suite_execution_vol_mnt_dirpath = 7;
+
+  // Mapping of artifact_url -> filepath_on_container_to_mount_artifact_contents
+  map<string, string> files_artifact_mount_dirpaths = 8;
+}
+
+message StartServiceResponse {
+  // Mapping of used_ports_provided_in_input_args -> ip_and_port_on_host_where_port_is_bound (in ip:port form)
+  // Ports will only be in this map if they were successfully bound to a host port; if no ports were bound, then
+  // this map will be empty
+  map<string, PortBinding> used_ports_host_port_bindings = 1;
+}
+
+message PortBinding {
+  string interface_ip = 1;
+
+  string interface_port = 2;
+}
+
+// ==============================================================================================
+//                                        Remove Service
+// ==============================================================================================
+message RemoveServiceArgs {
+  string service_id = 1;
+
+  // How long to wait for the service to gracefully stop before hard killing it
+  uint64 container_stop_timeout_seconds = 2;
+}
+
+// ==============================================================================================
+//                                          Repartition
+// ==============================================================================================
+message RepartitionArgs {
+  // Definition of partitionId -> services that should be inside the partition after repartitioning
+  map<string, PartitionServices> partition_services = 1;
+
+  // Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
+  map<string, PartitionConnections> partition_connections = 2;
+
+  // Information about the default inter-partition connection to set up if one is not defined in the
+  //  partition connections map
+  PartitionConnectionInfo default_connection = 3;
+}
+
+message PartitionServices {
+  // "Set" of service IDs in partition
+  map<string, bool> service_id_set = 1;
+}
+
+message PartitionConnections {
+  map<string, PartitionConnectionInfo> connection_info = 1;
+}
+
+message PartitionConnectionInfo {
+  // Whether network traffic is allowed between the two partitions
+  bool is_blocked = 1;
+}
+
+// ==============================================================================================
+//                                          Exec Command
+// ==============================================================================================
+message ExecCommandArgs {
+  // The service ID of the container that the command should be executed in
+  string service_id = 1;
+
+  repeated string command_args = 2;
+}
+
+message ExecCommandResponse {
+  int32 exit_code = 1;
+  bytes log_output = 2;
+}

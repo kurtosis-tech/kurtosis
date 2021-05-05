@@ -1,0 +1,45 @@
+syntax = "proto3";
+package test_suite_api;
+
+import "google/protobuf/empty.proto";
+
+service TestSuiteService {
+  rpc GetTestSuiteMetadata(google.protobuf.Empty) returns (TestSuiteMetadata) {};
+
+  rpc SetupTest(SetupTestArgs) returns (google.protobuf.Empty) {};
+
+  // We don't need args dictating what test to run because SetupTest already indicates it (and it wouldn't make
+  //  sense to setup one test and run another)
+  rpc RunTest(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+}
+
+// ====================================================================================================
+//                                       GetTestSuiteMetadata
+// ====================================================================================================
+message TestSuiteMetadata {
+  // Mapping of testName -> testMetadata
+  map<string, TestMetadata> test_metadata = 1;
+
+  uint32 network_width_bits = 2;
+
+  // TODO Declare used file artifact URLs here (at the suite level)
+}
+
+message TestMetadata {
+  bool is_partitioning_enabled = 1;
+
+  // "Set" of artifact URLs used by the test
+  map<string, bool> used_artifact_urls = 2;
+
+  uint32 test_setup_timeout_in_seconds = 3;
+
+  uint32 test_run_timeout_in_seconds = 4;
+}
+
+
+// ====================================================================================================
+//                                       SetupTest
+// ====================================================================================================
+message SetupTestArgs {
+  string test_name = 1;
+}

@@ -29,7 +29,6 @@ COPY --from=builder /build/kurtosis-api-server .
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
     --log-level=\"${LOG_LEVEL}\" \
-    --mode=\"${MODE}\" \
     --params-json=\"${PARAMS_JSON}\" \
 "]
 # Developer notes about the above:
