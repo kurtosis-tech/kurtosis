@@ -4,6 +4,9 @@ package api_container_api;
 import "google/protobuf/empty.proto";
 
 service ApiContainerService {
+  // Loads a module container
+  rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
+
   // Registers a service with the API container but doesn't start the container for it
   rpc RegisterService(RegisterServiceArgs) returns (RegisterServiceResponse) {};
 
@@ -21,6 +24,21 @@ service ApiContainerService {
 
   // Executes the given command inside a running container
   rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
+}
+
+
+// ==============================================================================================
+//                                     Load Module
+// ==============================================================================================
+message LoadModuleArgs {
+  string container_image = 1;
+
+  // The serialized-to-JSON params object that will be used to start the module
+  string params_json = 2;
+}
+
+message LoadModuleResponse {
+  string ip_addr = 1;
 }
 
 // ==============================================================================================

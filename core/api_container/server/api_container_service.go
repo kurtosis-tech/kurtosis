@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -29,12 +30,17 @@ const (
 )
 
 type ApiContainerService struct {
-	dockerManager             *docker_manager.DockerManager
-	serviceNetwork            *service_network.ServiceNetwork
+	dockerManager   *docker_manager.DockerManager
+	serviceNetwork  *service_network.ServiceNetwork
+	modules 		*module_store.ModuleStore
 }
 
 func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork) *ApiContainerService {
 	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
+}
+
+func (service ApiContainerService) LoadModule(ctx context.Context, args *bindings.LoadModuleArgs) (*bindings.LoadModuleResponse, error) {
+	panic("implement me")
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {

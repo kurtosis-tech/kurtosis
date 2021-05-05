@@ -1,3 +1,10 @@
+# TBD
+### Features
+* Added a `LoadModule` call to the API container, for loading modules
+
+### Changes
+* Inserted an extra `user-service` element to user service container names, for easier identification
+
 # 1.14.0
 ### Changes
 * Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being linear code that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly
