@@ -9,12 +9,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
@@ -37,8 +37,7 @@ type UserServiceLauncher struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
-	// A nil value for this field indicates that no service port <-> host port bindings should be done
-	freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
+	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 
 	artifactCache *suite_execution_volume.ArtifactCache
 
@@ -50,10 +49,9 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, freeHostPortBindingSupplier: freeHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
+func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
-
 
 
 /**
@@ -61,7 +59,7 @@ Launches a testnet service with the given parameters
 
 Returns:
 	* The container ID of the newly-launched service
-	* The mapping of used_port -> host_port_binding (if no host port binding is available, then the map will be empty)
+	* The mapping of used_port -> host_port_binding (if no host port is bound, then the value will be nil)
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
@@ -100,26 +98,13 @@ func (launcher UserServiceLauncher) Launch(
 			serviceId)
 	}
 
-	hostPortBindingsForDocker := map[nat.Port]*nat.PortBinding{} // Docker requires a present key to declare a used port, and a possibly-optional nil value
-	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
-	for port, _ := range usedPorts {
-		var dockerBindingToUse *nat.PortBinding = nil
-		if launcher.freeHostPortBindingSupplier != nil {
-			freeBinding, err := launcher.freeHostPortBindingSupplier.GetFreePortBinding()
-			if err != nil {
-				return "", nil, stacktrace.Propagate(
-					err,
-					"Host port binding was requested, but an error occurred getting a free host port to bind to service port %v",
-					port.Port(),
-				)
-			}
-			dockerBindingToUse = freeBinding
-			resultHostPortBindings[port] = freeBinding
-		}
-		hostPortBindingsForDocker[port] = dockerBindingToUse
+	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting used ports with host bindings",
+		)
 	}
-
-	logrus.Debugf("Service host port bindings: %+v", hostPortBindingsForDocker)
 
 	volumeMounts := map[string]string{
 		launcher.suiteExecutionVolName: suiteExecutionVolMntDirpath,
@@ -136,7 +121,7 @@ func (launcher UserServiceLauncher) Launch(
 		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
-		hostPortBindingsForDocker,
+		usedPortsWithHostBindings,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -147,7 +132,7 @@ func (launcher UserServiceLauncher) Launch(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
-	return containerId, resultHostPortBindings, nil
+	return containerId, usedPortsWithHostBindings, nil
 }
 
 // ==================================================================================================

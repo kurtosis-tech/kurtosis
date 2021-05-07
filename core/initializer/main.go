@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
@@ -262,13 +263,15 @@ func main() {
 		hostPortBindingSupplier = supplier
 	}
 
+	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
+
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
 		suiteExecutionVolName,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		parsedFlags.GetString(customParamsJson),
-		hostPortBindingSupplier,
+		optionalHostPortBindingSupplier,
 	)
 
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
