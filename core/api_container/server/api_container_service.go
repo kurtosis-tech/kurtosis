@@ -107,6 +107,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
 
+	// We strip out ports with nil host port bindings to make it easier to iterate over this map on the client side
 	responseHostPortBindings := map[string]*bindings.PortBinding{}
 	for portObj, hostPortBinding := range hostPortBindings {
 		portSpecStr, found := portObjToPortSpecStr[portObj]
@@ -116,11 +117,13 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 				portObj,
 			)
 		}
-		responseBinding := &bindings.PortBinding{
-			InterfaceIp:   hostPortBinding.HostIP,
-			InterfacePort: hostPortBinding.HostPort,
+		if hostPortBinding != nil {
+			responseBinding := &bindings.PortBinding{
+				InterfaceIp:   hostPortBinding.HostIP,
+				InterfacePort: hostPortBinding.HostPort,
+			}
+			responseHostPortBindings[portSpecStr] = responseBinding
 		}
-		responseHostPortBindings[portSpecStr] = responseBinding
 	}
 	response := bindings.StartServiceResponse{
 		UsedPortsHostPortBindings: responseHostPortBindings,

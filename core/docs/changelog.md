@@ -1,3 +1,8 @@
+# TBD
+### Fixes
+* Fixed an occasional failure by Docker to retrieve the initializer container's ID
+* Fixed an issue where `user_service_launcher` wasn't setting container used ports correctly
+
 # 1.14.0
 ### Changes
 * Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being linear code that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly
