@@ -12,7 +12,7 @@ INITIALIZER_REPO="${REPO_BASE}_initializer"
 # However, this *does* mean that we'll be testing Kurt Core against a probably-outdated version of Kurt Libs - we're alright doing this, 
 # because some bit of sanity-checking is better than none and we'll test Kurt Core against the latest Kurt Libs when we upgrade the Core version in Libs
 # TODO The ideal would be having an extensive testsuite, specific to this repo, that runs all the this-repos-specific tests so that we don't have to depend on Kurt Libs anymore
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-golang-example:mieubrisse_testsuite-as-server"
+GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-golang-example:1.24.1"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"

@@ -81,7 +81,7 @@ func (launcher ApiContainerLauncher) Launch(
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]*nat.PortBinding{
-			kurtosisApiPort: nil,
+			kurtosisApiPort: nil, // We don't expose the API container's port to the host machine for now
 		},
 		nil, // Nil ENTRYPOINT args because the API container is launched by setting env vars
 		nil, // Nil CMD args because the API container is launched by setting env vars

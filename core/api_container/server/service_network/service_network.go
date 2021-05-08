@@ -225,7 +225,7 @@ Starts a previously-registered but not-started service by creating it in a conta
 
 Returns:
 	Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
-		to access the port. This will be empty if no ports are bound.
+		to access the port. If a used port doesn't have a host port bound, then the value will be nil.
  */
 func (network *ServiceNetwork) StartService(
 		ctx context.Context,
