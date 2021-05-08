@@ -1,4 +1,4 @@
-# TBD
+# 1.14.1
 ### Fixes
 * Fixed an occasional failure by Docker to retrieve the initializer container's ID
 * Fixed an issue where `user_service_launcher` wasn't setting container used ports correctly
