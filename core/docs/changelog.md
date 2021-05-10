@@ -1,3 +1,7 @@
+# TBD
+### Fixes
+* Fixed an issue where `kurtosis.sh` would break on some versions of Zsh when trying to uppercase the execution instance UUID
+
 # 1.14.1
 ### Fixes
 * Fixed an occasional failure by Docker to retrieve the initializer container's ID
