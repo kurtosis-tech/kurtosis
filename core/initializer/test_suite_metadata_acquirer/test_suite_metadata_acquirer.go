@@ -25,6 +25,8 @@ import (
 )
 
 const (
+	waitForTestsuiteAvailabilityTimeout = 10 * time.Second
+
 	metadataProvidingTestsuiteContainerTitle = "Metadata-Providing Testsuite Container"
 
 	metadataAcquisitionTimeout = 20 * time.Second
@@ -69,10 +71,20 @@ func GetTestSuiteMetadata(
 	}
 	testsuiteClient := bindings.NewTestSuiteServiceClient(conn)
 
+	logrus.Debugf("Waiting for testsuite container to become available...")
+	if err := waitUntilTestsuiteContainerIsAvailable(parentContext, testsuiteClient); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while waiting for the testsuite container to become available")
+	}
+	logrus.Debugf("Testsuite container became available")
+
 	logrus.Debugf("Getting testsuite metadata...")
 	ctxWithTimeout, cancelFunc := context.WithTimeout(parentContext, metadataAcquisitionTimeout)
 	defer cancelFunc() // Safeguard to ensure we don't leak resources
-	suiteMetadata, err := testsuiteClient.GetTestSuiteMetadata(ctxWithTimeout, &emptypb.Empty{})
+	suiteMetadata, err := testsuiteClient.GetTestSuiteMetadata(
+		ctxWithTimeout,
+		&emptypb.Empty{},
+		grpc.WaitForReady(true),
+	)
 	if err != nil {
 		printContainerLogsWithBanners(
 			dockerManager,
@@ -94,6 +106,15 @@ func GetTestSuiteMetadata(
 	}
 
 	return suiteMetadata, nil
+}
+
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client bindings.TestSuiteServiceClient) error {
+	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
+	defer cancelFunc()
+	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for the testsuite container to become available")
+	}
+	return nil
 }
 
 /*
