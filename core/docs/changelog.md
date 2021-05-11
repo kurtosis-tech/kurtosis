@@ -1,3 +1,7 @@
+# TBD
+### Fixes
+* Fixed an occasional issue where the initializer would try to connect to the testsuite container before it was up (resulting in a "connection refused" and a failed) by adding an is-available endpoint to the testsuite that the initializer will poll before running test setup
+
 # 1.14.1
 ### Fixes
 * Fixed an occasional failure by Docker to retrieve the initializer container's ID

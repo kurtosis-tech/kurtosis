@@ -4,6 +4,9 @@ package test_suite_api;
 import "google/protobuf/empty.proto";
 
 service TestSuiteService {
+  // Endpoint to verify the gRPC server is actually up before making any real calls
+  rpc IsAvailable(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+
   rpc GetTestSuiteMetadata(google.protobuf.Empty) returns (TestSuiteMetadata) {};
 
   rpc SetupTest(SetupTestArgs) returns (google.protobuf.Empty) {};
