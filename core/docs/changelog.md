@@ -1,6 +1,7 @@
 # TBD
 ### Fixes
-* Fixed an occasional issue where the initializer would try to connect to the testsuite container before it was up (resulting in a "connection refused" and a failed) by adding an is-available endpoint to the testsuite that the initializer will poll before running test setup
+* Fixed an issue where `kurtosis.sh` would break on some versions of Zsh when trying to uppercase the execution instance UUID
+* Fixed an occasional issue where the initializer would try to connect to the testsuite container before it was up (resulting in a "connection refused" and a failed test) by adding an `IsAvailable` endpoint to the testsuite that the initializer will poll before running test setup
 
 # 1.14.1
 ### Fixes
