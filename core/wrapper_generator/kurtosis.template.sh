@@ -136,10 +136,13 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
 fi
 
 if ! execution_uuid="$(uuidgen)"; then
-    echo "ERROR: Failed to generate a UUID for identifying this run of Kurtosis"
+    echo "ERROR: Failed to generate a UUID for identifying this run of Kurtosis" >&2
     exit 1
 fi
-execution_uuid="${execution_uuid^^}"
+if ! execution_uuid="$(echo "${execution_uuid}" | tr '[:lower:]' '[:upper:]')"; then
+    echo "ERROR: Failed to uppercase execution instance UUID" >&2
+    exit 1
+fi
 
 docker run \
     --name "${execution_uuid}__initializer" \
