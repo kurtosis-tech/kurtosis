@@ -1,3 +1,7 @@
+# TBD
+### Fixes
+* Switch back to productized version of Kurtosis Libs (v1.24.2) for the `build-and-run.sh` script
+
 # 1.14.2
 ### Fixes
 * Fixed an issue where `kurtosis.sh` would break on some versions of Zsh when trying to uppercase the execution instance UUID
