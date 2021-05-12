@@ -1,6 +1,10 @@
 # TBD
+### Changes
+* Made the docs for customizing a testsuite more explicit
+
 ### Fixes
 * Switch back to productized version of Kurtosis Libs (v1.24.2) for the `build-and-run.sh` script
+* Updated `DockerContainerInitializer` -> `ContainerConfigFactory` in diagram in testsuite customization docs
 
 # 1.14.2
 ### Fixes

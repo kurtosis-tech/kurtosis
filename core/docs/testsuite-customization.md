@@ -2,6 +2,7 @@ Testsuite Customization
 =======================
 ### Prerequisites
 * Bootstrapped testsuite from following the quickstart instructions [here](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart)
+* Testsuite opened in your IDE of choice for your testsuite's language
 
 ### Testsuite Customization
 Now that you have a running testsuite, you'll want to start customizing the testsuite to your needs. Here we'll walk through the components inside a testsuite, as well as how to customize them.
