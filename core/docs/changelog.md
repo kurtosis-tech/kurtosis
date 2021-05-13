@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Made the docs for customizing a testsuite more explicit
+* Make `build-and-run-core.sh` more explicit about what it's building
 
 ### Fixes
 * Switch back to productized version of Kurtosis Libs (v1.24.2) for the `build-and-run.sh` script
