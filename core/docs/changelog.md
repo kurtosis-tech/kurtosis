@@ -1,3 +1,6 @@
+# TBD
+* Add a release script to automate the release process
+
 # 1.14.3
 ### Changes
 * Made the docs for customizing a testsuite more explicit
