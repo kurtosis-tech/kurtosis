@@ -1,3 +1,12 @@
+# 1.14.3
+### Changes
+* Made the docs for customizing a testsuite more explicit
+* Make `build-and-run-core.sh` more explicit about what it's building
+
+### Fixes
+* Switch back to productized version of Kurtosis Libs (v1.24.2) for the `build-and-run.sh` script
+* Updated `DockerContainerInitializer` -> `ContainerConfigFactory` in diagram in testsuite customization docs
+
 # 1.14.2
 ### Fixes
 * Fixed an issue where `kurtosis.sh` would break on some versions of Zsh when trying to uppercase the execution instance UUID
