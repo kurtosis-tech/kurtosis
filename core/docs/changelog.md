@@ -1,5 +1,9 @@
 # TBD
-* Renamed --test-suite-log-level to --suite-log-level
+### Changes
+* Renamed --test-suite-log-level flag to kurtosis.sh to be --suite-log-level
+
+### Breaking Changes
+* The flag to set the testsuite's log level has been renamed from `--test-suite-log-level` -> `--suite-log-level`
 
 # 1.14.4
 * Add a release script to automate the release process
