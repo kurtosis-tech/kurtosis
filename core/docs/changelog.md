@@ -1,4 +1,5 @@
 # TBD
+* Renamed --test-suite-log-level to --suite-log-level
 
 # 1.14.4
 * Add a release script to automate the release process
