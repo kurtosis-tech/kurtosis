@@ -513,8 +513,8 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with names matching string '%v'", nameStr)
 	}
 	result := []string{}
-	for _, container := range containers {
-		result = append(result, container.ID)
+	for _, containerObj := range containers {
+		result = append(result, containerObj.ID)
 	}
 	return result, nil
 }

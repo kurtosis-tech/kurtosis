@@ -84,7 +84,7 @@ func NewFreeHostPortBindingSupplier(
 	}, nil
 }
 
-func (supplier *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding nat.PortBinding, err error) {
+func (supplier *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding *nat.PortBinding, err error) {
 	supplier.mutex.Lock()
 	defer supplier.mutex.Unlock()
 
@@ -112,7 +112,7 @@ func (supplier *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding n
 			continue
 		}
 
-		binding := nat.PortBinding{
+		binding := &nat.PortBinding{
 			HostIP:   supplier.interfaceIpAddr,
 			HostPort: fmt.Sprint(portInt),
 		}
@@ -120,7 +120,7 @@ func (supplier *FreeHostPortBindingSupplier) GetFreePortBinding() (portBinding n
 		return binding, nil
 	}
 
-	return nat.PortBinding{}, stacktrace.NewError(
+	return &nat.PortBinding{}, stacktrace.NewError(
 		"There are no more free ports available on interface '%v' on protocol '%v' in range [%v, %v)",
 		supplier.interfaceIpAddr,
 		supplier.protocol,

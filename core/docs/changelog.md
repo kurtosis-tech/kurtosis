@@ -5,6 +5,35 @@
 ### Changes
 * Inserted an extra `user-service` element to user service container names, for easier identification
 
+# 1.15.0
+### Changes
+* Renamed --test-suite-log-level flag to kurtosis.sh to be --suite-log-level
+
+### Breaking Changes
+* The flag to set the testsuite's log level has been renamed from `--test-suite-log-level` -> `--suite-log-level`
+
+# 1.14.4
+* Add a release script to automate the release process
+
+# 1.14.3
+### Changes
+* Made the docs for customizing a testsuite more explicit
+* Make `build-and-run-core.sh` more explicit about what it's building
+
+### Fixes
+* Switch back to productized version of Kurtosis Libs (v1.24.2) for the `build-and-run.sh` script
+* Updated `DockerContainerInitializer` -> `ContainerConfigFactory` in diagram in testsuite customization docs
+
+# 1.14.2
+### Fixes
+* Fixed an issue where `kurtosis.sh` would break on some versions of Zsh when trying to uppercase the execution instance UUID
+* Fixed an occasional issue where the initializer would try to connect to the testsuite container before it was up (resulting in a "connection refused" and a failed test) by adding an `IsAvailable` endpoint to the testsuite that the initializer will poll before running test setup
+
+# 1.14.1
+### Fixes
+* Fixed an occasional failure by Docker to retrieve the initializer container's ID
+* Fixed an issue where `user_service_launcher` wasn't setting container used ports correctly
+
 # 1.14.0
 ### Changes
 * Significantly refactored the project to invert the relationship between Core & a testsuite container: rather than the testsuite container being linear code that registers itself with the API container, the testsuite container now runs a server and the initializer container calls the testsuite container directly

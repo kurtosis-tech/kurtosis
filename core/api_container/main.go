@@ -15,6 +15,7 @@ import (
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
@@ -161,6 +162,7 @@ func createApiContainerService(
 		}
 		hostPortBindingSupplier = supplier
 	}
+	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
 
 	serviceNetwork := createServiceNetwork(
 		args.EnclaveNameElems,
@@ -172,7 +174,7 @@ func createApiContainerService(
 		freeIpAddrTracker,
 		args.NetworkId,
 		args.IsPartitioningEnabled,
-		hostPortBindingSupplier)
+		optionalHostPortBindingSupplier)
 
 	result := server.NewApiContainerService(dockerManager, serviceNetwork)
 
@@ -199,7 +201,7 @@ func createServiceNetwork(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
 		isPartitioningEnabled bool,
-		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *service_network.ServiceNetwork {
+		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *service_network.ServiceNetwork {
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
@@ -213,7 +215,7 @@ func createServiceNetwork(
 		dockerManager,
 		containerNameElemsProvider,
 		freeIpAddrTracker,
-		hostPortBindingSupplier,
+		optionalHostPortBindingSupplier,
 		artifactCache,
 		filesArtifactExpander,
 		dockerNetworkId,

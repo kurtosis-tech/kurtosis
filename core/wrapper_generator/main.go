@@ -153,8 +153,7 @@ var wrapperArgs = []WrapperArg{
 		Action:     StoreValue,
 	},
 	{
-		// TODO Rename this to --suite-log-level to be less of a pain to type
-		Flag:       "--test-suite-log-level",
+		Flag:       "--suite-log-level",
 		Variable:   "test_suite_log_level",
 		DefaultVal: "info",
 		HelpText: fmt.Sprintf("A string that will be passed as-is to the test suite container to indicate what log level the test suite container should output at; this string should be meaningful to the test suite container because Kurtosis won't know what logging framework the testsuite uses"),

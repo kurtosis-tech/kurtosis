@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_env_vars"
 	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
@@ -48,31 +48,11 @@ type TestsuiteContainerLauncher struct {
 	// The JSON-serialized custom params object that will be passed as-is to the testsuite
 	customParamsJson string
 
-	// This is the port object inside the testsuite container that a debugger might be listening on, if any is running at all
-	// We'll always bind this port on the testsuite container to a port on the user's machine, so they can attach
-	//  a debugger if desired
-	debuggerPortObj nat.Port
-
-	// Supplier for getting free host ports, which will only be active if non-nil
-	//  the constructor
-	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
+	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 }
 
-func NewTestsuiteContainerLauncher(
-		executionInstanceUuid string,
-		suiteExecutionVolName string,
-		testsuiteImage string,
-		testsuiteLogLevel string,
-		customParamsJson string,
-		hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{
-		executionInstanceUuid:   executionInstanceUuid,
-		suiteExecutionVolName:   suiteExecutionVolName,
-		testsuiteImage:          testsuiteImage,
-		suiteLogLevel:           testsuiteLogLevel,
-		customParamsJson:        customParamsJson,
-		hostPortBindingSupplier: hostPortBindingSupplier,
-	}
+func NewTestsuiteContainerLauncher(executionInstanceUuid string, suiteExecutionVolName string, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{executionInstanceUuid: executionInstanceUuid, suiteExecutionVolName: suiteExecutionVolName, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
 }
 
 /*
@@ -196,6 +176,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
+// NOTE: The port binding will be nil if no host port was bound
 func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -214,30 +195,30 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 			test_suite_rpc_api_consts.ListenPort,
 		)
 	}
-	hostPortBindings := map[nat.Port]*nat.PortBinding{
-		// Could expose the testsuite RPC API to the user's host machine if we really wanted
-		testsuiteRpcPort: nil,
+
+	testsuiteDebuggerPort, err := nat.NewPort(protocolForDebuggersRunningOnTestsuite, strconv.Itoa(portForDebuggersRunningOnTestsuite))
+	if err != nil {
+		return "", nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the port object on '%v/%v' to represent the testsuite debugger port",
+			protocolForDebuggersRunningOnTestsuite,
+			portForDebuggersRunningOnTestsuite,
+		)
 	}
 
-	var debuggerPortBinding *nat.PortBinding = nil
-	if launcher.hostPortBindingSupplier != nil {
-		freePortBinding, err := launcher.hostPortBindingSupplier.GetFreePortBinding()
-		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "An error occurred getting a free host port binding for the testsuite container")
-		}
-		debuggerPortBinding = &freePortBinding
+	usedPorts := map[nat.Port]bool{
+		testsuiteRpcPort: true,
+		testsuiteDebuggerPort: true,
+	}
 
-		debuggerPortInsideTestsuite, err := nat.NewPort(protocolForDebuggersRunningOnTestsuite, strconv.Itoa(portForDebuggersRunningOnTestsuite))
-		if err != nil {
-			return "", nil, stacktrace.Propagate(
-				err,
-				"An error occurred creating the port object on '%v/%v' to represent the debugger's port inside the testsuite",
-				protocolForDebuggersRunningOnTestsuite,
-				portForDebuggersRunningOnTestsuite,
-			)
-		}
+	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred binding the test suite's used ports to host port bindings where necessary")
+	}
 
-		hostPortBindings[debuggerPortInsideTestsuite] = debuggerPortBinding
+	debuggerHostPortBinding, found := usedPortsWithHostBindings[testsuiteDebuggerPort]
+	if !found {
+		return "", nil, stacktrace.NewError("Couldn't find an entry for the debugger port even though it should be in the map!")
 	}
 
 	containerId, err := dockerManager.CreateAndStartContainer(
@@ -248,7 +229,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		containerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers
 		docker_manager.DefaultNetworkMode,  			// No special networking modes for testsuite containers
-		hostPortBindings,
+		usedPortsWithHostBindings,
 		nil, // Nil ENTRYPOINT args because we expect the test suite image to be parameterized with variables
 		nil, // Nil CMD args because we expect the test suite image to be parameterized with variables
 		envVars,
@@ -262,7 +243,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating and starting the testsuite container")
 	}
 
-	return containerId, debuggerPortBinding, nil
+	return containerId, debuggerHostPortBinding, nil
 }
 
 func logSuccessfulSuiteContainerLaunch(
@@ -302,11 +283,10 @@ func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(kurtosisAp
 Generates the map of environment variables needed to run a test suite container
 */
 func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiSocket string) (map[string]string, error) {
-	debuggerPortIntStr := strconv.Itoa(launcher.debuggerPortObj.Int())
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
-		test_suite_env_vars.CustomParamsJsonEnvVar:  launcher.customParamsJson,
-		test_suite_env_vars.DebuggerPortEnvVar:      debuggerPortIntStr,
+		test_suite_env_vars.CustomParamsJsonEnvVar:        launcher.customParamsJson,
+		test_suite_env_vars.DebuggerPortEnvVar:      strconv.Itoa(portForDebuggersRunningOnTestsuite),
 		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
 		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
 	}

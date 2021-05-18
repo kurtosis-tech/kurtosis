@@ -22,6 +22,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 )
 
@@ -38,6 +39,8 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
 
 const (
 	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
+
+	waitForTestsuiteAvailabilityTimeout = 10 * time.Second
 
 	// How long we'll give the API container & testsuite container to gracefully stop after we're done trying to run the test
 	//  (either through success or error)
@@ -206,6 +209,10 @@ func RunTest(
 	defer conn.Close()
 	testsuiteServiceClient := bindings.NewTestSuiteServiceClient(conn)
 
+	if err := waitUntilTestsuiteContainerIsAvailable(testSetupExecutionCtx, testsuiteServiceClient); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred while waiting for the testsuite container to become available")
+	}
+
 	if err := streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx,
 		testTeardownContext,
@@ -219,6 +226,16 @@ func RunTest(
 	}
 
 	return true, nil
+}
+
+// =========================== PRIVATE HELPER FUNCTIONS =========================================
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client bindings.TestSuiteServiceClient) error {
+	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
+	defer cancelFunc()
+	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for the testsuite container to become available")
+	}
+	return nil
 }
 
 // NOTE: This function makes heavy use of deferred functions, to simplify the code
@@ -297,7 +314,6 @@ func streamTestsuiteLogsWhileRunningTest(
 }
 
 
-// =========================== PRIVATE HELPER FUNCTIONS =========================================
 /*
 Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
 	exited (either normally or with error)
