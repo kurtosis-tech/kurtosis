@@ -16,6 +16,7 @@ BINDINGS_OUTPUT_DIRNAME="bindings"
 # The bindings for the Protobuf files will be generated inside a 'bindings' directory in this directory
 PROTOBUF_RELATIVE_DIRPATHS=(
     "api_container/api_container_rpc_api"
+    "kurtosis_module/kurtosis_module_rpc_api"
     "test_suite/test_suite_rpc_api"
 )
 

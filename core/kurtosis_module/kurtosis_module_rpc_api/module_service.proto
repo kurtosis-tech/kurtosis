@@ -1,0 +1,8 @@
+syntax = "proto3";
+package module_rpc_api;
+
+import "google/protobuf/empty.proto";
+
+service ModuleService {
+  rpc IsAvailable(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+}

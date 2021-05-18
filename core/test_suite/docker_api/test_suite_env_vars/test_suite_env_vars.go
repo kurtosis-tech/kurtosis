@@ -12,7 +12,7 @@ A package to contain the contract of Docker environment variables that will be p
 
 type TestSuiteMode string
 const (
-	CustomParamsJson        = "CUSTOM_PARAMS_JSON"
+	CustomParamsJsonEnvVar  = "CUSTOM_PARAMS_JSON"
 	DebuggerPortEnvVar      = "DEBUGGER_PORT"
 	KurtosisApiSocketEnvVar = "KURTOSIS_API_SOCKET" // Only populated if in test-running mode
 	LogLevelEnvVar          = "LOG_LEVEL"
