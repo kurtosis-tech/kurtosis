@@ -8,7 +8,7 @@ package module_launcher
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -38,7 +38,7 @@ type ModuleLauncher struct {
 
 // TODO Constructor
 
-func (launcher ModuleLauncher) Launch(ctx context.Context, moduleId module_store.ModuleID, containerImage string, paramsJsonStr string) (id string, ipAddr net.IP, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
+func (launcher ModuleLauncher) Launch(ctx context.Context, moduleId module_store_types.ModuleID, containerImage string, paramsJsonStr string) (id string, ipAddr net.IP, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
 	moduleIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
