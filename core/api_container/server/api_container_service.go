@@ -40,7 +40,15 @@ func NewApiContainerService(dockerManager *docker_manager.DockerManager, service
 }
 
 func (service ApiContainerService) LoadModule(ctx context.Context, args *bindings.LoadModuleArgs) (*bindings.LoadModuleResponse, error) {
-	panic("implement me")
+	moduleId, moduleIpAddr, err := service.modules.LoadModule(ctx, args.ContainerImage, args.ParamsJson)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading module with container image '%v' and params JSON '%v'", args.ContainerImage, args.ParamsJson)
+	}
+	result := &bindings.LoadModuleResponse{
+		ModuleId: string(moduleId),
+		IpAddr:   moduleIpAddr.String(),
+	}
+	return result, nil
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {

@@ -38,7 +38,9 @@ message LoadModuleArgs {
 }
 
 message LoadModuleResponse {
-  string ip_addr = 1;
+  string module_id = 1;
+
+  string ip_addr = 2;
 }
 
 // ==============================================================================================
