@@ -53,6 +53,9 @@ type ApiContainerArgs struct {
 	//  running. For example, when running a test, this will be [execution_instance_uuid, test_name]
 	EnclaveNameElems []string `json:"enclaveNameElems"`
 
+	// Necessary so that when the API container starts modules, it knows which IP addr to give them
+	ApiContainerIpAddr string
+
 	// Instructs the API container that these IP addrs are already taken and shouldn't be used
 	TakenIpAddrs			 map[string]bool `json:"takenIpAddrsSet"`
 
@@ -73,16 +76,18 @@ func NewApiContainerArgs(
 		gatewayIpAddr string,
 		suiteExecutionVolumeName string,
 		enclaveNameElems []string,
+		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
 		hostPortBindingSupplierParams *HostPortBindingSupplierParams) (*ApiContainerArgs, error) {
 	result := ApiContainerArgs{
-		ExecutionInstanceId: executionInstanceId,
-		NetworkId:           networkId,
-		SubnetMask:          subnetMask,
-		GatewayIpAddr:       gatewayIpAddr,
-		SuiteExecutionVolumeName: suiteExecutionVolumeName,
-		EnclaveNameElems:         enclaveNameElems,
+		ExecutionInstanceId:           executionInstanceId,
+		NetworkId:                     networkId,
+		SubnetMask:                    subnetMask,
+		GatewayIpAddr:                 gatewayIpAddr,
+		SuiteExecutionVolumeName:      suiteExecutionVolumeName,
+		EnclaveNameElems:              enclaveNameElems,
+		ApiContainerIpAddr:            apiContainerIpAddr,
 		TakenIpAddrs:                  takenIpAddrs,
 		IsPartitioningEnabled:         isPartitioningEnabled,
 		HostPortBindingSupplierParams: hostPortBindingSupplierParams,

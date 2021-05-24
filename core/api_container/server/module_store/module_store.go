@@ -34,7 +34,13 @@ type ModuleStore struct {
 	moduleLauncher *module_launcher.ModuleLauncher
 }
 
-// TODO Constructor
+func NewModuleStore(moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
+	return &ModuleStore{
+		mutex: &sync.Mutex{},
+		moduleInfo: map[module_store_types.ModuleID]moduleInfo{},
+		moduleLauncher: moduleLauncher,
+	}
+}
 
 // Loads a module and returns its module ID, IP address, and any host port bindings
 func (store *ModuleStore) LoadModule(ctx context.Context, containerImage string, paramsJsonStr string) (module_store_types.ModuleID, net.IP, error) {

@@ -15,6 +15,8 @@ import (
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
@@ -176,6 +178,15 @@ func createApiContainerService(
 		args.IsPartitioningEnabled,
 		optionalHostPortBindingSupplier)
 
+	moduleStore := createModuleStore(
+		dockerManager,
+		args.ApiContainerIpAddr,
+		containerNameElemsProvider,
+		freeIpAddrTracker,
+		optionalHostPortBindingSupplier,
+
+	)
+
 	result := server.NewApiContainerService(dockerManager, serviceNetwork)
 
 	return result, nil
@@ -236,4 +247,25 @@ func createServiceNetwork(
 		networkingSidecarManager)
 
 	return serviceNetwork
+}
+
+func createModuleStore(
+		dockerManager *docker_manager.DockerManager,
+		apiContainerIpAddr string,
+		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
+		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
+		dockerNetworkId string) *module_store.ModuleStore {
+	moduleLauncher := module_launcher.NewModuleLauncher(
+		dockerManager,
+		apiContainerIpAddr,
+		containerNameElemsProvider,
+		freeIpAddrTracker,
+		optionalHostPortBindingSupplier,
+		dockerNetworkId,
+	)
+
+	moduleStore := module_store.NewModuleStore(moduleLauncher)
+
+	return moduleStore
 }

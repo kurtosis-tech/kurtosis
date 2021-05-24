@@ -7,13 +7,14 @@ package module_launcher
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_module/docker_api/kurtosis_module_env_vars"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_module/kurtosis_module_rpc_api/kurtosis_module_rpc_api_consts"
 	"github.com/palantir/stacktrace"
@@ -24,19 +25,21 @@ import (
 type ModuleLauncher struct {
 	dockerManager *docker_manager.DockerManager
 
+	// Modules have a connection to the API container, so the module launcher must know about the API container's IP addr
+	apiContainerIpAddr string
+
 	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 
-	// A nil value for this field indicates that no service port <-> host port bindings should be done
-	freeHostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
-
 	dockerNetworkId string
 }
 
-// TODO Constructor
+func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string) *ModuleLauncher {
+	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId}
+}
 
 func (launcher ModuleLauncher) Launch(ctx context.Context, moduleId module_store_types.ModuleID, containerImage string, paramsJsonStr string) (id string, ipAddr net.IP, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
 	moduleIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
@@ -63,7 +66,9 @@ func (launcher ModuleLauncher) Launch(ctx context.Context, moduleId module_store
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred binding used ports to host ports")
 	}
 
+	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, api_container_rpc_api_consts.ListenPort)
 	envVars := map[string]string{
+		kurtosis_module_env_vars.ApiContainerSocketEnvVar: apiContainerSocket,
 		kurtosis_module_env_vars.CustomParamsJsonEnvVar: paramsJsonStr,
 	}
 

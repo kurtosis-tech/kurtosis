@@ -35,8 +35,8 @@ type ApiContainerService struct {
 	modules 		*module_store.ModuleStore
 }
 
-func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork) *ApiContainerService {
-	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
+func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, modules *module_store.ModuleStore) *ApiContainerService {
+	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork, modules: modules}
 }
 
 func (service ApiContainerService) LoadModule(ctx context.Context, args *bindings.LoadModuleArgs) (*bindings.LoadModuleResponse, error) {
