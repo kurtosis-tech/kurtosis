@@ -166,6 +166,8 @@ func createApiContainerService(
 	}
 	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
 
+	dockerNetworkId := args.NetworkId
+
 	serviceNetwork := createServiceNetwork(
 		args.EnclaveNameElems,
 		args.SuiteExecutionVolumeName,
@@ -174,7 +176,7 @@ func createApiContainerService(
 		enclaveDirectory,
 		dockerManager,
 		freeIpAddrTracker,
-		args.NetworkId,
+		dockerNetworkId,
 		args.IsPartitioningEnabled,
 		optionalHostPortBindingSupplier)
 
@@ -184,10 +186,10 @@ func createApiContainerService(
 		containerNameElemsProvider,
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
-
+		dockerNetworkId,
 	)
 
-	result := server.NewApiContainerService(dockerManager, serviceNetwork)
+	result := server.NewApiContainerService(dockerManager, serviceNetwork, moduleStore)
 
 	return result, nil
 }
