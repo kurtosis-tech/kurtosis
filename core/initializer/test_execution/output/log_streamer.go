@@ -50,6 +50,10 @@ type LogStreamer struct {
 
 	// Hook that will be called after the streaming thread is shutdown
 	threadShutdownHook func()
+
+	// Map that holds ReadClosers as key and associates it with a boolean that indicates whether ReadCloser
+	// is opened or closed
+	inputReadClosers map[*io.ReadCloser]bool
 }
 
 func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStreamer {
@@ -59,6 +63,7 @@ func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStream
 		streamThreadShutdownChan: nil,
 		streamThreadStoppedChan:  nil,
 		outputLogger:             outputLogger,
+		inputReadClosers:		  make(map[*io.ReadCloser]bool),
 	}
 }
 
@@ -67,6 +72,8 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred opening input filepath '%v' for reading", inputFilepath)
 	}
+
+	//streamer.inputReadClosers[&input] = true
 
 	threadShutdownHook := func() {
 		input.Close()
@@ -78,8 +85,14 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 	return nil
 }
 
-func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.Reader) error {
-	threadShutdownHook := func() {}
+func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
+	//Instead of the argument being of type io.Reader, it should be of type io.ReadCloser
+
+	streamer.inputReadClosers[&input] = true
+
+	threadShutdownHook := func() {
+		input.Close()
+	}
 	if err := streamer.startStreamingThread(input, true, threadShutdownHook); err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
 	}
@@ -95,6 +108,11 @@ func (streamer *LogStreamer) StopStreaming() error {
 	}
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
+	}
+
+	//Closing all of the ReadClosers opened to prevent blocking
+	for k := range streamer.inputReadClosers {
+		(*k).Close()
 	}
 
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
@@ -118,6 +136,7 @@ func (streamer *LogStreamer) StopStreaming() error {
 //                                       Private helper functions
 // ====================================================================================================
 func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemultiplexing bool, threadShutdownHook func()) error {
+
 	if streamer.state != notStarted {
 		return stacktrace.NewError("Cannot start streaming with this log streamer; streamer is not in the '%v' state", notStarted)
 	}
@@ -128,8 +147,8 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	streamer.streamThreadShutdownChan = streamThreadShutdownChan
 	streamer.streamThreadStoppedChan = streamThreadStoppedChan
 
-	// TODO TODO This entire thing needs to be rewritten!!!! This was written when we thought io.Copy was non-blocking,
-	//  and would just copy as much as was available! Instead, io.Copy will block until an EOF, so the "keepGoing" loop
+	// TODO TODO This entire thing needs to be rewritten!!!! This was written when we thought StdCopy was non-blocking,
+	//  and would just copy as much as was available! Instead, StdCopy will block until an EOF, so the "keepGoing" loop
 	//  here doesn't actually get run more than once!
 	go func() {
 		defer threadShutdownHook()
@@ -143,6 +162,7 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 				keepGoing = false
 			case <- time.After(timeBetweenStreamerCopies):
 				streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
+
 				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
 					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
 				}
@@ -156,11 +176,13 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 		streamer.streamThreadStoppedChan <- true
 	}()
 	streamer.state = streaming
+
 	return nil
 }
 
 func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing bool) error {
 	var result error
+
 	if useDockerDemultiplexing {
 		_, result = stdcopy.StdCopy(output, output, input)
 	} else {
