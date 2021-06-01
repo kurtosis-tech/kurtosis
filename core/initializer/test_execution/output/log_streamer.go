@@ -110,16 +110,12 @@ func (streamer *LogStreamer) StopStreaming() error {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
 
-	//Closing all of the ReadClosers opened to prevent blocking
-	for k := range streamer.inputReadClosers {
-		(*k).Close()
-	}
-
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 	streamer.streamThreadShutdownChan <- true
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
 
 	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamer.getLoglinePrefix(), streamerStopTimeout)
+
 	select {
 	case <- streamer.streamThreadStoppedChan:
 		streamer.outputLogger.Tracef("%vThread reported stop", streamer.getLoglinePrefix())
@@ -130,6 +126,13 @@ func (streamer *LogStreamer) StopStreaming() error {
 		streamer.state = failedToStop
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
+
+	//Closing all of the ReadClosers opened to prevent blocking
+	for k := range streamer.inputReadClosers {
+		(*k).Close()
+	}
+
+	return nil
 }
 
 // ====================================================================================================
