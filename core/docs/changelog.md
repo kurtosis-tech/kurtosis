@@ -1,4 +1,12 @@
 # TBD
+### Changes
+* Added another attribute to the LogStreamer struct which holds all of the ReadClosers that are opened
+
+### Fixes
+* Fixed an issue with the LogStreamer where StdCopy is a blocking method which could halt all of Kurtosis if not dealt with appropriately
+
+### Breaking Changes
+* If an intentionally hung testsuite runs, Kurtosis should now not hang due to the blocking StdCopy method but instead give a timeout error
 
 # 1.15.0
 ### Changes
