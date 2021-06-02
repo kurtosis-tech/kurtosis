@@ -73,7 +73,7 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 		return stacktrace.Propagate(err, "An error occurred opening input filepath '%v' for reading", inputFilepath)
 	}
 
-	//streamer.inputReadClosers[&input] = true
+	//streamer.inputReadClosers[input] = true
 
 	threadShutdownHook := func() {
 		input.Close()
@@ -86,7 +86,6 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 }
 
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
-	//Instead of the argument being of type io.Reader, it should be of type io.ReadCloser
 
 	streamer.inputReadClosers[&input] = true
 
@@ -109,6 +108,8 @@ func (streamer *LogStreamer) StopStreaming() error {
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
+
+	//logrus.Infof("<<<<<<~~~~~ !!! Does it reach StopStreaming???? !!!! ----->>>>>>")
 
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 	streamer.streamThreadShutdownChan <- true
@@ -186,10 +187,14 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing bool) error {
 	var result error
 
+	//logrus.Infof("<<<<<<~~~~~ !!! Does it reach right before the stdcopy???? !!!! ----->>>>>>")
+
 	if useDockerDemultiplexing {
 		_, result = stdcopy.StdCopy(output, output, input)
+		//logrus.Infof("<<<<<<~~~~~ !!! Does it reach after the stdcopy???? !!!! ----->>>>>>")
 	} else {
 		_, result = io.Copy(output, input)
+		//logrus.Infof("<<<<<<~~~~~ !!! Does it reach after io.Copy???? !!!! ----->>>>>>")
 	}
 	return result
 }
