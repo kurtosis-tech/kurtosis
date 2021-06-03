@@ -73,7 +73,8 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 		return stacktrace.Propagate(err, "An error occurred opening input filepath '%v' for reading", inputFilepath)
 	}
 
-	//streamer.inputReadClosers[input] = true
+	//streamer.inputReadClosers[input.(*io.ReadCloser)] = true
+	fmt.Println("~~~~~ ALIIIIII Filepath ~~~~~~", input)
 
 	threadShutdownHook := func() {
 		input.Close()
@@ -86,6 +87,8 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 }
 
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
+
+	fmt.Println("~~~~ ALIIIIII Docker ~~~~~", input)
 
 	streamer.inputReadClosers[&input] = true
 
@@ -109,8 +112,6 @@ func (streamer *LogStreamer) StopStreaming() error {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
 
-	//logrus.Infof("<<<<<<~~~~~ !!! Does it reach StopStreaming???? !!!! ----->>>>>>")
-
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 	streamer.streamThreadShutdownChan <- true
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
@@ -121,19 +122,27 @@ func (streamer *LogStreamer) StopStreaming() error {
 	case <- streamer.streamThreadStoppedChan:
 		streamer.outputLogger.Tracef("%vThread reported stop", streamer.getLoglinePrefix())
 		streamer.state = terminated
+
+		//Closing all of the ReadClosers opened to prevent blocking
+		for k := range streamer.inputReadClosers {
+			(*k).Close()
+			fmt.Println("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~", *k)
+		}
+
 		return nil
 	case <- time.After(streamerStopTimeout):
 		streamer.outputLogger.Tracef("%v%v timeout was hit", streamer.getLoglinePrefix(), streamerStopTimeout)
 		streamer.state = failedToStop
+
+		//Closing all of the ReadClosers opened to prevent blocking
+		for k := range streamer.inputReadClosers {
+			(*k).Close()
+			fmt.Println("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~", *k)
+		}
+
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
 
-	//Closing all of the ReadClosers opened to prevent blocking
-	for k := range streamer.inputReadClosers {
-		(*k).Close()
-	}
-
-	return nil
 }
 
 // ====================================================================================================
@@ -187,14 +196,16 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing bool) error {
 	var result error
 
-	//logrus.Infof("<<<<<<~~~~~ !!! Does it reach right before the stdcopy???? !!!! ----->>>>>>")
-
 	if useDockerDemultiplexing {
+
+		//fmt.Println("~~~~ Ali - Before STDCopy!!!! ~~~~~")
+
 		_, result = stdcopy.StdCopy(output, output, input)
-		//logrus.Infof("<<<<<<~~~~~ !!! Does it reach after the stdcopy???? !!!! ----->>>>>>")
+
+		//fmt.Println("~~~~ Ali - After STDCopy!!!! ~~~~~")
+
 	} else {
 		_, result = io.Copy(output, input)
-		//logrus.Infof("<<<<<<~~~~~ !!! Does it reach after io.Copy???? !!!! ----->>>>>>")
 	}
 	return result
 }
