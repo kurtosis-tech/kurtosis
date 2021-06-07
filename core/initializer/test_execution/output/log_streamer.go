@@ -73,9 +73,6 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 		return stacktrace.Propagate(err, "An error occurred opening input filepath '%v' for reading", inputFilepath)
 	}
 
-	//streamer.inputReadClosers[input.(*io.ReadCloser)] = true
-	fmt.Println("~~~~~ ALIIIIII Filepath ~~~~~~", input)
-
 	threadShutdownHook := func() {
 		input.Close()
 	}
@@ -87,8 +84,6 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 }
 
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
-
-	fmt.Println("~~~~ ALIIIIII Docker ~~~~~", input)
 
 	streamer.inputReadClosers[&input] = true
 
@@ -126,7 +121,8 @@ func (streamer *LogStreamer) StopStreaming() error {
 		//Closing all of the ReadClosers opened to prevent blocking
 		for k := range streamer.inputReadClosers {
 			(*k).Close()
-			fmt.Println("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~", *k)
+			streamer.inputReadClosers[k] = false
+			streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
 		}
 
 		return nil
@@ -137,7 +133,8 @@ func (streamer *LogStreamer) StopStreaming() error {
 		//Closing all of the ReadClosers opened to prevent blocking
 		for k := range streamer.inputReadClosers {
 			(*k).Close()
-			fmt.Println("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~", *k)
+			streamer.inputReadClosers[k] = false
+			streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
 		}
 
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
@@ -197,13 +194,7 @@ func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing boo
 	var result error
 
 	if useDockerDemultiplexing {
-
-		//fmt.Println("~~~~ Ali - Before STDCopy!!!! ~~~~~")
-
 		_, result = stdcopy.StdCopy(output, output, input)
-
-		//fmt.Println("~~~~ Ali - After STDCopy!!!! ~~~~~")
-
 	} else {
 		_, result = io.Copy(output, input)
 	}
