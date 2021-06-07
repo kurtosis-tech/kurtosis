@@ -108,6 +108,10 @@ func (streamer *LogStreamer) StopStreaming() error {
 	}
 
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
+
+	//ADD CODE
+	//if use
+
 	streamer.streamThreadShutdownChan <- true
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
 
@@ -163,25 +167,30 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	go func() {
 		defer threadShutdownHook()
 
-		keepGoing := true
-		for keepGoing {
-			streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
-			select {
-			case <- streamer.streamThreadShutdownChan:
-				streamer.outputLogger.Tracef("%vReceived signal on stream thread shutdown chan; setting keepGoing to false", streamer.getLoglinePrefix())
-				keepGoing = false
-			case <- time.After(timeBetweenStreamerCopies):
-				streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
+		if useDockerDemultiplexing {
+			stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input)
 
-				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
+		} else {
+			keepGoing := true
+			for keepGoing {
+				streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
+				select {
+				case <-streamer.streamThreadShutdownChan:
+					streamer.outputLogger.Tracef("%vReceived signal on stream thread shutdown chan; setting keepGoing to false", streamer.getLoglinePrefix())
+					keepGoing = false
+				case <-time.After(timeBetweenStreamerCopies):
+					streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
+
+					if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+						streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
+					}
 				}
+				streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
 			}
-			streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
-		}
-		// Do a final copy, to capture any non-copied output
-		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
+			// Do a final copy, to capture any non-copied output
+			if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+				streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
+			}
 		}
 		streamer.streamThreadStoppedChan <- true
 	}()
