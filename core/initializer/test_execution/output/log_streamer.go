@@ -110,7 +110,16 @@ func (streamer *LogStreamer) StopStreaming() error {
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 
 	//ADD CODE
-	//if use
+	if (len(streamer.inputReadClosers) != 0){
+
+		//Closing all of the ReadClosers opened to prevent blocking
+		for k := range streamer.inputReadClosers {
+			(*k).Close()
+			streamer.inputReadClosers[k] = false
+			streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
+		}
+
+	}
 
 	streamer.streamThreadShutdownChan <- true
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
@@ -122,24 +131,24 @@ func (streamer *LogStreamer) StopStreaming() error {
 		streamer.outputLogger.Tracef("%vThread reported stop", streamer.getLoglinePrefix())
 		streamer.state = terminated
 
-		//Closing all of the ReadClosers opened to prevent blocking
-		for k := range streamer.inputReadClosers {
-			(*k).Close()
-			streamer.inputReadClosers[k] = false
-			streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
-		}
+		////Closing all of the ReadClosers opened to prevent blocking
+		//for k := range streamer.inputReadClosers {
+		//	(*k).Close()
+		//	streamer.inputReadClosers[k] = false
+		//	streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
+		//}
 
 		return nil
 	case <- time.After(streamerStopTimeout):
 		streamer.outputLogger.Tracef("%v%v timeout was hit", streamer.getLoglinePrefix(), streamerStopTimeout)
 		streamer.state = failedToStop
 
-		//Closing all of the ReadClosers opened to prevent blocking
-		for k := range streamer.inputReadClosers {
-			(*k).Close()
-			streamer.inputReadClosers[k] = false
-			streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
-		}
+		////Closing all of the ReadClosers opened to prevent blocking
+		//for k := range streamer.inputReadClosers {
+		//	(*k).Close()
+		//	streamer.inputReadClosers[k] = false
+		//	streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
+		//}
 
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
