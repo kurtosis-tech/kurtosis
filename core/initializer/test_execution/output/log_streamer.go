@@ -155,9 +155,6 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	streamer.streamThreadShutdownChan = streamThreadShutdownChan
 	streamer.streamThreadStoppedChan = streamThreadStoppedChan
 
-	// TODO TODO This entire thing needs to be rewritten!!!! This was written when we thought StdCopy was non-blocking,
-	//  and would just copy as much as was available! Instead, StdCopy will block until an EOF, so the "keepGoing" loop
-	//  here doesn't actually get run more than once!
 	go func() {
 		defer threadShutdownHook()
 
