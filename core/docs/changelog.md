@@ -1,7 +1,4 @@
 # TBD
-### Changes
-* Added another attribute to the LogStreamer struct which holds all of the ReadClosers that are opened
-
 ### Fixes
 * Fixed an issue with the LogStreamer where StdCopy is a blocking method which could halt all of Kurtosis if not dealt with appropriately
 
