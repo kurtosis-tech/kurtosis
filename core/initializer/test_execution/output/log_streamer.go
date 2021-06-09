@@ -110,13 +110,12 @@ func (streamer *LogStreamer) StopStreaming() error {
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 
 	//ADD CODE
-	if (len(streamer.inputReadClosers) != 0){
+	if len(streamer.inputReadClosers) != 0{
 
 		//Closing all of the ReadClosers opened to prevent blocking
 		for k := range streamer.inputReadClosers {
 			(*k).Close()
 			streamer.inputReadClosers[k] = false
-			streamer.outputLogger.Infof("~~~~ ALIIIIII NEW Closed ReadClosers!! ~~~~~")
 		}
 
 	}
@@ -131,24 +130,10 @@ func (streamer *LogStreamer) StopStreaming() error {
 		streamer.outputLogger.Tracef("%vThread reported stop", streamer.getLoglinePrefix())
 		streamer.state = terminated
 
-		////Closing all of the ReadClosers opened to prevent blocking
-		//for k := range streamer.inputReadClosers {
-		//	(*k).Close()
-		//	streamer.inputReadClosers[k] = false
-		//	streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
-		//}
-
 		return nil
 	case <- time.After(streamerStopTimeout):
 		streamer.outputLogger.Tracef("%v%v timeout was hit", streamer.getLoglinePrefix(), streamerStopTimeout)
 		streamer.state = failedToStop
-
-		////Closing all of the ReadClosers opened to prevent blocking
-		//for k := range streamer.inputReadClosers {
-		//	(*k).Close()
-		//	streamer.inputReadClosers[k] = false
-		//	streamer.outputLogger.Infof("~~~~ ALIIIIII Closed ReadClosers!! ~~~~~")
-		//}
 
 		return stacktrace.NewError("We asked the streamer to stop but it still hadn't after %v", streamerStopTimeout)
 	}
@@ -176,10 +161,6 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	go func() {
 		defer threadShutdownHook()
 
-		//if useDockerDemultiplexing {
-		//	stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input)
-		//
-		//} else {
 		keepGoing := true
 		for keepGoing {
 			streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
@@ -201,8 +182,6 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
 		}
 		streamer.streamThreadStoppedChan <- true
-		//}
-		//streamer.streamThreadStoppedChan <- true
 	}()
 	streamer.state = streaming
 
