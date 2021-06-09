@@ -51,9 +51,9 @@ type LogStreamer struct {
 	// Hook that will be called after the streaming thread is shutdown
 	threadShutdownHook func()
 
-	// Map that holds ReadClosers as key and associates it with a boolean that indicates whether ReadCloser
-	// is opened or closed
-	inputReadClosers map[*io.ReadCloser]bool
+	//Pointer to ReadCloser that has been opened by Docker input on this struct
+	//Will be nil if non-Docker input however
+	inputReadClosers *io.ReadCloser
 }
 
 func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStreamer {
@@ -63,7 +63,7 @@ func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStream
 		streamThreadShutdownChan: nil,
 		streamThreadStoppedChan:  nil,
 		outputLogger:             outputLogger,
-		inputReadClosers:		  make(map[*io.ReadCloser]bool),
+		inputReadClosers:		  nil,
 	}
 }
 
@@ -85,7 +85,7 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
 
-	streamer.inputReadClosers[&input] = true
+	streamer.inputReadClosers = &input
 
 	threadShutdownHook := func() {
 		input.Close()
@@ -109,15 +109,9 @@ func (streamer *LogStreamer) StopStreaming() error {
 
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 
-	//ADD CODE
-	if len(streamer.inputReadClosers) != 0{
-
-		//Closing all of the ReadClosers opened to prevent blocking
-		for k := range streamer.inputReadClosers {
-			(*k).Close()
-			streamer.inputReadClosers[k] = false
-		}
-
+	//Closing the ReadCloser opened to prevent blocking
+	if streamer.inputReadClosers != nil{
+		(*streamer.inputReadClosers).Close()
 	}
 
 	streamer.streamThreadShutdownChan <- true
