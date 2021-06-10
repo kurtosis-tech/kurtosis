@@ -28,7 +28,9 @@ const (
 
 	//TODO - type filePathState OR DockerState
 	notStarted streamerState = "NOT_STARTED"
-	streaming streamerState = "STREAMING"
+	streaming streamerState = "STREAMING" //TODO - remove this ??
+	streamingFilePath streamerState = "STREAMING_FILEPATH"
+	streamingDocker streamerState = "STREAMING_DOCKER"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
 
@@ -44,7 +46,7 @@ type LogStreamer struct {
 
 	// A channel to tell the streaming thread to stop
 	// Will be set to non-nil when streaming starts
-	streamThreadShutdownChan chan bool
+	filePathStreamThreadShutdownChan chan bool
 
 	// A channel to indicate that the streaming thread has stopped
 	// Will be set to non-nil when streaming starts
@@ -65,7 +67,7 @@ func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStream
 	return &LogStreamer{
 		loglineLabel:             loglineLabel,
 		state:                    notStarted,
-		streamThreadShutdownChan: nil,
+		filePathStreamThreadShutdownChan: nil,
 		streamThreadStoppedChan:  nil,
 		outputLogger:             outputLogger,
 		inputReadClosers:		  nil,
@@ -117,6 +119,8 @@ func (streamer *LogStreamer) StopStreaming() error {
 		streamer.outputLogger.Tracef("%vShort-circuiting stop; streamer state is already '%v' state", streamer.getLoglinePrefix(), streamer.state)
 		return nil
 	}
+	//TODO - probably need to fix this below
+	//streamer.state != streaming || streamer.state != streamingFilePath || streamer.state != streamingDocker
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
@@ -126,9 +130,10 @@ func (streamer *LogStreamer) StopStreaming() error {
 	//Closing the ReadCloser opened to prevent blocking
 	if streamer.inputReadClosers != nil{
 		(*streamer.inputReadClosers).Close()
+	} else {
+		streamer.filePathStreamThreadShutdownChan <- true
 	}
-
-	streamer.streamThreadShutdownChan <- true
+	
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
 
 	streamer.outputLogger.Tracef("%vWaiting until thread reports stopped, or %v timeout is hit...", streamer.getLoglinePrefix(), streamerStopTimeout)
@@ -160,34 +165,44 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	streamThreadShutdownChan := make(chan bool)
 	streamThreadStoppedChan := make(chan bool)
 
-	streamer.streamThreadShutdownChan = streamThreadShutdownChan
+	streamer.filePathStreamThreadShutdownChan = streamThreadShutdownChan
 	streamer.streamThreadStoppedChan = streamThreadStoppedChan
 
 	go func() {
 		defer threadShutdownHook()
 
 		//TODO - Create streamFilePointerLogs helper function
-		keepGoing := true
-		for keepGoing {
-			streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
-			select {
-			case <-streamer.streamThreadShutdownChan:
-				streamer.outputLogger.Tracef("%vReceived signal on stream thread shutdown chan; setting keepGoing to false", streamer.getLoglinePrefix())
-				keepGoing = false
-			case <-time.After(timeBetweenStreamerCopies):
-				streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
+		if useDockerDemultiplexing {
+			stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input)
+			streamer.state = streamingDocker
+		} else {
 
-				if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-					streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
+			keepGoing := true
+			for keepGoing {
+				streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
+				select {
+				case <-streamer.filePathStreamThreadShutdownChan:
+					streamer.outputLogger.Tracef("%vReceived signal on stream thread shutdown chan; setting keepGoing to false", streamer.getLoglinePrefix())
+					keepGoing = false
+				case <-time.After(timeBetweenStreamerCopies):
+					streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
+
+					if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+						streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
+					}
 				}
+				streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
 			}
-			streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
+			// Do a final copy, to capture any non-copied output
+			if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+				streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
+			}
+			streamer.state = streamingFilePath
 		}
-		// Do a final copy, to capture any non-copied output
-		if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
-			streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
-		}
+
 		streamer.streamThreadStoppedChan <- true
+		
+
 	}()
 	streamer.state = streaming
 
