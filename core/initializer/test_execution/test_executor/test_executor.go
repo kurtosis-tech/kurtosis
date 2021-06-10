@@ -53,8 +53,6 @@ const (
 	//  rather than the testsuite
 	initializerLogPrefix = "[INITIALIZER] "
 
-	shouldFollowTestsuiteLogs = true
-
 	// During network removal, how long to wait after issuing the kill command to the containers and before
 	//  trying to remove the network (which will fail if there are running containers)
 	networkTeardownWaitTime = 2 * time.Second
@@ -253,26 +251,35 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
-	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
-	if err != nil {
-		log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
+
+	//TODO - Get rid of code below
+	//readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, true)
+	//if err != nil {
+	//	log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
+	//} else {
+	//defer readCloser.Close()
+
+	//TODO dockerLogStreamerLogLineLabel - change into constant
+	logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
+	//TODO move constant inside log streamer
+	//TODO - move this to personal document (magic variables - bad practice; want to extract and turn into constants)
+	//TODO - move this to personal documemnt (complex code is not good, need to make things explicit)
+	//TODO - continuation from above; that is why we want to make if..else (differentiate between FP and Docker)
+	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
+		testsuiteContainerId); startStreamingErr != nil {
+		log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 	} else {
-		defer readCloser.Close()
+		log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
 
-		logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
-		if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
-			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
-		} else {
-			log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
-
-			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
-			defer func() {
-				if err := logStreamer.StopStreaming(); err != nil {
-					log.Warnf("An error occurred stopping the log streamer: %v", err)
-				}
-			}()
-		}
+		// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
+		defer func() {
+			if err := logStreamer.StopStreaming(); err != nil {
+				log.Warnf("An error occurred stopping the log streamer: %v", err)
+			}
+		}()
 	}
+	//TODO - Get rid of code of commented code below
+	//}
 
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)

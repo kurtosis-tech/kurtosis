@@ -6,8 +6,10 @@
 package output
 
 import (
+	"context"
 	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -24,10 +26,13 @@ const (
 	// If we ask the streamer to stop and it hasn't after this time, throw an error
 	streamerStopTimeout = 5 * time.Second
 
+	//TODO - type filePathState OR DockerState
 	notStarted streamerState = "NOT_STARTED"
 	streaming streamerState = "STREAMING"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
+
+	shouldFollowTestsuiteLogs = true
 )
 
 // Single-use, non-thread-safe streamer that will read data and pump it to the given output log
@@ -83,15 +88,24 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 	return nil
 }
 
-func (streamer *LogStreamer) StartStreamingFromDockerLogs(input io.ReadCloser) error {
+func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx context.Context,
+	dockerManager *docker_manager.DockerManager, testsuiteContainerId string) error {
 
-	streamer.inputReadClosers = &input
+	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
 
-	threadShutdownHook := func() {
-		input.Close()
-	}
-	if err := streamer.startStreamingThread(input, true, threadShutdownHook); err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
+	if err != nil {
+		//TODO - make sure this is correct
+		stacktrace.NewError("An error occurred getting the testsuite container logs for streaming: %v", err)
+	} else {
+
+		streamer.inputReadClosers = &input
+
+		threadShutdownHook := func() {
+			input.Close()
+		}
+		if err := streamer.startStreamingThread(input, true, threadShutdownHook); err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
+		}
 	}
 	return nil
 }
@@ -152,6 +166,7 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	go func() {
 		defer threadShutdownHook()
 
+		//TODO - Create streamFilePointerLogs helper function
 		keepGoing := true
 		for keepGoing {
 			streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
