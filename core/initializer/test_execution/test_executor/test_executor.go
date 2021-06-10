@@ -48,6 +48,8 @@ const (
 
 	printTestsuiteLogSectionAsError = false
 
+	dockerLogStreamerLogLineLabel = "DOCKER LOGS STREAMER"
+
 	// For debugging, we'll sometimes want to print logs from the initializer during the section labelled "testsuite logs"
 	// To distinguish initializer logs from testsuite logs, we add this prefix to loglines that come from the initializer
 	//  rather than the testsuite
@@ -252,19 +254,8 @@ func streamTestsuiteLogsWhileRunningTest(
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
 
-	//TODO - Get rid of code below
-	//readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, true)
-	//if err != nil {
-	//	log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
-	//} else {
-	//defer readCloser.Close()
+	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
 
-	//TODO dockerLogStreamerLogLineLabel - change into constant
-	logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
-	//TODO move constant inside log streamer
-	//TODO - move this to personal document (magic variables - bad practice; want to extract and turn into constants)
-	//TODO - move this to personal documemnt (complex code is not good, need to make things explicit)
-	//TODO - continuation from above; that is why we want to make if..else (differentiate between FP and Docker)
 	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
 		testsuiteContainerId); startStreamingErr != nil {
 		log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
@@ -278,8 +269,6 @@ func streamTestsuiteLogsWhileRunningTest(
 			}
 		}()
 	}
-	//TODO - Get rid of code of commented code below
-	//}
 
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
