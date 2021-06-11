@@ -26,11 +26,8 @@ const (
 	// If we ask the streamer to stop and it hasn't after this time, throw an error
 	streamerStopTimeout = 5 * time.Second
 
-	//TODO - type filePathState OR DockerState
 	notStarted streamerState = "NOT_STARTED"
-	streaming streamerState = "STREAMING" //TODO - remove this ??
-	streamingFilePath streamerState = "STREAMING_FILEPATH"
-	streamingDocker streamerState = "STREAMING_DOCKER"
+	streaming streamerState = "STREAMING"
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
 
@@ -96,8 +93,7 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx 
 	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
 
 	if err != nil {
-		//TODO - make sure this is correct
-		stacktrace.NewError("An error occurred getting the testsuite container logs for streaming: %v", err)
+		stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
 	} else {
 
 		streamer.inputReadClosers = &input
@@ -119,8 +115,7 @@ func (streamer *LogStreamer) StopStreaming() error {
 		streamer.outputLogger.Tracef("%vShort-circuiting stop; streamer state is already '%v' state", streamer.getLoglinePrefix(), streamer.state)
 		return nil
 	}
-	//TODO - probably need to fix this below
-	//streamer.state != streaming || streamer.state != streamingFilePath || streamer.state != streamingDocker
+
 	if streamer.state != streaming {
 		return stacktrace.NewError("Cannot stop streamer; streamer is not in 'streaming' state")
 	}
@@ -173,13 +168,12 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 
 		if useDockerDemultiplexing {
 			stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input)
-			streamer.state = streamingDocker
 		} else {
 			streamFilePointerLogs(streamer, input, useDockerDemultiplexing)
 		}
 
 		streamer.streamThreadStoppedChan <- true
-
+		
 	}()
 	streamer.state = streaming
 
@@ -188,7 +182,7 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 
 
 func streamFilePointerLogs(streamer *LogStreamer, input io.Reader, useDockerDemultiplexing bool) error {
-	
+
 	keepGoing := true
 	for keepGoing {
 		streamer.outputLogger.Tracef("%vRunning channel-check cycle...", streamer.getLoglinePrefix())
@@ -209,7 +203,6 @@ func streamFilePointerLogs(streamer *LogStreamer, input io.Reader, useDockerDemu
 	if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
 		streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
 	}
-	streamer.state = streamingFilePath
 
 	return nil
 }
