@@ -63,7 +63,7 @@ const (
 	// How much time we'll give the testsuite to stop gracefully before killing it
 	testsuiteGracefulStopTimeout = 10 * time.Second
 
-	// This string is used to evaluate if a context cancel error has been getting during a setup or run test execution
+	// This string is used to evaluate if a context cancel error has been encountered during a setup or run test execution
 	contextDeadlineStringError = "context deadline exceeded"
 )
 
