@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strings"
 	"time"
 )
 
@@ -61,6 +62,9 @@ const (
 
 	// How much time we'll give the testsuite to stop gracefully before killing it
 	testsuiteGracefulStopTimeout = 10 * time.Second
+
+	// This string is used to evaluate if a context cancel error has been encountered during a setup or run test execution
+	contextDeadlineStringError = "context deadline exceeded"
 )
 
 /*
@@ -285,6 +289,9 @@ func streamTestsuiteLogsWhileRunningTest(
 		TestName: testParams.TestName,
 	}
 	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
+		if strings.Contains(err.Error(), contextDeadlineStringError){
+			return stacktrace.NewError("Test setup timeout exceeded")
+		}
 		return stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
 	}
 	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
@@ -297,6 +304,9 @@ func streamTestsuiteLogsWhileRunningTest(
 	)
 	defer testRunCtxCancelFunc()
 	if _, err := testsuiteServiceClient.RunTest(testRunCtx, &empty.Empty{}); err != nil {
+		if strings.Contains(err.Error(), contextDeadlineStringError){
+			return stacktrace.NewError("Test run timeout exceeded")
+		}
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
