@@ -157,10 +157,10 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 		return stacktrace.NewError("Cannot start streaming with this log streamer; streamer is not in the '%v' state", notStarted)
 	}
 
-	streamThreadShutdownChan := make(chan bool)
+	filePathStreamThreadShutdownChan := make(chan bool)
 	streamThreadStoppedChan := make(chan bool)
 
-	streamer.filePathStreamThreadShutdownChan = streamThreadShutdownChan
+	streamer.filePathStreamThreadShutdownChan = filePathStreamThreadShutdownChan
 	streamer.streamThreadStoppedChan = streamThreadStoppedChan
 
 	go func() {
