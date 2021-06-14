@@ -90,7 +90,14 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx context.Context,
 	dockerManager *docker_manager.DockerManager, testsuiteContainerId string) error {
 
+	functionExitedSuccessfully := false
 	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
+
+	defer func() {
+		if !functionExitedSuccessfully {
+			input.Close()
+		}
+	}()
 
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
@@ -105,6 +112,9 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx 
 			return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
 		}
 	}
+
+	functionExitedSuccessfully = true
+
 	return nil
 }
 
