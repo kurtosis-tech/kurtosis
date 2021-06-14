@@ -93,7 +93,7 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx 
 	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
 
 	if err != nil {
-		stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
+		return stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
 	} else {
 
 		streamer.inputReadCloser = input
