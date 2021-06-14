@@ -177,9 +177,11 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 		defer threadShutdownHook()
 
 		if useDockerDemultiplexing {
-			stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input)
+			if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
+				streamer.outputLogger.Errorf("%vAn error occurred reading the docker log output from the test logs: %v", streamer.getLoglinePrefix(), err)
+			}
 		} else {
-			streamFilePointerLogs(streamer, input, useDockerDemultiplexing)
+			streamFilePointerLogs(streamer, input)
 		}
 
 		streamer.streamThreadStoppedChan <- true
@@ -191,7 +193,7 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 }
 
 
-func streamFilePointerLogs(streamer *LogStreamer, input io.Reader, useDockerDemultiplexing bool) error {
+func streamFilePointerLogs(streamer *LogStreamer, input io.Reader) error {
 
 	keepGoing := true
 	for keepGoing {
@@ -203,14 +205,14 @@ func streamFilePointerLogs(streamer *LogStreamer, input io.Reader, useDockerDemu
 		case <-time.After(timeBetweenStreamerCopies):
 			streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
 
-			if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+			if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
 				streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
 			}
 		}
 		streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
 	}
 	// Do a final copy, to capture any non-copied output
-	if err := copyToOutput(input, streamer.outputLogger.Out, useDockerDemultiplexing); err != nil {
+	if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
 		streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
 	}
 
