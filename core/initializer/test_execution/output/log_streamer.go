@@ -57,17 +57,17 @@ type LogStreamer struct {
 
 	//Pointer to ReadCloser that has been opened by Docker input on this struct
 	//Will be nil if non-Docker input however
-	inputReadClosers *io.ReadCloser
+	inputReadCloser io.ReadCloser
 }
 
 func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStreamer {
 	return &LogStreamer{
-		loglineLabel:             loglineLabel,
-		state:                    notStarted,
+		loglineLabel:                     loglineLabel,
+		state:                            notStarted,
 		filePathStreamThreadShutdownChan: nil,
-		streamThreadStoppedChan:  nil,
-		outputLogger:             outputLogger,
-		inputReadClosers:		  nil,
+		streamThreadStoppedChan:          nil,
+		outputLogger:                     outputLogger,
+		inputReadCloser:                  nil,
 	}
 }
 
@@ -96,7 +96,7 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx 
 		stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
 	} else {
 
-		streamer.inputReadClosers = &input
+		streamer.inputReadCloser = input
 
 		threadShutdownHook := func() {
 			input.Close()
@@ -123,8 +123,8 @@ func (streamer *LogStreamer) StopStreaming() error {
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 
 	//Closing the ReadCloser opened to prevent blocking
-	if streamer.inputReadClosers != nil{
-		(*streamer.inputReadClosers).Close()
+	if streamer.inputReadCloser != nil{
+		(streamer.inputReadCloser).Close()
 	} else {
 		streamer.filePathStreamThreadShutdownChan <- true
 	}
