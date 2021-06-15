@@ -19,6 +19,8 @@ import (
 
 type streamerState string
 
+type streamerInputSource string
+
 const (
 	// How long the streamer will pause between each cycle of copying input -> output
 	timeBetweenStreamerCopies = 500 * time.Millisecond
@@ -31,6 +33,9 @@ const (
 	terminated streamerState = "TERMINATED"
 	failedToStop streamerState = "FAILED_TO_STOP"
 
+	inputFilePath streamerInputSource = "FILE_POINTER"
+	inputDocker streamerInputSource = "DOCKER_LOG_STREAM"
+
 	shouldFollowTestsuiteLogs = true
 )
 
@@ -40,6 +45,8 @@ type LogStreamer struct {
 	loglineLabel string
 
 	state streamerState
+
+	inputState streamerInputSource
 
 	// A channel to tell the streaming thread to stop
 	// Will be set to non-nil when streaming starts
@@ -64,6 +71,7 @@ func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStream
 	return &LogStreamer{
 		loglineLabel:                     loglineLabel,
 		state:                            notStarted,
+		inputState: 					  inputFilePath,
 		filePathStreamThreadShutdownChan: nil,
 		streamThreadStoppedChan:          nil,
 		outputLogger:                     outputLogger,
@@ -72,6 +80,9 @@ func NewLogStreamer(loglineLabel string, outputLogger *logrus.Logger) *LogStream
 }
 
 func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) error {
+
+	streamer.inputState = inputFilePath
+
 	input, err := os.Open(inputFilepath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred opening input filepath '%v' for reading", inputFilepath)
@@ -89,6 +100,8 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 
 func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx context.Context,
 	dockerManager *docker_manager.DockerManager, testsuiteContainerId string) error {
+
+	streamer.inputState = inputDocker
 
 	functionExitedSuccessfully := false
 	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
@@ -133,7 +146,7 @@ func (streamer *LogStreamer) StopStreaming() error {
 	streamer.outputLogger.Tracef("%vSending signal to stop streaming thread...", streamer.getLoglinePrefix())
 
 	//Closing the ReadCloser opened to prevent blocking
-	if streamer.inputReadCloser != nil{
+	if streamer.inputState == inputDocker{
 		(streamer.inputReadCloser).Close()
 	} else {
 		streamer.filePathStreamThreadShutdownChan <- true
@@ -219,17 +232,6 @@ func streamFilePointerLogs(streamer *LogStreamer, input io.Reader) error {
 	return nil
 }
 
-
-func copyToOutput(input io.Reader, output io.Writer, useDockerDemultiplexing bool) error {
-	var result error
-
-	if useDockerDemultiplexing {
-		_, result = stdcopy.StdCopy(output, output, input)
-	} else {
-		_, result = io.Copy(output, input)
-	}
-	return result
-}
 
 // This is a prefix that will be attached to log messages to identify that they're coming from the streamer
 // This is necessary because these log messages will likely be outputted in the section labelled "testsuite logs",
