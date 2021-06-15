@@ -148,8 +148,10 @@ func (streamer *LogStreamer) StopStreaming() error {
 	//Closing the ReadCloser opened to prevent blocking
 	if streamer.inputState == inputDocker{
 		(streamer.inputReadCloser).Close()
-	} else {
+	} else if streamer.inputState == inputFilePath {
 		streamer.filePathStreamThreadShutdownChan <- true
+	} else {
+		return stacktrace.NewError("Detected unrecognized enum value '%v'; this is a bug in Kurtosis itself", streamer.inputState)
 	}
 	
 	streamer.outputLogger.Tracef("%vSuccessfully sent signal to stop streaming thread", streamer.getLoglinePrefix())
