@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # This script regenerates Go bindings corresponding to all .proto files inside this project
 # It requires the Golang Protobuf extension to the 'protoc' compiler, as well as the Golang gRPC extension
 
