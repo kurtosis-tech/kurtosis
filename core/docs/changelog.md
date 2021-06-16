@@ -1,5 +1,9 @@
 # TBD
 
+# 1.15.1
+### Changes
+* Add a new user-friendly log message when setup or run timeout is exceeded during a test starting process
+
 # 1.15.0
 ### Changes
 * Renamed --test-suite-log-level flag to kurtosis.sh to be --suite-log-level
