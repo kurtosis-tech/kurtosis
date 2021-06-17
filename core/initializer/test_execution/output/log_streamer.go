@@ -92,7 +92,7 @@ func (streamer *LogStreamer) StartStreamingFromFilepath(inputFilepath string) er
 		input.Close()
 	}
 
-	if err := streamer.startStreamingThread(input, false, threadShutdownHook); err != nil {
+	if err := streamer.startStreamingThread(input, threadShutdownHook); err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the streaming thread from filepath '%v'", inputFilepath)
 	}
 	return nil
@@ -106,24 +106,27 @@ func (streamer *LogStreamer) StartStreamingFromDockerLogs(testSetupExecutionCtx 
 	functionExitedSuccessfully := false
 	input, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
 
-	defer func() {
-		if !functionExitedSuccessfully {
-			input.Close()
-		}
-	}()
 
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the testsuite container logs for streaming.")
 	} else {
+
+		defer func() {
+			if !functionExitedSuccessfully {
+				input.Close()
+			}
+		}()
 
 		streamer.inputReadCloser = input
 
 		threadShutdownHook := func() {
 			input.Close()
 		}
-		if err := streamer.startStreamingThread(input, true, threadShutdownHook); err != nil {
+		if err := streamer.startStreamingThread(input, threadShutdownHook); err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting the streaming thread from the given reader")
 		}
+
+
 	}
 
 	functionExitedSuccessfully = true
@@ -176,7 +179,7 @@ func (streamer *LogStreamer) StopStreaming() error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemultiplexing bool, threadShutdownHook func()) error {
+func (streamer *LogStreamer) startStreamingThread(input io.Reader, threadShutdownHook func()) error {
 
 	if streamer.state != notStarted {
 		return stacktrace.NewError("Cannot start streaming with this log streamer; streamer is not in the '%v' state", notStarted)
@@ -191,12 +194,14 @@ func (streamer *LogStreamer) startStreamingThread(input io.Reader, useDockerDemu
 	go func() {
 		defer threadShutdownHook()
 
-		if useDockerDemultiplexing {
+		if streamer.inputState == inputDocker {
 			if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
 				streamer.outputLogger.Errorf("%vAn error occurred reading the docker log output from the test logs: %v", streamer.getLoglinePrefix(), err)
 			}
-		} else {
+		} else if streamer.inputState == inputFilePath {
 			streamFilePointerLogs(streamer, input)
+		} else {
+			streamer.outputLogger.Errorf("Detected unrecognized enum value '%v'; this is a bug in Kurtosis itself", streamer.inputState)
 		}
 
 		streamer.streamThreadStoppedChan <- true
