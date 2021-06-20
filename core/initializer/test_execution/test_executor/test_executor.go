@@ -49,12 +49,12 @@ const (
 
 	printTestsuiteLogSectionAsError = false
 
+	dockerLogStreamerLogLineLabel = "DOCKER LOGS STREAMER"
+
 	// For debugging, we'll sometimes want to print logs from the initializer during the section labelled "testsuite logs"
 	// To distinguish initializer logs from testsuite logs, we add this prefix to loglines that come from the initializer
 	//  rather than the testsuite
 	initializerLogPrefix = "[INITIALIZER] "
-
-	shouldFollowTestsuiteLogs = true
 
 	// During network removal, how long to wait after issuing the kill command to the containers and before
 	//  trying to remove the network (which will fail if there are running containers)
@@ -257,25 +257,21 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
-	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
-	if err != nil {
-		log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
+
+	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+
+	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
+		testsuiteContainerId); startStreamingErr != nil {
+		log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 	} else {
-		defer readCloser.Close()
+		log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
 
-		logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
-		if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
-			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
-		} else {
-			log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
-
-			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
-			defer func() {
-				if err := logStreamer.StopStreaming(); err != nil {
-					log.Warnf("An error occurred stopping the log streamer: %v", err)
-				}
-			}()
-		}
+		// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
+		defer func() {
+			if err := logStreamer.StopStreaming(); err != nil {
+				log.Warnf("An error occurred stopping the log streamer: %v", err)
+			}
+		}()
 	}
 
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second

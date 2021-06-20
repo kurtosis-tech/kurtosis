@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed an issue with the LogStreamer where StdCopy is a blocking method which could halt all of Kurtosis if not dealt with appropriately
 
 # 1.15.1
 ### Changes
