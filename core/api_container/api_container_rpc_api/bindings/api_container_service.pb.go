@@ -73,6 +73,49 @@ func (FileGenerationOptions_FileTypeToGenerate) EnumDescriptor() ([]byte, []int)
 	return file_api_container_service_proto_rawDescGZIP(), []int{3, 0}
 }
 
+type ExecuteSerializedCommandsArgs_SchemaVersion int32
+
+const (
+	ExecuteSerializedCommandsArgs_V0 ExecuteSerializedCommandsArgs_SchemaVersion = 0
+)
+
+// Enum value maps for ExecuteSerializedCommandsArgs_SchemaVersion.
+var (
+	ExecuteSerializedCommandsArgs_SchemaVersion_name = map[int32]string{
+		0: "V0",
+	}
+	ExecuteSerializedCommandsArgs_SchemaVersion_value = map[string]int32{
+		"V0": 0,
+	}
+)
+
+func (x ExecuteSerializedCommandsArgs_SchemaVersion) Enum() *ExecuteSerializedCommandsArgs_SchemaVersion {
+	p := new(ExecuteSerializedCommandsArgs_SchemaVersion)
+	*p = x
+	return p
+}
+
+func (x ExecuteSerializedCommandsArgs_SchemaVersion) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExecuteSerializedCommandsArgs_SchemaVersion) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_container_service_proto_enumTypes[1].Descriptor()
+}
+
+func (ExecuteSerializedCommandsArgs_SchemaVersion) Type() protoreflect.EnumType {
+	return &file_api_container_service_proto_enumTypes[1]
+}
+
+func (x ExecuteSerializedCommandsArgs_SchemaVersion) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExecuteSerializedCommandsArgs_SchemaVersion.Descriptor instead.
+func (ExecuteSerializedCommandsArgs_SchemaVersion) EnumDescriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{15, 0}
+}
+
 // ==============================================================================================
 //                                     Register Service
 // ==============================================================================================
@@ -942,6 +985,66 @@ func (x *ExecCommandResponse) GetLogOutput() []byte {
 	return nil
 }
 
+// ==============================================================================================
+//                                     Execute Serialized Commands
+// ==============================================================================================
+type ExecuteSerializedCommandsArgs struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Used to indicate the version of the JSON schema
+	SchemaVersion ExecuteSerializedCommandsArgs_SchemaVersion `protobuf:"varint,1,opt,name=schema_version,json=schemaVersion,proto3,enum=api_container_api.ExecuteSerializedCommandsArgs_SchemaVersion" json:"schema_version,omitempty"`
+	// Commands, serialized as JSON
+	Json string `protobuf:"bytes,2,opt,name=json,proto3" json:"json,omitempty"`
+}
+
+func (x *ExecuteSerializedCommandsArgs) Reset() {
+	*x = ExecuteSerializedCommandsArgs{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_container_service_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ExecuteSerializedCommandsArgs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecuteSerializedCommandsArgs) ProtoMessage() {}
+
+func (x *ExecuteSerializedCommandsArgs) ProtoReflect() protoreflect.Message {
+	mi := &file_api_container_service_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecuteSerializedCommandsArgs.ProtoReflect.Descriptor instead.
+func (*ExecuteSerializedCommandsArgs) Descriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ExecuteSerializedCommandsArgs) GetSchemaVersion() ExecuteSerializedCommandsArgs_SchemaVersion {
+	if x != nil {
+		return x.SchemaVersion
+	}
+	return ExecuteSerializedCommandsArgs_V0
+}
+
+func (x *ExecuteSerializedCommandsArgs) GetJson() string {
+	if x != nil {
+		return x.Json
+	}
+	return ""
+}
+
 var File_api_container_service_proto protoreflect.FileDescriptor
 
 var file_api_container_service_proto_rawDesc = []byte{
@@ -1154,43 +1257,61 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x65, 0x78, 0x69,
 	0x74, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x6c, 0x6f, 0x67, 0x5f, 0x6f, 0x75, 0x74,
 	0x70, 0x75, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x6c, 0x6f, 0x67, 0x4f, 0x75,
-	0x74, 0x70, 0x75, 0x74, 0x32, 0xbc, 0x04, 0x0a, 0x13, 0x41, 0x70, 0x69, 0x43, 0x6f, 0x6e, 0x74,
-	0x61, 0x69, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x67, 0x0a, 0x0f,
-	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
-	0x26, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f,
-	0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76,
-	0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x2a, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f,
-	0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x61, 0x0a, 0x0d, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74,
-	0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x24, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e,
-	0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72,
-	0x61, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x28, 0x2e, 0x61,
-	0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69,
-	0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5e, 0x0a, 0x0c, 0x53, 0x74, 0x61, 0x72,
-	0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x23, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63,
-	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x61,
-	0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x27, 0x2e,
+	0x74, 0x70, 0x75, 0x74, 0x22, 0xb3, 0x01, 0x0a, 0x1d, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65,
+	0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x73, 0x41, 0x72, 0x67, 0x73, 0x12, 0x65, 0x0a, 0x0e, 0x73, 0x63, 0x68, 0x65, 0x6d, 0x61,
+	0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x3e,
+	0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61,
+	0x70, 0x69, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c,
+	0x69, 0x7a, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x41, 0x72, 0x67, 0x73,
+	0x2e, 0x53, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0d,
+	0x73, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a,
+	0x04, 0x6a, 0x73, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6a, 0x73, 0x6f,
+	0x6e, 0x22, 0x17, 0x0a, 0x0d, 0x53, 0x63, 0x68, 0x65, 0x6d, 0x61, 0x56, 0x65, 0x72, 0x73, 0x69,
+	0x6f, 0x6e, 0x12, 0x06, 0x0a, 0x02, 0x56, 0x30, 0x10, 0x00, 0x32, 0xa5, 0x05, 0x0a, 0x13, 0x41,
+	0x70, 0x69, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x12, 0x67, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65,
+	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x26, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74,
+	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x2a, 0x2e,
 	0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70,
-	0x69, 0x2e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4f, 0x0a, 0x0d, 0x52, 0x65, 0x6d, 0x6f,
-	0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x24, 0x2e, 0x61, 0x70, 0x69, 0x5f,
-	0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65,
-	0x6d, 0x6f, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a,
-	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x4b, 0x0a, 0x0b, 0x52, 0x65, 0x70,
-	0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x22, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63,
-	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x70,
-	0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67,
-	0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45,
-	0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0b, 0x45, 0x78, 0x65, 0x63, 0x43, 0x6f,
-	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x22, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74,
-	0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x43, 0x6f,
-	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x26, 0x2e, 0x61, 0x70, 0x69, 0x5f,
-	0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x78,
-	0x65, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x61, 0x0a, 0x0d, 0x47,
+	0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x24, 0x2e, 0x61,
+	0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69,
+	0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72,
+	0x67, 0x73, 0x1a, 0x28, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
+	0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x5e,
+	0x0a, 0x0c, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x23,
+	0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61,
+	0x70, 0x69, 0x2e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41,
+	0x72, 0x67, 0x73, 0x1a, 0x27, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4f,
+	0x0a, 0x0d, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
+	0x24, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f,
+	0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12,
+	0x4b, 0x0a, 0x0b, 0x52, 0x65, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x22,
+	0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61,
+	0x70, 0x69, 0x2e, 0x52, 0x65, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x41, 0x72,
+	0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x00, 0x12, 0x5b, 0x0a, 0x0b,
+	0x45, 0x78, 0x65, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x12, 0x22, 0x2e, 0x61, 0x70,
+	0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e,
+	0x45, 0x78, 0x65, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x41, 0x72, 0x67, 0x73, 0x1a,
+	0x26, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f,
+	0x61, 0x70, 0x69, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x43, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x67, 0x0a, 0x19, 0x45, 0x78, 0x65,
+	0x63, 0x75, 0x74, 0x65, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x43, 0x6f,
+	0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x12, 0x30, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e,
+	0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x75,
+	0x74, 0x65, 0x53, 0x65, 0x72, 0x69, 0x61, 0x6c, 0x69, 0x7a, 0x65, 0x64, 0x43, 0x6f, 0x6d, 0x6d,
+	0x61, 0x6e, 0x64, 0x73, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c,
+	0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79,
+	0x22, 0x00, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1205,72 +1326,77 @@ func file_api_container_service_proto_rawDescGZIP() []byte {
 	return file_api_container_service_proto_rawDescData
 }
 
-var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_api_container_service_proto_goTypes = []interface{}{
-	(FileGenerationOptions_FileTypeToGenerate)(0), // 0: api_container_api.FileGenerationOptions.FileTypeToGenerate
-	(*RegisterServiceArgs)(nil),                   // 1: api_container_api.RegisterServiceArgs
-	(*RegisterServiceResponse)(nil),               // 2: api_container_api.RegisterServiceResponse
-	(*GenerateFilesArgs)(nil),                     // 3: api_container_api.GenerateFilesArgs
-	(*FileGenerationOptions)(nil),                 // 4: api_container_api.FileGenerationOptions
-	(*GenerateFilesResponse)(nil),                 // 5: api_container_api.GenerateFilesResponse
-	(*StartServiceArgs)(nil),                      // 6: api_container_api.StartServiceArgs
-	(*StartServiceResponse)(nil),                  // 7: api_container_api.StartServiceResponse
-	(*PortBinding)(nil),                           // 8: api_container_api.PortBinding
-	(*RemoveServiceArgs)(nil),                     // 9: api_container_api.RemoveServiceArgs
-	(*RepartitionArgs)(nil),                       // 10: api_container_api.RepartitionArgs
-	(*PartitionServices)(nil),                     // 11: api_container_api.PartitionServices
-	(*PartitionConnections)(nil),                  // 12: api_container_api.PartitionConnections
-	(*PartitionConnectionInfo)(nil),               // 13: api_container_api.PartitionConnectionInfo
-	(*ExecCommandArgs)(nil),                       // 14: api_container_api.ExecCommandArgs
-	(*ExecCommandResponse)(nil),                   // 15: api_container_api.ExecCommandResponse
-	nil,                                           // 16: api_container_api.GenerateFilesArgs.FilesToGenerateEntry
-	nil,                                           // 17: api_container_api.GenerateFilesResponse.GeneratedFileRelativeFilepathsEntry
-	nil,                                           // 18: api_container_api.StartServiceArgs.UsedPortsEntry
-	nil,                                           // 19: api_container_api.StartServiceArgs.DockerEnvVarsEntry
-	nil,                                           // 20: api_container_api.StartServiceArgs.FilesArtifactMountDirpathsEntry
-	nil,                                           // 21: api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry
-	nil,                                           // 22: api_container_api.RepartitionArgs.PartitionServicesEntry
-	nil,                                           // 23: api_container_api.RepartitionArgs.PartitionConnectionsEntry
-	nil,                                           // 24: api_container_api.PartitionServices.ServiceIdSetEntry
-	nil,                                           // 25: api_container_api.PartitionConnections.ConnectionInfoEntry
-	(*emptypb.Empty)(nil),                         // 26: google.protobuf.Empty
+	(FileGenerationOptions_FileTypeToGenerate)(0),    // 0: api_container_api.FileGenerationOptions.FileTypeToGenerate
+	(ExecuteSerializedCommandsArgs_SchemaVersion)(0), // 1: api_container_api.ExecuteSerializedCommandsArgs.SchemaVersion
+	(*RegisterServiceArgs)(nil),                      // 2: api_container_api.RegisterServiceArgs
+	(*RegisterServiceResponse)(nil),                  // 3: api_container_api.RegisterServiceResponse
+	(*GenerateFilesArgs)(nil),                        // 4: api_container_api.GenerateFilesArgs
+	(*FileGenerationOptions)(nil),                    // 5: api_container_api.FileGenerationOptions
+	(*GenerateFilesResponse)(nil),                    // 6: api_container_api.GenerateFilesResponse
+	(*StartServiceArgs)(nil),                         // 7: api_container_api.StartServiceArgs
+	(*StartServiceResponse)(nil),                     // 8: api_container_api.StartServiceResponse
+	(*PortBinding)(nil),                              // 9: api_container_api.PortBinding
+	(*RemoveServiceArgs)(nil),                        // 10: api_container_api.RemoveServiceArgs
+	(*RepartitionArgs)(nil),                          // 11: api_container_api.RepartitionArgs
+	(*PartitionServices)(nil),                        // 12: api_container_api.PartitionServices
+	(*PartitionConnections)(nil),                     // 13: api_container_api.PartitionConnections
+	(*PartitionConnectionInfo)(nil),                  // 14: api_container_api.PartitionConnectionInfo
+	(*ExecCommandArgs)(nil),                          // 15: api_container_api.ExecCommandArgs
+	(*ExecCommandResponse)(nil),                      // 16: api_container_api.ExecCommandResponse
+	(*ExecuteSerializedCommandsArgs)(nil),            // 17: api_container_api.ExecuteSerializedCommandsArgs
+	nil,                                              // 18: api_container_api.GenerateFilesArgs.FilesToGenerateEntry
+	nil,                                              // 19: api_container_api.GenerateFilesResponse.GeneratedFileRelativeFilepathsEntry
+	nil,                                              // 20: api_container_api.StartServiceArgs.UsedPortsEntry
+	nil,                                              // 21: api_container_api.StartServiceArgs.DockerEnvVarsEntry
+	nil,                                              // 22: api_container_api.StartServiceArgs.FilesArtifactMountDirpathsEntry
+	nil,                                              // 23: api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry
+	nil,                                              // 24: api_container_api.RepartitionArgs.PartitionServicesEntry
+	nil,                                              // 25: api_container_api.RepartitionArgs.PartitionConnectionsEntry
+	nil,                                              // 26: api_container_api.PartitionServices.ServiceIdSetEntry
+	nil,                                              // 27: api_container_api.PartitionConnections.ConnectionInfoEntry
+	(*emptypb.Empty)(nil),                            // 28: google.protobuf.Empty
 }
 var file_api_container_service_proto_depIdxs = []int32{
-	16, // 0: api_container_api.GenerateFilesArgs.files_to_generate:type_name -> api_container_api.GenerateFilesArgs.FilesToGenerateEntry
+	18, // 0: api_container_api.GenerateFilesArgs.files_to_generate:type_name -> api_container_api.GenerateFilesArgs.FilesToGenerateEntry
 	0,  // 1: api_container_api.FileGenerationOptions.file_type_to_generate:type_name -> api_container_api.FileGenerationOptions.FileTypeToGenerate
-	17, // 2: api_container_api.GenerateFilesResponse.generated_file_relative_filepaths:type_name -> api_container_api.GenerateFilesResponse.GeneratedFileRelativeFilepathsEntry
-	18, // 3: api_container_api.StartServiceArgs.used_ports:type_name -> api_container_api.StartServiceArgs.UsedPortsEntry
-	19, // 4: api_container_api.StartServiceArgs.docker_env_vars:type_name -> api_container_api.StartServiceArgs.DockerEnvVarsEntry
-	20, // 5: api_container_api.StartServiceArgs.files_artifact_mount_dirpaths:type_name -> api_container_api.StartServiceArgs.FilesArtifactMountDirpathsEntry
-	21, // 6: api_container_api.StartServiceResponse.used_ports_host_port_bindings:type_name -> api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry
-	22, // 7: api_container_api.RepartitionArgs.partition_services:type_name -> api_container_api.RepartitionArgs.PartitionServicesEntry
-	23, // 8: api_container_api.RepartitionArgs.partition_connections:type_name -> api_container_api.RepartitionArgs.PartitionConnectionsEntry
-	13, // 9: api_container_api.RepartitionArgs.default_connection:type_name -> api_container_api.PartitionConnectionInfo
-	24, // 10: api_container_api.PartitionServices.service_id_set:type_name -> api_container_api.PartitionServices.ServiceIdSetEntry
-	25, // 11: api_container_api.PartitionConnections.connection_info:type_name -> api_container_api.PartitionConnections.ConnectionInfoEntry
-	4,  // 12: api_container_api.GenerateFilesArgs.FilesToGenerateEntry.value:type_name -> api_container_api.FileGenerationOptions
-	8,  // 13: api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry.value:type_name -> api_container_api.PortBinding
-	11, // 14: api_container_api.RepartitionArgs.PartitionServicesEntry.value:type_name -> api_container_api.PartitionServices
-	12, // 15: api_container_api.RepartitionArgs.PartitionConnectionsEntry.value:type_name -> api_container_api.PartitionConnections
-	13, // 16: api_container_api.PartitionConnections.ConnectionInfoEntry.value:type_name -> api_container_api.PartitionConnectionInfo
-	1,  // 17: api_container_api.ApiContainerService.RegisterService:input_type -> api_container_api.RegisterServiceArgs
-	3,  // 18: api_container_api.ApiContainerService.GenerateFiles:input_type -> api_container_api.GenerateFilesArgs
-	6,  // 19: api_container_api.ApiContainerService.StartService:input_type -> api_container_api.StartServiceArgs
-	9,  // 20: api_container_api.ApiContainerService.RemoveService:input_type -> api_container_api.RemoveServiceArgs
-	10, // 21: api_container_api.ApiContainerService.Repartition:input_type -> api_container_api.RepartitionArgs
-	14, // 22: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
-	2,  // 23: api_container_api.ApiContainerService.RegisterService:output_type -> api_container_api.RegisterServiceResponse
-	5,  // 24: api_container_api.ApiContainerService.GenerateFiles:output_type -> api_container_api.GenerateFilesResponse
-	7,  // 25: api_container_api.ApiContainerService.StartService:output_type -> api_container_api.StartServiceResponse
-	26, // 26: api_container_api.ApiContainerService.RemoveService:output_type -> google.protobuf.Empty
-	26, // 27: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
-	15, // 28: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
-	23, // [23:29] is the sub-list for method output_type
-	17, // [17:23] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	19, // 2: api_container_api.GenerateFilesResponse.generated_file_relative_filepaths:type_name -> api_container_api.GenerateFilesResponse.GeneratedFileRelativeFilepathsEntry
+	20, // 3: api_container_api.StartServiceArgs.used_ports:type_name -> api_container_api.StartServiceArgs.UsedPortsEntry
+	21, // 4: api_container_api.StartServiceArgs.docker_env_vars:type_name -> api_container_api.StartServiceArgs.DockerEnvVarsEntry
+	22, // 5: api_container_api.StartServiceArgs.files_artifact_mount_dirpaths:type_name -> api_container_api.StartServiceArgs.FilesArtifactMountDirpathsEntry
+	23, // 6: api_container_api.StartServiceResponse.used_ports_host_port_bindings:type_name -> api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry
+	24, // 7: api_container_api.RepartitionArgs.partition_services:type_name -> api_container_api.RepartitionArgs.PartitionServicesEntry
+	25, // 8: api_container_api.RepartitionArgs.partition_connections:type_name -> api_container_api.RepartitionArgs.PartitionConnectionsEntry
+	14, // 9: api_container_api.RepartitionArgs.default_connection:type_name -> api_container_api.PartitionConnectionInfo
+	26, // 10: api_container_api.PartitionServices.service_id_set:type_name -> api_container_api.PartitionServices.ServiceIdSetEntry
+	27, // 11: api_container_api.PartitionConnections.connection_info:type_name -> api_container_api.PartitionConnections.ConnectionInfoEntry
+	1,  // 12: api_container_api.ExecuteSerializedCommandsArgs.schema_version:type_name -> api_container_api.ExecuteSerializedCommandsArgs.SchemaVersion
+	5,  // 13: api_container_api.GenerateFilesArgs.FilesToGenerateEntry.value:type_name -> api_container_api.FileGenerationOptions
+	9,  // 14: api_container_api.StartServiceResponse.UsedPortsHostPortBindingsEntry.value:type_name -> api_container_api.PortBinding
+	12, // 15: api_container_api.RepartitionArgs.PartitionServicesEntry.value:type_name -> api_container_api.PartitionServices
+	13, // 16: api_container_api.RepartitionArgs.PartitionConnectionsEntry.value:type_name -> api_container_api.PartitionConnections
+	14, // 17: api_container_api.PartitionConnections.ConnectionInfoEntry.value:type_name -> api_container_api.PartitionConnectionInfo
+	2,  // 18: api_container_api.ApiContainerService.RegisterService:input_type -> api_container_api.RegisterServiceArgs
+	4,  // 19: api_container_api.ApiContainerService.GenerateFiles:input_type -> api_container_api.GenerateFilesArgs
+	7,  // 20: api_container_api.ApiContainerService.StartService:input_type -> api_container_api.StartServiceArgs
+	10, // 21: api_container_api.ApiContainerService.RemoveService:input_type -> api_container_api.RemoveServiceArgs
+	11, // 22: api_container_api.ApiContainerService.Repartition:input_type -> api_container_api.RepartitionArgs
+	15, // 23: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
+	17, // 24: api_container_api.ApiContainerService.ExecuteSerializedCommands:input_type -> api_container_api.ExecuteSerializedCommandsArgs
+	3,  // 25: api_container_api.ApiContainerService.RegisterService:output_type -> api_container_api.RegisterServiceResponse
+	6,  // 26: api_container_api.ApiContainerService.GenerateFiles:output_type -> api_container_api.GenerateFilesResponse
+	8,  // 27: api_container_api.ApiContainerService.StartService:output_type -> api_container_api.StartServiceResponse
+	28, // 28: api_container_api.ApiContainerService.RemoveService:output_type -> google.protobuf.Empty
+	28, // 29: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
+	16, // 30: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
+	28, // 31: api_container_api.ApiContainerService.ExecuteSerializedCommands:output_type -> google.protobuf.Empty
+	25, // [25:32] is the sub-list for method output_type
+	18, // [18:25] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_api_container_service_proto_init() }
@@ -1459,14 +1585,26 @@ func file_api_container_service_proto_init() {
 				return nil
 			}
 		}
+		file_api_container_service_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ExecuteSerializedCommandsArgs); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_container_service_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   25,
+			NumEnums:      2,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
@@ -1505,6 +1643,8 @@ type ApiContainerServiceClient interface {
 	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(ctx context.Context, in *ExecCommandArgs, opts ...grpc.CallOption) (*ExecCommandResponse, error)
+	// Executes serialized instructions
+	ExecuteSerializedCommands(ctx context.Context, in *ExecuteSerializedCommandsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type apiContainerServiceClient struct {
@@ -1569,6 +1709,15 @@ func (c *apiContainerServiceClient) ExecCommand(ctx context.Context, in *ExecCom
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) ExecuteSerializedCommands(ctx context.Context, in *ExecuteSerializedCommandsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteSerializedCommands", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiContainerServiceServer is the server API for ApiContainerService service.
 type ApiContainerServiceServer interface {
 	// Registers a service with the API container but doesn't start the container for it
@@ -1583,6 +1732,8 @@ type ApiContainerServiceServer interface {
 	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error)
+	// Executes serialized instructions
+	ExecuteSerializedCommands(context.Context, *ExecuteSerializedCommandsArgs) (*emptypb.Empty, error)
 }
 
 // UnimplementedApiContainerServiceServer can be embedded to have forward compatible implementations.
@@ -1606,6 +1757,9 @@ func (*UnimplementedApiContainerServiceServer) Repartition(context.Context, *Rep
 }
 func (*UnimplementedApiContainerServiceServer) ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecCommand not implemented")
+}
+func (*UnimplementedApiContainerServiceServer) ExecuteSerializedCommands(context.Context, *ExecuteSerializedCommandsArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecuteSerializedCommands not implemented")
 }
 
 func RegisterApiContainerServiceServer(s *grpc.Server, srv ApiContainerServiceServer) {
@@ -1720,6 +1874,24 @@ func _ApiContainerService_ExecCommand_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_ExecuteSerializedCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExecuteSerializedCommandsArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).ExecuteSerializedCommands(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api_container_api.ApiContainerService/ExecuteSerializedCommands",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).ExecuteSerializedCommands(ctx, req.(*ExecuteSerializedCommandsArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApiContainerService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api_container_api.ApiContainerService",
 	HandlerType: (*ApiContainerServiceServer)(nil),
@@ -1747,6 +1919,10 @@ var _ApiContainerService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExecCommand",
 			Handler:    _ApiContainerService_ExecCommand_Handler,
+		},
+		{
+			MethodName: "ExecuteSerializedCommands",
+			Handler:    _ApiContainerService_ExecuteSerializedCommands_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

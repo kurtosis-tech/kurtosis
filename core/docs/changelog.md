@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added an endpoint to the API container for JSON-serialized instructions
 
 # 1.15.1
 ### Changes

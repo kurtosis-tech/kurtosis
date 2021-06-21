@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	json_parser "github.com/kurtosis-tech/kurtosis/api_container/server/serialized_commands_execution_engine"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -31,10 +32,11 @@ const (
 type ApiContainerService struct {
 	dockerManager             *docker_manager.DockerManager
 	serviceNetwork            *service_network.ServiceNetwork
+	serializedCmdsExecEngine  *json_parser.SerializedCommandsExecutionEngine
 }
 
-func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork) *ApiContainerService {
-	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
+func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork, serializedCmdsExecEngine *json_parser.SerializedCommandsExecutionEngine) *ApiContainerService {
+	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork, serializedCmdsExecEngine: serializedCmdsExecEngine}
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
@@ -227,4 +229,12 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *bindin
 	}
 	return resp, nil
 }
+
+func (service ApiContainerService) ExecuteSerializedCommands(ctx context.Context, args *bindings.ExecuteSerializedCommandsArgs) (*emptypb.Empty, error) {
+	if err := service.serializedCmdsExecEngine.ExecuteSerializedCommands(args.SchemaVersion, args.Json); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing the serialized commands")
+	}
+	return &emptypb.Empty{}, nil
+}
+
 
