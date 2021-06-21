@@ -10,8 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_consts"
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
@@ -86,11 +86,11 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
+		core_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		api_container_rpc_api_consts.ListenPort,
-		api_container_rpc_api_consts.ListenProtocol,
+		core_api_consts.ListenPort,
+		core_api_consts.ListenProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,

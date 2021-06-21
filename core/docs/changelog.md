@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Change the API container to depend on `kurtosis-client`, rather than duplicating the `.proto` file in here
+    * This also simplifies the binding generation logic, as we no longer need to generate bindings inside this repo
 
 # 1.15.2
 ### Fixes
