@@ -1,8 +1,15 @@
 # TBD
 
+# 1.15.2
+### Fixes
+* Fixed an issue with the LogStreamer where StdCopy is a blocking method which could halt all of Kurtosis if not dealt with appropriately
+
 # 1.15.1
 ### Changes
 * Add a new user-friendly log message when setup or run timeout is exceeded during a test starting process
+
+### Fixes
+* Added `#!/usr/bin/env bash` shebang to the start of all shell scripts, to solve the shell incompatibility issues we've been seeing
 
 # 1.15.0
 ### Changes
