@@ -3,6 +3,7 @@
 * Change the API container to depend on `kurtosis-client`, rather than duplicating the `.proto` file in here
     * This also simplifies the binding generation logic, as we no longer need to generate bindings inside this repo
 * Ripped out the core of `regenerate-protobuf-bindings.sh` and replaced it with the script from the `developer-tools` repo
+* Add custom params log to show users that Kurtosis has loaded this configuration
 
 # 1.15.2
 ### Fixes
