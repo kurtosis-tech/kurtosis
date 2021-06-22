@@ -7,6 +7,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
@@ -17,6 +18,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io/ioutil"
+	"net/http"
 	"time"
 )
 
@@ -228,3 +231,62 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 	return resp, nil
 }
 
+func (service ApiContainerService) WaitHttpEndpointAvailability(ctx context.Context, args *core_api_bindings.WaitHttpEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+
+	var(
+		resp *http.Response
+		err error
+	)
+
+	url := fmt.Sprintf("http://%v:%v/%v", args.IpAddress, args.Port, args.Path)
+
+	time.Sleep(args.initialDelaySeconds * time.Second)
+
+	for i := 0; i < args.retries; i++ {
+		resp, err = getAvailability(url)
+		if err == nil  {
+			break
+		}
+		time.Sleep(args.retriesDelayMilliseconds)
+	}
+
+	if err != nil {
+		logrus.Debugf("An error occurred when trying to check availability on ip_address: error:%v", args.IpAddress, err)
+		return &emptypb.Empty{}, err
+	}
+
+	if args.bodyText != "" {
+		body := resp.Body
+		defer body.Close()
+
+		bodyBytes, err := ioutil.ReadAll(body)
+
+		if err != nil {
+			logrus.Debugf("An error occurred reading the response body: %v", err)
+			return &emptypb.Empty{}, err
+		}
+
+		bodyStr := string(bodyBytes)
+
+		if bodyStr != args.bodyText {
+			bodyErr := errors.New("The response body text is not the same as args.bodyText")
+			return &emptypb.Empty{}, bodyErr
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func getAvailability(url string) (*http.Response, error){
+	resp, err := http.Get(url)
+	if err != nil {
+		logrus.Debugf("An HTTP error occurred when polliong the availability endpoint: %v", err)
+		return nil, err
+	}
+	if resp.StatusCode <= http.StatusOK && resp.StatusCode >= http.StatusBadRequest {
+		logrus.Debugf("Received non-OK status code: %v", resp.StatusCode)
+		return resp, errors.New("received non-OK status code")
+	}
+
+	return resp, nil
+}
