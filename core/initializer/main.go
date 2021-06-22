@@ -274,6 +274,8 @@ func main() {
 		optionalHostPortBindingSupplier,
 	)
 
+	logrus.Infof("Custom param loaded: \n'%v'",testsuiteLauncher.GetCustomParams())
+
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		executionInstanceId,
 		parsedFlags.GetString(kurtosisApiImageArg),
