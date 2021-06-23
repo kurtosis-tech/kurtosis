@@ -6,6 +6,7 @@
 * Change the API container to depend on `kurtosis-client`, rather than duplicating the `.proto` file in here
 * Change the API container to depend on `kurtosis-libs`, rather than duplicating the testsuite `.proto` file in here
 * Removed the `regenerate-protobuf-bindings.sh`, as it's no longer necessary
+* Upgraded Kurtosis Client version to 0.2.0 (was 0.1.1)
 
 # 1.15.2
 ### Fixes

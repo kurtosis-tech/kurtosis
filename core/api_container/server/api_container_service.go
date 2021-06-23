@@ -29,6 +29,9 @@ const (
 )
 
 type ApiContainerService struct {
+	// This embedding is required by gRPC
+	core_api_bindings.UnimplementedApiContainerServiceServer
+
 	dockerManager             *docker_manager.DockerManager
 	serviceNetwork            *service_network.ServiceNetwork
 }
