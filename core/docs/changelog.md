@@ -1,4 +1,6 @@
 # TBD
+
+# 1.15.3
 ### Features
 * Add custom params log to show users that Kurtosis has loaded this configuration
 
