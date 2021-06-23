@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -29,6 +29,9 @@ const (
 )
 
 type ApiContainerService struct {
+	// This embedding is required by gRPC
+	core_api_bindings.UnimplementedApiContainerServiceServer
+
 	dockerManager             *docker_manager.DockerManager
 	serviceNetwork            *service_network.ServiceNetwork
 }
@@ -37,7 +40,7 @@ func NewApiContainerService(dockerManager *docker_manager.DockerManager, service
 	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
 }
 
-func (service ApiContainerService) RegisterService(ctx context.Context, args *bindings.RegisterServiceArgs) (*bindings.RegisterServiceResponse, error) {
+func (service ApiContainerService) RegisterService(ctx context.Context, args *core_api_bindings.RegisterServiceArgs) (*core_api_bindings.RegisterServiceResponse, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
@@ -47,24 +50,24 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *bi
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
-	return &bindings.RegisterServiceResponse{
+	return &core_api_bindings.RegisterServiceResponse{
 		IpAddr:                          ip.String(),
 	}, nil
 }
 
-func (service ApiContainerService) GenerateFiles(ctx context.Context, args *bindings.GenerateFilesArgs) (*bindings.GenerateFilesResponse, error) {
+func (service ApiContainerService) GenerateFiles(ctx context.Context, args *core_api_bindings.GenerateFilesArgs) (*core_api_bindings.GenerateFilesResponse, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	filesToGenerate := args.FilesToGenerate
 	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating files for service '%v'", serviceId)
 	}
-	return &bindings.GenerateFilesResponse{
+	return &core_api_bindings.GenerateFilesResponse{
 		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
 	}, nil
 }
 
-func (service ApiContainerService) StartService(ctx context.Context, args *bindings.StartServiceArgs) (*bindings.StartServiceResponse, error) {
+func (service ApiContainerService) StartService(ctx context.Context, args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 
 	usedPorts := map[nat.Port]bool{}
@@ -108,7 +111,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 	}
 
 	// We strip out ports with nil host port bindings to make it easier to iterate over this map on the client side
-	responseHostPortBindings := map[string]*bindings.PortBinding{}
+	responseHostPortBindings := map[string]*core_api_bindings.PortBinding{}
 	for portObj, hostPortBinding := range hostPortBindings {
 		portSpecStr, found := portObjToPortSpecStr[portObj]
 		if !found {
@@ -118,14 +121,14 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 			)
 		}
 		if hostPortBinding != nil {
-			responseBinding := &bindings.PortBinding{
+			responseBinding := &core_api_bindings.PortBinding{
 				InterfaceIp:   hostPortBinding.HostIP,
 				InterfacePort: hostPortBinding.HostPort,
 			}
 			responseHostPortBindings[portSpecStr] = responseBinding
 		}
 	}
-	response := bindings.StartServiceResponse{
+	response := core_api_bindings.StartServiceResponse{
 		UsedPortsHostPortBindings: responseHostPortBindings,
 	}
 
@@ -141,7 +144,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *bindi
 	return &response, nil
 }
 
-func (service ApiContainerService) RemoveService(ctx context.Context, args *bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) RemoveService(ctx context.Context, args *core_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
@@ -154,7 +157,7 @@ func (service ApiContainerService) RemoveService(ctx context.Context, args *bind
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) Repartition(ctx context.Context, args *bindings.RepartitionArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) Repartition(ctx context.Context, args *core_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
@@ -201,7 +204,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *bindin
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) ExecCommand(ctx context.Context, args *bindings.ExecCommandArgs) (*bindings.ExecCommandResponse, error) {
+func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_api_bindings.ExecCommandArgs) (*core_api_bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
 	serviceId := service_network_types.ServiceID(serviceIdStr)
 	command := args.CommandArgs
@@ -221,7 +224,7 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *bindin
 			maxLogOutputSizeBytes,
 		)
 	}
-	resp := &bindings.ExecCommandResponse{
+	resp := &core_api_bindings.ExecCommandResponse{
 		ExitCode: exitCode,
 		LogOutput: logOutput.Bytes(),
 	}

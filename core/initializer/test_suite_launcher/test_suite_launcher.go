@@ -9,12 +9,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_consts"
+	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/test_suite/docker_api/test_suite_env_vars"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -173,6 +173,13 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	return suiteContainerId, nil
 }
 
+/*
+Returns custom Params value
+*/
+func (launcher TestsuiteContainerLauncher) GetCustomParams() string{
+	return launcher.customParamsJson
+}
+
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
@@ -271,7 +278,7 @@ func (launcher TestsuiteContainerLauncher) generateMetadataProvidingEnvVars() (m
 }
 
 func (launcher TestsuiteContainerLauncher) generateTestRunningEnvVars(kurtosisApiIp string) (map[string]string, error) {
-	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, api_container_rpc_api_consts.ListenPort)
+	kurtosisApiSocket := fmt.Sprintf("%v:%v", kurtosisApiIp, core_api_consts.ListenPort)
 	result, err := launcher.generateTestSuiteEnvVars(kurtosisApiSocket)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating the test-running env vars")
