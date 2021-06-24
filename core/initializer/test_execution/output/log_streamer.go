@@ -225,14 +225,14 @@ func streamFilePointerLogs(streamer *LogStreamer, input io.Reader) error {
 		case <-time.After(timeBetweenStreamerCopies):
 			streamer.outputLogger.Tracef("%vNo signal received on stream thread shutdown chan after waiting for %v; copying logs", streamer.getLoglinePrefix(), timeBetweenStreamerCopies)
 
-			if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
+			if _, err := io.Copy(streamer.outputLogger.Out, input); err != nil {
 				streamer.outputLogger.Errorf("%vAn error occurred copying the output from the test logs: %v", streamer.getLoglinePrefix(), err)
 			}
 		}
 		streamer.outputLogger.Tracef("%vChannel-check cycle completed", streamer.getLoglinePrefix())
 	}
 	// Do a final copy, to capture any non-copied output
-	if _, err := stdcopy.StdCopy(streamer.outputLogger.Out, streamer.outputLogger.Out, input); err != nil {
+	if _, err := io.Copy(streamer.outputLogger.Out, input); err != nil {
 		streamer.outputLogger.Errorf("%vAn error occurred copying the final output from the test logs: %v", streamer.getLoglinePrefix(), err)
 	}
 
