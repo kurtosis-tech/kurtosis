@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where Docker's `StdCopy` was being used to copy logs from testsuite tempfile to STDOUT
 
 # 1.15.3
 ### Features
