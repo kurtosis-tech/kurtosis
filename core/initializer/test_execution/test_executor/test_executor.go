@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -17,8 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -49,12 +49,12 @@ const (
 
 	printTestsuiteLogSectionAsError = false
 
+	dockerLogStreamerLogLineLabel = "DOCKER LOGS STREAMER"
+
 	// For debugging, we'll sometimes want to print logs from the initializer during the section labelled "testsuite logs"
 	// To distinguish initializer logs from testsuite logs, we add this prefix to loglines that come from the initializer
 	//  rather than the testsuite
 	initializerLogPrefix = "[INITIALIZER] "
-
-	shouldFollowTestsuiteLogs = true
 
 	// During network removal, how long to wait after issuing the kill command to the containers and before
 	//  trying to remove the network (which will fail if there are running containers)
@@ -257,25 +257,21 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
-	readCloser, err := dockerManager.GetContainerLogs(testSetupExecutionCtx, testsuiteContainerId, shouldFollowTestsuiteLogs)
-	if err != nil {
-		log.Errorf("An error occurred getting the testsuite container logs for streaming: %v", err)
+
+	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+
+	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
+		testsuiteContainerId); startStreamingErr != nil {
+		log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
 	} else {
-		defer readCloser.Close()
+		log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
 
-		logStreamer := output.NewLogStreamer("DOCKER LOGS STREAMER", log)
-		if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(readCloser); err != nil {
-			log.Errorf("The following error occurred when attempting to stream the testsuite logs: %v", startStreamingErr)
-		} else {
-			log.Tracef("%vTestsuite container log streamer started successfully", initializerLogPrefix)
-
-			// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
-			defer func() {
-				if err := logStreamer.StopStreaming(); err != nil {
-					log.Warnf("An error occurred stopping the log streamer: %v", err)
-				}
-			}()
-		}
+		// Catch-all to make sure we don't leave a thread hanging around in case this function exits abnormally
+		defer func() {
+			if err := logStreamer.StopStreaming(); err != nil {
+				log.Warnf("An error occurred stopping the log streamer: %v", err)
+			}
+		}()
 	}
 
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second

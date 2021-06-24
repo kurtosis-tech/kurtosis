@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	test_suite_bindings "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -38,7 +38,7 @@ const (
 
 func GetTestSuiteMetadata(
 		dockerClient *client.Client,
-		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*bindings.TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*test_suite_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -69,7 +69,7 @@ func GetTestSuiteMetadata(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't dial testsuite container at %v to get testsuite metadata", testsuiteSocket)
 	}
-	testsuiteClient := bindings.NewTestSuiteServiceClient(conn)
+	testsuiteClient := test_suite_bindings.NewTestSuiteServiceClient(conn)
 
 	logrus.Debugf("Waiting for testsuite container to become available...")
 	if err := waitUntilTestsuiteContainerIsAvailable(parentContext, testsuiteClient); err != nil {
@@ -108,7 +108,7 @@ func GetTestSuiteMetadata(
 	return suiteMetadata, nil
 }
 
-func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client bindings.TestSuiteServiceClient) error {
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client test_suite_bindings.TestSuiteServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
@@ -162,7 +162,7 @@ func printContainerLogsWithBanners(
 	banner_printer.PrintSection(log, "End " + containerDescription + " Logs", false)
 }
 
-func validateTestSuiteMetadata(suiteMetadata *bindings.TestSuiteMetadata) error {
+func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetadata) error {
 	if suiteMetadata.NetworkWidthBits == 0 {
 		return stacktrace.NewError("Test suite metadata has a network width bits == 0")
 	}
@@ -183,7 +183,7 @@ func validateTestSuiteMetadata(suiteMetadata *bindings.TestSuiteMetadata) error 
 	return nil
 }
 
-func validateTestMetadata(testMetadata *bindings.TestMetadata) error {
+func validateTestMetadata(testMetadata *test_suite_bindings.TestMetadata) error {
 	for artifactUrl := range testMetadata.UsedArtifactUrls {
 		if len(strings.TrimSpace(artifactUrl)) == 0 {
 			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)

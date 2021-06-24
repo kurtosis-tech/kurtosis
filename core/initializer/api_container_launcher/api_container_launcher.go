@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
@@ -66,7 +66,11 @@ func (launcher ApiContainerLauncher) Launch(
 	}
 
 	log.Info("Launching Kurtosis API container...")
-	kurtosisApiPort := nat.Port(fmt.Sprintf("%v/%v", api_container_rpc_api_consts.ListenPort, api_container_rpc_api_consts.ListenProtocol))
+	kurtosisApiPort := nat.Port(fmt.Sprintf(
+		"%v/%v",
+		core_api_consts.ListenPort,
+		core_api_consts.ListenProtocol,
+	))
 	kurtosisApiContainerNameElems := []string{
 		launcher.executionInstanceUuid,
 		testName,
