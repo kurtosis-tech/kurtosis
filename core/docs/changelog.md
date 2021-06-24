@@ -2,6 +2,10 @@
 ### Features
 * Added an endpoint to the API container for JSON-serialized instructions
 
+# 1.15.4
+### Fixes
+* Fixed a bug where Docker's `StdCopy` was being used to copy logs from testsuite tempfile to STDOUT
+
 # 1.15.3
 ### Features
 * Add custom params log to show users that Kurtosis has loaded this configuration
