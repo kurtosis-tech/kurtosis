@@ -244,7 +244,7 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
-			"An error occurred when try to get the service IP address from service ID: '%v'",
+			"An error occurred when try to get the service IP address by service ID: '%v'",
 			serviceId)
 	}
 
@@ -292,7 +292,7 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 func getAvailability(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, stacktrace.NewError("An HTTP error occurred when polliong the availability endpoint: '%v'", err)
+		return nil, stacktrace.NewError("An HTTP error occurred when polling the availability endpoint: '%v'", err)
 	}
 	if resp.StatusCode <= http.StatusOK && resp.StatusCode >= http.StatusBadRequest {
 		return resp, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
