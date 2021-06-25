@@ -234,7 +234,6 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 }
 
 func (service ApiContainerService) CheckAvailability(ctx context.Context, args *core_api_bindings.CheckAvailabilityArgs) (*emptypb.Empty, error) {
-
 	var(
 		resp *http.Response
 		err error
@@ -266,7 +265,6 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 			"The HTTP endpoint '%v':'%v'/'%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
 			serviceIP, args.Port, args.Path, args.Retries, args.RetriesDelayMilliseconds)
 	}
-	logrus.Debugf("[REMOVE-IT] Resp Body: %+v", resp.Body)
 
 	if args.BodyText != "" {
 		body := resp.Body
