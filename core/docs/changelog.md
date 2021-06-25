@@ -1,7 +1,7 @@
 # TBD
 ### Features
-* Added a new method `CheckAvailability` in the API. Clients can use this method to check if a service is up and running. This method executes an HTTP request
-* Added a new method `GetServiceIP` in service network, it returns an IP Address By a Service ID.
+* Added a new method `WaitForEndpointAvailability` to the API container which can be used to wait for a service's HTTP endpoint to come up
+* Added a new method `GetServiceIP` in service network which returns an IP Address by Service ID.
 
 # 1.15.4
 ### Fixes

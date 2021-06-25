@@ -381,7 +381,7 @@ func (network *ServiceNetwork) ExecCommand(
 
 func (network *ServiceNetwork)  GetServiceIP(serviceId service_network_types.ServiceID,) (net.IP, error) {
 	ip, found := network.serviceIps[serviceId]; if !found {
-		return nil, stacktrace.NewError("Service with that ID: '%v' does not exists", serviceId)
+		return nil, stacktrace.NewError("Service with ID: '%v' does not exists", serviceId)
 	}
 
 	return ip, nil

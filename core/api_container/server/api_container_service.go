@@ -244,7 +244,7 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
-			"An error occurred when try to get the service IP address by service ID: '%v'",
+			"An error occurred when trying to get the service IP address by service ID: '%v'",
 			serviceId)
 	}
 
@@ -253,7 +253,7 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
 
 	for i := 0; i < int(args.Retries); i++ {
-		resp, err = getAvailability(url)
+		resp, err = makeHttpGetRequest(url)
 		if err == nil  {
 			break
 		}
@@ -262,8 +262,8 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
-			"The HTTP endpoint '%v':'%v'/'%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			serviceIP, args.Port, args.Path, args.Retries, args.RetriesDelayMilliseconds)
+			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			url, args.Retries, args.RetriesDelayMilliseconds)
 	}
 
 	if args.BodyText != "" {
@@ -274,14 +274,13 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 
 		if err != nil {
 			return nil, stacktrace.Propagate(err,
-				"An error occurred reading the response body: '%v' for HTTP endpoint '%v'",
-				err, serviceIP)
+				"An error occurred reading the response body from endpoint '%v'", url)
 		}
 
 		bodyStr := string(bodyBytes)
 
 		if bodyStr != args.BodyText {
-			return nil, stacktrace.NewError("The response body text is not the same as args.bodyText")
+			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
 
 		}
 	}
@@ -289,13 +288,13 @@ func (service ApiContainerService) CheckAvailability(ctx context.Context, args *
 	return &emptypb.Empty{}, nil
 }
 
-func getAvailability(url string) (*http.Response, error){
+func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, stacktrace.NewError("An HTTP error occurred when polling the availability endpoint: '%v'", err)
+		return nil, stacktrace.Propagate(err, "An HTTP error occurred when sending GET request to endpoint '%v'", url)
 	}
-	if resp.StatusCode <= http.StatusOK && resp.StatusCode >= http.StatusBadRequest {
-		return resp, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
 }
