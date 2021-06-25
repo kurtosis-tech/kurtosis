@@ -7,7 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/containerd/containerd v1.3.4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
@@ -15,9 +15,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210623231509-bb07b900f4cb
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210624183539-63e0f56f74b3
 	github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210621234109-86a9ff488974
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect

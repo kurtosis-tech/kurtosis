@@ -7,7 +7,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
@@ -234,46 +233,58 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 	return resp, nil
 }
 
-func (service ApiContainerService) WaitHttpEndpointAvailability(ctx context.Context, args *core_api_bindings.WaitHttpEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) CheckAvailability(ctx context.Context, args *core_api_bindings.CheckAvailabilityArgs) (*emptypb.Empty, error) {
 
 	var(
 		resp *http.Response
 		err error
 	)
 
-	url := fmt.Sprintf("http://%v:%v/%v", args.IpAddress, args.Port, args.Path)
+	serviceIdStr := args.ServiceId
+	serviceId := service_network_types.ServiceID(serviceIdStr)
+	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred when try to get the service IP address from service ID: '%v'",
+			serviceId)
+	}
 
-	time.Sleep(args.initialDelaySeconds * time.Second)
+	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
 
-	for i := 0; i < args.retries; i++ {
+	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
+
+	for i := 0; i < int(args.Retries); i++ {
 		resp, err = getAvailability(url)
 		if err == nil  {
 			break
 		}
-		time.Sleep(args.retriesDelayMilliseconds)
+		time.Sleep(time.Duration(args.RetriesDelayMilliseconds) * time.Millisecond)
 	}
 
 	if err != nil {
-		logrus.Debugf("An error occurred when trying to check availability on ip_address: error:%v", args.IpAddress, err)
-		return &emptypb.Empty{}, err
+		return nil, stacktrace.Propagate(err,
+			"The HTTP endpoint '%v':'%v'/'%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			serviceIP, args.Port, args.Path, args.Retries, args.RetriesDelayMilliseconds)
 	}
+	logrus.Debugf("[REMOVE-IT] Resp Body: %+v", resp.Body)
 
-	if args.bodyText != "" {
+	if args.BodyText != "" {
 		body := resp.Body
 		defer body.Close()
 
 		bodyBytes, err := ioutil.ReadAll(body)
 
 		if err != nil {
-			logrus.Debugf("An error occurred reading the response body: %v", err)
-			return &emptypb.Empty{}, err
+			return nil, stacktrace.Propagate(err,
+				"An error occurred reading the response body: '%v' for HTTP endpoint '%v'",
+				err, serviceIP)
 		}
 
 		bodyStr := string(bodyBytes)
 
-		if bodyStr != args.bodyText {
-			bodyErr := errors.New("The response body text is not the same as args.bodyText")
-			return &emptypb.Empty{}, bodyErr
+		if bodyStr != args.BodyText {
+			return nil, stacktrace.NewError("The response body text is not the same as args.bodyText")
+
 		}
 	}
 
@@ -283,13 +294,10 @@ func (service ApiContainerService) WaitHttpEndpointAvailability(ctx context.Cont
 func getAvailability(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
-		logrus.Debugf("An HTTP error occurred when polliong the availability endpoint: %v", err)
-		return nil, err
+		return nil, stacktrace.NewError("An HTTP error occurred when polliong the availability endpoint: '%v'", err)
 	}
 	if resp.StatusCode <= http.StatusOK && resp.StatusCode >= http.StatusBadRequest {
-		logrus.Debugf("Received non-OK status code: %v", resp.StatusCode)
-		return resp, errors.New("received non-OK status code")
+		return resp, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
-
 	return resp, nil
 }
