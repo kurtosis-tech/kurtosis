@@ -252,7 +252,7 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 
 	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
 
-	for i := 0; i < int(args.Retries); i++ {
+	for i := uint32(0); i < args.Retries; i++ {
 		resp, err = makeHttpGetRequest(url)
 		if err == nil  {
 			break
