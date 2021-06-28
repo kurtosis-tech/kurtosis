@@ -17,6 +17,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io/ioutil"
+	"net/http"
 	"time"
 )
 
@@ -231,3 +233,68 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 	return resp, nil
 }
 
+func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Context, args *core_api_bindings.WaitForEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+	var(
+		resp *http.Response
+		err error
+	)
+
+	serviceIdStr := args.ServiceId
+	serviceId := service_network_types.ServiceID(serviceIdStr)
+	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred when trying to get the service IP address by service ID: '%v'",
+			serviceId)
+	}
+
+	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
+
+	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
+
+	for i := uint32(0); i < args.Retries; i++ {
+		resp, err = makeHttpGetRequest(url)
+		if err == nil  {
+			break
+		}
+		time.Sleep(time.Duration(args.RetriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			url, args.Retries, args.RetriesDelayMilliseconds)
+	}
+
+	if args.BodyText != "" {
+		body := resp.Body
+		defer body.Close()
+
+		bodyBytes, err := ioutil.ReadAll(body)
+
+		if err != nil {
+			return nil, stacktrace.Propagate(err,
+				"An error occurred reading the response body from endpoint '%v'", url)
+		}
+
+		bodyStr := string(bodyBytes)
+
+		if bodyStr != args.BodyText {
+			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
+
+		}
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func makeHttpGetRequest(url string) (*http.Response, error){
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An HTTP error occurred when sending GET request to endpoint '%v'", url)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
+	}
+	return resp, nil
+}

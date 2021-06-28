@@ -379,6 +379,15 @@ func (network *ServiceNetwork) ExecCommand(
 	return exitCode, execOutputBuf, nil
 }
 
+func (network *ServiceNetwork)  GetServiceIP(serviceId service_network_types.ServiceID,) (net.IP, error) {
+	ip, found := network.serviceIps[serviceId]; if !found {
+		return nil, stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
+	}
+
+	return ip, nil
+}
+
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
