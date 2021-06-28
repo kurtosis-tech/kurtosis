@@ -233,7 +233,7 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 	return resp, nil
 }
 
-func (service ApiContainerService) CheckAvailability(ctx context.Context, args *core_api_bindings.CheckAvailabilityArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Context, args *core_api_bindings.WaitForEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	var(
 		resp *http.Response
 		err error
