@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added a new method `WaitForEndpointAvailability` to the API container which can be used to wait for a service's HTTP endpoint to come up
+* Added a new method `GetServiceIP` in service network which returns an IP Address by Service ID.
 
 # 1.15.4
 ### Fixes
