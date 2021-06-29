@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Added an endpoint to the API container for JSON-serialized instructions
+* Implemented the `ExecuteBulkCommands` endpoint for running multiple API container endpoint commands at once
 
 # 1.15.5
 ### Features
