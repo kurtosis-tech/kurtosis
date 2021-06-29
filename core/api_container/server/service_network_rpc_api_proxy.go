@@ -17,9 +17,14 @@ import (
 	"time"
 )
 
+/*
 // This struct purely decodes args from the RPC API and transforms them into calls to the ServiceNetwork
 type ServiceNetworkRpcApiProxy struct {
-	serviceNetwork *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
+}
+
+func NewServiceNetworkRpcApiProxy(serviceNetwork service_network.ServiceNetwork) *ServiceNetworkRpcApiProxy {
+	return &ServiceNetworkRpcApiProxy{serviceNetwork: serviceNetwork}
 }
 
 func (proxy ServiceNetworkRpcApiProxy) RegisterService(args *core_api_bindings.RegisterServiceArgs) (*core_api_bindings.RegisterServiceResponse, error) {
@@ -212,3 +217,6 @@ func (proxy ServiceNetworkRpcApiProxy) ExecCommand(ctx context.Context, args *co
 	}
 	return resp, nil
 }
+
+
+ */
