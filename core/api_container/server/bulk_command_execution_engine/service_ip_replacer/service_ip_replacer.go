@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package bulk_command_execution_engine
+package service_ip_replacer
 
 import (
 	"fmt"
@@ -95,7 +95,7 @@ func (replacer ServiceIPReplacer) ReplaceMapValues(input map[string]string) (map
 	for key, val := range input {
 		replacedVal, err := replacer.ReplaceStr(val)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs in map value '%v' corresponding to key", val, key)
+			return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs in map value '%v' corresponding to key '%v'", val, key)
 		}
 		result[key] = replacedVal
 	}

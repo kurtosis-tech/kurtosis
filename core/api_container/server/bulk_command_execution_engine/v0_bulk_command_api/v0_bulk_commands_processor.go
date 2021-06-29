@@ -6,20 +6,19 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/kurtosis-tech/kurtosis-client/golang/bulk_command_execution/v0_bulk_command_api"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/service_ip_replacer"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 type V0BulkCommandProcessor struct {
-	apiService *server.ApiContainerService
-	ipReplacer *bulk_command_execution_engine.ServiceIPReplacer
+	apiService core_api_bindings.ApiContainerServiceServer
+	ipReplacer *service_ip_replacer.ServiceIPReplacer
 }
 
-func NewV0BulkCommandProcessor(serviceNetwork service_network.ServiceNetwork, apiService *server.ApiContainerService) (*V0BulkCommandProcessor, error) {
-	ipReplacer, err := bulk_command_execution_engine.NewServiceIPReplacer(
+func NewV0BulkCommandProcessor(serviceNetwork service_network.ServiceNetwork, apiService core_api_bindings.ApiContainerServiceServer) (*V0BulkCommandProcessor, error) {
+	ipReplacer, err := service_ip_replacer.NewServiceIPReplacer(
 		v0_bulk_command_api.ServiceIdIpReplacementPrefix,
 		v0_bulk_command_api.ServiceIdIpReplacementSuffix,
 		serviceNetwork,

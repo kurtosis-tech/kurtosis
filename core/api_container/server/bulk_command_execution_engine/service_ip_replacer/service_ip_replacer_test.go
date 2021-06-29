@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package bulk_command_execution_engine
+package service_ip_replacer
 
 import (
 	"fmt"
