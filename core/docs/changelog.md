@@ -2,6 +2,11 @@
 ### Features
 * Added an endpoint to the API container for JSON-serialized instructions
 
+# 1.15.5
+### Features
+* Added a new method `WaitForEndpointAvailability` to the API container which can be used to wait for a service's HTTP endpoint to come up
+* Added a new method `GetServiceIP` in service network which returns an IP Address by Service ID.
+
 # 1.15.4
 ### Fixes
 * Fixed a bug where Docker's `StdCopy` was being used to copy logs from testsuite tempfile to STDOUT
