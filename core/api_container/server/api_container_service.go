@@ -233,7 +233,8 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 	return resp, nil
 }
 
-func (service ApiContainerService) BulkExecuteCommands(ctx context.Context, args *core_api_bindings.BulkExecuteCommandsArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *core_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
+
 	if err := service.bulkCmdExecEngine.ExecuteCommands(args.SchemaVersion, args.SerializedCommands); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing the commands")
 	}

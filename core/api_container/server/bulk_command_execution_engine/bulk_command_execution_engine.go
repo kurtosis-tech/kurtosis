@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/palantir/stacktrace"
@@ -32,8 +33,10 @@ type GenericCommand struct {
 }
 
 type BulkCommandExecutionEngine struct {
+	serviceNetworkProxy *server.ServiceNetworkRpcApiProxy
 	serviceNetwork *service_network.ServiceNetwork
 }
+
 
 func (engine *BulkCommandExecutionEngine) ExecuteCommands(schemaVersion core_api_bindings.BulkExecuteCommandsArgs_SchemaVersion, jsonStr string) error {
 	switch schemaVersion {
