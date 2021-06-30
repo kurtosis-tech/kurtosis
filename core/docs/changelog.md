@@ -1,6 +1,9 @@
 # TBD
 ### Features
-* Implemented the `ExecuteBulkCommands` endpoint for running multiple API container endpoint commands at once
+* Implemented the `ExecuteBulkCommands` endpoint in the API container's API for running multiple API container endpoint commands at once
+
+### Fixes
+* Fixed bug where `ServiceNetwork.GetServiceIP` didn't use the mutex
 
 # 1.15.5
 ### Features

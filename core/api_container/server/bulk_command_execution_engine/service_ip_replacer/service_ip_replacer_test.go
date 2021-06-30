@@ -19,6 +19,19 @@ const (
 	testSuffix = ">>>"
 )
 
+func TestConstructorValidation(t *testing.T) {
+	mockNetwork := service_network.NewMockServiceNetwork(map[service_network_types.ServiceID]net.IP{})
+
+	_, err := NewServiceIPReplacer("xx", "xx", mockNetwork)
+	assert.Error(t, err, "Should have gotten an error on identical prefix & suffix")
+
+	_, err = NewServiceIPReplacer("", "xx", mockNetwork)
+	assert.Error(t, err, "Should have gotten an error on zero-length prefix")
+
+	_, err = NewServiceIPReplacer("xx", "", mockNetwork)
+	assert.Error(t, err, "Should have gotten an error on zero-length suffix")
+}
+
 func TestValidStrReplacing(t *testing.T) {
 	serviceId := service_network_types.ServiceID("serviceId")
 	var serviceIp net.IP = []byte{1, 2, 3, 4}

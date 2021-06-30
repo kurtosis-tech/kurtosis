@@ -1,4 +1,4 @@
-package v0_bulk_command_api
+package v0_bulk_command_execution
 
 import (
 	"context"

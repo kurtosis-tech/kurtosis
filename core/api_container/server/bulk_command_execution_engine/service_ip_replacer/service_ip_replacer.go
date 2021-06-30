@@ -20,7 +20,7 @@ const (
 )
 
 /**
-This struct replaces instances of <<<service_id>>> in a string with the IP address of the referenced service ID
+This struct replaces instances of PREFIX + service_id + SUFFIX in a string with the IP address of the referenced service ID
  */
 type ServiceIPReplacer struct {
 	serviceIdReplaceStrPrefix string // Prefix of the service ID replace string, which looks like PREFIX + service_id + SUFFIX
@@ -32,6 +32,9 @@ type ServiceIPReplacer struct {
 func NewServiceIPReplacer(serviceIdReplaceStrPrefix string, serviceIdReplaceStrSuffix string, serviceNetwork service_network.ServiceNetwork) (*ServiceIPReplacer, error) {
 	if serviceIdReplaceStrPrefix == serviceIdReplaceStrSuffix {
 		return nil, stacktrace.NewError("Service ID replace pattern prefix '%v' is the same as the suffix", serviceIdReplaceStrPrefix)
+	}
+	if len(serviceIdReplaceStrPrefix) == 0 || len(serviceIdReplaceStrSuffix) == 0 {
+		return nil, stacktrace.NewError("Service ID replacement pattern prefix & suffix must both have >= 1 character")
 	}
 
 	// The *? means a non-greedy match

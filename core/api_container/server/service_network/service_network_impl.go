@@ -380,6 +380,12 @@ func (network *ServiceNetworkImpl) ExecCommand(
 }
 
 func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types.ServiceID,) (net.IP, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return nil, stacktrace.NewError("Cannot get IP address; the service network has been destroyed")
+	}
+
 	ip, found := network.serviceIps[serviceId]; if !found {
 		return nil, stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
 	}

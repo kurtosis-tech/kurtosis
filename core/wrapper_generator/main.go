@@ -211,7 +211,7 @@ func main()  {
 // ===================================================================================================
 //                                        Private helper functions
 // ===================================================================================================
-// TODO ReplaceStr this entire thing by:
+// TODO Replace this entire thing by:
 //  1. Moving the docker_flag_parser out of initializer and into commmons (it can now be generalized)
 //  2. Using that now-generalized class here
 func parseAndValidateFlags() (kurtosisCoreVersion, templateFilepath, outputFilepath string, err error) {

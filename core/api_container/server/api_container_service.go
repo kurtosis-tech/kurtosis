@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
-	json_parser "github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_api"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -37,7 +37,7 @@ type ApiContainerService struct {
 
 	serviceNetwork service_network.ServiceNetwork
 
-	bulkCmdExecEngine *json_parser.BulkCommandExecutionEngine
+	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
 }
 
 func NewApiContainerService(serviceNetwork service_network.ServiceNetwork) (*ApiContainerService, error) {
@@ -45,13 +45,14 @@ func NewApiContainerService(serviceNetwork service_network.ServiceNetwork) (*Api
 		serviceNetwork: serviceNetwork,
 	}
 
-	// NOTE: This is a circular dependency, but by necessity: the API service must farm bulk commands out
-	//  to the bulk command execution engine, which must call back to the API service to actually do work
-	v0BulkCmdProcessor, err := v0_bulk_command_api.NewV0BulkCommandProcessor(serviceNetwork, service)
+	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
+	//  necessity: the API service must farm bulk commands out to the bulk command execution engine, which must call
+	//  back to the API service to actually do work.
+	v0BulkCmdProcessor, err := v0_bulk_command_execution.NewV0BulkCommandProcessor(serviceNetwork, service)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the v0 bulk command processor")
 	}
-	bulkCmdExecEngine := json_parser.NewBulkCommandExecutionEngine(v0BulkCmdProcessor)
+	bulkCmdExecEngine := bulk_command_execution_engine.NewBulkCommandExecutionEngine(v0BulkCmdProcessor)
 	service.bulkCmdExecEngine = bulkCmdExecEngine
 
 	return service, nil

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis-client/golang/bulk_command_execution"
-	server_v0_bulk_command_api "github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_api"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/palantir/stacktrace"
 )
 
@@ -14,10 +14,10 @@ type deserializableBulkCommandsDocument struct {
 }
 
 type BulkCommandExecutionEngine struct {
-	v0BulkCommandsProcessor *server_v0_bulk_command_api.V0BulkCommandProcessor
+	v0BulkCommandsProcessor *v0_bulk_command_execution.V0BulkCommandProcessor
 }
 
-func NewBulkCommandExecutionEngine(v0BulkCommandsProcessor *server_v0_bulk_command_api.V0BulkCommandProcessor) *BulkCommandExecutionEngine {
+func NewBulkCommandExecutionEngine(v0BulkCommandsProcessor *v0_bulk_command_execution.V0BulkCommandProcessor) *BulkCommandExecutionEngine {
 	return &BulkCommandExecutionEngine{v0BulkCommandsProcessor: v0BulkCommandsProcessor}
 }
 

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package v0_bulk_command_api
+package v0_bulk_command_execution
 
 import (
 	"context"
@@ -18,6 +18,9 @@ const (
 	successExecCmdExitCode = 0
 )
 
+// This visitor is really more like a generic function, that takes in arguments (ctx, uncastedCommandArgsPtr) and
+//  uses the value of the command type enum to process them in various ways
+// WARNING: The visitor is NOT intended to be used more than once!
 type v0CommandProcessingVisitor struct {
 	// Normally storing a context in an object is prohibited, but this is a special case as the visitor acts more like a transient function than a long-lived struct
 	ctx                    context.Context
@@ -35,8 +38,7 @@ func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr p
 //                                         Public functions
 // ====================================================================================================
 
-func (visitor v0CommandProcessingVisitor) VisitRegisterService() error {
-	logrus.Infof("Uncasted: %+v", visitor.uncastedCommandArgsPtr)
+func (visitor *v0CommandProcessingVisitor) VisitRegisterService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RegisterServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to register service args")
@@ -47,18 +49,25 @@ func (visitor v0CommandProcessingVisitor) VisitRegisterService() error {
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitGenerateFiles() error {
+// NOTE: Because the user can't manipulate the resulting generated files, this command doesn't make much sense to use
+//  in bulk. Nonetheless, we implement it for completeness.
+func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.GenerateFilesArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to generate files args")
 	}
-	if _, err := visitor.apiService.GenerateFiles(visitor.ctx, castedArgs); err != nil {
+	generateFilesResp, err := visitor.apiService.GenerateFiles(visitor.ctx, castedArgs)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred generating the requested files")
+	}
+	logrus.Info("Successfully generated files at the given relative filepaths of the testsuite volume:")
+	for fileKey, relativeFilepath := range generateFilesResp.GeneratedFileRelativeFilepaths {
+		logrus.Infof(" - %v: %v", fileKey, relativeFilepath)
 	}
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitStartService() error {
+func (visitor *v0CommandProcessingVisitor) VisitStartService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.StartServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to start service args")
@@ -69,13 +78,13 @@ func (visitor v0CommandProcessingVisitor) VisitStartService() error {
 	}
 	hostPortBindings, err := visitor.apiService.StartService(visitor.ctx, ipReplacedArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting service '%v'", castedArgs.ServiceId)
+		return stacktrace.Propagate(err, "An error occurred starting service '%v'", ipReplacedArgs.ServiceId)
 	}
 	logrus.Infof("Started service '%v' via bulk command, resulting in the following host port bindings: %+v", ipReplacedArgs.ServiceId, hostPortBindings)
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitRemoveService() error {
+func (visitor *v0CommandProcessingVisitor) VisitRemoveService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RemoveServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to remove service args")
@@ -86,18 +95,18 @@ func (visitor v0CommandProcessingVisitor) VisitRemoveService() error {
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitRepartition() error {
+func (visitor *v0CommandProcessingVisitor) VisitRepartition() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RepartitionArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
 	if _, err := visitor.apiService.Repartition(visitor.ctx, castedArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred repartitionoing the network")
+		return stacktrace.Propagate(err, "An error occurred repartitioning the network")
 	}
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitExecCommand() error {
+func (visitor *v0CommandProcessingVisitor) VisitExecCommand() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecCommandArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to exec command args")
@@ -115,6 +124,8 @@ func (visitor v0CommandProcessingVisitor) VisitExecCommand() error {
 			replacedArgs.ServiceId,
 		)
 	}
+	// Because the user can't examine the return value of the exec command when executing in bulk, we help them out
+	//  and throw an error if their exec command fails (under the assumption that they'd want this)
 	if execCmdResponse.ExitCode != successExecCmdExitCode {
 		return stacktrace.NewError(
 			"Exec command '%+v' on service '%v' exited with non-%v exit code '%v'",
@@ -127,7 +138,7 @@ func (visitor v0CommandProcessingVisitor) VisitExecCommand() error {
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() error {
+func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
@@ -148,7 +159,7 @@ func (visitor v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() err
 	return nil
 }
 
-func (visitor v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
+func (visitor *v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecuteBulkCommandsArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to bulk command execution args")
@@ -164,8 +175,8 @@ func (visitor v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
 // ====================================================================================================
 //                                     Private helper functions
 // ====================================================================================================
-
-func (visitor v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEndpointAvailabilityArgs(
+// Returns a copy of the endpoint availability-waiting args with the service ID reference patterns replaced with the service's IP
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEndpointAvailabilityArgs(
 		args *core_api_bindings.WaitForEndpointAvailabilityArgs) (*core_api_bindings.WaitForEndpointAvailabilityArgs, error) {
 	clonedMessage := proto.Clone(args)
 	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
@@ -188,11 +199,12 @@ func (visitor v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEnd
 	return ipReplacedArgs, nil
 }
 
-func (visitor v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecCommandArgs(args *core_api_bindings.ExecCommandArgs) (*core_api_bindings.ExecCommandArgs, error) {
+// Returns a copy of the exec command args with the service ID reference patterns replaced with the service's IP
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecCommandArgs(args *core_api_bindings.ExecCommandArgs) (*core_api_bindings.ExecCommandArgs, error) {
 	clonedMessage := proto.Clone(args)
 	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.ExecCommandArgs)
 	if !ok {
-		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to start service args")
+		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to exec command args")
 	}
 
 	replacedCmd, err := visitor.ipReplacer.ReplaceStrSlice(args.CommandArgs)
@@ -204,7 +216,8 @@ func (visitor v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecComman
 	return ipReplacedArgs, nil
 }
 
-func (visitor v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServiceArgs(args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceArgs, error) {
+// Returns a copy of the start service args with the service ID reference patterns replaced with the service's IP
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServiceArgs(args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceArgs, error) {
 	clonedMessage := proto.Clone(args)
 	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.StartServiceArgs)
 	if !ok {
