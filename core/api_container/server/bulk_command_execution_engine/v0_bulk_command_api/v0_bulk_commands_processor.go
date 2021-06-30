@@ -37,7 +37,7 @@ func (processor *V0BulkCommandProcessor) Process(ctx context.Context, serialized
 	}
 
 	for idx, command := range deserialized.Commands {
-		cmdProcessingVisitor := newV0CommandProcessingVisitor(ctx, command.Args, processor.ipReplacer, processor.apiService)
+		cmdProcessingVisitor := newV0CommandProcessingVisitor(ctx, command.ArgsPtr, processor.ipReplacer, processor.apiService)
 		if err := command.Type.AcceptVisitor(cmdProcessingVisitor); err != nil {
 			return stacktrace.Propagate(err, "An error occurred processing bulk command #%v of type '%v'", idx, command.Type)
 		}

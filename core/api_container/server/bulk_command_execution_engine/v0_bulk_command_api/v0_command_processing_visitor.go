@@ -20,14 +20,14 @@ const (
 
 type v0CommandProcessingVisitor struct {
 	// Normally storing a context in an object is prohibited, but this is a special case as the visitor acts more like a transient function than a long-lived struct
-	ctx context.Context
-	uncastedCommandArgs interface{}
-	ipReplacer *service_ip_replacer.ServiceIPReplacer
-	apiService core_api_bindings.ApiContainerServiceServer
+	ctx                    context.Context
+	uncastedCommandArgsPtr proto.Message // POINTER to the arg object!
+	ipReplacer             *service_ip_replacer.ServiceIPReplacer
+	apiService             core_api_bindings.ApiContainerServiceServer
 }
 
-func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgs interface{}, ipReplacer *service_ip_replacer.ServiceIPReplacer, apiService core_api_bindings.ApiContainerServiceServer) *v0CommandProcessingVisitor {
-	return &v0CommandProcessingVisitor{ctx: ctx, uncastedCommandArgs: uncastedCommandArgs, ipReplacer: ipReplacer, apiService: apiService}
+func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr proto.Message, ipReplacer *service_ip_replacer.ServiceIPReplacer, apiService core_api_bindings.ApiContainerServiceServer) *v0CommandProcessingVisitor {
+	return &v0CommandProcessingVisitor{ctx: ctx, uncastedCommandArgsPtr: uncastedCommandArgsPtr, ipReplacer: ipReplacer, apiService: apiService}
 }
 
 
@@ -36,7 +36,8 @@ func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgs inte
 // ====================================================================================================
 
 func (visitor v0CommandProcessingVisitor) VisitRegisterService() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.RegisterServiceArgs)
+	logrus.Infof("Uncasted: %+v", visitor.uncastedCommandArgsPtr)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RegisterServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to register service args")
 	}
@@ -47,7 +48,7 @@ func (visitor v0CommandProcessingVisitor) VisitRegisterService() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitGenerateFiles() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.GenerateFilesArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.GenerateFilesArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to generate files args")
 	}
@@ -58,7 +59,7 @@ func (visitor v0CommandProcessingVisitor) VisitGenerateFiles() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitStartService() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.StartServiceArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.StartServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to start service args")
 	}
@@ -75,7 +76,7 @@ func (visitor v0CommandProcessingVisitor) VisitStartService() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitRemoveService() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.RemoveServiceArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RemoveServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to remove service args")
 	}
@@ -86,7 +87,7 @@ func (visitor v0CommandProcessingVisitor) VisitRemoveService() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitRepartition() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.RepartitionArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RepartitionArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
@@ -97,7 +98,7 @@ func (visitor v0CommandProcessingVisitor) VisitRepartition() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitExecCommand() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.ExecCommandArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecCommandArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to exec command args")
 	}
@@ -127,7 +128,7 @@ func (visitor v0CommandProcessingVisitor) VisitExecCommand() error {
 }
 
 func (visitor v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
@@ -148,7 +149,7 @@ func (visitor v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() err
 }
 
 func (visitor v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
-	castedArgs, ok := visitor.uncastedCommandArgs.(*core_api_bindings.ExecuteBulkCommandsArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecuteBulkCommandsArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to bulk command execution args")
 	}
