@@ -225,6 +225,9 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServ
 	}
 
 	replacedEntrypointArgs, err := visitor.ipReplacer.ReplaceStrSlice(args.EntrypointArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs for the ENTRYPOINT arguments")
+	}
 	ipReplacedArgs.EntrypointArgs = replacedEntrypointArgs
 
 	replacedCmdArgs, err := visitor.ipReplacer.ReplaceStrSlice(args.CmdArgs)

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
+ * All Rights Reserved.
+ */
+
 package v0_bulk_command_execution
 
 import (
