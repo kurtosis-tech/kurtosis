@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 )
@@ -239,13 +240,10 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 		err error
 	)
 
-	serviceIdStr := args.ServiceId
-	serviceId := service_network_types.ServiceID(serviceIdStr)
-	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
+	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"An error occurred when trying to get the service IP address by service ID: '%v'",
-			serviceId)
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
+			args.ServiceId)
 	}
 
 	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
@@ -288,6 +286,19 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	return &emptypb.Empty{}, nil
 }
 
+func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
+	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
+			args.ServiceId)
+	}
+
+	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
+		IpAddr: serviceIP.String(),
+	}
+	return serviceInfoResponse, nil
+}
+
 func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
@@ -297,4 +308,15 @@ func makeHttpGetRequest(url string) (*http.Response, error){
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
+}
+
+func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (net.IP, error){
+	serviceID := service_network_types.ServiceID(serviceId)
+	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred when trying to get the service IP address by service ID: '%v'",
+			serviceId)
+	}
+	return serviceIP, nil
 }
