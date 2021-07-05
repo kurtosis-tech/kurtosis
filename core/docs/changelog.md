@@ -1,4 +1,6 @@
 # TBD
+
+# 1.15.6
 ### Changes
 * Upgraded to using Kurtosis Client v0.2.2, with the `ExecuteBulkCommands` endpoint
 
