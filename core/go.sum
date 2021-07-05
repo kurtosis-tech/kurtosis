@@ -88,6 +88,8 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210625204610-dbc8ce4886
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210625204610-dbc8ce488696/go.mod h1:degxAH35Ut7M3Ec4E2LtYk7Yun+kRqtROEzXJpzgyqM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210705145439-566fc9b1398c h1:Kup6HMonKduUVBXs8wp3aTkvbAGLHfB5eqef3zlZdc8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210705145439-566fc9b1398c/go.mod h1:degxAH35Ut7M3Ec4E2LtYk7Yun+kRqtROEzXJpzgyqM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210705200127-e300d2a96a47 h1:haw2/l+pmPJlhb1K6/uZsi5FOFi8QnGlBFPlxxD35B4=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210705200127-e300d2a96a47/go.mod h1:degxAH35Ut7M3Ec4E2LtYk7Yun+kRqtROEzXJpzgyqM=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210621234109-86a9ff488974 h1:6NU4hxqRiwDX0yUpUXbXBZdCSq26gc0AQ6h7DAEF8tM=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210621234109-86a9ff488974/go.mod h1:7omyMOrg11eNdOqICPOmU04xrDzjpSIE36e4W5/p/54=
 github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b h1:nT5nOiGX2r02IYaQDQ81PHKcLssLcXuRNjzNCpGL6PU=
