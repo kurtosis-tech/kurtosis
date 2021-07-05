@@ -10,10 +10,11 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -34,12 +35,27 @@ type ApiContainerService struct {
 	// This embedding is required by gRPC
 	core_api_bindings.UnimplementedApiContainerServiceServer
 
-	dockerManager             *docker_manager.DockerManager
-	serviceNetwork            *service_network.ServiceNetwork
+	serviceNetwork service_network.ServiceNetwork
+
+	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
 }
 
-func NewApiContainerService(dockerManager *docker_manager.DockerManager, serviceNetwork *service_network.ServiceNetwork) *ApiContainerService {
-	return &ApiContainerService{dockerManager: dockerManager, serviceNetwork: serviceNetwork}
+func NewApiContainerService(serviceNetwork service_network.ServiceNetwork) (*ApiContainerService, error) {
+	service := &ApiContainerService{
+		serviceNetwork: serviceNetwork,
+	}
+
+	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
+	//  necessity: the API service must farm bulk commands out to the bulk command execution engine, which must call
+	//  back to the API service to actually do work.
+	v0BulkCmdProcessor, err := v0_bulk_command_execution.NewV0BulkCommandProcessor(serviceNetwork, service)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the v0 bulk command processor")
+	}
+	bulkCmdExecEngine := bulk_command_execution_engine.NewBulkCommandExecutionEngine(v0BulkCmdProcessor)
+	service.bulkCmdExecEngine = bulkCmdExecEngine
+
+	return service, nil
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *core_api_bindings.RegisterServiceArgs) (*core_api_bindings.RegisterServiceResponse, error) {
@@ -285,6 +301,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 		}
 	}
 
+	return &emptypb.Empty{}, nil
+}
+
+func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *core_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
+	if err := service.bulkCmdExecEngine.Process(ctx, []byte(args.SerializedCommands)); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing the bulk commands")
+	}
 	return &emptypb.Empty{}, nil
 }
 

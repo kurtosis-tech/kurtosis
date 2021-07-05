@@ -176,7 +176,10 @@ func createApiContainerService(
 		args.IsPartitioningEnabled,
 		optionalHostPortBindingSupplier)
 
-	result := server.NewApiContainerService(dockerManager, serviceNetwork)
+	result, err := server.NewApiContainerService(serviceNetwork)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the API container service")
+	}
 
 	return result, nil
 }
@@ -201,7 +204,7 @@ func createServiceNetwork(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
 		isPartitioningEnabled bool,
-		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *service_network.ServiceNetwork {
+		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) service_network.ServiceNetwork {
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
@@ -227,7 +230,7 @@ func createServiceNetwork(
 		freeIpAddrTracker,
 		dockerNetworkId)
 
-	serviceNetwork := service_network.NewServiceNetwork(
+	serviceNetwork := service_network.NewServiceNetworkImpl(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,

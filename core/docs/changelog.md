@@ -1,4 +1,12 @@
 # TBD
+### Changes
+* Upgraded to using Kurtosis Client v0.2.2, with the `ExecuteBulkCommands` endpoint
+
+### Features
+* Implemented the `ExecuteBulkCommands` endpoint in the API container's API for running multiple API container endpoint commands at once
+
+### Fixes
+* Fixed bug where `ServiceNetwork.GetServiceIP` didn't use the mutex
 
 # 1.15.5
 ### Features
