@@ -147,6 +147,19 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 	return &response, nil
 }
 
+func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
+	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
+			args.ServiceId)
+	}
+
+	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
+		IpAddr: serviceIP.String(),
+	}
+	return serviceInfoResponse, nil
+}
+
 func (service ApiContainerService) RemoveService(ctx context.Context, args *core_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 
@@ -286,19 +299,9 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
-	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
-			args.ServiceId)
-	}
-
-	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
-		IpAddr: serviceIP.String(),
-	}
-	return serviceInfoResponse, nil
-}
-
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
 func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
