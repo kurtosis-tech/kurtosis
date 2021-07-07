@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add a new method `GetServiceInfo` in API container which can be used to get relevant information about a service running in the network
 
 # 1.15.5
 ### Features
