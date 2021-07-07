@@ -37,6 +37,10 @@ func (m MockServiceNetwork) GenerateFiles(serviceId service_network_types.Servic
 	panic("This is unimplemented for the mock network")
 }
 
+func (m MockServiceNetwork) LoadStaticFiles(serviceId service_network_types.ServiceID, staticFileIdKeys map[string]bool) (map[string]string, error) {
+	panic("This is unimplemented for the mock network")
+}
+
 func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service_network_types.ServiceID, imageName string, usedPorts map[nat.Port]bool, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, suiteExecutionVolMntDirpath string, filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
 	panic("This is unimplemented for the mock network")
 }

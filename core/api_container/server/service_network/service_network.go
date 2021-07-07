@@ -40,6 +40,13 @@ type ServiceNetwork interface {
 		filesToGenerate map[string]*core_api_bindings.FileGenerationOptions,
 	) (map[string]string, error)
 
+	// Copies files from the static file cache to the given service's filespace
+	// Returns a mapping of static_file_id -> filepath_relative_to_suite_ex_vol_root
+	LoadStaticFiles(
+		serviceId service_network_types.ServiceID,
+		staticFileIdKeys map[string]bool,
+	) (map[string]string, error)
+
 	// TODO add tests for this
 	/*
 	Starts a previously-registered but not-started service by creating it in a container

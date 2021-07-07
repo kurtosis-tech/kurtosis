@@ -18,7 +18,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -50,6 +52,8 @@ type ServiceNetworkImpl struct {
 
 	testExecutionDirectory *suite_execution_volume.EnclaveDirectory
 
+	staticFileCache *suite_execution_volume.StaticFileCache
+
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
 	topology *partition_topology.PartitionTopology
@@ -69,6 +73,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		testExecutionDirectory *suite_execution_volume.EnclaveDirectory,
+		staticFileCache *suite_execution_volume.StaticFileCache,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -78,6 +83,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker: freeIpAddrTracker,
 		dockerManager: dockerManager,
 		testExecutionDirectory: testExecutionDirectory,
+		staticFileCache: staticFileCache,
 		userServiceLauncher: userServiceLauncher,
 		mutex:               &sync.Mutex{},
 		topology:            partition_topology.NewPartitionTopology(
@@ -202,7 +208,7 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 		fileTypeToGenerate := fileGenerationOptions.GetFileTypeToGenerate()
 		switch fileTypeToGenerate {
 		case core_api_bindings.FileGenerationOptions_FILE:
-			file, err := serviceDirectory.GetFile(userCreatedFileKey)
+			file, err := serviceDirectory.GetGeneratedFile(userCreatedFileKey)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
 			}
@@ -217,6 +223,54 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 		}
 	}
 	return generatedFilesRelativeFilepaths, nil
+}
+
+func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_types.ServiceID, staticFileIdKeys map[string]bool) (map[string]string, error) {
+	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+	}
+
+	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service directory inside the test execution volume for service with ID '%v'", serviceId)
+	}
+
+	result := map[string]string{}
+	for staticFileId := range staticFileIdKeys {
+		src, err := network.staticFileCache.GetEntry(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the source static file with key '%v' from the static file cache", staticFileId)
+		}
+
+		dest, err := serviceDirectory.GetStaticFile(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the destination static file for key '%v' in filespace of service '%v'", staticFileId, serviceId)
+		}
+
+		srcAbsFilepath := src.GetAbsoluteFilepath()
+		srcFp, err := os.Open(srcAbsFilepath)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the file pointer from source static file filepath '%v'", srcAbsFilepath)
+		}
+		srcFp.Close()
+
+		destAbsFilepath := dest.GetAbsoluteFilepath()
+		destFp, err := os.Create(destAbsFilepath)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the file pointer for destination static file filepath '%v'", destAbsFilepath)
+		}
+		destFp.Close()
+
+		if _, err := io.Copy(destFp, srcFp); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred copying source static file '%v' to destination '%v'", srcAbsFilepath, destAbsFilepath)
+		}
+
+		result[staticFileId] = src.GetFilepathRelativeToVolRoot()
+	}
+	return result, nil
 }
 
 // TODO add tests for this

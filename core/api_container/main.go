@@ -138,9 +138,15 @@ func createApiContainerService(
 	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
+	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache")
+	}
+
+	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the static file cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -170,6 +176,7 @@ func createApiContainerService(
 		containerNameElemsProvider,
 		artifactCache,
 		enclaveDirectory,
+		staticFileCache,
 		dockerManager,
 		freeIpAddrTracker,
 		args.NetworkId,
@@ -200,6 +207,7 @@ func createServiceNetwork(
 		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		enclaveDirectory *suite_execution_volume.EnclaveDirectory,
+		staticFileCache *suite_execution_volume.StaticFileCache,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
@@ -235,6 +243,7 @@ func createServiceNetwork(
 		freeIpAddrTracker,
 		dockerManager,
 		enclaveDirectory,
+		staticFileCache,
 		userServiceLauncher,
 		networkingSidecarManager)
 

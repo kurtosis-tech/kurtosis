@@ -85,6 +85,17 @@ func (service ApiContainerService) GenerateFiles(ctx context.Context, args *core
 	}, nil
 }
 
+func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *core_api_bindings.LoadStaticFilesArgs) (*core_api_bindings.LoadStaticFilesResponse, error) {
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	copiedStaticFileRelativeFilepaths, err := service.serviceNetwork.LoadStaticFiles(serviceId, args.StaticFiles)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading static files for service '%v'", serviceId)
+	}
+	return &core_api_bindings.LoadStaticFilesResponse{
+		CopiedStaticFileRelativeFilepaths: copiedStaticFileRelativeFilepaths,
+	}, nil
+}
+
 func (service ApiContainerService) StartService(ctx context.Context, args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 

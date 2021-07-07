@@ -33,7 +33,7 @@ func TestGetFile(t *testing.T) {
 
 	filename := "someFile"
 
-	file, err := svcDir.GetFile(filename)
+	file, err := svcDir.GetGeneratedFile(filename)
 	assert.Nil(t, err)
 
 	// Check file was actually created
