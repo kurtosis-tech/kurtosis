@@ -170,8 +170,16 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *cor
 			args.ServiceId)
 	}
 
+	serviceID := service_network_types.ServiceID(args.ServiceId)
+	suiteExecutionVolMntDirpath, err :=service.serviceNetwork.GetServiceSuiteExecutionVolMntDirpath(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
+			serviceID)
+	}
+
 	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
 		IpAddr: serviceIP.String(),
+		SuiteExecutionVolMntDirpath: suiteExecutionVolMntDirpath,
 	}
 	return serviceInfoResponse, nil
 }

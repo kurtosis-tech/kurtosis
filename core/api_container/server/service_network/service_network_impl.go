@@ -58,6 +58,7 @@ type ServiceNetworkImpl struct {
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceIps map[service_network_types.ServiceID]net.IP
 	serviceContainerIds map[service_network_types.ServiceID]string
+	serviceSuiteExecutionVolMntDirpaths map[service_network_types.ServiceID]string
 
 	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
 
@@ -86,6 +87,7 @@ func NewServiceNetworkImpl(
 		),
 		serviceIps:               map[service_network_types.ServiceID]net.IP{},
 		serviceContainerIds:      map[service_network_types.ServiceID]string{},
+		serviceSuiteExecutionVolMntDirpaths: map[service_network_types.ServiceID]string{},
 		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
@@ -296,6 +298,8 @@ func (network *ServiceNetworkImpl) StartService(
 	}
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
+	network.serviceSuiteExecutionVolMntDirpaths[serviceId] = suiteExecutionVolMntDirpath
+
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
 		if err != nil {
@@ -379,7 +383,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	return exitCode, execOutputBuf, nil
 }
 
-func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types.ServiceID,) (net.IP, error) {
+func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -391,6 +395,20 @@ func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types
 	}
 
 	return ip, nil
+}
+
+func (network *ServiceNetworkImpl) GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return "", stacktrace.NewError("Cannot get suite execution volume mount directory path; the service network has been destroyed")
+	}
+
+	volMntDirPath, found := network.serviceSuiteExecutionVolMntDirpaths[serviceId]; if !found {
+		return "", stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
+	}
+
+	return volMntDirPath, nil
 }
 
 
@@ -417,6 +435,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 			return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 		}
 		delete(network.serviceContainerIds, serviceId)
+		delete(network.serviceSuiteExecutionVolMntDirpaths, serviceId)
 		logrus.Debugf("Successfully stopped container ID")
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
