@@ -173,13 +173,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	return suiteContainerId, nil
 }
 
-/*
-Returns custom Params value
-*/
-func (launcher TestsuiteContainerLauncher) GetCustomParams() string{
-	return launcher.customParamsJson
-}
-
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================

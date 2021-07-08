@@ -270,8 +270,9 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	serviceId := service_network_types.ServiceID(serviceIdStr)
 	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"An error occurred when trying to get the service IP address by service ID: '%v'",
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the IP address for service '%v'",
 			serviceId)
 	}
 
@@ -288,9 +289,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	}
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
+		return nil, stacktrace.Propagate(
+			err,
 			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			url, args.Retries, args.RetriesDelayMilliseconds)
+			url,
+			args.Retries,
+			args.RetriesDelayMilliseconds,
+		)
 	}
 
 	if args.BodyText != "" {

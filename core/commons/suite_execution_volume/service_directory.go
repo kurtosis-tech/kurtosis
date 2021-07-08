@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	generatedFileFilenamePrefix = "generated_"
-	staticFileFilenamePrefix = "static_"
+	generatedFileFilenamePrefix = "generated"
+	staticFileFilenamePrefix = "static"
 )
 
 // API for interacting with a service's directory inside the suite execution volume

@@ -31,6 +31,12 @@ const (
 	startingDefaultConnectionBlockStatus                                   = false
 )
 
+// Information that gets created with a service's registration
+type serviceRegistrationInfo struct {
+	ipAddr net.IP
+	serviceDirectory *suite_execution_volume.ServiceDirectory
+}
+
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
 	any changes to the test network, this struct must be used.
@@ -60,7 +66,7 @@ type ServiceNetworkImpl struct {
 
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
-	serviceIps map[service_network_types.ServiceID]net.IP
+	serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo
 	serviceContainerIds map[service_network_types.ServiceID]string
 
 	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
@@ -90,7 +96,7 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceIps:               map[service_network_types.ServiceID]net.IP{},
+		serviceRegistrationInfo:               map[service_network_types.ServiceID]serviceRegistrationInfo{},
 		serviceContainerIds:      map[service_network_types.ServiceID]string{},
 		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
 		networkingSidecarManager: networkingSidecarManager,
@@ -123,7 +129,7 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.Propagate(err, "An error occurred getting the blocklists after repartition, meaning that " +
 			"no partitions are actually being enforced!")
 	}
-	if err := updateIpTables(ctx, blocklists, network.serviceIps, network.networkingSidecars); err != nil {
+	if err := updateIpTables(ctx, blocklists, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
 	}
 	return nil
@@ -145,8 +151,7 @@ func (network ServiceNetworkImpl) RegisterService(
 		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
-	_, found := network.serviceIps[serviceId]
-	if found {
+	if _, found := network.serviceRegistrationInfo[serviceId]; found {
 		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
@@ -160,18 +165,32 @@ func (network ServiceNetworkImpl) RegisterService(
 		)
 	}
 
+	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a service directory for service with ID '%v'", serviceId)
+	}
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
+	shouldFreeIpAddr := true
+	defer func() {
+		if shouldFreeIpAddr {
+			network.freeIpAddrTracker.ReleaseIpAddr(ip)
+		}
+	}()
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
-	network.serviceIps[serviceId] = ip
-	shouldUndoServiceIpAdd := true
+
+	registrationInfo := serviceRegistrationInfo{
+		ipAddr:           ip,
+		serviceDirectory: serviceDirectory,
+	}
+	network.serviceRegistrationInfo[serviceId] = registrationInfo
+	shouldUndoRegistrationInfoAdd := true
 	// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
 	defer func() {
-		if shouldUndoServiceIpAdd {
-			delete(network.serviceIps, serviceId)
-			network.freeIpAddrTracker.ReleaseIpAddr(ip)
+		if shouldUndoRegistrationInfoAdd {
+			delete(network.serviceRegistrationInfo, serviceId)
 		}
 	}()
 
@@ -182,8 +201,9 @@ func (network ServiceNetworkImpl) RegisterService(
 			serviceId,
 			partitionId)
 	}
-	shouldUndoServiceIpAdd = false
 
+	shouldFreeIpAddr = false
+	shouldUndoRegistrationInfoAdd = false
 	return ip, nil
 }
 
@@ -198,10 +218,11 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
-	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service directory inside the test execution volume for service with ID '%v'", serviceId)
+	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
+	if !found {
+		return nil, stacktrace.NewError("Cannot generate files for service '%v' as no service with that ID has been registered", serviceId)
 	}
+	serviceDirectory := registrationInfo.serviceDirectory
 
 	generatedFilesRelativeFilepaths := map[string]string{}
 	for userCreatedFileKey, fileGenerationOptions := range filesToGenerate {
@@ -230,13 +251,14 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, stacktrace.NewError("Cannot load static files for service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
-	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the service directory inside the test execution volume for service with ID '%v'", serviceId)
+	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
+	if !found {
+		return nil, stacktrace.NewError("Cannot load static files for service '%v' as no service with that ID has been registered", serviceId)
 	}
+	serviceDirectory := registrationInfo.serviceDirectory
 
 	result := map[string]string{}
 	for staticFileId := range staticFileIdKeys {
@@ -255,14 +277,14 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file pointer from source static file filepath '%v'", srcAbsFilepath)
 		}
-		srcFp.Close()
+		defer srcFp.Close()
 
 		destAbsFilepath := dest.GetAbsoluteFilepath()
 		destFp, err := os.Create(destAbsFilepath)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the file pointer for destination static file filepath '%v'", destAbsFilepath)
 		}
-		destFp.Close()
+		defer destFp.Close()
 
 		if _, err := io.Copy(destFp, srcFp); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred copying source static file '%v' to destination '%v'", srcAbsFilepath, destAbsFilepath)
@@ -298,8 +320,8 @@ func (network *ServiceNetworkImpl) StartService(
 		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
-	serviceIpAddr, foundIp := network.serviceIps[serviceId]
-	if !foundIp {
+	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[serviceId]
+	if !registrationInfoFound {
 		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
 	}
 	if _, found := network.serviceContainerIds[serviceId]; found {
@@ -326,7 +348,7 @@ func (network *ServiceNetworkImpl) StartService(
 			}
 			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
 		}
-		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceIps, network.networkingSidecars); err != nil {
+		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services " +
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
@@ -335,7 +357,7 @@ func (network *ServiceNetworkImpl) StartService(
 	serviceContainerId, hostPortBindings, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceId,
-		serviceIpAddr,
+		registrationInfo.ipAddr,
 		imageName,
 		usedPorts,
 		entrypointArgs,
@@ -372,7 +394,7 @@ func (network *ServiceNetworkImpl) StartService(
 		updatesToApply := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{
 			serviceId: newNodeBlocklist,
 		}
-		if err := updateIpTables(ctx, updatesToApply, network.serviceIps, network.networkingSidecars); err != nil {
+		if err := updateIpTables(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it " +
 				"off from other nodes")
 		}
@@ -440,11 +462,12 @@ func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types
 		return nil, stacktrace.NewError("Cannot get IP address; the service network has been destroyed")
 	}
 
-	ip, found := network.serviceIps[serviceId]; if !found {
+	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
+	if !found {
 		return nil, stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
 	}
 
-	return ip, nil
+	return registrationInfo.ipAddr, nil
 }
 
 
@@ -455,12 +478,12 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
 		containerStopTimeout time.Duration) error {
-	serviceIp, foundIpAddr := network.serviceIps[serviceId]
-	if !foundIpAddr {
-		return stacktrace.NewError("No IP found for service '%v'", serviceId)
+	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceId]
+	if !foundRegistrationInfo {
+		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
 	}
 	network.topology.RemoveService(serviceId)
-	delete(network.serviceIps, serviceId)
+	delete(network.serviceRegistrationInfo, serviceId)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	serviceContainerId, foundContainerId := network.serviceContainerIds[serviceId]
@@ -473,7 +496,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		delete(network.serviceContainerIds, serviceId)
 		logrus.Debugf("Successfully stopped container ID")
 	}
-	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
+	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.ipAddr)
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
 	if network.isPartitioningEnabled && foundSidecar {
@@ -500,21 +523,21 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateIpTables(
 		ctx context.Context,
 		targetBlocklists map[service_network_types.ServiceID]*service_network_types.ServiceIDSet,
-		serviceIps map[service_network_types.ServiceID]net.IP,
+		serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
 		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	for serviceId, newBlocklist := range targetBlocklists {
 		allIpsToBlock := []net.IP{}
 		for _, serviceIdToBlock := range newBlocklist.Elems() {
-			ipToBlock, found := serviceIps[serviceIdToBlock]
+			infoForService, found := serviceRegistrationInfo[serviceIdToBlock]
 			if !found {
 				return stacktrace.NewError(
 					"Service with ID '%v' needs to block service with ID '%v', but the latter " +
-						"doesn't have an IP associated with it",
+						"doesn't have service registration info (i.e. an IP) associated with it",
 					serviceId,
 					serviceIdToBlock)
 			}
-			allIpsToBlock = append(allIpsToBlock, ipToBlock)
+			allIpsToBlock = append(allIpsToBlock, infoForService.ipAddr)
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
