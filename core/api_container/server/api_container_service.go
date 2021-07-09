@@ -86,6 +86,17 @@ func (service ApiContainerService) GenerateFiles(ctx context.Context, args *core
 	}, nil
 }
 
+func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *core_api_bindings.LoadStaticFilesArgs) (*core_api_bindings.LoadStaticFilesResponse, error) {
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	copiedStaticFileRelativeFilepaths, err := service.serviceNetwork.LoadStaticFiles(serviceId, args.StaticFiles)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading static files for service '%v'", serviceId)
+	}
+	return &core_api_bindings.LoadStaticFilesResponse{
+		CopiedStaticFileRelativeFilepaths: copiedStaticFileRelativeFilepaths,
+	}, nil
+}
+
 func (service ApiContainerService) StartService(ctx context.Context, args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 
@@ -179,7 +190,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *cor
 
 	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
 		IpAddr: serviceIP.String(),
-		SuiteExecutionVolMntDirpath: suiteExecutionVolMntDirpath,
+		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
 	}
 	return serviceInfoResponse, nil
 }
@@ -277,10 +288,14 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 		err error
 	)
 
-	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	serviceIdStr := args.ServiceId
+	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
-			args.ServiceId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the IP address for service '%v'",
+			serviceIdStr,
+		)
 	}
 
 	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
@@ -296,9 +311,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	}
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
+		return nil, stacktrace.Propagate(
+			err,
 			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			url, args.Retries, args.RetriesDelayMilliseconds)
+			url,
+			args.Retries,
+			args.RetriesDelayMilliseconds,
+		)
 	}
 
 	if args.BodyText != "" {
@@ -316,7 +335,6 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 
 		if bodyStr != args.BodyText {
 			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
-
 		}
 	}
 

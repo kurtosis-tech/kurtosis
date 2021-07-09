@@ -13,6 +13,11 @@ import (
 	"path"
 )
 
+const (
+	generatedFileFilenamePrefix = "generated"
+	staticFileFilenamePrefix = "static"
+)
+
 // API for interacting with a service's directory inside the suite execution volume
 type ServiceDirectory struct {
 	absoluteDirpath          string
@@ -23,10 +28,25 @@ func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
+func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*File, error) {
+	file, err := directory.getNewFilepath(generatedFileFilenamePrefix, generatedFileKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for generated file key '%v'", generatedFileKey)
+	}
+	return file, nil
+}
 
-func (directory ServiceDirectory) GetFile(filename string) (*File, error) {
+func (directory ServiceDirectory) NewStaticFile(staticFileKey string) (*File, error) {
+	file, err := directory.getNewFilepath(staticFileFilenamePrefix, staticFileKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for static file key '%v'", staticFileKey)
+	}
+	return file, nil
+}
+
+func (directory ServiceDirectory) getNewFilepath(prefix string, identifierFragment string) (*File, error) {
 	uniqueId := uuid.New()
-	uniqueFilename := fmt.Sprintf("%v-%v", filename, uniqueId)
+	uniqueFilename := fmt.Sprintf("%v_%v_%v", prefix, identifierFragment, uniqueId)
 
 	absoluteFilepath := path.Join(directory.absoluteDirpath, uniqueFilename)
 	fp, err := os.Create(absoluteFilepath)
