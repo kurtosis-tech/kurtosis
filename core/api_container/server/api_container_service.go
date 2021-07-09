@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 )
@@ -173,6 +174,27 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 	return &response, nil
 }
 
+func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
+	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
+			args.ServiceId)
+	}
+
+	serviceID := service_network_types.ServiceID(args.ServiceId)
+	suiteExecutionVolMntDirpath, err :=service.serviceNetwork.GetServiceSuiteExecutionVolMntDirpath(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
+			serviceID)
+	}
+
+	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
+		IpAddr: serviceIP.String(),
+		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+	}
+	return serviceInfoResponse, nil
+}
+
 func (service ApiContainerService) RemoveService(ctx context.Context, args *core_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 
@@ -267,13 +289,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	)
 
 	serviceIdStr := args.ServiceId
-	serviceId := service_network_types.ServiceID(serviceIdStr)
-	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
+	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred when trying to get the IP address for service '%v'",
-			serviceId)
+			serviceIdStr,
+		)
 	}
 
 	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
@@ -313,7 +335,6 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 
 		if bodyStr != args.BodyText {
 			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
-
 		}
 	}
 
@@ -327,6 +348,9 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 	return &emptypb.Empty{}, nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
 func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
@@ -337,3 +361,15 @@ func makeHttpGetRequest(url string) (*http.Response, error){
 	}
 	return resp, nil
 }
+
+func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (net.IP, error){
+	serviceID := service_network_types.ServiceID(serviceId)
+	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred when trying to get the service IP address by service ID: '%v'",
+			serviceId)
+	}
+	return serviceIP, nil
+}
+
