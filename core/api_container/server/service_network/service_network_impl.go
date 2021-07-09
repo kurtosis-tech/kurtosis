@@ -29,6 +29,14 @@ const (
 	startingDefaultConnectionBlockStatus                                   = false
 )
 
+type serviceRunInfo struct {
+	// Service's container ID
+	containerId string
+
+	// Where the suite execution volume is mounted on the service
+	suiteExecutionVolumeMountDirpath string
+}
+
 /*
 This is the in-memory representation of the service network that the API container will manipulate. To make
 	any changes to the test network, this struct must be used.
@@ -57,7 +65,7 @@ type ServiceNetworkImpl struct {
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceIps map[service_network_types.ServiceID]net.IP
-	serviceContainerIds map[service_network_types.ServiceID]string
+	serviceRunInfo map[service_network_types.ServiceID]serviceRunInfo
 
 	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
 
@@ -85,7 +93,7 @@ func NewServiceNetworkImpl(
 			defaultPartitionConnection,
 		),
 		serviceIps:               map[service_network_types.ServiceID]net.IP{},
-		serviceContainerIds:      map[service_network_types.ServiceID]string{},
+		serviceRunInfo:           map[service_network_types.ServiceID]serviceRunInfo{},
 		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
@@ -248,8 +256,8 @@ func (network *ServiceNetworkImpl) StartService(
 	if !foundIp {
 		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
 	}
-	if _, found := network.serviceContainerIds[serviceId]; found {
-		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has a container associated with it", serviceId)
+	if _, found := network.serviceRunInfo[serviceId]; found {
+		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
 	}
 
 	// When partitioning is enabled, there's a race condition where:
@@ -294,7 +302,11 @@ func (network *ServiceNetworkImpl) StartService(
 			err,
 			"An error occurred creating the user service container")
 	}
-	network.serviceContainerIds[serviceId] = serviceContainerId
+	runInfo := serviceRunInfo{
+		containerId:                      serviceContainerId,
+		suiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+	}
+	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
@@ -356,7 +368,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 		return 0, nil, stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
 	}
 
-	containerId, found := network.serviceContainerIds[serviceId]
+	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
 		return 0, nil, stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
@@ -368,7 +380,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	// In the future, this will likely be insufficient
 
 	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := network.dockerManager.RunExecCommand(ctx, containerId, command, execOutputBuf)
+	exitCode, err := network.dockerManager.RunExecCommand(ctx, runInfo.containerId, command, execOutputBuf)
 	if err != nil {
 		return 0, nil, stacktrace.Propagate(
 			err,
@@ -379,7 +391,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	return exitCode, execOutputBuf, nil
 }
 
-func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types.ServiceID,) (net.IP, error) {
+func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -391,6 +403,21 @@ func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types
 	}
 
 	return ip, nil
+}
+
+func (network *ServiceNetworkImpl) GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return "", stacktrace.NewError("Cannot get suite execution volume mount directory path; the service network has been destroyed")
+	}
+
+	runInfo, found := network.serviceRunInfo[serviceId]
+	if !found {
+		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+	}
+
+	return runInfo.suiteExecutionVolumeMountDirpath, nil
 }
 
 
@@ -409,14 +436,16 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	delete(network.serviceIps, serviceId)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
-	serviceContainerId, foundContainerId := network.serviceContainerIds[serviceId]
-	if foundContainerId {
+
+	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
+	if foundRunInfo {
+		serviceContainerId := runInfo.containerId
 		// Make a best-effort attempt to stop the service container
 		logrus.Debugf("Stopping container ID '%v' for service ID '%v'...", serviceContainerId, serviceId)
 		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
 		}
-		delete(network.serviceContainerIds, serviceId)
+		delete(network.serviceRunInfo, serviceId)
 		logrus.Debugf("Successfully stopped container ID")
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(serviceIp)
