@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Upgraded to Kurtosis Client v0.3.0
+
 ### Features
 * Add a new method `GetServiceInfo` in API container which can be used to get relevant information about a service running in the network
 
