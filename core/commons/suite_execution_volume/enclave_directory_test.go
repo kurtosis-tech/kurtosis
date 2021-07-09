@@ -26,7 +26,7 @@ func TestGetServiceDirectory(t *testing.T) {
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.GetServiceDirectory(serviceId)
+	svcDir, err := testExDir.NewServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	allSvcsDirpath := path.Join(suiteExVolDirpath, testId, allServicesDirname)

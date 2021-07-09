@@ -29,7 +29,7 @@ func newEnclaveDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 }
 
 // Creates a new, unique service directory for a service with the given service ID
-func (executionDir EnclaveDirectory) GetServiceDirectory(serviceId string) (*ServiceDirectory, error) {
+func (executionDir EnclaveDirectory) NewServiceDirectory(serviceId string) (*ServiceDirectory, error) {
 	allServicesAbsoluteDirpath := path.Join(executionDir.absoluteDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside test execution dir", allServicesAbsoluteDirpath)

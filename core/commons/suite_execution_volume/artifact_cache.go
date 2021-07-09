@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-
 	// This is a special type of import that includes the correct hashing algorithm that we use
 	// If we don't have the "_" in front, Goland will complain it's unused
 	_ "golang.org/x/crypto/sha3"
@@ -32,12 +31,14 @@ An interface for interacting with the artifact cache directory that exists insid
  */
 type ArtifactCache struct {
 	absoluteDirpath string
-
 	dirpathRelativeToVolRoot string
 }
 
 func newArtifactCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *ArtifactCache {
-	return &ArtifactCache{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
+	return &ArtifactCache{
+		absoluteDirpath: absoluteDirpath,
+		dirpathRelativeToVolRoot: dirpathRelativeToVolRoot,
+	}
 }
 
 func (cache ArtifactCache) AddArtifact(artifactUrl string) error {

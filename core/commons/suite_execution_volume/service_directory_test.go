@@ -25,7 +25,7 @@ func TestGetFile(t *testing.T) {
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.GetServiceDirectory(serviceId)
+	svcDir, err := testExDir.NewServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
@@ -33,7 +33,7 @@ func TestGetFile(t *testing.T) {
 
 	filename := "someFile"
 
-	file, err := svcDir.GetFile(filename)
+	file, err := svcDir.NewGeneratedFile(filename)
 	assert.Nil(t, err)
 
 	// Check file was actually created
