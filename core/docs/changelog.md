@@ -1,4 +1,6 @@
 # TBD
+
+# 1.15.7
 ### Changes
 * Upgraded to Kurtosis Client v0.3.0
 
