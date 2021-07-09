@@ -20,7 +20,7 @@ const (
 )
 
 func TestConstructorValidation(t *testing.T) {
-	mockNetwork := service_network.NewMockServiceNetwork(map[service_network_types.ServiceID]net.IP{})
+	mockNetwork := service_network.NewMockServiceNetwork(map[service_network_types.ServiceID]net.IP{}, map[service_network_types.ServiceID]string{})
 
 	_, err := NewServiceIPReplacer("xx", "xx", mockNetwork)
 	assert.Error(t, err, "Should have gotten an error on identical prefix & suffix")
@@ -38,8 +38,11 @@ func TestValidStrReplacing(t *testing.T) {
 	serviceIps := map[service_network_types.ServiceID]net.IP{
 		serviceId: serviceIp,
 	}
+	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+		serviceId: "/test-volume",
+	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
@@ -52,7 +55,7 @@ func TestValidStrReplacing(t *testing.T) {
 }
 
 func TestErrorOnNonexistentServiceId(t *testing.T) {
-	mockNetwork := service_network.NewMockServiceNetwork(map[service_network_types.ServiceID]net.IP{})
+	mockNetwork := service_network.NewMockServiceNetwork(map[service_network_types.ServiceID]net.IP{}, map[service_network_types.ServiceID]string{})
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
@@ -70,8 +73,12 @@ func TestStrSliceReplacing(t *testing.T) {
 		serviceId1: serviceIp1,
 		serviceId2: serviceIp2,
 	}
+	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+		serviceId1: "/test-volume-1",
+		serviceId2: "/test-volume-2",
+	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
@@ -98,8 +105,12 @@ func TestMapValReplacing(t *testing.T) {
 		serviceId1: serviceIp1,
 		serviceId2: serviceIp2,
 	}
+	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+		serviceId1: "/test-volume-1",
+		serviceId2: "/test-volume-2",
+	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
