@@ -17,7 +17,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210707225825-b5c3891b2d8c
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210708185714-b006b745c12f
 	github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210706222051-6798d43ee14c
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect

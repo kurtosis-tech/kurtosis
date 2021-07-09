@@ -67,6 +67,22 @@ func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
 	return nil
 }
 
+func (visitor *v0CommandProcessingVisitor) VisitLoadStaticFiles() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.LoadStaticFilesArgs)
+	if !ok {
+		return stacktrace.NewError("An error occurred downcasting the generic args object to load static files args")
+	}
+	loadStaticFilesResp, err := visitor.apiService.LoadStaticFiles(visitor.ctx, castedArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading the requested static files")
+	}
+	logrus.Infof("Successfully loaded static files for service '%v' at the given relative filepaths of the testsuite volume:", castedArgs.ServiceId)
+	for staticFileId, relativeFilepath := range loadStaticFilesResp.CopiedStaticFileRelativeFilepaths {
+		logrus.Infof(" - %v: %v", staticFileId, relativeFilepath)
+	}
+	return nil
+}
+
 func (visitor *v0CommandProcessingVisitor) VisitStartService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.StartServiceArgs)
 	if !ok {
