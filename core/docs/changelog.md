@@ -1,6 +1,10 @@
 # TBD
 ### Changes
 * Upgraded to Kurtosis Client v0.4.0
+* Implemented the `LoadStaticFiles` endpoint
+
+### Breaking Changes
+* Testsuites must now provide used static files in testsuite metadata
 
 # 1.15.7
 ### Changes
