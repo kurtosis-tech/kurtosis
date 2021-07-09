@@ -9,7 +9,6 @@ import (
 	"github.com/palantir/stacktrace"
 	"os"
 	"path"
-	"sync"
 )
 
 /*
@@ -18,10 +17,6 @@ An interface for interacting with the static file cache directory that exists in
 */
 type StaticFileCache struct {
 	absoluteDirpath string
-
-	// Guard to make sure concurrency can't mess us up
-	mutex *sync.Mutex
-
 	dirpathRelativeToVolRoot string
 }
 

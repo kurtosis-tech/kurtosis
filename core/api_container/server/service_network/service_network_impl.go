@@ -174,9 +174,9 @@ func (network ServiceNetworkImpl) RegisterService(
 		)
 	}
 
-	serviceDirectory, err := network.testExecutionDirectory.GetServiceDirectory(string(serviceId))
+	serviceDirectory, err := network.testExecutionDirectory.NewServiceDirectory(string(serviceId))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a service directory for service with ID '%v'", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new service directory for service with ID '%v'", serviceId)
 	}
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
@@ -184,6 +184,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	}
 	shouldFreeIpAddr := true
 	defer func() {
+		// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
 		if shouldFreeIpAddr {
 			network.freeIpAddrTracker.ReleaseIpAddr(ip)
 		}
@@ -196,8 +197,8 @@ func (network ServiceNetworkImpl) RegisterService(
 	}
 	network.serviceRegistrationInfo[serviceId] = registrationInfo
 	shouldUndoRegistrationInfoAdd := true
-	// To keep our bookkeeping correct, if an error occurs later we need to back out the IP-adding that we do now
 	defer func() {
+		// If an error occurs, the service ID won't be used so we need to delete it from the map
 		if shouldUndoRegistrationInfoAdd {
 			delete(network.serviceRegistrationInfo, serviceId)
 		}
@@ -238,7 +239,7 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 		fileTypeToGenerate := fileGenerationOptions.GetFileTypeToGenerate()
 		switch fileTypeToGenerate {
 		case core_api_bindings.FileGenerationOptions_FILE:
-			file, err := serviceDirectory.GetGeneratedFile(userCreatedFileKey)
+			file, err := serviceDirectory.NewGeneratedFile(userCreatedFileKey)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
 			}
@@ -276,7 +277,7 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 			return nil, stacktrace.Propagate(err, "An error occurred getting the source static file with key '%v' from the static file cache", staticFileId)
 		}
 
-		dest, err := serviceDirectory.GetStaticFile(staticFileId)
+		dest, err := serviceDirectory.NewStaticFile(staticFileId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the destination static file for key '%v' in filespace of service '%v'", staticFileId, serviceId)
 		}

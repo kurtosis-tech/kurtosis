@@ -28,23 +28,23 @@ func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
-func (directory ServiceDirectory) GetGeneratedFile(generatedFileKey string) (*File, error) {
-	file, err := directory.getFile(generatedFileFilenamePrefix, generatedFileKey)
+func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*File, error) {
+	file, err := directory.getNewFilepath(generatedFileFilenamePrefix, generatedFileKey)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting generated file for generated file key '%v'", generatedFileKey)
+		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for generated file key '%v'", generatedFileKey)
 	}
 	return file, nil
 }
 
-func (directory ServiceDirectory) GetStaticFile(staticFileKey string) (*File, error) {
-	file, err := directory.getFile(staticFileFilenamePrefix, staticFileKey)
+func (directory ServiceDirectory) NewStaticFile(staticFileKey string) (*File, error) {
+	file, err := directory.getNewFilepath(staticFileFilenamePrefix, staticFileKey)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting static file for static file key '%v'", staticFileKey)
+		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for static file key '%v'", staticFileKey)
 	}
 	return file, nil
 }
 
-func (directory ServiceDirectory) getFile(prefix string, identifierFragment string) (*File, error) {
+func (directory ServiceDirectory) getNewFilepath(prefix string, identifierFragment string) (*File, error) {
 	uniqueId := uuid.New()
 	uniqueFilename := fmt.Sprintf("%v_%v_%v", prefix, identifierFragment, uniqueId)
 
