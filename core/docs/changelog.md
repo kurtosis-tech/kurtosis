@@ -1,4 +1,6 @@
 # TBD
+
+# 1.16.0
 ### Changes
 * Upgraded to Kurtosis Client v0.4.0
 * Implemented the `LoadStaticFiles` endpoint
