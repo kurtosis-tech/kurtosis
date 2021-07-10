@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/json"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
@@ -96,6 +97,13 @@ func main() {
 			apiContainerServiceRegistrationFunc,
 		},
 	)
+
+	//Destroy the serviceNetwork found inside the apiContainerService
+	ctx := context.TODO()
+	args *core_api_bindings.DestroyArgs
+	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
+	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
+	apiContainerService.Destroy(ctx, containerStopTimeout)
 
 	logrus.Info("Running server...")
 	if err := apiContainerServer.Run(); err != nil {

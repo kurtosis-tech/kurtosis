@@ -311,6 +311,19 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 	return &emptypb.Empty{}, nil
 }
 
+func (service ApiContainerService) Destroy(ctx context.Context, containerStopTimeout time.Duration) {
+	//serviceId := service_network_types.ServiceID(args.ServiceId)
+	//
+	//containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
+	//containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
+	//
+	//if err := service.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
+	//	// TODO IP: Leaks internal information about the API container
+	//	return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
+	//}
+	//return &emptypb.Empty{}, nil
+}
+
 func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {

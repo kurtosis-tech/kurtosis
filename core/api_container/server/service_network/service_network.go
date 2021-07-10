@@ -73,4 +73,9 @@ type ServiceNetwork interface {
 	) (int32, *bytes.Buffer, error)
 
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
+
+	Destroy(
+		ctx context.Context,
+		containerStopTimeout time.Duration,
+	) error
 }

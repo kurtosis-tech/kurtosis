@@ -297,7 +297,7 @@ func (network *ServiceNetworkImpl) StartService(
 	network.serviceContainerIds[serviceId] = serviceContainerId
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceId, serviceContainerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
@@ -393,6 +393,37 @@ func (network *ServiceNetworkImpl)  GetServiceIP(serviceId service_network_types
 	return ip, nil
 }
 
+// Destroy all services the network is tracking, as well as make the network not usable anymore
+func (network *ServiceNetworkImpl) Destroy(
+	ctx context.Context,
+	containerStopTimeout time.Duration) error {
+
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot destroy service; the service network has been destroyed")
+	}
+
+	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
+	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
+	for serviceId := range network.serviceIps {
+		serviceIdsToRemove[serviceId] = true
+	}
+
+	//Removing all the services that is being tracked by this network
+	for serviceId := range serviceIdsToRemove {
+		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying service with ID '%v'", serviceId)
+		}
+	}
+
+	//Make the network unusable
+	network.isDestroyed = true
+
+	return nil
+
+}
+
 
 // ====================================================================================================
 // 									   Private helper methods
@@ -428,7 +459,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		// 	 a) nothing is using it so it doesn't do anything and
 		//	 b) all service's iptables get overwritten on the next Add/Repartition call
 		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
-		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
+		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
 		delete(network.networkingSidecars, serviceId)
