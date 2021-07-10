@@ -19,10 +19,11 @@ import (
 
 type MockServiceNetwork struct {
 	serviceIps map[service_network_types.ServiceID]net.IP
+	serviceSuiteExecutionVolMntDirpaths map[service_network_types.ServiceID]string
 }
 
-func NewMockServiceNetwork(serviceIps map[service_network_types.ServiceID]net.IP) *MockServiceNetwork {
-	return &MockServiceNetwork{serviceIps: serviceIps}
+func NewMockServiceNetwork(serviceIps map[service_network_types.ServiceID]net.IP, serviceSuiteExecutionVolMntDirpaths map[service_network_types.ServiceID]string) *MockServiceNetwork {
+	return &MockServiceNetwork{serviceIps: serviceIps, serviceSuiteExecutionVolMntDirpaths: serviceSuiteExecutionVolMntDirpaths}
 }
 
 func (m MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
@@ -34,6 +35,10 @@ func (m MockServiceNetwork) RegisterService(serviceId service_network_types.Serv
 }
 
 func (m MockServiceNetwork) GenerateFiles(serviceId service_network_types.ServiceID, filesToGenerate map[string]*core_api_bindings.FileGenerationOptions) (map[string]string, error) {
+	panic("This is unimplemented for the mock network")
+}
+
+func (m MockServiceNetwork) LoadStaticFiles(serviceId service_network_types.ServiceID, staticFileIdKeys map[string]bool) (map[string]string, error) {
 	panic("This is unimplemented for the mock network")
 }
 
@@ -57,3 +62,10 @@ func (m MockServiceNetwork) GetServiceIP(serviceId service_network_types.Service
 	return ip, nil
 }
 
+func (m MockServiceNetwork) GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+	volMntDirPath, found := m.serviceSuiteExecutionVolMntDirpaths[serviceId]
+	if !found {
+		return "", stacktrace.NewError("No volume directory path defined for service with ID '%v'", serviceId)
+	}
+	return volMntDirPath, nil
+}

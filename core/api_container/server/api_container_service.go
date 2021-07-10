@@ -19,6 +19,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 )
@@ -82,6 +83,17 @@ func (service ApiContainerService) GenerateFiles(ctx context.Context, args *core
 	}
 	return &core_api_bindings.GenerateFilesResponse{
 		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
+	}, nil
+}
+
+func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *core_api_bindings.LoadStaticFilesArgs) (*core_api_bindings.LoadStaticFilesResponse, error) {
+	serviceId := service_network_types.ServiceID(args.ServiceId)
+	copiedStaticFileRelativeFilepaths, err := service.serviceNetwork.LoadStaticFiles(serviceId, args.StaticFiles)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading static files for service '%v'", serviceId)
+	}
+	return &core_api_bindings.LoadStaticFilesResponse{
+		CopiedStaticFileRelativeFilepaths: copiedStaticFileRelativeFilepaths,
 	}, nil
 }
 
@@ -160,6 +172,27 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
 
 	return &response, nil
+}
+
+func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
+	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
+			args.ServiceId)
+	}
+
+	serviceID := service_network_types.ServiceID(args.ServiceId)
+	suiteExecutionVolMntDirpath, err :=service.serviceNetwork.GetServiceSuiteExecutionVolMntDirpath(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
+			serviceID)
+	}
+
+	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
+		IpAddr: serviceIP.String(),
+		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+	}
+	return serviceInfoResponse, nil
 }
 
 func (service ApiContainerService) RemoveService(ctx context.Context, args *core_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
@@ -256,12 +289,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	)
 
 	serviceIdStr := args.ServiceId
-	serviceId := service_network_types.ServiceID(serviceIdStr)
-	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceId)
+	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"An error occurred when trying to get the service IP address by service ID: '%v'",
-			serviceId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the IP address for service '%v'",
+			serviceIdStr,
+		)
 	}
 
 	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
@@ -277,9 +311,13 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	}
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
+		return nil, stacktrace.Propagate(
+			err,
 			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			url, args.Retries, args.RetriesDelayMilliseconds)
+			url,
+			args.Retries,
+			args.RetriesDelayMilliseconds,
+		)
 	}
 
 	if args.BodyText != "" {
@@ -297,7 +335,6 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 
 		if bodyStr != args.BodyText {
 			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
-
 		}
 	}
 
@@ -311,19 +348,9 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) Destroy(ctx context.Context, containerStopTimeout time.Duration) {
-	//serviceId := service_network_types.ServiceID(args.ServiceId)
-	//
-	//containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
-	//containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
-	//
-	//if err := service.serviceNetwork.RemoveService(ctx, serviceId, containerStopTimeout); err != nil {
-	//	// TODO IP: Leaks internal information about the API container
-	//	return nil, stacktrace.Propagate(err, "An error occurred removing service with ID '%v'", serviceId)
-	//}
-	//return &emptypb.Empty{}, nil
-}
-
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
 func makeHttpGetRequest(url string) (*http.Response, error){
 	resp, err := http.Get(url)
 	if err != nil {
@@ -334,3 +361,15 @@ func makeHttpGetRequest(url string) (*http.Response, error){
 	}
 	return resp, nil
 }
+
+func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (net.IP, error){
+	serviceID := service_network_types.ServiceID(serviceId)
+	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred when trying to get the service IP address by service ID: '%v'",
+			serviceId)
+	}
+	return serviceIP, nil
+}
+

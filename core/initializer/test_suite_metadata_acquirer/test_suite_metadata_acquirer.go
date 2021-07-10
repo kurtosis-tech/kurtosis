@@ -13,6 +13,7 @@ import (
 	test_suite_bindings "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
 	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
@@ -36,9 +37,10 @@ const (
 	shouldFollowTestsuiteLogsOnErr = false
 )
 
-func GetTestSuiteMetadata(
+func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 		dockerClient *client.Client,
-		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*test_suite_bindings.TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher,
+		staticFilesCache *suite_execution_volume.StaticFileCache) (*test_suite_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -96,6 +98,34 @@ func GetTestSuiteMetadata(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
 	logrus.Debugf("Successfully retrieved testsuite metadata")
+
+	// NOTE: Maybe we want this code moved somewhere else?
+	logrus.Debugf("Copying static files from the testsuite to the static file cache...")
+	usedStaticFiles := suiteMetadata.GetStaticFiles()
+	staticFileRelativeFilepaths := map[string]string{}
+	for staticFileId := range usedStaticFiles {
+		file, err := staticFilesCache.RegisterEntry(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred registering static file key '%v' in the static file cache", staticFileId)
+		}
+		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
+	}
+	copyStaticFilesArgs := &test_suite_bindings.CopyStaticFilesToExecutionVolumeArgs{
+		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
+	}
+	// TODO PERF: If copying all the static files becomes expensive perf-wise, we could have tests register
+	//  which static files they'll use and only tell the testsuite to copy those
+	if _, err := testsuiteClient.CopyStaticFilesToExecutionVolume(parentContext, copyStaticFilesArgs); err != nil {
+		printContainerLogsWithBanners(
+			dockerManager,
+			parentContext,
+			containerId,
+			logrus.StandardLogger(),
+			metadataProvidingTestsuiteContainerTitle,
+		)
+		return nil, stacktrace.Propagate(err, "An error occurred instructing the testsuite to copy its static files into the locations we provided")
+	}
+	logrus.Debugf("Successfully copied testsuite static files to the static file cache")
 
 	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
@@ -168,6 +198,9 @@ func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetad
 	}
 	if suiteMetadata.TestMetadata == nil {
 		return stacktrace.NewError("Test metadata map is nil")
+	}
+	if suiteMetadata.StaticFiles == nil {
+		return stacktrace.NewError("Static files set is nil")
 	}
 	if len(suiteMetadata.TestMetadata) == 0 {
 		return stacktrace.NewError("Test suite doesn't declare any tests")

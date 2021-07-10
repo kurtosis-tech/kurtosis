@@ -2,6 +2,21 @@
 ### Changes
 * Added Destroy method that would destroy tear down the docker side containers
 
+# 1.16.0
+### Changes
+* Upgraded to Kurtosis Client v0.4.0
+* Implemented the `LoadStaticFiles` endpoint
+
+### Breaking Changes
+* Testsuites must now provide used static files in testsuite metadata
+
+# 1.15.7
+### Changes
+* Upgraded to Kurtosis Client v0.3.0
+
+### Features
+* Add a new method `GetServiceInfo` in API container which can be used to get relevant information about a service running in the network
+
 # 1.15.6
 ### Changes
 * Upgraded to using Kurtosis Client v0.2.2, with the `ExecuteBulkCommands` endpoint
