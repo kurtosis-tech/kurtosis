@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Added Destroy method that would destroy tear down the docker side containers
 
 # 1.15.6
 ### Changes
