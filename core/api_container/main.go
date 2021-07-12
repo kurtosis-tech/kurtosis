@@ -6,8 +6,8 @@
 package main
 
 import (
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
@@ -81,7 +81,7 @@ func main() {
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 	paramsJsonStr := *paramsJsonArg
 
-	//All the steps needed to create serviceNtwork
+	//All the steps needed to create serviceNetwork
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_env_var_values2.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
