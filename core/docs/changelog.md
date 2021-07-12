@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
 
 # 1.16.0
 ### Changes
