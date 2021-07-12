@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
 
 # 1.16.0
 ### Changes
