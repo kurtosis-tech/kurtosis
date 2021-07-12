@@ -512,7 +512,7 @@ func (network *ServiceNetworkImpl) Destroy(
 
 	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
 	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
-	for serviceId := range network.serviceIps {
+	for serviceId := range network.serviceRegistrationInfo {
 		serviceIdsToRemove[serviceId] = true
 	}
 

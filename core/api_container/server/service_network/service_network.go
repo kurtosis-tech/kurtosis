@@ -82,4 +82,6 @@ type ServiceNetwork interface {
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
 
 	GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
+
+	Destroy(ctx context.Context, containerStopTimeout time.Duration) error
 }

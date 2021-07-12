@@ -77,56 +77,20 @@ func main() {
 	}
 	logrus.SetLevel(logLevel)
 
+	// TODO Rename this so it's not tied to testing
 	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
-	paramsJson := *paramsJsonArg
+	paramsJsonStr := *paramsJsonArg
 
-	apiContainerService, err := createApiContainerService(suiteExecutionVolume, paramsJson)
-	if err != nil {
-		logrus.Errorf("An error occurred creating the API container service using params JSON '%v':", paramsJson)
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
-	}
-	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		core_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
-	}
-	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		core_api_consts.ListenPort,
-		core_api_consts.ListenProtocol,
-		grpcServerStopGracePeriod,
-		[]func(*grpc.Server){
-			apiContainerServiceRegistrationFunc,
-		},
-	)
-
-	//Destroy the serviceNetwork found inside the apiContainerService
-	ctx := context.TODO()
-	args *core_api_bindings.DestroyArgs
-	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
-	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
-	apiContainerService.Destroy(ctx, containerStopTimeout)
-
-	logrus.Info("Running server...")
-	if err := apiContainerServer.Run(); err != nil {
-		logrus.Errorf("An error occurred running the server:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
-	}
-	os.Exit(successExitCode)
-}
-
-func createApiContainerService(
-		// TODO Rename this so it's not tied to testing
-		suiteExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-		paramsJsonStr string) (*server.ApiContainerService, error) {
+	//All the steps needed to create serviceNtwork
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_env_var_values2.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", paramsJsonStr)
+		logrus.Errorf("An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
 
 	dockerManager, err := createDockerManager()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+		logrus.Errorf( "An error occurred creating the Docker manager")
 	}
 
 	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
@@ -137,24 +101,24 @@ func createApiContainerService(
 		args.TakenIpAddrs,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker")
+		logrus.Errorf("An error occurred creating the free IP address tracker")
 	}
 
 	enclaveDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
+		logrus.Errorf("An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
 	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache")
+		logrus.Errorf("An error occurred creating the artifact cache")
 	}
 
 	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the static file cache")
+		logrus.Errorf("An error occurred creating the static file cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -169,8 +133,7 @@ func createApiContainerService(
 			hostPortSupplierParams.TakenPorts,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
+			logrus.Errorf(
 				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
 			)
 		}
@@ -190,6 +153,41 @@ func createApiContainerService(
 		args.NetworkId,
 		args.IsPartitioningEnabled,
 		optionalHostPortBindingSupplier)
+
+	//Creation of ApiContainerService
+	apiContainerService, err := createApiContainerService(serviceNetwork)
+	if err != nil {
+		logrus.Errorf("An error occurred creating the API container service using params JSON '%v':", paramsJsonStr)
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(failureExitCode)
+	}
+	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
+		core_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
+	}
+	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
+		core_api_consts.ListenPort,
+		core_api_consts.ListenProtocol,
+		grpcServerStopGracePeriod,
+		[]func(*grpc.Server){
+			apiContainerServiceRegistrationFunc,
+		},
+	)
+
+	logrus.Info("Running server...")
+	if err := apiContainerServer.Run(); err != nil {
+		logrus.Errorf("An error occurred running the server:")
+		fmt.Fprintln(logrus.StandardLogger().Out, err)
+		os.Exit(failureExitCode)
+	}
+	os.Exit(successExitCode)
+
+	//Destroy the serviceNetwork found inside the apiContainerService
+	defer serviceNetwork.Destroy(context.Background(), 1)
+
+}
+
+func createApiContainerService(
+		serviceNetwork service_network.ServiceNetwork) (*server.ApiContainerService, error) {
 
 	result, err := server.NewApiContainerService(serviceNetwork)
 	if err != nil {
