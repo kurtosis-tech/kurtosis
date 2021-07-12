@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
+* `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
 
 # 1.16.0
 ### Changes
