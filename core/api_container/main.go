@@ -179,11 +179,15 @@ func main() {
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		os.Exit(failureExitCode)
 	}
-	os.Exit(successExitCode)
+	os.Exit(deferDestroy(serviceNetwork))
 
+}
+
+func deferDestroy(serviceNetwork service_network.ServiceNetwork) int {
 	//Destroy the serviceNetwork found inside the apiContainerService
 	defer serviceNetwork.Destroy(context.Background(), 1)
 
+	return 0
 }
 
 func createApiContainerService(
