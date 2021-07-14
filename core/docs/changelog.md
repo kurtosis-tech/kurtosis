@@ -1,5 +1,14 @@
 # TBD
 
+# 1.16.1
+### Changes
+* Upgraded to Kurt Client 0.5.0
+* Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
+* `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
+
+### Fixes
+* Fixed bug where a testsuite with no static files would trip an overly-aggressive validation check
+
 # 1.16.0
 ### Changes
 * Upgraded to Kurtosis Client v0.4.0
