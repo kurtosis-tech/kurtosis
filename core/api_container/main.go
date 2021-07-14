@@ -77,8 +77,7 @@ func main() {
 	}
 	logrus.SetLevel(logLevel)
 
-	// TODO Rename this so it's not tied to testing
-	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
+	KurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 	paramsJsonStr := *paramsJsonArg
 
 	//All the steps needed to create serviceNetwork
@@ -104,19 +103,19 @@ func main() {
 		logrus.Errorf("An error occurred creating the free IP address tracker")
 	}
 
-	enclaveDirectory, err := suiteExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
+	enclaveDirectory, err := KurtosisExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
 	if err != nil {
 		logrus.Errorf("An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
 	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
+	artifactCache, err := KurtosisExecutionVolume.GetArtifactCache()
 	if err != nil {
 		logrus.Errorf("An error occurred creating the artifact cache")
 	}
 
-	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
+	staticFileCache, err := KurtosisExecutionVolume.GetStaticFileCache()
 	if err != nil {
 		logrus.Errorf("An error occurred creating the static file cache")
 	}

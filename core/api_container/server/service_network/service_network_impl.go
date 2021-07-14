@@ -516,15 +516,34 @@ func (network *ServiceNetworkImpl) Destroy(
 		serviceIdsToRemove[serviceId] = true
 	}
 
-	//Removing all the services that is being tracked by this network
+	//Adding an array that holds any services that are not removed successfully
+	containerStopErrors := []error{}
 	for serviceId := range serviceIdsToRemove {
 		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying service with ID '%v'", serviceId)
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing service with ID '%v'",
+				serviceId)
+			containerStopErrors = append(containerStopErrors, wrappedErr)
 		}
 	}
 
 	//Make the network unusable
 	network.isDestroyed = true
+
+	//Return the appropriate error message if needed
+	if len(containerStopErrors) > 0 {
+		errorStrs := []string{}
+		for _, err := range containerStopErrors {
+			errStr := err.Error()
+			errorStrs = append(errorStrs, errStr)
+		}
+		joinedErrStrings := strings.Join(errorStrs, "\n")
+		return stacktrace.NewError(
+			"One or more error(s) occurred stopping the services in the test network " +
+				"during service network destruction:\n%s",
+			joinedErrStrings)
+	}
 
 	return nil
 
