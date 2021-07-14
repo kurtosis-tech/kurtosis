@@ -5,6 +5,9 @@
 * Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
 * `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
 
+### Fixes
+* Fix the bug where the side containers are teared down properly
+
 # 1.16.0
 ### Changes
 * Upgraded to Kurtosis Client v0.4.0
