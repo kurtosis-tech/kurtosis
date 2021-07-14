@@ -97,7 +97,11 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 		)
 		return nil, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
-	logrus.Debugf("Successfully retrieved testsuite metadata")
+	logrus.Debugf("Successfully retrieved testsuite metadata: %+v", suiteMetadata)
+
+	if err := validateTestSuiteMetadata(suiteMetadata); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
+	}
 
 	// NOTE: Maybe we want this code moved somewhere else?
 	logrus.Debugf("Copying static files from the testsuite to the static file cache...")
@@ -129,10 +133,6 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 
 	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
-	}
-
-	if err := validateTestSuiteMetadata(suiteMetadata); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
 	}
 
 	return suiteMetadata, nil
@@ -199,9 +199,7 @@ func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetad
 	if suiteMetadata.TestMetadata == nil {
 		return stacktrace.NewError("Test metadata map is nil")
 	}
-	if suiteMetadata.StaticFiles == nil {
-		return stacktrace.NewError("Static files set is nil")
-	}
+	// NOTE: We don't check if the static file set is nil because an empty map will be deserialized as nil
 	if len(suiteMetadata.TestMetadata) == 0 {
 		return stacktrace.NewError("Test suite doesn't declare any tests")
 	}
