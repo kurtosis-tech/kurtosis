@@ -2,8 +2,8 @@
 ### Changes
 * Added Destroy method that would tear down the docker side containers
 
-###Fixes
-* Fix the bug where the side containers are teared down properly
+### Fixes
+* Fix the bug where the side containers weren't torn down properly
 
 # 1.16.1
 ### Changes

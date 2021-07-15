@@ -41,27 +41,30 @@ const (
 	successExitCode = 0
 	failureExitCode = 1
 
+	defaultContainerStopTimeout = 1
+
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
 func main() {
 
+	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
+	logrus.SetFormatter(&logrus.TextFormatter{
+		ForceColors:   true,
+		FullTimestamp: true,
+	})
+
 	err := runMain()
 	if err != nil {
-		logrus.Errorf("An error occurred creating the running the main function")
+		logrus.Errorf("An error occurred when running the main function")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		//os.Exit(failureExitCode) - TODO Should I keep this, I don't think I need it
+		os.Exit(failureExitCode)
 	}
 	os.Exit(successExitCode)
 
 }
 
 func runMain () error {
-	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
-	logrus.SetFormatter(&logrus.TextFormatter{
-		ForceColors:   true,
-		FullTimestamp: true,
-	})
 
 	logLevelArg := flag.String(
 		"log-level",
@@ -84,7 +87,6 @@ func runMain () error {
 	logLevel, err := logrus.ParseLevel(*logLevelArg)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", *logLevelArg)
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
 	}
 	logrus.SetLevel(logLevel)
 
@@ -96,7 +98,7 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
-	defer serviceNetwork.Destroy(context.Background(), 1)
+	defer serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout)
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(serviceNetwork)
