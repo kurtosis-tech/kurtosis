@@ -1,12 +1,18 @@
 # TBD
 ### Changes
 * Added Destroy method that would tear down the docker side containers
+
+###Fixes
+* Fix the bug where the side containers are teared down properly
+
+# 1.16.1
+### Changes
 * Upgraded to Kurt Client 0.5.0
 * Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
 * `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
 
 ### Fixes
-* Fix the bug where the side containers are teared down properly
+* Fixed bug where a testsuite with no static files would trip an overly-aggressive validation check
 
 # 1.16.0
 ### Changes
