@@ -193,7 +193,8 @@ func createServiceNetwork(
 			hostPortSupplierParams.TakenPorts,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err,
+			return nil, stacktrace.Propagate(
+				err,
 				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
 			)
 		}

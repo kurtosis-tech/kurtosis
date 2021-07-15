@@ -538,7 +538,7 @@ func (network *ServiceNetworkImpl) Destroy(
 			errStr := err.Error()
 			errorStrs = append(errorStrs, errStr)
 		}
-		joinedErrStrings := strings.Join(errorStrs, "\n")
+		joinedErrStrings := strings.Join(errorStrs, "\n\n")
 		return stacktrace.NewError(
 			"One or more error(s) occurred stopping the services in the test network " +
 				"during service network destruction:\n%s",
