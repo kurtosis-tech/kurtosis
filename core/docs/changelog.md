@@ -5,6 +5,70 @@
 ### Changes
 * Inserted an extra `user-service` element to user service container names, for easier identification
 
+# 1.16.1
+### Changes
+* Upgraded to Kurt Client 0.5.0
+* Upgraded example Go testsuite being used in `build-and-run.sh` to v1.28.0 (was v1.24.2)
+* `release.sh` is now a simple wrapper around the devtools `release-repo.sh` script
+
+### Fixes
+* Fixed bug where a testsuite with no static files would trip an overly-aggressive validation check
+
+# 1.16.0
+### Changes
+* Upgraded to Kurtosis Client v0.4.0
+* Implemented the `LoadStaticFiles` endpoint
+
+### Breaking Changes
+* Testsuites must now provide used static files in testsuite metadata
+
+# 1.15.7
+### Changes
+* Upgraded to Kurtosis Client v0.3.0
+
+### Features
+* Add a new method `GetServiceInfo` in API container which can be used to get relevant information about a service running in the network
+
+# 1.15.6
+### Changes
+* Upgraded to using Kurtosis Client v0.2.2, with the `ExecuteBulkCommands` endpoint
+
+### Features
+* Implemented the `ExecuteBulkCommands` endpoint in the API container's API for running multiple API container endpoint commands at once
+
+### Fixes
+* Fixed bug where `ServiceNetwork.GetServiceIP` didn't use the mutex
+
+# 1.15.5
+### Features
+* Added a new method `WaitForEndpointAvailability` to the API container which can be used to wait for a service's HTTP endpoint to come up
+* Added a new method `GetServiceIP` in service network which returns an IP Address by Service ID.
+
+# 1.15.4
+### Fixes
+* Fixed a bug where Docker's `StdCopy` was being used to copy logs from testsuite tempfile to STDOUT
+
+# 1.15.3
+### Features
+* Add custom params log to show users that Kurtosis has loaded this configuration
+
+### Changes
+* Change the API container to depend on `kurtosis-client`, rather than duplicating the `.proto` file in here
+* Change the API container to depend on `kurtosis-libs`, rather than duplicating the testsuite `.proto` file in here
+* Removed the `regenerate-protobuf-bindings.sh`, as it's no longer necessary
+* Upgraded Kurtosis Client version to 0.2.0 (was 0.1.1)
+
+# 1.15.2
+### Fixes
+* Fixed an issue with the LogStreamer where StdCopy is a blocking method which could halt all of Kurtosis if not dealt with appropriately
+
+# 1.15.1
+### Changes
+* Add a new user-friendly log message when setup or run timeout is exceeded during a test starting process
+
+### Fixes
+* Added `#!/usr/bin/env bash` shebang to the start of all shell scripts, to solve the shell incompatibility issues we've been seeing
+
 # 1.15.0
 ### Changes
 * Renamed --test-suite-log-level flag to kurtosis.sh to be --suite-log-level

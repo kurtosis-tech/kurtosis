@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -25,7 +26,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -74,7 +74,7 @@ const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	clientIdArg                 = "CLIENT_ID"
 	clientSecretArg             = "CLIENT_SECRET"
-	customParamsJson            = "CUSTOM_PARAMS_JSON"
+	customParamsJsonArg         = "CUSTOM_PARAMS_JSON"
 	doListArg                   = "DO_LIST"
 	executionUuidArg            = "EXECUTION_UUID"
 	isDebugModeArg              = "IS_DEBUG_MODE"
@@ -107,7 +107,7 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: fmt.Sprintf("An OAuth client secret which is needed for running Kurtosis in CI, and should be left empty when running Kurtosis on a local machine"),
 		Type:     docker_flag_parser.StringFlagType,
 	},
-	customParamsJson: {
+	customParamsJsonArg: {
 		Required: false,
 		Default:  "{}",
 		HelpText: "JSON string containing custom data that will be passed as-is to your testsuite, so your testsuite can modify its operation based on input",
@@ -265,15 +265,16 @@ func main() {
 
 	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
 
+	customParamsJson := parsedFlags.GetString(customParamsJsonArg)
+	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
 		suiteExecutionVolName,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
-		parsedFlags.GetString(customParamsJson),
+		customParamsJson,
 		optionalHostPortBindingSupplier,
 	)
-
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		executionInstanceId,
 		parsedFlags.GetString(kurtosisApiImageArg),
@@ -282,11 +283,19 @@ func main() {
 		hostPortBindingSupplier,
 	)
 
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		dockerClient,
-		testsuiteLauncher)
+	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
 	if err != nil {
-		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
+		logrus.Errorf("An error occurred getting the static file cache: %v", err)
+		os.Exit(failureExitCode)
+	}
+
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadataAndInitializeStaticFilesCache(
+		dockerClient,
+		testsuiteLauncher,
+		staticFileCache,
+	)
+	if err != nil {
+		logrus.Errorf("An error occurred getting the test suite metadata & initializing the static file cache: %v", err)
 		os.Exit(failureExitCode)
 	}
 

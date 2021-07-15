@@ -28,11 +28,14 @@ func TestUpdateIpTables(t *testing.T) {
 		mockSidecars[serviceId] = sidecar
 	}
 
-	serviceIps := map[service_network_types.ServiceID]net.IP{}
+	registrationInfo := map[service_network_types.ServiceID]serviceRegistrationInfo{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
 		ip := testIpFromInt(i)
-		serviceIps[serviceId] = ip
+		registrationInfo[serviceId] = serviceRegistrationInfo{
+			ipAddr:           ip,
+			serviceDirectory: nil,
+		}
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
@@ -49,7 +52,7 @@ func TestUpdateIpTables(t *testing.T) {
 		targetBlocklists[serviceId] = blockedSet
 	}
 
-	assert.Nil(t, updateIpTables(ctx, targetBlocklists, serviceIps, sidecars))
+	assert.Nil(t, updateIpTables(ctx, targetBlocklists, registrationInfo, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {

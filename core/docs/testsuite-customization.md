@@ -9,18 +9,11 @@ Now that you have a running testsuite, you'll want to start customizing the test
 
 **NOTE:** This tutorial will avoid language-specific idioms and use a Java-like pseudocode notation in this documentation, but will reference the example in [the Go implementation](https://github.com/kurtosis-tech/kurtosis-libs/tree/master/golang) to illustrate. All object names and methods will be more or less the same in your language of choice, and [all language repos](https://github.com/kurtosis-tech/kurtosis-libs/tree/master) come with an example testsuite.
 
-### Service Interface & Implementation
-You're writing a Kurtosis testsuite because you want to write tests for a network, and networks are composed of services. To a test, a service is just an API that represents an interaction with the actual Docker container. 
-
-To give your tests this API, define an implementation of the `Service` interface that provides the functionality you want for your test [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/master/golang/testsuite/services_impl/datastore/datastore_service.go). Here you'll define all the functions you want to be able to call on the service, as well as the Kurtosis-required function `Service.isAvailable` for telling Kurtosis when your service is available and ready for use. 
-
-Go ahead and create an implementation of the `Service` interface to represent a running instance of your service and the ways to interact with it.
-
 ### Container Config Factory
-Our tests now have a nice interface for interacting with a service running in a Docker container, but we need to tell Kurtosis how to actually start the Docker container running the service. This is done by implementing the `ContainerConfigFactory` interface. [This interface is well-documented in the documentation](https://docs.kurtosistech.com/kurtosis-libs/lib-documentation#containerconfigfactorys-extends-service), so you can use the guidance there to write a config factory [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/develop/golang/testsuite/services_impl/datastore/datastore_container_config_factory.go) now.
+First, we need to tell Kurtosis how to actually start the Docker container running the service. This is done by implementing the `ContainerConfigFactory` interface. [This interface is well-documented in the documentation](https://docs.kurtosistech.com/kurtosis-libs/lib-documentation#containerconfigfactorys-extends-service), so you can use the guidance there to write a config factory [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/develop/golang/testsuite/services_impl/datastore/datastore_container_config_factory.go) now.
 
 ### Tests & Test Setup
-Now that we have a service, we can use it in a test. Each test is simply an implementation of the `Test` interface, and each has a `Test.setup` method which performs the work necessary to setup the testnet to a state where the test can run over it. You should use the `NetworkContext.addService` method to create instances of your service [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/master/golang/testsuite/testsuite_impl/basic_datastore_test/basic_datastore_test_.go#L38). 
+Now that we can start a service, we can use it in a test. Each test is simply an implementation of the `Test` interface, and each has a `Test.setup` method which performs the work necessary to setup the testnet to a state where the test can run over it. You should use the `NetworkContext.addService` method to create instances of your service [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/master/golang/testsuite/testsuite_impl/basic_datastore_test/basic_datastore_test_.go#L38). 
 
 The `addService` call return an instance of your service, as well as an `AvailabilityChecker` object. The `waitForStartup` method of the checker is a polling wrapper around `Service.isAvailable` that you wrote earlier, and can be used to block until the service instance is up or a timeout is hit.
 
@@ -34,7 +27,7 @@ Every implementation of the `Test` interface must fill out the `Test.run` method
 You should now fill in your test's `run` method with logic to query and make assertions on your test network.
 
 ### Service Dependencies
-It's not very useful to test just one service at a time; we're using Kurtosis because we want to test whole networks. This means that we need services which depend on other services. Fortunately, this is easily done by passing the dependency `Service` interface in the dependent's `ContainerConfigFactory` constructor like you would any other object, like [this API service which depends on the datastore service](https://github.com/kurtosis-tech/kurtosis-libs/blob/develop/golang/testsuite/services_impl/api/api_container_config_factory.go#L37).
+It's not very useful to test just one service at a time; we're using Kurtosis because we want to test whole networks. This means that we need services which depend on other services. Fortunately, this is easily done by passing the dependency `Service` interface in the dependent's `ContainerConfigFactory` constructor like you would any other object, like [this API service which depends on the datastore service](https://github.com/kurtosis-tech/kurtosis-libs/blob/develop/golang/testsuite/services_impl/api/api_container_config_factory.go#L32).
 
 Then, when instantiating the network in `Test.setup`, simply instantiate the dependency first and the dependent second, [like this](https://github.com/kurtosis-tech/kurtosis-libs/blob/master/golang/testsuite/testsuite_impl/basic_datastore_and_api_test/basic_datastore_and_api_test_.go#L39).
 

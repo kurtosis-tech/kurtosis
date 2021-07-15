@@ -10,11 +10,12 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	test_suite_bindings "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/bindings"
-	"github.com/kurtosis-tech/kurtosis/test_suite/test_suite_rpc_api/test_suite_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -36,9 +37,10 @@ const (
 	shouldFollowTestsuiteLogsOnErr = false
 )
 
-func GetTestSuiteMetadata(
+func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 		dockerClient *client.Client,
-		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*bindings.TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher,
+		staticFilesCache *suite_execution_volume.StaticFileCache) (*test_suite_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -69,7 +71,7 @@ func GetTestSuiteMetadata(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't dial testsuite container at %v to get testsuite metadata", testsuiteSocket)
 	}
-	testsuiteClient := bindings.NewTestSuiteServiceClient(conn)
+	testsuiteClient := test_suite_bindings.NewTestSuiteServiceClient(conn)
 
 	logrus.Debugf("Waiting for testsuite container to become available...")
 	if err := waitUntilTestsuiteContainerIsAvailable(parentContext, testsuiteClient); err != nil {
@@ -95,20 +97,48 @@ func GetTestSuiteMetadata(
 		)
 		return nil, stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
-	logrus.Debugf("Successfully retrieved testsuite metadata")
-
-	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
-	}
+	logrus.Debugf("Successfully retrieved testsuite metadata: %+v", suiteMetadata)
 
 	if err := validateTestSuiteMetadata(suiteMetadata); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the test suite metadata")
 	}
 
+	// NOTE: Maybe we want this code moved somewhere else?
+	logrus.Debugf("Copying static files from the testsuite to the static file cache...")
+	usedStaticFiles := suiteMetadata.GetStaticFiles()
+	staticFileRelativeFilepaths := map[string]string{}
+	for staticFileId := range usedStaticFiles {
+		file, err := staticFilesCache.RegisterEntry(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred registering static file key '%v' in the static file cache", staticFileId)
+		}
+		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
+	}
+	copyStaticFilesArgs := &test_suite_bindings.CopyStaticFilesToExecutionVolumeArgs{
+		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
+	}
+	// TODO PERF: If copying all the static files becomes expensive perf-wise, we could have tests register
+	//  which static files they'll use and only tell the testsuite to copy those
+	if _, err := testsuiteClient.CopyStaticFilesToExecutionVolume(parentContext, copyStaticFilesArgs); err != nil {
+		printContainerLogsWithBanners(
+			dockerManager,
+			parentContext,
+			containerId,
+			logrus.StandardLogger(),
+			metadataProvidingTestsuiteContainerTitle,
+		)
+		return nil, stacktrace.Propagate(err, "An error occurred instructing the testsuite to copy its static files into the locations we provided")
+	}
+	logrus.Debugf("Successfully copied testsuite static files to the static file cache")
+
+	if err := dockerManager.StopContainer(parentContext, containerId, containerStopTimeout); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping the metadata-providing testsuite container")
+	}
+
 	return suiteMetadata, nil
 }
 
-func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client bindings.TestSuiteServiceClient) error {
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client test_suite_bindings.TestSuiteServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
@@ -162,13 +192,14 @@ func printContainerLogsWithBanners(
 	banner_printer.PrintSection(log, "End " + containerDescription + " Logs", false)
 }
 
-func validateTestSuiteMetadata(suiteMetadata *bindings.TestSuiteMetadata) error {
+func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetadata) error {
 	if suiteMetadata.NetworkWidthBits == 0 {
 		return stacktrace.NewError("Test suite metadata has a network width bits == 0")
 	}
 	if suiteMetadata.TestMetadata == nil {
 		return stacktrace.NewError("Test metadata map is nil")
 	}
+	// NOTE: We don't check if the static file set is nil because an empty map will be deserialized as nil
 	if len(suiteMetadata.TestMetadata) == 0 {
 		return stacktrace.NewError("Test suite doesn't declare any tests")
 	}
@@ -183,7 +214,7 @@ func validateTestSuiteMetadata(suiteMetadata *bindings.TestSuiteMetadata) error 
 	return nil
 }
 
-func validateTestMetadata(testMetadata *bindings.TestMetadata) error {
+func validateTestMetadata(testMetadata *test_suite_bindings.TestMetadata) error {
 	for artifactUrl := range testMetadata.UsedArtifactUrls {
 		if len(strings.TrimSpace(artifactUrl)) == 0 {
 			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)

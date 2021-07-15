@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright (c) 2020 - present Kurtosis Technologies LLC.
 # All Rights Reserved.
 

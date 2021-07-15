@@ -10,8 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_consts"
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
@@ -88,11 +88,11 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 	apiContainerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
+		core_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		api_container_rpc_api_consts.ListenPort,
-		api_container_rpc_api_consts.ListenProtocol,
+		core_api_consts.ListenPort,
+		core_api_consts.ListenProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -140,9 +140,15 @@ func createApiContainerService(
 	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
+	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the artifact cache")
+	}
+
+	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the static file cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -174,6 +180,7 @@ func createApiContainerService(
 		containerNameElemsProvider,
 		artifactCache,
 		enclaveDirectory,
+		staticFileCache,
 		dockerManager,
 		freeIpAddrTracker,
 		dockerNetworkId,
@@ -189,7 +196,10 @@ func createApiContainerService(
 		dockerNetworkId,
 	)
 
-	result := server.NewApiContainerService(dockerManager, serviceNetwork, moduleStore)
+	result, err := server.NewApiContainerService(serviceNetwork, moduleStore)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the API container service")
+	}
 
 	return result, nil
 }
@@ -210,11 +220,12 @@ func createServiceNetwork(
 		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		artifactCache *suite_execution_volume.ArtifactCache,
 		enclaveDirectory *suite_execution_volume.EnclaveDirectory,
+		staticFileCache *suite_execution_volume.StaticFileCache,
 		dockerManager *docker_manager.DockerManager,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerNetworkId string,
 		isPartitioningEnabled bool,
-		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *service_network.ServiceNetwork {
+		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) service_network.ServiceNetwork {
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
@@ -240,11 +251,12 @@ func createServiceNetwork(
 		freeIpAddrTracker,
 		dockerNetworkId)
 
-	serviceNetwork := service_network.NewServiceNetwork(
+	serviceNetwork := service_network.NewServiceNetworkImpl(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
 		enclaveDirectory,
+		staticFileCache,
 		userServiceLauncher,
 		networkingSidecarManager)
 
