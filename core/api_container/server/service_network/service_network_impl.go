@@ -387,7 +387,7 @@ func (network *ServiceNetworkImpl) StartService(
 	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Create(ctx, serviceId, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceId, serviceContainerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
@@ -499,6 +499,56 @@ func (network *ServiceNetworkImpl) GetServiceSuiteExecutionVolMntDirpath(service
 	return runInfo.suiteExecutionVolumeMountDirpath, nil
 }
 
+// Destroy all services the network is tracking, as well as make the network not usable anymore
+func (network *ServiceNetworkImpl) Destroy(
+	ctx context.Context,
+	containerStopTimeout time.Duration) error {
+
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return stacktrace.NewError("Cannot destroy service; the service network has been destroyed")
+	}
+
+	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
+	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
+	for serviceId := range network.serviceRegistrationInfo {
+		serviceIdsToRemove[serviceId] = true
+	}
+
+	//Adding an array that holds any services that are not removed successfully
+	containerStopErrors := []error{}
+	for serviceId := range serviceIdsToRemove {
+		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing service with ID '%v'",
+				serviceId)
+			containerStopErrors = append(containerStopErrors, wrappedErr)
+		}
+	}
+
+	//Make the network unusable
+	network.isDestroyed = true
+
+	//Return the appropriate error message if needed
+	if len(containerStopErrors) > 0 {
+		errorStrs := []string{}
+		for _, err := range containerStopErrors {
+			errStr := err.Error()
+			errorStrs = append(errorStrs, errStr)
+		}
+		joinedErrStrings := strings.Join(errorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more error(s) occurred stopping the services in the test network " +
+				"during service network destruction:\n%s",
+			joinedErrStrings)
+	}
+
+	return nil
+
+}
+
 
 // ====================================================================================================
 // 									   Private helper methods
@@ -536,7 +586,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		// 	 a) nothing is using it so it doesn't do anything and
 		//	 b) all service's iptables get overwritten on the next Add/Repartition call
 		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
-		if err := network.networkingSidecarManager.Destroy(ctx, sidecar); err != nil {
+		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
 		delete(network.networkingSidecars, serviceId)

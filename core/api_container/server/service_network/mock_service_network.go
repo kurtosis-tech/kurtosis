@@ -69,3 +69,7 @@ func (m MockServiceNetwork) GetServiceSuiteExecutionVolMntDirpath(serviceId serv
 	}
 	return volMntDirPath, nil
 }
+
+func (m MockServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
+	panic("This is unimplemented for the mock network")
+}

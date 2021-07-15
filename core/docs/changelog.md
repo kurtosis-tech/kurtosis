@@ -1,5 +1,12 @@
 # TBD
 
+# 1.16.2
+### Changes
+* Added Destroy method that would tear down the docker side containers
+
+### Fixes
+* Fix the bug where the side containers weren't torn down properly
+
 # 1.16.1
 ### Changes
 * Upgraded to Kurt Client 0.5.0
