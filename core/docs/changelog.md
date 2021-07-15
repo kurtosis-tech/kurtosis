@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Added a step in .circleci/config.yml in the push_artifacts job  to check for running docker containers
 
 # 1.16.2
 ### Changes
