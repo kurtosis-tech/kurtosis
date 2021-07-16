@@ -76,7 +76,3 @@ func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_
 
 	return containerIpAddr, nil
 }
-
-func (store *ModuleStore) ExecuteLambda(moduleId module_store_types.ModuleID, paramsJson string) (responseJson string, resultErr error) {
-	// NOTE: No need to lock the mutex because we don't modify the internal state!
-}

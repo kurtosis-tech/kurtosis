@@ -41,8 +41,8 @@ var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
 //                                        Interface
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Create(ctx context.Context, serviceId service_network_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
-	Destroy(ctx context.Context, sidecar NetworkingSidecar) error
+	Add(ctx context.Context, serviceId service_network_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
+	Remove(ctx context.Context, sidecar NetworkingSidecar) error
 }
 
 // ==========================================================================================
@@ -68,7 +68,7 @@ func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerMan
 }
 
 // Adds a sidecar container attached to the given service ID
-func (manager *StandardNetworkingSidecarManager) Create(
+func (manager *StandardNetworkingSidecarManager) Add(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
 		serviceContainerId string) (NetworkingSidecar, error) {
@@ -120,7 +120,7 @@ func (manager *StandardNetworkingSidecarManager) Create(
 	return sidecarContainer, nil
 }
 
-func (manager *StandardNetworkingSidecarManager) Destroy(
+func (manager *StandardNetworkingSidecarManager) Remove(
 		ctx context.Context,
 		sidecar NetworkingSidecar) error {
 	sidecarContainerId := sidecar.GetContainerID()

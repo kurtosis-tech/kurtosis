@@ -3,7 +3,15 @@
 * Added a `LoadModule` call to the API container, for loading modules
 
 ### Changes
+* Upgraded to Kurt Client 0.7.0, which renames the Kurt API bindings/consts packages for easier readability in the code
 * Inserted an extra `user-service` element to user service container names, for easier identification
+
+# 1.16.2
+### Changes
+* Added Destroy method that would tear down the docker side containers
+
+### Fixes
+* Fix the bug where the side containers weren't torn down properly
 
 # 1.16.1
 ### Changes

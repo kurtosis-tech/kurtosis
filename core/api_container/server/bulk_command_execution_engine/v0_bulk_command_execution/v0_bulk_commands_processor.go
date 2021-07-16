@@ -8,19 +8,19 @@ package v0_bulk_command_execution
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-client/golang/bulk_command_execution/v0_bulk_command_api"
-	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/lib/bulk_command_execution/v0_bulk_command_api"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/service_ip_replacer"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/palantir/stacktrace"
 )
 
 type V0BulkCommandProcessor struct {
-	apiService core_api_bindings.ApiContainerServiceServer
+	apiService kurtosis_core_rpc_api_bindings.ApiContainerServiceServer
 	ipReplacer *service_ip_replacer.ServiceIPReplacer
 }
 
-func NewV0BulkCommandProcessor(serviceNetwork service_network.ServiceNetwork, apiService core_api_bindings.ApiContainerServiceServer) (*V0BulkCommandProcessor, error) {
+func NewV0BulkCommandProcessor(serviceNetwork service_network.ServiceNetwork, apiService kurtosis_core_rpc_api_bindings.ApiContainerServiceServer) (*V0BulkCommandProcessor, error) {
 	ipReplacer, err := service_ip_replacer.NewServiceIPReplacer(
 		v0_bulk_command_api.ServiceIdIpReplacementPrefix,
 		v0_bulk_command_api.ServiceIdIpReplacementSuffix,

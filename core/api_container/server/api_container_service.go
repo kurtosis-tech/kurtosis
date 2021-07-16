@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store"
@@ -36,7 +36,7 @@ const (
 
 type ApiContainerService struct {
 	// This embedding is required by gRPC
-	core_api_bindings.UnimplementedApiContainerServiceServer
+	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
 
 	serviceNetwork service_network.ServiceNetwork
 
@@ -64,7 +64,7 @@ func NewApiContainerService(serviceNetwork service_network.ServiceNetwork, modul
 	return service, nil
 }
 
-func (service ApiContainerService) LoadModule(ctx context.Context, args *core_api_bindings.LoadModuleArgs) (*core_api_bindings.LoadModuleResponse, error) {
+func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
 	moduleId := module_store_types.ModuleID(args.ModuleId)
 	moduleImage := args.ContainerImage
 	paramsJson := args.ParamsJson
@@ -72,18 +72,18 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *core_ap
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and params JSON '%v'", moduleId, moduleImage, paramsJson)
 	}
-	result := &core_api_bindings.LoadModuleResponse{
+	result := &kurtosis_core_rpc_api_bindings.LoadModuleResponse{
 		IpAddr: moduleIpAddr.String(),
 	}
 	return result, nil
 }
 
-func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *core_api_bindings.ExecuteLambdaArgs) (*core_api_bindings.ExecuteLambdaResponse, error) {
+func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs) (*kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse, error) {
 	// TODO implement
 	return nil, stacktrace.NewError("THIS MUST BE IMPLEMENTED")
 }
 
-func (service ApiContainerService) RegisterService(ctx context.Context, args *core_api_bindings.RegisterServiceArgs) (*core_api_bindings.RegisterServiceResponse, error) {
+func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
@@ -93,35 +93,35 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *co
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
-	return &core_api_bindings.RegisterServiceResponse{
+	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
 		IpAddr:                          ip.String(),
 	}, nil
 }
 
-func (service ApiContainerService) GenerateFiles(ctx context.Context, args *core_api_bindings.GenerateFilesArgs) (*core_api_bindings.GenerateFilesResponse, error) {
+func (service ApiContainerService) GenerateFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GenerateFilesArgs) (*kurtosis_core_rpc_api_bindings.GenerateFilesResponse, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	filesToGenerate := args.FilesToGenerate
 	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating files for service '%v'", serviceId)
 	}
-	return &core_api_bindings.GenerateFilesResponse{
+	return &kurtosis_core_rpc_api_bindings.GenerateFilesResponse{
 		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
 	}, nil
 }
 
-func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *core_api_bindings.LoadStaticFilesArgs) (*core_api_bindings.LoadStaticFilesResponse, error) {
+func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadStaticFilesArgs) (*kurtosis_core_rpc_api_bindings.LoadStaticFilesResponse, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	copiedStaticFileRelativeFilepaths, err := service.serviceNetwork.LoadStaticFiles(serviceId, args.StaticFiles)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading static files for service '%v'", serviceId)
 	}
-	return &core_api_bindings.LoadStaticFilesResponse{
+	return &kurtosis_core_rpc_api_bindings.LoadStaticFilesResponse{
 		CopiedStaticFileRelativeFilepaths: copiedStaticFileRelativeFilepaths,
 	}, nil
 }
 
-func (service ApiContainerService) StartService(ctx context.Context, args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceResponse, error) {
+func (service ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
 
 	usedPorts := map[nat.Port]bool{}
@@ -165,7 +165,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 	}
 
 	// We strip out ports with nil host port bindings to make it easier to iterate over this map on the client side
-	responseHostPortBindings := map[string]*core_api_bindings.PortBinding{}
+	responseHostPortBindings := map[string]*kurtosis_core_rpc_api_bindings.PortBinding{}
 	for portObj, hostPortBinding := range hostPortBindings {
 		portSpecStr, found := portObjToPortSpecStr[portObj]
 		if !found {
@@ -175,14 +175,14 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 			)
 		}
 		if hostPortBinding != nil {
-			responseBinding := &core_api_bindings.PortBinding{
+			responseBinding := &kurtosis_core_rpc_api_bindings.PortBinding{
 				InterfaceIp:   hostPortBinding.HostIP,
 				InterfacePort: hostPortBinding.HostPort,
 			}
 			responseHostPortBindings[portSpecStr] = responseBinding
 		}
 	}
-	response := core_api_bindings.StartServiceResponse{
+	response := kurtosis_core_rpc_api_bindings.StartServiceResponse{
 		UsedPortsHostPortBindings: responseHostPortBindings,
 	}
 
@@ -198,7 +198,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *core_
 	return &response, nil
 }
 
-func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *core_api_bindings.GetServiceInfoArgs) (*core_api_bindings.GetServiceInfoResponse, error) {
+func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
@@ -212,14 +212,14 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *cor
 			serviceID)
 	}
 
-	serviceInfoResponse := &core_api_bindings.GetServiceInfoResponse{
+	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		IpAddr: serviceIP.String(),
 		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
 	}
 	return serviceInfoResponse, nil
 }
 
-func (service ApiContainerService) RemoveService(ctx context.Context, args *core_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
@@ -232,7 +232,7 @@ func (service ApiContainerService) RemoveService(ctx context.Context, args *core
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) Repartition(ctx context.Context, args *core_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
 	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
@@ -279,7 +279,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *core_a
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_api_bindings.ExecCommandArgs) (*core_api_bindings.ExecCommandResponse, error) {
+func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
 	serviceId := service_network_types.ServiceID(serviceIdStr)
 	command := args.CommandArgs
@@ -299,14 +299,14 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *core_a
 			maxLogOutputSizeBytes,
 		)
 	}
-	resp := &core_api_bindings.ExecCommandResponse{
+	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
 		ExitCode: exitCode,
 		LogOutput: logOutput.Bytes(),
 	}
 	return resp, nil
 }
 
-func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Context, args *core_api_bindings.WaitForEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	var(
 		resp *http.Response
 		err error
@@ -365,7 +365,7 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *core_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
 	if err := service.bulkCmdExecEngine.Process(ctx, []byte(args.SerializedCommands)); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing the bulk commands")
 	}
