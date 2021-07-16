@@ -14,9 +14,16 @@ import (
 	"sync"
 )
 
+type moduleType string
+
+const (
+	lambdaModuleType moduleType = "LAMBDA"
+)
+
 type moduleInfo struct {
 	containerId string
 	ipAddr net.IP
+	moduleType moduleType
 }
 
 type ModuleContext struct {
@@ -63,9 +70,13 @@ func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_
 	moduleData := moduleInfo{
 		containerId: containerId,
 		ipAddr:      containerIpAddr,
+		moduleType:  "",
 	}
 	store.moduleInfo[moduleId] = moduleData
 
 	return containerIpAddr, nil
 }
 
+func (store *ModuleStore) ExecuteLambda(moduleId module_store_types.ModuleID, paramsJson string) (responseJson string, resultErr error) {
+	// NOTE: No need to lock the mutex because we don't modify the internal state!
+}

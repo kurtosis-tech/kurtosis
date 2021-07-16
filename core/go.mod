@@ -17,6 +17,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210715220313-64a85a24896a
+	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210716211927-5c8a66038368 // indirect
 	github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210709215550-6248056be8c5
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
