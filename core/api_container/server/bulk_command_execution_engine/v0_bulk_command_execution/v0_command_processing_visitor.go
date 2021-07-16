@@ -7,7 +7,7 @@ package v0_bulk_command_execution
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/service_ip_replacer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -26,10 +26,10 @@ type v0CommandProcessingVisitor struct {
 	ctx                    context.Context
 	uncastedCommandArgsPtr proto.Message // POINTER to the arg object!
 	ipReplacer             *service_ip_replacer.ServiceIPReplacer
-	apiService             core_api_bindings.ApiContainerServiceServer
+	apiService             kurtosis_core_rpc_api_bindings.ApiContainerServiceServer
 }
 
-func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr proto.Message, ipReplacer *service_ip_replacer.ServiceIPReplacer, apiService core_api_bindings.ApiContainerServiceServer) *v0CommandProcessingVisitor {
+func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr proto.Message, ipReplacer *service_ip_replacer.ServiceIPReplacer, apiService kurtosis_core_rpc_api_bindings.ApiContainerServiceServer) *v0CommandProcessingVisitor {
 	return &v0CommandProcessingVisitor{ctx: ctx, uncastedCommandArgsPtr: uncastedCommandArgsPtr, ipReplacer: ipReplacer, apiService: apiService}
 }
 
@@ -39,7 +39,7 @@ func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr p
 // ====================================================================================================
 
 func (visitor *v0CommandProcessingVisitor) VisitRegisterService() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RegisterServiceArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.RegisterServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to register service args")
 	}
@@ -52,7 +52,7 @@ func (visitor *v0CommandProcessingVisitor) VisitRegisterService() error {
 // NOTE: Because the user can't manipulate the resulting generated files, this command doesn't make much sense to use
 //  in bulk. Nonetheless, we implement it for completeness.
 func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.GenerateFilesArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.GenerateFilesArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to generate files args")
 	}
@@ -68,7 +68,7 @@ func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitLoadStaticFiles() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.LoadStaticFilesArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.LoadStaticFilesArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to load static files args")
 	}
@@ -84,7 +84,7 @@ func (visitor *v0CommandProcessingVisitor) VisitLoadStaticFiles() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitStartService() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.StartServiceArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.StartServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to start service args")
 	}
@@ -101,7 +101,7 @@ func (visitor *v0CommandProcessingVisitor) VisitStartService() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitRemoveService() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RemoveServiceArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.RemoveServiceArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to remove service args")
 	}
@@ -112,7 +112,7 @@ func (visitor *v0CommandProcessingVisitor) VisitRemoveService() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitRepartition() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.RepartitionArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.RepartitionArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
@@ -123,7 +123,7 @@ func (visitor *v0CommandProcessingVisitor) VisitRepartition() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitExecCommand() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecCommandArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.ExecCommandArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to exec command args")
 	}
@@ -155,7 +155,7 @@ func (visitor *v0CommandProcessingVisitor) VisitExecCommand() error {
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
@@ -176,7 +176,7 @@ func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailability() er
 }
 
 func (visitor *v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*core_api_bindings.ExecuteBulkCommandsArgs)
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to bulk command execution args")
 	}
@@ -193,9 +193,9 @@ func (visitor *v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
 // ====================================================================================================
 // Returns a copy of the endpoint availability-waiting args with the service ID reference patterns replaced with the service's IP
 func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEndpointAvailabilityArgs(
-		args *core_api_bindings.WaitForEndpointAvailabilityArgs) (*core_api_bindings.WaitForEndpointAvailabilityArgs, error) {
+		args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs) (*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs, error) {
 	clonedMessage := proto.Clone(args)
-	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.WaitForEndpointAvailabilityArgs)
+	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs)
 	if !ok {
 		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to endpoint availability-waiting args")
 	}
@@ -216,9 +216,9 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEn
 }
 
 // Returns a copy of the exec command args with the service ID reference patterns replaced with the service's IP
-func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecCommandArgs(args *core_api_bindings.ExecCommandArgs) (*core_api_bindings.ExecCommandArgs, error) {
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecCommandArgs(args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandArgs, error) {
 	clonedMessage := proto.Clone(args)
-	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.ExecCommandArgs)
+	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.ExecCommandArgs)
 	if !ok {
 		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to exec command args")
 	}
@@ -233,9 +233,9 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnExecComma
 }
 
 // Returns a copy of the start service args with the service ID reference patterns replaced with the service's IP
-func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServiceArgs(args *core_api_bindings.StartServiceArgs) (*core_api_bindings.StartServiceArgs, error) {
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServiceArgs(args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceArgs, error) {
 	clonedMessage := proto.Clone(args)
-	ipReplacedArgs, ok := clonedMessage.(*core_api_bindings.StartServiceArgs)
+	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.StartServiceArgs)
 	if !ok {
 		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to start service args")
 	}
