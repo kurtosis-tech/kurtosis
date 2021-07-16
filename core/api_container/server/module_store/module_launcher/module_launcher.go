@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/api_container_rpc_api/api_container_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
@@ -66,7 +66,7 @@ func (launcher ModuleLauncher) Launch(ctx context.Context, moduleId module_store
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred binding used ports to host ports")
 	}
 
-	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, api_container_rpc_api_consts.ListenPort)
+	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, core_api_consts.ListenPort)
 	envVars := map[string]string{
 		kurtosis_module_env_vars.ApiContainerSocketEnvVar: apiContainerSocket,
 		kurtosis_module_env_vars.CustomParamsJsonEnvVar: paramsJsonStr,
