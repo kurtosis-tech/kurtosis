@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/palantir/stacktrace"
@@ -34,7 +34,7 @@ func (m MockServiceNetwork) RegisterService(serviceId service_network_types.Serv
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) GenerateFiles(serviceId service_network_types.ServiceID, filesToGenerate map[string]*core_api_bindings.FileGenerationOptions) (map[string]string, error) {
+func (m MockServiceNetwork) GenerateFiles(serviceId service_network_types.ServiceID, filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions) (map[string]string, error) {
 	panic("This is unimplemented for the mock network")
 }
 
