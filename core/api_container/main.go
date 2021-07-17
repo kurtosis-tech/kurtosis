@@ -98,7 +98,11 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
-	defer serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout)
+	defer func() {
+		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout) ; err != nil {
+			logrus.Info("An error occurred destroying the service network")
+		}
+	}()
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(serviceNetwork)
