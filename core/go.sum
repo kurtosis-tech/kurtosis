@@ -74,6 +74,7 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxv
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210630122852-803468141c0e/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
+github.com/kurtosis-tech/kurtosis-client v0.0.0-20210715220313-649cb62bf57c h1:A+5es4zEHlJyV6RI4a8mnWoEmqT24libIzZCKGDKsUo=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210609143139-cb8f6346f0ba/go.mod h1:degxAH35Ut7M3Ec4E2LtYk7Yun+kRqtROEzXJpzgyqM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210709213855-4df83454d041 h1:QoEwpe8Ijg4ykbAS6qhQQuIXsxKIlV7BdiJSCN4sFxA=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210709213855-4df83454d041/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
@@ -81,6 +82,9 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210709221857-9070e5102e
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210709221857-9070e5102e66/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210713182807-dad0c8eb4281 h1:k66ZKmEUD8ak+zRvYMs2inVYdR/Cf4vUNMRw6hzWyLc=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210713182807-dad0c8eb4281/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716190011-69c21ac00552 h1:+McF2t20EZD1rn+0T0x4E/0S1Be7umoMwQDHiDaGBA0=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716190011-69c21ac00552/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716190011-8c3d4bc1c8cd h1:m8UinjPvWalk9nOIO4q9gcy9pir6TvRvsW2X9Xj5juY=
 github.com/kurtosis-tech/kurtosis-libs v0.0.0-20210709215550-6248056be8c5 h1:wJeU7Ik43K2bC20BTUSe4qERGQugV3vx4gON8OYKFOw=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210709215550-6248056be8c5 h1:b/F/dNjHV7PmdjvUUMQRdPB6vYGHUKCxMyDavd78XSA=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210709215550-6248056be8c5/go.mod h1:dePQ7w+oUoKzkBC+vZfj1KS3Ui27h/eVz+VwVABM42A=
