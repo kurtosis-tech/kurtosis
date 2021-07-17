@@ -16,8 +16,8 @@ import (
 	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/module_store/module_launcher"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
@@ -96,14 +96,25 @@ func runMain () error {
 	kurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
 	paramsJsonStr := *paramsJsonArg
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisExecutionVolume, paramsJsonStr)
+	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(kurtosisExecutionVolume, paramsJsonStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
+		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
-	defer serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout)
+	defer func() {
+		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout); err != nil {
+			logrus.Errorf("An error occurred while destroying the service network:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+		}
+	}()
+	defer func() {
+		if err := lambdaStore.Destroy(context.Background()); err != nil {
+			logrus.Errorf("An error occurred while destroying the Lambda store:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+		}
+	}()
 
 	//Creation of ApiContainerService
-	apiContainerService, err := server.NewApiContainerService(serviceNetwork, moduleStore)
+	apiContainerService, err := server.NewApiContainerService(serviceNetwork, lambdaStore)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
 	}
@@ -140,9 +151,9 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkAndModuleStore(
+func createServiceNetworkAndLambdaStore(
 	kurtosisExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-	paramsJsonStr string) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+	paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_env_var_values2.ApiContainerArgs
@@ -242,7 +253,7 @@ func createServiceNetworkAndModuleStore(
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	moduleStore := createModuleStore(
+	lambdaStore := createLambdaStore(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		containerNameElemsProvider,
@@ -251,17 +262,17 @@ func createServiceNetworkAndModuleStore(
 		dockerNetworkId,
 	)
 
-	return serviceNetwork, moduleStore, nil
+	return serviceNetwork, lambdaStore, nil
 }
 
-func createModuleStore(
+func createLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		apiContainerIpAddr string,
 		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
-		dockerNetworkId string) *module_store.ModuleStore {
-	moduleLauncher := module_launcher.NewModuleLauncher(
+		dockerNetworkId string) *lambda_store.LambdaStore {
+	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
 		dockerManager,
 		apiContainerIpAddr,
 		containerNameElemsProvider,
@@ -270,7 +281,7 @@ func createModuleStore(
 		dockerNetworkId,
 	)
 
-	moduleStore := module_store.NewModuleStore(moduleLauncher)
+	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
 
-	return moduleStore
+	return lambdaStore
 }

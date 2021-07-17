@@ -3,6 +3,7 @@
  * All Rights Reserved.
  */
 
-package module_store_types
+package lambda_store_types
 
-type ModuleID string
+type LambdaID string
+
