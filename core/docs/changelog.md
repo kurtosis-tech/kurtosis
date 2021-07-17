@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Upgraded to Kurt Client 0.7.0, which renames the Kurt API bindings/consts packages for easier readability in the code
+* Added CircleCI step in check_code to check for any running docker containers after Kurtosis testsuite builds and runs 
 
 # 1.16.2
 ### Changes
