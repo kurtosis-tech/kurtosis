@@ -75,15 +75,6 @@ jobs:
       - run: |
           echo "export X_Y_VERSION=\"$(echo '<<pipeline.git.tag>>' | egrep -o '^[0-9]+\.[0-9]+')\"" >> $BASH_ENV
 
-      # Checking for running Docker containers
-      - run: |
-          docker container ls > $BASH_ENV | tail -n +2 tmp_file.txt > tmp_file.txt |
-          if [ -s tmp_file.txt ] ; then
-                  echo "containers running"
-          else
-                  echo "no containers running"
-          fi
-
       # Docker images with this tag will have gotten built by build_and_run
       - run: |
           echo "X.Y version: ${X_Y_VERSION}"
