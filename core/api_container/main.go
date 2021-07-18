@@ -260,6 +260,7 @@ func createServiceNetworkAndLambdaStore(
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
 		dockerNetworkId,
+		suiteExecutionVolName,
 	)
 
 	return serviceNetwork, lambdaStore, nil
@@ -271,7 +272,8 @@ func createLambdaStore(
 		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
-		dockerNetworkId string) *lambda_store.LambdaStore {
+		dockerNetworkId string,
+		suiteExVolName string) *lambda_store.LambdaStore {
 	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
 		dockerManager,
 		apiContainerIpAddr,
@@ -279,6 +281,7 @@ func createLambdaStore(
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
 		dockerNetworkId,
+		suiteExVolName,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_docker_api"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
@@ -17,7 +18,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/kurtosis_module/docker_api/kurtosis_module_env_vars"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -44,18 +44,15 @@ type LambdaLauncher struct {
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 
 	dockerNetworkId string
+
+	suiteExecutionVolumeName string
 }
 
-func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string) *LambdaLauncher {
-	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId}
+func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, suiteExecutionVolumeName string) *LambdaLauncher {
+	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, suiteExecutionVolumeName: suiteExecutionVolumeName}
 }
 
-func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, paramsJsonStr string) (id string, ipAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
-	lambdaIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
-	}
-
+func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, paramsJsonStr string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
 	lambdaPortNumStr := strconv.Itoa(kurtosis_lambda_rpc_api_consts.ListenPort)
 	lambdaPortObj, err := nat.NewPort(kurtosis_lambda_rpc_api_consts.ListenProtocol, lambdaPortNumStr)
 	if err != nil {
@@ -75,10 +72,20 @@ func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred binding used ports to host ports")
 	}
 
+	lambdaIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
+	}
+
 	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	envVars := map[string]string{
-		kurtosis_module_env_vars.ApiContainerSocketEnvVar: apiContainerSocket,
-		kurtosis_module_env_vars.CustomParamsJsonEnvVar: paramsJsonStr,
+		kurtosis_lambda_docker_api.ApiContainerSocketEnvVar: apiContainerSocket,
+		// TODO log level
+		// TODO custom params JSON
+	}
+
+	volumeMounts := map[string]string{
+		launcher.suiteExecutionVolumeName: kurtosis_lambda_docker_api.ExecutionVolumeMountpoint,
 	}
 
 	containerId, err := launcher.dockerManager.CreateAndStartContainer(
@@ -94,7 +101,7 @@ func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store
 		nil, // No CMD overrides; modules are configured using env vars
 		envVars,
 		nil, // No bind mounts needed
-		nil, // No volume mounts needed
+		volumeMounts,
 		false, // Modules don't need to access the host machine
 	)
 	if err != nil {
@@ -111,7 +118,7 @@ func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store
 		}
 	}()
 
-	lambdaSocket := fmt.Sprintf("%v:%v", ipAddr, kurtosis_lambda_rpc_api_consts.ListenPort)
+	lambdaSocket := fmt.Sprintf("%v:%v", lambdaIpAddr, kurtosis_lambda_rpc_api_consts.ListenPort)
 	conn, err := grpc.Dial(
 		lambdaSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct lambda

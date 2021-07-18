@@ -98,6 +98,14 @@ func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_sto
 	return resp.ResponseJson, nil
 }
 
+func (store *LambdaStore) GetLambdaIPAddrByID(lambdaId lambda_store_types.LambdaID) (net.IP, error) {
+	info, found := store.lambdas[lambdaId]
+	if !found {
+		return nil, stacktrace.NewError("No Lambda with ID '%v' has been loaded", lambdaId)
+	}
+	return info.ipAddr, nil
+}
+
 func (store *LambdaStore) Destroy(ctx context.Context) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()

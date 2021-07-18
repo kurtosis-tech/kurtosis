@@ -79,11 +79,15 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716190011-69c21ac005
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716190011-69c21ac00552/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716225554-1b2d348613c5 h1:Z2EjcVdNOrv2e+kDnWTH2tfrFSNluA3NKUxNWG/6B+E=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210716225554-1b2d348613c5/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210718200020-38f18be7a4c5 h1:n/1mBhdb5qdJg/hsjMTZow9phClfNod+MOIRDOXXHhU=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210718200020-38f18be7a4c5/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib v0.0.0-20210716211927-5c8a66038368 h1:CKt1mESIAUw23KkSBJAx1fXyD7iatylexkPXcIjVfhk=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210716211927-5c8a66038368 h1:fNevMSXBf60bqUlFhBHC/iCCXsuKzHluECqTZSBZ3w4=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210716211927-5c8a66038368/go.mod h1:Z7HBoe4l6XcTypqY0Uuhv5T7IvnpRCaPydRbIKZtmt8=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210716234030-dc27d5e676e9 h1:FApNhXNuL06KTJ4pYugwGPpu0Hy2KyHNAPxTRxvArtw=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210716234030-dc27d5e676e9/go.mod h1:Z7HBoe4l6XcTypqY0Uuhv5T7IvnpRCaPydRbIKZtmt8=
+github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210718172719-63ae3f483301 h1:OgV3FhxRl6tnNTbrMuZt8Th+IRqftH56ogAtym7OgiI=
+github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210718172719-63ae3f483301/go.mod h1:Z7HBoe4l6XcTypqY0Uuhv5T7IvnpRCaPydRbIKZtmt8=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210709215550-6248056be8c5 h1:b/F/dNjHV7PmdjvUUMQRdPB6vYGHUKCxMyDavd78XSA=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210709215550-6248056be8c5/go.mod h1:dePQ7w+oUoKzkBC+vZfj1KS3Ui27h/eVz+VwVABM42A=
 github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210716222711-f8290fe69f6b h1:K31361WG7EP1JKF82D4qgdUgaiCnAxVOr07dkFGp8Ds=
