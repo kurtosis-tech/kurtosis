@@ -40,7 +40,7 @@ jobs:
 
       # Checking for running Docker containers after Kurtosis completes testsuite execution
       - run: |
-          docker container ls | grep -v "CONTAINER_ID" | wc -l
+          [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
 
   check_docs:
     docker:
