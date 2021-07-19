@@ -100,7 +100,8 @@ func runMain () error {
 	}
 	defer func() {
 		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout) ; err != nil {
-			logrus.Info("An error occurred destroying the service network")
+			logrus.Errorf("An error occurred destroying the service network:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
 	}()
 
