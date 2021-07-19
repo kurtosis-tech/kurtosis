@@ -99,6 +99,12 @@ func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_sto
 }
 
 func (store *LambdaStore) GetLambdaIPAddrByID(lambdaId lambda_store_types.LambdaID) (net.IP, error) {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	if store.isDestroyed {
+		return nil, stacktrace.NewError("Cannot get IP address for Lambda '%v'; the Lambda store is destroyed", lambdaId)
+	}
+
 	info, found := store.lambdas[lambdaId]
 	if !found {
 		return nil, stacktrace.NewError("No Lambda with ID '%v' has been loaded", lambdaId)

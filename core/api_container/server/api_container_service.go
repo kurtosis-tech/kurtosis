@@ -69,7 +69,7 @@ func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosi
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
 	if err := service.lambdaStore.LoadLambda(ctx, lambdaId, image, serializedParams); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and params JSON '%v'", lambdaId, image, serializedParams)
+		return nil, stacktrace.Propagate(err, "An error occurred loading Lambda '%v' with container image '%v' and serialized params '%v'", lambdaId, image, serializedParams)
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -79,7 +79,7 @@ func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurt
 	serializedParams := args.SerializedParams
 	serializedResult, err := service.lambdaStore.ExecuteLambda(ctx, lambdaId, serializedParams)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred executing Lambda '%v'", lambdaId)
+		return nil, stacktrace.Propagate(err, "An error occurred executing Lambda '%v' with serialized params '%v'", lambdaId, serializedParams)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse{SerializedResult: serializedResult}
 	return resp, nil

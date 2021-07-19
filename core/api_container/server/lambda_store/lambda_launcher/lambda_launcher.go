@@ -105,7 +105,7 @@ func (launcher LambdaLauncher) Launch(
 		envVars,
 		nil, // No bind mounts needed
 		volumeMounts,
-		false, // Modules don't need to access the host machine
+		false, // Lambdas shouldn't have access to the host machine, for security purposes!
 	)
 	if err != nil {
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the module container")
@@ -145,7 +145,7 @@ func waitUntilLambdaContainerIsAvailable(ctx context.Context, client kurtosis_la
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForLambdaAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for the lambda container to become available")
+		return stacktrace.Propagate(err, "An error occurred waiting for the Lambda container to become available")
 	}
 	return nil
 }
