@@ -1,6 +1,8 @@
 # TBD
 ### Changes
 * Upgraded to Kurt Client 0.7.0, which renames the Kurt API bindings/consts packages for easier readability in the code
+
+### Fixes
 * Added check to account for error when calling Destroy method inside api_container/main.go
 
 # 1.16.2
