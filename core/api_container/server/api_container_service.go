@@ -67,21 +67,21 @@ func NewApiContainerService(serviceNetwork service_network.ServiceNetwork, lambd
 func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadLambdaArgs) (*emptypb.Empty, error) {
 	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
 	image := args.ContainerImage
-	paramsJson := args.ParamsJson
-	if err := service.lambdaStore.LoadLambda(ctx, lambdaId, image, paramsJson); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and params JSON '%v'", lambdaId, image, paramsJson)
+	serializedParams := args.SerializedParams
+	if err := service.lambdaStore.LoadLambda(ctx, lambdaId, image, serializedParams); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and params JSON '%v'", lambdaId, image, serializedParams)
 	}
 	return &emptypb.Empty{}, nil
 }
 
 func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs) (*kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse, error) {
 	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
-	paramsJson := args.ParamsJson
-	respJson, err := service.lambdaStore.ExecuteLambda(ctx, lambdaId, paramsJson)
+	serializedParams := args.SerializedParams
+	serializedResult, err := service.lambdaStore.ExecuteLambda(ctx, lambdaId, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing Lambda '%v'", lambdaId)
 	}
-	resp := &kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse{ResponseJson: respJson}
+	resp := &kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse{SerializedResult: serializedResult}
 	return resp, nil
 }
 

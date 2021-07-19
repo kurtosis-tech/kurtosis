@@ -45,7 +45,7 @@ func NewLambdaStore(lambdaLauncher *lambda_launcher.LambdaLauncher) *LambdaStore
 	}
 }
 
-func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, paramsJsonStr string) error {
+func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, serializedParams string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	if store.isDestroyed {
@@ -57,13 +57,13 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 	}
 
 	// NOTE: We don't use module host port bindings for now; we could expose them in the future if it's useful
-	containerId, containerIpAddr, client, _, err := store.lambdaLauncher.Launch(ctx, lambdaId, containerImage, paramsJsonStr)
+	containerId, containerIpAddr, client, _, err := store.lambdaLauncher.Launch(ctx, lambdaId, containerImage, serializedParams)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred launching Lambda from container image '%v' and params JSON string '%v'",
+			"An error occurred launching Lambda from container image '%v' and serialized params '%v'",
 			containerImage,
-			paramsJsonStr,
+			serializedParams,
 		)
 	}
 
@@ -76,7 +76,7 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 	return nil
 }
 
-func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, paramsJson string) (responseJson string, resultErr error) {
+func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, serializedParams string) (serializedResult string, resultErr error) {
 	// NOTE: technically we don't need this mutex for this function since we're not modifying internal state, but we do need it to check isDestroyed
 	// TODO PERF: Don't block the entire store on executing a lambda
 	store.mutex.Lock()
@@ -90,10 +90,10 @@ func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_sto
 		return "", stacktrace.NewError("No Lambda '%v' exists in the Lambda store", lambdaId)
 	}
 	client := info.client
-	args := &kurtosis_lambda_rpc_api_bindings.ExecuteArgs{ParamsJson: paramsJson}
+	args := &kurtosis_lambda_rpc_api_bindings.ExecuteArgs{ParamsJson: serializedParams}
 	resp, err := client.Execute(ctx, args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred calling Lambda '%v' with params JSON '%v'", lambdaId, paramsJson)
+		return "", stacktrace.Propagate(err, "An error occurred calling Lambda '%v' with serialized params '%v'", lambdaId, serializedParams)
 	}
 	return resp.ResponseJson, nil
 }

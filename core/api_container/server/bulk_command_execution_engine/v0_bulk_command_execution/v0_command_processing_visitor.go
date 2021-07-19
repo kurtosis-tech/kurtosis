@@ -38,6 +38,35 @@ func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr p
 //                                         Public functions
 // ====================================================================================================
 
+func (visitor *v0CommandProcessingVisitor) VisitLoadLambda() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.LoadLambdaArgs)
+	if !ok {
+		return stacktrace.NewError("An error occurred downcasting the generic args object to Lambda-loading args")
+	}
+	if _, err := visitor.apiService.LoadLambda(visitor.ctx, castedArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading Lambda with ID '%v'", castedArgs.LambdaId)
+	}
+	return nil
+}
+
+func (visitor *v0CommandProcessingVisitor) VisitExecuteLambda() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs)
+	if !ok {
+		return stacktrace.NewError("An error occurred downcasting the generic args object to Lambda-executing args")
+	}
+	resp, err := visitor.apiService.ExecuteLambda(visitor.ctx, castedArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing Lambda with ID '%v'", castedArgs.LambdaId)
+	}
+	logrus.Infof(
+		"Executed Lambda '%v' with serialized args '%v', which returned serialized result '%v'",
+		castedArgs.LambdaId,
+		castedArgs.SerializedParams,
+		resp.SerializedResult,
+	)
+	return nil
+}
+
 func (visitor *v0CommandProcessingVisitor) VisitRegisterService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.RegisterServiceArgs)
 	if !ok {

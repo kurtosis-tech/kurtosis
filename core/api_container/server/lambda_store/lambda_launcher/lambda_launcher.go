@@ -52,7 +52,10 @@ func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainer
 	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, suiteExecutionVolumeName: suiteExecutionVolumeName}
 }
 
-func (launcher LambdaLauncher) Launch(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, paramsJsonStr string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
+func (launcher LambdaLauncher) Launch(
+		ctx context.Context,
+		lambdaId lambda_store_types.LambdaID,
+		containerImage string, serializedParam string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
 	lambdaPortNumStr := strconv.Itoa(kurtosis_lambda_rpc_api_consts.ListenPort)
 	lambdaPortObj, err := nat.NewPort(kurtosis_lambda_rpc_api_consts.ListenProtocol, lambdaPortNumStr)
 	if err != nil {
