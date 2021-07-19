@@ -55,7 +55,8 @@ func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainer
 func (launcher LambdaLauncher) Launch(
 		ctx context.Context,
 		lambdaId lambda_store_types.LambdaID,
-		containerImage string, serializedParam string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
+		containerImage string,
+		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
 	lambdaPortNumStr := strconv.Itoa(kurtosis_lambda_rpc_api_consts.ListenPort)
 	lambdaPortObj, err := nat.NewPort(kurtosis_lambda_rpc_api_consts.ListenProtocol, lambdaPortNumStr)
 	if err != nil {
@@ -83,8 +84,7 @@ func (launcher LambdaLauncher) Launch(
 	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	envVars := map[string]string{
 		kurtosis_lambda_docker_api.ApiContainerSocketEnvVar: apiContainerSocket,
-		// TODO log level
-		// TODO custom params JSON
+		kurtosis_lambda_docker_api.SerializedCustomParamsEnvVar: serializedParams,
 	}
 
 	volumeMounts := map[string]string{

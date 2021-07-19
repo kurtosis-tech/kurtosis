@@ -16,8 +16,8 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719171145-f444c54d3e04
-	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210718172719-63ae3f483301
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719180545-e21b98013e6f
+	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-libs/golang v0.0.0-20210716222711-f8290fe69f6b
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
@@ -29,8 +29,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
-	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/grpc v1.39.0
+	google.golang.org/protobuf v1.27.1
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.2 // indirect
 )

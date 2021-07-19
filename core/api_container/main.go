@@ -8,12 +8,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
+	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
+	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
@@ -28,14 +28,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -67,34 +65,23 @@ func main() {
 }
 
 func runMain () error {
+	logLevelStr, found := os.LookupEnv(api_container_env_vars.LogLevelEnvVar)
+	if !found {
+		return stacktrace.NewError("No log level environment variable '%v' defined", api_container_env_vars.LogLevelEnvVar)
+	}
+	paramsJsonStr, found := os.LookupEnv(api_container_env_vars.ParamsJsonEnvVar)
+	if !found {
+		return stacktrace.NewError("No custom params JSON environment variable '%v' defined", api_container_env_vars.ParamsJsonEnvVar)
+	}
 
-	logLevelArg := flag.String(
-		"log-level",
-		"info",
-		fmt.Sprintf(
-			"Log level to use for the API container (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-
-	// NOTE: We take this in as JSON so that it's easy to modify the params without needing to modify the Dockerfile
-	paramsJsonArg := flag.String(
-		"params-json",
-		"",
-		"JSON string containing the params to the API container",
-	)
-
-	flag.Parse()
-
-	logLevel, err := logrus.ParseLevel(*logLevelArg)
+	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", *logLevelArg)
+		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", logLevelStr)
 	}
 	logrus.SetLevel(logLevel)
 
 	//Creation of serviceNetwork
 	kurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
-	paramsJsonStr := *paramsJsonArg
 
 	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(kurtosisExecutionVolume, paramsJsonStr)
 	if err != nil {
@@ -156,7 +143,7 @@ func createServiceNetworkAndLambdaStore(
 	paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 
 	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_env_var_values2.ApiContainerArgs
+	var args api_container_env_var_values.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 		return nil, nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
