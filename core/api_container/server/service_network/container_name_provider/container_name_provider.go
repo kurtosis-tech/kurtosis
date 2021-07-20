@@ -6,12 +6,15 @@
 package container_name_provider
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 )
 
 const (
+	userServiceNameLabel        = "user-service"
 	networkingSidecarNameSuffix = "networking-sidecar"
 	artifactExpanderNameLabel   = "files-artifact-expander"
+	lambdaNameLabel             = "lambda"
 )
 
 type ContainerNameElementsProvider struct {
@@ -24,6 +27,7 @@ func NewContainerNameElementsProvider(prefixElems []string) *ContainerNameElemen
 
 func (provider ContainerNameElementsProvider) GetForUserService(serviceId service_network_types.ServiceID) []string {
 	return provider.addPrefix([]string{
+		userServiceNameLabel,
 		string(serviceId),
 	})
 }
@@ -40,6 +44,13 @@ func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(servic
 		string(serviceId),
 		artifactExpanderNameLabel,
 		artifactUrlHash,
+	})
+}
+
+func (provider ContainerNameElementsProvider) GetForLambda(lambdaId lambda_store_types.LambdaID) []string {
+	return provider.addPrefix([]string{
+		lambdaNameLabel,
+		string(lambdaId),
 	})
 }
 

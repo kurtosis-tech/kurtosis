@@ -1,5 +1,19 @@
 # TBD
 
+# 1.16.3
+### Features
+* Added Kurtosis Lambda support!
+
+### Changes
+* Upgraded to Kurtosis Client 0.9.0
+* Inserted an extra `user-service` element to user service container names, for easier identification
+* Switched the API container's `main.go` to read environment variables directly, rather than taking in Dockerfile flags
+    * This means that we won't need to change the Dockerfile if we add new parameters!
+* Added CircleCI step in check_code to check for any running docker containers after Kurtosis testsuite builds and runs 
+
+### Fixes
+* Added check to account for error when calling Destroy method inside api_container/main.go
+
 # 1.16.2
 ### Changes
 * Added Destroy method that would tear down the docker side containers

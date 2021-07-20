@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/core_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -220,7 +220,7 @@ func (network ServiceNetworkImpl) RegisterService(
 // Generates files in a location in the suite execution volume allocated to the given service
 func (network *ServiceNetworkImpl) GenerateFiles(
 		serviceId service_network_types.ServiceID,
-		filesToGenerate map[string]*core_api_bindings.FileGenerationOptions) (map[string]string, error) {
+		filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions) (map[string]string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -238,7 +238,7 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 	for userCreatedFileKey, fileGenerationOptions := range filesToGenerate {
 		fileTypeToGenerate := fileGenerationOptions.GetFileTypeToGenerate()
 		switch fileTypeToGenerate {
-		case core_api_bindings.FileGenerationOptions_FILE:
+		case kurtosis_core_rpc_api_bindings.FileGenerationOptions_FILE:
 			file, err := serviceDirectory.NewGeneratedFile(userCreatedFileKey)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
