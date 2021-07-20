@@ -16,6 +16,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
+	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b // indirect
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719180545-e21b98013e6f
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210720025347-26fa18b06b80
