@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixes a very occasional failure with exec commands due to a race condition in the Docker engine
 
 # 1.16.3
 ### Features
