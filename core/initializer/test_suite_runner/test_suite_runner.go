@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
@@ -64,7 +64,7 @@ func RunTests(
 		initializerContainerId string,
 		dockerClient *client.Client,
 		artifactCache *suite_execution_volume.ArtifactCache,
-		testSuiteMetadata *bindings.TestSuiteMetadata,
+		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -150,7 +150,7 @@ func RunTests(
 func downloadUsedArtifacts(
 		artifactCache *suite_execution_volume.ArtifactCache,
 		testNames map[string]bool,
-		suiteMetadata *bindings.TestSuiteMetadata) error {
+		suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
 	allTestMetadata := suiteMetadata.TestMetadata
 	// TODO PERF: parallelize to speed this up
 	for testName := range testNames {
@@ -173,7 +173,7 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		networkWidthBits uint32,
-		testSuiteMetadata *bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
+		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
 	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)

@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
@@ -407,7 +407,7 @@ func getAccessController(
 	return accessController
 }
 
-func verifyNoDelimiterCharInTestNames(suiteMetadata *bindings.TestSuiteMetadata) error {
+func verifyNoDelimiterCharInTestNames(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
 	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
 	//  error and loudly alert the user
 	for testName, _ := range suiteMetadata.TestMetadata {
@@ -421,7 +421,7 @@ func verifyNoDelimiterCharInTestNames(suiteMetadata *bindings.TestSuiteMetadata)
 	return nil
 }
 
-func printTestsInSuite(suiteMetadata *bindings.TestSuiteMetadata) {
+func printTestsInSuite(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) {
 	testNames := []string{}
 	for name := range suiteMetadata.TestMetadata {
 		testNames = append(testNames, name)

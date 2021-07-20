@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
-	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -204,14 +204,14 @@ func RunTest(
 		}
 	}()
 
-	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), test_suite_rpc_api_consts.ListenPort)
+	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), kurtosis_testsuite_rpc_api_consts.ListenPort)
 	// TODO SECURITY: Use HTTPS
 	conn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred dialing the testsuite container endpoint")
 	}
 	defer conn.Close()
-	testsuiteServiceClient := bindings.NewTestSuiteServiceClient(conn)
+	testsuiteServiceClient := kurtosis_testsuite_rpc_api_bindings.NewTestSuiteServiceClient(conn)
 
 	if err := waitUntilTestsuiteContainerIsAvailable(testSetupExecutionCtx, testsuiteServiceClient); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred while waiting for the testsuite container to become available")
@@ -233,7 +233,7 @@ func RunTest(
 }
 
 // =========================== PRIVATE HELPER FUNCTIONS =========================================
-func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client bindings.TestSuiteServiceClient) error {
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
@@ -250,7 +250,7 @@ func streamTestsuiteLogsWhileRunningTest(
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
 		testParams parallel_test_params.ParallelTestParams,
-		testsuiteServiceClient bindings.TestSuiteServiceClient) error {
+		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	// After this point, we can go back to printing initializer logs
 	defer banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
@@ -281,7 +281,7 @@ func streamTestsuiteLogsWhileRunningTest(
 		setupTimeout,
 	)
 	defer testSetupCtxCancelFunc()
-	setupArgs := &bindings.SetupTestArgs{
+	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{
 		TestName: testParams.TestName,
 	}
 	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
