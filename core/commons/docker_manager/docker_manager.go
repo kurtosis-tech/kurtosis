@@ -425,23 +425,18 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 		Detach: false,
 	}
 
-	// IMPORTANT DEEP DOCKER MAGIC:
-	// If this attach isn't BEFORE the ContainerExecStart, by the time we try the attach the command
-	//  will have finished running and Docker won't give us back the logs of the command but instead a Docker-generated
-	//  error saying "Exec proc 123451312321321 has already finished"
+	// IMPORTANT NOTE:
+	// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
+	//  ...but ContainerExecAttach **actually starts the exec command!!!!**
+	// We used to be doing them both, but then we were hitting this occasional race condition: https://github.com/moby/moby/issues/42408
+	// Therefore, we ONLY call Attach, without Start
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
 		return 0, stacktrace.Propagate(
 			err,
-			"An error occurred attaching to the exec command")
+			"An error occurred starting/attaching to the exec command")
 	}
 	defer attachResp.Close()
-
-	if err := dockerClient.ContainerExecStart(context, execId, execStartConfig); err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred starting the exec command")
-	}
 
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
