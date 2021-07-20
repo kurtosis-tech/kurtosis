@@ -1,4 +1,6 @@
 # TBD
+
+# 1.16.6
 ### Features
 * Moved the Kurtosis-internal testsuite from Kurtosis Libs into here, to break the circular dependency that used to exist between the two repos
 
