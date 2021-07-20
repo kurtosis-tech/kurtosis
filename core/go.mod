@@ -16,7 +16,8 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210718200020-38f18be7a4c5 // indirect
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210718200020-38f18be7a4c5
+	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210720025347-26fa18b06b80
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
