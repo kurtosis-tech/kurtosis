@@ -38,6 +38,10 @@ jobs:
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
       - run: "! grep 'ERRO' build-output.txt"
 
+      # Checking for running Docker containers after Kurtosis completes testsuite execution
+      - run: |
+          [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
+
   check_docs:
     docker:
       # Needed for `npm install` down below
