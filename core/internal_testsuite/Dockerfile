@@ -14,12 +14,13 @@ COPY go.sum .
 RUN go mod download
 
 # Copy the code into the container
-COPY testsuite .
+COPY . .
 
-RUN go test ./...
+# NOTE: As of 2021-07-20, we do the 'go test' part outside of Docker build
+# RUN go test ./...
 
 # Build the application
-RUN GOOS=linux go build -o testsuite.bin testsuite/main.go
+RUN GOOS=linux go build -o testsuite.bin internal_testsuite/main.go
 
 # ============= Execution Stage ================
 FROM alpine:3.12 AS execution
@@ -31,7 +32,7 @@ COPY --from=builder /build/testsuite.bin .
 
 # Copy local static files inside the testsuite image
 # NOTE: The testsuite will need to register these static files in the GetStaticFiles method
-COPY testsuite/files /static-files
+COPY internal_testsuite/files /static-files
 
 # TODO Switch to exec command form, wrapping arguments with double-quote
 CMD ./testsuite.bin \

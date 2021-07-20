@@ -7,12 +7,8 @@ DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
 INITIALIZER_REPO="${REPO_BASE}_initializer"
-# NOTE: We build against a specific version of the Golang testsuite (rather than an evergreen 'develop' version) to minimize the circular dependencies 
-# going on (since Kurt Libs depends on this repo depends on Kurt Lib). 
-# However, this *does* mean that we'll be testing Kurt Core against a probably-outdated version of Kurt Libs - we're alright doing this, 
-# because some bit of sanity-checking is better than none and we'll test Kurt Core against the latest Kurt Libs when we upgrade the Core version in Libs
-# TODO The ideal would be having an extensive testsuite, specific to this repo, that runs all the this-repos-specific tests so that we don't have to depend on Kurt Libs anymore
-GO_EXAMPLE_SUITE_IMAGE="${DOCKER_ORG}/kurtosis-golang-example:1.28.0"
+INTERNAL_TESTSUITE_REPO="${REPO_BASE}_internal-testsuite"
+
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
@@ -91,9 +87,11 @@ fi
 
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
 api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
+internal_testsuite_image="${DOCKER_ORG}/${INTERNAL_TESTSUITE_REPO}:${docker_tag}"
 
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
+internal_testsuite_log_filepath="$(mktemp)"
 if "${do_build}"; then
     echo "Running tests..."
     if ! go test "${root_dirpath}/..."; then
@@ -113,16 +111,20 @@ if "${do_build}"; then
     "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
     echo "Successfully generated wrapper script"
 
-    echo "Launching builds of initializer & API images in parallel threads..."
+    echo "Launching builds of initializer, API, & internal testsuite images in parallel threads..."
     docker build --progress=plain -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
     initializer_build_pid="${!}"
     docker build --progress=plain -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
     api_build_pid="${!}"
+    docker build --progress=plain -t "${internal_testsuite_image}" -f "${root_dirpath}/internal_testsuite/Dockerfile" "${root_dirpath}" > "${internal_testsuite_log_filepath}" 2>&1 &
+    internal_testsuite_build_pid="${!}"
     echo "Build threads launched successfully:"
     echo " - Initializer thread PID: ${initializer_build_pid}"
     echo " - Initializer logs: ${initializer_log_filepath}"
     echo " - API thread PID: ${api_build_pid}"
     echo " - API logs: ${api_log_filepath}"
+    echo " - Internal testsuite thread PID: ${internal_testsuite_build_pid}"
+    echo " - Internal testsuite logs: ${internal_testsuite_log_filepath}"
 
     echo "Waiting for build threads to exit..."
     builds_succeeded=true
@@ -132,15 +134,22 @@ if "${do_build}"; then
     if ! wait "${api_build_pid}"; then
         builds_succeeded=false
     fi
+    if ! wait "${internal_testsuite_build_pid}"; then
+        builds_succeeded=false
+    fi
     echo "Build threads exited"
 
     echo ""
-    echo "===================== Initializer Image Build Logs =========================="
+    echo "========================= Initializer Image Build Logs ================================"
     cat "${initializer_log_filepath}"
 
     echo ""
-    echo "========================= API Image Build Logs =============================="
+    echo "============================ API Image Build Logs ====================================="
     cat "${api_log_filepath}"
+
+    echo ""
+    echo "===================== Internal Testsuite Image Build Logs ============================="
+    cat "${internal_testsuite_log_filepath}"
 
     echo ""
     if ! "${builds_succeeded}"; then
@@ -151,17 +160,10 @@ if "${do_build}"; then
 fi
 
 if "${do_run}"; then
-    echo "Pulling latest version of example Go testsuite image..."
-    if ! docker pull "${GO_EXAMPLE_SUITE_IMAGE}"; then
-        echo "WARN: An error occurred pulling the latest version of the example Go testsuite image (${GO_EXAMPLE_SUITE_IMAGE}); you may be running an out-of-date version" >&2
-    else
-        echo "Successfully pulled latest version of example Go testsuite image"
-    fi
-
-    # --------------------- Kurtosis Go environment variables ---------------------
+    # --------------------- Internal testsuite environment variables ---------------------
     api_service_image="${DOCKER_ORG}/example-microservices_api"
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
-    go_suite_params_json='{
+    internal_suite_params_json='{
         "apiServiceImage" :"'${api_service_image}'",
         "datastoreServiceImage": "'${datastore_service_image}'",
         "isKurtosisCoreDevMode": true
@@ -170,5 +172,5 @@ if "${do_run}"; then
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
     # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
     #  ${1} exists, evaluate ${@}"
-    bash "${WRAPPER_FILEPATH}" --custom-params "${go_suite_params_json}" ${1+"${@}"} "${GO_EXAMPLE_SUITE_IMAGE}"
+    bash "${WRAPPER_FILEPATH}" --custom-params "${internal_suite_params_json}" ${1+"${@}"} "${internal_testsuite_image}"
 fi
