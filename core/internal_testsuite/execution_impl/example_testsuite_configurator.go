@@ -7,20 +7,20 @@ package execution_impl
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/internal_testsuite/testsuite_impl"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
+	"github.com/kurtosis-tech/kurtosis/internal_testsuite/testsuite_impl"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
 
-type ExampleTestsuiteConfigurator struct {}
+type InternalTestsuiteConfigurator struct {}
 
-func NewExampleTestsuiteConfigurator() *ExampleTestsuiteConfigurator {
-	return &ExampleTestsuiteConfigurator{}
+func NewInternalTestsuiteConfigurator() *InternalTestsuiteConfigurator {
+	return &InternalTestsuiteConfigurator{}
 }
 
-func (t ExampleTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
+func (t InternalTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
 	level, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing loglevel string '%v'", logLevelStr)
@@ -33,9 +33,9 @@ func (t ExampleTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
 	return nil
 }
 
-func (t ExampleTestsuiteConfigurator) ParseParamsAndCreateSuite(paramsJsonStr string) (testsuite.TestSuite, error) {
+func (t InternalTestsuiteConfigurator) ParseParamsAndCreateSuite(paramsJsonStr string) (testsuite.TestSuite, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
-	var args ExampleTestsuiteArgs
+	var args InternalTestsuiteArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the testsuite params JSON")
 	}
@@ -44,11 +44,11 @@ func (t ExampleTestsuiteConfigurator) ParseParamsAndCreateSuite(paramsJsonStr st
 		return nil, stacktrace.Propagate(err, "An error occurred validating the deserialized testsuite params")
 	}
 
-	suite := testsuite_impl.NewExampleTestsuite(args.ApiServiceImage, args.DatastoreServiceImage, args.IsKurtosisCoreDevMode)
+	suite := testsuite_impl.NewInternalTestsuite(args.ApiServiceImage, args.DatastoreServiceImage)
 	return suite, nil
 }
 
-func validateArgs(args ExampleTestsuiteArgs) error {
+func validateArgs(args InternalTestsuiteArgs) error {
 	if strings.TrimSpace(args.ApiServiceImage) == "" {
 		return stacktrace.NewError("API service image is empty")
 	}

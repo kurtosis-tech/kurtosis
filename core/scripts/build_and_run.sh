@@ -166,7 +166,6 @@ if "${do_run}"; then
     internal_suite_params_json='{
         "apiServiceImage" :"'${api_service_image}'",
         "datastoreServiceImage": "'${datastore_service_image}'",
-        "isKurtosisCoreDevMode": true
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash

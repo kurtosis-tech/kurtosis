@@ -8,8 +8,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/internal_testsuite/execution_impl"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/execution"
+	"github.com/kurtosis-tech/kurtosis/internal_testsuite/execution_impl"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -40,10 +40,7 @@ func main() {
 
 	flag.Parse()
 
-	// >>>>>>>>>>>>>>>>>>> REPLACE WITH YOUR OWN CONFIGURATOR <<<<<<<<<<<<<<<<<<<<<<<<
-	configurator := execution_impl.NewExampleTestsuiteConfigurator()
-	// >>>>>>>>>>>>>>>>>>> REPLACE WITH YOUR OWN CONFIGURATOR <<<<<<<<<<<<<<<<<<<<<<<<
-
+	configurator := execution_impl.NewInternalTestsuiteConfigurator()
 	suiteExecutor := execution.NewTestSuiteExecutor(*kurtosisApiSocketArg, *logLevelArg, *customParamsJsonArg, configurator)
 	if err := suiteExecutor.Run(); err != nil {
 		logrus.Errorf("An error occurred running the test suite executor:")

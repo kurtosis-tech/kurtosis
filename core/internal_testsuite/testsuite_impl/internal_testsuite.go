@@ -28,17 +28,16 @@ const (
 	staticFilesDirpath = "/static-files"
 )
 
-type ExampleTestsuite struct {
+type InternalTestsuite struct {
 	apiServiceImage string
 	datastoreServiceImage string
-	isKurtosisCoreDevMode bool
 }
 
-func NewExampleTestsuite(apiServiceImage string, datastoreServiceImage string, isKurtosisCoreDevMode bool) *ExampleTestsuite {
-	return &ExampleTestsuite{apiServiceImage: apiServiceImage, datastoreServiceImage: datastoreServiceImage, isKurtosisCoreDevMode: isKurtosisCoreDevMode}
+func NewInternalTestsuite(apiServiceImage string, datastoreServiceImage string) *InternalTestsuite {
+	return &InternalTestsuite{apiServiceImage: apiServiceImage, datastoreServiceImage: datastoreServiceImage}
 }
 
-func (suite ExampleTestsuite) GetTests() map[string]testsuite.Test {
+func (suite InternalTestsuite) GetTests() map[string]testsuite.Test {
 	tests := map[string]testsuite.Test{
 		"basicDatastoreTest": basic_datastore_test.NewBasicDatastoreTest(suite.datastoreServiceImage),
 		"basicDatastoreAndApiTest": basic_datastore_and_api_test.NewBasicDatastoreAndApiTest(
@@ -49,34 +48,27 @@ func (suite ExampleTestsuite) GetTests() map[string]testsuite.Test {
 			suite.datastoreServiceImage,
 			suite.apiServiceImage,
 		),
-	}
-
-	// This example Go testsuite is used internally, when developing on Kurtosis Core, to verify functionality
-	// When this testsuite is being used in this way, some special tests (which likely won't be interesting
-	//  to you) are run
-	// Feel free to delete these tests as you see fit
-	if suite.isKurtosisCoreDevMode {
-		tests["networkPartitionTest"] = network_partition_test.NewNetworkPartitionTest(
+		"networkPartitionTest": network_partition_test.NewNetworkPartitionTest(
 			suite.datastoreServiceImage,
 			suite.apiServiceImage,
-		)
-		tests["filesArtifactMountingTest"] = files_artifact_mounting_test.FilesArtifactMountingTest{}
-		tests["execCommandTest"] = exec_command_test.ExecCommandTest{}
-		tests["waitForEndpointAvailabilityTest"] = wait_for_endpoint_availability_test.NewWaitForEndpointAvailabilityTest(
+		),
+		"filesArtifactMountingTest": files_artifact_mounting_test.FilesArtifactMountingTest{},
+		"execCommandTest": exec_command_test.ExecCommandTest{},
+		"waitForEndpointAvailabilityTest": wait_for_endpoint_availability_test.NewWaitForEndpointAvailabilityTest(
 			suite.datastoreServiceImage,
-		)
-		tests["localStaticFileTest"] = local_static_file_test.LocalStaticFileTest{}
-		tests["bulkCommandExecutionTest"] = bulk_command_execution_test.NewBulkCommandExecutionTest(suite.datastoreServiceImage)
-		tests["lambdaTest"] = lambda_test.LambdaTest{}
+		),
+		"localStaticFileTest": local_static_file_test.LocalStaticFileTest{},
+		"bulkCommandExecutionTest": bulk_command_execution_test.NewBulkCommandExecutionTest(suite.datastoreServiceImage),
+		"lambdaTest": lambda_test.LambdaTest{},
 	}
 	return tests
 }
 
-func (suite ExampleTestsuite) GetNetworkWidthBits() uint32 {
+func (suite InternalTestsuite) GetNetworkWidthBits() uint32 {
 	return 8
 }
 
-func (suite ExampleTestsuite) GetStaticFiles() map[services.StaticFileID]string {
+func (suite InternalTestsuite) GetStaticFiles() map[services.StaticFileID]string {
 	return map[services.StaticFileID]string{
 		static_file_consts.TestStaticFile1ID: path.Join(staticFilesDirpath, static_file_consts.TestStaticFile1Filename),
 		static_file_consts.TestStaticFile2ID: path.Join(staticFilesDirpath, static_file_consts.TestStaticFile2Filename),
