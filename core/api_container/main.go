@@ -8,14 +8,16 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	api_container_env_var_values2 "github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
+	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
+	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
@@ -26,14 +28,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -65,48 +65,43 @@ func main() {
 }
 
 func runMain () error {
+	logLevelStr, found := os.LookupEnv(api_container_env_vars.LogLevelEnvVar)
+	if !found {
+		return stacktrace.NewError("No log level environment variable '%v' defined", api_container_env_vars.LogLevelEnvVar)
+	}
+	paramsJsonStr, found := os.LookupEnv(api_container_env_vars.ParamsJsonEnvVar)
+	if !found {
+		return stacktrace.NewError("No custom params JSON environment variable '%v' defined", api_container_env_vars.ParamsJsonEnvVar)
+	}
 
-	logLevelArg := flag.String(
-		"log-level",
-		"info",
-		fmt.Sprintf(
-			"Log level to use for the API container (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-
-	// NOTE: We take this in as JSON so that it's easy to modify the params without needing to modify the Dockerfile
-	paramsJsonArg := flag.String(
-		"params-json",
-		"",
-		"JSON string containing the params to the API container",
-	)
-
-	flag.Parse()
-
-	logLevel, err := logrus.ParseLevel(*logLevelArg)
+	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", *logLevelArg)
+		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", logLevelStr)
 	}
 	logrus.SetLevel(logLevel)
 
 	//Creation of serviceNetwork
 	kurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
-	paramsJsonStr := *paramsJsonArg
 
-	serviceNetwork, err := createServiceNetwork(kurtosisExecutionVolume, paramsJsonStr)
+	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(kurtosisExecutionVolume, paramsJsonStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the service network")
+		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
 	defer func() {
-		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout) ; err != nil {
-			logrus.Errorf("An error occurred destroying the service network:")
+		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout); err != nil {
+			logrus.Errorf("An error occurred while destroying the service network:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+		}
+	}()
+	defer func() {
+		if err := lambdaStore.Destroy(context.Background()); err != nil {
+			logrus.Errorf("An error occurred while destroying the Lambda store:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
 	}()
 
 	//Creation of ApiContainerService
-	apiContainerService, err := server.NewApiContainerService(serviceNetwork)
+	apiContainerService, err := server.NewApiContainerService(serviceNetwork, lambdaStore)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
 	}
@@ -143,19 +138,19 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetwork(
+func createServiceNetworkAndLambdaStore(
 	kurtosisExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-	paramsJsonStr string) (service_network.ServiceNetwork, error) {
+	paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 
 	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_env_var_values2.ApiContainerArgs
+	var args api_container_env_var_values.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
+		return nil, nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
 	}
 
 	dockerManager, err := createDockerManager()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
 	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
@@ -166,24 +161,24 @@ func createServiceNetwork(
 		args.TakenIpAddrs,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred creating the free IP address tracker")
+		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the free IP address tracker")
 	}
 
 	enclaveDirectory, err := kurtosisExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
+		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
 	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	artifactCache, err := kurtosisExecutionVolume.GetArtifactCache()
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred creating the artifact cache")
+		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the artifact cache")
 	}
 
 	staticFileCache, err := kurtosisExecutionVolume.GetStaticFileCache()
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred creating the static file cache")
+		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the static file cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -198,7 +193,7 @@ func createServiceNetwork(
 			hostPortSupplierParams.TakenPorts,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(
+			return nil, nil, stacktrace.Propagate(
 				err,
 				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
 			)
@@ -207,12 +202,10 @@ func createServiceNetwork(
 	}
 	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
 
-
 	filesArtifactExpansionVolumeNamePrefixElems := args.EnclaveNameElems
 	suiteExecutionVolName := args.SuiteExecutionVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
-
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		suiteExecutionVolName,
@@ -247,5 +240,38 @@ func createServiceNetwork(
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	return serviceNetwork, nil
+	lambdaStore := createLambdaStore(
+		dockerManager,
+		args.ApiContainerIpAddr,
+		containerNameElemsProvider,
+		freeIpAddrTracker,
+		optionalHostPortBindingSupplier,
+		dockerNetworkId,
+		suiteExecutionVolName,
+	)
+
+	return serviceNetwork, lambdaStore, nil
+}
+
+func createLambdaStore(
+		dockerManager *docker_manager.DockerManager,
+		apiContainerIpAddr string,
+		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
+		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
+		dockerNetworkId string,
+		suiteExVolName string) *lambda_store.LambdaStore {
+	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
+		dockerManager,
+		apiContainerIpAddr,
+		containerNameElemsProvider,
+		freeIpAddrTracker,
+		optionalHostPortBindingSupplier,
+		dockerNetworkId,
+		suiteExVolName,
+	)
+
+	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
+
+	return lambdaStore
 }

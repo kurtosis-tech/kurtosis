@@ -138,6 +138,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 			launcher.executionInstanceUuid,
 			testName,
 		},
+		apiContainerIpAddr.String(),
 		map[string]bool{
 			gatewayIpAddr.String(): true,
 			initializerContainerIpAddr.String(): true,

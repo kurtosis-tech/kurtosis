@@ -23,14 +23,4 @@ WORKDIR /run
 # Copy the code into the container
 COPY --from=builder /build/kurtosis-api-server .
 
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#              1. Need to change api_container_env_vars if any of these changes!!
-#              2. Keep these sorted alphabetically, to ensure no duplicates
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-api-server \
-    --log-level=\"${LOG_LEVEL}\" \
-    --params-json=\"${PARAMS_JSON}\" \
-"]
-# Developer notes about the above:
-# - This is the "exec" form of the command to ensure that SIGTERM gets passed to the API server
-# - We call "sh" as the first command so that environment variable expansion will still happen
+CMD ./kurtosis-api-server

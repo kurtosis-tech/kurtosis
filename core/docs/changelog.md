@@ -1,6 +1,12 @@
 # TBD
+### Features
+* Added Kurtosis Lambda support!
+
 ### Changes
-* Upgraded to Kurt Client 0.7.0, which renames the Kurt API bindings/consts packages for easier readability in the code
+* Upgraded to Kurtosis Client 0.9.0
+* Inserted an extra `user-service` element to user service container names, for easier identification
+* Switched the API container's `main.go` to read environment variables directly, rather than taking in Dockerfile flags
+    * This means that we won't need to change the Dockerfile if we add new parameters!
 * Added CircleCI step in check_code to check for any running docker containers after Kurtosis testsuite builds and runs 
 
 ### Fixes
