@@ -10,9 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/docker_api/test_suite_container_mountpoints"
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/docker_api/test_suite_env_vars"
-	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_docker_api"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/palantir/stacktrace"
@@ -186,13 +185,13 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		envVars map[string]string,
 	) (string, *nat.PortBinding, error) {
 
-	testsuiteRpcPort, err := nat.NewPort(test_suite_rpc_api_consts.ListenProtocol, strconv.Itoa(test_suite_rpc_api_consts.ListenPort))
+	testsuiteRpcPort, err := nat.NewPort(kurtosis_testsuite_rpc_api_consts.ListenProtocol, strconv.Itoa(kurtosis_testsuite_rpc_api_consts.ListenPort))
 	if err != nil {
 		return "", nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the port object on '%v/%v' to represent the testsuite RPC API",
-			test_suite_rpc_api_consts.ListenProtocol,
-			test_suite_rpc_api_consts.ListenPort,
+			kurtosis_testsuite_rpc_api_consts.ListenProtocol,
+			kurtosis_testsuite_rpc_api_consts.ListenPort,
 		)
 	}
 
@@ -235,7 +234,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		envVars,
 		map[string]string{}, 		// No bind mounts for a testsuite container
 		map[string]string{
-			launcher.suiteExecutionVolName: test_suite_container_mountpoints.TestsuiteContainerSuiteExVolMountpoint,
+			launcher.suiteExecutionVolName: kurtosis_testsuite_docker_api.TestsuiteContainerSuiteExVolMountpoint,
 		},
 		false, // The testsuite container should never be able to access the machine hosting Docker
 	)
@@ -285,10 +284,10 @@ Generates the map of environment variables needed to run a test suite container
 func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiSocket string) (map[string]string, error) {
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
-		test_suite_env_vars.CustomParamsJson:        launcher.customParamsJson,
-		test_suite_env_vars.DebuggerPortEnvVar:      strconv.Itoa(portForDebuggersRunningOnTestsuite),
-		test_suite_env_vars.KurtosisApiSocketEnvVar: kurtosisApiSocket,
-		test_suite_env_vars.LogLevelEnvVar:          launcher.suiteLogLevel,
+		kurtosis_testsuite_docker_api.CustomParamsJsonEnvVar:        launcher.customParamsJson,
+		kurtosis_testsuite_docker_api.DebuggerPortEnvVar:      strconv.Itoa(portForDebuggersRunningOnTestsuite),
+		kurtosis_testsuite_docker_api.KurtosisApiSocketEnvVar: kurtosisApiSocket,
+		kurtosis_testsuite_docker_api.LogLevelEnvVar:          launcher.suiteLogLevel,
 	}
 	return standardVars, nil
 }
