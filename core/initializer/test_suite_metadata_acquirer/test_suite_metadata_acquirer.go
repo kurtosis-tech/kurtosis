@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	test_suite_bindings "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
-	test_suite_rpc_api_consts "github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -40,7 +40,7 @@ const (
 func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 		dockerClient *client.Client,
 		launcher *test_suite_launcher.TestsuiteContainerLauncher,
-		staticFilesCache *suite_execution_volume.StaticFileCache) (*test_suite_bindings.TestSuiteMetadata, error) {
+		staticFilesCache *suite_execution_volume.StaticFileCache) (*kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -63,7 +63,7 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 	}()
 	logrus.Infof("Metadata-providing testsuite container launched")
 
-	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, test_suite_rpc_api_consts.ListenPort)
+	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, kurtosis_testsuite_rpc_api_consts.ListenPort)
 	conn, err := grpc.Dial(
 		testsuiteSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct testsuite
@@ -71,7 +71,7 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't dial testsuite container at %v to get testsuite metadata", testsuiteSocket)
 	}
-	testsuiteClient := test_suite_bindings.NewTestSuiteServiceClient(conn)
+	testsuiteClient := kurtosis_testsuite_rpc_api_bindings.NewTestSuiteServiceClient(conn)
 
 	logrus.Debugf("Waiting for testsuite container to become available...")
 	if err := waitUntilTestsuiteContainerIsAvailable(parentContext, testsuiteClient); err != nil {
@@ -114,7 +114,7 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 		}
 		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
 	}
-	copyStaticFilesArgs := &test_suite_bindings.CopyStaticFilesToExecutionVolumeArgs{
+	copyStaticFilesArgs := &kurtosis_testsuite_rpc_api_bindings.CopyStaticFilesToExecutionVolumeArgs{
 		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
 	}
 	// TODO PERF: If copying all the static files becomes expensive perf-wise, we could have tests register
@@ -138,7 +138,7 @@ func GetTestSuiteMetadataAndInitializeStaticFilesCache(
 	return suiteMetadata, nil
 }
 
-func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client test_suite_bindings.TestSuiteServiceClient) error {
+func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForTestsuiteAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {
@@ -192,7 +192,7 @@ func printContainerLogsWithBanners(
 	banner_printer.PrintSection(log, "End " + containerDescription + " Logs", false)
 }
 
-func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetadata) error {
+func validateTestSuiteMetadata(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
 	if suiteMetadata.NetworkWidthBits == 0 {
 		return stacktrace.NewError("Test suite metadata has a network width bits == 0")
 	}
@@ -214,7 +214,7 @@ func validateTestSuiteMetadata(suiteMetadata *test_suite_bindings.TestSuiteMetad
 	return nil
 }
 
-func validateTestMetadata(testMetadata *test_suite_bindings.TestMetadata) error {
+func validateTestMetadata(testMetadata *kurtosis_testsuite_rpc_api_bindings.TestMetadata) error {
 	for artifactUrl := range testMetadata.UsedArtifactUrls {
 		if len(strings.TrimSpace(artifactUrl)) == 0 {
 			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)

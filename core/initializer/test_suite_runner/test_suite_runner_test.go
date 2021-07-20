@@ -6,7 +6,7 @@
 package test_suite_runner
 
 import (
-	"github.com/kurtosis-tech/kurtosis-libs/golang/lib/rpc_api/bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/stretchr/testify/assert"
 	"strconv"
@@ -51,15 +51,15 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
 }
 
-func getTestingSuiteMetadata(numTests int) *bindings.TestSuiteMetadata {
-	testMetadata := map[string]*bindings.TestMetadata{}
+func getTestingSuiteMetadata(numTests int) *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata {
+	testMetadata := map[string]*kurtosis_testsuite_rpc_api_bindings.TestMetadata{}
 	for i := 0; i < numTests; i++ {
-		testMetadata["test" + strconv.Itoa(i)] = &bindings.TestMetadata{
+		testMetadata["test" + strconv.Itoa(i)] = &kurtosis_testsuite_rpc_api_bindings.TestMetadata{
 			IsPartitioningEnabled: 		false,
 			UsedArtifactUrls:        	map[string]bool{},
 		}
 	}
-	return &bindings.TestSuiteMetadata{
+	return &kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata{
 		TestMetadata: testMetadata,
 		NetworkWidthBits: 0,
 	}
