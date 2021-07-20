@@ -165,7 +165,7 @@ if "${do_run}"; then
     datastore_service_image="${DOCKER_ORG}/example-microservices_datastore"
     internal_suite_params_json='{
         "apiServiceImage" :"'${api_service_image}'",
-        "datastoreServiceImage": "'${datastore_service_image}'",
+        "datastoreServiceImage": "'${datastore_service_image}'"
     }'
     # --------------------- End Kurtosis Go environment variables ---------------------
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
