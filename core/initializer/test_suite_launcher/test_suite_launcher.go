@@ -284,7 +284,7 @@ Generates the map of environment variables needed to run a test suite container
 func (launcher TestsuiteContainerLauncher) generateTestSuiteEnvVars(kurtosisApiSocket string) (map[string]string, error) {
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	standardVars := map[string]string{
-		kurtosis_testsuite_docker_api.CustomParamsJsonEnvVar:        launcher.customParamsJson,
+		kurtosis_testsuite_docker_api.CustomParamsJsonEnvVar:  launcher.customParamsJson,
 		kurtosis_testsuite_docker_api.DebuggerPortEnvVar:      strconv.Itoa(portForDebuggersRunningOnTestsuite),
 		kurtosis_testsuite_docker_api.KurtosisApiSocketEnvVar: kurtosisApiSocket,
 		kurtosis_testsuite_docker_api.LogLevelEnvVar:          launcher.suiteLogLevel,

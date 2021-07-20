@@ -12,6 +12,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -38,12 +40,15 @@ type ApiContainerService struct {
 
 	serviceNetwork service_network.ServiceNetwork
 
+	lambdaStore *lambda_store.LambdaStore
+
 	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
 }
 
-func NewApiContainerService(serviceNetwork service_network.ServiceNetwork) (*ApiContainerService, error) {
+func NewApiContainerService(serviceNetwork service_network.ServiceNetwork, lambdaStore *lambda_store.LambdaStore) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		serviceNetwork: serviceNetwork,
+		lambdaStore:    lambdaStore,
 	}
 
 	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
@@ -57,6 +62,37 @@ func NewApiContainerService(serviceNetwork service_network.ServiceNetwork) (*Api
 	service.bulkCmdExecEngine = bulkCmdExecEngine
 
 	return service, nil
+}
+
+func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadLambdaArgs) (*emptypb.Empty, error) {
+	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	image := args.ContainerImage
+	serializedParams := args.SerializedParams
+	if err := service.lambdaStore.LoadLambda(ctx, lambdaId, image, serializedParams); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred loading Lambda '%v' with container image '%v' and serialized params '%v'", lambdaId, image, serializedParams)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs) (*kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse, error) {
+	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	serializedParams := args.SerializedParams
+	serializedResult, err := service.lambdaStore.ExecuteLambda(ctx, lambdaId, serializedParams)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing Lambda '%v' with serialized params '%v'", lambdaId, serializedParams)
+	}
+	resp := &kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse{SerializedResult: serializedResult}
+	return resp, nil
+}
+
+func (service ApiContainerService) GetLambdaInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetLambdaInfoArgs) (*kurtosis_core_rpc_api_bindings.GetLambdaInfoResponse, error) {
+	lambdaIdStr := args.LambdaId
+	ipAddr, err := service.lambdaStore.GetLambdaIPAddrByID(lambda_store_types.LambdaID(lambdaIdStr))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for Lambda '%v'", lambdaIdStr)
+	}
+	response := &kurtosis_core_rpc_api_bindings.GetLambdaInfoResponse{IpAddr: ipAddr.String()}
+	return response, nil
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
