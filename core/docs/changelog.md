@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Use the testsuite API lib v0.2.0 which reads environment variables directly (so that users don't need to ever touch their Dockerfile)
 
 # 1.16.6
 ### Features
