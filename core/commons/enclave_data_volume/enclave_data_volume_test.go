@@ -18,7 +18,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
+	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
 	testServiceId := "test-service"
 	svcDir, err := enclaveDir.NewServiceDirectory(testServiceId)
@@ -51,7 +51,7 @@ func TestGetArtifactCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
+	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
 	artifactCache, err := enclaveDir.GetArtifactCache()
 	assert.Nil(t, err)
@@ -59,10 +59,10 @@ func TestGetArtifactCache(t *testing.T) {
 	expectedAbsDirpath := path.Join(enclaveDirpath, artifactCacheDirname)
 	_, err = os.Stat(expectedAbsDirpath)
 	assert.Nil(t, err)
-	assert.Equal(t, expectedAbsDirpath, artifactCache.absoluteDirpath)
+	assert.Equal(t, expectedAbsDirpath, artifactCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := artifactCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, artifactCache.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, artifactCache.underlying.dirpathRelativeToVolRoot)
 
 }
 
@@ -70,7 +70,7 @@ func TestGetStaticFileCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
+	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
 	staticFileCache, err := enclaveDir.GetStaticFileCache()
 	assert.Nil(t, err)
@@ -78,9 +78,9 @@ func TestGetStaticFileCache(t *testing.T) {
 	expectedAbsDirpath := path.Join(enclaveDirpath, staticFileCacheDirname)
 	_, err = os.Stat(expectedAbsDirpath)
 	assert.Nil(t, err)
-	assert.Equal(t, expectedAbsDirpath, staticFileCache.absoluteDirpath)
+	assert.Equal(t, expectedAbsDirpath, staticFileCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := staticFileCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, staticFileCache.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, staticFileCache.underlying.dirpathRelativeToVolRoot)
 
 }

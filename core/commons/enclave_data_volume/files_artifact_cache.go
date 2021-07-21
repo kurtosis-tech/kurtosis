@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies LLC.
+ * All Rights Reserved.
+ */
+
+package enclave_data_volume
+
+import (
+	"bufio"
+	"github.com/palantir/stacktrace"
+	"io"
+	"net/http"
+	"os"
+	// This is a special type of import that includes the correct hashing algorithm that we use
+	// If we don't have the "_" in front, Goland will complain it's unused
+	_ "golang.org/x/crypto/sha3"
+)
+
+/*
+A file cache inside the for storing files artifacts, downloaded from the URL
+ */
+type FilesArtifactCache struct {
+	underlying *FileCache
+}
+
+func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *FilesArtifactCache {
+	return &FilesArtifactCache{
+		underlying: newFileCache(absoluteDirpath, dirpathRelativeToVolRoot),
+	}
+}
+
+func (cache FilesArtifactCache) AddFilesArtifact(artifactId string, url string) error {
+	supplier := func(fp *os.File) error {
+		resp, err := http.Get(url)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the data for aritfact '%v'", url, artifactId)
+		}
+		body := resp.Body
+		defer body.Close()
+
+		bufferedWriter := bufio.NewWriter(fp)
+		if _, err := io.Copy(bufferedWriter, body); err != nil {
+			return stacktrace.Propagate(err, "An error occurred copying the files artifact bytes from the response to the filesystem for artifact '%v'", artifactId)
+		}
+		return nil
+	}
+
+	if _, err := cache.underlying.AddFile(artifactId, supplier); err != nil {
+
+		return stacktrace.Propagate(err, "An error occurred downloading the files artifact '%v' from URL '%v'", artifactId, url)
+	}
+	return nil
+}
+
+// Gets the artifact with the given URL, or throws an error if it doesn't exist
+func (cache FilesArtifactCache) GetFilesArtifact(artifactId string) (*EnclaveDataVolFile, error) {
+	result, err := cache.underlying.GetFile(artifactId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact with ID '%v' from the cache", artifactId)
+	}
+	return result, nil
+}

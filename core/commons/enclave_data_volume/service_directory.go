@@ -18,7 +18,7 @@ const (
 	staticFileFilenamePrefix = "static"
 )
 
-// API for interacting with a service's directory inside the suite execution volume
+// API for interacting with a service's directory inside the enclave data volume
 type ServiceDirectory struct {
 	absoluteDirpath          string
 	dirpathRelativeToVolRoot string

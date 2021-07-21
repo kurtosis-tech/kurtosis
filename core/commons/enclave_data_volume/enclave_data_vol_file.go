@@ -20,7 +20,7 @@ func (file EnclaveDataVolFile) GetAbsoluteFilepath() string {
 	return file.absoluteFilepath
 }
 
-// Gets the path to the file relative to the root of the suite execution volume
+// Gets the path to the file relative to the root of the enclave data volume
 func (file EnclaveDataVolFile) GetFilepathRelativeToVolRoot() string {
 	return file.filepathRelativeToVolRoot
 }

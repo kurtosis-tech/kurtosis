@@ -14,18 +14,14 @@ import (
 )
 
 func TestGetFile(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	testId := "someTest"
-
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
-	assert.Nil(t, err)
+	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.NewServiceDirectory(serviceId)
+	svcDir, err := enclaveDir.NewServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
