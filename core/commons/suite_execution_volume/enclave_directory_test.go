@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestGetServiceDirectory(t *testing.T) {
+func TestNewServiceDirectory(t *testing.T) {
 	suiteExVolDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
@@ -49,4 +49,50 @@ func TestGetServiceDirectory(t *testing.T) {
 	relativeSvcDirpath := svcDir.dirpathRelativeToVolRoot
 	assert.Equal(t, path.Join(testId, allServicesDirname), path.Dir(relativeSvcDirpath))
 	assert.True(t, strings.Contains(relativeSvcDirpath, serviceId))
+}
+
+func TestGetArtifactCache(t *testing.T) {
+	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	assert.Nil(t, err)
+
+	testId := "someTest"
+
+	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
+	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
+	assert.Nil(t, err)
+
+	artifactCache, err := testExDir.GetArtifactCache()
+	assert.Nil(t, err)
+
+	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId, artifactCacheDirname)
+	_, err = os.Stat(expectedAbsDirpath)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedAbsDirpath, artifactCache.absoluteDirpath)
+
+	expectedRelativeDirpath := path.Join(testId, artifactCacheDirname)
+	assert.Equal(t, expectedRelativeDirpath, artifactCache.dirpathRelativeToVolRoot)
+
+}
+
+func TestGetStaticFileCache(t *testing.T) {
+	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	assert.Nil(t, err)
+
+	testId := "someTest"
+
+	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
+	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
+	assert.Nil(t, err)
+
+	staticFileCache, err := testExDir.GetStaticFileCache()
+	assert.Nil(t, err)
+
+	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId, staticFileCacheDirname)
+	_, err = os.Stat(expectedAbsDirpath)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedAbsDirpath, staticFileCache.absoluteDirpath)
+
+	expectedRelativeDirpath := path.Join(testId, staticFileCacheDirname)
+	assert.Equal(t, expectedRelativeDirpath, staticFileCache.dirpathRelativeToVolRoot)
+
 }

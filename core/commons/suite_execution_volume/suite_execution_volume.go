@@ -14,14 +14,6 @@ import (
 const (
 	suiteMetadataFilename = "suite-metadata.json"
 
-	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where artifacts are being
-	//  a) stored using the initializer and b) retrieved using the files artifact expander
-	artifactCacheDirname = "artifact-cache"
-
-	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where static files from the
-	//  testsuite container are stored, and used when launching services
-	staticFileCacheDirname = "static-file-cache"
-
 	enclaveNameJoinChar = "_"
 )
 
@@ -45,23 +37,3 @@ func (volume SuiteExecutionVolume) GetEnclaveDirectory(enclaveNameElems []string
 	}
 	return newEnclaveDirectory(absoluteDirpath, relativeDirpath), nil
 }
-
-func (volume SuiteExecutionVolume) GetArtifactCache() (*ArtifactCache, error) {
-	relativeDirpath := artifactCacheDirname
-	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
-	if err := ensureDirpathExists(absoluteDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring artifact cache dirpath '%v' exists", absoluteDirpath)
-	}
-
-	return newArtifactCache(absoluteDirpath, relativeDirpath), nil
-}
-
-func (volume SuiteExecutionVolume) GetStaticFileCache() (*StaticFileCache, error) {
-	relativeDirpath := staticFileCacheDirname
-	absoluteDirpath := path.Join(volume.mountDirpath, relativeDirpath)
-	if err := ensureDirpathExists(absoluteDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring static file cache dirpath '%v' exists", absoluteDirpath)
-	}
-	return newStaticFileCache(absoluteDirpath, relativeDirpath), nil
-}
-

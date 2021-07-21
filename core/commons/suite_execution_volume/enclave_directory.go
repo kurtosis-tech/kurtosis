@@ -14,6 +14,14 @@ import (
 
 const (
 	allServicesDirname = "services"
+
+	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where artifacts are being
+	//  a) stored using the initializer and b) retrieved using the files artifact expander
+	artifactCacheDirname = "artifact-cache"
+
+	// The name of the directory INSIDE THE TEST EXECUTION VOLUME where static files from the
+	//  testsuite container are stored, and used when launching services
+	staticFileCacheDirname = "static-file-cache"
 )
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
@@ -28,13 +36,33 @@ func newEnclaveDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 	return &EnclaveDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
+
+func (enclaveDir EnclaveDirectory) GetArtifactCache() (*ArtifactCache, error) {
+	relativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, artifactCacheDirname)
+	absoluteDirpath := path.Join(enclaveDir.absoluteDirpath, artifactCacheDirname)
+	if err := ensureDirpathExists(absoluteDirpath); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring artifact cache dirpath '%v' exists", absoluteDirpath)
+	}
+
+	return newArtifactCache(absoluteDirpath, relativeDirpath), nil
+}
+
+func (enclaveDir EnclaveDirectory) GetStaticFileCache() (*StaticFileCache, error) {
+	relativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, staticFileCacheDirname)
+	absoluteDirpath := path.Join(enclaveDir.absoluteDirpath, staticFileCacheDirname)
+	if err := ensureDirpathExists(absoluteDirpath); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring static file cache dirpath '%v' exists", absoluteDirpath)
+	}
+	return newStaticFileCache(absoluteDirpath, relativeDirpath), nil
+}
+
 // Creates a new, unique service directory for a service with the given service ID
-func (executionDir EnclaveDirectory) NewServiceDirectory(serviceId string) (*ServiceDirectory, error) {
-	allServicesAbsoluteDirpath := path.Join(executionDir.absoluteDirpath, allServicesDirname)
+func (enclaveDir EnclaveDirectory) NewServiceDirectory(serviceId string) (*ServiceDirectory, error) {
+	allServicesAbsoluteDirpath := path.Join(enclaveDir.absoluteDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside test execution dir", allServicesAbsoluteDirpath)
 	}
-	allServicesRelativeDirpath := path.Join(executionDir.dirpathRelativeToVolRoot, allServicesDirname)
+	allServicesRelativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, allServicesDirname)
 
 	uniqueId := uuid.New()
 	serviceDirname := fmt.Sprintf("%v_%v", serviceId, uniqueId.String())

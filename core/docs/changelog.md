@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added a test for the static file cache
 
 # 1.16.6
 ### Features
