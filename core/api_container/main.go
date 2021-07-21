@@ -246,7 +246,7 @@ func createLambdaStore(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
 		dockerNetworkId string,
-		suiteExVolName string) *lambda_store.LambdaStore {
+		enclaveDataVolName string) *lambda_store.LambdaStore {
 	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
 		dockerManager,
 		apiContainerIpAddr,
@@ -254,7 +254,7 @@ func createLambdaStore(
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
 		dockerNetworkId,
-		suiteExVolName,
+		enclaveDataVolName,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)

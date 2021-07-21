@@ -60,7 +60,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "used_ports": {
                         "1323/tcp": true
                     },
-                    "suite_execution_vol_mnt_dirpath": "/test-volume"
+                    "enclave_data_vol_mnt_dirpath": "/test-volume"
                 }
             },
             {
@@ -89,7 +89,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "used_ports": {
                         "1323/tcp": true
                     },
-                    "suite_execution_vol_mnt_dirpath": "/test-volume"
+                    "enclave_data_vol_mnt_dirpath": "/test-volume"
                 }
             },
             {
@@ -139,7 +139,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "used_ports": {
                         "1323/tcp": true
                     },
-                    "suite_execution_vol_mnt_dirpath": "/test-volume"
+                    "enclave_data_vol_mnt_dirpath": "/test-volume"
                 }
             },
             {

@@ -213,7 +213,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	return ip, nil
 }
 
-// Generates files in a location in the suite execution volume allocated to the given service
+// Generates files in a location in the enclave data volume allocated to the given service
 func (network *ServiceNetworkImpl) GenerateFiles(
 		serviceId service_network_types.ServiceID,
 		filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions) (map[string]string, error) {

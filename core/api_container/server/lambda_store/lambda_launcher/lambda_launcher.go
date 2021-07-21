@@ -45,11 +45,11 @@ type LambdaLauncher struct {
 
 	dockerNetworkId string
 
-	suiteExecutionVolumeName string
+	enclaveDataVolName string
 }
 
-func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, suiteExecutionVolumeName string) *LambdaLauncher {
-	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, suiteExecutionVolumeName: suiteExecutionVolumeName}
+func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
+	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
 
 func (launcher LambdaLauncher) Launch(
@@ -88,7 +88,7 @@ func (launcher LambdaLauncher) Launch(
 	}
 
 	volumeMounts := map[string]string{
-		launcher.suiteExecutionVolumeName: kurtosis_lambda_docker_api.ExecutionVolumeMountpoint,
+		launcher.enclaveDataVolName: kurtosis_lambda_docker_api.ExecutionVolumeMountpoint,
 	}
 
 	containerId, err := launcher.dockerManager.CreateAndStartContainer(

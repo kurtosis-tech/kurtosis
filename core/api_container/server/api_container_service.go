@@ -264,7 +264,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	serviceID := service_network_types.ServiceID(args.ServiceId)
 	enclaveDataVolMntDirpath, err :=service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service enclave data volume directory path by service ID: '%v'",
 			serviceID)
 	}
 

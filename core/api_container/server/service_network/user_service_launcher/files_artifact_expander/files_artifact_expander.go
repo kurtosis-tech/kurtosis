@@ -26,7 +26,7 @@ const (
 	//  into a Docker volume
 	dockerImage = "alpine:3.12"
 
-	// Dirpath on the artifact expander container where the suite execution volume (which contains the artifacts)
+	// Dirpath on the artifact expander container where the enclave data volume (which contains the artifacts)
 	//  will be mounted
 	enclaveDataVolMountpointOnExpanderContainer = "/enclave-data"
 
