@@ -7,7 +7,6 @@ package user_service_launcher
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
@@ -15,22 +14,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
-	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
 	"net"
-	"strings"
-	"time"
 )
 
 /*
 Convenience struct whose only purpose is launching user services
  */
 type UserServiceLauncher struct {
-	// Elements which will get prefixed to the volume name when doing files artifact expansion
-	filesArtifactExpansionVolumeNamePrefixElems []string
-
 	dockerManager *docker_manager.DockerManager
 
 	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
@@ -39,20 +30,17 @@ type UserServiceLauncher struct {
 
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 
-	artifactCache *enclave_data_volume.FilesArtifactCache
-
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
 	dockerNetworkId string
 
-	// The name of the Docker volume containing data for this suite execution that will be mounted on this service
-	suiteExecutionVolName string
+	// The name of the Docker volume containing data for the enclave
+	enclaveDataVolName string
 }
 
-func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, artifactCache *enclave_data_volume.FilesArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, enclaveDataVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
-
 
 /**
 Launches a testnet service with the given parameters
@@ -70,32 +58,34 @@ func (launcher UserServiceLauncher) Launch(
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		suiteExecutionVolMntDirpath string,
-		// Mapping artifactUrl -> mountpoint
-		artifactUrlToMountDirpath map[string]string) (string, map[nat.Port]*nat.PortBinding, error) {
+		enclaveDataVolMntDirpath string,
+		// Mapping files artifact ID -> mountpoint on the container to launch
+		filesArtifactIdsToMountpoints map[string]string) (string, map[nat.Port]*nat.PortBinding, error) {
+
+	usedArtifactIdSet := map[string]bool{}
+	for artifactId := range filesArtifactIdsToMountpoints {
+		usedArtifactIdSet[artifactId] = true
+	}
+
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactToVolName := map[enclave_data_volume.Artifact]string{}
-	artifactVolToMountpoint := map[string]string{}
-	for artifactUrl, mountDirpath := range artifactUrlToMountDirpath {
-		logrus.Debugf("Hashing artifact URL '%v' to be mounted at '%v'...", artifactUrl, mountDirpath)
-		artifact, err := launcher.artifactCache.GetFilesArtifact(artifactUrl)
-		if err != nil {
-			return "", nil, stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)
-		}
-		artifactUrlHash := artifact.GetUrlHash()
-		destVolName := launcher.getExpandedFilesArtifactVolName(
-			serviceId,
-			artifactUrlHash)
-		artifactToVolName[*artifact] = destVolName
-		artifactVolToMountpoint[destVolName] = mountDirpath
+	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceId, usedArtifactIdSet)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
-	if err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceId, artifactToVolName); err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"An error occurred expanding the requested artifacts for service '%v' into Docker volumes",
-			serviceId)
+
+	artifactVolumeMounts := map[string]string{}
+	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
+		artifactVolume, found := artifactIdsToVolumes[artifactId]
+		if !found {
+			return "", nil, stacktrace.NewError(
+				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the " +
+					"expanded contents was found; this is a bug in Kurtosis",
+				artifactId,
+			)
+		}
+		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
 	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
@@ -107,9 +97,9 @@ func (launcher UserServiceLauncher) Launch(
 	}
 
 	volumeMounts := map[string]string{
-		launcher.suiteExecutionVolName: suiteExecutionVolMntDirpath,
+		launcher.enclaveDataVolName: enclaveDataVolMntDirpath,
 	}
-	for artifactVolName, mountpoint := range artifactVolToMountpoint {
+	for artifactVolName, mountpoint := range artifactVolumeMounts {
 		volumeMounts[artifactVolName] = mountpoint
 	}
 
@@ -133,20 +123,4 @@ func (launcher UserServiceLauncher) Launch(
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
 	return containerId, usedPortsWithHostBindings, nil
-}
-
-// ==================================================================================================
-//                                     Private helper functions
-// ==================================================================================================
-func (launcher UserServiceLauncher) getExpandedFilesArtifactVolName(
-		serviceId service_network_types.ServiceID,
-		artifactUrlHash string) string {
-	timestampStr := time.Now().Format(volume_naming_consts.GoTimestampFormat)
-	prefix := strings.Join(launcher.filesArtifactExpansionVolumeNamePrefixElems, "_")
-	return fmt.Sprintf(
-		"%v_%v_%v_%v",
-		timestampStr,
-		prefix,
-		serviceId,
-		artifactUrlHash)
 }

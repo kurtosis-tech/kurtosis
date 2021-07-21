@@ -42,8 +42,8 @@ type serviceRunInfo struct {
 	// Service's container ID
 	containerId string
 
-	// Where the suite execution volume is mounted on the service
-	suiteExecutionVolumeMountDirpath string
+	// Where the enclave data volume is mounted on the service
+	enclaveDataVolMntDirpath string
 }
 
 /*
@@ -65,9 +65,7 @@ type ServiceNetworkImpl struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	testExecutionDirectory *enclave_data_volume.EnclaveDataVolume
-
-	staticFileCache *enclave_data_volume.StaticFileCache
+	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -87,20 +85,18 @@ func NewServiceNetworkImpl(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
-		testExecutionDirectory *enclave_data_volume.EnclaveDataVolume,
-		staticFileCache *enclave_data_volume.StaticFileCache,
+		enclaveDataVolume *enclave_data_volume.EnclaveDataVolume,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
 	return &ServiceNetworkImpl{
-		isDestroyed: false,
+		isDestroyed:           false,
 		isPartitioningEnabled: isPartitioningEnabled,
-		freeIpAddrTracker: freeIpAddrTracker,
-		dockerManager: dockerManager,
-		testExecutionDirectory: testExecutionDirectory,
-		staticFileCache: staticFileCache,
-		userServiceLauncher: userServiceLauncher,
-		mutex:               &sync.Mutex{},
+		freeIpAddrTracker:     freeIpAddrTracker,
+		dockerManager:         dockerManager,
+		enclaveDataVolume:     enclaveDataVolume,
+		userServiceLauncher:   userServiceLauncher,
+		mutex:                 &sync.Mutex{},
 		topology:            partition_topology.NewPartitionTopology(
 			defaultPartitionId,
 			defaultPartitionConnection,
@@ -174,7 +170,7 @@ func (network ServiceNetworkImpl) RegisterService(
 		)
 	}
 
-	serviceDirectory, err := network.testExecutionDirectory.NewServiceDirectory(string(serviceId))
+	serviceDirectory, err := network.enclaveDataVolume.NewServiceDirectory(string(serviceId))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new service directory for service with ID '%v'", serviceId)
 	}
@@ -270,9 +266,14 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 	}
 	serviceDirectory := registrationInfo.serviceDirectory
 
+	staticFileCache, err := network.enclaveDataVolume.GetStaticFileCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the static file cache")
+	}
+
 	result := map[string]string{}
 	for staticFileId := range staticFileIdKeys {
-		src, err := network.staticFileCache.GetStaticFile(staticFileId)
+		src, err := staticFileCache.GetStaticFile(staticFileId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the source static file with key '%v' from the static file cache", staticFileId)
 		}
@@ -321,7 +322,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		suiteExecutionVolMntDirpath string,
+		enclaveDataVolMntDirpath string,
 		filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
@@ -373,7 +374,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
-		suiteExecutionVolMntDirpath,
+		enclaveDataVolMntDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -381,8 +382,8 @@ func (network *ServiceNetworkImpl) StartService(
 			"An error occurred creating the user service container")
 	}
 	runInfo := serviceRunInfo{
-		containerId:                      serviceContainerId,
-		suiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+		containerId:              serviceContainerId,
+		enclaveDataVolMntDirpath: enclaveDataVolMntDirpath,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
 
@@ -484,11 +485,11 @@ func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.
 	return registrationInfo.ipAddr, nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return "", stacktrace.NewError("Cannot get suite execution volume mount directory path; the service network has been destroyed")
+		return "", stacktrace.NewError("Cannot get enclave data mount directory path; the service network has been destroyed")
 	}
 
 	runInfo, found := network.serviceRunInfo[serviceId]
@@ -496,7 +497,7 @@ func (network *ServiceNetworkImpl) GetServiceSuiteExecutionVolMntDirpath(service
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
 
-	return runInfo.suiteExecutionVolumeMountDirpath, nil
+	return runInfo.enclaveDataVolMntDirpath, nil
 }
 
 // Destroy all services the network is tracking, as well as make the network not usable anymore

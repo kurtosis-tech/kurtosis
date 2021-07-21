@@ -62,7 +62,7 @@ func (m MockServiceNetwork) GetServiceIP(serviceId service_network_types.Service
 	return ip, nil
 }
 
-func (m MockServiceNetwork) GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+func (m MockServiceNetwork) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
 	volMntDirPath, found := m.serviceSuiteExecutionVolMntDirpaths[serviceId]
 	if !found {
 		return "", stacktrace.NewError("No volume directory path defined for service with ID '%v'", serviceId)

@@ -213,7 +213,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
-		args.SuiteExecutionVolMntDirpath,
+		args.EnclaveDataVolMntDirpath,
 		args.FilesArtifactMountDirpaths)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -262,15 +262,15 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 
 	serviceID := service_network_types.ServiceID(args.ServiceId)
-	suiteExecutionVolMntDirpath, err :=service.serviceNetwork.GetServiceSuiteExecutionVolMntDirpath(serviceID)
+	enclaveDataVolMntDirpath, err :=service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
 			serviceID)
 	}
 
 	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr: serviceIP.String(),
-		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+		IpAddr:                        serviceIP.String(),
+		EnclaveDataVolumeMountDirpath: enclaveDataVolMntDirpath,
 	}
 	return serviceInfoResponse, nil
 }
