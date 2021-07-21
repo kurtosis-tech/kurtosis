@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
@@ -17,12 +18,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -36,7 +39,9 @@ const (
 
 type ApiContainerService struct {
 	// This embedding is required by gRPC
-	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
+	// kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
+
+	enclaveDirectory *suite_execution_volume.EnclaveDirectory
 
 	serviceNetwork service_network.ServiceNetwork
 
@@ -93,6 +98,57 @@ func (service ApiContainerService) GetLambdaInfo(ctx context.Context, args *kurt
 	}
 	response := &kurtosis_core_rpc_api_bindings.GetLambdaInfoResponse{IpAddr: ipAddr.String()}
 	return response, nil
+}
+
+func (service ApiContainerService) RegisterStaticFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterStaticFilesArgs) (*kurtosis_core_rpc_api_bindings.RegisterStaticFilesResponse, error) {
+	panic("implement me")
+
+	// NOTE: Maybe we want this code moved somewhere else?
+	logrus.Debugf("Copying static files from the testsuite to the static file cache...")
+	usedStaticFiles := suiteMetadata.GetStaticFiles()
+	staticFileRelativeFilepaths := map[string]string{}
+	for staticFileId := range usedStaticFiles {
+		file, err := staticFilesCache.RegisterEntry(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred registering static file key '%v' in the static file cache", staticFileId)
+		}
+		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
+	}
+	copyStaticFilesArgs := &kurtosis_testsuite_rpc_api_bindings.CopyStaticFilesToExecutionVolumeArgs{
+		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
+	}
+	// TODO PERF: If copying all the static files becomes expensive perf-wise, we could have tests register
+	//  which static files they'll use and only tell the testsuite to copy those
+	if _, err := testsuiteClient.CopyStaticFilesToExecutionVolume(parentContext, copyStaticFilesArgs); err != nil {
+		printContainerLogsWithBanners(
+			dockerManager,
+			parentContext,
+			containerId,
+			logrus.StandardLogger(),
+			metadataProvidingTestsuiteContainerTitle,
+		)
+		return nil, stacktrace.Propagate(err, "An error occurred instructing the testsuite to copy its static files into the locations we provided")
+	}
+	logrus.Debugf("Successfully copied testsuite static files to the static file cache")
+
+}
+
+func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
+	panic("implement me")
+	for artifactUrl := range testMetadata.UsedArtifactUrls {
+		if len(strings.TrimSpace(artifactUrl)) == 0 {
+			return stacktrace.NewError("Found empty used artifact URL: %v", artifactUrl)
+		}
+	}
+	// Download any required artifacts for the tests being run
+	logrus.Debug("Downloading artifacts used by the tests...")
+	if err := downloadUsedArtifacts(artifactCache, testNamesToRun, testSuiteMetadata); err != nil {
+		return false, stacktrace.Propagate(
+			err,
+			"An error occurred downloading the artifacts needed by the tests being run")
+	}
+	logrus.Debug("Test artifacts downloaded successfully")
+
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
@@ -409,3 +465,21 @@ func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (ne
 	return serviceIP, nil
 }
 
+// Downloads only the artifacts that are needed by the tests being run (i.e. not any artifacts used by
+// 	tests which aren't being run)
+func downloadUsedArtifacts(
+	artifactCache *suite_execution_volume.ArtifactCache,
+	testNames map[string]bool,
+	suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
+	allTestMetadata := suiteMetadata.TestMetadata
+	// TODO PERF: parallelize to speed this up
+	for testName := range testNames {
+		testMetadata := allTestMetadata[testName]
+		for artifactUrl := range testMetadata.UsedArtifactUrls {
+			if err := artifactCache.AddArtifact(artifactUrl); err != nil {
+				return stacktrace.Propagate(err, "An error occurred adding artifact with URL '%v' to the artifact cache", artifactUrl)
+			}
+		}
+	}
+	return nil
+}

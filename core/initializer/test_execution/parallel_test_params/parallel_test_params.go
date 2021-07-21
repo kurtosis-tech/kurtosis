@@ -19,12 +19,9 @@ type ParallelTestParams struct {
 
 	TestRunTimeoutSeconds uint32
 
-	UsedArtifactUrls map[string]bool
-
 	IsPartitioningEnabled bool
 }
 
-func NewParallelTestParams(testName string, subnetMask string, testSetupTimeout uint32, testRunTimeout uint32, usedArtifactUrls map[string]bool, isPartitioningEnabled bool) *ParallelTestParams {
-	return &ParallelTestParams{TestName: testName, SubnetMask: subnetMask, TestSetupTimeoutSeconds: testSetupTimeout, TestRunTimeoutSeconds: testRunTimeout, UsedArtifactUrls: usedArtifactUrls, IsPartitioningEnabled: isPartitioningEnabled}
+func NewParallelTestParams(testName string, subnetMask string, testSetupTimeoutSeconds uint32, testRunTimeoutSeconds uint32, isPartitioningEnabled bool) *ParallelTestParams {
+	return &ParallelTestParams{TestName: testName, SubnetMask: subnetMask, TestSetupTimeoutSeconds: testSetupTimeoutSeconds, TestRunTimeoutSeconds: testRunTimeoutSeconds, IsPartitioningEnabled: isPartitioningEnabled}
 }
-

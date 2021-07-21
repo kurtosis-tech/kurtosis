@@ -283,19 +283,12 @@ func main() {
 		hostPortBindingSupplier,
 	)
 
-	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
-	if err != nil {
-		logrus.Errorf("An error occurred getting the static file cache: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadataAndInitializeStaticFilesCache(
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher,
-		staticFileCache,
 	)
 	if err != nil {
-		logrus.Errorf("An error occurred getting the test suite metadata & initializing the static file cache: %v", err)
+		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
 	}
 
@@ -310,12 +303,6 @@ func main() {
 	}
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
-
-	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
-	if err != nil {
-		logrus.Errorf("An error occurred getting the artifact cache: %v", err)
-		os.Exit(failureExitCode)
-	}
 
 	var parallelismUint uint
 	if isDebugMode {

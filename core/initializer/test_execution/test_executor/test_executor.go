@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -219,7 +218,6 @@ func RunTest(
 
 	if err := streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx,
-		testTeardownContext,
 		log,
 		dockerManager,
 		testsuiteContainerId,
@@ -245,7 +243,6 @@ func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client kurtosis
 // NOTE: This function makes heavy use of deferred functions, to simplify the code
 func streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx context.Context,
-		testTeardownCtx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
@@ -274,15 +271,47 @@ func streamTestsuiteLogsWhileRunningTest(
 		}()
 	}
 
+	testName := testParams.TestName
+
+	// NOTE: We could add a timeout here if necessary
+	log.Tracef("%Registering test files...", initializerLogPrefix)
+	registerFilesArgs := &kurtosis_testsuite_rpc_api_bindings.RegisterFilesArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.RegisterFiles(testSetupExecutionCtx, registerFilesArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred registering the files for test '%v'", testName)
+	}
+	log.Tracef("%Test files registered successfully", initializerLogPrefix)
+
+	// Setup the test network before running the test
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
+	if err := setupTestWithTimeout(testSetupExecutionCtx, setupTimeout, testName, testsuiteServiceClient); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting up the test")
+	}
+	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
+
+	// Run the test using the setup network
+	runTimeout := time.Duration(testParams.TestRunTimeoutSeconds) * time.Second
+	log.Tracef("%vRunning test with run timeout of %v...", initializerLogPrefix, runTimeout)
+	if err := runTestWithTimeout(testSetupExecutionCtx, runTimeout, testName, testsuiteServiceClient); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running the test")
+	}
+	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
+
+	return nil
+}
+
+func setupTestWithTimeout(
+		testSetupExecutionCtx context.Context,
+		setupTimeout time.Duration,
+		testName string,
+		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
 		setupTimeout,
 	)
 	defer testSetupCtxCancelFunc()
 	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{
-		TestName: testParams.TestName,
+		TestName: testName,
 	}
 	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
@@ -290,32 +319,26 @@ func streamTestsuiteLogsWhileRunningTest(
 		}
 		return stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
 	}
-	log.Tracef("%vTest setup completed successfully", initializerLogPrefix)
+	return nil
+}
 
-	runTimeout := time.Duration(testParams.TestRunTimeoutSeconds) * time.Second
-	log.Tracef("%vRunning test with run timeout of %v...", initializerLogPrefix, runTimeout)
+func runTestWithTimeout(
+		testSetupExecutionCtx context.Context,
+		runTimeout time.Duration,
+		testName string,
+		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
 		testSetupExecutionCtx,
 		runTimeout,
 	)
 	defer testRunCtxCancelFunc()
-	if _, err := testsuiteServiceClient.RunTest(testRunCtx, &empty.Empty{}); err != nil {
+	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test run timeout exceeded")
 		}
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
-	log.Tracef("%vTest run completed successfully", initializerLogPrefix)
-
-	// TODO This shouldn't be necessary (the network cleanup should stop all containers) BUT we have a bug
-	//  where the call to LogStreamer.Stop will hang while the container is still running
-	//  See also: https://github.com/kurtosis-tech/kurtosis-core/issues/222
-	if err := dockerManager.StopContainer(testTeardownCtx, testsuiteContainerId, testsuiteGracefulStopTimeout); err != nil {
-		// Warning level because we'll tear down the testsuite container as we tear down the network
-		log.Warnf("%vAn error occurred stopping the testsuite container:", initializerLogPrefix)
-		fmt.Fprintln(log.Out, err.Error())
-	}
-
 	return nil
 }
 

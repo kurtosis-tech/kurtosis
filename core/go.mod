@@ -17,9 +17,9 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719180545-e21b98013e6f
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210721011832-8505f0c77311
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
-	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210720025347-26fa18b06b80
+	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210721164820-1709d951e954
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
