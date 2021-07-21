@@ -21,7 +21,6 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		"1234-abcd",
 		"5678-efgh",
 		nil,
-		nil,
 		suiteMetadata,
 		map[string]bool{},
 		1,
@@ -41,7 +40,6 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		"1234-abcd",
 		"5678-efgh",
 		nil,
-		nil,
 		suiteMetadata,
 		map[string]bool{},
 		1,
@@ -55,8 +53,9 @@ func getTestingSuiteMetadata(numTests int) *kurtosis_testsuite_rpc_api_bindings.
 	testMetadata := map[string]*kurtosis_testsuite_rpc_api_bindings.TestMetadata{}
 	for i := 0; i < numTests; i++ {
 		testMetadata["test" + strconv.Itoa(i)] = &kurtosis_testsuite_rpc_api_bindings.TestMetadata{
-			IsPartitioningEnabled: 		false,
-			UsedArtifactUrls:        	map[string]bool{},
+			IsPartitioningEnabled:     false,
+			TestSetupTimeoutInSeconds: 60,
+			TestRunTimeoutInSeconds:   60,
 		}
 	}
 	return &kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata{

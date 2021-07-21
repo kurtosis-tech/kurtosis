@@ -87,6 +87,7 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210718200020-38f18be7a4
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719180545-e21b98013e6f h1:SsRooQSdXmDYzZC9HqAJcreUHWUUFjiXoGR6uvaSSF0=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210719180545-e21b98013e6f/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210721011832-8505f0c77311/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210721213025-126211c46251 h1:UouN3zTEkzkmOD7yWJA9clBnHp5VMt3fNnPttRPRnls=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210721213025-126211c46251/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c h1:hBA/N93ibR0O1f4tXzQ5hsokIdcaZ8Qkiwlhlls3odA=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=

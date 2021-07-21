@@ -231,6 +231,7 @@ func RunTest(
 
 	if err := streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx,
+		testTeardownContext,
 		log,
 		dockerManager,
 		testsuiteContainerId,
@@ -256,6 +257,7 @@ func waitUntilTestsuiteContainerIsAvailable(ctx context.Context, client kurtosis
 // NOTE: This function makes heavy use of deferred functions, to simplify the code
 func streamTestsuiteLogsWhileRunningTest(
 		testSetupExecutionCtx context.Context,
+		testTeardownCtx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
@@ -284,15 +286,24 @@ func streamTestsuiteLogsWhileRunningTest(
 		}()
 	}
 
+	// We need to stop the container BEFORE we stop the logstreamer to ensure that it flushes its logs and sends
+	//  an EOF
+	defer func() {
+		if err := dockerManager.StopContainer(testTeardownCtx, testsuiteContainerId, containerTeardownTimeout); err != nil {
+				log.Errorf("An error occurred stopping the testsuite container; this will likely cause a log streamer error:")
+				fmt.Fprintln(log.Out, err)
+		}
+	}()
+
 	testName := testParams.TestName
 
 	// NOTE: We could add a timeout here if necessary
-	log.Tracef("%Registering test files...", initializerLogPrefix)
+	log.Tracef("%vRegistering test files...", initializerLogPrefix)
 	registerFilesArgs := &kurtosis_testsuite_rpc_api_bindings.RegisterFilesArgs{TestName: testName}
 	if _, err := testsuiteServiceClient.RegisterFiles(testSetupExecutionCtx, registerFilesArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred registering the files for test '%v'", testName)
 	}
-	log.Tracef("%Test files registered successfully", initializerLogPrefix)
+	log.Tracef("%vTest files registered successfully", initializerLogPrefix)
 
 	// Setup the test network before running the test
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second

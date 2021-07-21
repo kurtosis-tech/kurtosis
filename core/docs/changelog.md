@@ -2,6 +2,9 @@
 ### Features
 * Added a test for the static file cache
 
+### Fixes
+* Stopped the scary `use of closed network connection` error from appearing, as it's expected
+
 ### Breaking Changes
 * `kurtosis.sh` no longer creates a suite execution volume, and the initializer container no longer accepts a param for it
 
