@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package suite_execution_volume
+package enclave_data_volume
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -43,7 +43,7 @@ func TestGetFile(t *testing.T) {
 	fileInfo := files[0]
 	assert.True(t, strings.Contains(fileInfo.Name(), filename))
 
-	// Check File data structure is correct
+	// Check EnclaveDataVolFile data structure is correct
 	assert.Equal(
 		t,
 		svcAbsDirpath,

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package suite_execution_volume
+package enclave_data_volume
 
 import (
 	"fmt"

@@ -3,14 +3,14 @@
  * All Rights Reserved.
  */
 
-package suite_execution_volume
+package enclave_data_volume
 
 type Artifact struct {
 	urlHash string
-	file *File
+	file *EnclaveDataVolFile
 }
 
-func newArtifact(urlHash string, file *File) *Artifact {
+func newArtifact(urlHash string, file *EnclaveDataVolFile) *Artifact {
 	return &Artifact{urlHash: urlHash, file: file}
 }
 
@@ -18,6 +18,6 @@ func (artifact Artifact) GetUrlHash() string {
 	return artifact.urlHash
 }
 
-func (artifact Artifact) GetFile() *File {
+func (artifact Artifact) GetFile() *EnclaveDataVolFile {
 	return artifact.file
 }
