@@ -25,21 +25,19 @@ const (
 )
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
-// In testing, this will correspond to the name of the test
-// In interactive mode, this will be the enclave in which the user's test network is running
+// An enclave is created either per-test (in the testing framework) or per interactive instance (with Kurtosis Interactive)
 type EnclaveDirectory struct {
-	absoluteDirpath          string
-	dirpathRelativeToVolRoot string
+	absMountDirpath string
 }
 
-func newEnclaveDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string) *EnclaveDirectory {
-	return &EnclaveDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
+func NewEnclaveDirectory(absMountDirpath string) *EnclaveDirectory {
+	return &EnclaveDirectory{absMountDirpath: absMountDirpath}
 }
 
 
 func (enclaveDir EnclaveDirectory) GetArtifactCache() (*ArtifactCache, error) {
-	relativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, artifactCacheDirname)
-	absoluteDirpath := path.Join(enclaveDir.absoluteDirpath, artifactCacheDirname)
+	relativeDirpath := artifactCacheDirname
+	absoluteDirpath := path.Join(enclaveDir.absMountDirpath, artifactCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring artifact cache dirpath '%v' exists", absoluteDirpath)
 	}
@@ -48,8 +46,8 @@ func (enclaveDir EnclaveDirectory) GetArtifactCache() (*ArtifactCache, error) {
 }
 
 func (enclaveDir EnclaveDirectory) GetStaticFileCache() (*StaticFileCache, error) {
-	relativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, staticFileCacheDirname)
-	absoluteDirpath := path.Join(enclaveDir.absoluteDirpath, staticFileCacheDirname)
+	relativeDirpath := staticFileCacheDirname
+	absoluteDirpath := path.Join(enclaveDir.absMountDirpath, staticFileCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring static file cache dirpath '%v' exists", absoluteDirpath)
 	}
@@ -58,17 +56,17 @@ func (enclaveDir EnclaveDirectory) GetStaticFileCache() (*StaticFileCache, error
 
 // Creates a new, unique service directory for a service with the given service ID
 func (enclaveDir EnclaveDirectory) NewServiceDirectory(serviceId string) (*ServiceDirectory, error) {
-	allServicesAbsoluteDirpath := path.Join(enclaveDir.absoluteDirpath, allServicesDirname)
+	allServicesRelativeDirpath := allServicesDirname
+	allServicesAbsoluteDirpath := path.Join(enclaveDir.absMountDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside test execution dir", allServicesAbsoluteDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside the enclave data dir", allServicesAbsoluteDirpath)
 	}
-	allServicesRelativeDirpath := path.Join(enclaveDir.dirpathRelativeToVolRoot, allServicesDirname)
 
 	uniqueId := uuid.New()
 	serviceDirname := fmt.Sprintf("%v_%v", serviceId, uniqueId.String())
 	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, serviceDirname)
 	if err := ensureDirpathExists(absoluteServiceDirpath); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred ensuring service dirpath '%v' exists inside test execution dir", absoluteServiceDirpath)
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring service dirpath '%v' exists inside the enclave data dir", absoluteServiceDirpath)
 	}
 	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, serviceDirname)
 	return newServiceDirectory(absoluteServiceDirpath, relativeServiceDirpath), nil

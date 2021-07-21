@@ -15,21 +15,17 @@ import (
 )
 
 func TestNewServiceDirectory(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	testId := "someTest"
+	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
 
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
+	testServiceId := "test-service"
+	svcDir, err := enclaveDir.NewServiceDirectory(testServiceId)
 	assert.Nil(t, err)
 
-	serviceId := "someService"
-
-	svcDir, err := testExDir.NewServiceDirectory(serviceId)
-	assert.Nil(t, err)
-
-	allSvcsDirpath := path.Join(suiteExVolDirpath, testId, allServicesDirname)
+	// Test that all-services dir got created
+	allSvcsDirpath := path.Join(enclaveDirpath, allServicesDirname)
 	_, err = os.Stat(allSvcsDirpath)
 	assert.Nil(t, err)
 
@@ -40,59 +36,51 @@ func TestNewServiceDirectory(t *testing.T) {
 	createdDir := files[0]
 	// We add a UUID to each service so they don't conflict, so the name won't match exactly
 	// This is why we use "contains"
-	strings.Contains(createdDir.Name(), serviceId)
+	strings.Contains(createdDir.Name(), testServiceId)
 
 	absoluteSvcDirpath := svcDir.absoluteDirpath
 	assert.Equal(t, allSvcsDirpath, path.Dir(absoluteSvcDirpath))
-	assert.True(t, strings.Contains(absoluteSvcDirpath, serviceId))
+	assert.True(t, strings.Contains(absoluteSvcDirpath, testServiceId))
 
 	relativeSvcDirpath := svcDir.dirpathRelativeToVolRoot
-	assert.Equal(t, path.Join(testId, allServicesDirname), path.Dir(relativeSvcDirpath))
-	assert.True(t, strings.Contains(relativeSvcDirpath, serviceId))
+	assert.Equal(t, path.Join(allServicesDirname), path.Dir(relativeSvcDirpath))
+	assert.True(t, strings.Contains(relativeSvcDirpath, testServiceId))
 }
 
 func TestGetArtifactCache(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	testId := "someTest"
+	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
 
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
+	artifactCache, err := enclaveDir.GetArtifactCache()
 	assert.Nil(t, err)
 
-	artifactCache, err := testExDir.GetArtifactCache()
-	assert.Nil(t, err)
-
-	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId, artifactCacheDirname)
+	expectedAbsDirpath := path.Join(enclaveDirpath, artifactCacheDirname)
 	_, err = os.Stat(expectedAbsDirpath)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedAbsDirpath, artifactCache.absoluteDirpath)
 
-	expectedRelativeDirpath := path.Join(testId, artifactCacheDirname)
+	expectedRelativeDirpath := artifactCacheDirname
 	assert.Equal(t, expectedRelativeDirpath, artifactCache.dirpathRelativeToVolRoot)
 
 }
 
 func TestGetStaticFileCache(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	testId := "someTest"
+	enclaveDir := NewEnclaveDirectory(enclaveDirpath)
 
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
+	staticFileCache, err := enclaveDir.GetStaticFileCache()
 	assert.Nil(t, err)
 
-	staticFileCache, err := testExDir.GetStaticFileCache()
-	assert.Nil(t, err)
-
-	expectedAbsDirpath := path.Join(suiteExVolDirpath, testId, staticFileCacheDirname)
+	expectedAbsDirpath := path.Join(enclaveDirpath, staticFileCacheDirname)
 	_, err = os.Stat(expectedAbsDirpath)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedAbsDirpath, staticFileCache.absoluteDirpath)
 
-	expectedRelativeDirpath := path.Join(testId, staticFileCacheDirname)
+	expectedRelativeDirpath := staticFileCacheDirname
 	assert.Equal(t, expectedRelativeDirpath, staticFileCache.dirpathRelativeToVolRoot)
 
 }
