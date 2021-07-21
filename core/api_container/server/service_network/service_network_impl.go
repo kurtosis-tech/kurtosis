@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -34,7 +34,7 @@ const (
 // Information that gets created with a service's registration
 type serviceRegistrationInfo struct {
 	ipAddr net.IP
-	serviceDirectory *suite_execution_volume.ServiceDirectory
+	serviceDirectory *enclave_data_volume.ServiceDirectory
 }
 
 // Information that gets created when a container is started for a service
@@ -65,9 +65,9 @@ type ServiceNetworkImpl struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	testExecutionDirectory *suite_execution_volume.EnclaveDirectory
+	testExecutionDirectory *enclave_data_volume.EnclaveDataVolume
 
-	staticFileCache *suite_execution_volume.StaticFileCache
+	staticFileCache *enclave_data_volume.StaticFileCache
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -87,8 +87,8 @@ func NewServiceNetworkImpl(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
-		testExecutionDirectory *suite_execution_volume.EnclaveDirectory,
-		staticFileCache *suite_execution_volume.StaticFileCache,
+		testExecutionDirectory *enclave_data_volume.EnclaveDataVolume,
+		staticFileCache *enclave_data_volume.StaticFileCache,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -272,7 +272,7 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 
 	result := map[string]string{}
 	for staticFileId := range staticFileIdKeys {
-		src, err := network.staticFileCache.GetEntry(staticFileId)
+		src, err := network.staticFileCache.GetStaticFile(staticFileId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the source static file with key '%v' from the static file cache", staticFileId)
 		}

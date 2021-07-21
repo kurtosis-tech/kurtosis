@@ -28,7 +28,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -81,7 +81,7 @@ func runMain () error {
 	logrus.SetLevel(logLevel)
 
 	//Creation of serviceNetwork
-	kurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
+	kurtosisExecutionVolume := enclave_data_volume.NewSuiteExecutionVolume(api_container_mountpoints.EnclaveDataVolumeMountpoint)
 
 	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(kurtosisExecutionVolume, paramsJsonStr)
 	if err != nil {
@@ -139,7 +139,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createServiceNetworkAndLambdaStore(
-	kurtosisExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
+	kurtosisExecutionVolume *enclave_data_volume.SuiteExecutionVolume,
 	paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 
 	paramsJsonBytes := []byte(paramsJsonStr)

@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"path"
 )
@@ -46,24 +46,30 @@ type FilesArtifactExpander struct {
 	testNetworkId string
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
+
+	filesArtifactCache *enclave_data_volume.FilesArtifactCache
 }
 
-func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker) *FilesArtifactExpander {
-	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker}
+func NewFilesArtifactExpander(suiteExecutionVolumeName string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_volume.FilesArtifactCache) *FilesArtifactExpander {
+	return &FilesArtifactExpander{suiteExecutionVolumeName: suiteExecutionVolumeName, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
 }
-
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID, // Service ID for whom the artifacts are being expanded into volumes
-		artifactToVolName map[suite_execution_volume.Artifact]string) error {
+		// TODO MAKE THIS A SET
+		artifactIdToVolName map[string]string) error {
 	// TODO PERF: parallelize this to increase speed
-	for artifact, volumeName := range artifactToVolName {
+	for artifactId, volumeName := range artifactIdToVolName {
+		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(artifactId)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
+		}
+
 		if err := expander.dockerManager.CreateVolume(ctx, volumeName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", volumeName)
 		}
 
-		artifactFile := artifact.GetFile()
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToVolRoot()
 		artifactFilepathOnExpanderContainer := path.Join(
 			suiteExVolMntDirpathOnExpander,
@@ -77,7 +83,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			volumeName:                        destVolMntDirpathOnExpander,
 		}
 
-		containerNameElems := expander.containerNameElemsProvider.GetForFilesArtifactExpander(serviceId, artifact.GetUrlHash())
+		containerNameElems := expander.containerNameElemsProvider.GetForFilesArtifactExpander(serviceId, artifactId)
 		if err := expander.runExpanderContainer(ctx, containerNameElems, containerCmd, volumeMounts); err != nil {
 			return stacktrace.Propagate(err, "An error occurred running the expander container")
 		}

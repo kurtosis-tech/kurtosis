@@ -6,6 +6,6 @@
 package api_container_mountpoints
 
 const (
-	// The location where the suite execution Docker volume will be mounted on the API container
-	SuiteExecutionVolumeMountDirpath = "/suite-execution"
+	// The location where the Docker volume for storing enclave data will be mounted on the API container
+	EnclaveDataVolumeMountpoint = "/kurtosis-enclave-data"
 )

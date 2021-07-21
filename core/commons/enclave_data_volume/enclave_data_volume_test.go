@@ -53,7 +53,7 @@ func TestGetArtifactCache(t *testing.T) {
 
 	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
-	artifactCache, err := enclaveDir.GetArtifactCache()
+	artifactCache, err := enclaveDir.GetFilesArtifactCache()
 	assert.Nil(t, err)
 
 	expectedAbsDirpath := path.Join(enclaveDirpath, artifactCacheDirname)

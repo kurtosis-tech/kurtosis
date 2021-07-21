@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -39,7 +39,7 @@ type UserServiceLauncher struct {
 
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 
-	artifactCache *suite_execution_volume.ArtifactCache
+	artifactCache *enclave_data_volume.FilesArtifactCache
 
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
@@ -49,7 +49,7 @@ type UserServiceLauncher struct {
 	suiteExecutionVolName string
 }
 
-func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, artifactCache *suite_execution_volume.ArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
+func NewUserServiceLauncher(filesArtifactExpansionVolumeNamePrefixElems []string, dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, artifactCache *enclave_data_volume.FilesArtifactCache, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, suiteExecutionVolName string) *UserServiceLauncher {
 	return &UserServiceLauncher{filesArtifactExpansionVolumeNamePrefixElems: filesArtifactExpansionVolumeNamePrefixElems, dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, artifactCache: artifactCache, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, suiteExecutionVolName: suiteExecutionVolName}
 }
 
@@ -76,11 +76,11 @@ func (launcher UserServiceLauncher) Launch(
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactToVolName := map[suite_execution_volume.Artifact]string{}
+	artifactToVolName := map[enclave_data_volume.Artifact]string{}
 	artifactVolToMountpoint := map[string]string{}
 	for artifactUrl, mountDirpath := range artifactUrlToMountDirpath {
 		logrus.Debugf("Hashing artifact URL '%v' to be mounted at '%v'...", artifactUrl, mountDirpath)
-		artifact, err := launcher.artifactCache.GetArtifact(artifactUrl)
+		artifact, err := launcher.artifactCache.GetFilesArtifact(artifactUrl)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "An error occurred getting artifact with URL '%v' from artifact cache", artifactUrl)
 		}

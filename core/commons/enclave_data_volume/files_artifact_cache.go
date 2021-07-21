@@ -29,7 +29,7 @@ func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToVolRoot stri
 	}
 }
 
-func (cache FilesArtifactCache) AddFilesArtifact(artifactId string, url string) error {
+func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url string) error {
 	supplier := func(fp *os.File) error {
 		resp, err := http.Get(url)
 		if err != nil {

@@ -30,13 +30,12 @@ const (
 type ApiContainerLauncher struct {
 	executionInstanceUuid string
 	containerImage string
-	suiteExecutionVolName string
 	kurtosisLogLevel logrus.Level
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
-func NewApiContainerLauncher(executionInstanceUuid string, containerImage string, suiteExecutionVolName string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
-	return &ApiContainerLauncher{executionInstanceUuid: executionInstanceUuid, containerImage: containerImage, suiteExecutionVolName: suiteExecutionVolName, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
+func NewApiContainerLauncher(executionInstanceUuid string, containerImage string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
+	return &ApiContainerLauncher{executionInstanceUuid: executionInstanceUuid, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
 }
 
 func (launcher ApiContainerLauncher) Launch(
@@ -50,6 +49,7 @@ func (launcher ApiContainerLauncher) Launch(
 		initializerContainerIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
+		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (string, error){
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
 		networkId,
@@ -59,6 +59,7 @@ func (launcher ApiContainerLauncher) Launch(
 		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
 		testName,
+		enclaveDataVolumeName,
 		isPartitioningEnabled,
 	)
 	if err != nil {
@@ -94,7 +95,7 @@ func (launcher ApiContainerLauncher) Launch(
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			launcher.suiteExecutionVolName: api_container_mountpoints.SuiteExecutionVolumeMountDirpath,
+			enclaveDataVolumeName: api_container_mountpoints.EnclaveDataVolumeMountpoint,
 		},
 		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
 	)
@@ -115,6 +116,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		testName string,
+		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	var hostPortBindingSupplierParams *api_container_env_var_values.HostPortBindingSupplierParams = nil
 	hostPortBindingSupplier := launcher.hostPortBindingSupplier
@@ -133,7 +135,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),
-		launcher.suiteExecutionVolName,
+		enclaveDataVolumeName,
 		[]string{
 			launcher.executionInstanceUuid,
 			testName,

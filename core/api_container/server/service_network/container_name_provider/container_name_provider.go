@@ -39,11 +39,11 @@ func (provider ContainerNameElementsProvider) GetForNetworkingSidecar(serviceIdS
 	})
 }
 
-func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(serviceId service_network_types.ServiceID, artifactUrlHash string) []string {
+func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(serviceId service_network_types.ServiceID, artifactId string) []string {
 	return provider.addPrefix([]string{
 		string(serviceId),
 		artifactExpanderNameLabel,
-		artifactUrlHash,
+		artifactId,
 	})
 }
 

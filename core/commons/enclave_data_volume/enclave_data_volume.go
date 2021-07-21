@@ -34,7 +34,7 @@ func NewEnclaveDataVolume(absMountDirpath string) *EnclaveDataVolume {
 }
 
 
-func (volume EnclaveDataVolume) GetArtifactCache() (*FilesArtifactCache, error) {
+func (volume EnclaveDataVolume) GetFilesArtifactCache() (*FilesArtifactCache, error) {
 	relativeDirpath := artifactCacheDirname
 	absoluteDirpath := path.Join(volume.absMountDirpath, artifactCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {

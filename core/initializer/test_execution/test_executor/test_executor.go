@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
@@ -161,6 +162,16 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
+	enclaveDataVolumeName := fmt.Sprintf(
+		"%v_%v_%v",
+		time.Now().Format(volume_naming_consts.GoTimestampFormat),
+		executionInstanceUuid,
+		testName,
+	)
+	if err := dockerManager.CreateVolume(testSetupExecutionCtx, enclaveDataVolumeName); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveDataVolumeName)
+	}
+
 	apiContainerId, err := apiContainerLauncher.Launch(
 		testSetupExecutionCtx,
 		log,
@@ -172,6 +183,7 @@ func RunTest(
 		initializerContainerIp,
 		testRunningContainerIp,
 		kurtosisApiIp,
+		enclaveDataVolumeName,
 		testParams.IsPartitioningEnabled,
 	)
 	if err != nil {
@@ -192,6 +204,7 @@ func RunTest(
 		testName,
 		kurtosisApiIp,
 		testRunningContainerIp,
+		enclaveDataVolumeName,
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")

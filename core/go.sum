@@ -93,6 +93,8 @@ github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210720025347
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210720025347-26fa18b06b80/go.mod h1:CLzAEnwEk8WDVwot76ziiDVrHMQ0HzXHBAyqIO80UDI=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210721164820-1709d951e954 h1:X4CVzGJ+1bvwH9xqxn14e/LAHt7naiwvAf7g9uOMF9s=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210721164820-1709d951e954/go.mod h1:oGtsFDCkRmWzNOx6sV9QpUXI+wh6+6f65nKsflbTYZ8=
+github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210721174608-b477054e0451 h1:rnJXRxSdAoeQIYIBO4wq5r8orrSe9YUNiJcFB30ozpg=
+github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210721174608-b477054e0451/go.mod h1:oGtsFDCkRmWzNOx6sV9QpUXI+wh6+6f65nKsflbTYZ8=
 github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b h1:nT5nOiGX2r02IYaQDQ81PHKcLssLcXuRNjzNCpGL6PU=
 github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b/go.mod h1:/XcImLhsJTy+xD9xN9t6eV8ASM9s/OU5g/KqBb8DCEg=
 github.com/labstack/echo v3.3.10+incompatible/go.mod h1:0INS7j/VjnFxD4E2wkz67b8cVwCLbBmJyDaka6Cmk1s=
