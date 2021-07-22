@@ -13,3 +13,4 @@ wrapper_generator
 
 api_container/Dockerfile
 initializer/Dockerfile
+internal_testsuite/Dockerfile

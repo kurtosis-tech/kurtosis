@@ -34,14 +34,14 @@ type ServiceNetwork interface {
 		partitionId service_network_types.PartitionID,
 	) (net.IP, error)
 
-	// Generates files in a location in the suite execution volume allocated to the given service
+	// Generates files in a location in the enclave data volume allocated to the given service
 	GenerateFiles(
 		serviceId service_network_types.ServiceID,
 		filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions,
 	) (map[string]string, error)
 
 	// Copies files from the static file cache to the given service's filespace
-	// Returns a mapping of static_file_id -> filepath_relative_to_suite_ex_vol_root
+	// Returns a mapping of static_file_id -> filepath_relative_to_enclave_data_vol_root
 	LoadStaticFiles(
 		serviceId service_network_types.ServiceID,
 		staticFileIdKeys map[string]bool,
@@ -63,7 +63,7 @@ type ServiceNetwork interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		suiteExecutionVolMntDirpath string,
+		enclaveDataVolMntDirpath string,
 		filesArtifactMountDirpaths map[string]string,
 	) (map[nat.Port]*nat.PortBinding, error)
 
@@ -81,7 +81,7 @@ type ServiceNetwork interface {
 
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
 
-	GetServiceSuiteExecutionVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
+	GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
 
 	Destroy(ctx context.Context, containerStopTimeout time.Duration) error
 }

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
@@ -63,7 +62,6 @@ func RunTests(
 		executionInstanceUuid string,
 		initializerContainerId string,
 		dockerClient *client.Client,
-		artifactCache *suite_execution_volume.ArtifactCache,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
@@ -102,15 +100,6 @@ func RunTests(
 		logrus.Infof(" - %v", testName)
 	}
 
-	// Download any required artifacts for the tests being run
-	logrus.Debug("Downloading artifacts used by the tests...")
-	if err := downloadUsedArtifacts(artifactCache, testNamesToRun, testSuiteMetadata); err != nil {
-		return false, stacktrace.Propagate(
-			err,
-			"An error occurred downloading the artifacts needed by the tests being run")
-	}
-	logrus.Debug("Test artifacts downloaded successfully")
-
 	// NOTE: To implement network partitioning we need to start sidecar containers, so we'll need 2N the IP addresses
 	//  that the user requests to avoid running out. We use this crude method - double ALL testnet widths if even
 	//  one test has network partitioning enabled - and if running out of IP address ranges is ever a problem we can make
@@ -143,25 +132,6 @@ func RunTests(
 		testsuiteLauncher,
 		apiContainerLauncher)
 	return allTestsPassed, nil
-}
-
-// Downloads only the artifacts that are needed by the tests being run (i.e. not any artifacts used by
-// 	tests which aren't being run)
-func downloadUsedArtifacts(
-		artifactCache *suite_execution_volume.ArtifactCache,
-		testNames map[string]bool,
-		suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
-	allTestMetadata := suiteMetadata.TestMetadata
-	// TODO PERF: parallelize to speed this up
-	for testName := range testNames {
-		testMetadata := allTestMetadata[testName]
-		for artifactUrl := range testMetadata.UsedArtifactUrls {
-			if err := artifactCache.AddArtifact(artifactUrl); err != nil {
-				return stacktrace.Propagate(err, "An error occurred adding artifact with URL '%v' to the artifact cache", artifactUrl)
-			}
-		}
-	}
-	return nil
 }
 
 /*
@@ -210,7 +180,6 @@ func buildTestParams(
 			subnetCidrStr,
 			testMetadata.TestSetupTimeoutInSeconds,
 			testMetadata.TestRunTimeoutInSeconds,
-			testMetadata.UsedArtifactUrls,
 			testMetadata.IsPartitioningEnabled,
 		)
 		logrus.Debugf(

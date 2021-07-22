@@ -27,8 +27,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -80,10 +80,9 @@ func runMain () error {
 	}
 	logrus.SetLevel(logLevel)
 
-	//Creation of serviceNetwork
-	kurtosisExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(api_container_mountpoints.SuiteExecutionVolumeMountDirpath)
+	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_mountpoints.EnclaveDataVolumeMountpoint)
 
-	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(kurtosisExecutionVolume, paramsJsonStr)
+	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(enclaveDataVol, paramsJsonStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
@@ -101,7 +100,7 @@ func runMain () error {
 	}()
 
 	//Creation of ApiContainerService
-	apiContainerService, err := server.NewApiContainerService(serviceNetwork, lambdaStore)
+	apiContainerService, err := server.NewApiContainerService(enclaveDataVol, serviceNetwork, lambdaStore)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
 	}
@@ -138,10 +137,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkAndLambdaStore(
-	kurtosisExecutionVolume *suite_execution_volume.SuiteExecutionVolume,
-	paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
-
+func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.EnclaveDataVolume, paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	paramsJsonBytes := []byte(paramsJsonStr)
 	var args api_container_env_var_values.ApiContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
@@ -164,21 +160,11 @@ func createServiceNetworkAndLambdaStore(
 		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the free IP address tracker")
 	}
 
-	enclaveDirectory, err := kurtosisExecutionVolume.GetEnclaveDirectory(args.EnclaveNameElems)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the enclave directory using elems '%+v'", args.EnclaveNameElems)
-	}
-
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	artifactCache, err := kurtosisExecutionVolume.GetArtifactCache()
+	filesArtifactCache, err := enclaveDataVol.GetFilesArtifactCache()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the artifact cache")
-	}
-
-	staticFileCache, err := kurtosisExecutionVolume.GetStaticFileCache()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the static file cache")
+		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
@@ -202,28 +188,29 @@ func createServiceNetworkAndLambdaStore(
 	}
 	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
 
-	filesArtifactExpansionVolumeNamePrefixElems := args.EnclaveNameElems
-	suiteExecutionVolName := args.SuiteExecutionVolumeName
+	enclaveDataVolName := args.EnclaveDataVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		suiteExecutionVolName,
+		args.EnclaveNameElems,
+		enclaveDataVolName,
 		dockerManager,
 		containerNameElemsProvider,
 		dockerNetworkId,
-		freeIpAddrTracker)
+		freeIpAddrTracker,
+		filesArtifactCache,
+	)
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
-		filesArtifactExpansionVolumeNamePrefixElems,
 		dockerManager,
 		containerNameElemsProvider,
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
-		artifactCache,
 		filesArtifactExpander,
 		dockerNetworkId,
-		suiteExecutionVolName)
+		enclaveDataVolName,
+	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
@@ -235,8 +222,7 @@ func createServiceNetworkAndLambdaStore(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
-		enclaveDirectory,
-		staticFileCache,
+		enclaveDataVol,
 		userServiceLauncher,
 		networkingSidecarManager)
 
@@ -247,7 +233,7 @@ func createServiceNetworkAndLambdaStore(
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
 		dockerNetworkId,
-		suiteExecutionVolName,
+		enclaveDataVolName,
 	)
 
 	return serviceNetwork, lambdaStore, nil
@@ -260,7 +246,7 @@ func createLambdaStore(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
 		dockerNetworkId string,
-		suiteExVolName string) *lambda_store.LambdaStore {
+		enclaveDataVolName string) *lambda_store.LambdaStore {
 	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
 		dockerManager,
 		apiContainerIpAddr,
@@ -268,7 +254,7 @@ func createLambdaStore(
 		freeIpAddrTracker,
 		optionalHostPortBindingSupplier,
 		dockerNetworkId,
-		suiteExVolName,
+		enclaveDataVolName,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)

@@ -38,11 +38,11 @@ func TestValidStrReplacing(t *testing.T) {
 	serviceIps := map[service_network_types.ServiceID]net.IP{
 		serviceId: serviceIp,
 	}
-	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+	enclaveDataVolMntDirpaths := map[service_network_types.ServiceID]string{
 		serviceId: "/test-volume",
 	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,enclaveDataVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
@@ -73,12 +73,12 @@ func TestStrSliceReplacing(t *testing.T) {
 		serviceId1: serviceIp1,
 		serviceId2: serviceIp2,
 	}
-	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+	enclaveDataVolMntDirpaths := map[service_network_types.ServiceID]string{
 		serviceId1: "/test-volume-1",
 		serviceId2: "/test-volume-2",
 	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,enclaveDataVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 
@@ -105,12 +105,12 @@ func TestMapValReplacing(t *testing.T) {
 		serviceId1: serviceIp1,
 		serviceId2: serviceIp2,
 	}
-	serviceSuiteExecutionVolMntDirpaths := map[service_network_types.ServiceID]string{
+	enclaveDataVolMntDirpaths := map[service_network_types.ServiceID]string{
 		serviceId1: "/test-volume-1",
 		serviceId2: "/test-volume-2",
 	}
 
-	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,serviceSuiteExecutionVolMntDirpaths)
+	mockNetwork := service_network.NewMockServiceNetwork(serviceIps,enclaveDataVolMntDirpaths)
 	ipReplacer, err := NewServiceIPReplacer(testPrefix, testSuffix, mockNetwork)
 	assert.NoError(t, err, "An unexpected error occurred creating the IP replacer")
 

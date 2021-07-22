@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/commons/suite_execution_volume"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -42,10 +41,6 @@ const (
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism = 2
-
-	// The location on the INITIALIZER container where the suite execution volume will be mounted
-	// A user MUST mount a volume here
-	initializerContainerSuiteExVolMountDirpath = "/suite-execution"
 
 	// The location on the INITIALIZER container where the Kurtosis storage directory (containing things like JWT
 	//  tokens) will be bind-mounted from the host filesystem
@@ -81,7 +76,6 @@ const (
 	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
 	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
 	parallelismArg              = "PARALLELISM"
-	suiteExecutionVolumeNameArg = "SUITE_EXECUTION_VOLUME"
 	testNamesArg                = "TEST_NAMES"
 	testSuiteImageArg           = "TEST_SUITE_IMAGE"
 	testSuiteLogLevelArg        = "TEST_SUITE_LOG_LEVEL"
@@ -151,12 +145,6 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		Default:  defaultParallelism,
 		HelpText: "A positive integer telling Kurtosis how many tests to run concurrently (should be set no higher than the number of cores on your machine, else you'll slow down your tests and potentially hit test timeouts!)",
 		Type:     docker_flag_parser.IntFlagType,
-	},
-	suiteExecutionVolumeNameArg: {
-		Required: true,
-		Default:  "",
-		HelpText: "The name of the Docker volume that will contain all the data for the test suite execution (should be a new volume for each execution!)",
-		Type:     docker_flag_parser.StringFlagType,
 	},
 	testNamesArg: {
 		Required: false,
@@ -237,11 +225,7 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	suiteExecutionVolume := suite_execution_volume.NewSuiteExecutionVolume(initializerContainerSuiteExVolMountDirpath)
-
 	isDebugMode := parsedFlags.GetBool(isDebugModeArg)
-
-	suiteExecutionVolName := parsedFlags.GetString(suiteExecutionVolumeNameArg)
 
 	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
 	if isDebugMode {
@@ -269,7 +253,6 @@ func main() {
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		executionInstanceId,
-		suiteExecutionVolName,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		customParamsJson,
@@ -278,24 +261,16 @@ func main() {
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		executionInstanceId,
 		parsedFlags.GetString(kurtosisApiImageArg),
-		suiteExecutionVolName,
 		kurtosisLogLevel,
 		hostPortBindingSupplier,
 	)
 
-	staticFileCache, err := suiteExecutionVolume.GetStaticFileCache()
-	if err != nil {
-		logrus.Errorf("An error occurred getting the static file cache: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadataAndInitializeStaticFilesCache(
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher,
-		staticFileCache,
 	)
 	if err != nil {
-		logrus.Errorf("An error occurred getting the test suite metadata & initializing the static file cache: %v", err)
+		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
 		os.Exit(failureExitCode)
 	}
 
@@ -311,12 +286,6 @@ func main() {
 
 	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
 
-	artifactCache, err := suiteExecutionVolume.GetArtifactCache()
-	if err != nil {
-		logrus.Errorf("An error occurred getting the artifact cache: %v", err)
-		os.Exit(failureExitCode)
-	}
-
 	var parallelismUint uint
 	if isDebugMode {
 		logrus.Infof("NOTE: Due to debug mode being set to true, parallelism is set to %v", debugModeParallelism)
@@ -330,7 +299,6 @@ func main() {
 		executionInstanceId,
 		initializerContainerId,
 		dockerClient,
-		artifactCache,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,

@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -38,6 +39,8 @@ type ApiContainerService struct {
 	// This embedding is required by gRPC
 	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
 
+	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
+
 	serviceNetwork service_network.ServiceNetwork
 
 	lambdaStore *lambda_store.LambdaStore
@@ -45,10 +48,11 @@ type ApiContainerService struct {
 	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
 }
 
-func NewApiContainerService(serviceNetwork service_network.ServiceNetwork, lambdaStore *lambda_store.LambdaStore) (*ApiContainerService, error) {
+func NewApiContainerService(enclaveDirectory *enclave_data_volume.EnclaveDataVolume, serviceNetwork service_network.ServiceNetwork, lambdaStore *lambda_store.LambdaStore) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		serviceNetwork: serviceNetwork,
-		lambdaStore:    lambdaStore,
+		enclaveDataVolume: enclaveDirectory,
+		serviceNetwork:    serviceNetwork,
+		lambdaStore:       lambdaStore,
 	}
 
 	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
@@ -93,6 +97,46 @@ func (service ApiContainerService) GetLambdaInfo(ctx context.Context, args *kurt
 	}
 	response := &kurtosis_core_rpc_api_bindings.GetLambdaInfoResponse{IpAddr: ipAddr.String()}
 	return response, nil
+}
+
+func (service ApiContainerService) RegisterStaticFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterStaticFilesArgs) (*kurtosis_core_rpc_api_bindings.RegisterStaticFilesResponse, error) {
+	staticFilesCache, err := service.enclaveDataVolume.GetStaticFileCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the static files cache")
+	}
+
+	usedStaticFiles := args.StaticFilesSet
+	staticFileRelativeFilepaths := map[string]string{}
+	for staticFileId := range usedStaticFiles {
+		file, err := staticFilesCache.RegisterStaticFile(staticFileId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred registering static file key '%v' in the static file cache", staticFileId)
+		}
+		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
+	}
+
+	result := &kurtosis_core_rpc_api_bindings.RegisterStaticFilesResponse{
+		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
+	}
+	return result, nil
+}
+
+func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
+	filesArtifactCache, err := service.enclaveDataVolume.GetFilesArtifactCache()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
+	}
+
+	// TODO PERF: Do these in parallel
+	logrus.Debug("Downloading files artifacts to the files artifact cache...")
+	for artifactId, url := range args.FilesArtifactUrls {
+		if err := filesArtifactCache.DownloadFilesArtifact(artifactId, url); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v' from URL '%v'", artifactId, url)
+		}
+	}
+	logrus.Debug("Files artifacts downloaded successfully")
+
+	return &emptypb.Empty{}, nil
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
@@ -169,7 +213,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
-		args.SuiteExecutionVolMntDirpath,
+		args.EnclaveDataVolMntDirpath,
 		args.FilesArtifactMountDirpaths)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -218,15 +262,15 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 
 	serviceID := service_network_types.ServiceID(args.ServiceId)
-	suiteExecutionVolMntDirpath, err :=service.serviceNetwork.GetServiceSuiteExecutionVolMntDirpath(serviceID)
+	enclaveDataVolMntDirpath, err :=service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service suite execution volume directory path by service ID: '%v'",
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service enclave data volume directory path by service ID: '%v'",
 			serviceID)
 	}
 
 	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr: serviceIP.String(),
-		SuiteExecutionVolumeMountDirpath: suiteExecutionVolMntDirpath,
+		IpAddr:                        serviceIP.String(),
+		EnclaveDataVolumeMountDirpath: enclaveDataVolMntDirpath,
 	}
 	return serviceInfoResponse, nil
 }
@@ -408,4 +452,3 @@ func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (ne
 	}
 	return serviceIP, nil
 }
-

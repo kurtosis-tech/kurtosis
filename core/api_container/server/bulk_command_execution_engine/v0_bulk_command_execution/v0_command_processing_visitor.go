@@ -89,7 +89,7 @@ func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred generating the requested files")
 	}
-	logrus.Info("Successfully generated files at the given relative filepaths of the testsuite volume:")
+	logrus.Info("Successfully generated files at the given relative filepaths of the enclave data volume:")
 	for fileKey, relativeFilepath := range generateFilesResp.GeneratedFileRelativeFilepaths {
 		logrus.Infof(" - %v: %v", fileKey, relativeFilepath)
 	}
@@ -105,7 +105,7 @@ func (visitor *v0CommandProcessingVisitor) VisitLoadStaticFiles() error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred loading the requested static files")
 	}
-	logrus.Infof("Successfully loaded static files for service '%v' at the given relative filepaths of the testsuite volume:", castedArgs.ServiceId)
+	logrus.Infof("Successfully loaded static files for service '%v' at the given relative filepaths of the enclave data volume:", castedArgs.ServiceId)
 	for staticFileId, relativeFilepath := range loadStaticFilesResp.CopiedStaticFileRelativeFilepaths {
 		logrus.Infof(" - %v: %v", staticFileId, relativeFilepath)
 	}
@@ -293,11 +293,11 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServ
 	}
 	ipReplacedArgs.FilesArtifactMountDirpaths = replacedFilesArtifactMountDirpaths
 
-	replacedSuiteExVolMntDirpath, err := visitor.ipReplacer.ReplaceStr(args.SuiteExecutionVolMntDirpath)
+	replacedEnclaveDataVolMntDirpath, err := visitor.ipReplacer.ReplaceStr(args.EnclaveDataVolMntDirpath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs for the suite execution volume mount dirpath")
+		return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs for the enclave data volume mount dirpath")
 	}
-	ipReplacedArgs.SuiteExecutionVolMntDirpath = replacedSuiteExVolMntDirpath
+	ipReplacedArgs.EnclaveDataVolMntDirpath = replacedEnclaveDataVolMntDirpath
 
 	return ipReplacedArgs, nil
 }
