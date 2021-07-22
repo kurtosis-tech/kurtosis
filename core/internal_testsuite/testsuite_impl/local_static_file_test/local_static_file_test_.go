@@ -3,8 +3,8 @@ package local_static_file_test
 import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
-	"github.com/kurtosis-tech/kurtosis/internal_testsuite/testsuite_impl/static_file_consts"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
+	"github.com/kurtosis-tech/kurtosis/internal_testsuite/static_files_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -12,6 +12,8 @@ import (
 const (
 	dockerImage                    = "alpine:3.12.4"
 	testService services.ServiceID = "test-service"
+
+
 
 	execCommandSuccessExitCode = 0
 	expectedTestFile1Contents  = "This is a test static file"
@@ -21,7 +23,14 @@ const (
 type LocalStaticFileTest struct{}
 
 func (l LocalStaticFileTest) Configure(builder *testsuite.TestConfigurationBuilder) {
-	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
+	builder.WithSetupTimeoutSeconds(
+		60,
+	).WithRunTimeoutSeconds(
+		60,
+	).WithStaticFileFilepaths(map[services.StaticFileID]string{
+		static_files_consts.TestStaticFile1ID: static_files_consts.StaticFileFilepaths[static_files_consts.TestStaticFile1ID],
+		static_files_consts.TestStaticFile2ID: static_files_consts.StaticFileFilepaths[static_files_consts.TestStaticFile2ID],
+	})
 }
 
 func (l LocalStaticFileTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
@@ -47,19 +56,19 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 	}
 
 	staticFileAbsFilepaths, err := serviceCtx.LoadStaticFiles(map[services.StaticFileID]bool{
-		static_file_consts.TestStaticFile1ID: true,
-		static_file_consts.TestStaticFile2ID: true,
+		static_files_consts.TestStaticFile1ID: true,
+		static_files_consts.TestStaticFile2ID: true,
 	})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred loading the static file corresponding to key '%v'", static_file_consts.TestStaticFile1ID)
+		return stacktrace.Propagate(err, "An error occurred loading the static file corresponding to key '%v'", static_files_consts.TestStaticFile1ID)
 	}
-	testFile1AbsFilepath, found := staticFileAbsFilepaths[static_file_consts.TestStaticFile1ID]
+	testFile1AbsFilepath, found := staticFileAbsFilepaths[static_files_consts.TestStaticFile1ID]
 	if !found {
-		return stacktrace.Propagate(err, "No filepath found for test file 1 key '%v'; this is a bug in Kurtosis!", static_file_consts.TestStaticFile1ID)
+		return stacktrace.Propagate(err, "No filepath found for test file 1 key '%v'; this is a bug in Kurtosis!", static_files_consts.TestStaticFile1ID)
 	}
-	testFile2AbsFilepath, found := staticFileAbsFilepaths[static_file_consts.TestStaticFile2ID]
+	testFile2AbsFilepath, found := staticFileAbsFilepaths[static_files_consts.TestStaticFile2ID]
 	if !found {
-		return stacktrace.Propagate(err, "No filepath found for test file 2 key '%v'; this is a bug in Kurtosis!", static_file_consts.TestStaticFile2ID)
+		return stacktrace.Propagate(err, "No filepath found for test file 2 key '%v'; this is a bug in Kurtosis!", static_files_consts.TestStaticFile2ID)
 	}
 
 	// Test file 1
