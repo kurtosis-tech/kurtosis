@@ -47,7 +47,7 @@ type ApiContainerArgs struct {
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
 	GatewayIpAddr            string	`json:"gatewayIpAddr"`
-	SuiteExecutionVolumeName string	`json:"suiteExecutionVolumeName"`
+	EnclaveDataVolumeName 	 string	`json:"enclaveDataVolumeName"`
 
 	// Name elements used for identifying the enclave in which this instance of the API container is
 	//  running. For example, when running a test, this will be [execution_instance_uuid, test_name]
@@ -74,7 +74,7 @@ func NewApiContainerArgs(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr string,
-		suiteExecutionVolumeName string,
+		enclaveDataVolumeName string,
 		enclaveNameElems []string,
 		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
@@ -85,7 +85,7 @@ func NewApiContainerArgs(
 		NetworkId:                     networkId,
 		SubnetMask:                    subnetMask,
 		GatewayIpAddr:                 gatewayIpAddr,
-		SuiteExecutionVolumeName:      suiteExecutionVolumeName,
+		EnclaveDataVolumeName:      enclaveDataVolumeName,
 		EnclaveNameElems:              enclaveNameElems,
 		ApiContainerIpAddr:            apiContainerIpAddr,
 		TakenIpAddrs:                  takenIpAddrs,

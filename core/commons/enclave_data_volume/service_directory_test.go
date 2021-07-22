@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package suite_execution_volume
+package enclave_data_volume
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -14,18 +14,14 @@ import (
 )
 
 func TestGetFile(t *testing.T) {
-	suiteExVolDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	testId := "someTest"
-
-	suiteExVol := NewSuiteExecutionVolume(suiteExVolDirpath)
-	testExDir, err := suiteExVol.GetEnclaveDirectory([]string{testId})
-	assert.Nil(t, err)
+	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
 	serviceId := "someService"
 
-	svcDir, err := testExDir.NewServiceDirectory(serviceId)
+	svcDir, err := enclaveDir.NewServiceDirectory(serviceId)
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
@@ -43,7 +39,7 @@ func TestGetFile(t *testing.T) {
 	fileInfo := files[0]
 	assert.True(t, strings.Contains(fileInfo.Name(), filename))
 
-	// Check File data structure is correct
+	// Check EnclaveDataVolFile data structure is correct
 	assert.Equal(
 		t,
 		svcAbsDirpath,

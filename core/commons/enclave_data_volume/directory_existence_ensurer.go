@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package suite_execution_volume
+package enclave_data_volume
 
 import (
 	"github.com/palantir/stacktrace"
@@ -15,7 +15,7 @@ func ensureDirpathExists(absoluteDirpath string) error {
 		if err := os.Mkdir(absoluteDirpath, 0777); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"Directory '%v' in the suite execution volume didn't exist, and an error occurred trying to create it",
+				"Directory '%v' in the enclave data volume didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
 	}

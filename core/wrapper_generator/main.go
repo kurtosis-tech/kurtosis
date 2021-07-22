@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -60,9 +59,6 @@ type WrapperTemplateData struct {
 
 	OneLinerHelpText string
 	LinewiseHelpText []string
-
-	// Bash date format to use when formatting the timestamp in the suite execution volume name
-	VolumeTimestampDateFormat string
 }
 
 type Action int
@@ -411,7 +407,6 @@ func generateTemplateData(args []WrapperArg, kurtosisCoreVersion string, product
 		PositionalArgAssignment: positionalArgAssignment,
 		OneLinerHelpText:   combinedOneliner,
 		LinewiseHelpText:   combinedLinewiseHelptext,
-		VolumeTimestampDateFormat: volume_naming_consts.BashTimestampFormat,
 	}, nil
 }
 

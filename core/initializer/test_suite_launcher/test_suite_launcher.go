@@ -37,8 +37,6 @@ const (
 type TestsuiteContainerLauncher struct {
 	executionInstanceUuid string
 
-	suiteExecutionVolName string
-
 	testsuiteImage string
 
 	// The log level string that will be passed as-is to the testsuite (should be meaningful to the testsuite)
@@ -50,8 +48,8 @@ type TestsuiteContainerLauncher struct {
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 }
 
-func NewTestsuiteContainerLauncher(executionInstanceUuid string, suiteExecutionVolName string, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{executionInstanceUuid: executionInstanceUuid, suiteExecutionVolName: suiteExecutionVolName, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
+func NewTestsuiteContainerLauncher(executionInstanceUuid string, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{executionInstanceUuid: executionInstanceUuid, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
 }
 
 /*
@@ -97,6 +95,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		bridgeNetworkId,
 		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		testsuiteEnvVars,
+		map[string]string{},
 	)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
@@ -129,7 +128,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		networkId string,
 		testName string,
 		kurtosisApiContainerIp net.IP,
-		testsuiteContainerIp net.IP) (containerId string, resultErr error){
+		testsuiteContainerIp net.IP,
+		enclaveDataVolName string) (containerId string, resultErr error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
 		testsuiteContainerIp.String(),
@@ -149,13 +149,18 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testName,
 		testsuiteContainerNameSuffix,
 	}
+	volumeMountpoints := map[string]string{
+		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
+	}
 	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		suiteContainerNameElems,
 		networkId,
 		testsuiteContainerIp,
-		testSuiteEnvVars)
+		testSuiteEnvVars,
+		volumeMountpoints,
+	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
 	}
@@ -183,6 +188,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		networkId string,
 		containerIpAddr net.IP,
 		envVars map[string]string,
+		volumeMountpoints map[string]string,
 	) (string, *nat.PortBinding, error) {
 
 	testsuiteRpcPort, err := nat.NewPort(kurtosis_testsuite_rpc_api_consts.ListenProtocol, strconv.Itoa(kurtosis_testsuite_rpc_api_consts.ListenPort))
@@ -233,9 +239,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		nil, // Nil CMD args because we expect the test suite image to be parameterized with variables
 		envVars,
 		map[string]string{}, 		// No bind mounts for a testsuite container
-		map[string]string{
-			launcher.suiteExecutionVolName: kurtosis_testsuite_docker_api.TestsuiteContainerSuiteExVolMountpoint,
-		},
+		volumeMountpoints,
 		false, // The testsuite container should never be able to access the machine hosting Docker
 	)
 	if err != nil {
