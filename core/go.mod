@@ -19,7 +19,7 @@ require (
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210722025226-a9a577aaf4bb
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
-	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210722030655-80c8a7aacfbb // indirect
+	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210722180244-d31da75581e8 // indirect
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect

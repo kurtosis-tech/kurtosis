@@ -6,6 +6,7 @@
 * Use the testsuite API that reads environment variables directly (so that users don't need to ever touch their Dockerfile)
 
 ### Changes
+* Upgraded to testsuite API lib 0.3.0
 * Backed the `FilesArtifactCache` and `StaticFilesCache` by the same object, for better code quality
 
 ### Fixes
