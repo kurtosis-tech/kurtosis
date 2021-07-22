@@ -1,12 +1,18 @@
 # TBD
 ### Features
 * Added a test for the static file cache
+* There is no longer a single "suite execution volume" across multiple tests; instead, each test gets its own "enclave data volume"
+    * This is one of the necessary steps to get to Kurtosis Interactive
+
+### Changes
+* Backed the `FilesArtifactCache` and `StaticFilesCache` by the same object, for better code quality
 
 ### Fixes
-* Stopped the scary `use of closed network connection` error from appearing, as it's expected
+* Stopped the scary `use of closed network connection` error from appearing with the log streamer, as it's expected
 
 ### Breaking Changes
 * `kurtosis.sh` no longer creates a suite execution volume, and the initializer container no longer accepts a param for it
+    * Users should remove the `SUITE_EXECUTION_VOLUME` flag/parameter from their Dockerfile
 
 # 1.16.6
 ### Features
