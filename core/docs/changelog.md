@@ -3,6 +3,7 @@
 * Added a test for the static file cache
 * There is no longer a single "suite execution volume" across multiple tests; instead, each test gets its own "enclave data volume"
     * This is one of the necessary steps to get to Kurtosis Interactive
+* Use the testsuite API that reads environment variables directly (so that users don't need to ever touch their Dockerfile)
 
 ### Changes
 * Backed the `FilesArtifactCache` and `StaticFilesCache` by the same object, for better code quality

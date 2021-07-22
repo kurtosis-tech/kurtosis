@@ -33,8 +33,4 @@ COPY --from=builder /build/testsuite.bin .
 # Copy local static files inside the testsuite image
 COPY internal_testsuite/static_files /static-files
 
-# TODO Switch to exec command form, wrapping arguments with double-quote
-CMD ./testsuite.bin \
-    --custom-params-json="${CUSTOM_PARAMS_JSON}" \
-    --kurtosis-api-socket="${KURTOSIS_API_SOCKET}" \
-    --log-level="${LOG_LEVEL}"
+CMD ./testsuite.bin
