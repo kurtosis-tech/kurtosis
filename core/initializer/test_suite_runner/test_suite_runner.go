@@ -100,25 +100,7 @@ func RunTests(
 		logrus.Infof(" - %v", testName)
 	}
 
-	// NOTE: To implement network partitioning we need to start sidecar containers, so we'll need 2N the IP addresses
-	//  that the user requests to avoid running out. We use this crude method - double ALL testnet widths if even
-	//  one test has network partitioning enabled - and if running out of IP address ranges is ever a problem we can make
-	//  this more precise later ~ ktoday, 2021-01-15
-	shouldDoubleNetworkWidth := false
-	for testName, _ := range testNamesToRun {
-		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
-		if !found {
-			return false, stacktrace.NewError("Couldn't find test metadata for test '%v'", testName)
-		}
-		shouldDoubleNetworkWidth = shouldDoubleNetworkWidth || testMetadata.IsPartitioningEnabled
-	}
-	networkWidthBits := testSuiteMetadata.NetworkWidthBits
-	if shouldDoubleNetworkWidth {
-		networkWidthBits = networkWidthBits + 1
-	}
-	logrus.Debugf("Using network width bits: %v", networkWidthBits)
-
-	testParams, err := buildTestParams(testNamesToRun, networkWidthBits, testSuiteMetadata)
+	testParams, err := buildTestParams(testNamesToRun, testSuiteMetadata)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
@@ -142,7 +124,6 @@ Args:
  */
 func buildTestParams(
 		testNamesToRun map[string]bool,
-		networkWidthBits uint32,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
 	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
 
@@ -177,10 +158,11 @@ func buildTestParams(
 
 		testParamsForTest := *parallel_test_params.NewParallelTestParams(
 			testName,
-			subnetCidrStr,
 			testMetadata.TestSetupTimeoutInSeconds,
 			testMetadata.TestRunTimeoutInSeconds,
 			testMetadata.IsPartitioningEnabled,
+			// TODO We use the testsuite's network width bits, though we should make this test-specific
+			testSuiteMetadata.NetworkWidthBits,
 		)
 		logrus.Debugf(
 			"Built parallel test param for test '%v' with subnet CIDR string '%v', and test metadata '%v'",

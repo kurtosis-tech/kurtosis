@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -93,7 +94,7 @@ func RunTest(
 		initializerContainerId string,
 		log *logrus.Logger,
 		dockerClient *client.Client,
-		subnetMask string,
+		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		apiContainerLauncher *api_container_launcher.ApiContainerLauncher,
 		testParams parallel_test_params.ParallelTestParams) (bool, error) {
@@ -112,7 +113,26 @@ func RunTest(
 	//  potentially-cancelled setup context).
 	testTeardownContext := context.Background()
 
-	log.Infof("Creating Docker network for test with subnet mask %v...", subnetMask)
+	log.Infof("Creating Docker network for test...")
+	networkName := fmt.Sprintf(
+		"%v_%v_%v",
+		time.Now().Format(networkNameTimestampFormat),
+		executionInstanceUuid,
+		testName)
+	// NOTE: To implement network partitioning we need to start sidecar containers, so a test with partitioning enabled
+	//  actually needs 2N the IP addresses
+	networkWidthBits := testParams.NetworkWidthBits
+	if testParams.IsPartitioningEnabled {
+		// Partitioning requires running sidecar containers, which entails double the IPs
+		networkWidthBits = 2 * networkWidthBits
+	}
+	dockerNetworkAllocator.CreateNewNetwork(
+		testSetupExecutionCtx,
+		dockerManager,
+		log,
+		networkName,
+		networkWidthBits,
+	)
 	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
 		log,
 		subnetMask,
@@ -128,11 +148,6 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting the initializer container in the test network")
 	}
-	networkName := fmt.Sprintf(
-		"%v_%v_%v",
-		time.Now().Format(networkNameTimestampFormat),
-		executionInstanceUuid,
-		testName)
 	networkId, err := dockerManager.CreateNetwork(testSetupExecutionCtx, networkName, subnetMask, gatewayIp)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying

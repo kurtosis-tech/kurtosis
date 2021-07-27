@@ -32,16 +32,20 @@ const (
 )
 
 type DockerNetworkAllocator struct {
-	dockerManager *docker_manager.DockerManager
-
 	// Even though we don't have any internal state, we still want to make sure we're only trying to allocate one new network at a time
 	mutex *sync.Mutex
 }
 
-// TODO constructor
+func NewDockerNetworkAllocator() *DockerNetworkAllocator {
+	return &DockerNetworkAllocator{
+		mutex: &sync.Mutex{},
+	}
+}
+
 
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
 		log *logrus.Logger,
 		name string,
 		widthBits uint32) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
@@ -50,7 +54,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 
 	numRetries := 0
 	for numRetries < maxNumNetworkAllocationRetries {
-		networks, err := provider.dockerManager.ListNetworks(ctx)
+		networks, err := dockerManager.ListNetworks(ctx)
 		if err != nil {
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
 		}
