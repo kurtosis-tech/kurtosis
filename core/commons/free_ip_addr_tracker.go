@@ -33,25 +33,19 @@ Args:
 	alreadyTakenIps: A set of IPs that should be marked as taken from initialization.
 from the list of already-taken IPs
  */
-func NewFreeIpAddrTracker(log *logrus.Logger, subnetMask string, alreadyTakenIps map[string]bool) (ipAddrTracker *FreeIpAddrTracker, err error) {
-	_, ipv4Net, err := net.ParseCIDR(subnetMask)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to parse subnet %s as CIDR.", subnetMask)
-	}
-
+func NewFreeIpAddrTracker(log *logrus.Logger, subnet *net.IPNet, alreadyTakenIps map[string]bool) *FreeIpAddrTracker {
 	// Defensive copy
 	takenIps := map[string]bool{}
 	for ipAddr, _ := range alreadyTakenIps {
 		takenIps[ipAddr] = true
 	}
 
-	ipAddrTracker = &FreeIpAddrTracker{
+	return &FreeIpAddrTracker{
 		log: log,
-		subnet: ipv4Net,
+		subnet: subnet,
 		takenIps: takenIps,
 		mutex: &sync.Mutex{},
 	}
-	return ipAddrTracker, nil
 }
 
 /*
