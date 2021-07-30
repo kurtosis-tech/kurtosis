@@ -163,9 +163,6 @@ func printContainerLogsWithBanners(
 }
 
 func validateTestSuiteMetadata(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
-	if suiteMetadata.NetworkWidthBits == 0 {
-		return stacktrace.NewError("Test suite metadata has a network width bits == 0")
-	}
 	if suiteMetadata.TestMetadata == nil {
 		return stacktrace.NewError("Test metadata map is nil")
 	}

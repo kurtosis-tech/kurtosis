@@ -136,8 +136,6 @@ func buildTestParams(
 			testMetadata.TestSetupTimeoutInSeconds,
 			testMetadata.TestRunTimeoutInSeconds,
 			testMetadata.IsPartitioningEnabled,
-			// TODO We use the testsuite's network width bits, though we should make this test-specific
-			testSuiteMetadata.NetworkWidthBits,
 		)
 		logrus.Debugf(
 			"Built parallel test param for test '%v' and test metadata '%v'",

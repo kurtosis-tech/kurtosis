@@ -62,6 +62,5 @@ func getTestingSuiteMetadata(numTests int) *kurtosis_testsuite_rpc_api_bindings.
 	}
 	return &kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata{
 		TestMetadata: testMetadata,
-		NetworkWidthBits: 0,
 	}
 }

@@ -6,7 +6,6 @@
 package docker_network_allocator
 
 import (
-	"encoding/binary"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
@@ -19,6 +18,7 @@ import (
 
  */
 
+/*
 func TestCreateNetworkFromIp(t *testing.T) {
 	ipBytes := []byte{192, 168, 0, 1}
 	desiredWidthBits := uint32(8)
@@ -29,6 +29,10 @@ func TestCreateNetworkFromIp(t *testing.T) {
 	assert.Equal(t, desiredWidthBits, uint32(totalMaskBits - numMaskOnes))
 }
 
+ */
+
+
+/*
 func TestErrorOnNoNetworks(t *testing.T) {
 	_, err := findFreeNetwork(uint32(8), []*net.IPNet{})
 	assert.Error(t, err)
@@ -52,87 +56,90 @@ func TestErrorOnZeroWidthNetwork(t *testing.T) {
 	assert.Error(t, err)
 }
 
+ */
+
 func TestErrorOnNoFreeIps(t *testing.T) {
 	cidrs := []string{
 		"0.0.0.0/0",
 	}
 	networks := parseNetworks(t, cidrs)
-	_, err := findFreeNetwork(uint32(1), networks)
+	_, err := findFreeNetwork(networks)
 	assert.Error(t, err)
 
 }
 
 func TestExactHoleBeforeNetwork(t *testing.T) {
 	cidrs := []string{
-		"0.0.1.0/24",
+		"0.0.16.0/20",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}))
 }
 
 func TestLooseHoleBeforeNetwork(t *testing.T) {
 	cidrs := []string{
-		"0.0.2.0/24",
+		"0.0.32.0/20",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}))
 }
 
 func TestTooSmallHoleBeforeNetwork(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.128/25",
+		"0.0.4.0/24",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 1, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
 }
 
 func TestExactHoleBetweenNetworks(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.0/24",
-		"0.0.2.0/24",
+		"0.0.0.0/20",
+		"0.0.32.0/20",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 1, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
 }
 
 func TestLooseHoleBetweenNetworks(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.0/24",
-		"0.0.3.0/24",
+		"0.0.4.0/24",
+		"0.0.64.0/24",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 1, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
 }
 
 func TestTooSmallHoleBetweenNetworks(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.0/24",
-		"0.0.1.128/25",
+		"0.0.4.0/24",
+		"0.0.18.0/24",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 2, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 32, 0}))
 }
 
 func TestMultipleTooSmallHoleBetweenNetworks(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.0/24",
-		"0.0.1.128/25",
-		"0.0.2.128/25",
+		"0.0.4.0/24",
+		"0.0.18.0/24",
+		"0.0.32.0/24",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 3, 0}), uint32(8))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 48, 0}))
 }
 
 func TestHeterogenousSizedNetworks(t *testing.T) {
 	cidrs := []string{
-		"0.0.0.0/24",
+		"0.0.0.0/18",
+		"0.80.0.0/24",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 1, 0, 0}), uint32(16))
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 64, 0}))
 
 }
 
-func assertExpectedResultGivenCidrs(t *testing.T, cidrs []string, expectedIp net.IP, desiredWidthBits uint32) {
+func assertExpectedResultGivenCidrs(t *testing.T, cidrs []string, expectedIp net.IP) {
 	networks := parseNetworks(t, cidrs)
-	result, err := findFreeNetwork(desiredWidthBits, networks)
+	result, err := findFreeNetwork(networks)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedIp, result.IP)
 
 	maskNumOnes, maskTotalBits := result.Mask.Size()
-	assert.Equal(t, desiredWidthBits, uint32(maskTotalBits - maskNumOnes))
+	assert.Equal(t, networkWidthBits, uint32(maskTotalBits - maskNumOnes))
 }
 
 func parseNetworks(t *testing.T, cidrs []string) []*net.IPNet {

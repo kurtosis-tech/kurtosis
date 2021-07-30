@@ -15,7 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"math"
 	"net"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -25,6 +24,10 @@ const (
 	supportedIpAddrBitLength = uint32(32)
 
 	firstAllocatableIpUint32 = uint32(0)
+
+	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
+	// This will give 4096 IPs per address; if this isn't enough we can up it in the future
+	networkWidthBits = uint32(12)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
 	//  that overlaps with a preexisting network
@@ -36,6 +39,8 @@ const (
 
 	timeBetweenNetworkAvailabilityPolls = 500 * time.Millisecond
 )
+var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBits), int(supportedIpAddrBitLength))
+var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 
 type DockerNetworkAllocator struct {
 	// Even though we don't have any internal state, we still want to make sure we're only trying to allocate one new network at a time
@@ -53,8 +58,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		log *logrus.Logger,
-		networkName string,
-		widthBits uint32) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
+		networkName string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
 	provider.mutex.Lock()
 	defer provider.mutex.Unlock()
 
@@ -87,9 +91,9 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			}
 		}
 
-		freeNetworkIpAndMask, err := findFreeNetwork(widthBits, usedSubnets)
+		freeNetworkIpAndMask, err := findFreeNetwork(usedSubnets)
 		if err != nil {
-			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network to fit the requested width of %v bits", widthBits)
+			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
 		freeIpAddrTracker := commons.NewFreeIpAddrTracker(log, freeNetworkIpAndMask, map[string]bool{})
@@ -193,17 +197,37 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	return "", nil, nil, nil, stacktrace.NewError("We couldn't allocate a new network even after retrying %v times", maxNumNetworkAllocationRetries)
 }
 
-func findFreeNetwork(desiredWidthBits uint32, networks []*net.IPNet) (*net.IPNet, error) {
-	if desiredWidthBits == 0 {
-		return nil, stacktrace.NewError("Cannot request a network of 0 bits")
+func findFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
+	// TODO PERF: This algorithm is very dumb in that it iterates over EVERY possible network, starting from 0
+	//  This means that even if there's a preexisting network that takes up the first half of the IP space, we'll
+	//  still try *every* possible network inside that already-allocated space (which will burn a ton of CPU cycles)
+	for resultNetworkIpUint64 := uint64(0); resultNetworkIpUint64 < math.MaxUint32; resultNetworkIpUint64 += networkWidthUint64 {
+		resultNetworkIpUint32 := uint32(resultNetworkIpUint64)
+		resultNetworkIp := make([]byte, 4)
+		binary.BigEndian.PutUint32(resultNetworkIp, resultNetworkIpUint32)
+		resultNetwork := &net.IPNet{
+			IP:   resultNetworkIp,
+			Mask: networkCidrMask,
+		}
+
+		hasCollision := false
+		for _, network := range networks {
+			if resultNetwork.Contains(network.IP) || network.Contains(resultNetworkIp) {
+				hasCollision = true
+				break
+			}
+		}
+		if !hasCollision {
+			return resultNetwork, nil
+		}
 	}
-	if desiredWidthBits >= supportedIpAddrBitLength {
-		return nil, stacktrace.NewError(
-			"Requested a network width of %v bits, but the maximum supported IP address length is %v",
-			desiredWidthBits,
-			supportedIpAddrBitLength,
-		)
-	}
+
+	return nil, stacktrace.NewError("There is no IP address space available for a new network with %v bits of width", networkWidthBits)
+
+	/*
+
+
+
 
 	desiredWidth := uint32(math.Pow(
 		float64(2),
@@ -270,6 +294,8 @@ func findFreeNetwork(desiredWidthBits uint32, networks []*net.IPNet) (*net.IPNet
 			"network %v bits wide",
 		desiredWidthBits,
 	)
+
+	 */
 }
 
 func printDockerNetworks(log *logrus.Logger, networks []types.NetworkResource) {
@@ -282,6 +308,7 @@ func printDockerNetworks(log *logrus.Logger, networks []types.NetworkResource) {
 	}
 }
 
+/*
 func createNetworkFromIpAndWidth(firstIpUint32 uint32, desiredWidthBits uint32) *net.IPNet {
 	ip := make([]byte, 4)
 	binary.BigEndian.PutUint32(ip, firstIpUint32)
@@ -291,3 +318,6 @@ func createNetworkFromIpAndWidth(firstIpUint32 uint32, desiredWidthBits uint32) 
 		Mask: mask,
 	}
 }
+
+
+ */

@@ -117,13 +117,6 @@ func RunTest(
 		time.Now().Format(networkNameTimestampFormat),
 		executionInstanceUuid,
 		testName)
-	// NOTE: To implement network partitioning we need to start sidecar containers, so a test with partitioning enabled
-	//  actually needs 2N the IP addresses
-	networkWidthBits := testParams.NetworkWidthBits
-	if testParams.IsPartitioningEnabled {
-		// Partitioning requires running sidecar containers, which entails double the IPs
-		networkWidthBits = 2 * networkWidthBits
-	}
 
 	log.Debugf("Creating Docker network for test...")
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := dockerNetworkAllocator.CreateNewNetwork(
@@ -131,7 +124,6 @@ func RunTest(
 		dockerManager,
 		log,
 		networkName,
-		networkWidthBits,
 	)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
