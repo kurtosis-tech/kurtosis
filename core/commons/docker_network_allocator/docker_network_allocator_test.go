@@ -116,6 +116,14 @@ func TestMultipleTooSmallHoleBetweenNetworks(t *testing.T) {
 	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 3, 0}), uint32(8))
 }
 
+func TestHeterogenousSizedNetworks(t *testing.T) {
+	cidrs := []string{
+		"0.0.0.0/24",
+	}
+	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 1, 0, 0}), uint32(16))
+
+}
+
 func assertExpectedResultGivenCidrs(t *testing.T, cidrs []string, expectedIp net.IP, desiredWidthBits uint32) {
 	networks := parseNetworks(t, cidrs)
 	result, err := findFreeNetwork(desiredWidthBits, networks)

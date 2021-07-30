@@ -33,6 +33,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"net"
 	"os"
 	"time"
 )
@@ -151,14 +152,15 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 
 	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
 
-	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
+	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
+	}
+	freeIpAddrTracker := commons.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
-		args.SubnetMask,
+		parsedSubnetMask,
 		args.TakenIpAddrs,
 	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred creating the free IP address tracker")
-	}
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis

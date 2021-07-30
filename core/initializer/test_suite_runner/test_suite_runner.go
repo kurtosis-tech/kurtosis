@@ -6,10 +6,9 @@
 package test_suite_runner
 
 import (
-	"encoding/binary"
-	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
@@ -17,8 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"math"
-	"net"
 	sort "sort"
 )
 
@@ -62,6 +59,7 @@ func RunTests(
 		executionInstanceUuid string,
 		initializerContainerId string,
 		dockerClient *client.Client,
+		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
@@ -109,6 +107,7 @@ func RunTests(
 		executionInstanceUuid,
 		initializerContainerId,
 		dockerClient,
+		dockerNetworkAllocator,
 		testParallelism,
 		testParams,
 		testsuiteLauncher,
@@ -125,32 +124,8 @@ Args:
 func buildTestParams(
 		testNamesToRun map[string]bool,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
-	subnetMaskBits := BITS_IN_IP4_ADDR - networkWidthBits
-
-	subnetStartIp := net.ParseIP(SUBNET_START_ADDR)
-	if subnetStartIp == nil {
-		return nil, stacktrace.NewError("Subnet start IP %v was not a valid IP address; this is a code problem", SUBNET_START_ADDR)
-	}
-
-	// The IP can be either 4 bytes or 16 bytes long; we need to handle both
-	//  else we'll get a silent 0 value for the int!
-	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
-	var subnetStartIpInt uint32
-	if len(subnetStartIp) == 16 {
-		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp[12:16])
-	} else {
-		subnetStartIpInt = binary.BigEndian.Uint32(subnetStartIp)
-	}
-
-	testIndex := 0
 	testParams := make(map[string]parallel_test_params.ParallelTestParams)
 	for testName, _ := range testNamesToRun {
-		// Pick the next free available subnet IP, considering all the tests we've started previously
-		subnetIpInt := subnetStartIpInt + uint32(testIndex) * uint32(math.Pow(2, float64(networkWidthBits)))
-		subnetIp := make(net.IP, 4)
-		binary.BigEndian.PutUint32(subnetIp, subnetIpInt)
-		subnetCidrStr := fmt.Sprintf("%v/%v", subnetIp.String(), subnetMaskBits)
-
 		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
 		if !found {
 			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
@@ -165,13 +140,12 @@ func buildTestParams(
 			testSuiteMetadata.NetworkWidthBits,
 		)
 		logrus.Debugf(
-			"Built parallel test param for test '%v' with subnet CIDR string '%v', and test metadata '%v'",
+			"Built parallel test param for test '%v' and test metadata '%v'",
 			testName,
-			subnetCidrStr,
-			testMetadata)
+			testMetadata,
+		)
 
 		testParams[testName] = testParamsForTest
-		testIndex++
 	}
 	return testParams, nil
 }

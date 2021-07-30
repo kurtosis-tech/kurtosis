@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -294,11 +295,14 @@ func main() {
 		parallelismUint = uint(parsedFlags.GetInt(parallelismArg))
 	}
 
+	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator()
+
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		executionInstanceId,
 		initializerContainerId,
 		dockerClient,
+		dockerNetworkAllocator,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,

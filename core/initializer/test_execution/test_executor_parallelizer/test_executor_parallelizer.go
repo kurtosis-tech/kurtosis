@@ -32,17 +32,6 @@ Runs the given tests in parallel, printing:
 1) the output of tests as they finish
 2) a summary of all tests once all tests have finished
 
-Args:
-	executionUuid: The UUID uniquely identifying this execution of the tests
-	initializerContainerId: The container ID of the initializer container, which will need to be connected to the test networks
-	dockerClient: The handle to manipulating the Docker environment
-	parallelism: The number of tests to run concurrently
-	allTestParams: A mapping of test_name -> parameters for running the test
-	testSuiteImageName: The name of the Docker image that will be used to run the test controller
-	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
-	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
-		passed via Docker environment variables to the test controller
-
 Returns:
 	True if all tests passed, false otherwise
  */

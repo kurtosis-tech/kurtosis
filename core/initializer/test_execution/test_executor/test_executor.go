@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
@@ -101,11 +100,11 @@ func RunTest(
 
 	testName := testParams.TestName
 
-	log.Info("Creating Docker manager from environment settings...")
+	log.Debugf("Creating Docker manager from environment settings...")
 	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
 	//  only need to cancel this context once
 	dockerManager := docker_manager.NewDockerManager(log, dockerClient)
-	log.Info("Docker manager created successfully")
+	log.Debugf("Docker manager created successfully")
 
 	// We'll use the test setup context for setting stuff up so that a cancellation (e.g. Ctrl-C)
 	//  will prevent any new things from getting added to Docker. We still want to be able to retrieve exit codes
@@ -113,7 +112,6 @@ func RunTest(
 	//  potentially-cancelled setup context).
 	testTeardownContext := context.Background()
 
-	log.Infof("Creating Docker network for test...")
 	networkName := fmt.Sprintf(
 		"%v_%v_%v",
 		time.Now().Format(networkNameTimestampFormat),
@@ -126,42 +124,35 @@ func RunTest(
 		// Partitioning requires running sidecar containers, which entails double the IPs
 		networkWidthBits = 2 * networkWidthBits
 	}
-	dockerNetworkAllocator.CreateNewNetwork(
+
+	log.Debugf("Creating Docker network for test...")
+	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := dockerNetworkAllocator.CreateNewNetwork(
 		testSetupExecutionCtx,
 		dockerManager,
 		log,
 		networkName,
 		networkWidthBits,
 	)
-	freeIpAddrTracker, err := commons.NewFreeIpAddrTracker(
-		log,
-		subnetMask,
-		map[string]bool{})
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the free IP address tracker for test %v", testName)
+		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
+		//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
+		//  need to parse the log message for the string "context canceled" and, if found, do another search for
+		//  networks with our network name and delete them
+		return false, stacktrace.Propagate(err, "An error occurred allocating new network '%v' for test '%v'", networkName, testName)
 	}
-	gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for the gateway for test %v", testName)
-	}
+	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
+	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", networkName, networkId, networkIpAndMask.String())
+
+
+	log.Debugf("Mounting the initializer container inside network '%v' so that it can call functions on the testsuite container...", networkName)
 	initializerContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting the initializer container in the test network")
 	}
-	networkId, err := dockerManager.CreateNetwork(testSetupExecutionCtx, networkName, subnetMask, gatewayIp)
-	if err != nil {
-		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
-		//  that the Context was cancelled as expected, but *the Docker engine will still create the networks!!! We'll
-		//  need to parse the log message for the string "context canceled" and, if found, do another search for
-		//  networks with our network name and delete them
-		return false, stacktrace.Propagate(err, "Error occurred creating Docker network %v for test %v", networkName, testName)
-	}
-	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
-	log.Infof("Docker network %v created successfully", networkId)
-
 	if err := dockerManager.ConnectContainerToNetwork(testSetupExecutionCtx, networkId, initializerContainerId, initializerContainerIp); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred connecting the initializer container to the test network, which is required to communicate with the testsuite")
 	}
+	log.Debugf("Successfully mounted the initializer container inside network '%v'", networkName)
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
@@ -193,7 +184,7 @@ func RunTest(
 		dockerManager,
 		testName,
 		networkId,
-		subnetMask,
+		networkIpAndMask.String(),
 		gatewayIp,
 		initializerContainerIp,
 		testRunningContainerIp,
