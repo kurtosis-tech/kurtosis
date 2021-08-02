@@ -11,129 +11,87 @@ import (
 	"testing"
 )
 
-/*
-8 = 1000
-9 = 1001
-10 = 1010
-
- */
-
-/*
-func TestCreateNetworkFromIp(t *testing.T) {
-	ipBytes := []byte{192, 168, 0, 1}
-	desiredWidthBits := uint32(8)
-	network := createNetworkFromIpAndWidth(binary.BigEndian.Uint32(ipBytes), desiredWidthBits)
-	assert.Equal(t, net.IP(ipBytes), network.IP)
-
-	numMaskOnes, totalMaskBits := network.Mask.Size()
-	assert.Equal(t, desiredWidthBits, uint32(totalMaskBits - numMaskOnes))
-}
-
- */
-
-
-/*
-func TestErrorOnNoNetworks(t *testing.T) {
-	_, err := findFreeNetwork(uint32(8), []*net.IPNet{})
-	assert.Error(t, err)
-}
-
-func TestErrorOnTooBigNetwork(t *testing.T) {
-	cidrs := []string{
-		"0.0.1.0/24",
-	}
-	networks := parseNetworks(t, cidrs)
-	_, err := findFreeNetwork(uint32(400), networks)
-	assert.Error(t, err)
-}
-
-func TestErrorOnZeroWidthNetwork(t *testing.T) {
-	cidrs := []string{
-		"0.0.1.0/24",
-	}
-	networks := parseNetworks(t, cidrs)
-	_, err := findFreeNetwork(uint32(0), networks)
-	assert.Error(t, err)
-}
-
- */
-
 func TestErrorOnNoFreeIps(t *testing.T) {
 	cidrs := []string{
 		"0.0.0.0/0",
 	}
 	networks := parseNetworks(t, cidrs)
-	_, err := findFreeNetwork(networks)
+	_, err := findRandomFreeNetwork(networks)
 	assert.Error(t, err)
 
 }
 
-func TestExactHoleBeforeNetwork(t *testing.T) {
+func TestExactHole(t *testing.T) {
+	// This has exactly one hole - at 0.0.0.0/20
 	cidrs := []string{
 		"0.0.16.0/20",
+		"0.0.32.0/19",
+		"0.0.64.0/18",
+		"0.0.128.0/17",
+		"0.1.0.0/16",
+		"0.2.0.0/15",
+		"0.4.0.0/14",
+		"0.8.0.0/13",
+		"0.16.0.0/12",
+		"0.32.0.0/11",
+		"0.64.0.0/10",
+		"0.128.0.0/9",
+		"1.0.0.0/8",
+		"2.0.0.0/7",
+		"4.0.0.0/6",
+		"8.0.0.0/5",
+		"16.0.0.0/4",
+		"32.0.0.0/3",
+		"64.0.0.0/2",
+		"128.0.0.0/1",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}))
+	assertExpectedResultGivenCidrs(t, cidrs, []byte{0, 0, 0, 0})
 }
 
-func TestLooseHoleBeforeNetwork(t *testing.T) {
-	cidrs := []string{
-		"0.0.32.0/20",
+func TestNetworkFoundOnVariousCases(t *testing.T) {
+	// Because the free network-finding is random, we just test that we don't get an error (i.e. we actually find a network)
+	successfulCases := [][]string{
+		{
+			"0.0.16.0/20",
+		},
+		{
+			"0.0.32.0/20",
+		},
+		{
+			"0.0.4.0/24",
+		},
+		{
+			"0.0.0.0/20",
+			"0.0.32.0/20",
+		},
+		{
+			"0.0.4.0/24",
+			"0.0.64.0/24",
+		},
+		{
+			"0.0.4.0/24",
+			"0.0.18.0/24",
+		},
+		{
+			"0.0.4.0/24",
+			"0.0.18.0/24",
+			"0.0.32.0/24",
+		},
+		{
+			"0.0.0.0/18",
+			"0.80.0.0/24",
+		},
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 0, 0}))
-}
-
-func TestTooSmallHoleBeforeNetwork(t *testing.T) {
-	cidrs := []string{
-		"0.0.4.0/24",
+	for _, cidrs := range successfulCases {
+		parsedNetworks := parseNetworks(t, cidrs)
+		_, err := findRandomFreeNetwork(parsedNetworks)
+		assert.NoError(t, err, "Got an unexpected error when finding a free network with already-occupied CIDRS %+v", cidrs)
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
-}
-
-func TestExactHoleBetweenNetworks(t *testing.T) {
-	cidrs := []string{
-		"0.0.0.0/20",
-		"0.0.32.0/20",
-	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
-}
-
-func TestLooseHoleBetweenNetworks(t *testing.T) {
-	cidrs := []string{
-		"0.0.4.0/24",
-		"0.0.64.0/24",
-	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 16, 0}))
-}
-
-func TestTooSmallHoleBetweenNetworks(t *testing.T) {
-	cidrs := []string{
-		"0.0.4.0/24",
-		"0.0.18.0/24",
-	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 32, 0}))
-}
-
-func TestMultipleTooSmallHoleBetweenNetworks(t *testing.T) {
-	cidrs := []string{
-		"0.0.4.0/24",
-		"0.0.18.0/24",
-		"0.0.32.0/24",
-	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 48, 0}))
-}
-
-func TestHeterogenousSizedNetworks(t *testing.T) {
-	cidrs := []string{
-		"0.0.0.0/18",
-		"0.80.0.0/24",
-	}
-	assertExpectedResultGivenCidrs(t, cidrs, net.IP([]byte{0, 0, 64, 0}))
-
 }
 
 func assertExpectedResultGivenCidrs(t *testing.T, cidrs []string, expectedIp net.IP) {
 	networks := parseNetworks(t, cidrs)
-	result, err := findFreeNetwork(networks)
+	result, err := findRandomFreeNetwork(networks)
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedIp, result.IP)

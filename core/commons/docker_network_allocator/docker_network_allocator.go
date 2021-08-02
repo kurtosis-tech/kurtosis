@@ -13,6 +13,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -34,8 +35,10 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 )
+
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBits), int(supportedIpAddrBitLength))
 var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
+var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 
 type DockerNetworkAllocator struct {
 	// Even though we don't have any internal state, we still want to make sure we're only trying to allocate one new network at a time
@@ -43,6 +46,11 @@ type DockerNetworkAllocator struct {
 }
 
 func NewDockerNetworkAllocator() *DockerNetworkAllocator {
+	// NOTE: If we need a deterministic rand seed anywhere else in the program, this will break it! The reason we do this
+	//  here is because it's way more likely that we'll forget to seed the rand when using this class than it is that we need
+	//  a deterministic rand seed
+	rand.Seed(time.Now().UnixNano())
+
 	return &DockerNetworkAllocator{
 		mutex: &sync.Mutex{},
 	}
@@ -81,7 +89,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			}
 		}
 
-		freeNetworkIpAndMask, err := findFreeNetwork(usedSubnets)
+		freeNetworkIpAndMask, err := findRandomFreeNetwork(usedSubnets)
 		if err != nil {
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
@@ -97,6 +105,9 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return networkId, freeNetworkIpAndMask, gatewayIp, freeIpAddrTracker, nil
 		}
 
+		// Docker does this weird thing where a newly-deleted network won't show up in DockerClient.ListNetworks, but its IPs
+		//  will still be counted as used for several seconds after deletion. The best we can do here is catch the "overlapping
+		//  IP pool" error and retry with a new random network
 		if !strings.Contains(err.Error(), overlappingAddressSpaceErrStr) {
 			return "", nil, nil, nil, stacktrace.Propagate(
 				err,
@@ -106,9 +117,6 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			)
 		}
 
-		// Docker does this weird thing where a newly-deleted network's IPs won't be freed right away
-		// The network won't show up in the network list (so we can't detect its used IPs), so the best we can
-		//  do is just retry
 		log.Debugf(
 			"Tried to create network '%v' with CIDR '%v', but Docker returned the '%v' error indicating that either:\n" +
 				" 1) there used to be a Docker network that used those IPs that was just deleted (Docker will report a network as deleted earlier than its IPs are freed)\n" +
@@ -127,15 +135,37 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		time.Sleep(timeBetweenNetworkCreationRetries)
 	}
 
-	return "", nil, nil, nil, stacktrace.NewError("We couldn't allocate a new network even after retrying %v times", maxNumNetworkAllocationRetries)
+	return "", nil, nil, nil, stacktrace.NewError(
+		"We couldn't allocate a new network even after retrying %v times with %v between retries",
+		maxNumNetworkAllocationRetries,
+		timeBetweenNetworkCreationRetries,
+	)
 }
 
-func findFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	// TODO PERF: This algorithm is very dumb in that it iterates over EVERY possible network, starting from 0
-	//  This means that even if there's a preexisting network that takes up the first half of the IP space, we'll
+// NOTE: This is an intentionally non-deterministic algorithm!!!! The rationale: when many instances of Kurtosis
+//  are running at once, if we make the algorithm deterministic (e.g. start a 0.0.0.0, and keep checking subsequent
+//  subnets until you find a free one, which was the first iteration of this algo) then you get contention as the
+//  multiple instances are all trying to allocate the same networks at the same time. Therefore, we change the start
+//  to be different on every call
+func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
+	searchStartNetworksOffsetUint64 := uint64(rand.Uint32()) / networkWidthUint64
+	searchStartNetworkIpUint64 := searchStartNetworksOffsetUint64 * networkWidthUint64
+
+	// TODO PERF: This algorithm is very dumb in that it iterates over EVERY possible network, starting from a random
+	//  start IP. This means that even if there's a preexisting network that takes up the first half of the IP space, we'll
 	//  still try *every* possible network inside that already-allocated space (which will burn a ton of CPU cycles)
-	for resultNetworkIpUint64 := uint64(0); resultNetworkIpUint64 < math.MaxUint32; resultNetworkIpUint64 += networkWidthUint64 {
+	for offsetIpsUint64 := uint64(0); offsetIpsUint64 < maxUint32PlusOne; offsetIpsUint64 += networkWidthUint64 {
+		resultNetworkIpUint64UnModulod := searchStartNetworkIpUint64 + offsetIpsUint64
+
+		// Homerolled modulo, because doing modulo in Golang is a pain in the ass
+		var resultNetworkIpUint64 uint64
+		if resultNetworkIpUint64UnModulod < maxUint32PlusOne {
+			resultNetworkIpUint64 = resultNetworkIpUint64UnModulod
+		} else {
+			resultNetworkIpUint64 = resultNetworkIpUint64UnModulod - maxUint32PlusOne
+		}
 		resultNetworkIpUint32 := uint32(resultNetworkIpUint64)
+
 		resultNetworkIp := make([]byte, 4)
 		binary.BigEndian.PutUint32(resultNetworkIp, resultNetworkIpUint32)
 		resultNetwork := &net.IPNet{
