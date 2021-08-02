@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Created a `DockerNetworkAllocator`, which will allocate new free networks even if other networks exist (a necessary step for Kurtosis Interactive)
+* Allow multiple instances of Kurtosis to run at the same time!
 
 # 1.17.0
 ### Features
