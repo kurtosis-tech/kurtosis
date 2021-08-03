@@ -6,10 +6,17 @@
 package docker_network_allocator
 
 import (
+	"context"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
 )
+
+func TestErrorOnInstantiationWithoutConstructor(t *testing.T) {
+	allocator := DockerNetworkAllocator{}
+	_, _, _, _, err := allocator.CreateNewNetwork(context.Background(), nil, nil, "")
+	assert.Error(t, err)
+}
 
 func TestErrorOnNoFreeIps(t *testing.T) {
 	cidrs := []string{
