@@ -2,6 +2,9 @@
 ### Features
 * Allow multiple instances of Kurtosis to run at the same time!
 
+### Fixes
+* Add an extra guard to make sure that DockerNetworkAllocator can't be instantiated without `rand.Seed` being called
+
 # 1.17.0
 ### Features
 * Added a test for the static file cache
