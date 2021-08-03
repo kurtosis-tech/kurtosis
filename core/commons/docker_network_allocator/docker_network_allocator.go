@@ -16,7 +16,6 @@ import (
 	"math/rand"
 	"net"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -41,8 +40,9 @@ var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 
 type DockerNetworkAllocator struct {
-	// Even though we don't have any internal state, we still want to make sure we're only trying to allocate one new network at a time
-	mutex *sync.Mutex
+	// Our constructor sets the rand.Seed, so we want to force users to use the constructor
+	// This private variable guarantees it
+	isConstructedViaConstructor bool
 }
 
 func NewDockerNetworkAllocator() *DockerNetworkAllocator {
@@ -52,7 +52,7 @@ func NewDockerNetworkAllocator() *DockerNetworkAllocator {
 	rand.Seed(time.Now().UnixNano())
 
 	return &DockerNetworkAllocator{
-		mutex: &sync.Mutex{},
+		isConstructedViaConstructor: true,
 	}
 }
 
@@ -62,8 +62,9 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		dockerManager *docker_manager.DockerManager,
 		log *logrus.Logger,
 		networkName string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
-	provider.mutex.Lock()
-	defer provider.mutex.Unlock()
+	if !provider.isConstructedViaConstructor {
+		return "", nil, nil, nil, stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
+	}
 
 	numRetries := 0
 	for numRetries < maxNumNetworkAllocationRetries {
