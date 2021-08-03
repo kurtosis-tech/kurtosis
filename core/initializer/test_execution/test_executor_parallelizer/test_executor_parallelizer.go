@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
@@ -31,17 +32,6 @@ Runs the given tests in parallel, printing:
 1) the output of tests as they finish
 2) a summary of all tests once all tests have finished
 
-Args:
-	executionUuid: The UUID uniquely identifying this execution of the tests
-	initializerContainerId: The container ID of the initializer container, which will need to be connected to the test networks
-	dockerClient: The handle to manipulating the Docker environment
-	parallelism: The number of tests to run concurrently
-	allTestParams: A mapping of test_name -> parameters for running the test
-	testSuiteImageName: The name of the Docker image that will be used to run the test controller
-	testSuiteLogLevel: A string, meaningful to the test controller, that represents the user's desired log level
-	customTestSuiteEnvVars: A custom user-defined map from <env variable name> -> <env variable value> that will be
-		passed via Docker environment variables to the test controller
-
 Returns:
 	True if all tests passed, false otherwise
  */
@@ -49,6 +39,7 @@ func RunInParallelAndPrintResults(
 		executionUuid string,
 		initializerContainerId string,
 		dockerClient *client.Client,
+		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
 		parallelism uint,
 		allTestParams map[string]parallel_test_params.ParallelTestParams,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -93,6 +84,7 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		dockerClient,
+		dockerNetworkAllocator,
 		testsuiteLauncher,
 		apiContainerLauncher)
 	logrus.Info("All tests exited")
@@ -119,6 +111,7 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
 		dockerClient *client.Client,
+		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
@@ -142,6 +135,7 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			dockerClient,
+			dockerNetworkAllocator,
 			testsuiteLauncher,
 			apiContainerLauncher)
 	}
@@ -160,6 +154,7 @@ func runTestWorkerGoroutine(
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
 			dockerClient *client.Client,
+			dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
 			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 			apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
@@ -174,7 +169,7 @@ func runTestWorkerGoroutine(
 			initializerContainerId,
 			testLog,
 			dockerClient,
-			testParams.SubnetMask,
+			dockerNetworkAllocator,
 			testsuiteLauncher,
 			apiContainerLauncher,
 			testParams)

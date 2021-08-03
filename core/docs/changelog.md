@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Allow multiple instances of Kurtosis to run at the same time!
 
 # 1.17.0
 ### Features

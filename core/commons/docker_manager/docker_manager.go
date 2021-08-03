@@ -105,6 +105,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 		Subnet: subnetMask,
 		Gateway: gatewayIP.String(),
 	}}
+
 	resp, err := manager.dockerClient.NetworkCreate(context, name, types.NetworkCreate{
 		Driver: dockerNetworkDriver,
 		IPAM: &network.IPAM{
@@ -117,11 +118,19 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 	return resp.ID, nil
 }
 
+func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkResource, error) {
+	networks, err := manager.dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred listing the Docker networks")
+	}
+	return networks, nil
+}
+
 /*
 Returns the Docker network IDs of the networks matching the given name (if any).
  */
-func (manager DockerManager) GetNetworkIdsByName(context context.Context, name string) ([]string, error) {
-	networks, err := manager.getNetworksByFilter(context, nameFilterKey, name)
+func (manager DockerManager) GetNetworkIdsByName(ctx context.Context, name string) ([]string, error) {
+	networks, err := manager.getNetworksByFilter(ctx, nameFilterKey, name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
