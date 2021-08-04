@@ -55,10 +55,3 @@ func (suite InternalTestsuite) GetTests() map[string]testsuite.Test {
 	}
 	return tests
 }
-
-func (suite InternalTestsuite) GetNetworkWidthBits() uint32 {
-	return 8
-}
-
-
-
