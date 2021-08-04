@@ -33,6 +33,8 @@ const (
 	maxNumNetworkAllocationRetries = 10
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
+
+	postCreationGracePeriod = 1 * time.Second
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBits), int(supportedIpAddrBitLength))
@@ -103,6 +105,12 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 
 		networkId, err := dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp)
 		if err == nil {
+			// Occasionally, when trying to add a container to the newly-created network, we get
+			// "Error response from daemon: failed to set gateway while updating gateway: route for the gateway 226.100.32.1 could not be found: network is unreachable"
+			// This happens nondeterministically, indicating that Docker isn't telling the full truth when it says "yep, the network was created"
+			// We sleep for a tick after creating the network to account for this
+			time.Sleep(postCreationGracePeriod)
+
 			return networkId, freeNetworkIpAndMask, gatewayIp, freeIpAddrTracker, nil
 		}
 
