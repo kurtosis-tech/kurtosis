@@ -4,6 +4,7 @@
 
 ### Fixes
 * Add an extra guard to make sure that DockerNetworkAllocator can't be instantiated without `rand.Seed` being called
+* Added a workaround so that https://github.com/moby/moby/issues/42709 doesn't cause Kurtosis to randomly fail
 
 # 1.17.0
 ### Features
