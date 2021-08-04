@@ -39,6 +39,14 @@ var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBi
 var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 
+// Docker, for unknown reasons, will throw an error like:
+//   "failed to set gateway while updating gateway: route for the gateway X.X.X.X could not be found: network is unreachable"
+// if the network IP is in the range (223.108.240.0/20, 240.77.64.0/20), which we determined by running 100 Kurtosis
+//  tests and seeing that those two bracket IPs worked but the IPs inside that range failed
+// Bug report we filed: https://github.com/moby/moby/issues/42709
+var dockerPoisonIpRangeStart = binary.BigEndian.Uint32([]byte{223, 0, 0, 0})
+var dockerPoisonIpRangeEnd = binary.BigEndian.Uint32([]byte{240, 0, 0, 0})
+
 type DockerNetworkAllocator struct {
 	// Our constructor sets the rand.Seed, so we want to force users to use the constructor
 	// This private variable guarantees it
@@ -166,6 +174,13 @@ func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 			resultNetworkIpUint64 = resultNetworkIpUint64UnModulod - maxUint32PlusOne
 		}
 		resultNetworkIpUint32 := uint32(resultNetworkIpUint64)
+
+		// Docker, for unknown reasons, will throw an error when we connect a container to a network whose IP is in a certain range
+		// Bug report we filed: https://github.com/moby/moby/issues/42709
+		// Our band-aid solution is to skip these IPs:
+		if resultNetworkIpUint32 > dockerPoisonIpRangeStart && resultNetworkIpUint32 < dockerPoisonIpRangeEnd {
+			continue
+		}
 
 		resultNetworkIp := make([]byte, 4)
 		binary.BigEndian.PutUint32(resultNetworkIp, resultNetworkIpUint32)
