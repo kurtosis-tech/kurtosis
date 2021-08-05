@@ -1,4 +1,6 @@
 # TBD
+
+# 1.17.1
 ### Features
 * Allow multiple instances of Kurtosis to run at the same time!
 * Upgraded to [testsuite API lib 0.4.0](https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/blob/develop/docs/changelog.md#040)
