@@ -1,5 +1,14 @@
 # TBD
 
+# 1.17.1
+### Features
+* Allow multiple instances of Kurtosis to run at the same time!
+* Upgraded to [testsuite API lib 0.4.0](https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/blob/develop/docs/changelog.md#040)
+
+### Fixes
+* Add an extra guard to make sure that DockerNetworkAllocator can't be instantiated without `rand.Seed` being called
+* Added a workaround so that https://github.com/moby/moby/issues/42709 doesn't cause Kurtosis to randomly fail
+
 # 1.17.0
 ### Features
 * Added a test for the static file cache

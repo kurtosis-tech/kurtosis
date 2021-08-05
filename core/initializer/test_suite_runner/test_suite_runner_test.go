@@ -21,6 +21,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		"1234-abcd",
 		"5678-efgh",
 		nil,
+		nil,
 		suiteMetadata,
 		map[string]bool{},
 		1,
@@ -39,6 +40,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		perms,
 		"1234-abcd",
 		"5678-efgh",
+		nil,
 		nil,
 		suiteMetadata,
 		map[string]bool{},
@@ -60,6 +62,5 @@ func getTestingSuiteMetadata(numTests int) *kurtosis_testsuite_rpc_api_bindings.
 	}
 	return &kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata{
 		TestMetadata: testMetadata,
-		NetworkWidthBits: 0,
 	}
 }

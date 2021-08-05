@@ -12,9 +12,6 @@ type ParallelTestParams struct {
 	// Name of the test to run
 	TestName            string
 
-	// Subnet mask that should be used for the Docker network that the test controller & network will run in
-	SubnetMask          string
-
 	TestSetupTimeoutSeconds uint32
 
 	TestRunTimeoutSeconds uint32
@@ -22,6 +19,6 @@ type ParallelTestParams struct {
 	IsPartitioningEnabled bool
 }
 
-func NewParallelTestParams(testName string, subnetMask string, testSetupTimeoutSeconds uint32, testRunTimeoutSeconds uint32, isPartitioningEnabled bool) *ParallelTestParams {
-	return &ParallelTestParams{TestName: testName, SubnetMask: subnetMask, TestSetupTimeoutSeconds: testSetupTimeoutSeconds, TestRunTimeoutSeconds: testRunTimeoutSeconds, IsPartitioningEnabled: isPartitioningEnabled}
+func NewParallelTestParams(testName string, testSetupTimeoutSeconds uint32, testRunTimeoutSeconds uint32, isPartitioningEnabled bool) *ParallelTestParams {
+	return &ParallelTestParams{TestName: testName, TestSetupTimeoutSeconds: testSetupTimeoutSeconds, TestRunTimeoutSeconds: testRunTimeoutSeconds, IsPartitioningEnabled: isPartitioningEnabled}
 }

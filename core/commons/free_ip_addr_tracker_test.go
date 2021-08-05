@@ -8,16 +8,18 @@ package commons
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"net"
 	"testing"
 )
 
 func TestGetIp(t *testing.T) {
 	subnetMask := "1.2.3.4/16"
-	addrTracker, err := NewFreeIpAddrTracker(logrus.StandardLogger(), subnetMask, map[string]bool{
+	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
+	assert.Nil(t, err)
+	addrTracker := NewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{
 		"1.2.0.2": true,
 		"1.2.0.3": true,
 	})
-	assert.Nil(t, err)
 
 	ip, err := addrTracker.GetFreeIpAddr()
 	assert.Nil(t, err)
@@ -34,8 +36,9 @@ func TestGetIp(t *testing.T) {
 
 func TestReleaseIp(t *testing.T) {
 	subnetMask := "1.2.3.4/16"
-	addrTracker, err := NewFreeIpAddrTracker(logrus.StandardLogger(), subnetMask, map[string]bool{})
+	_, parsedSubnetMask, err := net.ParseCIDR(subnetMask)
 	assert.Nil(t, err)
+	addrTracker := NewFreeIpAddrTracker(logrus.StandardLogger(), parsedSubnetMask, map[string]bool{})
 
 	ip, err := addrTracker.GetFreeIpAddr()
 	assert.Nil(t, err)
