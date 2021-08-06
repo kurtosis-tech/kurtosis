@@ -1,4 +1,6 @@
 # TBD
+### Fixed
+* Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`
 
 # 1.17.1
 ### Features

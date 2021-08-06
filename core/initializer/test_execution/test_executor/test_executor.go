@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
-	"github.com/kurtosis-tech/kurtosis/commons/volume_naming_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
@@ -89,7 +89,7 @@ Returns:
 */
 func RunTest(
 		testSetupExecutionCtx context.Context,
-		executionInstanceUuid string,
+		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
 		log *logrus.Logger,
 		dockerClient *client.Client,
@@ -112,31 +112,27 @@ func RunTest(
 	//  potentially-cancelled setup context).
 	testTeardownContext := context.Background()
 
-	networkName := fmt.Sprintf(
-		"%v_%v_%v",
-		time.Now().Format(networkNameTimestampFormat),
-		executionInstanceUuid,
-		testName)
+	enclaveName, _ := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
 	log.Debugf("Creating Docker network for test...")
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := dockerNetworkAllocator.CreateNewNetwork(
 		testSetupExecutionCtx,
 		dockerManager,
 		log,
-		networkName,
+		enclaveName,
 	)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
 		//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
 		//  need to parse the log message for the string "context canceled" and, if found, do another search for
 		//  networks with our network name and delete them
-		return false, stacktrace.Propagate(err, "An error occurred allocating new network '%v' for test '%v'", networkName, testName)
+		return false, stacktrace.Propagate(err, "An error occurred allocating new network '%v' for test '%v'", enclaveName, testName)
 	}
 	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
-	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", networkName, networkId, networkIpAndMask.String())
+	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveName, networkId, networkIpAndMask.String())
 
 
-	log.Debugf("Mounting the initializer container inside network '%v' so that it can call functions on the testsuite container...", networkName)
+	log.Debugf("Mounting the initializer container inside network '%v' so that it can call functions on the testsuite container...", enclaveName)
 	initializerContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting the initializer container in the test network")
@@ -144,7 +140,7 @@ func RunTest(
 	if err := dockerManager.ConnectContainerToNetwork(testSetupExecutionCtx, networkId, initializerContainerId, initializerContainerIp); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred connecting the initializer container to the test network, which is required to communicate with the testsuite")
 	}
-	log.Debugf("Successfully mounted the initializer container inside network '%v'", networkName)
+	log.Debugf("Successfully mounted the initializer container inside network '%v'", enclaveName)
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
@@ -160,14 +156,8 @@ func RunTest(
 	}
 	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
 
-	enclaveDataVolumeName := fmt.Sprintf(
-		"%v_%v_%v",
-		time.Now().Format(volume_naming_consts.GoTimestampFormat),
-		executionInstanceUuid,
-		testName,
-	)
-	if err := dockerManager.CreateVolume(testSetupExecutionCtx, enclaveDataVolumeName); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveDataVolumeName)
+	if err := dockerManager.CreateVolume(testSetupExecutionCtx, enclaveName); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveName)
 	}
 
 	apiContainerId, err := apiContainerLauncher.Launch(
@@ -181,7 +171,7 @@ func RunTest(
 		initializerContainerIp,
 		testRunningContainerIp,
 		kurtosisApiIp,
-		enclaveDataVolumeName,
+		enclaveName,
 		testParams.IsPartitioningEnabled,
 	)
 	if err != nil {
@@ -202,7 +192,7 @@ func RunTest(
 		testName,
 		kurtosisApiIp,
 		testRunningContainerIp,
-		enclaveDataVolumeName,
+		enclaveName,
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")

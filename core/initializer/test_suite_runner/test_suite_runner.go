@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
@@ -56,7 +57,7 @@ Returns:
  */
 func RunTests(
 		permissions *permissions.Permissions,
-		executionInstanceUuid string,
+		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
 		dockerClient *client.Client,
 		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
@@ -93,7 +94,7 @@ func RunTests(
 	}
 	sort.Strings(orderedTestNames)
 
-	logrus.Infof("Running %v tests with execution ID '%v':", len(testNamesToRun), executionInstanceUuid)
+	logrus.Infof("Running %v tests:", len(testNamesToRun))
 	for _, testName := range orderedTestNames {
 		logrus.Infof(" - %v", testName)
 	}
@@ -104,7 +105,7 @@ func RunTests(
 	}
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
-		executionInstanceUuid,
+		testsuiteExObjNameProvider,
 		initializerContainerId,
 		dockerClient,
 		dockerNetworkAllocator,
