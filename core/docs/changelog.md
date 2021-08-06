@@ -1,6 +1,10 @@
 # TBD
 ### Fixed
-* Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`
+* Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`, where:
+    * `KTT` is a prefix indicating "Kurtosis testing"
+    * `YYYY-MM-DDTHH.MM.SS` is the timestamp of when the testsuite execution was launched
+    * `RANDOMNUM` is a random salt to ensure that two testsuites run at exactly the same second don't collide
+    * `TESTNAME` is the name of the test running inside the enclave
 
 # 1.17.1
 ### Features
