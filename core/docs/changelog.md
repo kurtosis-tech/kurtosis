@@ -1,4 +1,9 @@
 # TBD
+### Fixes
+* Updated copyright notice to 2021, with entity as Kurtosis Technologies Inc.
+
+### Breaking Changes
+* Add explicit copyright notice to all files (including `kurtosis.sh`)
 
 # 1.17.1
 ### Features
