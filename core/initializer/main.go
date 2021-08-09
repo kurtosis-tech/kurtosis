@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -68,18 +69,18 @@ const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	clientIdArg                 = "CLIENT_ID"
-	clientSecretArg             = "CLIENT_SECRET"
-	customParamsJsonArg         = "CUSTOM_PARAMS_JSON"
-	doListArg                   = "DO_LIST"
-	executionUuidArg            = "EXECUTION_UUID"
-	isDebugModeArg              = "IS_DEBUG_MODE"
-	kurtosisApiImageArg         = "KURTOSIS_API_IMAGE"
-	kurtosisLogLevelArg         = "KURTOSIS_LOG_LEVEL"
-	parallelismArg              = "PARALLELISM"
-	testNamesArg                = "TEST_NAMES"
-	testSuiteImageArg           = "TEST_SUITE_IMAGE"
-	testSuiteLogLevelArg        = "TEST_SUITE_LOG_LEVEL"
+	clientIdArg          = "CLIENT_ID"
+	clientSecretArg      = "CLIENT_SECRET"
+	customParamsJsonArg  = "CUSTOM_PARAMS_JSON"
+	doListArg            = "DO_LIST"
+	executionIdArg       = "EXECUTION_ID"
+	isDebugModeArg       = "IS_DEBUG_MODE"
+	kurtosisApiImageArg  = "KURTOSIS_API_IMAGE"
+	kurtosisLogLevelArg  = "KURTOSIS_LOG_LEVEL"
+	parallelismArg       = "PARALLELISM"
+	testNamesArg         = "TEST_NAMES"
+	testSuiteImageArg    = "TEST_SUITE_IMAGE"
+	testSuiteLogLevelArg = "TEST_SUITE_LOG_LEVEL"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                     If you change the above, you need to update the Dockerfile!
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -114,10 +115,10 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 		HelpText: "Rather than running the tests, lists the tests available to run",
 		Type:     docker_flag_parser.BoolFlagType,
 	},
-	executionUuidArg: {
+	executionIdArg: {
 		Required: true,
 		Default:  "",
-		HelpText: "UUID used for identifying everything associated with this run of Kurtosis",
+		HelpText: "ID used for identifying everything associated with this run of Kurtosis",
 		Type:     docker_flag_parser.StringFlagType,
 	},
 	isDebugModeArg: {
@@ -214,13 +215,15 @@ func main() {
 		os.Exit(failureExitCode)
 	}
 
-	executionInstanceId := parsedFlags.GetString(executionUuidArg)
+	executionId := parsedFlags.GetString(executionIdArg)
+
+	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 
 	// We need the initializer container's ID so that we can connect it to the subnetworks so that it can
 	//  call the testsuite containers, and the least fragile way we have to find it is to use the execution UUID
 	// We must do this before starting any other containers though, else we won't know which one is the initializer
 	//  (since using the image name is very fragile)
-	initializerContainerId, err := getInitializerContainerId(dockerClient, executionInstanceId)
+	initializerContainerId, err := getInitializerContainerId(dockerClient, executionId)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the initializer container's ID: %v", err)
 		os.Exit(failureExitCode)
@@ -253,14 +256,14 @@ func main() {
 	customParamsJson := parsedFlags.GetString(customParamsJsonArg)
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
-		executionInstanceId,
+		testsuiteExObjNameProvider,
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		customParamsJson,
 		optionalHostPortBindingSupplier,
 	)
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
-		executionInstanceId,
+		testsuiteExObjNameProvider,
 		parsedFlags.GetString(kurtosisApiImageArg),
 		kurtosisLogLevel,
 		hostPortBindingSupplier,
@@ -297,9 +300,10 @@ func main() {
 
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator()
 
+	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
-		executionInstanceId,
+		testsuiteExObjNameProvider,
 		initializerContainerId,
 		dockerClient,
 		dockerNetworkAllocator,
