@@ -299,6 +299,16 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
+	functionFinishedSuccessfully := false
+	defer func() {
+		if !functionFinishedSuccessfully {
+			if err := manager.KillContainer(context, containerId); err != nil {
+				manager.log.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
+				fmt.Fprintln(manager.log.Out, err)
+				manager.log.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
+			}
+		}
+	}()
 
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
@@ -354,6 +364,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		resultHostPortBindings = portBindingsOnExpectedInterface
 	}
 
+	functionFinishedSuccessfully = true
 	return containerId, resultHostPortBindings, nil
 }
 

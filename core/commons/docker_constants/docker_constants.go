@@ -6,7 +6,6 @@
 package docker_constants
 
 const (
-	// TODO DELETE IF UNNEEDED
 	// This is the magic domain name inside a container that Docker will give the host machine running Docker itself
 	// This is available by default on Docker for Mac & Windows because they run in VMs, but needs to be specifically
 	//  bound in Docker for Linux
