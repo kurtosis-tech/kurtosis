@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
@@ -41,22 +40,23 @@ type LambdaLauncher struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
-	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
+	shouldPublishPorts bool
 
 	dockerNetworkId string
 
 	enclaveDataVolName string
 }
 
-func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
-	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
+func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
+	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
 
 func (launcher LambdaLauncher) Launch(
 		ctx context.Context,
 		lambdaId lambda_store_types.LambdaID,
 		containerImage string,
-		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, hostPortBindings map[nat.Port]*nat.PortBinding, resultErr error) {
+		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, lambdaPortHostPortBindng *nat.PortBinding, resultErr error) {
+
 	lambdaPortNumStr := strconv.Itoa(kurtosis_lambda_rpc_api_consts.ListenPort)
 	lambdaPortObj, err := nat.NewPort(kurtosis_lambda_rpc_api_consts.ListenProtocol, lambdaPortNumStr)
 	if err != nil {
@@ -69,11 +69,6 @@ func (launcher LambdaLauncher) Launch(
 	}
 	usedPorts := map[nat.Port]bool {
 		lambdaPortObj: true,
-	}
-
-	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
-	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred binding used ports to host ports")
 	}
 
 	lambdaIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
@@ -91,7 +86,7 @@ func (launcher LambdaLauncher) Launch(
 		launcher.enclaveDataVolName: kurtosis_lambda_docker_api.ExecutionVolumeMountpoint,
 	}
 
-	containerId, err := launcher.dockerManager.CreateAndStartContainer(
+	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		containerImage,
 		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaId),
@@ -99,7 +94,8 @@ func (launcher LambdaLauncher) Launch(
 		lambdaIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capapbilities needed for modules
 		docker_manager.DefaultNetworkMode,
-		usedPortsWithHostBindings,
+		usedPorts,
+		launcher.shouldPublishPorts,
 		nil, // No ENTRYPOINT overrides; modules are configured using env vars
 		nil, // No CMD overrides; modules are configured using env vars
 		envVars,
@@ -121,6 +117,12 @@ func (launcher LambdaLauncher) Launch(
 		}
 	}()
 
+	var resultHostPortBinding *nat.PortBinding = nil
+	hostPortBindingFromMap, found := allHostPortBindings[lambdaPortObj]
+	if found {
+		resultHostPortBinding = hostPortBindingFromMap
+	}
+
 	lambdaSocket := fmt.Sprintf("%v:%v", lambdaIpAddr, kurtosis_lambda_rpc_api_consts.ListenPort)
 	conn, err := grpc.Dial(
 		lambdaSocket,
@@ -138,7 +140,7 @@ func (launcher LambdaLauncher) Launch(
 	logrus.Debugf("Lambda container '%v' became available", lambdaId)
 
 	shouldDestroyContainer = false
-	return containerId, lambdaIpAddr, lambdaClient, usedPortsWithHostBindings, nil
+	return containerId, lambdaIpAddr, lambdaClient, resultHostPortBinding, nil
 }
 
 func waitUntilLambdaContainerIsAvailable(ctx context.Context, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient) error {

@@ -10,11 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -231,28 +228,6 @@ func main() {
 
 	isDebugMode := parsedFlags.GetBool(isDebugModeArg)
 
-	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
-	if isDebugMode {
-		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
-			docker_constants.HostMachineDomainInsideContainer,
-			hostPortTrackerInterfaceIp,
-			protocolForDebuggerPorts,
-			hostPortTrackerStartRange,
-			hostPortTrackerEndRange,
-			map[uint32]bool{}, // We don't know of any taken ports at this point
-		)
-		if err != nil {
-			logrus.Fatalf(
-				"An error occurred instanting the free host port binding supplier: %v",
-				err,
-			)
-			os.Exit(failureExitCode)
-		}
-		hostPortBindingSupplier = supplier
-	}
-
-	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
-
 	customParamsJson := parsedFlags.GetString(customParamsJsonArg)
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
@@ -260,13 +235,13 @@ func main() {
 		parsedFlags.GetString(testSuiteImageArg),
 		parsedFlags.GetString(testSuiteLogLevelArg),
 		customParamsJson,
-		optionalHostPortBindingSupplier,
+		isDebugMode,
 	)
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		testsuiteExObjNameProvider,
 		parsedFlags.GetString(kurtosisApiImageArg),
 		kurtosisLogLevel,
-		hostPortBindingSupplier,
+		isDebugMode,
 	)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(

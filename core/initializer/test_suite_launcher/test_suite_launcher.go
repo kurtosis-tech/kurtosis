@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_docker_api"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -30,6 +29,9 @@ const (
 	protocolForDebuggersRunningOnTestsuite = "tcp"
 )
 
+var testsuiteRpcPort = nat.Port(fmt.Sprintf("%v/%v", kurtosis_testsuite_rpc_api_consts.ListenPort, kurtosis_testsuite_rpc_api_consts.ListenProtocol))
+var testsuiteDebuggerPort = nat.Port(fmt.Sprintf("%v/%v", portForDebuggersRunningOnTestsuite, protocolForDebuggersRunningOnTestsuite))
+
 type TestsuiteContainerLauncher struct {
 	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 
@@ -41,11 +43,11 @@ type TestsuiteContainerLauncher struct {
 	// The JSON-serialized custom params object that will be passed as-is to the testsuite
 	customParamsJson string
 
-	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
+	shouldPublishPorts bool
 }
 
-func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string, shouldPublishPorts bool) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, shouldPublishPorts: shouldPublishPorts}
 }
 
 /*
@@ -141,7 +143,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
-	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
 		containerName,
@@ -160,7 +162,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		suiteContainerId,
 		func() bool { return functionCompletedSuccessfully },
 	)
-	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, debuggerPortHostBinding)
+	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, hostPortBindings)
 
 	functionCompletedSuccessfully = true
 	return suiteContainerId, nil
@@ -178,44 +180,15 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		containerIpAddr net.IP,
 		envVars map[string]string,
 		volumeMountpoints map[string]string,
-	) (string, *nat.PortBinding, error) {
+	) (string, map[nat.Port]*nat.PortBinding, error) {
 
-	testsuiteRpcPort, err := nat.NewPort(kurtosis_testsuite_rpc_api_consts.ListenProtocol, strconv.Itoa(kurtosis_testsuite_rpc_api_consts.ListenPort))
-	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the port object on '%v/%v' to represent the testsuite RPC API",
-			kurtosis_testsuite_rpc_api_consts.ListenProtocol,
-			kurtosis_testsuite_rpc_api_consts.ListenPort,
-		)
-	}
-
-	testsuiteDebuggerPort, err := nat.NewPort(protocolForDebuggersRunningOnTestsuite, strconv.Itoa(portForDebuggersRunningOnTestsuite))
-	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the port object on '%v/%v' to represent the testsuite debugger port",
-			protocolForDebuggersRunningOnTestsuite,
-			portForDebuggersRunningOnTestsuite,
-		)
-	}
 
 	usedPorts := map[nat.Port]bool{
 		testsuiteRpcPort: true,
 		testsuiteDebuggerPort: true,
 	}
 
-	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred binding the test suite's used ports to host port bindings where necessary")
-	}
-
-	debuggerHostPortBinding, found := usedPortsWithHostBindings[testsuiteDebuggerPort]
-	if !found {
-		return "", nil, stacktrace.NewError("Couldn't find an entry for the debugger port even though it should be in the map!")
-	}
-
-	containerId, err := dockerManager.CreateAndStartContainer(
+	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
 		name,
@@ -223,7 +196,8 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		containerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers
 		docker_manager.DefaultNetworkMode,  			// No special networking modes for testsuite containers
-		usedPortsWithHostBindings,
+		usedPorts,
+		launcher.shouldPublishPorts,
 		nil, // Nil ENTRYPOINT args because we expect the test suite image to be parameterized with variables
 		nil, // Nil CMD args because we expect the test suite image to be parameterized with variables
 		envVars,
@@ -235,19 +209,20 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating and starting the testsuite container")
 	}
 
-	return containerId, debuggerHostPortBinding, nil
+	return containerId, hostPortBindings, nil
 }
 
 func logSuccessfulSuiteContainerLaunch(
 		log *logrus.Logger,
 		suiteContainerDesc string,
-		debuggerPortHostBinding *nat.PortBinding) {
+		hostPortBindings map[nat.Port]*nat.PortBinding) {
 	suiteLaunchSupplementalLogInfo := ""
-	if debuggerPortHostBinding != nil {
+	debuggerHostPortBinding, found := hostPortBindings[testsuiteDebuggerPort]
+	if found {
 		suiteLaunchSupplementalLogInfo = fmt.Sprintf(
 			" with debugger port bound to host port %v:%v (if a debugger is running, you may need to connect to this port to proceed)",
-			debuggerPortHostBinding.HostIP,
-			debuggerPortHostBinding.HostPort,
+			debuggerHostPortBinding.HostIP,
+			debuggerHostPortBinding.HostPort,
 		)
 	}
 	log.Infof("Successfully created %v%v", suiteContainerDesc, suiteLaunchSupplementalLogInfo)
