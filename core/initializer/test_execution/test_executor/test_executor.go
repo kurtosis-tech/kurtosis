@@ -39,8 +39,6 @@ No logging to the system-level logger is allowed in this file!!! Everything shou
  */
 
 const (
-	networkNameTimestampFormat = "2006-01-02T15.04.05" // Go timestamp formatting is absolutely absurd...
-
 	waitForTestsuiteAvailabilityTimeout = 10 * time.Second
 
 	// How long we'll give the API container & testsuite container to gracefully stop after we're done trying to run the test
@@ -101,8 +99,6 @@ func RunTest(
 	testName := testParams.TestName
 
 	log.Debugf("Creating Docker manager from environment settings...")
-	// NOTE: at this point, all Docker commands from here forward will be bound by the Context that we pass in here - we'll
-	//  only need to cancel this context once
 	dockerManager := docker_manager.NewDockerManager(log, dockerClient)
 	log.Debugf("Docker manager created successfully")
 
