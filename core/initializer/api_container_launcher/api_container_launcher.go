@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -31,11 +30,11 @@ type ApiContainerLauncher struct {
 	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 	containerImage          string
 	kurtosisLogLevel        logrus.Level
-	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
+	shouldPublishPorts		bool
 }
 
-func NewApiContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, containerImage string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
-	return &ApiContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
+func NewApiContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, containerImage string, kurtosisLogLevel logrus.Level, shouldPublishPorts bool) *ApiContainerLauncher {
+	return &ApiContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, shouldPublishPorts: shouldPublishPorts}
 }
 
 func (launcher ApiContainerLauncher) Launch(
@@ -74,7 +73,7 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosis_core_rpc_api_consts.ListenProtocol,
 	))
 	containerName := enclaveObjNameProvider.ForApiContainer()
-	containerId, err := dockerManager.CreateAndStartContainer(
+	containerId, _, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.containerImage,
 		containerName,
@@ -82,9 +81,8 @@ func (launcher ApiContainerLauncher) Launch(
 		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
-		map[nat.Port]*nat.PortBinding{
-			kurtosisApiPort: nil, // We don't expose the API container's port to the host machine for now
-		},
+		map[nat.Port]bool{kurtosisApiPort: true},
+		false, // For now, we don't publish the API container's port to the host machine (though maybe this will change in the future)
 		nil, // Nil ENTRYPOINT args because the API container is launched by setting env vars
 		nil, // Nil CMD args because the API container is launched by setting env vars
 		apiContainerEnvVars,
@@ -94,7 +92,7 @@ func (launcher ApiContainerLauncher) Launch(
 		map[string]string{
 			enclaveDataVolumeName: api_container_mountpoints.EnclaveDataVolumeMountpoint,
 		},
-		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
+		false, // The API container doesn't need access to the host machine
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
@@ -115,18 +113,6 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		apiContainerIpAddr net.IP,
 		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (map[string]string, error) {
-	var hostPortBindingSupplierParams *api_container_env_var_values.HostPortBindingSupplierParams = nil
-	hostPortBindingSupplier := launcher.hostPortBindingSupplier
-	if hostPortBindingSupplier != nil {
-		hostPortBindingSupplierParams = api_container_env_var_values.NewHostPortBindingSupplierParams(
-			hostPortBindingSupplier.GetInterfaceIp(),
-			hostPortBindingSupplier.GetProtocol(),
-			hostPortBindingSupplier.GetPortRangeStart(),
-			hostPortBindingSupplier.GetPortRangeEnd(),
-			hostPortBindingSupplier.GetTakenPorts(),
-		)
-	}
-
 	args, err := api_container_env_var_values.NewApiContainerArgs(
 		enclaveId,
 		networkId,
@@ -141,7 +127,8 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 			testSuiteContainerIpAddr.String(): true,
 		},
 		isPartitioningEnabled,
-		hostPortBindingSupplierParams)
+		launcher.shouldPublishPorts,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
 	}

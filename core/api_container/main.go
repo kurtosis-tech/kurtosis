@@ -18,16 +18,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
@@ -169,27 +166,6 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
 
-	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
-	if args.HostPortBindingSupplierParams != nil {
-		hostPortSupplierParams := args.HostPortBindingSupplierParams
-		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
-			docker_constants.HostMachineDomainInsideContainer,
-			hostPortSupplierParams.InterfaceIp,
-			hostPortSupplierParams.Protocol,
-			hostPortSupplierParams.PortRangeStart,
-			hostPortSupplierParams.PortRangeEnd,
-			hostPortSupplierParams.TakenPorts,
-		)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(
-				err,
-				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
-			)
-		}
-		hostPortBindingSupplier = supplier
-	}
-	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
-
 	enclaveDataVolName := args.EnclaveDataVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
@@ -207,7 +183,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		dockerManager,
 		enclaveObjNameProvider,
 		freeIpAddrTracker,
-		optionalHostPortBindingSupplier,
+		args.ShouldPublishPorts,
 		filesArtifactExpander,
 		dockerNetworkId,
 		enclaveDataVolName,
@@ -232,7 +208,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
 		freeIpAddrTracker,
-		optionalHostPortBindingSupplier,
+		args.ShouldPublishPorts,
 		dockerNetworkId,
 		enclaveDataVolName,
 	)

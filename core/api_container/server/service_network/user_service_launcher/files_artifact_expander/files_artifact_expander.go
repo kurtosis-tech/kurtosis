@@ -117,7 +117,7 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 	}
 	defer expander.freeIpAddrTracker.ReleaseIpAddr(containerIp)
 
-	containerId, err := expander.dockerManager.CreateAndStartContainer(
+	containerId, _, err := expander.dockerManager.CreateAndStartContainer(
 		ctx,
 		dockerImage,
 		containerName,
@@ -125,7 +125,8 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		containerIp,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
-		map[nat.Port]*nat.PortBinding{},
+		map[nat.Port]bool{},
+		false, // We don't need to publish any ports for the files artifact-expanding image
 		nil, // No ENTRYPOINT overriding needed
 		containerCmd,
 		map[string]string{}, // No env variables

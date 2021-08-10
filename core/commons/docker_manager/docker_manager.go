@@ -49,6 +49,8 @@ const (
 	dockerKillSignal = "KILL"
 
 	nameFilterKey = "name"
+
+	expectedHostIp = "0.0.0.0"
 )
 
 /*
@@ -210,8 +212,9 @@ Args:
 	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
 		For more info, see the --cap-add section of https://docs.docker.com/engine/reference/run/
 	networkMode: When a non-empty string, sets the Docker --network flag to be this given string
-	usedPorts: A map of (ports that the container will listen on) -> (an *optional* IP/port on the host that
-		will get bound to the container port); set the binding to nil to exclude it
+	usedPorts: A set of ports that the container will listen on
+	shouldPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
+		to the container
 	entrypointArgs: The args that will be used to override the ENTRYPOINT of the image (leave as nil to not override)
 	cmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
 	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
@@ -222,7 +225,9 @@ Args:
 		needs to check the host machine's free ports)
 
 Returns:
-	The Docker container ID of the newly-created container
+	containerId: The Docker container ID of the newly-created container
+	containerHostPortBindings: If shouldPublishAllPorts is true, returns the ports on the host container interface where each of the
+		container's exposed ports can be found; if shouldPublishAllPorts is false, this will be an empty map
  */
 func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
@@ -232,76 +237,135 @@ func (manager DockerManager) CreateAndStartContainer(
 			staticIp net.IP,
 			addedCapabilities map[ContainerCapability]bool,
 			networkMode DockerManagerNetworkMode,
-			usedPortsWithHostBindings map[nat.Port]*nat.PortBinding,
+			usedPortsSet map[nat.Port]bool,
+			shouldPublishAllPorts bool,
 			entrypointArgs []string,
 			cmdArgs []string,
 			envVariables map[string]string,
 			bindMounts map[string]string,
 			volumeMounts map[string]string,
-			needsAccessToDockerHostMachine bool) (containerId string, err error) {
+			needsAccessToDockerHostMachine bool) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
 
 	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
 
 	if !imageExistsLocally {
 		err = manager.pullImage(context, dockerImage)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
+			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
 	}
 
 	networks, err := manager.getNetworksByFilter(context, "id", networkId)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
 	}
 	if len(networks) == 0 {
-		return "", stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
+		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
 	} else if len(networks) > 1 {
-		return "", stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
+		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
 	}
 
-	usedPorts := map[nat.Port]bool{}
-	usedPortsWithHostBindingsDeref := map[nat.Port]nat.PortBinding{}
-	for usedPort, hostBinding := range usedPortsWithHostBindings {
-		usedPorts[usedPort] = true
-		if hostBinding != nil {
-			usedPortsWithHostBindingsDeref[usedPort] = *hostBinding
-		}
-	}
-
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPorts, entrypointArgs, cmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPortsSet, entrypointArgs, cmdArgs, envVariables)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to configure container from service.")
+		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
 		addedCapabilities,
 		networkMode,
 		bindMounts,
 		volumeMounts,
-		usedPortsWithHostBindingsDeref,
+		usedPortsSet,
+		shouldPublishAllPorts,
 		needsAccessToDockerHostMachine)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
+		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
 	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, name)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", name, dockerImage)
+		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", name, dockerImage)
 	}
 	containerId = resp.ID
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
 		if err := manager.ConnectContainerToNetwork(context, networkId, containerId, staticIp); err != nil {
-			return "", stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
+			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
 
 	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
-		return "", stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
-	return containerId, nil
+	functionFinishedSuccessfully := false
+	defer func() {
+		if !functionFinishedSuccessfully {
+			if err := manager.KillContainer(context, containerId); err != nil {
+				manager.log.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
+				fmt.Fprintln(manager.log.Out, err)
+				manager.log.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
+			}
+		}
+	}()
+
+	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
+	//  on the host. We need to look up what those ports are so we can return report them back to the user.
+	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
+	if shouldPublishAllPorts {
+		resp, err := manager.dockerClient.ContainerInspect(context, containerId)
+		if err != nil {
+			return "", nil, stacktrace.Propagate(
+				err,
+				"Publishing all ports was requested, but an error occurred inspecting the newly-started " +
+					"container which is necessary for determining which host ports the container's ports were bound to",
+			)
+		}
+		networkSettings := resp.NetworkSettings
+		if networkSettings == nil {
+			return "", nil, stacktrace.NewError(
+				"We got a response from inspecting container '%v' which is necessary for determining the " +
+					"exposed host ports, but the network settings object was nil",
+				containerId,
+			)
+		}
+		allInterfaceHostPortBindings := networkSettings.Ports
+		if allInterfaceHostPortBindings == nil {
+			return "", nil, stacktrace.NewError(
+				"Pulbishing all ports was requested for container '%v', but the container host port bindings were null",
+				containerId,
+			)
+		}
+
+		portBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
+		for port, allInterfaceBindings := range allInterfaceHostPortBindings {
+			for _, interfaceBinding := range allInterfaceBindings {
+				if interfaceBinding.HostIP == expectedHostIp {
+					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
+						HostIP:   interfaceBinding.HostIP,
+						HostPort: interfaceBinding.HostPort,
+					}
+				}
+			}
+		}
+
+		numUsedPorts := len(usedPortsSet)
+		numPortBindingsOnExpectedInterface := len(portBindingsOnExpectedInterface)
+		if numUsedPorts != numPortBindingsOnExpectedInterface {
+			return "", nil, stacktrace.NewError(
+				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got host port bindings on the expected interface '%v'",
+				numUsedPorts,
+				numPortBindingsOnExpectedInterface,
+				expectedHostIp,
+			)
+		}
+
+		resultHostPortBindings = portBindingsOnExpectedInterface
+	}
+
+	functionFinishedSuccessfully = true
+	return containerId, resultHostPortBindings, nil
 }
 
 // Gets the container's ID on a given network
@@ -573,7 +637,9 @@ Args:
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
-	hostPortBindings: Mapping of (container port) -> (IP/port on host to bind to)
+	exposedPorts: Set of container ports to expose
+	shouldPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
+		to the container
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
 
@@ -583,7 +649,8 @@ func (manager *DockerManager) getContainerHostConfig(
 		networkMode DockerManagerNetworkMode,
 		bindMounts map[string]string,
 		volumeMounts map[string]string,
-		hostPortBindings map[nat.Port]nat.PortBinding,
+		exposedPorts map[nat.Port]bool,
+		shouldPublishAllPorts bool,
 		needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -599,8 +666,8 @@ func (manager *DockerManager) getContainerHostConfig(
 	manager.log.Debugf("Binds: %v", bindsList)
 
 	portMap := nat.PortMap{}
-	for containerPort, hostBinding := range hostPortBindings {
-		portMap[containerPort] = []nat.PortBinding{hostBinding}
+	for containerPort := range exposedPorts {
+		portMap[containerPort] = nil
 	}
 
 	addedCapabilitiesSlice := []string{}
@@ -624,6 +691,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		CapAdd: addedCapabilitiesSlice,
 		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
+		PublishAllPorts: shouldPublishAllPorts,
 		ExtraHosts: extraHosts,
 	}
 	return containerHostConfigPtr, nil

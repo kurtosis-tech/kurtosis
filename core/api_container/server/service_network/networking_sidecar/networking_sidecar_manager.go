@@ -79,7 +79,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			"An error occurred getting a free IP address for the sidecar container attached to service with ID '%v'",
 			serviceId)
 	}
-	sidecarContainerId, err := manager.dockerManager.CreateAndStartContainer(
+	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
 		networkingSidecarImageName,
 		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceId),
@@ -89,7 +89,8 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			docker_manager.NetAdmin: true,
 		},
 		docker_manager.NewContainerNetworkMode(serviceContainerId),
-		map[nat.Port]*nat.PortBinding{},
+		map[nat.Port]bool{},
+		false, // We don't publish network sidecar ports
 		nil, // No entrypoint overriding needed
 		sidecarContainerCommand,
 		map[string]string{}, // No environment variables

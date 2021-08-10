@@ -7,6 +7,13 @@
     * `RANDOMNUM` is a random salt to ensure that two testsuites run at exactly the same second don't collide
     * `TESTNAME` is the name of the test running inside the enclave
 
+### Features
+* When running in debug mode, let Docker handle host-port binding
+    * This allows multiple versions of Kurtosis to be running in debug mode at the same time
+
+### Removals
+* Removed OptionalHostPortBindingSupplier, which is no longer needed
+
 ### Breaking Changes
 * Add explicit copyright notice to all files (including `kurtosis.sh`)
 
