@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
 package exec_command_test
 
 import (
