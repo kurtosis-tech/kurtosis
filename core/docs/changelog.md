@@ -1,6 +1,11 @@
 # TBD
 ### Fixes
 * Updated copyright notice to 2021, with entity as Kurtosis Technologies Inc.
+* Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`, where:
+    * `KTT` is a prefix indicating "Kurtosis testing"
+    * `YYYY-MM-DDTHH.MM.SS` is the timestamp of when the testsuite execution was launched
+    * `RANDOMNUM` is a random salt to ensure that two testsuites run at exactly the same second don't collide
+    * `TESTNAME` is the name of the test running inside the enclave
 
 ### Breaking Changes
 * Add explicit copyright notice to all files (including `kurtosis.sh`)

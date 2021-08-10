@@ -43,15 +43,11 @@ func NewHostPortBindingSupplierParams(interfaceIp string, protocol string, portR
 
 // Fields are public for JSON de/serialization
 type ApiContainerArgs struct {
-	ExecutionInstanceId      string	`json:"executionInstanceId"`
+	EnclaveId				 string `json:"enclaveId"'`
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
 	GatewayIpAddr            string	`json:"gatewayIpAddr"`
 	EnclaveDataVolumeName 	 string	`json:"enclaveDataVolumeName"`
-
-	// Name elements used for identifying the enclave in which this instance of the API container is
-	//  running. For example, when running a test, this will be [execution_instance_uuid, test_name]
-	EnclaveNameElems []string `json:"enclaveNameElems"`
 
 	// Necessary so that when the API container starts modules, it knows which IP addr to give them
 	ApiContainerIpAddr string
@@ -70,23 +66,21 @@ type ApiContainerArgs struct {
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
 func NewApiContainerArgs(
-		executionInstanceId string,
+		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr string,
 		enclaveDataVolumeName string,
-		enclaveNameElems []string,
 		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
 		hostPortBindingSupplierParams *HostPortBindingSupplierParams) (*ApiContainerArgs, error) {
 	result := ApiContainerArgs{
-		ExecutionInstanceId:           executionInstanceId,
+		EnclaveId:           		   enclaveId,
 		NetworkId:                     networkId,
 		SubnetMask:                    subnetMask,
 		GatewayIpAddr:                 gatewayIpAddr,
 		EnclaveDataVolumeName:      enclaveDataVolumeName,
-		EnclaveNameElems:              enclaveNameElems,
 		ApiContainerIpAddr:            apiContainerIpAddr,
 		TakenIpAddrs:                  takenIpAddrs,
 		IsPartitioningEnabled:         isPartitioningEnabled,
@@ -99,10 +93,6 @@ func NewApiContainerArgs(
 }
 
 func (args ApiContainerArgs) validate() error {
-	if len(args.EnclaveNameElems) == 0 {
-		return stacktrace.NewError("Length of enclave name elems must be > 0")
-	}
-
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()

@@ -18,7 +18,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 	perms := permissions.FromPermissionsSet(map[string]bool{})
 	result, err := RunTests(
 		perms,
-		"1234-abcd",
+		nil,
 		"5678-efgh",
 		nil,
 		nil,
@@ -38,7 +38,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	})
 	result, err := RunTests(
 		perms,
-		"1234-abcd",
+		nil,
 		"5678-efgh",
 		nil,
 		nil,

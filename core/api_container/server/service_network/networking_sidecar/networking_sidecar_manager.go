@@ -8,10 +8,10 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"strings"
 )
@@ -55,16 +55,16 @@ type NetworkingSidecarManager interface {
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type StandardNetworkingSidecarManager struct {
 	dockerManager *docker_manager.DockerManager
-
-	containerNameProvider *container_name_provider.ContainerNameElementsProvider
+	
+	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, containerNameProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, containerNameProvider: containerNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -82,7 +82,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	sidecarContainerId, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
 		networkingSidecarImageName,
-		manager.containerNameProvider.GetForNetworkingSidecar(serviceId),
+		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceId),
 		manager.dockerNetworkId,
 		sidecarIp,
 		map[docker_manager.ContainerCapability]bool{

@@ -16,26 +16,26 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 )
 
 const (
-	apiContainerNameSuffix       = "kurtosis-api"
 
 	dockerSocket = "/var/run/docker.sock"
 )
 
 type ApiContainerLauncher struct {
-	executionInstanceUuid string
-	containerImage string
-	kurtosisLogLevel logrus.Level
+	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
+	containerImage          string
+	kurtosisLogLevel        logrus.Level
 	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
 }
 
-func NewApiContainerLauncher(executionInstanceUuid string, containerImage string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
-	return &ApiContainerLauncher{executionInstanceUuid: executionInstanceUuid, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
+func NewApiContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, containerImage string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
+	return &ApiContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
 }
 
 func (launcher ApiContainerLauncher) Launch(
@@ -51,14 +51,15 @@ func (launcher ApiContainerLauncher) Launch(
 		apiContainerIpAddr net.IP,
 		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (string, error){
+	enclaveId, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
+		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
 		initializerContainerIpAddr,
 		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
-		testName,
 		enclaveDataVolumeName,
 		isPartitioningEnabled,
 	)
@@ -72,15 +73,11 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosis_core_rpc_api_consts.ListenPort,
 		kurtosis_core_rpc_api_consts.ListenProtocol,
 	))
-	kurtosisApiContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		testName,
-		apiContainerNameSuffix,
-	}
+	containerName := enclaveObjNameProvider.ForApiContainer()
 	containerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.containerImage,
-		kurtosisApiContainerNameElems,
+		containerName,
 		networkId,
 		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
@@ -109,13 +106,13 @@ func (launcher ApiContainerLauncher) Launch(
 }
 
 func (launcher ApiContainerLauncher) genApiContainerEnvVars(
+		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
 		initializerContainerIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		testName string,
 		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (map[string]string, error) {
 	var hostPortBindingSupplierParams *api_container_env_var_values.HostPortBindingSupplierParams = nil
@@ -131,15 +128,11 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 	}
 
 	args, err := api_container_env_var_values.NewApiContainerArgs(
-		launcher.executionInstanceUuid,
+		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),
 		enclaveDataVolumeName,
-		[]string{
-			launcher.executionInstanceUuid,
-			testName,
-		},
 		apiContainerIpAddr.String(),
 		map[string]bool{
 			gatewayIpAddr.String(): true,

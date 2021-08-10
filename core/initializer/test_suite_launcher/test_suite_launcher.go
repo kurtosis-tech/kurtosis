@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -27,15 +28,10 @@ const (
 	// will be told to listen on
 	portForDebuggersRunningOnTestsuite     = 2778
 	protocolForDebuggersRunningOnTestsuite = "tcp"
-
-	// Identifier included in hostnames of containers running for metadata acquisition
-	metadataAcquisitionContainerNameLabel = "metadata-acquisition"
-
-	testsuiteContainerNameSuffix = "testsuite"
 )
 
 type TestsuiteContainerLauncher struct {
-	executionInstanceUuid string
+	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 
 	testsuiteImage string
 
@@ -48,8 +44,8 @@ type TestsuiteContainerLauncher struct {
 	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
 }
 
-func NewTestsuiteContainerLauncher(executionInstanceUuid string, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{executionInstanceUuid: executionInstanceUuid, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier}
 }
 
 /*
@@ -83,15 +79,11 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 
 	suiteContainerDesc := "metadata-providing testsuite container"
 	log.Infof("Launching %v...", suiteContainerDesc)
-	testsuiteContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		metadataAcquisitionContainerNameLabel,
-		testsuiteContainerNameSuffix,
-	}
+	containerName := launcher.testsuiteExObjNameProvider.ForMetadataAcquiringTestsuiteContainer()
 	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
-		testsuiteContainerNameElems,
+		containerName,
 		bridgeNetworkId,
 		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		testsuiteEnvVars,
@@ -144,18 +136,15 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Infof("Launching %v....", suiteContainerDesc)
-	suiteContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		testName,
-		testsuiteContainerNameSuffix,
-	}
+	_, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
+	containerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
 	suiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
 		dockerManager,
-		suiteContainerNameElems,
+		containerName,
 		networkId,
 		testsuiteContainerIp,
 		testSuiteEnvVars,
@@ -184,7 +173,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
-		containerNameElems []string,
+		name string,
 		networkId string,
 		containerIpAddr net.IP,
 		envVars map[string]string,
@@ -229,7 +218,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 	containerId, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.testsuiteImage,
-		containerNameElems,
+		name,
 		networkId,
 		containerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers

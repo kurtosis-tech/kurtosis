@@ -15,9 +15,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -37,7 +37,7 @@ type LambdaLauncher struct {
 	// Lambdas have a connection to the API container, so the launcher must know about the API container's IP addr
 	apiContainerIpAddr string
 
-	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
+	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
@@ -48,8 +48,8 @@ type LambdaLauncher struct {
 	enclaveDataVolName string
 }
 
-func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
-	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
+func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
+	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
 
 func (launcher LambdaLauncher) Launch(
@@ -94,7 +94,7 @@ func (launcher LambdaLauncher) Launch(
 	containerId, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		containerImage,
-		launcher.containerNameElemsProvider.GetForLambda(lambdaId),
+		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaId),
 		launcher.dockerNetworkId,
 		lambdaIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capapbilities needed for modules
