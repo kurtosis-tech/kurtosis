@@ -1,5 +1,24 @@
 # TBD
 
+# 1.18.0
+### Fixes
+* Updated copyright notice to 2021, with entity as Kurtosis Technologies Inc.
+* Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`, where:
+    * `KTT` is a prefix indicating "Kurtosis testing"
+    * `YYYY-MM-DDTHH.MM.SS` is the timestamp of when the testsuite execution was launched
+    * `RANDOMNUM` is a random salt to ensure that two testsuites run at exactly the same second don't collide
+    * `TESTNAME` is the name of the test running inside the enclave
+
+### Features
+* When running in debug mode, let Docker handle host-port binding
+    * This allows multiple versions of Kurtosis to be running in debug mode at the same time
+
+### Removals
+* Removed OptionalHostPortBindingSupplier, which is no longer needed
+
+### Breaking Changes
+* Add explicit copyright notice to all files (including `kurtosis.sh`)
+
 # 1.17.1
 ### Features
 * Allow multiple instances of Kurtosis to run at the same time!
@@ -7,7 +26,7 @@
 
 ### Fixes
 * Add an extra guard to make sure that DockerNetworkAllocator can't be instantiated without `rand.Seed` being called
-* Added a workaround so that https://github.com/moby/moby/issues/42709 doesn't cause Kurtosis to randomly fail
+* Skip [multicast addresses](https://en.wikipedia.org/wiki/Multicast_address) when choosing network IPs
 
 # 1.17.0
 ### Features

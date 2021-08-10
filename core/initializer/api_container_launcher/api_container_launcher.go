@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
 
@@ -15,27 +15,26 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 )
 
 const (
-	apiContainerNameSuffix       = "kurtosis-api"
 
 	dockerSocket = "/var/run/docker.sock"
 )
 
 type ApiContainerLauncher struct {
-	executionInstanceUuid string
-	containerImage string
-	kurtosisLogLevel logrus.Level
-	hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier
+	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
+	containerImage          string
+	kurtosisLogLevel        logrus.Level
+	shouldPublishPorts		bool
 }
 
-func NewApiContainerLauncher(executionInstanceUuid string, containerImage string, kurtosisLogLevel logrus.Level, hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier) *ApiContainerLauncher {
-	return &ApiContainerLauncher{executionInstanceUuid: executionInstanceUuid, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, hostPortBindingSupplier: hostPortBindingSupplier}
+func NewApiContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, containerImage string, kurtosisLogLevel logrus.Level, shouldPublishPorts bool) *ApiContainerLauncher {
+	return &ApiContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, shouldPublishPorts: shouldPublishPorts}
 }
 
 func (launcher ApiContainerLauncher) Launch(
@@ -51,14 +50,15 @@ func (launcher ApiContainerLauncher) Launch(
 		apiContainerIpAddr net.IP,
 		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (string, error){
+	enclaveId, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
+		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
 		initializerContainerIpAddr,
 		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
-		testName,
 		enclaveDataVolumeName,
 		isPartitioningEnabled,
 	)
@@ -72,22 +72,17 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosis_core_rpc_api_consts.ListenPort,
 		kurtosis_core_rpc_api_consts.ListenProtocol,
 	))
-	kurtosisApiContainerNameElems := []string{
-		launcher.executionInstanceUuid,
-		testName,
-		apiContainerNameSuffix,
-	}
-	containerId, err := dockerManager.CreateAndStartContainer(
+	containerName := enclaveObjNameProvider.ForApiContainer()
+	containerId, _, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.containerImage,
-		kurtosisApiContainerNameElems,
+		containerName,
 		networkId,
 		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container
 		docker_manager.DefaultNetworkMode,
-		map[nat.Port]*nat.PortBinding{
-			kurtosisApiPort: nil, // We don't expose the API container's port to the host machine for now
-		},
+		map[nat.Port]bool{kurtosisApiPort: true},
+		false, // For now, we don't publish the API container's port to the host machine (though maybe this will change in the future)
 		nil, // Nil ENTRYPOINT args because the API container is launched by setting env vars
 		nil, // Nil CMD args because the API container is launched by setting env vars
 		apiContainerEnvVars,
@@ -97,7 +92,7 @@ func (launcher ApiContainerLauncher) Launch(
 		map[string]string{
 			enclaveDataVolumeName: api_container_mountpoints.EnclaveDataVolumeMountpoint,
 		},
-		launcher.hostPortBindingSupplier != nil, // If we're expecting ot dole out host ports, the API container WILL need access to the host machine running Docker
+		false, // The API container doesn't need access to the host machine
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
@@ -109,37 +104,21 @@ func (launcher ApiContainerLauncher) Launch(
 }
 
 func (launcher ApiContainerLauncher) genApiContainerEnvVars(
+		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
 		initializerContainerIpAddr net.IP,
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		testName string,
 		enclaveDataVolumeName string,
 		isPartitioningEnabled bool) (map[string]string, error) {
-	var hostPortBindingSupplierParams *api_container_env_var_values.HostPortBindingSupplierParams = nil
-	hostPortBindingSupplier := launcher.hostPortBindingSupplier
-	if hostPortBindingSupplier != nil {
-		hostPortBindingSupplierParams = api_container_env_var_values.NewHostPortBindingSupplierParams(
-			hostPortBindingSupplier.GetInterfaceIp(),
-			hostPortBindingSupplier.GetProtocol(),
-			hostPortBindingSupplier.GetPortRangeStart(),
-			hostPortBindingSupplier.GetPortRangeEnd(),
-			hostPortBindingSupplier.GetTakenPorts(),
-		)
-	}
-
 	args, err := api_container_env_var_values.NewApiContainerArgs(
-		launcher.executionInstanceUuid,
+		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr.String(),
 		enclaveDataVolumeName,
-		[]string{
-			launcher.executionInstanceUuid,
-			testName,
-		},
 		apiContainerIpAddr.String(),
 		map[string]bool{
 			gatewayIpAddr.String(): true,
@@ -148,7 +127,8 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 			testSuiteContainerIpAddr.String(): true,
 		},
 		isPartitioningEnabled,
-		hostPortBindingSupplierParams)
+		launcher.shouldPublishPorts,
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
 	}

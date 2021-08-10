@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
 
@@ -8,12 +8,11 @@ package user_service_launcher
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"net"
 )
@@ -24,11 +23,11 @@ Convenience struct whose only purpose is launching user services
 type UserServiceLauncher struct {
 	dockerManager *docker_manager.DockerManager
 
-	containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider
+	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
-
-	optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier
+	
+	shouldPublishPorts bool
 
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
@@ -38,8 +37,8 @@ type UserServiceLauncher struct {
 	enclaveDataVolName string
 }
 
-func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, enclaveDataVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{dockerManager: dockerManager, containerNameElemsProvider: containerNameElemsProvider, freeIpAddrTracker: freeIpAddrTracker, optionalHostPortBindingSupplier: optionalHostPortBindingSupplier, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, dockerNetworkId string, enclaveDataVolName string) *UserServiceLauncher {
+	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
 
 /**
@@ -88,14 +87,6 @@ func (launcher UserServiceLauncher) Launch(
 		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
-	usedPortsWithHostBindings, err := launcher.optionalHostPortBindingSupplier.BindPortsToHostIfNeeded(usedPorts)
-	if err != nil {
-		return "", nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting used ports with host bindings",
-		)
-	}
-
 	volumeMounts := map[string]string{
 		launcher.enclaveDataVolName: enclaveDataVolMntDirpath,
 	}
@@ -103,15 +94,16 @@ func (launcher UserServiceLauncher) Launch(
 		volumeMounts[artifactVolName] = mountpoint
 	}
 
-	containerId, err := launcher.dockerManager.CreateAndStartContainer(
+	containerId, hostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		imageName,
-		launcher.containerNameElemsProvider.GetForUserService(serviceId),
+		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceId),
 		launcher.dockerNetworkId,
 		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
-		usedPortsWithHostBindings,
+		usedPorts,
+		launcher.shouldPublishPorts,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -122,5 +114,5 @@ func (launcher UserServiceLauncher) Launch(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}
-	return containerId, usedPortsWithHostBindings, nil
+	return containerId, hostPortBindings, nil
 }

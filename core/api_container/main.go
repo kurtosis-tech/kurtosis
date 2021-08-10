@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 - present Kurtosis Technologies LLC.
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
 
@@ -18,17 +18,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/optional_host_port_binding_supplier"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/container_name_provider"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
-	"github.com/kurtosis-tech/kurtosis/commons/free_host_port_binding_supplier"
+	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -150,7 +147,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	containerNameElemsProvider := container_name_provider.NewContainerNameElementsProvider(args.EnclaveNameElems)
+	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(args.EnclaveId)
 
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
 	if err != nil {
@@ -169,36 +166,14 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
 
-	var hostPortBindingSupplier *free_host_port_binding_supplier.FreeHostPortBindingSupplier = nil
-	if args.HostPortBindingSupplierParams != nil {
-		hostPortSupplierParams := args.HostPortBindingSupplierParams
-		supplier, err := free_host_port_binding_supplier.NewFreeHostPortBindingSupplier(
-			docker_constants.HostMachineDomainInsideContainer,
-			hostPortSupplierParams.InterfaceIp,
-			hostPortSupplierParams.Protocol,
-			hostPortSupplierParams.PortRangeStart,
-			hostPortSupplierParams.PortRangeEnd,
-			hostPortSupplierParams.TakenPorts,
-		)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(
-				err,
-				"Host port binding supplier params were non-null, but an error occurred creating the host port binding supplier",
-			)
-		}
-		hostPortBindingSupplier = supplier
-	}
-	optionalHostPortBindingSupplier := optional_host_port_binding_supplier.NewOptionalHostPortBindingSupplier(hostPortBindingSupplier)
-
 	enclaveDataVolName := args.EnclaveDataVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		args.EnclaveNameElems,
 		enclaveDataVolName,
 		dockerManager,
-		containerNameElemsProvider,
+		enclaveObjNameProvider,
 		dockerNetworkId,
 		freeIpAddrTracker,
 		filesArtifactCache,
@@ -206,9 +181,9 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		dockerManager,
-		containerNameElemsProvider,
+		enclaveObjNameProvider,
 		freeIpAddrTracker,
-		optionalHostPortBindingSupplier,
+		args.ShouldPublishPorts,
 		filesArtifactExpander,
 		dockerNetworkId,
 		enclaveDataVolName,
@@ -216,7 +191,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
-		containerNameElemsProvider,
+		enclaveObjNameProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
@@ -228,38 +203,17 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	lambdaStore := createLambdaStore(
-		dockerManager,
-		args.ApiContainerIpAddr,
-		containerNameElemsProvider,
-		freeIpAddrTracker,
-		optionalHostPortBindingSupplier,
-		dockerNetworkId,
-		enclaveDataVolName,
-	)
-
-	return serviceNetwork, lambdaStore, nil
-}
-
-func createLambdaStore(
-		dockerManager *docker_manager.DockerManager,
-		apiContainerIpAddr string,
-		containerNameElemsProvider *container_name_provider.ContainerNameElementsProvider,
-		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		optionalHostPortBindingSupplier *optional_host_port_binding_supplier.OptionalHostPortBindingSupplier,
-		dockerNetworkId string,
-		enclaveDataVolName string) *lambda_store.LambdaStore {
 	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
 		dockerManager,
-		apiContainerIpAddr,
-		containerNameElemsProvider,
+		args.ApiContainerIpAddr,
+		enclaveObjNameProvider,
 		freeIpAddrTracker,
-		optionalHostPortBindingSupplier,
+		args.ShouldPublishPorts,
 		dockerNetworkId,
 		enclaveDataVolName,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
 
-	return lambdaStore
+	return serviceNetwork, lambdaStore, nil
 }

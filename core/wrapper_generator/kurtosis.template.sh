@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2020 - present Kurtosis Technologies LLC.
+#
+# Copyright (c) 2021 - present Kurtosis Technologies Inc.
 # All Rights Reserved.
+#
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
@@ -27,7 +29,8 @@ API_IMAGE="${KURTOSIS_DOCKERHUB_ORG}/kurtosis-core_api:${KURTOSIS_CORE_TAG}"
 
 POSITIONAL_ARG_DEFINITION_FRAGMENTS=2
 
-
+# The identifier that will be prefixed to all objects run in the Kurtosis testing framework
+KURTOSIS_TESTING_IDENTIFIER="KTT"
 
 # ============================================================================================
 #                                      Arg Parsing
@@ -128,17 +131,9 @@ if ! mkdir -p "${KURTOSIS_DIRPATH}"; then
     exit 1
 fi
 
-if ! execution_uuid="$(uuidgen)"; then
-    echo "ERROR: Failed to generate a UUID for identifying this run of Kurtosis" >&2
-    exit 1
-fi
-if ! execution_uuid="$(echo "${execution_uuid}" | tr '[:lower:]' '[:upper:]')"; then
-    echo "ERROR: Failed to uppercase execution instance UUID" >&2
-    exit 1
-fi
-
+execution_id="${KURTOSIS_TESTING_IDENTIFIER}$(date +%FT%H.%M.%S)-${RANDOM}"
 docker run \
-    --name "${execution_uuid}__initializer" \
+    --name "${execution_id}__initializer" \
     \
     `# The Kurtosis initializer runs inside a Docker container, but needs to access to the Docker engine; this is how to do it` \
     `# For more info, see the bottom of: http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/` \
@@ -158,7 +153,7 @@ docker run \
     --env CLIENT_SECRET="${client_secret}" \
     --env CUSTOM_PARAMS_JSON="${custom_params_json}" \
     --env DO_LIST="${do_list}" \
-    --env EXECUTION_UUID="${execution_uuid}" \
+    --env EXECUTION_ID="${execution_id}" \
     --env IS_DEBUG_MODE="${is_debug_mode}" \
     --env KURTOSIS_API_IMAGE="${API_IMAGE}" \
     --env KURTOSIS_LOG_LEVEL="${kurtosis_log_level}" \

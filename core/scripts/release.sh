@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# Copyright (c) 2021 - present Kurtosis Technologies Inc.
+# All Rights Reserved.
+#
+
 # ^^^^^^^^^^^^^^^^^ this is the most platform-agnostic way to guarantee this script runs with Bash
 # 2021-07-08 WATERMARK, DO NOT REMOVE - This script was generated from the Kurtosis Bash script template
 
