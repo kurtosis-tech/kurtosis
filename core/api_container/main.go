@@ -166,53 +166,6 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func disconnectExternalContainersAndKillEverythingElse(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		networkId string,
-		ownContainerId string,
-		externalContainerIds map[string]bool) error {
-	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
-	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers connected to network '%v', which is necessary for stopping them", networkId)
-	}
-
-	allContainerHandlingErrors := map[string]error{}
-	for _, containerId := range containerIds {
-		if containerId == ownContainerId {
-			continue
-		}
-
-		var containerHandlingErr error = nil
-		if _, found := externalContainerIds[containerId]; found {
-			// We don't want to kill the external containers since we don't own them, but we need them gone from the network
-			if err := dockerManager.DisconnectContainerFromNetwork(ctx, containerId, networkId); err != nil {
-				containerHandlingErr = stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from the network", containerId)
-			}
-		} else {
-			if err := dockerManager.KillContainer(ctx, containerId); err != nil {
-				containerHandlingErr = stacktrace.Propagate(err, "An error occurred killing container '%v'", containerId)
-			}
-		}
-		if containerHandlingErr != nil {
-			allContainerHandlingErrors[containerId] = containerHandlingErr
-		}
-	}
-
-	if len(allContainerHandlingErrors) > 0 {
-		errorStrs := []string{}
-		for containerId, err := range allContainerHandlingErrors {
-			strToAppend := fmt.Sprintf("An error occurred removing container '%v':\n%v", containerId, err.Error())
-			errorStrs = append(errorStrs, strToAppend)
-		}
-		resultErrStr := strings.Join(errorStrs, "\n\n")
-		return errors.New(resultErrStr)
-	}
-	logrus.Debugf("Successfully disconnected external containers and killed everything else on network '%v'", networkId)
-	return nil
-}
-
 func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
@@ -287,4 +240,51 @@ func createServiceNetworkAndLambdaStore(
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
 
 	return serviceNetwork, lambdaStore, nil
+}
+
+func disconnectExternalContainersAndKillEverythingElse(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	networkId string,
+	ownContainerId string,
+	externalContainerIds map[string]bool) error {
+	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
+	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the containers connected to network '%v', which is necessary for stopping them", networkId)
+	}
+
+	allContainerHandlingErrors := map[string]error{}
+	for _, containerId := range containerIds {
+		if containerId == ownContainerId {
+			continue
+		}
+
+		var containerHandlingErr error = nil
+		if _, found := externalContainerIds[containerId]; found {
+			// We don't want to kill the external containers since we don't own them, but we need them gone from the network
+			if err := dockerManager.DisconnectContainerFromNetwork(ctx, containerId, networkId); err != nil {
+				containerHandlingErr = stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from the network", containerId)
+			}
+		} else {
+			if err := dockerManager.KillContainer(ctx, containerId); err != nil {
+				containerHandlingErr = stacktrace.Propagate(err, "An error occurred killing container '%v'", containerId)
+			}
+		}
+		if containerHandlingErr != nil {
+			allContainerHandlingErrors[containerId] = containerHandlingErr
+		}
+	}
+
+	if len(allContainerHandlingErrors) > 0 {
+		errorStrs := []string{}
+		for containerId, err := range allContainerHandlingErrors {
+			strToAppend := fmt.Sprintf("An error occurred removing container '%v':\n%v", containerId, err.Error())
+			errorStrs = append(errorStrs, strToAppend)
+		}
+		resultErrStr := strings.Join(errorStrs, "\n\n")
+		return errors.New(resultErrStr)
+	}
+	logrus.Debugf("Successfully disconnected external containers and killed everything else on network '%v'", networkId)
+	return nil
 }
