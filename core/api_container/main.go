@@ -241,11 +241,11 @@ func createServiceNetworkAndLambdaStore(
 }
 
 func disconnectExternalContainersAndKillEverythingElse(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-	networkId string,
-	ownContainerId string,
-	externalContainerIds map[string]bool) error {
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		networkId string,
+		ownContainerId string,
+		externalContainerIds map[string]bool) error {
 	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
 	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
 	if err != nil {

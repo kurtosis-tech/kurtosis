@@ -101,7 +101,7 @@ func RunTest(
 	//  potentially-cancelled setup context).
 	testTeardownContext := context.Background()
 
-	enclaveId, _ := testsuiteExObjNameProvider.ForTestEnclave(testName)
+	enclaveId := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
 	enclaveCtx, err := enclaveManager.CreateEnclave(testSetupExecutionCtx, log, initializerContainerId, enclaveId, isPartitioningEnabled)
@@ -120,13 +120,14 @@ func RunTest(
 	networkId := enclaveCtx.GetNetworkID()
 	kurtosisApiIp := enclaveCtx.GetAPIContainerIPAddr()
 	testsuiteContainerIp := enclaveCtx.GetTestsuiteContainerIPAddr()
+	testsuiteContainerName := enclaveCtx.GetTestsuiteContainerName()
 
 	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
 		log,
 		dockerManager,
 		networkId,
-		testName,
+		testsuiteContainerName,
 		kurtosisApiIp,
 		testsuiteContainerIp,
 		enclaveId,
@@ -285,24 +286,4 @@ func runTestWithTimeout(
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	return nil
-}
-
-
-/*
-Helper function for making a best-effort attempt at removing a network, which should be empty due to the API container
-	tearing down everything as part of its shutdown routine
-*/
-func removeNetworkDeferredFunc(
-		testTeardownContext context.Context,
-		log *logrus.Logger,
-		dockerManager *docker_manager.DockerManager,
-		networkId string) {
-	log.Debugf("Attempting to remove Docker network with ID %v...", networkId)
-	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
-		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
-		log.Error(err.Error())
-		log.Errorf("ACTION REQUIRED: You'll need to manually delete 1) any remaining containers on network ID '%v' 2) the network itself!!!", networkId)
-		return
-	}
-	log.Debugf("Successfully removed Docker network with ID %v", networkId)
 }

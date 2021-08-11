@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	docker_network_allocator2 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -31,13 +31,13 @@ type EnclaveManager struct {
 	// Will be wrapped in the DockerManager that logs to the proper location
 	dockerClient *client.Client
 
-	dockerNetworkAllocator *docker_network_allocator2.DockerNetworkAllocator
+	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
 
 	apiContainerLauncher *api_container_launcher.ApiContainerLauncher
 }
 
 func NewEnclaveManager(dockerClient *client.Client, apiContainerLauncher *api_container_launcher.ApiContainerLauncher) *EnclaveManager {
-	dockerNetworkAllocator := docker_network_allocator2.NewDockerNetworkAllocator()
+	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator()
 	return &EnclaveManager{
 		dockerClient: dockerClient,
 		dockerNetworkAllocator: dockerNetworkAllocator,
@@ -46,7 +46,7 @@ func NewEnclaveManager(dockerClient *client.Client, apiContainerLauncher *api_co
 }
 
 // NOTE: thisContainerId is the ID of the container in which this code is executing, so that it can be mounted inside
-//  the new enclave such that it can communicate with the API container
+//  the new enclave such that it can communicate with the containers inside the network
 func (manager *EnclaveManager) CreateEnclave(
 		setupCtx context.Context,
 		log *logrus.Logger,
@@ -176,6 +176,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerId,
 		apiContainerIpAddr,
 		testsuiteContainerIpAddr,
+		enclaveObjNameProvider.ForTestRunningTestsuiteContainer(),
 		dockerManager,
 	)
 

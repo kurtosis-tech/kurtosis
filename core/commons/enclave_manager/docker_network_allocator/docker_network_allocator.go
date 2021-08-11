@@ -35,7 +35,7 @@ const (
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 )
 
-var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
+var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength - networkWidthBits), int(supportedIpAddrBitLength))
 var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
 var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 

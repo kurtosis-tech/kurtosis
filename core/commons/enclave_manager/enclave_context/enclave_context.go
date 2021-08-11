@@ -10,6 +10,7 @@ import (
 	"net"
 )
 
+// Package class containing information about a Kurtosis enclave
 type EnclaveContext struct {
 	enclaveId string
 	networkId string
@@ -34,12 +35,17 @@ type EnclaveContext struct {
 	//  We can get rid of this once we have a container log-streaming endpoint in Kurtosis Client NetworkContext.
 	testsuiteContainerIpAddr net.IP
 
+	// TODO This suffers from the same problem as container IP - the testsuite container _should_ just be a module loaded
+	//  via an API container "LoadModule" call. Right now it's "special" in that it's started by teh initializer, and we can't
+	//  make it unspecial until the API container supports log streaming
+	testsuiteContainerName string
+
 	// A DockerManager that logs to the log passed in when the enclave was created
 	dockerManager *docker_manager.DockerManager
 }
 
-func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, dockerManager *docker_manager.DockerManager) *EnclaveContext {
-	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, dockerManager: dockerManager}
+func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
+	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
 }
 
 func (enclaveCtx *EnclaveContext) GetEnclaveID() string {
@@ -64,6 +70,10 @@ func (enclaveCtx *EnclaveContext) GetAPIContainerIPAddr() net.IP {
 
 func (enclaveCtx *EnclaveContext) GetTestsuiteContainerIPAddr() net.IP {
 	return enclaveCtx.testsuiteContainerIpAddr
+}
+
+func (enclaveCtx *EnclaveContext) GetTestsuiteContainerName() string {
+	return enclaveCtx.testsuiteContainerName
 }
 
 func (enclaveCtx *EnclaveContext) GetDockerManager() *docker_manager.DockerManager {
