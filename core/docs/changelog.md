@@ -1,4 +1,8 @@
 # TBD
+### Features
+* The API container will now shut down all the containers in its network as it shuts down, which is a step towards enclaves being independent of the testing framework
+
+# 1.18.0
 ### Fixes
 * Updated copyright notice to 2021, with entity as Kurtosis Technologies Inc.
 * Standardized enclave naming convention for the testing framework to `KTTYYYY-MM-DDTHH.MM.SS-RANDOMNUM_TESTNAME`, where:

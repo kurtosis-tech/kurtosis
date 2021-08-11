@@ -48,8 +48,10 @@ func (launcher ApiContainerLauncher) Launch(
 		gatewayIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		otherTakenIpAddrsInEnclave []net.IP,
-		isPartitioningEnabled bool) (string, error){
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (string, error){
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -57,6 +59,7 @@ func (launcher ApiContainerLauncher) Launch(
 		apiContainerIpAddr,
 		otherTakenIpAddrsInEnclave,
 		isPartitioningEnabled,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
@@ -99,13 +102,15 @@ func (launcher ApiContainerLauncher) Launch(
 }
 
 func (launcher ApiContainerLauncher) genApiContainerEnvVars(
+		containerName string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		otherTakenIpAddrsInEnclave []net.IP,
-		isPartitioningEnabled bool) (map[string]string, error) {
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (map[string]string, error) {
 	takenIpAddrStrSet := map[string]bool{
 		gatewayIpAddr.String(): true,
 		apiContainerIpAddr.String(): true,
@@ -114,6 +119,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		takenIpAddrStrSet[takenIp.String()] = true
 	}
 	args, err := api_container_env_var_values.NewApiContainerArgs(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -121,6 +127,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
 		launcher.shouldPublishPorts,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
