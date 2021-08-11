@@ -23,6 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"net"
 	"strings"
 	"time"
 )
@@ -164,9 +165,8 @@ func RunTest(
 		networkId,
 		networkIpAndMask.String(),
 		gatewayIp,
-		initializerContainerIp,
-		testRunningContainerIp,
 		kurtosisApiIp,
+		[]net.IP{initializerContainerIp, testRunningContainerIp},
 		enclaveName,
 		testParams.IsPartitioningEnabled,
 	)

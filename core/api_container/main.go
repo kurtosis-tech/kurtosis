@@ -147,7 +147,9 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(args.EnclaveId)
+	enclaveId := args.EnclaveId
+
+	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
 	if err != nil {
@@ -166,12 +168,11 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
 
-	enclaveDataVolName := args.EnclaveDataVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		enclaveDataVolName,
+		enclaveId,
 		dockerManager,
 		enclaveObjNameProvider,
 		dockerNetworkId,
@@ -186,7 +187,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
 		dockerNetworkId,
-		enclaveDataVolName,
+		enclaveId,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -210,7 +211,7 @@ func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.Encl
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,
-		enclaveDataVolName,
+		enclaveId,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
