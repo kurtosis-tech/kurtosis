@@ -31,7 +31,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 )
 
 const (
@@ -52,17 +51,6 @@ const (
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
-
-	// Can make these configurable if needed
-	hostPortTrackerInterfaceIp = "127.0.0.1"
-	hostPortTrackerStartRange = 8000
-	hostPortTrackerEndRange = 10000
-	// TODO This is wrong - we shouldn't actually specify the protocol at FreeHostPortBindingSupplier construction
-	//  time, but instead as a parameter to GetFreePort (so the protocol matches)
-	protocolForDebuggerPorts = "tcp"
-
-	maxTimesTryingToFindInitializerContainerId = 5
-	timeBetweenTryingToFindInitializerContainerId = 1 * time.Second
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!

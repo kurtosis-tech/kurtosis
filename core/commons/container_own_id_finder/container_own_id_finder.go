@@ -19,7 +19,7 @@ const (
 )
 
 func GetOwnContainerIdByName(ctx context.Context, dockerManager *docker_manager.DockerManager, nameFragment string) (string, error) {
-	logrus.Debugf("Getting own container ID given container name fragment '%v'...")
+	logrus.Debugf("Getting own container ID given container name fragment '%v'...", nameFragment)
 
 	// For some reason, Docker very occasionally will report 0 containers matching a name fragment even
 	//  though this container definitely has the right name, so we therefore retry a couple times as a workaround

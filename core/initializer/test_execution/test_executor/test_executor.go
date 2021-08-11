@@ -165,7 +165,6 @@ func RunTest(
 		log,
 		dockerManager,
 		testName,
-
 		networkId,
 		networkIpAndMask.String(),
 		gatewayIp,
@@ -174,12 +173,14 @@ func RunTest(
 		kurtosisApiIp,
 		enclaveName,
 		testParams.IsPartitioningEnabled,
+		map[string]bool{initializerContainerId: true},
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
 	defer func() {
-		// NOTE: The API container will stop everything in its network as part of its shutdown routine
+		// NOTE: The API container will stop everything in its network as part of its shutdown routine, so it's important
+		//  to use StopContainer (rather than KillContainer) to give it time to do so
 		if err := dockerManager.StopContainer(testTeardownContext, apiContainerId, containerTeardownTimeout); err !=  nil {
 			log.Errorf("An error occurred stopping the API container during teardown")
 		}
