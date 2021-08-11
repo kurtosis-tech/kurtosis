@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	docker_network_allocator2 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -31,13 +31,19 @@ type EnclaveManager struct {
 	// Will be wrapped in the DockerManager that logs to the proper location
 	dockerClient *client.Client
 
-	// TODO Hide this all inside this class, rather than taking it in as a constructor param????
-	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
+	dockerNetworkAllocator *docker_network_allocator2.DockerNetworkAllocator
 
 	apiContainerLauncher *api_container_launcher.ApiContainerLauncher
 }
 
-// TODO Constructor
+func NewEnclaveManager(dockerClient *client.Client, apiContainerLauncher *api_container_launcher.ApiContainerLauncher) *EnclaveManager {
+	dockerNetworkAllocator := docker_network_allocator2.NewDockerNetworkAllocator()
+	return &EnclaveManager{
+		dockerClient: dockerClient,
+		dockerNetworkAllocator: dockerNetworkAllocator,
+		apiContainerLauncher: apiContainerLauncher,
+	}
+}
 
 // NOTE: thisContainerId is the ID of the container in which this code is executing, so that it can be mounted inside
 //  the new enclave such that it can communicate with the API container
@@ -79,7 +85,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer func() {
 		if shouldDeleteNetwork {
 			if err := dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
-				log.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:")
+				log.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:", networkId)
 				fmt.Fprintln(log.Out, err)
 				log.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
 			}
@@ -88,11 +94,11 @@ func (manager *EnclaveManager) CreateEnclave(
 	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
 
 	log.Debugf("Connecting this container to the enclave network so that it can interact with the containers in the enclave...")
-	mountIp, err := freeIpAddrTracker.GetFreeIpAddr()
+	thisContainerIpInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting this container inside the enclave")
 	}
-	if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, thisContainerId, mountIp); err != nil {
+	if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, thisContainerId, thisContainerIpInsideEnclaveNetwork); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred connecting this container to the enclave network")
 	}
 	shouldDisconnectThisContainer := true
@@ -121,6 +127,12 @@ func (manager *EnclaveManager) CreateEnclave(
 	// NOTE: We could defer a deletion of this volume unless the function completes successfully - right now, Kurtosis
 	//  doesn't do any volume deletion
 
+	// TODO We want to get rid of this; see the detailed TODO on EnclaveContext
+	testsuiteContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Couldn't allocate an IP address for the to-be-started testsuite container")
+	}
+
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
 	apiContainerId, err := manager.apiContainerLauncher.Launch(
 		setupCtx,
@@ -132,7 +144,10 @@ func (manager *EnclaveManager) CreateEnclave(
 		networkIpAndMask.String(),
 		gatewayIp,
 		apiContainerIpAddr,
-		[]net.IP{},  // TODO Add the other containers that we mount in here
+		[]net.IP{
+			thisContainerIpInsideEnclaveNetwork,
+			testsuiteContainerIpAddr,
+		},
 		isPartitioningEnabled,
 		map[string]bool{thisContainerId: true},
 	)
@@ -153,11 +168,15 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
+
 	result := enclave_context.NewEnclaveContext(
-		networkId,
 		enclaveId,
+		networkId,
 		networkIpAndMask,
+		apiContainerId,
 		apiContainerIpAddr,
+		testsuiteContainerIpAddr,
+		dockerManager,
 	)
 
 	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller
@@ -166,6 +185,30 @@ func (manager *EnclaveManager) CreateEnclave(
 	return result, nil
 }
 
-func DestroyEnclave(ctx context.Context, enclaveId string) {
+func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, log *logrus.Logger, enclaveCtx *enclave_context.EnclaveContext) error {
+	enclaveId := enclaveCtx.GetEnclaveID()
+	dockerManager := enclaveCtx.GetDockerManager()
+	networkId := enclaveCtx.GetNetworkID()
 
-}
+	apiContainerId := enclaveCtx.GetAPIContainerID()
+	if err := dockerManager.StopContainer(ctx, apiContainerId, apiContainerStopTimeout); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred stopping the API container with ID '%v' for enclave '%v'",
+			apiContainerId,
+			enclaveId,
+		)
+	}
+
+	// The API container's shutdown logic disconnects/stops all other containers, so we're good to remove the network now
+	if err := dockerManager.RemoveNetwork(ctx, networkId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred deleting the network with ID '%v' for enclave '%v'",
+			networkId,
+			enclaveId,
+		)
+	}
+
+	return nil
+};

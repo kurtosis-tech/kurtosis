@@ -8,13 +8,11 @@ package test_executor
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
@@ -23,7 +21,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net"
 	"strings"
 	"time"
 )
@@ -91,17 +88,12 @@ func RunTest(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
 		log *logrus.Logger,
-		dockerClient *client.Client,
-		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
+		enclaveManager *enclave_manager.EnclaveManager,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		apiContainerLauncher *api_container_launcher.ApiContainerLauncher,
 		testParams parallel_test_params.ParallelTestParams) (bool, error) {
 
 	testName := testParams.TestName
-
-	log.Debugf("Creating Docker manager from environment settings...")
-	dockerManager := docker_manager.NewDockerManager(log, dockerClient)
-	log.Debugf("Docker manager created successfully")
+	isPartitioningEnabled := testParams.IsPartitioningEnabled
 
 	// We'll use the test setup context for setting stuff up so that a cancellation (e.g. Ctrl-C)
 	//  will prevent any new things from getting added to Docker. We still want to be able to retrieve exit codes
@@ -109,78 +101,25 @@ func RunTest(
 	//  potentially-cancelled setup context).
 	testTeardownContext := context.Background()
 
-	enclaveName, _ := testsuiteExObjNameProvider.ForTestEnclave(testName)
+	enclaveId, _ := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
-	log.Debugf("Creating Docker network for test...")
-	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := dockerNetworkAllocator.CreateNewNetwork(
-		testSetupExecutionCtx,
-		dockerManager,
-		log,
-		enclaveName,
-	)
+	log.Debugf("Creating enclave for test '%v'....", testName)
+	enclaveCtx, err := enclaveManager.CreateEnclave(testSetupExecutionCtx, log, initializerContainerId, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
-		//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
-		//  need to parse the log message for the string "context canceled" and, if found, do another search for
-		//  networks with our network name and delete them
-		return false, stacktrace.Propagate(err, "An error occurred allocating new network '%v' for test '%v'", enclaveName, testName)
-	}
-	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId)
-	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveName, networkId, networkIpAndMask.String())
-
-
-	log.Debugf("Mounting the initializer container inside network '%v' so that it can call functions on the testsuite container...", enclaveName)
-	initializerContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting the initializer container in the test network")
-	}
-	if err := dockerManager.ConnectContainerToNetwork(testSetupExecutionCtx, networkId, initializerContainerId, initializerContainerIp); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred connecting the initializer container to the test network, which is required to communicate with the testsuite")
-	}
-	log.Debugf("Successfully mounted the initializer container inside network '%v'", enclaveName)
-
-	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
-	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
-	//  container which will only be started after the testsuite container
-	kurtosisApiIp, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
-	}
-	defer freeIpAddrTracker.ReleaseIpAddr(kurtosisApiIp)
-	testRunningContainerIp, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting an IP for the test suite container running the test")
-	}
-	defer freeIpAddrTracker.ReleaseIpAddr(testRunningContainerIp)
-
-	if err := dockerManager.CreateVolume(testSetupExecutionCtx, enclaveName); err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveName)
-	}
-
-	apiContainerId, err := apiContainerLauncher.Launch(
-		testSetupExecutionCtx,
-		log,
-		dockerManager,
-		testName,
-		networkId,
-		networkIpAndMask.String(),
-		gatewayIp,
-		kurtosisApiIp,
-		[]net.IP{initializerContainerIp, testRunningContainerIp},
-		enclaveName,
-		testParams.IsPartitioningEnabled,
-		map[string]bool{initializerContainerId: true},
-	)
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
+		return false, stacktrace.Propagate(err, "An error occurred creating a Kurtosis enclave for test '%v'", testName)
 	}
 	defer func() {
-		// NOTE: The API container will stop everything in its network as part of its shutdown routine, so it's important
-		//  to use StopContainer (rather than KillContainer) to give it time to do so
-		if err := dockerManager.StopContainer(testTeardownContext, apiContainerId, containerTeardownTimeout); err !=  nil {
-			log.Errorf("An error occurred stopping the API container during teardown")
+		if err := enclaveManager.DestroyEnclave(testTeardownContext, log, enclaveCtx); err != nil {
+			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
+			fmt.Fprintln(log.Out, err)
+			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
 		}
 	}()
+
+	dockerManager := enclaveCtx.GetDockerManager()
+	networkId := enclaveCtx.GetNetworkID()
+	kurtosisApiIp := enclaveCtx.GetAPIContainerIPAddr()
+	testsuiteContainerIp := enclaveCtx.GetTestsuiteContainerIPAddr()
 
 	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
@@ -189,20 +128,16 @@ func RunTest(
 		networkId,
 		testName,
 		kurtosisApiIp,
-		testRunningContainerIp,
-		enclaveName,
+		testsuiteContainerIp,
+		enclaveId,
 	)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred launching the testsuite & Kurtosis API containers for executing the test")
+		return false, stacktrace.Propagate(err, "An error occurred launching the test-running testsuite container")
 	}
-	defer func() {
-		if err := dockerManager.StopContainer(testTeardownContext, testsuiteContainerId, containerTeardownTimeout); err !=  nil {
-			// This is a warning because the network teardown will try again
-			log.Warnf("An error occurred stopping the testsuite container during teardown; stopping & removal will be attmepted again during network teardown")
-		}
-	}()
+	// No need to have a deferred function that tears down the testsuite container if things don't work because the enclave
+	//  teardown logic that we have earlier will handle it
 
-	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testRunningContainerIp.String(), kurtosis_testsuite_rpc_api_consts.ListenPort)
+	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testsuiteContainerIp.String(), kurtosis_testsuite_rpc_api_consts.ListenPort)
 	// TODO SECURITY: Use HTTPS
 	conn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
 	if err != nil {
