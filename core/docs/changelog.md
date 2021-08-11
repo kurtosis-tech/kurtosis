@@ -1,4 +1,6 @@
 # TBD
+### Features
+* The API container will now shut down its own network as it shuts down, which is a step towards enclaves being independent of the testing framework
 
 # 1.18.0
 ### Fixes

@@ -128,7 +128,7 @@ func RunTest(
 		//  networks with our network name and delete them
 		return false, stacktrace.Propagate(err, "An error occurred allocating new network '%v' for test '%v'", enclaveName, testName)
 	}
-	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId, initializerContainerId)
+	defer removeNetworkDeferredFunc(testTeardownContext, log, dockerManager, networkId)
 	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveName, networkId, networkIpAndMask.String())
 
 
@@ -165,6 +165,7 @@ func RunTest(
 		log,
 		dockerManager,
 		testName,
+
 		networkId,
 		networkIpAndMask.String(),
 		gatewayIp,
@@ -178,9 +179,9 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
 	defer func() {
+		// NOTE: The API container will stop everything in its network as part of its shutdown routine
 		if err := dockerManager.StopContainer(testTeardownContext, apiContainerId, containerTeardownTimeout); err !=  nil {
-			// This is a warning because the network teardown will try again
-			log.Warnf("An error occurred stopping the API container during teardown; stopping & removal will be attempted again during network teardown")
+			log.Errorf("An error occurred stopping the API container during teardown")
 		}
 	}()
 
@@ -356,54 +357,20 @@ func runTestWithTimeout(
 
 
 /*
-Helper function for making a best-effort attempt at removing a network and the containers inside after a test has
-	exited (either normally or with error)
+Helper function for making a best-effort attempt at removing a network, which should be empty due to the API container
+	tearing down everything as part of its shutdown routine
 */
 func removeNetworkDeferredFunc(
 		testTeardownContext context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
-		networkId string,
-		initializerContainerId string) {
+		networkId string) {
 	log.Debugf("Attempting to remove Docker network with ID %v...", networkId)
-	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(testTeardownContext, networkId)
-	if err != nil {
-		errorDesc := fmt.Sprintf("An error occurred getting the containers connected to network '%v' so we can stop them:", networkId)
-		logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
-		return
-	}
-
-	for _, containerId := range containerIds {
-		if containerId == initializerContainerId {
-			// We don't want to kill the initializer since it could be coordinating other tests, but we need it gone
-			//  from the network before we can delete the network
-			if err := dockerManager.DisconnectContainerFromNetwork(testTeardownContext, initializerContainerId, networkId); err != nil {
-				errorDesc := fmt.Sprintf("An error occurred disconnecting the initializer container from the network, which prevents the network from being deleted:")
-				logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
-				return
-			}
-		} else {
-			if err := dockerManager.KillContainer(testTeardownContext, containerId); err != nil {
-				errorDesc := fmt.Sprintf("An error occurred killing container '%v', which prevents the network from being deleted:", containerId)
-				logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
-				return
-			}
-		}
-	}
-
-	// Give a tiny bit of time for the container-kills to complete before removing the network
-	time.Sleep(networkTeardownWaitTime)
-
 	if err := dockerManager.RemoveNetwork(testTeardownContext, networkId); err != nil {
-		errorDesc := fmt.Sprintf("An error occurred removing Docker network with ID %v:", networkId)
-		logErrorAndRecommendManualIntervention(log, errorDesc, err, networkId)
+		log.Errorf("An error occurred removing Docker network with ID %v:", networkId)
+		log.Error(err.Error())
+		log.Errorf("ACTION REQUIRED: You'll need to manually delete 1) any remaining containers on network ID '%v' 2) the network itself!!!", networkId)
 		return
 	}
 	log.Debugf("Successfully removed Docker network with ID %v", networkId)
-}
-
-func logErrorAndRecommendManualIntervention(log *logrus.Logger, humanReadableErrorDesc string, err error, networkId string) {
-	log.Errorf(humanReadableErrorDesc)
-	log.Error(err.Error())
-	log.Errorf("ACTION REQUIRED: You'll need to delete any remaining containers and the network with ID '%v' manually!!!", networkId)
 }

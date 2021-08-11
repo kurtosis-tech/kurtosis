@@ -8,6 +8,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
@@ -23,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
@@ -32,6 +34,7 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -78,9 +81,37 @@ func runMain () error {
 	}
 	logrus.SetLevel(logLevel)
 
+	paramsJsonBytes := []byte(paramsJsonStr)
+	var args api_container_env_var_values.ApiContainerArgs
+	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
+		return stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
+	}
+
+	dockerManager, err := createDockerManager()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+	}
+	ownContainerId, err := container_own_id_finder.GetOwnContainerIdByName(context.Background(), dockerManager, args.ContainerName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting this container's ID")
+	}
+	defer func() {
+		// This is a catch-all safeguard, to leave the network absolutely empty by the time the API container shuts down
+		if err := disconnectExternalContainersAndKillEverythingElse(
+				context.Background(),
+				dockerManager,
+				args.NetworkId,
+				ownContainerId,
+				args.ExternalMountedContainerIds); err != nil {
+			// TODO propagate this to the user somehow - likely in the exit code of the API container
+			logrus.Errorf("An error occurred when disconnecting external containers and killing everything else:")
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+		}
+	}()
+
 	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_mountpoints.EnclaveDataVolumeMountpoint)
 
-	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(enclaveDataVol, paramsJsonStr)
+	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
@@ -135,19 +166,59 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkAndLambdaStore(enclaveDataVol *enclave_data_volume.EnclaveDataVolume, paramsJsonStr string) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
-	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_env_var_values.ApiContainerArgs
-	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
-	}
-
-	dockerManager, err := createDockerManager()
+func disconnectExternalContainersAndKillEverythingElse(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		networkId string,
+		ownContainerId string,
+		externalContainerIds map[string]bool) error {
+	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
+	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the Docker manager")
+		return stacktrace.Propagate(err, "An error occurred getting the containers connected to network '%v', which is necessary for stopping them", networkId)
 	}
 
-	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(args.EnclaveId)
+	allContainerHandlingErrors := map[string]error{}
+	for _, containerId := range containerIds {
+		if containerId == ownContainerId {
+			continue
+		}
+
+		var containerHandlingErr error = nil
+		if _, found := externalContainerIds[containerId]; found {
+			// We don't want to kill the external containers since we don't own them, but we need them gone from the network
+			if err := dockerManager.DisconnectContainerFromNetwork(ctx, containerId, networkId); err != nil {
+				containerHandlingErr = stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from the network", containerId)
+			}
+		} else {
+			if err := dockerManager.KillContainer(ctx, containerId); err != nil {
+				containerHandlingErr = stacktrace.Propagate(err, "An error occurred killing container '%v'", containerId)
+			}
+		}
+		if containerHandlingErr != nil {
+			allContainerHandlingErrors[containerId] = containerHandlingErr
+		}
+	}
+
+	if len(allContainerHandlingErrors) > 0 {
+		errorStrs := []string{}
+		for containerId, err := range allContainerHandlingErrors {
+			strToAppend := fmt.Sprintf("An error occurred removing container '%v':\n%v", containerId, err.Error())
+			errorStrs = append(errorStrs, strToAppend)
+		}
+		resultErrStr := strings.Join(errorStrs, "\n\n")
+		return errors.New(resultErrStr)
+	}
+	logrus.Debugf("Successfully disconnected external containers and killed everything else on network '%v'", networkId)
+	return nil
+}
+
+func createServiceNetworkAndLambdaStore(
+		dockerManager *docker_manager.DockerManager,
+		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
+		args api_container_env_var_values.ApiContainerArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
+	enclaveId := args.EnclaveId
+	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
 	if err != nil {

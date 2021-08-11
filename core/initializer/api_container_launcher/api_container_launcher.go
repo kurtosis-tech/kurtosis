@@ -49,9 +49,12 @@ func (launcher ApiContainerLauncher) Launch(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		enclaveDataVolumeName string,
-		isPartitioningEnabled bool) (string, error){
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (string, error){
 	enclaveId, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
+	containerName := enclaveObjNameProvider.ForApiContainer()
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -61,6 +64,7 @@ func (launcher ApiContainerLauncher) Launch(
 		apiContainerIpAddr,
 		enclaveDataVolumeName,
 		isPartitioningEnabled,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
@@ -72,7 +76,6 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosis_core_rpc_api_consts.ListenPort,
 		kurtosis_core_rpc_api_consts.ListenProtocol,
 	))
-	containerName := enclaveObjNameProvider.ForApiContainer()
 	containerId, _, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.containerImage,
@@ -104,6 +107,7 @@ func (launcher ApiContainerLauncher) Launch(
 }
 
 func (launcher ApiContainerLauncher) genApiContainerEnvVars(
+		containerName string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,
@@ -112,8 +116,10 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
 		enclaveDataVolumeName string,
-		isPartitioningEnabled bool) (map[string]string, error) {
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (map[string]string, error) {
 	args, err := api_container_env_var_values.NewApiContainerArgs(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -128,6 +134,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		},
 		isPartitioningEnabled,
 		launcher.shouldPublishPorts,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
