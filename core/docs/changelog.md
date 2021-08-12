@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Correct links now that `kurtosis-libs` is renamed to `kurtosis-testsuite-starter-pack`
 
 # 1.18.0
 ### Fixes
