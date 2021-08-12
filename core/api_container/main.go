@@ -172,7 +172,6 @@ func createServiceNetworkAndLambdaStore(
 		args api_container_env_var_values.ApiContainerArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
-
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
@@ -190,12 +189,11 @@ func createServiceNetworkAndLambdaStore(
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
 
-	enclaveDataVolName := args.EnclaveDataVolumeName
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		enclaveDataVolName,
+		enclaveId,
 		dockerManager,
 		enclaveObjNameProvider,
 		dockerNetworkId,
@@ -210,7 +208,7 @@ func createServiceNetworkAndLambdaStore(
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
 		dockerNetworkId,
-		enclaveDataVolName,
+		enclaveId,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -234,7 +232,7 @@ func createServiceNetworkAndLambdaStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,
-		enclaveDataVolName,
+		enclaveId,
 	)
 
 	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
@@ -243,11 +241,11 @@ func createServiceNetworkAndLambdaStore(
 }
 
 func disconnectExternalContainersAndKillEverythingElse(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-	networkId string,
-	ownContainerId string,
-	externalContainerIds map[string]bool) error {
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		networkId string,
+		ownContainerId string,
+		externalContainerIds map[string]bool) error {
 	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
 	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
 	if err != nil {
