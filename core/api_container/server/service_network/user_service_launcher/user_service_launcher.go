@@ -98,6 +98,7 @@ func (launcher UserServiceLauncher) Launch(
 		ctx,
 		imageName,
 		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceId),
+		false,	// User services won't run in interactive mode
 		launcher.dockerNetworkId,
 		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},

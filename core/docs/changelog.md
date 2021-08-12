@@ -2,6 +2,7 @@
 ### Features
 * The API container will now shut down all the containers in its network as it shuts down, which is a step towards enclaves being independent of the testing framework
 * Created `EnclaveManager`, to start & stop enclaves independent of the testing framework
+* Added a CLI for starting a Kurtosis enclave and a Javascript REPL attached to the API container
 
 # 1.18.0
 ### Fixes

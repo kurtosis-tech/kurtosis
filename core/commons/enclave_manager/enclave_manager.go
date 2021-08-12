@@ -45,12 +45,10 @@ func NewEnclaveManager(dockerClient *client.Client, apiContainerLauncher *api_co
 	}
 }
 
-// NOTE: thisContainerId is the ID of the container in which this code is executing, so that it can be mounted inside
-//  the new enclave such that it can communicate with the containers inside the network
 func (manager *EnclaveManager) CreateEnclave(
 		setupCtx context.Context,
 		log *logrus.Logger,
-		thisContainerId string,
+		externalContainerIdsToMount map[string]bool,  // Preexisting containers that should be mounted inside the enclave network
 		enclaveId string,
 		isPartitioningEnabled bool) (*enclave_context.EnclaveContext, error) {
 	dockerManager := docker_manager.NewDockerManager(log, manager.dockerClient)
@@ -93,25 +91,30 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 	log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
 
-	log.Debugf("Connecting this container to the enclave network so that it can interact with the containers in the enclave...")
-	thisContainerIpInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting this container inside the enclave")
-	}
-	if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, thisContainerId, thisContainerIpInsideEnclaveNetwork); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred connecting this container to the enclave network")
-	}
-	shouldDisconnectThisContainer := true
+	log.Debugf("Connecting external containers to the enclave network so that they can interact with the containers in the enclave...")
+	externalContainerIpAddrs := []net.IP{}
+	externalContainerIdsToDisconnectSet := map[string]bool{}
 	defer func() {
-		if shouldDisconnectThisContainer {
-			if err := dockerManager.DisconnectContainerFromNetwork(teardownCtx, thisContainerId, networkId); err != nil {
-				log.Errorf("Creating the enclave didn't complete successfully, so we tried to disconnect this container from enclave network but an error was thrown:")
+		for containerId := range externalContainerIdsToDisconnectSet {
+			if err := dockerManager.DisconnectContainerFromNetwork(teardownCtx, containerId, networkId); err != nil {
+				log.Errorf("Creating the enclave didn't complete successfully, so we tried to disconnect container with ID '%v' from enclave network but an error was thrown:", containerId)
 				fmt.Fprintln(log.Out, err)
-				log.Errorf("ACTION REQUIRED: You'll need to manually disconnect container with ID '%v' from network with ID '%v'!!!!!!!", thisContainerId, networkId)
+				log.Errorf("ACTION REQUIRED: You'll need to manually disconnect container with ID '%v' from network with ID '%v'!!!!!!!", containerId, networkId)
 			}
 		}
 	}()
-	log.Debugf("Successfully connected this container to the enclave network so that it can interact with the containers in the enclave")
+	for containerId := range externalContainerIdsToMount {
+		ipInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting external container with ID '%v' inside the enclave", containerId)
+		}
+		externalContainerIpAddrs = append(externalContainerIpAddrs, ipInsideEnclaveNetwork)
+		if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
+		}
+		externalContainerIdsToDisconnectSet[containerId] = true
+	}
+	log.Debugf("Successfully connected external containers to the enclave network so that they can interact with the containers in the enclave")
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
@@ -134,6 +137,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
+	alreadyTakenIps := append(externalContainerIpAddrs, testsuiteContainerIpAddr)
 	apiContainerId, err := manager.apiContainerLauncher.Launch(
 		setupCtx,
 		log,
@@ -144,19 +148,16 @@ func (manager *EnclaveManager) CreateEnclave(
 		networkIpAndMask.String(),
 		gatewayIp,
 		apiContainerIpAddr,
-		[]net.IP{
-			thisContainerIpInsideEnclaveNetwork,
-			testsuiteContainerIpAddr,
-		},
+		alreadyTakenIps,
 		isPartitioningEnabled,
-		map[string]bool{thisContainerId: true},
+		externalContainerIdsToMount,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
 	// The API container is started successfully and it will disconnect/stop everything in its network when it shuts down,
-	//  so it takes over the responsibility of disconnecting this container
-	shouldDisconnectThisContainer = false
+	//  so it takes over the responsibility of disconnecting the external containers
+	externalContainerIdsToDisconnectSet = map[string]bool{}
 	shouldStopApiContainer := true
 	defer func() {
 		if shouldStopApiContainer {

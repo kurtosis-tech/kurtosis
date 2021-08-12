@@ -233,6 +233,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			name string,
+			isInteractiveMode bool,
 			networkId string,
 			staticIp net.IP,
 			addedCapabilities map[ContainerCapability]bool,
@@ -268,7 +269,14 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPortsSet, entrypointArgs, cmdArgs, envVariables)
+	containerConfigPtr, err := manager.getContainerCfg(
+		dockerImage,
+		isInteractiveMode,
+		usedPortsSet,
+		entrypointArgs,
+		cmdArgs,
+		envVariables,
+	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -382,6 +390,20 @@ func (manager DockerManager) GetContainerIP(ctx context.Context, networkName str
 		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
 	}
 	return networkInfo.IPAddress, nil
+}
+
+func (manager DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
+	attachOpts := types.ContainerAttachOptions{
+		Stream:     true,
+		Stdin:      true,
+		Stdout:     true,
+		Stderr:     true,
+	}
+	hijackedResponse, err := manager.dockerClient.ContainerAttach(ctx, containerId, attachOpts)
+	if err != nil {
+		return types.HijackedResponse{}, stacktrace.Propagate(err, "An error occurred attaching to container '%v'", containerId)
+	}
+	return hijackedResponse, nil
 }
 
 /*
@@ -700,6 +722,7 @@ func (manager *DockerManager) getContainerHostConfig(
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
+			isInteractiveMode bool,
 			usedPorts map[nat.Port]bool,
 			entrypointArgs []string,
 			cmdArgs []string,
@@ -715,7 +738,11 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		Tty:          false,
+		AttachStderr: isInteractiveMode,	// Analogous to `-a STDERR` option to `docker run`
+		AttachStdin:  isInteractiveMode,	// Analogous to `-a STDIN` option to `docker run`
+		AttachStdout: isInteractiveMode,	// Analogous to `-a STDOUT` option to `docker run`
+		Tty:          isInteractiveMode,	// Analogous to the `-t` option to `docker run`
+		OpenStdin: true,	// Analogous to the `-i` option to `docker run`
 		Image:        dockerImage,
 		ExposedPorts: portSet,
 		Cmd:          cmdArgs,

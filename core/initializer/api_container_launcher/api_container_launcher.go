@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
 	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -27,14 +26,13 @@ const (
 )
 
 type ApiContainerLauncher struct {
-	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 	containerImage          string
 	kurtosisLogLevel        logrus.Level
 	shouldPublishPorts		bool
 }
 
-func NewApiContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, containerImage string, kurtosisLogLevel logrus.Level, shouldPublishPorts bool) *ApiContainerLauncher {
-	return &ApiContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, shouldPublishPorts: shouldPublishPorts}
+func NewApiContainerLauncher(containerImage string, kurtosisLogLevel logrus.Level, shouldPublishPorts bool) *ApiContainerLauncher {
+	return &ApiContainerLauncher{containerImage: containerImage, kurtosisLogLevel: kurtosisLogLevel, shouldPublishPorts: shouldPublishPorts}
 }
 
 func (launcher ApiContainerLauncher) Launch(
@@ -75,6 +73,7 @@ func (launcher ApiContainerLauncher) Launch(
 		ctx,
 		launcher.containerImage,
 		containerName,
+		false,	// API container will not run in interactive mode
 		networkId,
 		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container

@@ -231,7 +231,6 @@ func main() {
 		isDebugMode,
 	)
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
-		testsuiteExObjNameProvider,
 		parsedFlags.GetString(kurtosisApiImageArg),
 		kurtosisLogLevel,
 		isDebugMode,
