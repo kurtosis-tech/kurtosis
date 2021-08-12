@@ -33,6 +33,8 @@ func (nameProvider *EnclaveObjectNameProvider) ForApiContainer() string {
 	)
 }
 
+// TODO We don't want testsuites to be special - they should be Just Another Kurtosis Module - but we can't make them
+//  unspecial (and thus delete this method) until the API container supports a container log-streaming endpoint
 func (nameProvider *EnclaveObjectNameProvider) ForTestRunningTestsuiteContainer() string {
 	return strings.Join(
 		[]string{nameProvider.enclaveId, testsuiteContainerNameSuffix},

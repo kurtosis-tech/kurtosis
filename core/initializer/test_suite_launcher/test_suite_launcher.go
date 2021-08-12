@@ -120,7 +120,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		networkId string,
-		testName string,
+		containerName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
 		enclaveDataVolName string) (containerId string, resultErr error){
@@ -138,8 +138,6 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Infof("Launching %v....", suiteContainerDesc)
-	_, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
-	containerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
