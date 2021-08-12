@@ -102,7 +102,7 @@ func runMain() error {
 		// Ensure we don't leak enclaves
 		logrus.Info("Removing enclave...")
 		if err := enclaveManager.DestroyEnclave(context.Background(), logrus.StandardLogger(), enclaveCtx); err != nil {
-			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:")
+			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
 		} else {
