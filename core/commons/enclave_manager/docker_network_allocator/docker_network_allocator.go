@@ -247,7 +247,6 @@ func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 		}
 		resultNetworkIpUint32 := uint32(resultNetworkIpUint64)
 
-		// Don't even both trying with disallowed IPs
 		if isIpInDisallowedRange(resultNetworkIpUint32) {
 			continue
 		}
