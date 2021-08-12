@@ -27,6 +27,8 @@ import (
 const (
 	successExitCode = 0
 	errorExitCode = 1
+
+	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
 )
 
 const (
@@ -57,6 +59,8 @@ func main() {
 		ForceColors:   true,
 		FullTimestamp: true,
 	})
+
+	// TODO figure out a way to set the loglevel for Kurtosis from here
 
 	// TODO set log level???
 
@@ -96,10 +100,13 @@ func runMain() error {
 	)
 	defer func() {
 		// Ensure we don't leak enclaves
+		logrus.Info("Removing enclave...")
 		if err := enclaveManager.DestroyEnclave(context.Background(), logrus.StandardLogger(), enclaveCtx); err != nil {
 			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
+		} else {
+			logrus.Info("Enclave removed")
 		}
 	}()
 
@@ -115,33 +122,32 @@ func runMain() error {
 func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *enclave_context.EnclaveContext) error {
 	enclaveId := enclaveCtx.GetEnclaveID()
 	networkId := enclaveCtx.GetNetworkID()
-	logrus.Debug("Network ID: %v", networkId)
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
+	replContainerIpAddr := enclaveCtx.GetREPLContainerIPAddr()
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
 		javascriptReplImage,
 		enclaveId + "_INTERACTIVE",
-		true,
+		true,  // REPL container needs to run in interactive mode
 		networkId,
-		// TODO THIS IS A GIGANTIC HACK FIX THIS
-		enclaveCtx.GetTestsuiteContainerIPAddr(),
+		replContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]bool{},
-		false,
+		false,	// REPL container doesn't have any ports for publishing
+		[]string{},
 		[]string{
-			// TODO don't hardcode this????
 			"node",
-		},
-		[]string{
 			"-i",
 			"-e",
 			fmt.Sprintf("kurtosisApiIpAddr = \"%v\"", kurtosisApiContainerIpAddr.String()),
 		},
-		map[string]string{},
-		map[string]string{},
-		map[string]string{},
-		false,
+		map[string]string{},	// No envvars needed
+		map[string]string{},	// TODO bind-mount a local directory so the user can give files to the REPL
+		map[string]string{
+			enclaveId: enclaveDataVolMountpointOnReplContainer,
+		},
+		false,	// The REPL doesn't need access to the host machine
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")
@@ -172,23 +178,23 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 		oldState, err = terminal.MakeRaw(fd)
 		if err != nil {
 			// print error
-			return stacktrace.Propagate(err, "An error occurred making STDIN raw")
+			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
 		}
 		defer terminal.Restore(fd, oldState)
 	}
 
-	// TODO use exit code???
-	if _, err := dockerManager.WaitForExit(context.Background(), replContainerId); err != nil {
+	exitCode, err := dockerManager.WaitForExit(context.Background(), replContainerId)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the REPL container to exit")
 	}
-
-	// TODO do we need this??
-	// terminal.Restore(fd, oldState)
+	if exitCode != successExitCode {
+		logrus.Warnf("The REPL container exited with a non-%v exit code", exitCode)
+	}
 
 	return nil
 }
 
-// TODO This should be merged with the Bash enclave ID generation!!!!!
+// TODO Merge this with the Bash enclave ID generation so that it's standardized!!!!!
 func getEnclaveId() string {
 	rand.Seed(time.Now().UnixNano())
 	// We make this uint16 to approximate Bash's RANDOM

@@ -133,11 +133,19 @@ func (manager *EnclaveManager) CreateEnclave(
 	// TODO We want to get rid of this; see the detailed TODO on EnclaveContext
 	testsuiteContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't allocate an IP address for the to-be-started testsuite container")
+		return nil, stacktrace.Propagate(err, "Couldn't reserve an IP address for a possible testsuite container")
+	}
+
+	replContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Couldn't reserve an IP address for a possible REPL container")
 	}
 
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
-	alreadyTakenIps := append(externalContainerIpAddrs, testsuiteContainerIpAddr)
+	alreadyTakenIps := append(
+		[]net.IP{testsuiteContainerIpAddr, replContainerIpAddr},
+		externalContainerIpAddrs...
+	)
 	apiContainerId, err := manager.apiContainerLauncher.Launch(
 		setupCtx,
 		log,
@@ -176,6 +184,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		networkIpAndMask,
 		apiContainerId,
 		apiContainerIpAddr,
+		replContainerIpAddr,
 		testsuiteContainerIpAddr,
 		enclaveObjNameProvider.ForTestRunningTestsuiteContainer(),
 		dockerManager,
