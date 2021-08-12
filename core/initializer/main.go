@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -30,7 +31,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"time"
 )
 
 const (
@@ -51,17 +51,6 @@ const (
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
-
-	// Can make these configurable if needed
-	hostPortTrackerInterfaceIp = "127.0.0.1"
-	hostPortTrackerStartRange = 8000
-	hostPortTrackerEndRange = 10000
-	// TODO This is wrong - we shouldn't actually specify the protocol at FreeHostPortBindingSupplier construction
-	//  time, but instead as a parameter to GetFreePort (so the protocol matches)
-	protocolForDebuggerPorts = "tcp"
-
-	maxTimesTryingToFindInitializerContainerId = 5
-	timeBetweenTryingToFindInitializerContainerId = 1 * time.Second
 
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	//                  If you change the below, you need to update the Dockerfile!
@@ -220,7 +209,11 @@ func main() {
 	//  call the testsuite containers, and the least fragile way we have to find it is to use the execution UUID
 	// We must do this before starting any other containers though, else we won't know which one is the initializer
 	//  (since using the image name is very fragile)
-	initializerContainerId, err := getInitializerContainerId(dockerClient, executionId)
+	initializerContainerId, err := container_own_id_finder.GetOwnContainerIdByName(
+		context.Background(),
+		docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient),
+		executionId,
+	)
 	if err != nil {
 		logrus.Errorf("An error occurred getting the initializer container's ID: %v", err)
 		os.Exit(failureExitCode)
@@ -301,34 +294,6 @@ func main() {
 		exitCode = failureExitCode
 	}
 	os.Exit(exitCode)
-}
-
-func getInitializerContainerId(dockerClient *client.Client, executionInstanceId string) (string, error) {
-	logrus.Debugf("Getting initializer container ID...")
-	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
-
-	// For some reason, Docker very occasionally will report 0 containers matching the execution instance ID even
-	//  though this container definitely has the right name, so we therefore retry a couple times as a workaround
-	// See: https://github.com/moby/moby/issues/42354)
-	timesTried := 0
-	for timesTried < maxTimesTryingToFindInitializerContainerId {
-		matchingIds, err := dockerManager.GetContainerIdsByName(context.Background(), executionInstanceId)
-		if err != nil {
-			logrus.Debugf("Got an error while trying to get the initializer container ID: %v", err)
-		} else if len(matchingIds) != 1 {
-			logrus.Debugf("Expected exactly 1 container ID matching execution instance ID '%v' but got %v", executionInstanceId, len(matchingIds))
-		} else {
-			result := matchingIds[0]
-			logrus.Debugf("Got initializer container ID: %v", result)
-			return result, nil
-		}
-		timesTried = timesTried + 1
-		if timesTried < maxTimesTryingToFindInitializerContainerId {
-			logrus.Debugf("Sleeping for %v then trying to get initializer container ID again...", timeBetweenTryingToFindInitializerContainerId)
-			time.Sleep(timeBetweenTryingToFindInitializerContainerId)
-		}
-	}
-	return "", stacktrace.NewError("Couldn't get the ID of the initializer container despite trying %v times with %v between tries", maxTimesTryingToFindInitializerContainerId, timeBetweenTryingToFindInitializerContainerId)
 }
 
 func getAccessController(

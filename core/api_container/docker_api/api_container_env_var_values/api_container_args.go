@@ -17,6 +17,9 @@ const (
 
 // Fields are public for JSON de/serialization
 type ApiContainerArgs struct {
+	// The name of the API container itself (will be used to get its own container ID)
+	ContainerName			 string	`json:"containerName"`
+
 	EnclaveId				 string `json:"enclaveId"'`
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
@@ -33,11 +36,18 @@ type ApiContainerArgs struct {
 
 	// Whether the ports of the containers that the API service starts should be published to the Docker host machine
 	ShouldPublishPorts bool		`json:"shouldPublishPorts"`
+
+	// When shutting down, the API container will tear down everything in the enclave network that it knows about
+	// However, there can be containers which have been connected to the network which should NOT be stopped (e.g. the
+	// testing framework initializer container), which should merely be disconnected from the network
+	// This is a set of those containers
+	ExternalMountedContainerIds	map[string]bool 	`json:"externalMountedContainerIds"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
 func NewApiContainerArgs(
+		containerName string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,
@@ -46,8 +56,10 @@ func NewApiContainerArgs(
 		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
-		shouldPublishPorts bool) (*ApiContainerArgs, error) {
+		shouldPublishPorts bool,
+		externalMountedContainerIds map[string]bool) (*ApiContainerArgs, error) {
 	result := ApiContainerArgs{
+		ContainerName:         containerName,
 		EnclaveId:             enclaveId,
 		NetworkId:             networkId,
 		SubnetMask:            subnetMask,
@@ -57,6 +69,7 @@ func NewApiContainerArgs(
 		TakenIpAddrs:          takenIpAddrs,
 		IsPartitioningEnabled: isPartitioningEnabled,
 		ShouldPublishPorts:    shouldPublishPorts,
+		ExternalMountedContainerIds: externalMountedContainerIds,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
