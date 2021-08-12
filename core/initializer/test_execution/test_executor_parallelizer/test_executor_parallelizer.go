@@ -8,10 +8,8 @@ package test_executor_parallelizer
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
@@ -39,12 +37,10 @@ Returns:
 func RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
-		dockerClient *client.Client,
-		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
+		enclaveManager *enclave_manager.EnclaveManager,
 		parallelism uint,
 		allTestParams map[string]parallel_test_params.ParallelTestParams,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) bool {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -84,10 +80,8 @@ func RunInParallelAndPrintResults(
 		outputManager,
 		testParamsChan,
 		parallelism,
-		dockerClient,
-		dockerNetworkAllocator,
-		testsuiteLauncher,
-		apiContainerLauncher)
+		enclaveManager,
+		testsuiteLauncher)
 	logrus.Info("All tests exited")
 
 	allTestsPassed, err := outputManager.PrintSummary()
@@ -111,10 +105,8 @@ func disableSystemLogAndRunTestThreads(
 		outputManager *output.ParallelTestOutputManager,
 		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
-		dockerClient *client.Client,
-		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
+		enclaveManager *enclave_manager.EnclaveManager,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
 	// We therefore need to make sure that all code beyond this point uses the per-test logger rather than the systemwide logger.
 	// However, it's very difficult for  a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'.
@@ -135,10 +127,8 @@ func disableSystemLogAndRunTestThreads(
 			&waitGroup,
 			testParamsChan,
 			outputManager,
-			dockerClient,
-			dockerNetworkAllocator,
-			testsuiteLauncher,
-			apiContainerLauncher)
+			enclaveManager,
+			testsuiteLauncher)
 	}
 	waitGroup.Wait()
 }
@@ -154,10 +144,8 @@ func runTestWorkerGoroutine(
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
-			dockerClient *client.Client,
-			dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
-			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-			apiContainerLauncher *api_container_launcher.ApiContainerLauncher) {
+			enclaveManager *enclave_manager.EnclaveManager,
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -169,10 +157,8 @@ func runTestWorkerGoroutine(
 			testsuiteExObjNameProvider,
 			initializerContainerId,
 			testLog,
-			dockerClient,
-			dockerNetworkAllocator,
+			enclaveManager,
 			testsuiteLauncher,
-			apiContainerLauncher,
 			testParams)
 		outputManager.RegisterTestCompletion(testName, executionErr, passed)
 	}

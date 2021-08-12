@@ -41,28 +41,23 @@ func (launcher ApiContainerLauncher) Launch(
 		ctx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
-		testName string,
+		containerName string,
+		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		initializerContainerIpAddr net.IP,
-		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		enclaveDataVolumeName string,
+		otherTakenIpAddrsInEnclave []net.IP,
 		isPartitioningEnabled bool,
 		externalMountedContainerIds map[string]bool) (string, error){
-	enclaveId, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
-	containerName := enclaveObjNameProvider.ForApiContainer()
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
 		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
-		initializerContainerIpAddr,
-		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
-		enclaveDataVolumeName,
+		otherTakenIpAddrsInEnclave,
 		isPartitioningEnabled,
 		externalMountedContainerIds,
 	)
@@ -93,7 +88,7 @@ func (launcher ApiContainerLauncher) Launch(
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			enclaveDataVolumeName: api_container_mountpoints.EnclaveDataVolumeMountpoint,
+			enclaveId: api_container_mountpoints.EnclaveDataVolumeMountpoint,
 		},
 		false, // The API container doesn't need access to the host machine
 	)
@@ -112,26 +107,24 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		initializerContainerIpAddr net.IP,
-		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		enclaveDataVolumeName string,
+		otherTakenIpAddrsInEnclave []net.IP,
 		isPartitioningEnabled bool,
 		externalMountedContainerIds map[string]bool) (map[string]string, error) {
+	takenIpAddrStrSet := map[string]bool{
+		gatewayIpAddr.String(): true,
+		apiContainerIpAddr.String(): true,
+	}
+	for _, takenIp := range otherTakenIpAddrsInEnclave {
+		takenIpAddrStrSet[takenIp.String()] = true
+	}
 	args, err := api_container_env_var_values.NewApiContainerArgs(
 		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
-		gatewayIpAddr.String(),
-		enclaveDataVolumeName,
 		apiContainerIpAddr.String(),
-		map[string]bool{
-			gatewayIpAddr.String(): true,
-			initializerContainerIpAddr.String(): true,
-			apiContainerIpAddr.String(): true,
-			testSuiteContainerIpAddr.String(): true,
-		},
+		takenIpAddrStrSet,
 		isPartitioningEnabled,
 		launcher.shouldPublishPorts,
 		externalMountedContainerIds,

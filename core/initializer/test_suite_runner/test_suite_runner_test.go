@@ -21,12 +21,11 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		nil,
 		"5678-efgh",
 		nil,
-		nil,
 		suiteMetadata,
 		map[string]bool{},
 		1,
 		nil,
-		nil)
+	)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
 }
@@ -41,12 +40,11 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		nil,
 		"5678-efgh",
 		nil,
-		nil,
 		suiteMetadata,
 		map[string]bool{},
 		1,
 		nil,
-		nil)
+	)
 	assert.False(t, result)
 	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
 }

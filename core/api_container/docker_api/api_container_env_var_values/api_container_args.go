@@ -23,8 +23,6 @@ type ApiContainerArgs struct {
 	EnclaveId				 string `json:"enclaveId"'`
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
-	GatewayIpAddr            string	`json:"gatewayIpAddr"`
-	EnclaveDataVolumeName 	 string	`json:"enclaveDataVolumeName"`
 
 	// Necessary so that when the API container starts modules, it knows which IP addr to give them
 	ApiContainerIpAddr string
@@ -51,8 +49,6 @@ func NewApiContainerArgs(
 		enclaveId string,
 		networkId string,
 		subnetMask string,
-		gatewayIpAddr string,
-		enclaveDataVolumeName string,
 		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
@@ -63,8 +59,6 @@ func NewApiContainerArgs(
 		EnclaveId:             enclaveId,
 		NetworkId:             networkId,
 		SubnetMask:            subnetMask,
-		GatewayIpAddr:         gatewayIpAddr,
-		EnclaveDataVolumeName: enclaveDataVolumeName,
 		ApiContainerIpAddr:    apiContainerIpAddr,
 		TakenIpAddrs:          takenIpAddrs,
 		IsPartitioningEnabled: isPartitioningEnabled,

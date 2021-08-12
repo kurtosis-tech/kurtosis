@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
@@ -237,6 +237,8 @@ func main() {
 		isDebugMode,
 	)
 
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerLauncher)
+
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher,
@@ -266,20 +268,16 @@ func main() {
 		parallelismUint = uint(parsedFlags.GetInt(parallelismArg))
 	}
 
-	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator()
-
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		testsuiteExObjNameProvider,
 		initializerContainerId,
-		dockerClient,
-		dockerNetworkAllocator,
+		enclaveManager,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
 		testsuiteLauncher,
-		apiContainerLauncher,
 	)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")

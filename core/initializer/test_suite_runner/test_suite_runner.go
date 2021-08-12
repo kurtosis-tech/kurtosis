@@ -6,11 +6,9 @@
 package test_suite_runner
 
 import (
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_network_allocator"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_execution/test_executor_parallelizer"
@@ -59,13 +57,11 @@ func RunTests(
 		permissions *permissions.Permissions,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
-		dockerClient *client.Client,
-		dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator,
+		enclaveManager *enclave_manager.EnclaveManager,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		apiContainerLauncher *api_container_launcher.ApiContainerLauncher) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
 		return false, stacktrace.Propagate(
@@ -107,12 +103,10 @@ func RunTests(
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider,
 		initializerContainerId,
-		dockerClient,
-		dockerNetworkAllocator,
+		enclaveManager,
 		testParallelism,
 		testParams,
-		testsuiteLauncher,
-		apiContainerLauncher)
+		testsuiteLauncher)
 	return allTestsPassed, nil
 }
 

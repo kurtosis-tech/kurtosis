@@ -28,11 +28,10 @@ func (namer *TestsuiteExecutionObjectNameProvider) ForMetadataAcquiringTestsuite
 	)
 }
 
-func (namer *TestsuiteExecutionObjectNameProvider) ForTestEnclave(testName string) (string, *EnclaveObjectNameProvider) {
+func (namer *TestsuiteExecutionObjectNameProvider) ForTestEnclave(testName string) string {
 	enclaveId := strings.Join(
 		[]string{namer.executionId, testName},
 		objectNameElementSeparator,
 	)
-	enclaveObjectNameProvider := NewEnclaveObjectNameProvider(enclaveId)
-	return enclaveId, enclaveObjectNameProvider
+	return enclaveId
 }

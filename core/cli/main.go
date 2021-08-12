@@ -3,7 +3,8 @@
  * All Rights Reserved.
  */
 
-package volume_naming_consts
+package cli
 
-const (
-)
+func main() {
+
+}
