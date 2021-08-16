@@ -1,4 +1,6 @@
 # TBD
+
+# 1.18.1
 ### Fixes
 * Correct links now that `kurtosis-libs` is renamed to `kurtosis-testsuite-starter-pack`
 * There are more disallowed IP ranges than just the multicast addresses (see [this Wikipedia article](https://en.wikipedia.org/wiki/IPv4#Special-use_addresses)), so prevent the Docker network allocator from choosing those
