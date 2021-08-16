@@ -29,21 +29,21 @@ func TestErrorOnNoFreeIps(t *testing.T) {
 }
 
 func TestExactHole(t *testing.T) {
-	// This has exactly one hole - at 0.0.0.0/20
+	// This has exactly one hole - at 1.0.0.0/20
+	// Note that all 0.X.X.X aren't available because they're reserved
 	cidrs := []string{
-		"0.0.16.0/20",
-		"0.0.32.0/19",
-		"0.0.64.0/18",
-		"0.0.128.0/17",
-		"0.1.0.0/16",
-		"0.2.0.0/15",
-		"0.4.0.0/14",
-		"0.8.0.0/13",
-		"0.16.0.0/12",
-		"0.32.0.0/11",
-		"0.64.0.0/10",
-		"0.128.0.0/9",
-		"1.0.0.0/8",
+		"1.0.16.0/20",
+		"1.0.32.0/19",
+		"1.0.64.0/18",
+		"1.0.128.0/17",
+		"1.1.0.0/16",
+		"1.2.0.0/15",
+		"1.4.0.0/14",
+		"1.8.0.0/13",
+		"1.16.0.0/12",
+		"1.32.0.0/11",
+		"1.64.0.0/10",
+		"1.128.0.0/9",
 		"2.0.0.0/7",
 		"4.0.0.0/6",
 		"8.0.0.0/5",
@@ -52,41 +52,41 @@ func TestExactHole(t *testing.T) {
 		"64.0.0.0/2",
 		"128.0.0.0/1",
 	}
-	assertExpectedResultGivenCidrs(t, cidrs, []byte{0, 0, 0, 0})
+	assertExpectedResultGivenCidrs(t, cidrs, []byte{1, 0, 0, 0})
 }
 
 func TestNetworkFoundOnVariousCases(t *testing.T) {
 	// Because the free network-finding is random, we just test that we don't get an error (i.e. we actually find a network)
 	successfulCases := [][]string{
 		{
-			"0.0.16.0/20",
+			"1.0.16.0/20",
 		},
 		{
-			"0.0.32.0/20",
+			"1.0.32.0/20",
 		},
 		{
-			"0.0.4.0/24",
+			"1.0.4.0/24",
 		},
 		{
-			"0.0.0.0/20",
-			"0.0.32.0/20",
+			"1.0.0.0/20",
+			"1.0.32.0/20",
 		},
 		{
-			"0.0.4.0/24",
-			"0.0.64.0/24",
+			"1.0.4.0/24",
+			"1.0.64.0/24",
 		},
 		{
-			"0.0.4.0/24",
-			"0.0.18.0/24",
+			"1.0.4.0/24",
+			"1.0.18.0/24",
 		},
 		{
-			"0.0.4.0/24",
-			"0.0.18.0/24",
-			"0.0.32.0/24",
+			"1.0.4.0/24",
+			"1.0.18.0/24",
+			"1.0.32.0/24",
 		},
 		{
-			"0.0.0.0/18",
-			"0.80.0.0/24",
+			"1.0.0.0/18",
+			"1.80.0.0/24",
 		},
 	}
 	for _, cidrs := range successfulCases {

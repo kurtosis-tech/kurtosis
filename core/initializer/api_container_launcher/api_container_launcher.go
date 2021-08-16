@@ -41,26 +41,25 @@ func (launcher ApiContainerLauncher) Launch(
 		ctx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
-		testName string,
+		containerName string,
+		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		initializerContainerIpAddr net.IP,
-		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		enclaveDataVolumeName string,
-		isPartitioningEnabled bool) (string, error){
-	enclaveId, enclaveObjNameProvider := launcher.testsuiteExObjNameProvider.ForTestEnclave(testName)
+		otherTakenIpAddrsInEnclave []net.IP,
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (string, error){
 	apiContainerEnvVars, err := launcher.genApiContainerEnvVars(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
 		gatewayIpAddr,
-		initializerContainerIpAddr,
-		testSuiteContainerIpAddr,
 		apiContainerIpAddr,
-		enclaveDataVolumeName,
+		otherTakenIpAddrsInEnclave,
 		isPartitioningEnabled,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
@@ -72,7 +71,6 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosis_core_rpc_api_consts.ListenPort,
 		kurtosis_core_rpc_api_consts.ListenProtocol,
 	))
-	containerName := enclaveObjNameProvider.ForApiContainer()
 	containerId, _, err := dockerManager.CreateAndStartContainer(
 		ctx,
 		launcher.containerImage,
@@ -90,7 +88,7 @@ func (launcher ApiContainerLauncher) Launch(
 			dockerSocket: dockerSocket,
 		},
 		map[string]string{
-			enclaveDataVolumeName: api_container_mountpoints.EnclaveDataVolumeMountpoint,
+			enclaveId: api_container_mountpoints.EnclaveDataVolumeMountpoint,
 		},
 		false, // The API container doesn't need access to the host machine
 	)
@@ -104,30 +102,32 @@ func (launcher ApiContainerLauncher) Launch(
 }
 
 func (launcher ApiContainerLauncher) genApiContainerEnvVars(
+		containerName string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,
 		gatewayIpAddr net.IP,
-		initializerContainerIpAddr net.IP,
-		testSuiteContainerIpAddr net.IP,
 		apiContainerIpAddr net.IP,
-		enclaveDataVolumeName string,
-		isPartitioningEnabled bool) (map[string]string, error) {
+		otherTakenIpAddrsInEnclave []net.IP,
+		isPartitioningEnabled bool,
+		externalMountedContainerIds map[string]bool) (map[string]string, error) {
+	takenIpAddrStrSet := map[string]bool{
+		gatewayIpAddr.String(): true,
+		apiContainerIpAddr.String(): true,
+	}
+	for _, takenIp := range otherTakenIpAddrsInEnclave {
+		takenIpAddrStrSet[takenIp.String()] = true
+	}
 	args, err := api_container_env_var_values.NewApiContainerArgs(
+		containerName,
 		enclaveId,
 		networkId,
 		subnetMask,
-		gatewayIpAddr.String(),
-		enclaveDataVolumeName,
 		apiContainerIpAddr.String(),
-		map[string]bool{
-			gatewayIpAddr.String(): true,
-			initializerContainerIpAddr.String(): true,
-			apiContainerIpAddr.String(): true,
-			testSuiteContainerIpAddr.String(): true,
-		},
+		takenIpAddrStrSet,
 		isPartitioningEnabled,
 		launcher.shouldPublishPorts,
+		externalMountedContainerIds,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")

@@ -1,5 +1,14 @@
 # TBD
 
+# 1.18.1
+### Fixes
+* Correct links now that `kurtosis-libs` is renamed to `kurtosis-testsuite-starter-pack`
+* There are more disallowed IP ranges than just the multicast addresses (see [this Wikipedia article](https://en.wikipedia.org/wiki/IPv4#Special-use_addresses)), so prevent the Docker network allocator from choosing those
+
+### Features
+* The API container will now shut down all the containers in its network as it shuts down, which is a step towards enclaves being independent of the testing framework
+* Created `EnclaveManager`, to start & stop enclaves independent of the testing framework
+
 # 1.18.0
 ### Fixes
 * Updated copyright notice to 2021, with entity as Kurtosis Technologies Inc.
