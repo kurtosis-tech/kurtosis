@@ -42,10 +42,10 @@ const (
       tS%S; 't8@8:   :X8X%'  :8@88:     
     .X88X  .8888t  .888X%  .888:X.      
     't8' .88@8'  .8888%  .8888X                   KURTOSIS TESTING SUPPORT
-        .t8XX   :SXX'   :S8SX;                   Docs: ` + user_support_constants.Documentation +`
-      .888S   .888t   .8888X                    Email: ` + user_support_constants.SupportEmail + `
+        .t8XX   :SXX'   :S8SX;          Documentation: ` + user_support_constants.Documentation +`
+      .888S   .888t   .8888X            Github Issues: ` + user_support_constants.GithubIssues + `
      :88@:  .8@8S'  .8@@8;                    Discord: ` + user_support_constants.DiscordLink + `
-    .88;:  :X@S;   .%tSt.  @88:.        Github Issues: ` + user_support_constants.GithubIssues + `
+    .88;:  :X@S;   .%tSt.  @88:.                Email: ` + user_support_constants.SupportEmail + `
     .8X   :88t'   8888XX    @8@8:       
     .t8X   ''  .88;8:88@X:    %S@8.     
      ';%X..  .:t8@X:'  8@8.    888S.    
