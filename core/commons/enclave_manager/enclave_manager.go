@@ -27,6 +27,7 @@ const (
 	//  to give it some time to do so
 	apiContainerStopTimeout = 10 * time.Second
 
+	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 )
 
@@ -241,8 +242,8 @@ func waitForApiContainerAvailability(
 	}
 	if waitForAvailabilityExitCode != api_container_availability_waiter_consts.SuccessExitCode {
 		return stacktrace.NewError(
-			"Expected API container availability waiter binary '%v' to become available to return " +
-				"success code %v, but got %v instead with the following log output:%v",
+			"Expected API container availability waiter binary '%v' to return " +
+				"success code %v, but got '%v' instead with the following log output:%v",
 			availabilityWaiterBinaryFilepath,
 			api_container_availability_waiter_consts.SuccessExitCode,
 			waitForAvailabilityExitCode,

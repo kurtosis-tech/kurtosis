@@ -34,7 +34,10 @@ func main() {
 			conn.Close()
 			os.Exit(api_container_availability_waiter_consts.SuccessExitCode)
 		}
-		time.Sleep(timeBetweenWaitForAvailabilityRetries)
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i == maxWaitForAvailabilityRetries {
+			time.Sleep(timeBetweenWaitForAvailabilityRetries)
+		}
 	}
 	fmt.Println(fmt.Sprintf(
 		"The API container at %v didn't become available even after retrying %v times with %v between retries",
