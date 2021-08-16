@@ -65,7 +65,7 @@ func (launcher ApiContainerLauncher) Launch(
 		return "", stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
 
-	log.Info("Launching Kurtosis API container...")
+	log.Debugf("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf(
 		"%v/%v",
 		kurtosis_core_rpc_api_consts.ListenPort,
@@ -95,7 +95,7 @@ func (launcher ApiContainerLauncher) Launch(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred launching the Kurtosis API container")
 	}
-	log.Infof("Successfully launched the Kurtosis API container")
+	log.Debugf("Successfully launched the Kurtosis API container")
 
 	return containerId, nil
 

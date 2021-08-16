@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added a watermark with support information that displays on every run
+
+### Changes
+* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
 
 # 1.18.1
 ### Fixes

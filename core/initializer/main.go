@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -34,6 +35,53 @@ import (
 )
 
 const (
+	/*
+	// Text generated from https://patorjk.com/software/taag/#p=display&f=Nancyj&t=KURTOSIS%0ATESTING
+	watermark = `
+          .:%X%.          . %8@8@@8@8@8@:  
+         %.@888X;.        XS8@88888@:888%      dP     dP dP     dP  888888ba  d888888P  .88888.  .d88888b  dP .d88888b  
+        88.S. X:@8.     .@@;8S.:::8@8 @;.      88   .d8' 88     88  88    ` + "`" + `8b    88    d8'   ` + "`" + `8b 88.    "' 88 88.    "' 
+     .%.;@8:  .@;     .XSt.S:.. 8S S8X         88aaa8P'  88     88  88aaaa8P'    88    88     88 ` + "`" + `Y88888b. 88 ` + "`" + `Y88888b. 
+     @8X8%  t%.S@.  .XS8 X.' .@S tSS;.         88   ` + "`" + `8b. 88     88  88   ` + "`" + `8b.    88    88     88       ` + "`" + `8b 88       ` + "`" + `8b 
+     .8@.  @8t8%   .@88 t  . 8 88:             88     88 Y8.   .8P  88     88    88    Y8.   .8P d8'   .8P 88 d8'   .8P 
+         t; 88:  .XXtt8t . X8t88.              dP     dP ` + "`" + `Y88888P'  dP     dP    dP     ` + "`" + `8888P'   Y88888P  dP  Y88888P  
+       t:88X:  .X@% %:'  X@ :t.                
+    . S8;:%   .8;8%:'  .8 8@:                  
+     %8;%;  .X88t8:  .X8.88.  t;                    d888888P  88888888b .d88888b  d888888P dP 888888ba   .88888.             
+    ..:X   %8: 8.. .X8 X@    S:S@t                     88     88        88.    "'    88    88 88    ` + "`" + `8b d8'   ` + "`" + `88            
+     ;;X   8@ :  . X 88;@: . % @:88.                   88     88aaaa    ` + "`" + `Y88888b.    88    88 88     88 88                   
+     S S:  '^' . X8:88%S88t. ;. 888 %                  88     88              ` + "`" + `8b    88    88 88     88 88   YP88            
+      88@;t.. :88 :;  . %S @8t.    88 ;                88     88        d8'   .8P    88    88 88     88 Y8.   .88            
+       8.88 XS8.88:     : S88@ X S S 88;               dP     88888888P  Y88888P     dP    dP dP     dP  ` + "`" + `88888'             
+         8:8@S.SS          t 8X@88SS 8@S8; 
+
+                                                      SUPPORT
+                                           Docs: ` + user_support_constants.Documentation + `
+                                          Email: ` + user_support_constants.SupportEmail + `
+                                        Discord: ` + user_support_constants.DiscordLink + `
+                                  Github Issues: ` + user_support_constants.GithubIssues + `
+`
+
+	 */
+	// Image generated from https://www.ascii-art-generator.org/
+	watermark = `
+          .:%X%.          . %8@8@@8@8@8@:  
+         %.@888X;.        XS8@88888@:888%  
+        88.S. X:@8.     .@@;8S.:::8@8 @;.  
+     .%.;@8:  .@;     .XSt.S:.. 8S S8X   
+     @8X8%  t%.S@.  .XS8 X.' .@S tSS;.   
+     .8@.  @8t8%   .@88 t  . 8 88:       
+         t; 88:  .XXtt8t . X8t88.                  KURTOSIS TESTING SUPPORT
+       t:88X:  .X@% %:'  X@ :t.                   Docs: ` + user_support_constants.Documentation +`
+    . S8;:%   .8;8%:'  .8 8@:                    Email: ` + user_support_constants.SupportEmail + `
+     %8;%;  .X88t8:  .X8.88.  t;               Discord: ` + user_support_constants.DiscordLink + `
+    ..:X   %8: 8.. .X8 X@    S:S@t       Github Issues: ` + user_support_constants.GithubIssues + `
+     ;;X   8@ :  . X 88;@: . % @:88.     
+     S S:  '^' . X8:88%S88t. ;. 888 %      
+      88@;t.. :88 :;  . %S @8t.    88 ;    
+       8.88 XS8.88:     : S88@ X S S 88;   
+         8:8@S.SS          t 8X@88SS 8@S8; 
+`
 
 	successExitCode = 0
 	failureExitCode = 1
@@ -161,6 +209,8 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 
 
 func main() {
+	fmt.Println(watermark)
+
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
@@ -342,7 +392,7 @@ func printTestsInSuite(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSu
 	}
 	sort.Strings(testNames)
 
-	fmt.Println("\nTests in test suite:")
+	logrus.Info("\nTests in test suite:")
 	for _, name := range testNames {
 		// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
 		fmt.Println("- " + name)
