@@ -1,9 +1,9 @@
 Building & Running
 ==================
-Every testsuite is simply a package of test code in [an arbitrary language](https://github.com/kurtosis-tech/kurtosis-libs/blob/master/supported-languages.txt) that runs in a Docker container. This means that every test developer needs to a) build a testsuite Docker image and b) then feed it to Kurtosis for execution.
+Every testsuite is simply a package of test code in [an arbitrary language](https://github.com/kurtosis-tech/kurtosis-testsuite-starter-pack/blob/master/supported-languages.txt) that runs in a Docker container. This means that every test developer needs to a) build a testsuite Docker image and b) then feed it to Kurtosis for execution.
 
 ### Building a testsuite container
-Testsuites bootstrapped using [the quickstart instructions](https://github.com/kurtosis-tech/kurtosis-libs/tree/master#testsuite-quickstart) will come with the Dockerfile and `main` function necessary to package your test code into a Docker image. To build the testsuite Docker image, you'd need to call `docker build` on the Dockerfile to generate a new Docker image every time you make changes to your testsuite. This becomes tedious quickly, so we've automated this with a script that we'll see soon.
+Testsuites bootstrapped using [the quickstart instructions](https://github.com/kurtosis-tech/kurtosis-testsuite-starter-pack/tree/master#testsuite-quickstart) will come with the Dockerfile and `main` function necessary to package your test code into a Docker image. To build the testsuite Docker image, you'd need to call `docker build` on the Dockerfile to generate a new Docker image every time you make changes to your testsuite. This becomes tedious quickly, so we've automated this with a script that we'll see soon.
 
 ### Feeding a testsuite container to Kurtosis
 Kurtosis is invoked via the `kurtosis.sh` Bash script that's [released with each version of Kurtosis Core after 1.4](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/index.html?prefix=dist/) and created for you in the `.kurtosis` directory of a bootstrapped testsuite. To run your testsuite, you'd need to call `kurtosis.sh` and pass in the name of your testsuite image. As with building, this becomes tedious so we've automated it in a script.
