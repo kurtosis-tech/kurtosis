@@ -6,9 +6,11 @@
 package enclave_manager
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
@@ -24,6 +26,8 @@ const (
 	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
 	//  to give it some time to do so
 	apiContainerStopTimeout = 10 * time.Second
+
+	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -168,6 +172,9 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
+	if err := waitForApiContainerAvailability(setupCtx, dockerManager, apiContainerId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
+	}
 
 	result := enclave_context.NewEnclaveContext(
 		enclaveId,
@@ -213,3 +220,34 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, log *logrus.L
 
 	return nil
 };
+
+func waitForApiContainerAvailability(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		apiContainerId string) error {
+	cmdOutputBuffer := &bytes.Buffer{}
+	waitForAvailabilityExitCode, err := dockerManager.RunExecCommand(
+		ctx,
+		apiContainerId,
+		[]string{availabilityWaiterBinaryFilepath},
+		cmdOutputBuffer,
+	)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred executing binary '%v' to wait for the API container to become available",
+			availabilityWaiterBinaryFilepath,
+		)
+	}
+	if waitForAvailabilityExitCode != api_container_availability_waiter_consts.SuccessExitCode {
+		return stacktrace.NewError(
+			"Expected API container availability waiter binary '%v' to become available to return " +
+				"success code %v, but got %v instead with the following log output:%v",
+			availabilityWaiterBinaryFilepath,
+			api_container_availability_waiter_consts.SuccessExitCode,
+			waitForAvailabilityExitCode,
+			cmdOutputBuffer.String(),
+		)
+	}
+	return nil
+}
