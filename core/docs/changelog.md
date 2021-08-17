@@ -1,9 +1,12 @@
 # TBD
+### Changes
+* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+
 ### Features
 * Added a watermark with support information that displays on every run
 
-### Changes
-* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+### Fixes
+* Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
 
 # 1.18.1
 ### Fixes
