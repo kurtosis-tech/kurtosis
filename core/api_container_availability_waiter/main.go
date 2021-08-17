@@ -18,7 +18,7 @@ import (
 const (
 	apiContainerServerAddress             = "localhost"
 
-	maxWaitForAvailabilityRetries         = 30
+	maxWaitForAvailabilityRetries         = 10
 	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
 
 	errorExitCode = 1
@@ -38,7 +38,7 @@ func main() {
 		}
 		// Tiny optimization to not sleep if we're not going to run the loop again
 		logrus.Infof("Got a dial error: %v", err)
-		if i == maxWaitForAvailabilityRetries {
+		if i < maxWaitForAvailabilityRetries {
 			time.Sleep(timeBetweenWaitForAvailabilityRetries)
 		}
 	}
