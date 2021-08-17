@@ -1,6 +1,10 @@
 # TBD
+### Features
+* When we need to get a token for the user, also give them the signup link in case they don't have an account
+
 ### Fixes
 * Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
+* Check error when creating the request object that will get sent to Auth0 to get the device authorization
 
 # 1.18.1
 ### Fixes

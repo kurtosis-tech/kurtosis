@@ -77,7 +77,10 @@ func (authenticator StandardDeviceCodeAuthenticator) AuthorizeDeviceAndAuthentic
 		auth0_constants.Audience)
 	logrus.Debugf("Payload contents: %v", payloadContents)
 	payload := strings.NewReader(payloadContents)
-	req, _ := http.NewRequest("POST", url, payload)
+	req, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating the device authorization request that will get sent to Auth0")
+	}
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	// Send request for device code.
