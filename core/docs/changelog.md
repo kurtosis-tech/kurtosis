@@ -1,5 +1,18 @@
 # TBD
 
+# 1.18.2
+### Changes
+* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+
+### Features
+* Added a watermark with support information that displays on every run
+* When we need to get a token for the user, also give them the signup link in case they don't have an account
+* Add a test for our user support URLs to verify they're all valid URLs
+
+### Fixes
+* Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
+* Check error when creating the request object that will get sent to Auth0 to get the device authorization
+
 # 1.18.1
 ### Fixes
 * Correct links now that `kurtosis-libs` is renamed to `kurtosis-testsuite-starter-pack`

@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -34,6 +35,23 @@ import (
 )
 
 const (
+	// Logo generated from https://www.ascii-art-generator.org/, and then hand-modified to look better
+	watermark = `
+         :@X88@.        .888888888888%  
+       :X888888X:     .888S@XSS8@88@;   
+      tS%S; 't8@8:   :X8X%'  :8@88:     
+    .X88X  .8888t  .888X%  .888:X.      
+    't8' .88@8'  .8888%  .8888X                   KURTOSIS TESTING SUPPORT
+        .t8XX   :SXX'   :S8SX;          Documentation: ` + user_support_constants.DocumentationUrl +`
+      .888S   .888t   .8888X            Github Issues: ` + user_support_constants.GithubIssuesUrl + `
+     :88@:  .8@8S'  .8@@8;                    Discord: ` + user_support_constants.DiscordUrl + `
+    .88;:  :X@S;   .%tSt.  @88:.                Email: ` + user_support_constants.SupportEmail + `
+    .8X   :88t'   8888XX    @8@8:       
+    .t8X   ''  .88;8:88@X:    %S@8.     
+     ';%X..  .:t8@X:'  8@8.    888S.    
+       X888tXX88X:      %8'XS    %XX8:  
+        .%8888X'          ;888888@888S  
+`
 
 	successExitCode = 0
 	failureExitCode = 1
@@ -161,6 +179,8 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 
 
 func main() {
+	fmt.Println(watermark)
+
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
@@ -342,7 +362,7 @@ func printTestsInSuite(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSu
 	}
 	sort.Strings(testNames)
 
-	fmt.Println("\nTests in test suite:")
+	logrus.Info("\nTests in test suite:")
 	for _, name := range testNames {
 		// We intentionally don't use Logrus here so that we always see the output, even with a misconfigured loglevel
 		fmt.Println("- " + name)

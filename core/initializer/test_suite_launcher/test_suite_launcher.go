@@ -80,7 +80,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	}
 
 	suiteContainerDesc := "metadata-providing testsuite container"
-	log.Infof("Launching %v...", suiteContainerDesc)
+	log.Debugf("Launching %v...", suiteContainerDesc)
 	containerName := launcher.testsuiteExObjNameProvider.ForMetadataAcquiringTestsuiteContainer()
 	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
 		ctx,
@@ -137,7 +137,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	}
 
 	suiteContainerDesc := "test-running testsuite container"
-	log.Infof("Launching %v....", suiteContainerDesc)
+	log.Debugf("Launching %v....", suiteContainerDesc)
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
@@ -223,7 +223,7 @@ func logSuccessfulSuiteContainerLaunch(
 			debuggerHostPortBinding.HostPort,
 		)
 	}
-	log.Infof("Successfully created %v%v", suiteContainerDesc, suiteLaunchSupplementalLogInfo)
+	log.Debugf("Successfully created %v%v", suiteContainerDesc, suiteLaunchSupplementalLogInfo)
 
 }
 
