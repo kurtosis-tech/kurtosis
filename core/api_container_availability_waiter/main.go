@@ -16,7 +16,8 @@ import (
 
 const (
 	apiContainerServerAddress             = "localhost"
-	maxWaitForAvailabilityRetries         = 10
+
+	maxWaitForAvailabilityRetries         = 30
 	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
 
 	errorExitCode = 1
