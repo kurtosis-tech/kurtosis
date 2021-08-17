@@ -8,6 +8,7 @@ package auth0_authenticators
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -110,7 +111,19 @@ func (authenticator StandardDeviceCodeAuthenticator) AuthorizeDeviceAndAuthentic
 	}
 
 	// Prompt user to access authentication URL in browser in order to authenticate.
-	logrus.Infof("Please login to use Kurtosis by going to: %s\n Your user code for this device is: %s", deviceCodeResponse.VerificationUriComplete, deviceCodeResponse.UserCode)
+	logrus.Infof(
+		"To use Kurtosis, please login:\n" +
+			"\n" +
+			"    1) If you don't have a Kurtosis account, sign up:\n" +
+			"        a) Create an account at %v\n" +
+			"        b) Verify your email\n" +
+			"    2) Use your account to verify you see code %v at verification link %v\n" +
+			"\n" +
+			"(This only needs to be done once per month)",
+		user_support_constants.NewUserSignupUrl,
+		deviceCodeResponse.UserCode,
+		deviceCodeResponse.VerificationUriComplete,
+	)
 
 	// Poll for token while the user authenticates and confirms their device.
 	token, err := pollForToken(deviceCodeResponse.DeviceCode, deviceCodeResponse.Interval)

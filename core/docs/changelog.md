@@ -5,6 +5,7 @@
 ### Features
 * Added a watermark with support information that displays on every run
 * When we need to get a token for the user, also give them the signup link in case they don't have an account
+* Add a test for our user support URLs to verify they're all valid URLs
 
 ### Fixes
 * Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
