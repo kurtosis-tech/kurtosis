@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
 
 # 1.18.1
 ### Fixes
