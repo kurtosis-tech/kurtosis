@@ -1,5 +1,9 @@
 # TBD
+### Changes
+* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+
 ### Features
+* Added a watermark with support information that displays on every run
 * When we need to get a token for the user, also give them the signup link in case they don't have an account
 
 ### Fixes

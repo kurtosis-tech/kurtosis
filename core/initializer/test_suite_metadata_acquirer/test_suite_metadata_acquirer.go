@@ -43,7 +43,7 @@ func GetTestSuiteMetadata(
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	logrus.Info("Launching metadata-providing testsuite...")
+	logrus.Debugf("Launching metadata-providing testsuite...")
 	containerId, ipAddr, err := launcher.LaunchMetadataAcquiringContainer(
 		parentContext,
 		logrus.StandardLogger(),
@@ -59,7 +59,7 @@ func GetTestSuiteMetadata(
 			logrus.Errorf("ACTION REQUIRED: You'll need to manually stop container with ID '%v'!", containerId)
 		}
 	}()
-	logrus.Infof("Metadata-providing testsuite container launched")
+	logrus.Debugf("Metadata-providing testsuite container launched")
 
 	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, kurtosis_testsuite_rpc_api_consts.ListenPort)
 	conn, err := grpc.Dial(
