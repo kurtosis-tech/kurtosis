@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
+	"github.com/sirupsen/logrus"
 	"net"
 	"os"
 	"time"
@@ -36,16 +37,17 @@ func main() {
 			os.Exit(api_container_availability_waiter_consts.SuccessExitCode)
 		}
 		// Tiny optimization to not sleep if we're not going to run the loop again
+		logrus.Infof("Got a dial error: %v", err)
 		if i == maxWaitForAvailabilityRetries {
 			time.Sleep(timeBetweenWaitForAvailabilityRetries)
 		}
 	}
-	fmt.Println(fmt.Sprintf(
+	logrus.Errorf(
 		"The API container at %v didn't become available even after retrying %v times with %v between retries",
 		dialUrl,
 		maxWaitForAvailabilityRetries,
 		timeBetweenWaitForAvailabilityRetries,
-	))
+	)
 	os.Exit(errorExitCode)
 }
 
