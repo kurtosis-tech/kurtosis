@@ -438,9 +438,9 @@ func makeHttpRequest(httpMethod kurtosis_core_rpc_api_bindings.WaitForEndpointAv
 	)
 
 	if httpMethod.String() == http.MethodPost {
-		resp, err = http.Get(url)
-	} else if httpMethod.String() == http.MethodGet{
 		resp, err = http.Post(url, "", nil)
+	} else if httpMethod.String() == http.MethodGet{
+		resp, err = http.Get(url)
 	} else {
 		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod.String())
 	}
