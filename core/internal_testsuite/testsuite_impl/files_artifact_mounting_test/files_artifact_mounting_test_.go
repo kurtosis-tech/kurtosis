@@ -7,6 +7,7 @@ package files_artifact_mounting_test
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -60,7 +61,7 @@ func (f FilesArtifactMountingTest) Setup(networkCtx *networks.NetworkContext) (n
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
 
-	if err := networkCtx.WaitForEndpointAvailability(fileServerServiceId, 0, listenPort, file1Filename, waitInitialDelaySeconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
+	if err := networkCtx.WaitForEndpointAvailability(fileServerServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, listenPort, file1Filename, waitInitialDelaySeconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available")
 	}
 
