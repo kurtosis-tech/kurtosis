@@ -1,5 +1,9 @@
 # TBD
 
+### Changes
+* Update `Kurtosis Client` to version 0.12.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http method used in the http call to service's availability endpoint. The allowed values are GET or POST
+* Update internal testsuite tests adding the new argument `httpMethod` in every `WaitForEndpointAvailability` call
+
 # 1.18.2
 ### Changes
 * Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
