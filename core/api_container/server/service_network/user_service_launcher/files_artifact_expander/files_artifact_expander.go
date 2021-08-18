@@ -121,7 +121,7 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		ctx,
 		dockerImage,
 		containerName,
-		false,	// Files artifact expansion containers don't need interactive mode
+		nil,	// Files artifact expansion containers don't need interactive mode
 		expander.testNetworkId,
 		containerIp,
 		map[docker_manager.ContainerCapability]bool{},

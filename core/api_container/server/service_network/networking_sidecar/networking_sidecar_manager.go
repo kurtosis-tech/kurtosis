@@ -83,7 +83,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		ctx,
 		networkingSidecarImageName,
 		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceId),
-		false,	// Sidecar containers don't run in interactive mode
+		nil,	// Sidecar containers don't run in interactive mode
 		manager.dockerNetworkId,
 		sidecarIp,
 		map[docker_manager.ContainerCapability]bool{

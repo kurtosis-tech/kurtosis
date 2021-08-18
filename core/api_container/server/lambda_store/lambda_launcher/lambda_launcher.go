@@ -90,7 +90,7 @@ func (launcher LambdaLauncher) Launch(
 		ctx,
 		containerImage,
 		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaId),
-		false,	// Lambda containers don't run in interactive mode
+		nil,	// Lambda containers don't run in interactive mode
 		launcher.dockerNetworkId,
 		lambdaIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capapbilities needed for modules

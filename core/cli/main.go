@@ -18,6 +18,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/sys/unix"
 	"io"
 	"math/rand"
 	"os"
@@ -124,11 +125,22 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 	networkId := enclaveCtx.GetNetworkID()
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
 	replContainerIpAddr := enclaveCtx.GetREPLContainerIPAddr()
+
+	stdoutFd := int(os.Stdout.Fd())
+	windowSize, err := unix.IoctlGetWinsize(stdoutFd, unix.TIOCGWINSZ)
+	if err != nil {
+		return stacktrace.NewError("An error occurred getting the current terminal window size")
+	}
+	interactiveModeTtySize := &docker_manager.InteractiveModeTtySize{
+		Height: uint(windowSize.Row),
+		Width:  uint(windowSize.Col),
+	}
+
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
 		javascriptReplImage,
 		enclaveId + "_INTERACTIVE",
-		true,  // REPL container needs to run in interactive mode
+		interactiveModeTtySize,  // REPL container needs to run in interactive mode
 		networkId,
 		replContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{},
@@ -172,15 +184,15 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 	go io.Copy(os.Stdout, hijackedResponse.Reader)
 	go io.Copy(hijackedResponse.Conn, os.Stdin)
 
-	fd := int(os.Stdin.Fd())
+	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
-	if terminal.IsTerminal(fd) {
-		oldState, err = terminal.MakeRaw(fd)
+	if terminal.IsTerminal(stdinFd) {
+		oldState, err = terminal.MakeRaw(stdinFd)
 		if err != nil {
 			// print error
 			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
 		}
-		defer terminal.Restore(fd, oldState)
+		defer terminal.Restore(stdinFd, oldState)
 	}
 
 	exitCode, err := dockerManager.WaitForExit(context.Background(), replContainerId)
@@ -190,6 +202,8 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 	if exitCode != successExitCode {
 		logrus.Warnf("The REPL container exited with a non-%v exit code", exitCode)
 	}
+
+	terminal.Restore(stdinFd, oldState)
 
 	return nil
 }

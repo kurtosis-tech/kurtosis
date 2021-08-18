@@ -73,7 +73,7 @@ func (launcher ApiContainerLauncher) Launch(
 		ctx,
 		launcher.containerImage,
 		containerName,
-		false,	// API container will not run in interactive mode
+		nil,	// API container will not run in interactive mode
 		networkId,
 		apiContainerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for the API container

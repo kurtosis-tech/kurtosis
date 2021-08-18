@@ -53,6 +53,12 @@ const (
 	expectedHostIp = "0.0.0.0"
 )
 
+// The dimensions of the TTY that the container should output to when in interactive mode
+type InteractiveModeTtySize struct {
+	Height uint
+	Width uint
+}
+
 /*
 A handle to interacting with the Docker environment running a test.
  */
@@ -207,6 +213,8 @@ Args:
 	context: The Context that this request is running in (useful for cancellation)
 	dockerImage: Image to start
 	name: The name to give the container to be created
+	interactiveModeTerminalSize: If non-nil, the container will be started in interactive mode, with a container TTY
+		set to the specified dimensions
 	networkId: The ID of the Docker network that this container should be attached to
 	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
 	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
@@ -233,7 +241,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			name string,
-			isInteractiveMode bool,
+			interactiveModeTtySize *InteractiveModeTtySize, // If nil, interactive mode will be disabled; if non-nil, then interactive mode will be enabled
 			networkId string,
 			staticIp net.IP,
 			addedCapabilities map[ContainerCapability]bool,
@@ -268,6 +276,8 @@ func (manager DockerManager) CreateAndStartContainer(
 	} else if len(networks) > 1 {
 		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
 	}
+
+	isInteractiveMode := interactiveModeTtySize != nil
 
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
@@ -317,6 +327,27 @@ func (manager DockerManager) CreateAndStartContainer(
 			}
 		}
 	}()
+
+	if isInteractiveMode {
+		/*
+		Two notes:
+		 1) Container resizing must be done after the container is started
+		 2) This resize is very important - if we don't do it, then the output will look garbled for
+			 lines longer than the user's terminal
+		*/
+		resizeOpts := types.ResizeOptions{
+			Height: interactiveModeTtySize.Height,
+			Width:  interactiveModeTtySize.Width,
+		}
+		if err := manager.dockerClient.ContainerResize(context, containerId, resizeOpts); err != nil {
+			return "", nil, stacktrace.Propagate(
+				err,
+				"An error occurred resizing the new container's TTY size to height %v and width %v to match the user's terminal",
+				interactiveModeTtySize.Height,
+				interactiveModeTtySize.Width,
+			)
+		}
+	}
 
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
