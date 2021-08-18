@@ -383,7 +383,7 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
 
 	for i := uint32(0); i < args.Retries; i++ {
-		resp, err = makeHttpGetRequest(url)
+		resp, err = makeHttpRequest(args.HttpMethod, url)
 		if err == nil  {
 			break
 		}
@@ -431,8 +431,20 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func makeHttpGetRequest(url string) (*http.Response, error){
-	resp, err := http.Get(url)
+func makeHttpRequest(httpMethod kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_HttpMethod, url string) (*http.Response, error){
+	var (
+		resp *http.Response
+		err error
+	)
+
+	if httpMethod.String() == http.MethodPost {
+		resp, err = http.Post(url, "", nil)
+	} else if httpMethod.String() == http.MethodGet{
+		resp, err = http.Get(url)
+	} else {
+		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod.String())
+	}
+
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An HTTP error occurred when sending GET request to endpoint '%v'", url)
 	}
