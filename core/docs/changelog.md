@@ -1,4 +1,6 @@
 # TBD
+### Removals
+* Removed docs that have been ported to the main docs repo
 
 # 1.18.3
 
