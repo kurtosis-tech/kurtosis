@@ -61,7 +61,7 @@ func (f FilesArtifactMountingTest) Setup(networkCtx *networks.NetworkContext) (n
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
 
-	if err := networkCtx.WaitForEndpointAvailability(fileServerServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, listenPort, file1Filename, waitInitialDelaySeconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
+	if err := networkCtx.WaitForEndpointAvailability(fileServerServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, listenPort, file1Filename, "", waitInitialDelaySeconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available")
 	}
 
