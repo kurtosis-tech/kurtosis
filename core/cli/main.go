@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
@@ -136,6 +137,7 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 		Width:  uint(windowSize.Col),
 	}
 
+	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
 		javascriptReplImage,
@@ -147,14 +149,12 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 		docker_manager.DefaultNetworkMode,
 		map[nat.Port]bool{},
 		false,	// REPL container doesn't have any ports for publishing
-		[]string{},
-		[]string{
-			"node",
-			"-i",
-			"-e",
-			fmt.Sprintf("kurtosisApiIpAddr = \"%v\"", kurtosisApiContainerIpAddr.String()),
+		nil,
+		nil,
+		map[string]string{
+			// TODO Extract to named constant
+			"KURTOSIS_API_SOCKET": kurtosisApiContainerSocket,
 		},
-		map[string]string{},	// No envvars needed
 		map[string]string{},	// TODO bind-mount a local directory so the user can give files to the REPL
 		map[string]string{
 			enclaveId: enclaveDataVolMountpointOnReplContainer,
