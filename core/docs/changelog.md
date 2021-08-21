@@ -1,5 +1,6 @@
 # TBD
 ### Changes
+* Switch to using check-docs orb
 * Use the updated `minimal-grpc-server` Golang module, which is in a subdirectory
 
 # 1.18.3

@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   aws-s3: circleci/aws-s3@2.0.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
 
 executors:
   ubuntu_vm:
@@ -41,27 +42,6 @@ jobs:
       # Checking for running Docker containers after Kurtosis completes testsuite execution
       - run: |
           [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
-
-  check_docs:
-    docker:
-      # Needed for `npm install` down below
-      - image: cimg/node:15.3.0
-    resource_class: small
-    steps:
-      - checkout
-
-      # Gotchas I discovered when writing this:
-      # - Without the '--no-pager' flag, Git will print "WARNING: Terminal is not fully functional" and not display any output
-      # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
-      # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
-      # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
-      - run: "! git --no-pager diff --exit-code origin/develop...HEAD docs/changelog.md"
-
-      - run:
-          name: Check links in Markdown docs
-          command: |
-            sudo npm install -g markdown-link-check
-            bash .circleci/check-markdown-links.sh
 
   push_artifacts:
     environment:
@@ -106,16 +86,17 @@ workflows:
   build:
     jobs:
       # -- PR check jobs ------------------------------------------
-      - check_code:
-          context:
-            - docker-user
-            - kurtosis-user
+      - kurtosis-docs-checker/check-docs:
+          markdown-link-check-config-json: "{}"
           filters:
             branches:
               ignore:
                 - develop
                 - master
-      - check_docs:
+      - check_code:
+          context:
+            - docker-user
+            - kurtosis-user
           filters:
             branches:
               ignore:
