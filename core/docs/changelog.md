@@ -1,4 +1,28 @@
 # TBD
+### Changes
+* Switch to using check-docs orb
+* Use the updated `minimal-grpc-server` Golang module, which is in a subdirectory
+
+### Removals
+* Removed docs that have been ported to the main docs repo
+
+# 1.18.3
+### Changes
+* Update `Kurtosis Client` to version 0.12.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http method used in the http call to service's availability endpoint. The allowed values are GET or POST
+* Update internal testsuite tests adding the new argument `httpMethod` in every `WaitForEndpointAvailability` call
+
+# 1.18.2
+### Changes
+* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+
+### Features
+* Added a watermark with support information that displays on every run
+* When we need to get a token for the user, also give them the signup link in case they don't have an account
+* Add a test for our user support URLs to verify they're all valid URLs
+
+### Fixes
+* Wait for the API container to start up before we return the enclave to the user so there's no risk of dialling an API container and getting a connection refused
+* Check error when creating the request object that will get sent to Auth0 to get the device authorization
 
 # 1.18.1
 ### Fixes
