@@ -12,7 +12,7 @@ CMD node -i --experimental-repl-await -e " \
         kurtosis = kurtosisCore; \
         import(\"grpc\").then(grpc => { \
             const client = new kurtosisCore.ApiContainerServiceClient(\"${KURTOSIS_API_SOCKET}\", grpc.credentials.createInsecure()); \
-            networkCtx = new kurtosisCore.NetworkContext(client); \
+            networkCtx = new kurtosisCore.NetworkContext(client, \"${ENCLAVE_DATA_VOLUME_MOUNTPOINT}\"); \
         }); \
     }); \
 "

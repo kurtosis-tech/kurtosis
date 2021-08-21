@@ -37,10 +37,10 @@ const (
 	// TODO Read this from either:
 	//  1) the Kurt Core version if we're inside a testsuite repo
 	//  2) a global Kurtosis config if not
-	apiContainerImage = "kurtosistech/kurtosis-core_api:1.18"
+	apiContainerImage = "kurtosistech/kurtosis-core_api:mieubrisse_enclave-creation-cli"
 
 	// TODO make this configurable somehow
-	kurtosisLogLevel = logrus.InfoLevel
+	kurtosisLogLevel = logrus.DebugLevel
 
 	// TODO make configurable
 	javascriptReplImage = "test-repl-image"
@@ -154,6 +154,7 @@ func runReplContainer(dockerManager *docker_manager.DockerManager, enclaveCtx *e
 		map[string]string{
 			// TODO Extract to named constant
 			"KURTOSIS_API_SOCKET": kurtosisApiContainerSocket,
+			"ENCLAVE_DATA_VOLUME_MOUNTPOINT": enclaveDataVolMountpointOnReplContainer,
 		},
 		map[string]string{},	// TODO bind-mount a local directory so the user can give files to the REPL
 		map[string]string{

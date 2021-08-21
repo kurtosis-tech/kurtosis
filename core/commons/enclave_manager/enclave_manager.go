@@ -23,7 +23,7 @@ import (
 const (
 	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
 	//  to give it some time to do so
-	apiContainerStopTimeout = 10 * time.Second
+	apiContainerStopTimeout = 30 * time.Second
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks

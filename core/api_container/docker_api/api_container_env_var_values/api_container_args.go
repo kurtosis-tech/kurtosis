@@ -25,7 +25,7 @@ type ApiContainerArgs struct {
 	SubnetMask               string	`json:"subnetMask"`
 
 	// Necessary so that when the API container starts modules, it knows which IP addr to give them
-	ApiContainerIpAddr string
+	ApiContainerIpAddr string	`json:"apiContainerIpAddr"`
 
 	// Instructs the API container that these IP addrs are already taken and shouldn't be used
 	TakenIpAddrs			 map[string]bool `json:"takenIpAddrsSet"`
