@@ -85,8 +85,6 @@ github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210803193237-d8bcc867ae0e h1:F5wsNyPTH+mk8R36xbl2zoz4vBLybChrTCFq10AP6nw=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210803193237-d8bcc867ae0e/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
-github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210816213457-401fab3d23ea h1:qRQHRzXNKMePXGPDAqRBrYtquKm622PQXeOYRdCf7Lc=
-github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210816213457-401fab3d23ea/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210817190905-91d802b4169a h1:TVnfKvUqrIBTgQXGS+7C2puP7HqZTg6TznLhaiMu9d0=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210817190905-91d802b4169a/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c h1:hBA/N93ibR0O1f4tXzQ5hsokIdcaZ8Qkiwlhlls3odA=
@@ -95,6 +93,8 @@ github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210803203144
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210803203144-801fd9867a7f/go.mod h1:kXVTbqxkxPIO0pe++KopjZWM8OWqLqgAf4NArBCFlmk=
 github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b h1:nT5nOiGX2r02IYaQDQ81PHKcLssLcXuRNjzNCpGL6PU=
 github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b/go.mod h1:/XcImLhsJTy+xD9xN9t6eV8ASM9s/OU5g/KqBb8DCEg=
+github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85 h1:Q8r0lOSVuo5Kl/gT5eN/AKKDvgETls/fFR7c1t9wagA=
+github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
 github.com/labstack/echo v3.3.10+incompatible/go.mod h1:0INS7j/VjnFxD4E2wkz67b8cVwCLbBmJyDaka6Cmk1s=
 github.com/labstack/gommon v0.3.0/go.mod h1:MULnywXg0yavhxWKc+lOruYdAhDwPK9wf0OL7NoOu+k=
 github.com/mattn/go-colorable v0.1.2/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVcfRqFIhoBtE=

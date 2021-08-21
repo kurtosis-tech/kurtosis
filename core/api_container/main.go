@@ -28,7 +28,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
