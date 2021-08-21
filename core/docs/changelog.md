@@ -1,9 +1,12 @@
 # TBD
+### Changes
+* Switch to using check-docs orb
+* Use the updated `minimal-grpc-server` Golang module, which is in a subdirectory
+
 ### Removals
 * Removed docs that have been ported to the main docs repo
 
 # 1.18.3
-
 ### Changes
 * Update `Kurtosis Client` to version 0.12.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http method used in the http call to service's availability endpoint. The allowed values are GET or POST
 * Update internal testsuite tests adding the new argument `httpMethod` in every `WaitForEndpointAvailability` call
