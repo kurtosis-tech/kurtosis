@@ -9,6 +9,7 @@
 
 ### Fixes
 * Fix bug with not checking enclave creation error in the interactive CLI
+* The CircleCI artifact-publishing now uses the same constants as all the other scripts in the `scripts` directory
 
 # 1.18.4
 ### Changes
