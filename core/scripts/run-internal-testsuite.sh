@@ -3,72 +3,36 @@
 
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root_dirpath="$(dirname "${script_dirpath}")"
 
 
 
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-# TODO Fill constants here with UPPER_SNAKE_CASE, noting that the only variables constants may use are:
-# TODO  1) other constants (with the "${OTHER_CONSTANT}" syntax)
-# TODO  2) script_dirpath/root_dirpath from above
-DEFAULT_SOME_OPTIONAL_ARG_VALUE="A default value"   # TODO Replace with your own constants
+source "${script_dirpath}/_constants.sh"
 
-
-
-# ==================================================================================================
-#                                       Arg Parsing & Validation
-# ==================================================================================================
-# TODO Modify the arguments below to match the argument to your script
-show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") some_filepath_arg some_other_arg [some_optional_arg]"
-    echo ""
-    echo "  some_filepath_arg   The description of some_arg_1 goes here"
-    echo "  some_other_arg      The description of some_arg_2 goes here, and if the description is really long then"
-    echo "                          we break it into two lines like this"
-    echo "  some_optional_arg   Optional positional argument that doesn't need to be provided (default: ${DEFAULT_SOME_OPTIONAL_ARG_VALUE})"
-    echo ""
-    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
-}
-
-# TODO Modify the arg-grabbing below, noting that:
-# TODO - Non-constant variables are lower_snake_case
-# TODO - The "${X:-}" syntax is necessary to pass Bash strict mode
-some_filepath_arg="${1:-}"
-some_other_arg="${2:-}"
-some_optional_arg="${3:-"${DEFAULT_SOME_OPTIONAL_ARG_VALUE}"}"  # Note how optional arguments get a constant default value
-
-# TODO Modify this arg validation to match your arguments, keeping in mind:
-# TODO - Almost every arg should be verified to be non-empty
-# TODO - Filepath/dirpath ags often need to have their existence checked
-if [ -z "${some_filepath_arg}" ]; then
-    echo "Error: no filepath arg provided" >&2
-    show_helptext_and_exit
-fi
-if ! [ -f "${some_filepath_arg}" ]; then
-    echo "Error: filepath arg '${some_filepath_arg}' isn't a valid file" >&2
-    show_helptext_and_exit
-fi
-if [ -z "${some_other_arg}" ]; then
-    echo "Error: some other arg is empty" >&2
-    show_helptext_and_exit
-fi
+EXAMPLE_API_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-microservices_api"
+EXAMPLE_DATASTORE_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-microservices_datastore"
+INTERNAL_TESTSUITE_PARAMS_JSON='{
+    "apiServiceImage" :"'${EXAMPLE_API_MICROSERVICE_IMAGE}'",
+    "datastoreServiceImage": "'${EXAMPLE_DATASTORE_MICROSERVICE_IMAGE}'"
+}'
 
 
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-# TODO implement your main logic here using the args & constants, keeping in mind that:
-# TODO - Non-constant variables should be lower_snake_case
-# TODO - Variables should be referenced like this: ${some_variable}
-# TODO - Capturing subprocess output should be done using $(), NOT backticks ``, like so:
-# TODO
-# TODO      my_variable="$(echo "Something")"
-# TODO
-# TODO - Every call should have its return value checked like so:
-# TODO
-# TODO       if ! some_command; then 
-# TODO           echo "Error: Some description of the error" >&2
-# TODO           exit 1
-# TODO       fi
+if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+    echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
+    exit 1
+fi
+
+internal_testsuite_image="${DOCKER_ORG}/${INTERNAL_TESTSUITE_REPO}:${docker_tag}"
+wrapper_filepath="${root_dirpath}/${WRAPPER_OUTPUT_REL_FILEPATH}"
+
+# The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
+# ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
+#  ${1} exists, evaluate ${@}"
+bash "${wrapper_filepath}" --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${internal_testsuite_image}"
