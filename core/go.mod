@@ -19,7 +19,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210820220623-375ad07b71d1
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210803203144-801fd9867a7f
-	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -28,6 +28,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1 // indirect
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1

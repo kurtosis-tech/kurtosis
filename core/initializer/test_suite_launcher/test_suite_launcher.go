@@ -190,6 +190,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		ctx,
 		launcher.testsuiteImage,
 		name,
+		nil,	// Test suites won't run in interactive mode
 		networkId,
 		containerIpAddr,
 		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers

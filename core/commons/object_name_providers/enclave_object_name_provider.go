@@ -13,9 +13,8 @@ import (
 )
 
 const (
-
 	// These should represent the same format of YYYY-MM-DDTHH.mm.ss.SSS
-	goTimestampFormat = "2006-01-02T15.04.05.000"
+	uniqueTimestampFormat = "2006-01-02T15.04.05.000"
 )
 
 type EnclaveObjectNameProvider struct {
@@ -61,7 +60,7 @@ func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpanderContainer
 		string(serviceId),
 		artifactExpanderContainerNameLabel,
 		artifactId,
-		time.Now().Format(goTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
+		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
 	})
 }
 
@@ -70,7 +69,7 @@ func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(s
 		artifactExpansionVolumeNameLabel,
 		serviceId,
 		artifactId,
-		time.Now().Format(goTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
+		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
 	})
 }
 

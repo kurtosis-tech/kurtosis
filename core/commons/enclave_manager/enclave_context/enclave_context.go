@@ -18,6 +18,10 @@ type EnclaveContext struct {
 	apiContainerId string
 	apiContainerIpAddr net.IP
 
+	// A preallocated IP for a REPL (if any) that can be created inside the enclave
+	// NOTE: this is kiiiinda janky; a better way would be having the API container create it
+	replContainerIpAddr net.IP
+
 	// TODO This is a gigantic, jankalicious hack!!!!! The problem:
 	//  1. The initializer container needs to stream logs from the testsuite container, running inside the enclave
 	//  2. The only way we currently have to stream container logs is via DockerManager using the container ID - we'd like
@@ -44,8 +48,8 @@ type EnclaveContext struct {
 	dockerManager *docker_manager.DockerManager
 }
 
-func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
-	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
+func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, replContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
+	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, replContainerIpAddr: replContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
 }
 
 func (enclaveCtx *EnclaveContext) GetEnclaveID() string {
@@ -66,6 +70,10 @@ func (enclaveCtx *EnclaveContext) GetAPIContainerID() string {
 
 func (enclaveCtx *EnclaveContext) GetAPIContainerIPAddr() net.IP {
 	return enclaveCtx.apiContainerIpAddr
+}
+
+func (enclaveCtx *EnclaveContext) GetREPLContainerIPAddr() net.IP {
+	return enclaveCtx.replContainerIpAddr
 }
 
 func (enclaveCtx *EnclaveContext) GetTestsuiteContainerIPAddr() net.IP {
