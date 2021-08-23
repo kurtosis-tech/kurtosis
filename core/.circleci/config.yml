@@ -46,9 +46,6 @@ jobs:
           [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
 
   push_artifacts:
-    environment:
-      API_IMAGE_REPO: "kurtosistech/kurtosis-core_api"
-      INITIALIZER_IMAGE_REPO: "kurtosistech/kurtosis-core_initializer"
     executor: ubuntu_vm
     steps:
       - checkout
@@ -59,14 +56,18 @@ jobs:
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
       - run: |
-          echo "export X_Y_VERSION=\"$(echo '<<pipeline.git.tag>>' | egrep -o '^[0-9]+\.[0-9]+')\"" >> $BASH_ENV
+          version_to_publish="$(scripts/get-docker-images-tag.sh)"
+          echo "Version that will be published: ${version_to_publish}"
+          echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
 
-      # Docker images with this tag will have gotten built by build_and_run
       - run: |
-          echo "X.Y version: ${X_Y_VERSION}"
+          set -euo pipefail
+          source scripts/_constants.sh
+          api_image="${DOCKER_ORG}/${API_REPO}:${VERSION_TO_PUBLISH}"
+          initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${VERSION_TO_PUBLISH}"
 
-          docker push ${API_IMAGE_REPO}:${X_Y_VERSION}
-          docker push ${INITIALIZER_IMAGE_REPO}:${X_Y_VERSION}
+          docker push "${api_image}"
+          docker push "${initializer_image}"
 
       # All the variables here from the s3-upload-user context that we attach
       - aws-s3/copy:
@@ -74,13 +75,13 @@ jobs:
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
           from: build/kurtosis.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${X_Y_VERSION}/kurtosis.sh"
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/kurtosis.sh"
       - aws-s3/copy:
           aws-access-key-id: S3_ACCESS_KEY
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
           from: testsuite_scripts/build-and-run-core.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${X_Y_VERSION}/build-and-run-core.sh"
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/build-and-run-core.sh"
 
       # TODO add a step here for uploading the .proto files to the S3 public-access bucket!!! This will be necessary for making Kurtosis upgrades simple
 

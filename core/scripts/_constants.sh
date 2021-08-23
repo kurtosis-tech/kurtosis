@@ -2,8 +2,6 @@
 DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
 API_REPO="${REPO_BASE}_api"
-INITIALIZER_REPO="${REPO_BASE}_initializer"
-INTERNAL_TESTSUITE_REPO="${REPO_BASE}_internal-testsuite"
 
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
@@ -18,6 +16,9 @@ WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh
 WRAPPER_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/kurtosis.sh"
 
 INITIALIZER_DIRNAME="initializer"
+
+INITIALIZER_REPO="${REPO_BASE}_initializer"
+INTERNAL_TESTSUITE_REPO="${REPO_BASE}_internal-testsuite"
 
 # ---------------------- Interactive  -----------------------------------------------------
 CLI_DIRPATH="cli"
