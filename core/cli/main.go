@@ -100,6 +100,9 @@ func runMain() error {
 		enclaveId,
 		isPartitioningEnabled,
 	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an enclave")
+	}
 	defer func() {
 		// Ensure we don't leak enclaves
 		logrus.Info("Removing enclave...")

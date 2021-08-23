@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Build the interactive CLI & Javascript REPL image with `build-and-run.sh`
+
+### Fixes
+* Fix bug with not checking enclave creation error in the interactive CLI
 
 # 1.18.4
 ### Changes

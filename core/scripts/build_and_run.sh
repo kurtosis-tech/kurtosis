@@ -17,16 +17,28 @@ INTERNAL_TESTSUITE_REPO="${REPO_BASE}_internal-testsuite"
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
 BUILD_DIRPATH="${root_dirpath}/build"
-WRAPPER_GENERATOR_DIRPATH="${root_dirpath}/wrapper_generator"
-WRAPPER_GENERATOR_FILEPATH="${BUILD_DIRPATH}/wrapper-generator"
-WRAPPER_TEMPLATE_FILEPATH="${WRAPPER_GENERATOR_DIRPATH}/kurtosis.template.sh"
-WRAPPER_FILEPATH="${BUILD_DIRPATH}/kurtosis.sh"
 
+DEFAULT_DOCKER_BUILD_ARGS="--progress=plain"
+
+GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
 
 BUILD_ACTION="build"
 RUN_ACTION="run"
 BOTH_ACTION="all"
 HELP_ACTION="help"
+
+# ------------------------ Testing  -------------------------------------------------------
+WRAPPER_GENERATOR_DIRPATH="${root_dirpath}/wrapper_generator"
+WRAPPER_GENERATOR_FILEPATH="${BUILD_DIRPATH}/wrapper-generator"
+WRAPPER_TEMPLATE_FILEPATH="${WRAPPER_GENERATOR_DIRPATH}/kurtosis.template.sh"
+WRAPPER_FILEPATH="${BUILD_DIRPATH}/kurtosis.sh"
+
+# ---------------------- Interactive  -----------------------------------------------------
+CLI_DIRPATH="cli"
+CLI_BINARY_OUTPUT_FILEPATH="${BUILD_DIRPATH}/cli"
+# TODO CHANGE THIS!!! This is currently this way because the image is hardcoded in the CLI
+JAVASCRIPT_REPL_DIRNAME="javascript_cli_image"
+JAVASCRIPT_REPL_IMAGE="test-repl-image"
 
 # ====================== ARG PARSING =======================================================
 show_help() {
@@ -80,14 +92,9 @@ case "${action}" in
 esac
 
 # ====================== MAIN LOGIC =======================================================
-# Captures the first of tag > branch > commit
-git_ref="$(git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD)"
-docker_tag="$(echo "${git_ref}" | sed 's,[/:],_,g')"    # Sanitize git ref to be acceptable Docker tag format
-
-# If we're building a tag of X.Y.Z, then we need to actually build the Docker images and generate the wrapper script with tag X.Y so that users will
-#  get patch updates transparently
-if [[ "${docker_tag}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    docker_tag="$(echo "${docker_tag}" | egrep -o '^[0-9]+\.[0-9]+')"
+if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+    echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
+    exit 1
 fi
 
 initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
@@ -110,18 +117,35 @@ if "${do_build}"; then
         exit 1
     fi
 
+    echo "Building Kurtosis interactive CLI & Javascript REPL image..."
+    if ! go build -o "${CLI_BINARY_OUTPUT_FILEPATH}" "${CLI_DIRPATH}/main.go"; then
+        echo "Error: Failed to build the CLI binary" >&2
+        exit 1
+    fi
+    if ! docker build ${DEFAULT_DOCKER_BUILD_ARGS} -f "${JAVASCRIPT_REPL_DIRNAME}/Dockerfile" "${JAVASCRIPT_REPL_DIRNAME}"; then
+        echo "Error: Failed to build the Javascript REPL image" >&2
+        exit 1
+    fi
+    echo "Successfully build Kurtosis interactive CLI & Javascript REPL image"
+
     echo "Generating wrapper script..."
     mkdir -p "${BUILD_DIRPATH}"
-    go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"
-    "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"
+    if ! go build -o "${WRAPPER_GENERATOR_FILEPATH}" "${WRAPPER_GENERATOR_DIRPATH}/main.go"; then
+        echo "Error: Failed to build the wrapper script-generating binary" >&2
+        exit 1
+    fi
+    if ! "${WRAPPER_GENERATOR_FILEPATH}" -kurtosis-core-version "${docker_tag}" -template "${WRAPPER_TEMPLATE_FILEPATH}" -output "${WRAPPER_FILEPATH}"; then
+        echo "Error: Failed to generate the wrapper script" >&2
+        exit 1
+    fi
     echo "Successfully generated wrapper script"
 
     echo "Launching builds of initializer, API, & internal testsuite images in parallel threads..."
-    docker build --progress=plain -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
+    docker build ${DEFAULT_DOCKER_BUILD_ARGS} -t "${initializer_image}" -f "${root_dirpath}/initializer/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
     initializer_build_pid="${!}"
-    docker build --progress=plain -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
+    docker build ${DEFAULT_DOCKER_BUILD_ARGS} -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
     api_build_pid="${!}"
-    docker build --progress=plain -t "${internal_testsuite_image}" -f "${root_dirpath}/internal_testsuite/Dockerfile" "${root_dirpath}" > "${internal_testsuite_log_filepath}" 2>&1 &
+    docker build ${DEFAULT_DOCKER_BUILD_ARGS} -t "${internal_testsuite_image}" -f "${root_dirpath}/internal_testsuite/Dockerfile" "${root_dirpath}" > "${internal_testsuite_log_filepath}" 2>&1 &
     internal_testsuite_build_pid="${!}"
     echo "Build threads launched successfully:"
     echo " - Initializer thread PID: ${initializer_build_pid}"
