@@ -53,6 +53,12 @@ const (
 	expectedHostIp = "0.0.0.0"
 )
 
+// The dimensions of the TTY that the container should output to when in interactive mode
+type InteractiveModeTtySize struct {
+	Height uint
+	Width uint
+}
+
 /*
 A handle to interacting with the Docker environment running a test.
  */
@@ -207,6 +213,8 @@ Args:
 	context: The Context that this request is running in (useful for cancellation)
 	dockerImage: Image to start
 	name: The name to give the container to be created
+	interactiveModeTerminalSize: If non-nil, the container will be started in interactive mode, with a container TTY
+		set to the specified dimensions
 	networkId: The ID of the Docker network that this container should be attached to
 	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
 	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
@@ -233,6 +241,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			name string,
+			interactiveModeTtySize *InteractiveModeTtySize, // If nil, interactive mode will be disabled; if non-nil, then interactive mode will be enabled
 			networkId string,
 			staticIp net.IP,
 			addedCapabilities map[ContainerCapability]bool,
@@ -268,7 +277,16 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
 	}
 
-	containerConfigPtr, err := manager.getContainerCfg(dockerImage, usedPortsSet, entrypointArgs, cmdArgs, envVariables)
+	isInteractiveMode := interactiveModeTtySize != nil
+
+	containerConfigPtr, err := manager.getContainerCfg(
+		dockerImage,
+		isInteractiveMode,
+		usedPortsSet,
+		entrypointArgs,
+		cmdArgs,
+		envVariables,
+	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
@@ -309,6 +327,27 @@ func (manager DockerManager) CreateAndStartContainer(
 			}
 		}
 	}()
+
+	if isInteractiveMode {
+		/*
+		Two notes:
+		 1) Container resizing must be done after the container is started
+		 2) This resize is very important - if we don't do it, then the output will look garbled for
+			 lines longer than the user's terminal
+		*/
+		resizeOpts := types.ResizeOptions{
+			Height: interactiveModeTtySize.Height,
+			Width:  interactiveModeTtySize.Width,
+		}
+		if err := manager.dockerClient.ContainerResize(context, containerId, resizeOpts); err != nil {
+			return "", nil, stacktrace.Propagate(
+				err,
+				"An error occurred resizing the new container's TTY size to height %v and width %v to match the user's terminal",
+				interactiveModeTtySize.Height,
+				interactiveModeTtySize.Width,
+			)
+		}
+	}
 
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
@@ -382,6 +421,20 @@ func (manager DockerManager) GetContainerIP(ctx context.Context, networkName str
 		return "", stacktrace.NewError("Container ID '%v' isn't connected to network '%v'", containerId, networkName)
 	}
 	return networkInfo.IPAddress, nil
+}
+
+func (manager DockerManager) AttachToContainer(ctx context.Context, containerId string) (types.HijackedResponse, error) {
+	attachOpts := types.ContainerAttachOptions{
+		Stream:     true,
+		Stdin:      true,
+		Stdout:     true,
+		Stderr:     true,
+	}
+	hijackedResponse, err := manager.dockerClient.ContainerAttach(ctx, containerId, attachOpts)
+	if err != nil {
+		return types.HijackedResponse{}, stacktrace.Propagate(err, "An error occurred attaching to container '%v'", containerId)
+	}
+	return hijackedResponse, nil
 }
 
 /*
@@ -700,6 +753,7 @@ func (manager *DockerManager) getContainerHostConfig(
 // Creates a Docker container representing a service that will listen on ports in the network
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
+			isInteractiveMode bool,
 			usedPorts map[nat.Port]bool,
 			entrypointArgs []string,
 			cmdArgs []string,
@@ -715,7 +769,11 @@ func (manager *DockerManager) getContainerCfg(
 	}
 
 	nodeConfigPtr := &container.Config{
-		Tty:          false,
+		AttachStderr: isInteractiveMode,	// Analogous to `-a STDERR` option to `docker run`
+		AttachStdin:  isInteractiveMode,	// Analogous to `-a STDIN` option to `docker run`
+		AttachStdout: isInteractiveMode,	// Analogous to `-a STDOUT` option to `docker run`
+		Tty:          isInteractiveMode,	// Analogous to the `-t` option to `docker run`
+		OpenStdin: true,	// Analogous to the `-i` option to `docker run`
 		Image:        dockerImage,
 		ExposedPorts: portSet,
 		Cmd:          cmdArgs,
