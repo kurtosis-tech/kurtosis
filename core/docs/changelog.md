@@ -1,6 +1,11 @@
 # TBD
+### Changes
+* The interactive CLI now requires an API container image version
+
 ### Features
 * Build the interactive CLI & Javascript REPL image with `build-and-run.sh`
+* Split `build_and_run.sh` into two scripts: `build.sh` and `run-internal-testsuite.sh`
+* Added a `launch-interactive.sh` script for running Kurtosis Interactive
 
 ### Fixes
 * Fix bug with not checking enclave creation error in the interactive CLI

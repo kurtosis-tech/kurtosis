@@ -32,12 +32,14 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
+      - run: scripts/build.sh
+
       - run: |
-          scripts/build_and_run.sh all --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee build-output.txt
+          scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
 
       # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
-      - run: "! grep 'ERRO' build-output.txt"
+      - run: "! grep 'ERRO' internal-testsuite-output.txt"
 
       # Checking for running Docker containers after Kurtosis completes testsuite execution
       - run: |
@@ -52,7 +54,7 @@ jobs:
       - checkout
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-      - run: scripts/build_and_run.sh build
+      - run: scripts/build.sh
 
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
