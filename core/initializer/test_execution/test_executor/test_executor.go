@@ -104,7 +104,13 @@ func RunTest(
 	enclaveId := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
-	enclaveCtx, err := enclaveManager.CreateEnclave(testSetupExecutionCtx, log, initializerContainerId, enclaveId, isPartitioningEnabled)
+	enclaveCtx, err := enclaveManager.CreateEnclave(
+		testSetupExecutionCtx,
+		log,
+		map[string]bool{initializerContainerId: true},
+		enclaveId,
+		isPartitioningEnabled,
+	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating a Kurtosis enclave for test '%v'", testName)
 	}

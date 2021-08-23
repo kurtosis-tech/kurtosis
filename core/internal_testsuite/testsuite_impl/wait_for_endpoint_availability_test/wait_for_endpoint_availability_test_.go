@@ -56,7 +56,7 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 
 	port := uint32(datastorePort)
 
-	if err := castedNetworkContext.WaitForEndpointAvailability(datastoreServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, port, healthCheckUrlSlug, waitInitialDelaySeconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
+	if err := castedNetworkContext.WaitForEndpointAvailability(datastoreServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, port, healthCheckUrlSlug, "", waitInitialDelaySeconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 	logrus.Infof("Service: %v is available", datastoreServiceId)

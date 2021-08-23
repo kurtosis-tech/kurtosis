@@ -6,6 +6,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
@@ -383,7 +384,7 @@ func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Conte
 	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
 
 	for i := uint32(0); i < args.Retries; i++ {
-		resp, err = makeHttpRequest(args.HttpMethod, url)
+		resp, err = makeHttpRequest(args.HttpMethod, url, args.RequestBody)
 		if err == nil  {
 			break
 		}
@@ -431,14 +432,15 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func makeHttpRequest(httpMethod kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_HttpMethod, url string) (*http.Response, error){
+func makeHttpRequest(httpMethod kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_HttpMethod, url string, body string) (*http.Response, error){
 	var (
 		resp *http.Response
 		err error
 	)
 
 	if httpMethod.String() == http.MethodPost {
-		resp, err = http.Post(url, "", nil)
+		var bodyByte = []byte(body)
+		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
 	} else if httpMethod.String() == http.MethodGet{
 		resp, err = http.Get(url)
 	} else {

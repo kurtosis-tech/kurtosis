@@ -1,7 +1,15 @@
 # TBD
 
-# 1.18.3
+# 1.18.4
+### Changes
+* Update `Kurtosis Client` to version 0.13.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http request body used in the http call to service's availability endpoint.
+* Switch to using check-docs orb
+* Use the updated `minimal-grpc-server` Golang module, which is in a subdirectory
 
+### Removals
+* Removed docs that have been ported to the main docs repo
+
+# 1.18.3
 ### Changes
 * Update `Kurtosis Client` to version 0.12.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http method used in the http call to service's availability endpoint. The allowed values are GET or POST
 * Update internal testsuite tests adding the new argument `httpMethod` in every `WaitForEndpointAvailability` call
@@ -27,6 +35,7 @@
 ### Features
 * The API container will now shut down all the containers in its network as it shuts down, which is a step towards enclaves being independent of the testing framework
 * Created `EnclaveManager`, to start & stop enclaves independent of the testing framework
+* Added a CLI for starting a Kurtosis enclave with an attached Javascript REPL
 
 # 1.18.0
 ### Fixes
