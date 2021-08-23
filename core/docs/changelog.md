@@ -1,4 +1,6 @@
 # TBD
+
+# 1.18.4
 ### Changes
 * Update `Kurtosis Client` to version 0.13.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http request body used in the http call to service's availability endpoint.
 * Switch to using check-docs orb
