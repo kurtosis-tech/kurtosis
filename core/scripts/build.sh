@@ -49,7 +49,8 @@ if ! go build -o "${cli_binary_output_filepath}" "${root_dirpath}/${CLI_DIRPATH}
     echo "Error: Failed to build the CLI binary" >&2
     exit 1
 fi
-if ! docker build ${docker_build_args} -f "${root_dirpath}/${JAVASCRIPT_REPL_DIRNAME}/Dockerfile" "${root_dirpath}/${JAVASCRIPT_REPL_DIRNAME}"; then
+javascript_repl_image="${JAVASCRIPT_REPL_IMAGE}:${docker_tag}"
+if ! docker build ${docker_build_args} -f "${root_dirpath}/${JAVASCRIPT_REPL_DIRNAME}/Dockerfile" -t "${javascript_repl_image}" "${root_dirpath}/${JAVASCRIPT_REPL_DIRNAME}"; then
     echo "Error: Failed to build the Javascript REPL image" >&2
     exit 1
 fi
@@ -70,20 +71,16 @@ if ! "${wrapper_generator_binary_output_filepath}" -kurtosis-core-version "${doc
 fi
 echo "Successfully generated wrapper script"
 
-initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${docker_tag}"
-api_image="${DOCKER_ORG}/${API_REPO}:${docker_tag}"
-internal_testsuite_image="${DOCKER_ORG}/${INTERNAL_TESTSUITE_REPO}:${docker_tag}"
-
 initializer_log_filepath="$(mktemp)"
 api_log_filepath="$(mktemp)"
 internal_testsuite_log_filepath="$(mktemp)"
 
 echo "Launching builds of initializer, API, & internal testsuite images in parallel threads..."
-docker build ${docker_build_args} -t "${initializer_image}" -f "${root_dirpath}/${INITIALIZER_DIRNAME}/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
+docker build ${docker_build_args} -t "${INITIALIZER_IMAGE}:${docker_tag}" -f "${root_dirpath}/${INITIALIZER_DIRNAME}/Dockerfile" "${root_dirpath}" > "${initializer_log_filepath}" 2>&1 &
 initializer_build_pid="${!}"
-docker build ${docker_build_args} -t "${api_image}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
+docker build ${docker_build_args} -t "${API_IMAGE}:${docker_tag}" -f "${root_dirpath}/api_container/Dockerfile" "${root_dirpath}" > "${api_log_filepath}" 2>&1 &
 api_build_pid="${!}"
-docker build ${docker_build_args} -t "${internal_testsuite_image}" -f "${root_dirpath}/internal_testsuite/Dockerfile" "${root_dirpath}" > "${internal_testsuite_log_filepath}" 2>&1 &
+docker build ${docker_build_args} -t "${INTERNAL_TESTSUITE_IMAGE}:${docker_tag}" -f "${root_dirpath}/internal_testsuite/Dockerfile" "${root_dirpath}" > "${internal_testsuite_log_filepath}" 2>&1 &
 internal_testsuite_build_pid="${!}"
 echo "Build threads launched successfully:"
 echo " - Initializer thread PID: ${initializer_build_pid}"

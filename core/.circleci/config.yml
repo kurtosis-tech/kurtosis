@@ -65,9 +65,11 @@ jobs:
           source scripts/_constants.sh
           api_image="${DOCKER_ORG}/${API_REPO}:${VERSION_TO_PUBLISH}"
           initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${VERSION_TO_PUBLISH}"
+          javascript_repl_image="${JAVASCRIPT_REPL_IMAGE}:${VERSION_TO_PUBLISH}"
 
           docker push "${api_image}"
           docker push "${initializer_image}"
+          docker push "${javascript_repl_image}"
 
       # All the variables here from the s3-upload-user context that we attach
       - aws-s3/copy:

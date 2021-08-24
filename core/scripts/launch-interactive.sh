@@ -24,4 +24,7 @@ fi
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
 #  ${1} exists, evaluate ${@}"
-"${root_dirpath}/${CLI_BINARY_OUTPUT_REL_FILEPATH}" "--kurtosis-api-image=${DOCKER_ORG}/${API_REPO}:${docker_tag}" ${1+"${@}"}
+"${root_dirpath}/${CLI_BINARY_OUTPUT_REL_FILEPATH}" \
+    "--kurtosis-api-image=${API_IMAGE}:${docker_tag}" \
+    "--javascript-repl-image=${JAVASCRIPT_REPL_IMAGE}:${docker_tag}" \
+    ${1+"${@}"}

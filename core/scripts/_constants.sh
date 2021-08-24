@@ -1,7 +1,8 @@
 # This script is intended to be sources by the other scripts in this directory
 DOCKER_ORG="kurtosistech"
 REPO_BASE="kurtosis-core"
-API_REPO="${REPO_BASE}_api"
+
+API_IMAGE="${DOCKER_ORG}/${REPO_BASE}_api"
 
 KURTOSIS_DIRPATH="$HOME/.kurtosis"
 
@@ -17,12 +18,12 @@ WRAPPER_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/kurtosis.sh"
 
 INITIALIZER_DIRNAME="initializer"
 
-INITIALIZER_REPO="${REPO_BASE}_initializer"
-INTERNAL_TESTSUITE_REPO="${REPO_BASE}_internal-testsuite"
+INITIALIZER_IMAGE="${DOCKER_ORG}/${REPO_BASE}_initializer"
+
+INTERNAL_TESTSUITE_IMAGE="${DOCKER_ORG}/${REPO_BASE}_internal-testsuite"
 
 # ---------------------- Interactive  -----------------------------------------------------
 CLI_DIRPATH="cli"
 CLI_BINARY_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/cli"   # Relative to repo root
-# TODO CHANGE THIS!!! This is currently this way because the image is hardcoded in the CLI
 JAVASCRIPT_REPL_DIRNAME="javascript_cli_image"
-JAVASCRIPT_REPL_IMAGE="test-repl-image"
+JAVASCRIPT_REPL_IMAGE="${DOCKER_ORG}/javascript-interactive-repl"
