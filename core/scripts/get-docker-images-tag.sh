@@ -11,8 +11,6 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-DEFAULT_SOME_OPTIONAL_ARG_VALUE="A default value"   # TODO Replace with your own constants
-
 # Regex that the Git ref will be passed through to sanitize it for becoming
 #  a Docker image tag
 GIT_REF_SANITIZING_SED_REGEX="s,[/:],_,g"
