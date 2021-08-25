@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -31,13 +32,6 @@ const (
 	errorExitCode = 1
 
 	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
-)
-
-const (
-	// TODO Read this from either:
-	//  1) the Kurt Core version if we're inside a testsuite repo
-	//  2) a global Kurtosis config if not
-	apiContainerImage = "kurtosistech/kurtosis-core_api:mieubrisse_enclave-creation-cli"
 
 	// TODO make this configurable somehow
 	kurtosisLogLevel = logrus.DebugLevel
@@ -53,7 +47,18 @@ const (
 	enclaveIdTimestampFormat = "2006-01-02T15.04.05"
 
 	isPartitioningEnabled = true
+
+	apiContainerImageArg = "kurtosis-api-image"
 )
+
+var flagConfigs = map[string]docker_flag_parser.FlagConfig{
+	apiContainerImageArg: {
+		Required: true,
+		HelpText: "The image of the Kurtosis API container to use inside the enclave",
+		Default:  "",
+		Type:     docker_flag_parser.StringFlagType,
+	},
+}
 
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
@@ -61,6 +66,7 @@ func main() {
 		ForceColors:   true,
 		FullTimestamp: true,
 	})
+
 
 	// TODO figure out a way to set the loglevel for Kurtosis from here
 
@@ -74,6 +80,14 @@ func main() {
 }
 
 func runMain() error {
+	flagParser := docker_flag_parser.NewFlagParser(flagConfigs)
+	parsedFlags, err := flagParser.Parse()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the CLI flags")
+	}
+
+	apiContainerImage := parsedFlags.GetString(apiContainerImageArg)
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
@@ -100,6 +114,9 @@ func runMain() error {
 		enclaveId,
 		isPartitioningEnabled,
 	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an enclave")
+	}
 	defer func() {
 		// Ensure we don't leak enclaves
 		logrus.Info("Removing enclave...")
