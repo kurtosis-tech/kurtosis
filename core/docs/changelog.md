@@ -1,5 +1,20 @@
 # TBD
 
+# 1.18.5
+### Changes
+* The interactive CLI now requires an API container image version
+
+### Features
+* Build the interactive CLI & Javascript REPL image with `build-and-run.sh`
+* Split `build_and_run.sh` into two scripts: `build.sh` and `run-internal-testsuite.sh`
+* Added a `launch-interactive.sh` script for running Kurtosis Interactive
+* Publish the Javascript REPL image to `kurtosistech/javascript-interactive-repl`
+
+### Fixes
+* Fix bug with not checking enclave creation error in the interactive CLI
+* The CircleCI artifact-publishing now uses the same constants as all the other scripts in the `scripts` directory
+* The `launch-interactive` script will now appropriately use whichever version of the Javascript repl that you're working on
+
 # 1.18.4
 ### Changes
 * Update `Kurtosis Client` to version 0.13.0 which adds a new argument in `kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs` to specify the http request body used in the http call to service's availability endpoint.
@@ -16,7 +31,7 @@
 
 # 1.18.2
 ### Changes
-* Switched some less-important log levels (e.g. "Startin API container..." from INFO -> DEBUG)
+* Switched some less-important log levels (e.g. "Starting API container..." from INFO -> DEBUG)
 
 ### Features
 * Added a watermark with support information that displays on every run
