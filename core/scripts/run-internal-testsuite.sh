@@ -29,7 +29,7 @@ if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")
     exit 1
 fi
 
-internal_testsuite_image="${DOCKER_ORG}/${INTERNAL_TESTSUITE_REPO}:${docker_tag}"
+internal_testsuite_image="${INTERNAL_TESTSUITE_IMAGE}:${docker_tag}"
 wrapper_filepath="${root_dirpath}/${WRAPPER_OUTPUT_REL_FILEPATH}"
 
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
