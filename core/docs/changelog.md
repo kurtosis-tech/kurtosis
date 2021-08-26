@@ -1,4 +1,6 @@
 # TBD
+
+# 1.18.6
 ### Fixes
 * Fixed bug in image-publishing
 
