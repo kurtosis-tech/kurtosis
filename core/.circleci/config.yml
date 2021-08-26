@@ -63,8 +63,8 @@ jobs:
       - run: |
           set -euo pipefail
           source scripts/_constants.sh
-          api_image="${DOCKER_ORG}/${API_REPO}:${VERSION_TO_PUBLISH}"
-          initializer_image="${DOCKER_ORG}/${INITIALIZER_REPO}:${VERSION_TO_PUBLISH}"
+          api_image="${API_IMAGE}:${VERSION_TO_PUBLISH}"
+          initializer_image="${INITIALIZER_IMAGE}:${VERSION_TO_PUBLISH}"
           javascript_repl_image="${JAVASCRIPT_REPL_IMAGE}:${VERSION_TO_PUBLISH}"
 
           docker push "${api_image}"
