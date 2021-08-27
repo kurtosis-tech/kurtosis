@@ -73,6 +73,7 @@ func (launcher ApiContainerLauncher) Launch(
 		ctx,
 		launcher.containerImage,
 		containerName,
+		"",
 		nil,	// API container will not run in interactive mode
 		networkId,
 		apiContainerIpAddr,

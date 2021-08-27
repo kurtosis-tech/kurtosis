@@ -89,6 +89,7 @@ func (launcher LambdaLauncher) Launch(
 	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		containerImage,
+		"",
 		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaId),
 		nil,	// Lambda containers don't run in interactive mode
 		launcher.dockerNetworkId,

@@ -1,5 +1,9 @@
 # TBD
 
+# 1.18.7
+### Features
+* Add alias to user services' docker container
+
 # 1.18.6
 ### Fixes
 * Fixed bug in image-publishing

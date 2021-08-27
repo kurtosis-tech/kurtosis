@@ -114,7 +114,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting external container with ID '%v' inside the enclave", containerId)
 		}
 		externalContainerIpAddrs = append(externalContainerIpAddrs, ipInsideEnclaveNetwork)
-		if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork); err != nil {
+		if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork, ""); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
 		}
 		externalContainerIdsToDisconnectSet[containerId] = true
