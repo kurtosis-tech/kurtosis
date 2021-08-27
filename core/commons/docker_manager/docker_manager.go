@@ -600,14 +600,21 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		IPv4Address:  staticIpAddr.String(),
 	}
 
+	config := &network.EndpointSettings{
+		IPAMConfig: ipamConfig,
+	}
+
+	if alias != "" {
+		config.Aliases = []string{alias}
+	}
+
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
 		networkId,
 		containerId,
-		&network.EndpointSettings{
-			IPAMConfig: ipamConfig,
-			Aliases: []string{alias},
-		})
+		config,
+	)
+
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
 	}

@@ -98,7 +98,7 @@ func (launcher UserServiceLauncher) Launch(
 		ctx,
 		imageName,
 		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceId),
-		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceId),
+		string(serviceId),
 		nil,	// User services won't run in interactive mode
 		launcher.dockerNetworkId,
 		ipAddr,
