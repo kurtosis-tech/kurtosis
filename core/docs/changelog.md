@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add alias to user services' docker container
 
 # 1.18.6
 ### Fixes

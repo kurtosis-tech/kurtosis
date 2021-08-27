@@ -241,6 +241,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			context context.Context,
 			dockerImage string,
 			name string,
+			alias string,
 			interactiveModeTtySize *InteractiveModeTtySize, // If nil, interactive mode will be disabled; if non-nil, then interactive mode will be enabled
 			networkId string,
 			staticIp net.IP,
@@ -309,7 +310,7 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
-		if err := manager.ConnectContainerToNetwork(context, networkId, containerId, staticIp); err != nil {
+		if err := manager.ConnectContainerToNetwork(context, networkId, containerId, staticIp, alias); err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
@@ -588,7 +589,7 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 /*
 Connects the container with the given container ID to the network with the given network ID, using the given IP address
 */
-func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP) (err error) {
+func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
 	manager.log.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
@@ -599,13 +600,21 @@ func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, netw
 		IPv4Address:  staticIpAddr.String(),
 	}
 
+	config := &network.EndpointSettings{
+		IPAMConfig: ipamConfig,
+	}
+
+	if alias != "" {
+		config.Aliases = []string{alias}
+	}
+
 	err = manager.dockerClient.NetworkConnect(
 		ctx,
 		networkId,
 		containerId,
-		&network.EndpointSettings{
-			IPAMConfig: ipamConfig,
-		})
+		config,
+	)
+
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to connect container %s to network with ID %s.", containerId, networkId)
 	}

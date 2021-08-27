@@ -186,6 +186,7 @@ func runReplContainer(
 		context.Background(),
 		javascriptReplImage,
 		enclaveId + "_INTERACTIVE",
+		"",
 		interactiveModeTtySize,  // REPL container needs to run in interactive mode
 		networkId,
 		replContainerIpAddr,
