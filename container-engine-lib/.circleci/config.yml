@@ -25,16 +25,6 @@ jobs:
 
       - run: golang/scripts/build.sh
 
-  publish_typescript:
-    docker:
-      - image: cimg/node:14.17.1
-    steps:
-      - checkout
-      - run: typescript/scripts/build.sh
-      - npm-publisher/publish-from-package-version:
-          package-path: typescript
-          publish-token-variable: NPMJS_AUTH_TOKEN
-
 workflows:
   build:
     jobs:
