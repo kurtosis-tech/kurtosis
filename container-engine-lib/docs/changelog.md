@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.2
 ### Fixes
 * Fixed bug in markdown-link-check property
 
