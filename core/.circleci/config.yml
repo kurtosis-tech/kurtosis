@@ -29,15 +29,23 @@ jobs:
             circleci-agent step halt
           fi
 
-      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
-      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-
-      - run: curl -sL https://git.io/goreleaser | bash
-
-      - run: scripts/build.sh
+      # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
+      - run: |
+          docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+          docker build -t ci-running-image -f ci_build_docker_image .
+          docker run \
+            -rm \
+            --privileged \
+            -v "${PWD}:/build" \
+            -v "/var/run/docker.sock:/var/run/docker.sock \
+            -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
+            -e DOCKER_USERNAME \
+            -e DOCKER_PASSWORD \
+            --entrypoint bash \
+            ci-running-image -c "/login.sh && ./scripts/build.sh"
 
       - run: |
-          GITHUB_TOKEN="${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
+          scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
 
       # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
