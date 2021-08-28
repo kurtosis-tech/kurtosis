@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Switched to using `goreleaser` for building our binaries & Docker images
 
 # 1.18.6
 ### Fixes
