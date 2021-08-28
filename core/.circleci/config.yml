@@ -32,7 +32,7 @@ jobs:
       # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
       - run: |
           echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-          docker build -t ci-running-image -f ci_build_docker_image/Dockerfile .
+          docker build -t ci-running-image -f ci_build_docker_image/Dockerfile ci_build_docker_image
           docker run \
             -rm \
             --privileged \
