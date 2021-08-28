@@ -94,18 +94,18 @@ archives:
     allow_different_binary_count: true
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
-release:
-  github:
-    owner: kurtosis-tech
-    repo: 
+# release:
+#   github:
+#     owner: kurtosis-tech
+#     repo: 
 
-brews:
-  - ids:
-      - cli
-    tap:
-      owner: "kurtosis-tech"
-      name: "homebrew-tap"
-      token: "TOODOOOO"
+# brews:
+#   - ids:
+#       - cli
+#     tap:
+#       owner: "kurtosis-tech"
+#       name: "homebrew-tap"
+#       token: "TOODOOOO"
 
     # NOTE: Because our Github repo is private, we have to override the URL where aritfacts will be pulled from
 
