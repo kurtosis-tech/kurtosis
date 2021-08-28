@@ -30,7 +30,7 @@ workflows:
     jobs:
       # -- PR check jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          markdown-link-check-config-json: {}
+          markdown-link-check-config-json: "{}"
           filters:
             branches:
               ignore:
