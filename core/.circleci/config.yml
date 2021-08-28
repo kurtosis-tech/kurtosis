@@ -37,7 +37,7 @@ jobs:
       - run: scripts/build.sh
 
       - run: |
-          scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
+          GITHUB_TOKEN="${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
 
       # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
@@ -102,6 +102,7 @@ workflows:
                 - master
       - check_code:
           context:
+            - github-kurtosis-private-repo-reader
             - docker-user
             - kurtosis-user
           filters:
