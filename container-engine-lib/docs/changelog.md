@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Set up CircleCI checks
 
 # 0.2.0
 ### Breaking Changes
