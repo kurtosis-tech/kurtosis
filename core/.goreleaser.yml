@@ -1,0 +1,63 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks: []
+    # # You may remove this if you don't use go modules.
+    # - go mod tidy
+    # # you may remove this if you don't need go generate
+    # - go generate ./...
+builds:
+  - id: wrapper-script-generator
+    main: ./wrapper_generator
+    binary: wrapper-generator
+    env:
+      - CGO_ENABLED=0
+    # We explicitly call JUST this build first, since we want it to be built for the user's local architecture (which we won't know what it is)
+    # See: https://github.com/goreleaser/goreleaser/pull/2179
+    skip: true
+  - id: api-container-availability-waiter
+    main: ./api_container_availability_waiter
+    binary: api-container-availability-waiter
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+  - id: api-container
+    main: ./api_container
+    binary: api-container
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+dockers:
+  - id: api-container-image
+    dockerfile: api_container/Dockerfile
+    image_templates:
+      # TODO EXTRACT DOCKER ORG & REPO NAME INTO ENVVARS
+      - "kurtosistech/kurtosis-core_api:{{ .Tag }}"
+    ids:
+      - api-container
+      - api-container-availability-waiter
+    goos: linux
+    goarch: amd64
+
+archives:
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  # We manage our own changelog
+  skip: true
+
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
