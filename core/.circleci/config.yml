@@ -32,6 +32,8 @@ jobs:
       # Docker is restricting anonymous image pulls, so we log in before we do any pulling
       - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
 
+      - run: curl -sL https://git.io/goreleaser | bash
+
       - run: scripts/build.sh
 
       - run: |
