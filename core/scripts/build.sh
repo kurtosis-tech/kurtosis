@@ -20,9 +20,6 @@ WRAPPER_GENERATOR_DIRNAME="wrapper_generator"
 WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME="wrapper-generator"
 WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh"
 
-GOOS_ENV_VAR_NAME="GOOS"
-GOARCH_ENV_VAR_NAME="GOARCH"
-
 WRAPPER_SCRIPT_GENERATOR_GORELEASER_BUILD_ID="wrapper-generator"
 
 # ==================================================================================================
