@@ -1,5 +1,9 @@
 # TBD
 
+# 1.18.8
+### Changes
+* Switched to using `goreleaser` for building our binaries & Docker images
+
 # 1.18.7
 ### Features
 * Add alias to user services' docker container

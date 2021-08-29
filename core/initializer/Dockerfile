@@ -1,27 +1,8 @@
-# ============= Build Stage ======================
-FROM golang:1.15-alpine AS builder
-
-WORKDIR /build
-
-# Copy and download dependencies using go mod
-# Because this is first, the dependencies will get cached as a Docker layer
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
-
-# Copy the code into the container
-COPY . .
-
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o kurtosis-initializer initializer/main.go
-
-# ============= Execution Stage ================
-FROM alpine:3.12 AS execution
+FROM alpine:3.12
 
 WORKDIR /run
 
-# Copy the code into the container
-COPY --from=builder /build/kurtosis-initializer .
+COPY initializer .
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #  1. Keep these flags sorted alphabetically, to avoid duplicates (which will cause subtle problems)
@@ -30,7 +11,7 @@ COPY --from=builder /build/kurtosis-initializer .
 #       b. Update the template wrapper script, which passes in these environment variables
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IMPORTANT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # vvvvvvvvvvvvv Read the IMPORTANT section before modifying this! vvvvvvvvvvvvvvvvvvvvvvvv
-CMD ["sh", "-c", "set -euo pipefail && ./kurtosis-initializer \
+CMD ["sh", "-c", "set -euo pipefail && ./initializer \
     --CLIENT_ID=\"${CLIENT_ID}\" \
     --CLIENT_SECRET=\"${CLIENT_SECRET}\" \
     --CUSTOM_PARAMS_JSON=\"${CUSTOM_PARAMS_JSON}\" \

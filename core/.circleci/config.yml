@@ -29,10 +29,19 @@ jobs:
             circleci-agent step halt
           fi
 
-      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
-      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-
-      - run: scripts/build.sh
+      # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      - run: docker build -t ci-running-image -f ci_build_docker_image/Dockerfile ci_build_docker_image
+      - run: |
+          docker run \
+            --privileged \
+            -v "${PWD}:/build" \
+            -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
+            -e DOCKER_USERNAME \
+            -e DOCKER_PASSWORD \
+            --entrypoint bash \
+            ci-running-image -c "/login.sh && ./scripts/build.sh"
 
       - run: |
           scripts/run-internal-testsuite.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee internal-testsuite-output.txt
@@ -49,9 +58,20 @@ jobs:
     executor: ubuntu_vm
     steps:
       - checkout
-      # Docker is restricting anonymous image pulls, so we log in before we do any pulling
-      - run: "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
-      - run: scripts/build.sh
+
+      # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      - run: docker build -t ci-running-image -f ci_build_docker_image/Dockerfile ci_build_docker_image
+      - run: |
+          docker run \
+            --privileged \
+            -v "${PWD}:/build" \
+            -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
+            -e DOCKER_USERNAME \
+            -e DOCKER_PASSWORD \
+            --entrypoint bash \
+            ci-running-image -c "/login.sh && ./scripts/build.sh"
 
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
@@ -60,6 +80,7 @@ jobs:
           echo "Version that will be published: ${version_to_publish}"
           echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
 
+      # TODO REPLACE THIS PUSHING WITH GORELEASER PUSHING
       - run: |
           set -euo pipefail
           source scripts/_constants.sh
@@ -100,6 +121,7 @@ workflows:
                 - master
       - check_code:
           context:
+            - github-kurtosis-private-repo-reader
             - docker-user
             - kurtosis-user
           filters:
