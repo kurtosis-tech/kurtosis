@@ -1,0 +1,120 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks: []
+
+# AFTER HOOK TO GENERATE WRAPPER SCRIPT
+builds:
+  # TODO DELETE THIS WHEN WE NO LONGER HAVE A WRAPPER SCRIPT
+  - id: wrapper-generator
+    main: ./wrapper_generator
+    binary: "{{ .Env.WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME }}"
+    # NOTE: The goos and goarch don't really matter here, because we build this
+    #  wrapper script generator binary with --single-target anyways
+    goos:
+      - "darwin"
+    goarch:
+      - "amd64"
+    # We don't want a unique dist dir so that it's easy to get the filepath to the outputted binary
+    no_unique_dist_dir: true
+  - id: api-container-availability-waiter
+    main: ./api_container_availability_waiter
+    binary: api-container-availability-waiter
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+  - id: api-container
+    main: ./api_container
+    binary: api-container
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+  - id: cli
+    main: ./cli
+    binary: "{{ .Env.CLI_BINARY_FILENAME }}"
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+  - id: initializer
+    main: ./initializer
+    binary: initializer
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+  - id: internal-testsuite
+    main: ./internal_testsuite
+    binary: internal-testsuite
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+dockers:
+  # TODO Maybe package the CLI into a Docker image?
+  
+  - id: api-container-image
+    dockerfile: api_container/Dockerfile
+    image_templates:
+      - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+    ids:
+      - api-container
+      - api-container-availability-waiter
+    goos: linux
+    goarch: amd64
+  - id: initializer-image
+    ids:
+      - initializer
+    dockerfile: initializer/Dockerfile
+    image_templates:
+      - "{{ .Env.INITIALIZER_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+    goos: linux
+    goarch: amd64
+  - id: internal-testsuite-image
+    ids:
+      - internal-testsuite
+    dockerfile: internal_testsuite/Dockerfile
+    image_templates:
+      - "{{ .Env.INTERNAL_TESTSUITE_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+    goos: linux
+    goarch: amd64
+    extra_files:
+      - internal_testsuite/static_files
+  - id: javascript-repl-image
+    ids: []
+    dockerfile: javascript_cli_image/Dockerfile
+    image_templates:
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+
+archives:
+  # TODO Make this real
+  - format: binary
+    allow_different_binary_count: true
+
+# In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
+# release:
+#   github:
+#     owner: kurtosis-tech
+#     repo: 
+
+# brews:
+#   - ids:
+#       - cli
+#     tap:
+#       owner: "kurtosis-tech"
+#       name: "homebrew-tap"
+#       token: "TOODOOOO"
+
+    # NOTE: Because our Github repo is private, we have to override the URL where aritfacts will be pulled from
+
+
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Env.DOCKER_IMAGE_TAG }}"
+changelog:
+  # We manage our own changelog
+  skip: true
