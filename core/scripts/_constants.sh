@@ -16,7 +16,7 @@ WRAPPER_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/kurtosis.sh"
 
 INITIALIZER_IMAGE="${DOCKER_ORG}/${REPO_BASE}_initializer"
 
-INTERNAL_TESTSUITE_IMAGE="${DOCKER_ORG}/${REPO_BASE}_internal-testsuite"
+INTERNAL_TESTSUITE_IMAGE_SUFFIX="internal-testsuite"
 
 # ---------------------- Interactive  -----------------------------------------------------
 GORELEASER_CLI_BUILD_ID="cli"
