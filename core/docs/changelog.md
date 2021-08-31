@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Prep internal testsuites for having multiple internal testsuites, one per language
+* Switch to using `container-engine-lib` for `DockerManager`
 
 # 1.18.8
 ### Changes
