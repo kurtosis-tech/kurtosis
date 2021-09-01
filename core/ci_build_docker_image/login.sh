@@ -1,3 +1,4 @@
+set -x
 # This script is https://github.com/goreleaser/goreleaser/blob/master/scripts/entrypoint.sh but without the goreleaser call at the end
 
 if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
