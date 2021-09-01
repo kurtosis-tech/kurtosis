@@ -36,16 +36,15 @@ jobs:
 
       # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      # This private key is KurtosisBot's private key, which is loaded into this environment via CircleCI and then given to
+      #  our ci-running-image so that it can actually pull private Go deps when goreleaser is run
+      - run: cp "${HOME}/.ssh/id_rsa_39d1f0a049d1c89fc94cd831bec20ef7" "ci_build_docker_image/id_rsa"
       - run: docker build -t ci-running-image -f ci_build_docker_image/Dockerfile ci_build_docker_image
-      # NOTE: We have to bind-mount the SSH keys into the Docker container so that the Docker container has an SSH key which
-      #  can access the Go private dependency repos. This depends on this project in CircleCI being configured with an SSH 
-      #  key that has the appropriate access
       - run: |
           docker run \
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -v "${HOME}/.ssh:/root/.ssh" \
             -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
             -e DOCKER_USERNAME \
             -e DOCKER_PASSWORD \
