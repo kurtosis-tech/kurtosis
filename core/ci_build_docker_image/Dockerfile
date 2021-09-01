@@ -1,6 +1,13 @@
 FROM goreleaser/goreleaser
 ARG GITHUB_TOKEN
+ARG DOCKER_USERNAME
+ARG DOCKER_PASSWORD
 
+ENV GITHUB_TOKEN=${GITHUB_TOKEN}
+ENV DOCKER_USERNAME=${DOCKER_USERNAME}
+ENV DOCKER_PASSWORD=${DOCKER_PASSWORD}
+
+# Will log in to Docker using the envvars that are set
 ADD ./login.sh /
 RUN chmod +x /login.sh
 
