@@ -66,15 +66,19 @@ jobs:
 
       # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-      - run: docker build -t ci-running-image -f ci_build_docker_image/Dockerfile ci_build_docker_image
+      - run: |
+          docker build \
+            --build-arg "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
+            --build-arg "DOCKER_USERNAME=${DOCKER_USERNAME}" \
+            --build-arg "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+            -t ci-running-image \
+            -f ci_build_docker_image/Dockerfile \
+            ci_build_docker_image
       - run: |
           docker run \
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
-            -e DOCKER_USERNAME \
-            -e DOCKER_PASSWORD \
             --entrypoint bash \
             ci-running-image -c "/login.sh && ./scripts/build.sh"
 
