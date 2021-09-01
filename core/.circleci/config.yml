@@ -40,7 +40,7 @@ jobs:
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -v "~/.ssh:/root/.ssh" \
+            -v "${HOME}/.ssh:/root/.ssh" \
             -e "GITHUB_USER=${GITHUB_KURTOSIS_PRIVATE_REPO_READER_TOKEN}" \
             -e DOCKER_USERNAME \
             -e DOCKER_PASSWORD \
