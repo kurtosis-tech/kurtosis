@@ -6,7 +6,7 @@
 package enclave_context
 
 import (
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"net"
 )
 
