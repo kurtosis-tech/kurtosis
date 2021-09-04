@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -250,13 +249,8 @@ func main() {
 		customParamsJson,
 		isDebugMode,
 	)
-	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
-		parsedFlags.GetString(kurtosisApiImageArg),
-		kurtosisLogLevel,
-		isDebugMode,
-	)
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerLauncher)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, parsedFlags.GetString(kurtosisApiImageArg))
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
@@ -293,10 +287,12 @@ func main() {
 		testsuiteExObjNameProvider,
 		initializerContainerId,
 		enclaveManager,
+		kurtosisLogLevel,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
 		testsuiteLauncher,
+		isDebugMode,
 	)
 	if err != nil {
 		logrus.Errorf("An error occurred running the tests:")
