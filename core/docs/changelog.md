@@ -2,6 +2,11 @@
 ### Changes
 * Prep internal testsuites for having multiple internal testsuites, one per language
 * Switch to using `container-engine-lib` for `DockerManager`
+* Switch to using `kurtosis-core-launcher-lib`
+
+### Removals
+* Removed the API container `docker_api` package
+* Removed the `ApiContainerLauncher` class here, in favor of the one from `kurtosis-core-launcher-lib`
 
 # 1.18.8
 ### Changes

@@ -58,10 +58,13 @@ func RunTests(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
 		enclaveManager *enclave_manager.EnclaveManager,
+		kurtosisLogLevel logrus.Level,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) (allTestsPassed bool, executionErr error) {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		isDebugModeEnabled bool,
+	) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
 	if err := permissions.CanExecuteSuite(numTestsInSuite); err != nil {
 		return false, stacktrace.Propagate(
@@ -104,9 +107,12 @@ func RunTests(
 		testsuiteExObjNameProvider,
 		initializerContainerId,
 		enclaveManager,
+		kurtosisLogLevel,
 		testParallelism,
 		testParams,
-		testsuiteLauncher)
+		testsuiteLauncher,
+		isDebugModeEnabled,
+	)
 	return allTestsPassed, nil
 }
 

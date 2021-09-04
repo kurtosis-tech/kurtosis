@@ -10,12 +10,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib"
+	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -29,6 +29,12 @@ const (
 
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
+
+	// Protocol that the API container listens on
+	apiContainerListenProtocol = "tcp"
+
+	// The port that the API container listens on
+	apiContainerListenPort = 7443
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -38,24 +44,28 @@ type EnclaveManager struct {
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
 
-	apiContainerLauncher *api_container_launcher.ApiContainerLauncher
+	// TODO This shouldn't be passed in at constructor time, but should be auto-detected from the core API version!!!
+	apiContainerImage string
 }
 
-func NewEnclaveManager(dockerClient *client.Client, apiContainerLauncher *api_container_launcher.ApiContainerLauncher) *EnclaveManager {
+func NewEnclaveManager(dockerClient *client.Client, apiContainerImage string) *EnclaveManager {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator()
 	return &EnclaveManager{
-		dockerClient: dockerClient,
+		dockerClient:           dockerClient,
 		dockerNetworkAllocator: dockerNetworkAllocator,
-		apiContainerLauncher: apiContainerLauncher,
+		apiContainerImage:      apiContainerImage,
 	}
 }
 
 func (manager *EnclaveManager) CreateEnclave(
 		setupCtx context.Context,
 		log *logrus.Logger,
+		apiContainerLogLevel logrus.Level,
+		// TODO put in coreApiVersion as a param here!
 		externalContainerIdsToMount map[string]bool,  // Preexisting containers that should be mounted inside the enclave network
 		enclaveId string,
-		isPartitioningEnabled bool) (*enclave_context.EnclaveContext, error) {
+		isPartitioningEnabled bool,
+		shouldPublishAllPorts bool) (*enclave_context.EnclaveContext, error) {
 	dockerManager := docker_manager.NewDockerManager(log, manager.dockerClient)
 
 	matchingNetworks, err := dockerManager.GetNetworkIdsByName(setupCtx, enclaveId)
@@ -151,10 +161,24 @@ func (manager *EnclaveManager) CreateEnclave(
 		[]net.IP{testsuiteContainerIpAddr, replContainerIpAddr},
 		externalContainerIpAddrs...
 	)
-	apiContainerId, err := manager.apiContainerLauncher.Launch(
-		setupCtx,
-		log,
+
+	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
+	launchApiVersion := uint(0)
+	apiContainerLauncher, err := lib.GetAPIContainerLauncherForLaunchAPIVersion(
+		launchApiVersion,
 		dockerManager,
+		log,
+		manager.apiContainerImage,
+		apiContainerListenPort,
+		apiContainerListenProtocol,
+		apiContainerLogLevel,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the API container launcher for launch API version '%v'", launchApiVersion)
+	}
+
+	apiContainerId, err := apiContainerLauncher.Launch(
+		setupCtx,
 		apiContainerName,
 		enclaveId,
 		networkId,
@@ -164,6 +188,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		alreadyTakenIps,
 		isPartitioningEnabled,
 		externalContainerIdsToMount,
+		shouldPublishAllPorts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
