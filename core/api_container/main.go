@@ -7,15 +7,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_var_values"
-	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_env_vars"
-	"github.com/kurtosis-tech/kurtosis/api_container/docker_api/api_container_mountpoints"
+	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_docker_consts"
+	v0 "github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
@@ -25,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -66,26 +64,16 @@ func main() {
 }
 
 func runMain () error {
-	logLevelStr, found := os.LookupEnv(api_container_env_vars.LogLevelEnvVar)
-	if !found {
-		return stacktrace.NewError("No log level environment variable '%v' defined", api_container_env_vars.LogLevelEnvVar)
-	}
-	paramsJsonStr, found := os.LookupEnv(api_container_env_vars.ParamsJsonEnvVar)
-	if !found {
-		return stacktrace.NewError("No custom params JSON environment variable '%v' defined", api_container_env_vars.ParamsJsonEnvVar)
+	args, err := v0.RetrieveV0LaunchAPIArgs()
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
 	}
 
-	logLevel, err := logrus.ParseLevel(logLevelStr)
+	logLevel, err := logrus.ParseLevel(args.LogLevel)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", logLevelStr)
+		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.LogLevel)
 	}
 	logrus.SetLevel(logLevel)
-
-	paramsJsonBytes := []byte(paramsJsonStr)
-	var args api_container_env_var_values.ApiContainerArgs
-	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", paramsJsonStr)
-	}
 
 	dockerManager, err := createDockerManager()
 	if err != nil {
@@ -109,7 +97,7 @@ func runMain () error {
 		}
 	}()
 
-	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_mountpoints.EnclaveDataVolumeMountpoint)
+	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
 
 	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, args)
 	if err != nil {
@@ -169,7 +157,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
-		args api_container_env_var_values.ApiContainerArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
+		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)

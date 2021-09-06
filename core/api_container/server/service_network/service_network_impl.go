@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"

@@ -38,9 +38,11 @@ func RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		initializerContainerId string,
 		enclaveManager *enclave_manager.EnclaveManager,
+		kurtosisLogLevel logrus.Level,
 		parallelism uint,
 		allTestParams map[string]parallel_test_params.ParallelTestParams,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) bool {
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		isDebugModeEnabled bool) bool {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Set up listener for exit signals so we handle it nicely
@@ -81,7 +83,9 @@ func RunInParallelAndPrintResults(
 		testParamsChan,
 		parallelism,
 		enclaveManager,
-		testsuiteLauncher)
+		kurtosisLogLevel,
+		testsuiteLauncher,
+		isDebugModeEnabled)
 	logrus.Info("All tests exited")
 
 	allTestsPassed, err := outputManager.PrintSummary()
@@ -106,7 +110,9 @@ func disableSystemLogAndRunTestThreads(
 		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
 		enclaveManager *enclave_manager.EnclaveManager,
-		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
+		kurtosisLogLevel logrus.Level,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		isDebugModeEnabled bool) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
 	// We therefore need to make sure that all code beyond this point uses the per-test logger rather than the systemwide logger.
 	// However, it's very difficult for  a coder to remember to use 'log.Info' when they're used to doing 'logrus.Info'.
@@ -128,7 +134,10 @@ func disableSystemLogAndRunTestThreads(
 			testParamsChan,
 			outputManager,
 			enclaveManager,
-			testsuiteLauncher)
+			kurtosisLogLevel,
+			testsuiteLauncher,
+			isDebugModeEnabled,
+		)
 	}
 	waitGroup.Wait()
 }
@@ -145,7 +154,9 @@ func runTestWorkerGoroutine(
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
 			enclaveManager *enclave_manager.EnclaveManager,
-			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher) {
+			kurtosisLogLevel logrus.Level,
+			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+			isDebugModeEnabled bool) {
 	// IMPORTANT: make sure that we mark a thread as done!
 	defer waitGroup.Done()
 
@@ -158,8 +169,11 @@ func runTestWorkerGoroutine(
 			initializerContainerId,
 			testLog,
 			enclaveManager,
+			kurtosisLogLevel,
 			testsuiteLauncher,
-			testParams)
+			testParams,
+			isDebugModeEnabled,
+		)
 		outputManager.RegisterTestCompletion(testName, executionErr, passed)
 	}
 }
