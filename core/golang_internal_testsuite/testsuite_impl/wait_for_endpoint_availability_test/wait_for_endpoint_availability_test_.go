@@ -7,7 +7,6 @@ package wait_for_endpoint_availability_test
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -24,7 +23,7 @@ const (
 
 	waitForStartupTimeBetweenPolls = 1
 	waitForStartupMaxPolls         = 15
-	waitInitialDelaySeconds        = 1
+	waitInitialDelayMilliseconds   = 500
 )
 
 type WaitForEndpointAvailabilityTest struct {
@@ -56,7 +55,7 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 
 	port := uint32(datastorePort)
 
-	if err := castedNetworkContext.WaitForEndpointAvailability(datastoreServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, port, healthCheckUrlSlug, "", waitInitialDelaySeconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
+	if err := castedNetworkContext.WaitForEndpointAvailabilityHttpGet(datastoreServiceId, port, healthCheckUrlSlug, waitInitialDelayMilliseconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 	logrus.Infof("Service: %v is available", datastoreServiceId)

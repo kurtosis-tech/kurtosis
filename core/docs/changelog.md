@@ -1,6 +1,7 @@
 # TBD
 ### Changes
-* Prep internal testsuites for having multiple internal testsuites, one per language
+* Prep internal testsuites for having multiple internal testsuites, one per 
+* Split the `WaitForEndpointAvailability` api container function to `WaitForEndpointAvailabilityHttpGet` and `WaitForEndpointAvailabilityHttpPost`
 
 # 1.18.8
 ### Changes

@@ -363,60 +363,47 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtos
 	return resp, nil
 }
 
-func (service ApiContainerService) WaitForEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs) (*emptypb.Empty, error) {
-	var(
-		resp *http.Response
-		err error
-	)
+func (service ApiContainerService) WaitForEndpointAvailabilityHttpGet(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId
-	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred when trying to get the IP address for service '%v'",
+
+	if err := service.waitForEndpointAvailability(
 			serviceIdStr,
-		)
-	}
-
-	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, args.Port, args.Path)
-
-	time.Sleep(time.Duration(args.InitialDelaySeconds) * time.Second)
-
-	for i := uint32(0); i < args.Retries; i++ {
-		resp, err = makeHttpRequest(args.HttpMethod, url, args.RequestBody)
-		if err == nil  {
-			break
-		}
-		time.Sleep(time.Duration(args.RetriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			url,
+			http.MethodGet,
+			args.Port,
+			args.Path,
+			args.InitialDelayMilliseconds,
 			args.Retries,
 			args.RetriesDelayMilliseconds,
+			"",
+			args.BodyText); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when calling the availability endpoint",
 		)
 	}
 
-	if args.BodyText != "" {
-		body := resp.Body
-		defer body.Close()
+	return &emptypb.Empty{}, nil
+}
 
-		bodyBytes, err := ioutil.ReadAll(body)
+func (service ApiContainerService) WaitForEndpointAvailabilityHttpPost(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs) (*emptypb.Empty, error) {
 
-		if err != nil {
-			return nil, stacktrace.Propagate(err,
-				"An error occurred reading the response body from endpoint '%v'", url)
-		}
+	serviceIdStr := args.ServiceId
 
-		bodyStr := string(bodyBytes)
-
-		if bodyStr != args.BodyText {
-			return nil, stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", args.BodyText, url, bodyStr)
-		}
+	if err := service.waitForEndpointAvailability(
+		serviceIdStr,
+		http.MethodPost,
+		args.Port,
+		args.Path,
+		args.InitialDelayMilliseconds,
+		args.Retries,
+		args.RetriesDelayMilliseconds,
+		args.RequestBody,
+		args.BodyText); err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when calling the availability endpoint",
+		)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -432,19 +419,87 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func makeHttpRequest(httpMethod kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_HttpMethod, url string, body string) (*http.Response, error){
+func (service ApiContainerService) waitForEndpointAvailability(
+		serviceIdStr string,
+		httpMethod string,
+		port uint32,
+		path string,
+		initialDelayMilliseconds uint32,
+		retries uint32,
+		retriesDelayMilliseconds uint32,
+		requestBody string,
+		bodyText string) error {
+
+	var(
+		resp *http.Response
+		err error
+	)
+
+	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the IP address for service '%v'",
+			serviceIdStr,
+		)
+	}
+
+	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, port, path)
+
+	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
+
+	for i := uint32(0); i < retries; i++ {
+		resp, err = makeHttpRequest(httpMethod, url ,requestBody)
+		if err == nil  {
+			break
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			url,
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+
+	if bodyText != "" {
+		body := resp.Body
+		defer body.Close()
+
+		bodyBytes, err := ioutil.ReadAll(body)
+
+		if err != nil {
+			return stacktrace.Propagate(err,
+				"An error occurred reading the response body from endpoint '%v'", url)
+		}
+
+		bodyStr := string(bodyBytes)
+
+		if bodyStr != bodyText {
+			return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", bodyText, url, bodyStr)
+		}
+	}
+
+	return nil
+}
+
+func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error){
 	var (
 		resp *http.Response
 		err error
 	)
 
-	if httpMethod.String() == http.MethodPost {
+	if httpMethod == http.MethodPost {
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod.String() == http.MethodGet{
+	} else if httpMethod == http.MethodGet{
 		resp, err = http.Get(url)
 	} else {
-		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod.String())
+		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
 	}
 
 	if err != nil {
