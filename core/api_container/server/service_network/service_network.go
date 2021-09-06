@@ -84,4 +84,6 @@ type ServiceNetwork interface {
 	GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
 
 	Destroy(ctx context.Context, containerStopTimeout time.Duration) error
+
+	GetServiceRunInfo() map[service_network_types.ServiceID]serviceRunInfo
 }

@@ -1,17 +1,17 @@
 # TBD
+### Features
+* Add `GetServices` endpoint to get a list of running services' ID
+* Add `GetLambdas` endpoint to get a list of running Kurtosis Lambdas' ID
+
 ### Changes
-<<<<<<< HEAD
-* Prep internal testsuites for having multiple internal testsuites, one per 
-* Split the `WaitForEndpointAvailability` api container function to `WaitForEndpointAvailabilityHttpGet` and `WaitForEndpointAvailabilityHttpPost`
-=======
 * Prep internal testsuites for having multiple internal testsuites, one per language
 * Switch to using `container-engine-lib` for `DockerManager`
 * Switch to using `kurtosis-core-launcher-lib`
+* Split the `WaitForEndpointAvailability` api container function to `WaitForEndpointAvailabilityHttpGet` and `WaitForEndpointAvailabilityHttpPost`
 
 ### Removals
 * Removed the API container `docker_api` package
 * Removed the `ApiContainerLauncher` class here, in favor of the one from `kurtosis-core-launcher-lib`
->>>>>>> develop
 
 # 1.18.8
 ### Changes
