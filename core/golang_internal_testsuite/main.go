@@ -8,7 +8,7 @@ package main
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/execution"
-	"github.com/kurtosis-tech/kurtosis/internal_testsuite/execution_impl"
+	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/execution_impl"
 	"github.com/sirupsen/logrus"
 	"os"
 )

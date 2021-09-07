@@ -8,9 +8,9 @@ package test_executor
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -89,8 +89,10 @@ func RunTest(
 		initializerContainerId string,
 		log *logrus.Logger,
 		enclaveManager *enclave_manager.EnclaveManager,
+		kurtosisLogLevel logrus.Level,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
-		testParams parallel_test_params.ParallelTestParams) (bool, error) {
+		testParams parallel_test_params.ParallelTestParams,
+		isDebugModeEnabled bool) (bool, error) {
 
 	testName := testParams.TestName
 	isPartitioningEnabled := testParams.IsPartitioningEnabled
@@ -107,9 +109,11 @@ func RunTest(
 	enclaveCtx, err := enclaveManager.CreateEnclave(
 		testSetupExecutionCtx,
 		log,
+		kurtosisLogLevel,
 		map[string]bool{initializerContainerId: true},
 		enclaveId,
 		isPartitioningEnabled,
+		isDebugModeEnabled,
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating a Kurtosis enclave for test '%v'", testName)

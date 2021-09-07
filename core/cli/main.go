@@ -12,11 +12,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/initializer/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -123,20 +122,16 @@ func runMain() error {
 
 	enclaveId := getEnclaveId()
 
-	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
-		apiContainerImage,
-		kurtosisLogLevel,
-		shouldPublishPorts,
-	)
-
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerLauncher)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
 
 	enclaveCtx, err := enclaveManager.CreateEnclave(
 		context.Background(),
 		logrus.StandardLogger(),
+		kurtosisLogLevel,
 		map[string]bool{},
 		enclaveId,
 		isPartitioningEnabled,
+		shouldPublishPorts,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave")

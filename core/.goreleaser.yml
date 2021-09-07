@@ -45,9 +45,9 @@ builds:
       - linux # For Alpine Docker image
     goarch:
       - amd64
-  - id: internal-testsuite
-    main: ./internal_testsuite
-    binary: internal-testsuite
+  - id: golang-internal-testsuite
+    main: ./golang_internal_testsuite
+    binary: golang-internal-testsuite
     goos:
       - linux # For Alpine Docker image
     goarch:
@@ -72,16 +72,16 @@ dockers:
       - "{{ .Env.INITIALIZER_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
-  - id: internal-testsuite-image
+  - id: golang-internal-testsuite-image
     ids:
-      - internal-testsuite
-    dockerfile: internal_testsuite/Dockerfile
+      - golang-internal-testsuite
+    dockerfile: golang_internal_testsuite/Dockerfile
     image_templates:
-      - "{{ .Env.INTERNAL_TESTSUITE_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
     extra_files:
-      - internal_testsuite/static_files
+      - golang_internal_testsuite/static_files
   - id: javascript-repl-image
     ids: []
     dockerfile: javascript_cli_image/Dockerfile

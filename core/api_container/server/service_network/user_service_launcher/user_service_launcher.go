@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/kurtosis/commons/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"net"
