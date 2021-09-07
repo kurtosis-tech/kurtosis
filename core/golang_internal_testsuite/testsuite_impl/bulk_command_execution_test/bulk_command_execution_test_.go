@@ -69,7 +69,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 }
             },
             {
-                "type": "WAIT_FOR_ENDPOINT_AVAILABILITY_HTTP_GET",
+                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service1",
                     "port": 1323,
@@ -98,7 +98,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 }
             },
             {
-                "type": "WAIT_FOR_ENDPOINT_AVAILABILITY_HTTP_GET",
+                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service2",
                     "port": 1323,
@@ -148,7 +148,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 }
             },
             {
-                "type": "WAIT_FOR_ENDPOINT_AVAILABILITY_HTTP_GET",
+                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service3",
                     "port": 1323,

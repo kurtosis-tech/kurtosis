@@ -1,17 +1,16 @@
 # TBD
 ### Changes
-<<<<<<< HEAD
-* Prep internal testsuites for having multiple internal testsuites, one per 
-* Split the `WaitForEndpointAvailability` api container function to `WaitForEndpointAvailabilityHttpGet` and `WaitForEndpointAvailabilityHttpPost`
-=======
 * Prep internal testsuites for having multiple internal testsuites, one per language
 * Switch to using `container-engine-lib` for `DockerManager`
 * Switch to using `kurtosis-core-launcher-lib`
 
+### Breaking Changes
+* Split the `WaitForEndpointAvailability` api container function to `WaitForHttpGetEndpointAvailability` and `WaitForHttpPostEndpointAvailability`
+  * Users should replace their `WaitForEndpointAvailability` calls with `WaitForHttpGetEndpointAvailability` or `WaitForHttpPostEndpointAvailability` depending on the endpoint used to check availability
+
 ### Removals
 * Removed the API container `docker_api` package
 * Removed the `ApiContainerLauncher` class here, in favor of the one from `kurtosis-core-launcher-lib`
->>>>>>> develop
 
 # 1.18.8
 ### Changes

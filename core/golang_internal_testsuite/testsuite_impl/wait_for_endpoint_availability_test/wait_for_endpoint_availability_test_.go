@@ -55,7 +55,7 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 
 	port := uint32(datastorePort)
 
-	if err := castedNetworkContext.WaitForEndpointAvailabilityHttpGet(datastoreServiceId, port, healthCheckUrlSlug, waitInitialDelayMilliseconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
+	if err := castedNetworkContext.WaitForHttpGetEndpointAvailability(datastoreServiceId, port, healthCheckUrlSlug, waitInitialDelayMilliseconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 	logrus.Infof("Service: %v is available", datastoreServiceId)

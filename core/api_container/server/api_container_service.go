@@ -363,7 +363,7 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtos
 	return resp, nil
 }
 
-func (service ApiContainerService) WaitForEndpointAvailabilityHttpGet(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId
 
@@ -379,14 +379,15 @@ func (service ApiContainerService) WaitForEndpointAvailabilityHttpGet(ctx contex
 			args.BodyText); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred when calling the availability endpoint",
+			"An error occurred waiting for HTTP endpoint '%v' to become available",
+			args.Path,
 		)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) WaitForEndpointAvailabilityHttpPost(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdStr := args.ServiceId
 
@@ -402,7 +403,8 @@ func (service ApiContainerService) WaitForEndpointAvailabilityHttpPost(ctx conte
 		args.BodyText); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred when calling the availability endpoint",
+			"An error occurred waiting for HTTP endpoint '%v' to become available",
+			args.Path,
 		)
 	}
 
