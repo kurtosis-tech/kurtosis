@@ -7,7 +7,6 @@ package files_artifact_mounting_test
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -22,9 +21,9 @@ const (
 	fileServerServiceId    services.ServiceID = "file-server"
 	listenPort                                = 80
 
-	waitForStartupTimeBetweenPolls = 1000
+	waitForStartupTimeBetweenPolls = 500
 	waitForStartupMaxRetries       = 15
-	waitInitialDelaySeconds        = 0
+	waitInitialDelayMilliseconds   = 0
 
 	testFilesArtifactId  services.FilesArtifactID = "test-files-artifact"
 	testFilesArtifactUrl                          = "https://kurtosis-public-access.s3.us-east-1.amazonaws.com/test-artifacts/static-fileserver-files.tgz"
@@ -35,7 +34,6 @@ const (
 
 	expectedFile1Contents = "file1\n"
 	expectedFile2Contents = "file2\n"
-
 )
 
 type FilesArtifactMountingTest struct{}
@@ -61,7 +59,7 @@ func (f FilesArtifactMountingTest) Setup(networkCtx *networks.NetworkContext) (n
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
 
-	if err := networkCtx.WaitForEndpointAvailability(fileServerServiceId, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_GET, listenPort, file1Filename, "", waitInitialDelaySeconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
+	if err := networkCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, listenPort, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available")
 	}
 
