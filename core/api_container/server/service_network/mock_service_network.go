@@ -74,6 +74,6 @@ func (m MockServiceNetwork) Destroy(ctx context.Context, containerStopTimeout ti
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) GetServiceRunInfo() map[service_network_types.ServiceID]serviceRunInfo {
+func (m MockServiceNetwork) GetServiceIDs() map[service_network_types.ServiceID]bool {
 	panic("This is unimplemented for the mock network")
 }

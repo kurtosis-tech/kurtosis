@@ -137,6 +137,14 @@ func (store *LambdaStore) Destroy(ctx context.Context) error {
 	return nil
 }
 
-func (store *LambdaStore) GetLambdas() map[lambda_store_types.LambdaID]lambdaInfo {
-	return store.lambdas
+func (store *LambdaStore) GetLambdas() map[lambda_store_types.LambdaID]bool {
+
+	lambdaIDs := make(map[lambda_store_types.LambdaID]bool, len(store.lambdas))
+
+	for key, _ := range store.lambdas {
+		if _, ok := lambdaIDs[key]; !ok{
+			lambdaIDs[key] = true
+		}
+	}
+	return lambdaIDs
 }

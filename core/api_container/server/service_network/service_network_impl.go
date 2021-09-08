@@ -551,8 +551,16 @@ func (network *ServiceNetworkImpl) Destroy(
 
 }
 
-func (network *ServiceNetworkImpl) GetServiceRunInfo() map[service_network_types.ServiceID]serviceRunInfo {
-	return network.serviceRunInfo
+func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {
+
+	serviceIDs := make(map[service_network_types.ServiceID]bool, len(network.serviceRunInfo))
+
+	for key, _ := range network.serviceRunInfo {
+		if _, ok := serviceIDs[key]; !ok{
+			serviceIDs[key] = true
+		}
+	}
+	return serviceIDs
 }
 
 

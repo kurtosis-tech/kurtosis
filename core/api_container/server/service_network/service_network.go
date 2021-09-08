@@ -85,5 +85,5 @@ type ServiceNetwork interface {
 
 	Destroy(ctx context.Context, containerStopTimeout time.Duration) error
 
-	GetServiceRunInfo() map[service_network_types.ServiceID]serviceRunInfo
+	GetServiceIDs() map[service_network_types.ServiceID]bool
 }

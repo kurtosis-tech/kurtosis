@@ -420,28 +420,34 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 
 func (service ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error){
 
-	var servicesID []string
+	serviceIDs := make(map[string]bool, len(service.serviceNetwork.GetServiceIDs()))
 
-	for serviceID, _ := range service.serviceNetwork.GetServiceRunInfo() {
-		servicesID = append(servicesID, string(serviceID))
+	for serviceID, _ := range service.serviceNetwork.GetServiceIDs() {
+		serviceIDStr := string(serviceID)
+		if _, ok := serviceIDs[serviceIDStr]; !ok{
+			serviceIDs[serviceIDStr] = true
+		}
 	}
 
 	resp := &kurtosis_core_rpc_api_bindings.GetServicesResponse{
-		ServicesId: servicesID,
+		ServiceIds: serviceIDs,
 	}
 	return resp, nil
 }
 
 func (service ApiContainerService) GetLambdas(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetLambdasResponse, error){
 
-	var lambdasID []string
+	lambdaIDs := make(map[string]bool, len(service.lambdaStore.GetLambdas()))
 
 	for lambdaID, _ := range service.lambdaStore.GetLambdas() {
-		lambdasID = append(lambdasID, string(lambdaID))
+		lambdaIDStr := string(lambdaID)
+		if _, ok := lambdaIDs[lambdaIDStr]; !ok{
+			lambdaIDs[lambdaIDStr] = true
+		}
 	}
 
 	resp := &kurtosis_core_rpc_api_bindings.GetLambdasResponse{
-		LambdasId: lambdasID,
+		LambdaIds: lambdaIDs,
 	}
 	return resp, nil
 }
