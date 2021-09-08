@@ -1,5 +1,9 @@
 # TBD
 
+# 1.19.1
+### Fixes
+* Fix broken artifacts-publishing job in CI
+
 # 1.19.0
 ### Changes
 * Prep internal testsuites for having multiple internal testsuites, one per language
