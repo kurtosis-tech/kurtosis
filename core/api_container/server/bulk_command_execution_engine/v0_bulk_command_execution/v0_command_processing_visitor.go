@@ -12,6 +12,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -236,7 +237,19 @@ func (visitor *v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
 	return nil
 }
 
+func (visitor *v0CommandProcessingVisitor) VisitGetServices() error {
+	if _, err := visitor.apiService.GetServices(visitor.ctx, &emptypb.Empty{}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing the get services command")
+	}
+	return nil
+}
 
+func (visitor *v0CommandProcessingVisitor) VisitGetLambdas() error {
+	if _, err := visitor.apiService.GetLambdas(visitor.ctx, &emptypb.Empty{}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing the get lambdas command")
+	}
+	return nil
+}
 
 // ====================================================================================================
 //                                     Private helper functions

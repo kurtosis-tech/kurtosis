@@ -418,6 +418,40 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 	return &emptypb.Empty{}, nil
 }
 
+func (service ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error){
+
+	serviceIDs := make(map[string]bool, len(service.serviceNetwork.GetServiceIDs()))
+
+	for serviceID, _ := range service.serviceNetwork.GetServiceIDs() {
+		serviceIDStr := string(serviceID)
+		if _, ok := serviceIDs[serviceIDStr]; !ok{
+			serviceIDs[serviceIDStr] = true
+		}
+	}
+
+	resp := &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+		ServiceIds: serviceIDs,
+	}
+	return resp, nil
+}
+
+func (service ApiContainerService) GetLambdas(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetLambdasResponse, error){
+
+	lambdaIDs := make(map[string]bool, len(service.lambdaStore.GetLambdas()))
+
+	for lambdaID, _ := range service.lambdaStore.GetLambdas() {
+		lambdaIDStr := string(lambdaID)
+		if _, ok := lambdaIDs[lambdaIDStr]; !ok{
+			lambdaIDs[lambdaIDStr] = true
+		}
+	}
+
+	resp := &kurtosis_core_rpc_api_bindings.GetLambdasResponse{
+		LambdaIds: lambdaIDs,
+	}
+	return resp, nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

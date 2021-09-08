@@ -1,5 +1,10 @@
 # TBD
 
+# 1.19.2
+### Features
+* Add `GetServices` endpoint to get a set of running service IDs
+* Add `GetLambdas` endpoint to get a set of running Kurtosis Lambda IDs
+
 # 1.19.1
 ### Fixes
 * Fix broken artifacts-publishing job in CI
@@ -9,6 +14,7 @@
 * Prep internal testsuites for having multiple internal testsuites, one per language
 * Switch to using `container-engine-lib` for `DockerManager`
 * Switch to using `kurtosis-core-launcher-lib`
+* Split the `WaitForEndpointAvailability` api container function to `WaitForEndpointAvailabilityHttpGet` and `WaitForEndpointAvailabilityHttpPost`
 
 ### Breaking Changes
 * Split the `WaitForEndpointAvailability` api container function to `WaitForHttpGetEndpointAvailability` and `WaitForHttpPostEndpointAvailability`
