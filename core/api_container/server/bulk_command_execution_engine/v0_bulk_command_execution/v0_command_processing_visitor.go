@@ -183,16 +183,16 @@ func (visitor *v0CommandProcessingVisitor) VisitExecCommand() error {
 	return nil
 }
 
-func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailabilityHttpGet() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs)
+func (visitor *v0CommandProcessingVisitor) VisitWaitForHttpGetEndpointAvailability() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
-	replacedArgs, err := visitor.doServiceIdToIpReplacementOnWaitForEndpointAvailabilityHttpGetArgs(castedArgs)
+	replacedArgs, err := visitor.doServiceIdToIpReplacementOnWaitForHttpGetEndpointAvailabilityArgs(castedArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred doing service ID -> IP replacement on the endpoint availability-waiting args")
 	}
-	if _, err := visitor.apiService.WaitForEndpointAvailabilityHttpGet(visitor.ctx, replacedArgs); err != nil {
+	if _, err := visitor.apiService.WaitForHttpGetEndpointAvailability(visitor.ctx, replacedArgs); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred waiting for availability of endpoint at path '%v' on service '%v' at port '%v'",
@@ -204,16 +204,16 @@ func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailabilityHttpG
 	return nil
 }
 
-func (visitor *v0CommandProcessingVisitor) VisitWaitForEndpointAvailabilityHttpPost() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs)
+func (visitor *v0CommandProcessingVisitor) VisitWaitForHttpPostEndpointAvailability() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic args object to repartition args")
 	}
-	replacedArgs, err := visitor.doServiceIdToIpReplacementOnWaitForEndpointAvailabilityHttpPostArgs(castedArgs)
+	replacedArgs, err := visitor.doServiceIdToIpReplacementOnWaitForHttpPostEndpointAvailabilityArgs(castedArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred doing service ID -> IP replacement on the endpoint availability-waiting args")
 	}
-	if _, err := visitor.apiService.WaitForEndpointAvailabilityHttpPost(visitor.ctx, replacedArgs); err != nil {
+	if _, err := visitor.apiService.WaitForHttpPostEndpointAvailability(visitor.ctx, replacedArgs); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred waiting for availability of endpoint at path '%v' on service '%v' at port '%v'",
@@ -242,10 +242,10 @@ func (visitor *v0CommandProcessingVisitor) VisitExecuteBulkCommands() error {
 //                                     Private helper functions
 // ====================================================================================================
 // Returns a copy of the endpoint availability-waiting-http-get args with the service ID reference patterns replaced with the service's IP
-func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEndpointAvailabilityHttpGetArgs(
-		args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs) (*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs, error) {
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForHttpGetEndpointAvailabilityArgs(
+		args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs, error) {
 	clonedMessage := proto.Clone(args)
-	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpGetArgs)
+	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs)
 	if !ok {
 		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to endpoint availability-waiting args")
 	}
@@ -266,10 +266,10 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEn
 }
 
 // Returns a copy of the endpoint availability-waiting-http-post args with the service ID reference patterns replaced with the service's IP
-func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForEndpointAvailabilityHttpPostArgs(
-	args *kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs) (*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs, error) {
+func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnWaitForHttpPostEndpointAvailabilityArgs(
+	args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs, error) {
 	clonedMessage := proto.Clone(args)
-	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityHttpPostArgs)
+	ipReplacedArgs, ok := clonedMessage.(*kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs)
 	if !ok {
 		return nil, stacktrace.NewError("Couldn't downcast the cloned proto message to endpoint availability-waiting args")
 	}
