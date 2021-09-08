@@ -1,4 +1,6 @@
 # TBD
+
+# 1.19.2
 ### Features
 * Add `GetServices` endpoint to get a set of running service IDs
 * Add `GetLambdas` endpoint to get a set of running Kurtosis Lambda IDs
