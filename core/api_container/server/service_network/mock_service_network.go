@@ -73,3 +73,7 @@ func (m MockServiceNetwork) GetServiceEnclaveDataVolMntDirpath(serviceId service
 func (m MockServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
 	panic("This is unimplemented for the mock network")
 }
+
+func (m MockServiceNetwork) GetServiceIDs() map[service_network_types.ServiceID]bool {
+	panic("This is unimplemented for the mock network")
+}

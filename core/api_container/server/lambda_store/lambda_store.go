@@ -7,10 +7,10 @@ package lambda_store
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/palantir/stacktrace"
 	"net"
 	"strings"
@@ -135,4 +135,16 @@ func (store *LambdaStore) Destroy(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (store *LambdaStore) GetLambdas() map[lambda_store_types.LambdaID]bool {
+
+	lambdaIDs := make(map[lambda_store_types.LambdaID]bool, len(store.lambdas))
+
+	for key, _ := range store.lambdas {
+		if _, ok := lambdaIDs[key]; !ok{
+			lambdaIDs[key] = true
+		}
+	}
+	return lambdaIDs
 }
