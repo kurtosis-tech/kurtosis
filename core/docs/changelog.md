@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix broken artifacts-publishing job in CI
 
 # 1.19.0
 ### Changes

@@ -143,6 +143,7 @@ workflows:
       # -- Artifact-publishing jobs --------------------------------
       - push_artifacts:
           context:
+            - github-user
             - docker-user
             - kurtosis-user
             - s3-upload-user
