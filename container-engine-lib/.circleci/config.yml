@@ -10,7 +10,7 @@ orbs:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
-  check_golang:
+  check_code:
     docker:
       - image: cimg/go:1.15.13
     steps:
@@ -23,7 +23,7 @@ jobs:
             circleci-agent step halt
           fi
 
-      - run: golang/scripts/build.sh
+      - run: scripts/build.sh
 
 workflows:
   build:
@@ -36,7 +36,7 @@ workflows:
               ignore:
                 - develop
                 - master
-      - check_golang:
+      - check_code:
           filters:
             branches:
               ignore:
@@ -45,13 +45,4 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      # TODO UNCOMMENT WHEN READY
-      #- publish_typescript:
-      #    context:
-      #      - npmjs-user
-      #    filters:
-      #      branches:
-      #        ignore: /.*/
-      #      tags:
-      #        only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
