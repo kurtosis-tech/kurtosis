@@ -380,21 +380,40 @@ func (manager DockerManager) CreateAndStartContainer(
 
 		portBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
 		for port, allInterfaceBindings := range allInterfaceHostPortBindings {
+			// Skip ports that aren't a part of the usedPorts set that we passed in, so that the portBindings
+			//  result will have a 1:1 mapping
+			if _, found := usedPortsSet[port]; !found {
+				continue
+			}
+
+			foundHostPortBinding := false
 			for _, interfaceBinding := range allInterfaceBindings {
 				if interfaceBinding.HostIP == expectedHostIp {
 					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
 						HostIP:   interfaceBinding.HostIP,
 						HostPort: interfaceBinding.HostPort,
 					}
+					foundHostPortBinding = true
+					break
 				}
+			}
+			if !foundHostPortBinding {
+				return "", nil, stacktrace.NewError(
+					"Publishing all ports was requested, but used port '%v' didn't result in a host machine binding on " +
+						"expected interface '%v'",
+					port,
+					expectedHostIp,
+				)
 			}
 		}
 
+		// Final verification that all used ports get a host machine port bindings
 		numUsedPorts := len(usedPortsSet)
 		numPortBindingsOnExpectedInterface := len(portBindingsOnExpectedInterface)
 		if numUsedPorts != numPortBindingsOnExpectedInterface {
 			return "", nil, stacktrace.NewError(
-				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got host port bindings on the expected interface '%v'",
+				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got " +
+					"host port bindings on the expected interface '%v'",
 				numUsedPorts,
 				numPortBindingsOnExpectedInterface,
 				expectedHostIp,
@@ -728,8 +747,13 @@ func (manager *DockerManager) getContainerHostConfig(
 	manager.log.Debugf("Binds: %v", bindsList)
 
 	portMap := nat.PortMap{}
-	for containerPort := range exposedPorts {
-		portMap[containerPort] = nil
+	if shouldPublishAllPorts {
+		for containerPort := range exposedPorts {
+			portMap[containerPort] = []nat.PortBinding{
+				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
+				{},
+			}
+		}
 	}
 
 	addedCapabilitiesSlice := []string{}
@@ -748,12 +772,14 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
+	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
+	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
+	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		CapAdd: addedCapabilitiesSlice,
 		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
-		PublishAllPorts: shouldPublishAllPorts,
 		ExtraHosts: extraHosts,
 	}
 	return containerHostConfigPtr, nil
