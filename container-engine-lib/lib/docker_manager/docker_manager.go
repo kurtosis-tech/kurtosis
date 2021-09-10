@@ -728,10 +728,12 @@ func (manager *DockerManager) getContainerHostConfig(
 	manager.log.Debugf("Binds: %v", bindsList)
 
 	portMap := nat.PortMap{}
-	for containerPort := range exposedPorts {
-		portMap[containerPort] = []nat.PortBinding{
-			// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
-			{},
+	if shouldPublishAllPorts {
+		for containerPort := range exposedPorts {
+			portMap[containerPort] = []nat.PortBinding{
+				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
+				{},
+			}
 		}
 	}
 
@@ -759,7 +761,6 @@ func (manager *DockerManager) getContainerHostConfig(
 		CapAdd: addedCapabilitiesSlice,
 		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
-		// PublishAllPorts: shouldPublishAllPorts,
 		ExtraHosts: extraHosts,
 	}
 	return containerHostConfigPtr, nil
