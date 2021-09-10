@@ -729,7 +729,10 @@ func (manager *DockerManager) getContainerHostConfig(
 
 	portMap := nat.PortMap{}
 	for containerPort := range exposedPorts {
-		portMap[containerPort] = nil
+		portMap[containerPort] = []nat.PortBinding{
+			// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
+			{},
+		}
 	}
 
 	addedCapabilitiesSlice := []string{}
@@ -748,12 +751,15 @@ func (manager *DockerManager) getContainerHostConfig(
 		)
 	}
 
+	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
+	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
+	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
 	containerHostConfigPtr := &container.HostConfig{
 		Binds: bindsList,
 		CapAdd: addedCapabilitiesSlice,
 		NetworkMode: container.NetworkMode(networkMode),
 		PortBindings: portMap,
-		PublishAllPorts: shouldPublishAllPorts,
+		// PublishAllPorts: shouldPublishAllPorts,
 		ExtraHosts: extraHosts,
 	}
 	return containerHostConfigPtr, nil
