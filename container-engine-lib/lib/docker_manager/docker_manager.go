@@ -380,21 +380,40 @@ func (manager DockerManager) CreateAndStartContainer(
 
 		portBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
 		for port, allInterfaceBindings := range allInterfaceHostPortBindings {
+			// Skip ports that aren't a part of the usedPorts set that we passed in, so that the portBindings
+			//  result will have a 1:1 mapping
+			if _, found := usedPortsSet[port]; !found {
+				continue
+			}
+
+			foundHostPortBinding := false
 			for _, interfaceBinding := range allInterfaceBindings {
 				if interfaceBinding.HostIP == expectedHostIp {
 					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
 						HostIP:   interfaceBinding.HostIP,
 						HostPort: interfaceBinding.HostPort,
 					}
+					foundHostPortBinding = true
+					break
 				}
+			}
+			if !foundHostPortBinding {
+				return "", nil, stacktrace.NewError(
+					"Publishing all ports was requested, but used port '%v' didn't result in a host machine binding on " +
+						"expected interface '%v'",
+					port,
+					expectedHostIp,
+				)
 			}
 		}
 
+		// Final verification that all used ports get a host machine port bindings
 		numUsedPorts := len(usedPortsSet)
 		numPortBindingsOnExpectedInterface := len(portBindingsOnExpectedInterface)
 		if numUsedPorts != numPortBindingsOnExpectedInterface {
 			return "", nil, stacktrace.NewError(
-				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got host port bindings on the expected interface '%v'",
+				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got " +
+					"host port bindings on the expected interface '%v'",
 				numUsedPorts,
 				numPortBindingsOnExpectedInterface,
 				expectedHostIp,
