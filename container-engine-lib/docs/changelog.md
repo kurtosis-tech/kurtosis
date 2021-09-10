@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.3
 ### Features
 * Verify that, when starting a container with `shouldPublishAllPorts` == `true`, each used port gets exactly one host machine port binding
 
