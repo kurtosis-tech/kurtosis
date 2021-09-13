@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Interate testsuite' tests in alphabetical order
 
 # 1.19.2
 ### Features
