@@ -215,13 +215,13 @@ func logErroneousSystemLogging(capturedErroneousMessages []output.ErroneousSyste
 	}
 }
 /*
-This Helper function receives the allTestParams maps and takes its keys to creates and return an ordered
-slices of strings useful to iterate the allTestParams map in an alphabetical order
+This Helper function receives the allTestParams maps and takes its keys to create and return an ordered
+slice of strings useful to iterate the allTestParams map in an alphabetical order
  */
 func getAllTestParamsOrderedKeys(allTestParams map[string]parallel_test_params.ParallelTestParams) []string {
 	allTestParamsOrderedKeys := make([]string, 0, len(allTestParams))
-	for k := range allTestParams {
-		allTestParamsOrderedKeys = append(allTestParamsOrderedKeys, k)
+	for allTestParamKey := range allTestParams {
+		allTestParamsOrderedKeys = append(allTestParamsOrderedKeys, allTestParamKey)
 	}
 	sort.Strings(allTestParamsOrderedKeys)
 	return allTestParamsOrderedKeys
