@@ -1,5 +1,9 @@
 # TBD
 
+# 1.19.3
+### Changes
+* Iterate testsuite's tests in alphabetical order
+
 # 1.19.2
 ### Features
 * Add `GetServices` endpoint to get a set of running service IDs
