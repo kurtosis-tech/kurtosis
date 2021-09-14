@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Push the CLI binary up to Github as a Github release
 
 # 1.19.3
 ### Changes
