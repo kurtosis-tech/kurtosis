@@ -1,5 +1,12 @@
 # TBD
 
+# 1.19.8
+### Features
+* Also push `latest` tag versions of the API container, initializer container, and Javascript REPL image so that the CLI can consume them
+
+### Changes
+* Don't push the Go internal testsuite image to Dockerhub
+
 # 1.19.7
 ### Fixes
 * Correct the Homebrew tap's repo name
