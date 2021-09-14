@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Don't publish source code to Github as a release
+* Publish APKs, DEBs, etc. to the Github release
 
 # 1.19.4
 ### Fixes
