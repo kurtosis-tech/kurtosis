@@ -117,7 +117,7 @@ brews:
       - cli
     tap:
       owner: kurtosis-tech
-      name: kurtosis-core-homebrew-tap
+      name: homebrew-tap
     commit_author:
       name: kurtosisbot
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"

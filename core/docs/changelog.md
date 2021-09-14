@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Correct the Homebrew tap's repo name
 
 # 1.19.6
 ### Features
