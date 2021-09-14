@@ -1,6 +1,7 @@
 # TBD
 ### Fixes
 * Correct the Homebrew tap's repo name
+* Fixed the `kurtosis-core` README getting published with the binaries
 
 # 1.19.6
 ### Features
