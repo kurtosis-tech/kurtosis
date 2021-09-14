@@ -36,8 +36,6 @@ builds:
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
       - linux
-      - freebsd
-      - openbsd
       - darwin
     goarch:
       - 386
