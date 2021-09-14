@@ -307,6 +307,13 @@ func (manager DockerManager) CreateAndStartContainer(
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", name, dockerImage)
 	}
 	containerId = resp.ID
+	if containerId == "" {
+		return "", nil, stacktrace.NewError(
+			"Creation of container '%v' from image '%v' succeeded without error, but we didn't get a container ID back - this is VERY strange!",
+			name,
+			dockerImage,
+		)
+	}
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
@@ -314,6 +321,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
+	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
 	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)

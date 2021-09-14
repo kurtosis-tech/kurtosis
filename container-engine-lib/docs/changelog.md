@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.4
+### Fixes
+* Add extra error-checking to handle a very weird case we just saw where container creation succeeds but no container ID is allocated
+
 # 0.2.3
 ### Features
 * Verify that, when starting a container with `shouldPublishAllPorts` == `true`, each used port gets exactly one host machine port binding
