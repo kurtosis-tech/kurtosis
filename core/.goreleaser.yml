@@ -61,6 +61,7 @@ dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile
     image_templates:
+      - "{{ .Env.API_IMAGE }}:latest"
       - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     ids:
       - api-container
@@ -72,24 +73,29 @@ dockers:
       - initializer
     dockerfile: initializer/Dockerfile
     image_templates:
+      - "{{ .Env.INITIALIZER_IMAGE }}:latest"
       - "{{ .Env.INITIALIZER_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
+  - id: javascript-repl-image
+    ids: []
+    dockerfile: javascript_cli_image/Dockerfile
+    image_templates:
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite
     dockerfile: golang_internal_testsuite/Dockerfile
     image_templates:
+      # No need to create a "latest" image because this image will never get published to Dockerhub
       - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
     extra_files:
       - golang_internal_testsuite/static_files
-  - id: javascript-repl-image
-    ids: []
-    dockerfile: javascript_cli_image/Dockerfile
-    image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+    # We don't ever want or need to push our internal testsuites to Docker
+    skip_push: true
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
