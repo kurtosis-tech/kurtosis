@@ -1,4 +1,4 @@
-FROM goreleaser/goreleaser:0.179.0
+FROM goreleaser/goreleaser:v0.179.0
 ARG GITHUB_TOKEN
 ARG DOCKER_USERNAME
 ARG DOCKER_PASSWORD
