@@ -232,12 +232,16 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 			)
 		}
 		if hostPortBinding != nil {
-			responseBinding := &kurtosis_core_rpc_api_bindings.PortBinding{
-				InterfaceIp:   hostPortBinding.HostIP,
-				InterfacePort: hostPortBinding.HostPort,
-			}
-			responseHostPortBindings[portSpecStr] = responseBinding
+			return nil, stacktrace.NewError(
+				"Port spec string '%v' had a host port binding object returned by the Docker engine, but it was nil",
+				portSpecStr,
+			)
 		}
+		responseBinding := &kurtosis_core_rpc_api_bindings.PortBinding{
+			InterfaceIp:   hostPortBinding.HostIP,
+			InterfacePort: hostPortBinding.HostPort,
+		}
+		responseHostPortBindings[portSpecStr] = responseBinding
 	}
 	response := kurtosis_core_rpc_api_bindings.StartServiceResponse{
 		UsedPortsHostPortBindings: responseHostPortBindings,

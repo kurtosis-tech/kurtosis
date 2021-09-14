@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Upgraded to latest `container-engine-lib`, which fixes an error that would be thrown when an `EXPOSE` directive was declared in the Dockerfile
+* Throw an error if the `DockerManager` returns a host port binding map with nil objects (which should never happen)
 
 # 1.19.3
 ### Changes
