@@ -1,5 +1,10 @@
 # TBD
 
+# 1.19.5
+### Fixes
+* Don't publish source code to Github as a release
+* Publish APKs, DEBs, etc. to the Github release
+
 # 1.19.4
 ### Fixes
 * Upgraded to latest `container-engine-lib`, which fixes an error that would be thrown when an `EXPOSE` directive was declared in the Dockerfile

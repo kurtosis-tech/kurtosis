@@ -22,6 +22,10 @@ fi
 goarch="$(go env GOARCH)"
 goos="$(go env GOOS)"
 cli_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
+if ! [ -f "${cli_binary_filepath}" ]; then
+    echo "Error: Our buildscript doesn't build the Kurtosis CLI for GOOS '${goos}' and GOARCH '${goarch}'; this likely means your machine has a weird OS or arch as we try to build the CLI for all common OS + arch combinations" >&2
+    exit 1
+fi
 
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
