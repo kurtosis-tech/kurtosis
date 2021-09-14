@@ -231,7 +231,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 				portObj,
 			)
 		}
-		if hostPortBinding != nil {
+		if hostPortBinding == nil {
 			return nil, stacktrace.NewError(
 				"Port spec string '%v' had a host port binding object returned by the Docker engine, but it was nil",
 				portSpecStr,
