@@ -101,7 +101,7 @@ archives:
     #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
     # Therefore, we set this to a glob of files that definitely don't exist
     files:
-      - "THIS_FILE_DOES_NOT_EXIST"
+      - "*THIS_FILE_DOES_NOT_EXIST*"
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
