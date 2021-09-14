@@ -80,26 +80,26 @@ jobs:
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
             --entrypoint bash \
-            ci-running-image -c "/login.sh && ./scripts/build.sh"
+            ci-running-image -c "/login.sh && ./scripts/build.sh true"
 
-      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
-      #  we have to do this
-      - run: |
-          version_to_publish="$(scripts/get-docker-images-tag.sh)"
-          echo "Version that will be published: ${version_to_publish}"
-          echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
-
-      # TODO REPLACE THIS PUSHING WITH GORELEASER PUSHING
-      - run: |
-          set -euo pipefail
-          source scripts/_constants.sh
-          api_image="${API_IMAGE}:${VERSION_TO_PUBLISH}"
-          initializer_image="${INITIALIZER_IMAGE}:${VERSION_TO_PUBLISH}"
-          javascript_repl_image="${JAVASCRIPT_REPL_IMAGE}:${VERSION_TO_PUBLISH}"
-
-          docker push "${api_image}"
-          docker push "${initializer_image}"
-          docker push "${javascript_repl_image}"
+#      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
+#      #  we have to do this
+#      - run: |
+#          version_to_publish="$(scripts/get-docker-images-tag.sh)"
+#          echo "Version that will be published: ${version_to_publish}"
+#          echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
+#
+#      # TODO REPLACE THIS PUSHING WITH GORELEASER PUSHING
+#      - run: |
+#          set -euo pipefail
+#          source scripts/_constants.sh
+#          api_image="${API_IMAGE}:${VERSION_TO_PUBLISH}"
+#          initializer_image="${INITIALIZER_IMAGE}:${VERSION_TO_PUBLISH}"
+#          javascript_repl_image="${JAVASCRIPT_REPL_IMAGE}:${VERSION_TO_PUBLISH}"
+#
+#          docker push "${api_image}"
+#          docker push "${initializer_image}"
+#          docker push "${javascript_repl_image}"
 
       # All the variables here from the s3-upload-user context that we attach
       - aws-s3/copy:

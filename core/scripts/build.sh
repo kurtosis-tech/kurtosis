@@ -22,6 +22,25 @@ WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh
 
 WRAPPER_SCRIPT_GENERATOR_GORELEASER_BUILD_ID="wrapper-generator"
 
+DEFAULT_SHOULD_PUBLISH_ARG="false"
+
+# ==================================================================================================
+#                                       Arg Parsing & Validation
+# ==================================================================================================
+show_helptext_and_exit() {
+    echo "Usage: $(basename "${0}") [should_publish_arg]"
+    echo ""
+    echo "  should_publish_arg  Whether the build artifacts should be published (default: ${DEFAULT_SHOULD_PUBLISH_ARG})"
+    echo ""
+    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
+}
+
+should_publish_arg="${1:-"${DEFAULT_SHOULD_PUBLISH_ARG}"}"
+if [ "${should_publish_arg}" != "true" ] && [ "${should_publish_arg}" != "false" ]; then
+    echo "Error: Invalid should-publish arg '${should_publish_arg}'" >&2
+    show_helptext_and_exit
+fi
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
@@ -68,8 +87,13 @@ if ! "${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${WRAPPER_GENERATOR_BINARY_OU
 fi
 
 # Build all the Docker images
-if ! goreleaser release --rm-dist --snapshot; then
-    echo "Error: Goreleaser build of all binaries & Docker images failed" >&2
+if "${should_publish_arg}"; then
+    goreleaser_release_extra_args=""
+else
+    goreleaser_release_extra_args="--snapshot"
+fi
+if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_args}; then
+    echo "Error: Goreleaser release of all binaries & Docker images failed" >&2
     exit 1
 fi
 
