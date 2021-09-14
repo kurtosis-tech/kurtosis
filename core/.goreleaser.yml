@@ -111,15 +111,21 @@ release:
   ids:
     - cli
 
-# brews:
-#   - ids:
-#       - cli
-#     tap:
-#       owner: "kurtosis-tech"
-#       name: "homebrew-tap"
-#       token: "TOODOOOO"
+brews:
+  - name: cli
+    ids:
+      - cli
+    tap:
+      owner: kurtosis-tech
+      name: kurtosis-core-homebrew-tap
+    commit_author:
+      name: kurtosisbot
+    commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
+    homepage: "https://www.kurtosistech.com"
+    description: "CLI for managing Kurtosis environments."
 
-    # NOTE: Because our Github repo is private, we have to override the URL where aritfacts will be pulled from
+    # One day, we'll probably want to put a license
+    # license: SOME-SPDX-LICENSE
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code

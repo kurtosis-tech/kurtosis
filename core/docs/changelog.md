@@ -1,5 +1,9 @@
 # TBD
 
+# 1.19.6
+### Features
+* First attempt at adding Kurtosis CLI installation via Homebrew tap
+
 # 1.19.5
 ### Fixes
 * Don't publish source code to Github as a release
