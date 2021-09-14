@@ -35,9 +35,12 @@ builds:
     main: ./cli
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
-      - linux # For Alpine Docker image
+      - linux
+      - darwin
     goarch:
+      - 386
       - amd64
+      - arm64
   - id: initializer
     main: ./initializer
     binary: initializer
@@ -88,17 +91,23 @@ dockers:
     image_templates:
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
 
+# In order for releasing-to-Github to work, we have to create these archives
 archives:
-  # TODO Make this real
-  - format: binary
-    allow_different_binary_count: true
+  - id: cli
+    builds:
+      - cli
+    # GoReleaser by default packages the README, LICENSE, and changelog, but we don't want any of these packaged because Kurtosis Core is a private repo
+    #  and therefore shouldn't have its internals exposed to the world
+    files: []
+    name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
 release:
   github:
     owner: kurtosis-tech
-    name: kurtosis-interfaces-release-artifacts
+    name: kurtosis-core-release-artifacts
 
+  # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
 
@@ -112,7 +121,9 @@ release:
 
     # NOTE: Because our Github repo is private, we have to override the URL where aritfacts will be pulled from
 
-
+source:
+  # Kurt Core is a private project, and we definitely don't want to release source code
+  enabled: false
 
 checksum:
   name_template: 'checksums.txt'
