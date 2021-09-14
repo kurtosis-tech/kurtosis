@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.4
 ### Fixes
 * Add extra error-checking to handle a very weird case we just saw where container creation succeeds but no container ID is allocated
 
