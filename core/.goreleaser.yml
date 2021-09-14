@@ -96,9 +96,12 @@ archives:
   - id: cli
     builds:
       - cli
-    # GoReleaser by default packages the README, LICENSE, and changelog, but we don't want any of these packaged because Kurtosis Core is a private repo
-    #  and therefore shouldn't have its internals exposed to the world
-    files: []
+    # Kurtosis is a private repo so we don't want to package any files except the binaries, but GoReleaser by default packages the README, LICENSE, and changelog
+    # Worse, setting this to be emptylist won't work because GoReleaser takes emptylist to mean "package the defaults" per:
+    #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
+    # Therefore, we set this to a glob of files that definitely don't exist
+    files:
+      - "*THIS_FILE_DOES_NOT_EXIST*"
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
@@ -117,7 +120,7 @@ brews:
       - cli
     tap:
       owner: kurtosis-tech
-      name: kurtosis-core-homebrew-tap
+      name: homebrew-tap
     commit_author:
       name: kurtosisbot
     commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
@@ -126,6 +129,13 @@ brews:
 
     # One day, we'll probably want to put a license
     # license: SOME-SPDX-LICENSE
+
+    # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
+    #  https://github.com/goreleaser/goreleaser/issues/2488
+    # When this is fixed, we can remove this section
+    install: |
+      bin.install "kurtosis"
+
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code
