@@ -2,6 +2,7 @@
 ### Fixes
 * Correct the Homebrew tap's repo name
 * Fixed the `kurtosis-core` README getting published with the binaries
+* Fix issue with Homebrew formula not having the right binary install instruction
 
 # 1.19.6
 ### Features
