@@ -1,4 +1,6 @@
 # TBD
+### Features
+* First attempt at adding Kurtosis CLI installation via Homebrew tap
 
 # 1.19.5
 ### Fixes
