@@ -1,4 +1,6 @@
 # TBD
+
+# 1.19.8
 ### Features
 * Also push `latest` tag versions of the API container, initializer container, and Javascript REPL image so that the CLI can consume them
 
