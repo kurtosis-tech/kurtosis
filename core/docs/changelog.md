@@ -1,4 +1,11 @@
 # TBD
+### Fixes
+* Fixed LambdaStore not getting passed a `DockerManager`, which led to it segfaulting when it would go to tear down Lambdas upon `LambdaStore.Destroy`
+
+### Changes
+* Changed the grace time that an API container has to kill all the services it's managing from 30 seconds to 3 minutes
+* When destroying a `ServiceNetworkImpl`, only give the containers 1ms to stop (because we're destroying the network - no need to do so gracefully)
+* Upgrade to `container-engine-lib` 0.2.6, which has extra debugging to track down an issue with container ID getting set to emptystring
 
 # 1.19.9
 ### Fixes
