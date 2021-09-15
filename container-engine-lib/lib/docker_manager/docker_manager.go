@@ -51,6 +51,12 @@ const (
 	nameFilterKey = "name"
 
 	expectedHostIp = "0.0.0.0"
+
+	// Character Docker uses to separate the repo from
+	dockerTagSeparatorChar = ":"
+
+	// If no tag is specified for an image, this is the tag Dock
+	dockerDefaultTag = "latest"
 )
 
 // The dimensions of the TTY that the container should output to when in interactive mode
@@ -256,16 +262,26 @@ func (manager DockerManager) CreateAndStartContainer(
 			volumeMounts map[string]string,
 			needsAccessToDockerHostMachine bool) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
 
+	// If the user passed in a Docker iamge that doesn't have a tag separator (indicating no tag was specified), manually append
+	//  the Docker default tag so that when we search for the image we're searching for a very specific image
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
+
+	logrus.Debugf("Checking if image '%v' is available locally...", dockerImage)
 	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
+	logrus.Debugf("Is image available locally?: %v", imageExistsLocally)
 
 	if !imageExistsLocally {
+		logrus.Debugf("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.pullImage(context, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
+		logrus.Debugf("Image successfully pulled from remote to local")
 	}
 
 	networks, err := manager.getNetworksByFilter(context, "id", networkId)
@@ -688,7 +704,17 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
 	}
-	return len(images) > 0, nil
+	numMatchingImages := len(images)
+	if numMatchingImages > 1 {
+		return false, stacktrace.NewError(
+			"Searching for Docker images matching image name '%v' returned %v images; " +
+				"this indicates a bug because the image name being searched should only reference 0 or 1 images. Images matched:\n%+v",
+			imageName,
+			numMatchingImages,
+			images,
+		)
+	}
+	return numMatchingImages > 0, nil
 }
 
 func (manager DockerManager) getNetworksByFilter(ctx context.Context, filterKey string, filterValue string) ([]types.NetworkResource, error) {
