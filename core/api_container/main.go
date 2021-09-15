@@ -40,9 +40,6 @@ const (
 	successExitCode = 0
 	failureExitCode = 1
 
-	// We don't give any time whatsoever ot
-	serviceNetworkDestructionContainerStopTimeout = 1 * time.Millisecond
-
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
@@ -106,7 +103,7 @@ func runMain () error {
 	}
 	// TODO parallelize Lambda & service network destruction for perf
 	defer func() {
-		if err := serviceNetwork.Destroy(context.Background(), serviceNetworkDestructionContainerStopTimeout); err != nil {
+		if err := serviceNetwork.Destroy(context.Background()); err != nil {
 			logrus.Errorf("An error occurred while destroying the service network:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
