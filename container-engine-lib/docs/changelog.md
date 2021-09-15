@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.5
+### Fixes
+* Fixed a bug where not specifying an image tag (which should default to `latest`) wouldn't actually pull the image if it didn't exist locally
+
 # 0.2.4
 ### Fixes
 * Add extra error-checking to handle a very weird case we just saw where container creation succeeds but no container ID is allocated
