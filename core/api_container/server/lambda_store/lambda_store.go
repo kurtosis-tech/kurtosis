@@ -17,19 +17,13 @@ import (
 	"sync"
 )
 
-type lambdaInfo struct {
-	containerId string
-	ipAddr net.IP
-	client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient
-}
-
 type LambdaStore struct {
 	isDestroyed bool
 
 	mutex *sync.Mutex
 
 	// lambda_id -> IP addr, container ID, etc.
-	lambdas map[lambda_store_types.LambdaID]lambdaInfo
+	lambdas map[lambda_store_types.LambdaID]lambda_store_types.LambdaInfo
 
 	lambdaLauncher *lambda_launcher.LambdaLauncher
 
@@ -40,7 +34,7 @@ func NewLambdaStore(lambdaLauncher *lambda_launcher.LambdaLauncher) *LambdaStore
 	return &LambdaStore{
 		isDestroyed: false,
 		mutex:          &sync.Mutex{},
-		lambdas:        map[lambda_store_types.LambdaID]lambdaInfo{},
+		lambdas:        map[lambda_store_types.LambdaID]lambda_store_types.LambdaInfo{},
 		lambdaLauncher: lambdaLauncher,
 	}
 }
@@ -56,8 +50,9 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 		return stacktrace.NewError("Lambda ID '%v' already exists in the lambda map", lambdaId)
 	}
 
-	// NOTE: We don't use module host port bindings for now; we could expose them in the future if it's useful
-	containerId, containerIpAddr, client, _, err := store.lambdaLauncher.Launch(ctx, lambdaId, containerImage, serializedParams)
+	lambdaInfo := lambda_store_types.NewLambdaInfo(lambdaId)
+
+	containerId, containerIpAddr, client, hostPortBinding, err := store.lambdaLauncher.Launch(ctx, lambdaInfo.LambdaGUID(), containerImage, serializedParams)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -66,13 +61,12 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 			serializedParams,
 		)
 	}
+	lambdaInfo.SetContainerId(containerId)
+	lambdaInfo.SetIpAddr(containerIpAddr)
+	lambdaInfo.SetClient(client)
+	lambdaInfo.SetHostPortBinding(hostPortBinding)
 
-	lambdaData := lambdaInfo{
-		containerId: containerId,
-		ipAddr:      containerIpAddr,
-		client: client,
-	}
-	store.lambdas[lambdaId] = lambdaData
+	store.lambdas[lambdaId] = lambdaInfo
 	return nil
 }
 
@@ -89,7 +83,7 @@ func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_sto
 	if !found {
 		return "", stacktrace.NewError("No Lambda '%v' exists in the Lambda store", lambdaId)
 	}
-	client := info.client
+	client := info.Client()
 	args := &kurtosis_lambda_rpc_api_bindings.ExecuteArgs{ParamsJson: serializedParams}
 	resp, err := client.Execute(ctx, args)
 	if err != nil {
@@ -109,7 +103,7 @@ func (store *LambdaStore) GetLambdaIPAddrByID(lambdaId lambda_store_types.Lambda
 	if !found {
 		return nil, stacktrace.NewError("No Lambda with ID '%v' has been loaded", lambdaId)
 	}
-	return info.ipAddr, nil
+	return info.IpAddr(), nil
 }
 
 func (store *LambdaStore) Destroy(ctx context.Context) error {
@@ -121,7 +115,7 @@ func (store *LambdaStore) Destroy(ctx context.Context) error {
 
 	lambdaKillErrorTexts := []string{}
 	for lambdaId, lambdaInfo := range store.lambdas {
-		containerId := lambdaInfo.containerId
+		containerId := lambdaInfo.ContainerId()
 		if err := store.dockerManager.KillContainer(ctx, containerId); err != nil {
 			killError := stacktrace.Propagate(err, "An error occurred killing Lambda container '%v' while destroying the Lambda store", lambdaId)
 			lambdaKillErrorTexts = append(lambdaKillErrorTexts, killError.Error())

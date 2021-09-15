@@ -41,42 +41,42 @@ func (nameProvider *EnclaveObjectNameProvider) ForTestRunningTestsuiteContainer(
 	)
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForUserServiceContainer(serviceId service_network_types.ServiceID) string {
+func (nameProvider *EnclaveObjectNameProvider) ForUserServiceContainer(serviceGUID service_network_types.ServiceGUID) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
 		userServiceContainerNameLabel,
-		string(serviceId),
+		string(serviceGUID),
 	})
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForNetworkingSidecarContainer(serviceIdSidecarAttachedTo service_network_types.ServiceID) string {
+func (nameProvider *EnclaveObjectNameProvider) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service_network_types.ServiceGUID) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
-		string(serviceIdSidecarAttachedTo),
+		string(serviceGUIDSidecarAttachedTo),
 		networkingSidecarContainerNameSuffix,
 	})
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpanderContainer(serviceId service_network_types.ServiceID, artifactId string) string {
+func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpanderContainer(serviceGUID service_network_types.ServiceGUID, artifactId string) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
-		string(serviceId),
+		string(serviceGUID),
 		artifactExpanderContainerNameLabel,
 		artifactId,
-		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
+		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
 	})
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(serviceId string, artifactId string) string {
+func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(serviceGUID service_network_types.ServiceGUID, artifactId string) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
 		artifactExpansionVolumeNameLabel,
-		serviceId,
+		string(serviceGUID),
 		artifactId,
-		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service ID expanded twice, we won't get collisions
+		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
 	})
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaId lambda_store_types.LambdaID) string {
+func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID lambda_store_types.LambdaGUID) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
 		lambdaContainerNameLabel,
-		string(lambdaId),
+		string(lambdaGUID),
 	})
 }
 

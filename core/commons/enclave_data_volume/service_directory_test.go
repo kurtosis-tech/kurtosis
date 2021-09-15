@@ -43,11 +43,11 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(
 		t,
 		svcAbsDirpath,
-		path.Dir(file.absoluteFilepath),
+		path.Dir(file.GetAbsoluteFilepath()),
 	)
 	assert.Equal(
 		t,
 		svcRelDirpath,
-		path.Dir(file.filepathRelativeToVolRoot),
+		path.Dir(file.GetFilepathRelativeToVolRoot()),
 	)
 }

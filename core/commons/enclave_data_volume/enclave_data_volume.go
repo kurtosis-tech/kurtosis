@@ -6,8 +6,6 @@
 package enclave_data_volume
 
 import (
-	"fmt"
-	"github.com/google/uuid"
 	"github.com/palantir/stacktrace"
 	"path"
 )
@@ -53,20 +51,18 @@ func (volume EnclaveDataVolume) GetStaticFileCache() (*StaticFileCache, error) {
 	return newStaticFileCache(absoluteDirpath, relativeDirpath), nil
 }
 
-// Creates a new, unique service directory for a service with the given service ID
-func (volume EnclaveDataVolume) NewServiceDirectory(serviceId string) (*ServiceDirectory, error) {
+// Creates a new, unique service directory for a service with the given service GUID
+func (volume EnclaveDataVolume) NewServiceDirectory(serviceGUID string) (*ServiceDirectory, error) {
 	allServicesRelativeDirpath := allServicesDirname
 	allServicesAbsoluteDirpath := path.Join(volume.absMountDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside the enclave data dir", allServicesAbsoluteDirpath)
 	}
 
-	uniqueId := uuid.New()
-	serviceDirname := fmt.Sprintf("%v_%v", serviceId, uniqueId.String())
-	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, serviceDirname)
+	absoluteServiceDirpath := path.Join(allServicesAbsoluteDirpath, serviceGUID)
 	if err := ensureDirpathExists(absoluteServiceDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring service dirpath '%v' exists inside the enclave data dir", absoluteServiceDirpath)
 	}
-	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, serviceDirname)
+	relativeServiceDirpath := path.Join(allServicesRelativeDirpath, serviceGUID)
 	return newServiceDirectory(absoluteServiceDirpath, relativeServiceDirpath), nil
 }

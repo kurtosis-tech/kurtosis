@@ -32,12 +32,6 @@ const (
 	startingDefaultConnectionBlockStatus                                   = false
 )
 
-// Information that gets created with a service's registration
-type serviceRegistrationInfo struct {
-	ipAddr net.IP
-	serviceDirectory *enclave_data_volume.ServiceDirectory
-}
-
 // Information that gets created when a container is started for a service
 type serviceRunInfo struct {
 	// Service's container ID
@@ -66,6 +60,8 @@ type ServiceNetworkImpl struct {
 
 	dockerManager *docker_manager.DockerManager
 
+	dockerNetworkId string
+
 	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
@@ -74,18 +70,20 @@ type ServiceNetworkImpl struct {
 
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
-	serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo
+	serviceRegistrationInfo map[service_network_types.ServiceID]service_network_types.ServiceRegistrationInfo
 	serviceRunInfo map[service_network_types.ServiceID]serviceRunInfo
 
 	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
+
 }
 
 func NewServiceNetworkImpl(
 		isPartitioningEnabled bool,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
+		dockerNetworkId string,
 		enclaveDataVolume *enclave_data_volume.EnclaveDataVolume,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
@@ -95,6 +93,7 @@ func NewServiceNetworkImpl(
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
 		dockerManager:         dockerManager,
+		dockerNetworkId:       dockerNetworkId,
 		enclaveDataVolume:     enclaveDataVolume,
 		userServiceLauncher:   userServiceLauncher,
 		mutex:                 &sync.Mutex{},
@@ -102,7 +101,7 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceRegistrationInfo:  map[service_network_types.ServiceID]serviceRegistrationInfo{},
+		serviceRegistrationInfo:  map[service_network_types.ServiceID]service_network_types.ServiceRegistrationInfo{},
 		serviceRunInfo:           map[service_network_types.ServiceID]serviceRunInfo{},
 		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
 		networkingSidecarManager: networkingSidecarManager,
@@ -171,10 +170,6 @@ func (network ServiceNetworkImpl) RegisterService(
 		)
 	}
 
-	serviceDirectory, err := network.enclaveDataVolume.NewServiceDirectory(string(serviceId))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new service directory for service with ID '%v'", serviceId)
-	}
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
@@ -188,11 +183,16 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 
-	registrationInfo := serviceRegistrationInfo{
-		ipAddr:           ip,
-		serviceDirectory: serviceDirectory,
+	serviceRegistrationInfo := service_network_types.NewServiceRegistrationInfo(serviceId, ip)
+
+	serviceDirectory, err := network.enclaveDataVolume.NewServiceDirectory(string(serviceRegistrationInfo.ServiceGUID()))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new service directory for service with ID '%v'", serviceId)
 	}
-	network.serviceRegistrationInfo[serviceId] = registrationInfo
+
+	serviceRegistrationInfo.SetServiceDirectory(serviceDirectory)
+
+	network.serviceRegistrationInfo[serviceId] = serviceRegistrationInfo
 	shouldUndoRegistrationInfoAdd := true
 	defer func() {
 		// If an error occurs, the service ID won't be used so we need to delete it from the map
@@ -229,7 +229,7 @@ func (network *ServiceNetworkImpl) GenerateFiles(
 	if !found {
 		return nil, stacktrace.NewError("Cannot generate files for service '%v' as no service with that ID has been registered", serviceId)
 	}
-	serviceDirectory := registrationInfo.serviceDirectory
+	serviceDirectory := registrationInfo.ServiceDirectory()
 
 	generatedFilesRelativeFilepaths := map[string]string{}
 	for userCreatedFileKey, fileGenerationOptions := range filesToGenerate {
@@ -265,7 +265,7 @@ func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_typ
 	if !found {
 		return nil, stacktrace.NewError("Cannot load static files for service '%v' as no service with that ID has been registered", serviceId)
 	}
-	serviceDirectory := registrationInfo.serviceDirectory
+	serviceDirectory := registrationInfo.ServiceDirectory()
 
 	staticFileCache, err := network.enclaveDataVolume.GetStaticFileCache()
 	if err != nil {
@@ -368,9 +368,9 @@ func (network *ServiceNetworkImpl) StartService(
 
 	serviceContainerId, hostPortBindings, err := network.userServiceLauncher.Launch(
 		ctx,
-		serviceId,
-		registrationInfo.ipAddr,
+		registrationInfo,
 		imageName,
+		network.dockerNetworkId,
 		usedPorts,
 		entrypointArgs,
 		cmdArgs,
@@ -389,7 +389,7 @@ func (network *ServiceNetworkImpl) StartService(
 	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, serviceId, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Add(ctx, registrationInfo.ServiceGUID(), serviceContainerId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
@@ -483,7 +483,7 @@ func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.
 		return nil, stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
 	}
 
-	return registrationInfo.ipAddr, nil
+	return registrationInfo.IpAddr(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
@@ -590,8 +590,12 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		}
 		delete(network.serviceRunInfo, serviceId)
 		logrus.Debugf("Successfully stopped container ID")
+		logrus.Debugf("Disconnecting container ID '%v' from network ID '%v'...", serviceContainerId, network.dockerNetworkId)
+		if err := network.dockerManager.DisconnectContainerFromNetwork(ctx, serviceContainerId, network.dockerNetworkId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred disconnecting the container with ID %v from network with ID %v", serviceContainerId, network.dockerNetworkId)
+		}
 	}
-	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.ipAddr)
+	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.IpAddr())
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
 	if network.isPartitioningEnabled && foundSidecar {
@@ -618,7 +622,7 @@ NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 func updateIpTables(
 		ctx context.Context,
 		targetBlocklists map[service_network_types.ServiceID]*service_network_types.ServiceIDSet,
-		serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
+		serviceRegistrationInfo map[service_network_types.ServiceID]service_network_types.ServiceRegistrationInfo,
 		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 	for serviceId, newBlocklist := range targetBlocklists {
@@ -632,7 +636,7 @@ func updateIpTables(
 					serviceId,
 					serviceIdToBlock)
 			}
-			allIpsToBlock = append(allIpsToBlock, infoForService.ipAddr)
+			allIpsToBlock = append(allIpsToBlock, infoForService.IpAddr())
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
@@ -650,5 +654,3 @@ func updateIpTables(
 	}
 	return nil
 }
-
-

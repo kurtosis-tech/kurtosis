@@ -195,7 +195,6 @@ func createServiceNetworkAndLambdaStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
-		dockerNetworkId,
 		enclaveId,
 	)
 
@@ -209,6 +208,7 @@ func createServiceNetworkAndLambdaStore(
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
+		dockerNetworkId,
 		enclaveDataVol,
 		userServiceLauncher,
 		networkingSidecarManager)

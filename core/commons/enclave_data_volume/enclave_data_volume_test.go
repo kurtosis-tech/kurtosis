@@ -34,7 +34,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	assert.Equal(t, 1, len(files))
 
 	createdDir := files[0]
-	// We add a UUID to each service so they don't conflict, so the name won't match exactly
+	// We add a GUID to each service so they don't conflict, so the name won't match exactly
 	// This is why we use "contains"
 	strings.Contains(createdDir.Name(), testServiceId)
 
