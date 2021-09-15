@@ -40,8 +40,6 @@ const (
 	successExitCode = 0
 	failureExitCode = 1
 
-	defaultContainerStopTimeout = 1
-
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
@@ -103,8 +101,9 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
+	// TODO parallelize Lambda & service network destruction for perf
 	defer func() {
-		if err := serviceNetwork.Destroy(context.Background(), defaultContainerStopTimeout); err != nil {
+		if err := serviceNetwork.Destroy(context.Background()); err != nil {
 			logrus.Errorf("An error occurred while destroying the service network:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
@@ -223,7 +222,7 @@ func createServiceNetworkAndLambdaStore(
 		enclaveId,
 	)
 
-	lambdaStore := lambda_store.NewLambdaStore(lambdaLauncher)
+	lambdaStore := lambda_store.NewLambdaStore(dockerManager, lambdaLauncher)
 
 	return serviceNetwork, lambdaStore, nil
 }

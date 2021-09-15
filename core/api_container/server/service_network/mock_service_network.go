@@ -70,7 +70,7 @@ func (m MockServiceNetwork) GetServiceEnclaveDataVolMntDirpath(serviceId service
 	return volMntDirPath, nil
 }
 
-func (m MockServiceNetwork) Destroy(ctx context.Context, containerStopTimeout time.Duration) error {
+func (m MockServiceNetwork) Destroy(ctx context.Context) error {
 	panic("This is unimplemented for the mock network")
 }
 
