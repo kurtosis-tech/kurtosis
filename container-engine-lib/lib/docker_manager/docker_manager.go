@@ -268,20 +268,20 @@ func (manager DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	logrus.Debugf("Checking if image '%v' is available locally...", dockerImage)
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
 	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
-	logrus.Debugf("Is image available locally?: %v", imageExistsLocally)
+	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
 
 	if !imageExistsLocally {
-		logrus.Debugf("Image doesn't exist locally, so attempting to pull it...")
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.pullImage(context, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
-		logrus.Debugf("Image successfully pulled from remote to local")
+		logrus.Tracef("Image successfully pulled from remote to local")
 	}
 
 	networks, err := manager.getNetworksByFilter(context, "id", networkId)
