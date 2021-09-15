@@ -1,4 +1,6 @@
 # TBD
+
+# 1.19.10
 ### Fixes
 * Fixed LambdaStore not getting passed a `DockerManager`, which led to it segfaulting when it would go to tear down Lambdas upon `LambdaStore.Destroy`
 
