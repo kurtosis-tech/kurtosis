@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgraded to container-engine-lib 0.2.5, which fixes a bug where not specifying an image tag (which should default to `latest`) wouldn't actually pull the image if it didn't exist locally
 
 # 1.19.8
 ### Features
