@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Added extra debug logging to hunt down an issue where the `defer` to remove a container that doesn't start properly would try to remove a container with an empty container ID (which would return a "not found" from the Docker engine)
 
 # 0.2.5
 ### Fixes
