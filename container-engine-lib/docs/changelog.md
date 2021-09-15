@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.5
 ### Fixes
 * Fixed a bug where not specifying an image tag (which should default to `latest`) wouldn't actually pull the image if it didn't exist locally
 
