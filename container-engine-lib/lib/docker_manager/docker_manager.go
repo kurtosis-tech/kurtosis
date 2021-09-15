@@ -330,6 +330,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage,
 		)
 	}
+	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
