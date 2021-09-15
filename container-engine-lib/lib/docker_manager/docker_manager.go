@@ -262,7 +262,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			volumeMounts map[string]string,
 			needsAccessToDockerHostMachine bool) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
 
-	// If the user passed in a Docker iamge that doesn't have a tag separator (indicating no tag was specified), manually append
+	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
 	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
