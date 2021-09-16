@@ -112,7 +112,7 @@ func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context
 	initCmd := generateIpTablesInitCmd()
 
 	logrus.Infof(
-		"Running iptables init command '%v' in sidecar container '%v' attached to service with ID '%v'...",
+		"Running iptables init command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
 		initCmd,
 		sidecar.containerId,
 		sidecar.serviceGUID)
@@ -123,7 +123,7 @@ func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context
 			initCmd)
 	}
 	sidecar.chainInUse = initialKurtosisIpTablesChain
-	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceGUID)
+	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
 	return nil
 }
 
@@ -148,7 +148,7 @@ func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, bl
 	updateCmd := generateIpTablesUpdateCmd(backgroundChain, blockedIps)
 
 	logrus.Infof(
-		"Running iptables update command '%v' in sidecar container '%v' attached to service with ID '%v'...",
+		"Running iptables update command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
 		updateCmd,
 		sidecar.containerId,
 		sidecar.serviceGUID)
@@ -156,7 +156,7 @@ func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, bl
 		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'", updateCmd)
 	}
 	sidecar.chainInUse = backgroundChain
-	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceGUID)
+	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
 	return nil
 }
 

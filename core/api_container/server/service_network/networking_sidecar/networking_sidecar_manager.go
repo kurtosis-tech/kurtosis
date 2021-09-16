@@ -103,7 +103,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred starting the sidecar container attached to service with ID '%v'",
+			"An error occurred starting the sidecar container attached to service with GUID '%v'",
 			serviceGUID,
 		)
 	}

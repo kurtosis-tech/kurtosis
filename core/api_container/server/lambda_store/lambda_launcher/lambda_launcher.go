@@ -53,7 +53,7 @@ func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainer
 
 func (launcher LambdaLauncher) Launch(
 		ctx context.Context,
-		lambdaGUID lambda_store_types.LambdaGUID,
+		lambdaID lambda_store_types.LambdaID,
 		containerImage string,
 		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient, lambdaPortHostPortBinding *nat.PortBinding, resultErr error) {
 
@@ -86,6 +86,8 @@ func (launcher LambdaLauncher) Launch(
 		launcher.enclaveDataVolName: kurtosis_lambda_docker_api.ExecutionVolumeMountpoint,
 	}
 
+	lambdaGUID := newLambdaGUID(lambdaID)
+
 	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		containerImage,
@@ -94,7 +96,7 @@ func (launcher LambdaLauncher) Launch(
 		nil,	// Lambda containers don't run in interactive mode
 		launcher.dockerNetworkId,
 		lambdaIpAddr,
-		map[docker_manager.ContainerCapability]bool{}, // No extra capapbilities needed for modules
+		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for modules
 		docker_manager.DefaultNetworkMode,
 		usedPorts,
 		launcher.shouldPublishPorts,
@@ -131,20 +133,23 @@ func (launcher LambdaLauncher) Launch(
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct lambda
 	)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "Couldn't dial lambda container '%v' at %v", lambdaGUID, lambdaSocket)
+		return "", nil, nil, nil, stacktrace.Propagate(err, "Couldn't dial lambda container '%v' at %v", lambdaID, lambdaSocket)
 	}
 	lambdaClient := kurtosis_lambda_rpc_api_bindings.NewLambdaServiceClient(conn)
 
 	logrus.Debugf("Waiting for lambda container to become available...")
 	if err := waitUntilLambdaContainerIsAvailable(ctx, lambdaClient); err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for lambda container '%v' to become available", lambdaGUID)
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for lambda container '%v' to become available", lambdaID)
 	}
-	logrus.Debugf("Lambda container '%v' became available", lambdaGUID)
+	logrus.Debugf("Lambda container '%v' became available", lambdaID)
 
 	shouldDestroyContainer = false
 	return containerId, lambdaIpAddr, lambdaClient, resultHostPortBinding, nil
 }
 
+// ==========================================================================================
+//                                   Private helper functions
+// ==========================================================================================
 func waitUntilLambdaContainerIsAvailable(ctx context.Context, client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForLambdaAvailabilityTimeout)
 	defer cancelFunc()
@@ -152,4 +157,11 @@ func waitUntilLambdaContainerIsAvailable(ctx context.Context, client kurtosis_la
 		return stacktrace.Propagate(err, "An error occurred waiting for the Lambda container to become available")
 	}
 	return nil
+}
+
+func newLambdaGUID(lambdaID lambda_store_types.LambdaID) lambda_store_types.LambdaGUID {
+	now := time.Now()
+	nowSec := now.Unix()
+	registrationTimestampStr := strconv.FormatInt(nowSec, 10)
+	return lambda_store_types.LambdaGUID(string(lambdaID) + "_" + registrationTimestampStr)
 }

@@ -28,11 +28,12 @@ func TestUpdateIpTables(t *testing.T) {
 		mockSidecars[serviceId] = sidecar
 	}
 
-	registrationInfo := map[service_network_types.ServiceID]service_network_types.ServiceRegistrationInfo{}
+	registrationInfo := map[service_network_types.ServiceID]serviceRegistrationInfo{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
+		serviceGUID := newServiceGUID(serviceId)
 		ip := testIpFromInt(i)
-		registrationInfo[serviceId] = service_network_types.NewServiceRegistrationInfo(serviceId, ip)
+		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, ipAddr: ip}
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent

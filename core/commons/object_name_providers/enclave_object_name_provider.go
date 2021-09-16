@@ -49,7 +49,7 @@ func (nameProvider *EnclaveObjectNameProvider) ForUserServiceContainer(serviceGU
 }
 
 func (nameProvider *EnclaveObjectNameProvider) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service_network_types.ServiceGUID) string {
-	return nameProvider.combineElementsWithEnclaveId([]string{
+	return nameProvider.combineElementsWithEnclaveId([]string{// TODO Switch order of these
 		string(serviceGUIDSidecarAttachedTo),
 		networkingSidecarContainerNameSuffix,
 	})

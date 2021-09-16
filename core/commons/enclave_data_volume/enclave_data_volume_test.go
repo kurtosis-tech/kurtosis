@@ -6,6 +6,7 @@
 package enclave_data_volume
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -20,8 +21,8 @@ func TestNewServiceDirectory(t *testing.T) {
 
 	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
-	testServiceId := "test-service"
-	svcDir, err := enclaveDir.NewServiceDirectory(testServiceId)
+	testServiceGUID := service_network_types.ServiceGUID("test-service")
+	svcDir, err := enclaveDir.GetServiceDirectory(testServiceGUID)
 	assert.Nil(t, err)
 
 	// Test that all-services dir got created
@@ -34,17 +35,16 @@ func TestNewServiceDirectory(t *testing.T) {
 	assert.Equal(t, 1, len(files))
 
 	createdDir := files[0]
-	// We add a GUID to each service so they don't conflict, so the name won't match exactly
-	// This is why we use "contains"
-	strings.Contains(createdDir.Name(), testServiceId)
+
+	assert.Equal(t, createdDir.Name(),string(testServiceGUID))
 
 	absoluteSvcDirpath := svcDir.absoluteDirpath
 	assert.Equal(t, allSvcsDirpath, path.Dir(absoluteSvcDirpath))
-	assert.True(t, strings.Contains(absoluteSvcDirpath, testServiceId))
+	assert.True(t, strings.Contains(absoluteSvcDirpath, string(testServiceGUID)))
 
 	relativeSvcDirpath := svcDir.dirpathRelativeToVolRoot
 	assert.Equal(t, path.Join(allServicesDirname), path.Dir(relativeSvcDirpath))
-	assert.True(t, strings.Contains(relativeSvcDirpath, testServiceId))
+	assert.True(t, strings.Contains(relativeSvcDirpath, string(testServiceGUID)))
 }
 
 func TestGetArtifactCache(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
+	"net"
 )
 
 /*
@@ -47,7 +48,9 @@ Returns:
  */
 func (launcher UserServiceLauncher) Launch(
 		ctx context.Context,
-		serviceRegistrationInfo service_network_types.ServiceRegistrationInfo,
+		serviceGUID service_network_types.ServiceGUID,
+		dockerContainerAlias string,
+		ipAddr net.IP,
 		imageName string,
 		dockerNetworkId string,
 		usedPorts map[nat.Port]bool,
@@ -66,7 +69,7 @@ func (launcher UserServiceLauncher) Launch(
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceRegistrationInfo.ServiceGUID(), usedArtifactIdSet)
+	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
@@ -94,11 +97,11 @@ func (launcher UserServiceLauncher) Launch(
 	containerId, hostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
 		ctx,
 		imageName,
-		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceRegistrationInfo.ServiceGUID()),
-		serviceRegistrationInfo.Alias(),
+		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceGUID),
+		dockerContainerAlias,
 		nil,	// User services won't run in interactive mode
 		dockerNetworkId,
-		serviceRegistrationInfo.IpAddr(),
+		ipAddr,
 		map[docker_manager.ContainerCapability]bool{},
 		docker_manager.DefaultNetworkMode,
 		usedPorts,
