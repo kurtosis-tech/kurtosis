@@ -277,7 +277,7 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	if !imageExistsLocally {
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.pullImage(context, dockerImage)
+		err = manager.PullImage(context, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
@@ -700,6 +700,17 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
+func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
+	manager.log.Infof("Pulling image '%s'...", imageName)
+	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
+	}
+	defer out.Close()
+	io.Copy(ioutil.Discard, out)
+	return nil
+}
+
 
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
@@ -741,17 +752,6 @@ func (manager DockerManager) getNetworksByFilter(ctx context.Context, filterKey 
 		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search for %v = %v", filterKey, filterValue)
 	}
 	return networks, nil
-}
-
-func (manager DockerManager) pullImage(context context.Context, imageName string) (err error) {
-	manager.log.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
-	}
-	defer out.Close()
-	io.Copy(ioutil.Discard, out)
-	return nil
 }
 
 /*

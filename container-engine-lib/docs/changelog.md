@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Made `PullImage` a public function on `DockerManager`
 
 # 0.2.7
 ### Features
