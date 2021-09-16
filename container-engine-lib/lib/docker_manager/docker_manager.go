@@ -417,7 +417,12 @@ func (manager DockerManager) CreateAndStartContainer(
 
 			foundHostPortBinding := false
 			for _, interfaceBinding := range allInterfaceBindings {
-				logrus.Tracef("Examining interface binding with host IP '%v' and port '%v' for port '%v'...", port)
+				logrus.Tracef(
+					"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
+					interfaceBinding.HostIP,
+					interfaceBinding.HostPort,
+					port,
+				)
 				if interfaceBinding.HostIP == expectedHostIp {
 					logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
 					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
