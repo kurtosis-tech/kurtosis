@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.7
 ### Features
 * Added extra trace logging to Docker manager
 
