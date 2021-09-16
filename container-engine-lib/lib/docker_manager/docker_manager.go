@@ -386,6 +386,8 @@ func (manager DockerManager) CreateAndStartContainer(
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
 	if shouldPublishAllPorts {
+		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
+		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
 			logrus.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
 			containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
@@ -416,40 +418,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
-			for port, allInterfaceBindings := range allInterfaceHostPortBindings {
-				// Skip ports that aren't a part of the usedPorts set that we passed in, so that the portBindings
-				//  result will have a 1:1 mapping
-				if _, found := usedPortsSet[port]; !found {
-					logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
-					continue
-				}
-
-				foundHostPortBinding := false
-				for _, interfaceBinding := range allInterfaceBindings {
-					logrus.Tracef(
-						"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
-						interfaceBinding.HostIP,
-						interfaceBinding.HostPort,
-						port,
-					)
-					if interfaceBinding.HostIP == expectedHostIp {
-						logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
-						candidatePortBindingsOnExpectedInterface[port] = &nat.PortBinding{
-							HostIP:   interfaceBinding.HostIP,
-							HostPort: interfaceBinding.HostPort,
-						}
-						foundHostPortBinding = true
-						break
-					}
-				}
-				if !foundHostPortBinding {
-					// If this happens, it's likely because of https://github.com/moby/moby/issues/42860
-					// Eject, and try the whole thing again in a little bit
-					break
-				}
-			}
-			//
+			candidatePortBindingsOnExpectedInterface := getHostPortBindingsFromDockerInspectResult(usedPortsSet, allInterfaceHostPortBindings)
 			if len(candidatePortBindingsOnExpectedInterface) == len(usedPortsSet) {
 				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
 				break
@@ -870,4 +839,44 @@ func (manager *DockerManager) getContainerCfg(
 		Env:          envVariablesSlice,
 	}
 	return nodeConfigPtr, nil
+}
+
+// Takes in a PortMap (as reported by Docker container inspect) and returns
+// If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
+func getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
+	result := map[nat.Port]*nat.PortBinding{}
+	for port, allInterfaceBindings := range allInterfaceHostPortBindings {
+		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
+		//  result will have a 1:1 mapping
+		if _, found := usedPortsSet[port]; !found {
+			logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
+			continue
+		}
+
+		foundHostPortBinding := false
+		for _, interfaceBinding := range allInterfaceBindings {
+			logrus.Tracef(
+				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
+				interfaceBinding.HostIP,
+				interfaceBinding.HostPort,
+				port,
+			)
+			if interfaceBinding.HostIP == expectedHostIp {
+				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
+				result[port] = &nat.PortBinding{
+					HostIP:   interfaceBinding.HostIP,
+					HostPort: interfaceBinding.HostPort,
+				}
+				foundHostPortBinding = true
+				break
+			}
+		}
+		if !foundHostPortBinding {
+			// If we're missing a host port binding, it's likely because of https://github.com/moby/moby/issues/42860
+			// Eject, which will result in an incomplete candidate host port bindings map, which will
+			//  retry the whole thing again in a little bit
+			break
+		}
+	}
+	return result
 }
