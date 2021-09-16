@@ -318,11 +318,11 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	resp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, name)
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, name)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", name, dockerImage)
 	}
-	containerId = resp.ID
+	containerId = containerCreateResp.ID
 	if containerId == "" {
 		return "", nil, stacktrace.NewError(
 			"Creation of container '%v' from image '%v' succeeded without error, but we didn't get a container ID back - this is VERY strange!",
@@ -379,7 +379,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
 	if shouldPublishAllPorts {
-		resp, err := manager.dockerClient.ContainerInspect(context, containerId)
+		containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(
 				err,
@@ -387,7 +387,8 @@ func (manager DockerManager) CreateAndStartContainer(
 					"container which is necessary for determining which host ports the container's ports were bound to",
 			)
 		}
-		networkSettings := resp.NetworkSettings
+		logrus.Tracef("Container inspect response: %+v", containerInspectResp)
+		networkSettings := containerInspectResp.NetworkSettings
 		if networkSettings == nil {
 			return "", nil, stacktrace.NewError(
 				"We got a response from inspecting container '%v' which is necessary for determining the " +
@@ -395,6 +396,7 @@ func (manager DockerManager) CreateAndStartContainer(
 				containerId,
 			)
 		}
+		logrus.Tracef("Network settings: %+v", networkSettings)
 		allInterfaceHostPortBindings := networkSettings.Ports
 		if allInterfaceHostPortBindings == nil {
 			return "", nil, stacktrace.NewError(
@@ -402,18 +404,22 @@ func (manager DockerManager) CreateAndStartContainer(
 				containerId,
 			)
 		}
+		logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 		portBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
 		for port, allInterfaceBindings := range allInterfaceHostPortBindings {
 			// Skip ports that aren't a part of the usedPorts set that we passed in, so that the portBindings
 			//  result will have a 1:1 mapping
 			if _, found := usedPortsSet[port]; !found {
+				logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
 				continue
 			}
 
 			foundHostPortBinding := false
 			for _, interfaceBinding := range allInterfaceBindings {
+				logrus.Tracef("Examining interface binding with host IP '%v' and port '%v' for port '%v'...", port)
 				if interfaceBinding.HostIP == expectedHostIp {
+					logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
 					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
 						HostIP:   interfaceBinding.HostIP,
 						HostPort: interfaceBinding.HostPort,
