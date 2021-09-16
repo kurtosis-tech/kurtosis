@@ -423,6 +423,8 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915211458-2c8eac97be9d
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915211458-2c8eac97be9d/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915214951-2af6664d0dc3 h1:ZGpIa2BF+TQ+HvVZrM0YvJrMhs8AV/O5G2FkUc6CLKA=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915214951-2af6664d0dc3/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782 h1:2MVbsgt1XLrBF65+hUJfSbQHFi/3SBo6ex+eZeslYN4=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b h1:opxsLysuegttd+dYDKi+DEoiKQ+swJ419ujGPhHSIGg=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210803193237-d8bcc867ae0e/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
