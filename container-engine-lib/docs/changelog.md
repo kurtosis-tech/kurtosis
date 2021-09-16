@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.8
+### Features
+* Made `PullImage` a public function on `DockerManager`
+
 # 0.2.7
 ### Features
 * Added extra trace logging to Docker manager
