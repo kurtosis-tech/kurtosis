@@ -31,6 +31,9 @@ import (
 const (
 	defaultPartitionId                   service_network_types.PartitionID = "default"
 	startingDefaultConnectionBlockStatus                                   = false
+
+	// We don't give any time whatsoever for services to stop when we're destroying the service network (because there's no need)
+	destructionContainerStopTimeout = 1 * time.Millisecond
 )
 
 // Information that gets created with a service's registration
@@ -515,9 +518,7 @@ func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId 
 }
 
 // Destroy all services the network is tracking, as well as make the network not usable anymore
-func (network *ServiceNetworkImpl) Destroy(
-	ctx context.Context,
-	containerStopTimeout time.Duration) error {
+func (network *ServiceNetworkImpl) Destroy(ctx context.Context) error {
 
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -531,10 +532,11 @@ func (network *ServiceNetworkImpl) Destroy(
 		serviceIdsToRemove[serviceId] = true
 	}
 
+	// TODO Parallelize this to increase perf!
 	//Adding an array that holds any services that are not removed successfully
 	containerStopErrors := []error{}
 	for serviceId := range serviceIdsToRemove {
-		if err := network.removeServiceWithoutMutex(ctx, serviceId, containerStopTimeout); err != nil {
+		if err := network.removeServiceWithoutMutex(ctx, serviceId, destructionContainerStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred removing service with ID '%v'",
@@ -591,7 +593,6 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	delete(network.serviceRegistrationInfo, serviceId)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
-
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
 	if foundRunInfo {
 		serviceContainerId := runInfo.containerId

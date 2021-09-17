@@ -25,7 +25,7 @@ import (
 const (
 	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
 	//  to give it some time to do so
-	apiContainerStopTimeout = 30 * time.Second
+	apiContainerStopTimeout = 3 * time.Minute
 
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"

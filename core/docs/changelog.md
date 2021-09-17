@@ -4,6 +4,23 @@
 * Add a global unique identifier for lambdas `LambdaGUID` to avoid docker containers collisions and to match docker container name with lambdas folders in enclave data volume
 * Disconnect service container from the network when a service is removed with `ServiceNetworkImpl.RemoveService()` method
 
+# 1.19.11
+### Changes
+* Upgrade to `container-engine-lib` 0.2.7, which has even more logging to track down the empty container ID issue
+
+# 1.19.10
+### Fixes
+* Fixed LambdaStore not getting passed a `DockerManager`, which led to it segfaulting when it would go to tear down Lambdas upon `LambdaStore.Destroy`
+
+### Changes
+* Changed the grace time that an API container has to kill all the services it's managing from 30 seconds to 3 minutes
+* When destroying a `ServiceNetworkImpl`, only give the containers 1ms to stop (because we're destroying the network - no need to do so gracefully)
+* Upgrade to `container-engine-lib` 0.2.6, which has extra debugging to track down an issue with container ID getting set to emptystring
+
+# 1.19.9
+### Fixes
+* Upgraded to container-engine-lib 0.2.5, which fixes a bug where not specifying an image tag (which should default to `latest`) wouldn't actually pull the image if it didn't exist locally
+
 # 1.19.8
 ### Features
 * Also push `latest` tag versions of the API container, initializer container, and Javascript REPL image so that the CLI can consume them

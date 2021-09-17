@@ -30,18 +30,19 @@ type LambdaStore struct {
 
 	mutex *sync.Mutex
 
+	dockerManager *docker_manager.DockerManager
+
 	// lambda_id -> IP addr, container ID, etc.
 	lambdas map[lambda_store_types.LambdaID]lambdaInfo
 
 	lambdaLauncher *lambda_launcher.LambdaLauncher
-
-	dockerManager *docker_manager.DockerManager
 }
 
-func NewLambdaStore(lambdaLauncher *lambda_launcher.LambdaLauncher) *LambdaStore {
+func NewLambdaStore(dockerManager *docker_manager.DockerManager, lambdaLauncher *lambda_launcher.LambdaLauncher) *LambdaStore {
 	return &LambdaStore{
-		isDestroyed: false,
+		isDestroyed:    false,
 		mutex:          &sync.Mutex{},
+		dockerManager:  dockerManager,
 		lambdas:        map[lambda_store_types.LambdaID]lambdaInfo{},
 		lambdaLauncher: lambdaLauncher,
 	}
