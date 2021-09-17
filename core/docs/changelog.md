@@ -1,4 +1,6 @@
 # TBD
+
+# 1.19.12
 ### Features
 * Add a global unique identifier for services `ServiceGUID` to avoid docker containers collisions and to match docker container name with services folders in enclave data volume
 * Add a global unique identifier for lambdas `LambdaGUID` to avoid docker containers collisions and to match docker container name with lambdas folders in enclave data volume
