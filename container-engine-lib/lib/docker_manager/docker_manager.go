@@ -841,7 +841,7 @@ func (manager *DockerManager) getContainerCfg(
 	return nodeConfigPtr, nil
 }
 
-// Takes in a PortMap (as reported by Docker container inspect) and returns
+// Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
 // If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
 func getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
 	result := map[nat.Port]*nat.PortBinding{}
