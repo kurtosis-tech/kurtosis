@@ -8,9 +8,9 @@ package files_artifact_expander
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -56,11 +56,11 @@ func NewFilesArtifactExpander(enclaveDataVolName string, dockerManager *docker_m
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		ctx context.Context,
-		serviceId service_network_types.ServiceID, // Service ID for whom the artifacts are being expanded into volumes
+		serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
 		artifactIdsToExpand map[string]bool) (map[string]string, error) {
 	artifactIdsToVolNames := map[string]string{}
 	for artifactId := range artifactIdsToExpand {
-		destVolName := expander.enclaveObjNameProvider.ForFilesArtifactExpansionVolume(string(serviceId), artifactId)
+		destVolName := expander.enclaveObjNameProvider.ForFilesArtifactExpansionVolume(serviceGUID, artifactId)
 		artifactIdsToVolNames[artifactId] = destVolName
 	}
 
@@ -88,7 +88,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			destVolName:                  destVolMntDirpathOnExpander,
 		}
 
-		containerName := expander.enclaveObjNameProvider.ForFilesArtifactExpanderContainer(serviceId, artifactId)
+		containerName := expander.enclaveObjNameProvider.ForFilesArtifactExpanderContainer(serviceGUID, artifactId)
 		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running the expander container")
 		}
