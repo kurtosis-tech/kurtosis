@@ -6,6 +6,7 @@
 package enclave_data_volume
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"path"
@@ -19,9 +20,9 @@ func TestGetFile(t *testing.T) {
 
 	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
 
-	serviceId := "someService"
+	serviceGUID := service_network_types.ServiceGUID("someService")
 
-	svcDir, err := enclaveDir.NewServiceDirectory(serviceId)
+	svcDir, err := enclaveDir.GetServiceDirectory(serviceGUID)
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
@@ -43,11 +44,11 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(
 		t,
 		svcAbsDirpath,
-		path.Dir(file.absoluteFilepath),
+		path.Dir(file.GetAbsoluteFilepath()),
 	)
 	assert.Equal(
 		t,
 		svcRelDirpath,
-		path.Dir(file.filepathRelativeToVolRoot),
+		path.Dir(file.GetFilepathRelativeToVolRoot()),
 	)
 }

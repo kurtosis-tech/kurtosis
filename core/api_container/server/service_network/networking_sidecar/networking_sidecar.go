@@ -65,8 +65,8 @@ type ipTablesChain string
 type StandardNetworkingSidecar struct {
 	mutex *sync.Mutex
 
-	// ID of the service this sidecar container is attached to
-	serviceId service_network_types.ServiceID
+	// GUID of the service this sidecar container is attached to
+	serviceGUID service_network_types.ServiceGUID
 
 	// Tracks which Kurtosis chain is the primary chain, so we know
 	//  which chain is in the background that we can flush and rebuild
@@ -80,10 +80,10 @@ type StandardNetworkingSidecar struct {
 	execCmdExecutor sidecarExecCmdExecutor
 }
 
-func NewStandardNetworkingSidecar(serviceId service_network_types.ServiceID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
+func NewStandardNetworkingSidecar(serviceGUID service_network_types.ServiceGUID, containerId string, ipAddr net.IP, execCmdExecutor sidecarExecCmdExecutor) *StandardNetworkingSidecar {
 	return &StandardNetworkingSidecar{
 		mutex:           &sync.Mutex{},
-		serviceId:       serviceId,
+		serviceGUID:     serviceGUID,
 		chainInUse:      undefinedIpTablesChain,
 		containerId:     containerId,
 		ipAddr:          ipAddr,
@@ -112,10 +112,10 @@ func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context
 	initCmd := generateIpTablesInitCmd()
 
 	logrus.Infof(
-		"Running iptables init command '%v' in sidecar container '%v' attached to service with ID '%v'...",
+		"Running iptables init command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
 		initCmd,
 		sidecar.containerId,
-		sidecar.serviceId)
+		sidecar.serviceGUID)
 	if err := sidecar.execCmdExecutor.exec(ctx, initCmd); err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -123,7 +123,7 @@ func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context
 			initCmd)
 	}
 	sidecar.chainInUse = initialKurtosisIpTablesChain
-	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
+	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
 	return nil
 }
 
@@ -148,15 +148,15 @@ func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, bl
 	updateCmd := generateIpTablesUpdateCmd(backgroundChain, blockedIps)
 
 	logrus.Infof(
-		"Running iptables update command '%v' in sidecar container '%v' attached to service with ID '%v'...",
+		"Running iptables update command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
 		updateCmd,
 		sidecar.containerId,
-		sidecar.serviceId)
+		sidecar.serviceGUID)
 	if err := sidecar.execCmdExecutor.exec(ctx, updateCmd); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'", updateCmd)
 	}
 	sidecar.chainInUse = backgroundChain
-	logrus.Infof("Successfully executed iptables update command against service with ID '%v'", sidecar.serviceId)
+	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
 	return nil
 }
 

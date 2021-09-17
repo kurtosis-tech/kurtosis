@@ -1,5 +1,11 @@
 # TBD
 
+# 1.19.12
+### Features
+* Add a global unique identifier for services `ServiceGUID` to avoid docker containers collisions and to match docker container name with services folders in enclave data volume
+* Add a global unique identifier for lambdas `LambdaGUID` to avoid docker containers collisions and to match docker container name with lambdas folders in enclave data volume
+* Disconnect service container from the network when a service is removed with `ServiceNetworkImpl.RemoveService()` method
+
 # 1.19.11
 ### Changes
 * Upgrade to `container-engine-lib` 0.2.7, which has even more logging to track down the empty container ID issue

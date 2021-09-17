@@ -8,9 +8,9 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"strings"
@@ -41,7 +41,7 @@ var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
 //                                        Interface
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Add(ctx context.Context, serviceId service_network_types.ServiceID, serviceContainerId string) (NetworkingSidecar, error)
+	Add(ctx context.Context, serviceId service_network_types.ServiceGUID, serviceContainerId string) (NetworkingSidecar, error)
 	Remove(ctx context.Context, sidecar NetworkingSidecar) error
 }
 
@@ -70,20 +70,20 @@ func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerMan
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Add(
 		ctx context.Context,
-		serviceId service_network_types.ServiceID,
+		serviceGUID service_network_types.ServiceGUID,
 		serviceContainerId string) (NetworkingSidecar, error) {
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting a free IP address for the sidecar container attached to service with ID '%v'",
-			serviceId)
+			"An error occurred getting a free IP address for the sidecar container attached to service with GUID '%v'",
+			serviceGUID)
 	}
 	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(
 		ctx,
 		networkingSidecarImageName,
-		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceId),
-		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceId),
+		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID),
+		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID),
 		nil,	// Sidecar containers don't run in interactive mode
 		manager.dockerNetworkId,
 		sidecarIp,
@@ -103,8 +103,8 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred starting the sidecar container attached to service with ID '%v'",
-			serviceId,
+			"An error occurred starting the sidecar container attached to service with GUID '%v'",
+			serviceGUID,
 		)
 	}
 
@@ -114,7 +114,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		sidecarContainerShWrapper)
 
 	sidecarContainer := NewStandardNetworkingSidecar(
-		serviceId,
+		serviceGUID,
 		sidecarContainerId,
 		sidecarIp,
 		*execCmdExecutor,

@@ -31,11 +31,9 @@ func TestUpdateIpTables(t *testing.T) {
 	registrationInfo := map[service_network_types.ServiceID]serviceRegistrationInfo{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
+		serviceGUID := newServiceGUID(serviceId)
 		ip := testIpFromInt(i)
-		registrationInfo[serviceId] = serviceRegistrationInfo{
-			ipAddr:           ip,
-			serviceDirectory: nil,
-		}
+		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, ipAddr: ip}
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent

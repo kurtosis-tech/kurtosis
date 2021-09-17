@@ -7,6 +7,7 @@ package lambda_store
 
 import (
 	"context"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
@@ -18,9 +19,10 @@ import (
 )
 
 type lambdaInfo struct {
-	containerId string
-	ipAddr net.IP
-	client kurtosis_lambda_rpc_api_bindings.LambdaServiceClient
+	containerId           string
+	ipAddr                net.IP
+	client                kurtosis_lambda_rpc_api_bindings.LambdaServiceClient
+	hostPortBinding *nat.PortBinding
 }
 
 type LambdaStore struct {
@@ -58,7 +60,7 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 	}
 
 	// NOTE: We don't use module host port bindings for now; we could expose them in the future if it's useful
-	containerId, containerIpAddr, client, _, err := store.lambdaLauncher.Launch(ctx, lambdaId, containerImage, serializedParams)
+	containerId, containerIpAddr, client, hostPortBinding, err := store.lambdaLauncher.Launch(ctx, lambdaId, containerImage, serializedParams)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -68,12 +70,14 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 		)
 	}
 
-	lambdaData := lambdaInfo{
+	lambdaInfo :=  lambdaInfo{
 		containerId: containerId,
-		ipAddr:      containerIpAddr,
+		ipAddr: containerIpAddr,
 		client: client,
+		hostPortBinding: hostPortBinding,
 	}
-	store.lambdas[lambdaId] = lambdaData
+
+	store.lambdas[lambdaId] = lambdaInfo
 	return nil
 }
 
