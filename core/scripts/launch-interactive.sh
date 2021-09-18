@@ -31,6 +31,7 @@ fi
 # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if
 #  ${1} exists, evaluate ${@}"
 "${cli_binary_filepath}" \
+    "sandbox" \
     "--kurtosis-api-image=${API_IMAGE}:${docker_tag}" \
     "--javascript-repl-image=${JAVASCRIPT_REPL_IMAGE}:${docker_tag}" \
     ${1+"${@}"}
