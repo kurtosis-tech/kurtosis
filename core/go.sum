@@ -425,6 +425,12 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915214951-2af6664d0dc3
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210915214951-2af6664d0dc3/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782 h1:2MVbsgt1XLrBF65+hUJfSbQHFi/3SBo6ex+eZeslYN4=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916214112-c45dab6b41bd h1:8MAz7M+G6DTESATIPZPTsTZ0AEGqSUH+az9KG5kon3k=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916214112-c45dab6b41bd/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916224854-b1db8a7b0c30 h1:BNQNdHpKTeXZypyKf3unfyzBg4363VgdLuN/YOP6KlY=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916224854-b1db8a7b0c30/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210918011244-673cbdd59ec5 h1:bzP5kBhOCHv0GWt1gslD40zrIswwPTZUTu2S4KbfBFc=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210918011244-673cbdd59ec5/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b h1:opxsLysuegttd+dYDKi+DEoiKQ+swJ419ujGPhHSIGg=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210803193237-d8bcc867ae0e/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
