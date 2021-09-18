@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.9
+### Fixes
+* Added retry logic when trying to get host port bindings for a container, to account for https://github.com/moby/moby/issues/42860
+
 # 0.2.8
 ### Features
 * Made `PullImage` a public function on `DockerManager`
