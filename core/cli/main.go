@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -119,6 +119,9 @@ func runMain() error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
+
+	pullImageBestEffort(dockerManager, apiContainerImage)
+	pullImageBestEffort(dockerManager, jsReplImage)
 
 	enclaveId := getEnclaveId()
 
@@ -262,4 +265,10 @@ func getEnclaveId() string {
 		time.Now().Format(enclaveIdTimestampFormat),
 		randomNumUint16,
 	)
+}
+
+func pullImageBestEffort(dockerManager *docker_manager.DockerManager, image string) {
+	if err := dockerManager.PullImage(context.Background(), image); err != nil {
+		logrus.Warnf("Failed to pull the latest version of image '%v'; you may be running an out-of-date version", image)
+	}
 }
