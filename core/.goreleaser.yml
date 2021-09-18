@@ -121,7 +121,7 @@ release:
     - cli
 
 brews:
-  - name: cli
+  - name: kurtosis
     ids:
       - cli
     tap:

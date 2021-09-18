@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Changed the name of the CLI's published Homebrew formula to `kurtosis` (was `cli`) so that users can do `brew upgrade kurtosis`
+* Required the subcommand `sandbox` to be passed in to start a sandbox enclave, to make room for extra commands
 
 # 1.19.13
 ### Features
