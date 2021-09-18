@@ -57,6 +57,13 @@ const (
 
 	// If no tag is specified for an image, this is the tag Dock
 	dockerDefaultTag = "latest"
+
+	// For some reason, when publish-all-ports is requested, Docker will return successfully from starting a
+	//  container, but without having bound the host ports
+	// See: https://github.com/moby/moby/issues/42860
+	// To work around this, we retry a few times
+	timeBetweenHostPortBindingChecks = 500 * time.Millisecond
+	maxNumHostPortBindingChecks = 4
 )
 
 // The dimensions of the TTY that the container should output to when in interactive mode
@@ -379,84 +386,54 @@ func (manager DockerManager) CreateAndStartContainer(
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
 	if shouldPublishAllPorts {
-		containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
-		if err != nil {
-			return "", nil, stacktrace.Propagate(
-				err,
-				"Publishing all ports was requested, but an error occurred inspecting the newly-started " +
-					"container which is necessary for determining which host ports the container's ports were bound to",
-			)
-		}
-		logrus.Tracef("Container inspect response: %+v", containerInspectResp)
-		networkSettings := containerInspectResp.NetworkSettings
-		if networkSettings == nil {
-			return "", nil, stacktrace.NewError(
-				"We got a response from inspecting container '%v' which is necessary for determining the " +
-					"exposed host ports, but the network settings object was nil",
-				containerId,
-			)
-		}
-		logrus.Tracef("Network settings: %+v", networkSettings)
-		allInterfaceHostPortBindings := networkSettings.Ports
-		if allInterfaceHostPortBindings == nil {
-			return "", nil, stacktrace.NewError(
-				"Pulbishing all ports was requested for container '%v', but the container host port bindings were null",
-				containerId,
-			)
-		}
-		logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
-
-		portBindingsOnExpectedInterface := map[nat.Port]*nat.PortBinding{}
-		for port, allInterfaceBindings := range allInterfaceHostPortBindings {
-			// Skip ports that aren't a part of the usedPorts set that we passed in, so that the portBindings
-			//  result will have a 1:1 mapping
-			if _, found := usedPortsSet[port]; !found {
-				logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
-				continue
-			}
-
-			foundHostPortBinding := false
-			for _, interfaceBinding := range allInterfaceBindings {
-				logrus.Tracef(
-					"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
-					interfaceBinding.HostIP,
-					interfaceBinding.HostPort,
-					port,
+		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
+		//  from Docker
+		for i := 0; i < maxNumHostPortBindingChecks; i++ {
+			logrus.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
+			containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
+			if err != nil {
+				return "", nil, stacktrace.Propagate(
+					err,
+					"Publishing all ports was requested, but an error occurred inspecting the newly-started "+
+						"container which is necessary for determining which host ports the container's ports were bound to",
 				)
-				if interfaceBinding.HostIP == expectedHostIp {
-					logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
-					portBindingsOnExpectedInterface[port] = &nat.PortBinding{
-						HostIP:   interfaceBinding.HostIP,
-						HostPort: interfaceBinding.HostPort,
-					}
-					foundHostPortBinding = true
-					break
-				}
 			}
-			if !foundHostPortBinding {
+			logrus.Tracef("Container inspect response: %+v", containerInspectResp)
+			networkSettings := containerInspectResp.NetworkSettings
+			if networkSettings == nil {
 				return "", nil, stacktrace.NewError(
-					"Publishing all ports was requested, but used port '%v' didn't result in a host machine binding on " +
-						"expected interface '%v'",
-					port,
-					expectedHostIp,
+					"We got a response from inspecting container '%v' which is necessary for determining the "+
+						"exposed host ports, but the network settings object was nil",
+					containerId,
 				)
 			}
+			logrus.Tracef("Network settings: %+v", networkSettings)
+			allInterfaceHostPortBindings := networkSettings.Ports
+			if allInterfaceHostPortBindings == nil {
+				return "", nil, stacktrace.NewError(
+					"Publishing all ports was requested for container '%v', but the container host port bindings were null",
+					containerId,
+				)
+			}
+			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
+
+			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
+			candidatePortBindingsOnExpectedInterface := getHostPortBindingsFromDockerInspectResult(usedPortsSet, allInterfaceHostPortBindings)
+			if len(candidatePortBindingsOnExpectedInterface) == len(usedPortsSet) {
+				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
+				break
+			}
+			time.Sleep(timeBetweenHostPortBindingChecks)
 		}
 
 		// Final verification that all used ports get a host machine port bindings
-		numUsedPorts := len(usedPortsSet)
-		numPortBindingsOnExpectedInterface := len(portBindingsOnExpectedInterface)
-		if numUsedPorts != numPortBindingsOnExpectedInterface {
+		if len(resultHostPortBindings) != len(usedPortsSet) {
 			return "", nil, stacktrace.NewError(
-				"Publishing all ports was requested, but there were %v used ports declared while only %v ports got " +
-					"host port bindings on the expected interface '%v'",
-				numUsedPorts,
-				numPortBindingsOnExpectedInterface,
+				"Publishing all ports was requested, but container '%v' never got host port bindings for all the user ports on host machine interface '%v'",
+				containerId,
 				expectedHostIp,
 			)
 		}
-
-		resultHostPortBindings = portBindingsOnExpectedInterface
 	}
 
 	functionFinishedSuccessfully = true
@@ -862,4 +839,44 @@ func (manager *DockerManager) getContainerCfg(
 		Env:          envVariablesSlice,
 	}
 	return nodeConfigPtr, nil
+}
+
+// Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
+// If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
+func getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
+	result := map[nat.Port]*nat.PortBinding{}
+	for port, allInterfaceBindings := range allInterfaceHostPortBindings {
+		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
+		//  result will have a 1:1 mapping
+		if _, found := usedPortsSet[port]; !found {
+			logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
+			continue
+		}
+
+		foundHostPortBinding := false
+		for _, interfaceBinding := range allInterfaceBindings {
+			logrus.Tracef(
+				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
+				interfaceBinding.HostIP,
+				interfaceBinding.HostPort,
+				port,
+			)
+			if interfaceBinding.HostIP == expectedHostIp {
+				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
+				result[port] = &nat.PortBinding{
+					HostIP:   interfaceBinding.HostIP,
+					HostPort: interfaceBinding.HostPort,
+				}
+				foundHostPortBinding = true
+				break
+			}
+		}
+		if !foundHostPortBinding {
+			// If we're missing a host port binding, it's likely because of https://github.com/moby/moby/issues/42860
+			// Eject, which will result in an incomplete candidate host port bindings map, which will
+			//  retry the whole thing again in a little bit
+			break
+		}
+	}
+	return result
 }
