@@ -1,4 +1,6 @@
 # TBD
+
+# 1.19.13
 ### Features
 * The CLI makes a best-effort attempt to pull the latest version of the API container & Javascript REPL images on each run
 
