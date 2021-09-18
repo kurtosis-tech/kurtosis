@@ -3,6 +3,9 @@
 * Changed the name of the CLI's published Homebrew formula to `kurtosis` (was `cli`) so that users can do `brew upgrade kurtosis`
 * Required the subcommand `sandbox` to be passed in to start a sandbox enclave, to make room for extra commands
 
+### Fixes
+* Fix `launch-interactive.sh` for Cobra arg-parsing
+
 # 1.19.13
 ### Features
 * The CLI makes a best-effort attempt to pull the latest version of the API container & Javascript REPL images on each run
