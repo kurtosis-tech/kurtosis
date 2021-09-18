@@ -1,4 +1,9 @@
 # TBD
+### Features
+* The CLI makes a best-effort attempt to pull the latest version of the API container & Javascript REPL images on each run
+
+### Fixes
+* Upgrade to `container-engine-lib` 0.2.9, which fixes the issue with host ports not getting bound
 
 # 1.19.12
 ### Features
