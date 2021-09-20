@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"net"
@@ -32,20 +31,8 @@ type ServiceNetwork interface {
 	RegisterService(
 		serviceId service_network_types.ServiceID,
 		partitionId service_network_types.PartitionID,
-	) (net.IP, error)
+	) (net.IP, string, error)
 
-	// Generates files in a location in the enclave data volume allocated to the given service
-	GenerateFiles(
-		serviceId service_network_types.ServiceID,
-		filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions,
-	) (map[string]string, error)
-
-	// Copies files from the static file cache to the given service's filespace
-	// Returns a mapping of static_file_id -> filepath_relative_to_enclave_data_vol_root
-	LoadStaticFiles(
-		serviceId service_network_types.ServiceID,
-		staticFileIdKeys map[string]bool,
-	) (map[string]string, error)
 
 	// TODO add tests for this
 	/*
@@ -82,6 +69,8 @@ type ServiceNetwork interface {
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
 
 	GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
+
+	GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error)
 
 	Destroy(ctx context.Context) error
 

@@ -175,7 +175,7 @@ func getDataStoreRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[
 	return runConfigFunc
 }
 
-func getApiServiceConfigurations(network *TestNetwork) (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
+func getApiServiceContainerConfigSupplier(network *TestNetwork) func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
 	configInitializingFunc := getApiServiceConfigInitializingFunc(network.datastoreClient)
 
 	apiServiceContainerCreationConfig := getApiServiceContainerCreationConfig(configInitializingFunc)

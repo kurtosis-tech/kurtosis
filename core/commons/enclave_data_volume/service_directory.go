@@ -28,6 +28,10 @@ func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string
 	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
 }
 
+func (directory ServiceDirectory) GetDirpathRelativeToVolRoot() string {
+	return directory.dirpathRelativeToVolRoot
+}
+
 func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*EnclaveDataVolFile, error) {
 	file, err := directory.getNewFilepath(generatedFileFilenamePrefix, generatedFileKey)
 	if err != nil {

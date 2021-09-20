@@ -10,7 +10,6 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
@@ -19,9 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -154,27 +151,27 @@ func (network *ServiceNetworkImpl) Repartition(
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetworkImpl) RegisterService(
 		serviceId service_network_types.ServiceID,
-		partitionId service_network_types.PartitionID) (net.IP, error) {
+		partitionId service_network_types.PartitionID) (net.IP, string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	if strings.TrimSpace(string(serviceId)) == "" {
-		return nil, stacktrace.NewError("Service ID cannot be empty or whitespace")
+		return nil, "", stacktrace.NewError("Service ID cannot be empty or whitespace")
 	}
 
 	if _, found := network.serviceRegistrationInfo[serviceId]; found {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
+		return nil, "", stacktrace.NewError("Cannot register service with ID '%v'; a service with that ID already exists", serviceId)
 	}
 
 	if partitionId == "" {
 		partitionId = defaultPartitionId
 	}
 	if _, found := network.topology.GetPartitionServices()[partitionId]; !found {
-		return nil, stacktrace.NewError(
+		return nil, "", stacktrace.NewError(
 			"No partition with ID '%v' exists in the current partition topology",
 			partitionId,
 		)
@@ -182,7 +179,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	ip, err := network.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting an IP for service with ID '%v'", serviceId)
 	}
 	shouldFreeIpAddr := true
 	defer func() {
@@ -197,7 +194,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	serviceDirectory, err := network.enclaveDataVolume.GetServiceDirectory(serviceGUID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
+		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
 	}
 
 	serviceRegistrationInfo := serviceRegistrationInfo{
@@ -216,7 +213,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 
 	if err := network.topology.AddService(serviceId, partitionId); err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, "", stacktrace.Propagate(
 			err,
 			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
 			serviceId,
@@ -225,100 +222,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	shouldFreeIpAddr = false
 	shouldUndoRegistrationInfoAdd = false
-	return ip, nil
-}
-
-// Generates files in a location in the enclave data volume allocated to the given service
-func (network *ServiceNetworkImpl) GenerateFiles(
-		serviceId service_network_types.ServiceID,
-		filesToGenerate map[string]*kurtosis_core_rpc_api_bindings.FileGenerationOptions) (map[string]string, error) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot register service with ID '%v'; the service network has been destroyed", serviceId)
-	}
-
-	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
-	if !found {
-		return nil, stacktrace.NewError("Cannot generate files for service '%v' as no service with that ID has been registered", serviceId)
-	}
-	serviceDirectory := registrationInfo.serviceDirectory
-
-	generatedFilesRelativeFilepaths := map[string]string{}
-	for userCreatedFileKey, fileGenerationOptions := range filesToGenerate {
-		fileTypeToGenerate := fileGenerationOptions.GetFileTypeToGenerate()
-		switch fileTypeToGenerate {
-		case kurtosis_core_rpc_api_bindings.FileGenerationOptions_FILE:
-			file, err := serviceDirectory.NewGeneratedFile(userCreatedFileKey)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred creating file '%v' for service with ID '%v'", userCreatedFileKey, serviceId)
-			}
-			generatedFilesRelativeFilepaths[userCreatedFileKey] = file.GetFilepathRelativeToVolRoot()
-			logrus.Debugf("Created generated file '%v' at '%v'", userCreatedFileKey, file.GetFilepathRelativeToVolRoot())
-		default:
-			return nil, stacktrace.NewError(
-				"Could not generate file '%v'; unrecognized file type '%v'; this is a bug in Kurtosis",
-				userCreatedFileKey,
-				fileTypeToGenerate,
-			)
-		}
-	}
-	return generatedFilesRelativeFilepaths, nil
-}
-
-func (network *ServiceNetworkImpl) LoadStaticFiles(serviceId service_network_types.ServiceID, staticFileIdKeys map[string]bool) (map[string]string, error) {
-	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot load static files for service with ID '%v'; the service network has been destroyed", serviceId)
-	}
-
-	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
-	if !found {
-		return nil, stacktrace.NewError("Cannot load static files for service '%v' as no service with that ID has been registered", serviceId)
-	}
-	serviceDirectory := registrationInfo.serviceDirectory
-
-	staticFileCache, err := network.enclaveDataVolume.GetStaticFileCache()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the static file cache")
-	}
-
-	result := map[string]string{}
-	for staticFileId := range staticFileIdKeys {
-		src, err := staticFileCache.GetStaticFile(staticFileId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the source static file with key '%v' from the static file cache", staticFileId)
-		}
-
-		dest, err := serviceDirectory.NewStaticFile(staticFileId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the destination static file for key '%v' in filespace of service '%v'", staticFileId, serviceId)
-		}
-
-		srcAbsFilepath := src.GetAbsoluteFilepath()
-		srcFp, err := os.Open(srcAbsFilepath)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the file pointer from source static file filepath '%v'", srcAbsFilepath)
-		}
-		defer srcFp.Close()
-
-		destAbsFilepath := dest.GetAbsoluteFilepath()
-		destFp, err := os.Create(destAbsFilepath)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the file pointer for destination static file filepath '%v'", destAbsFilepath)
-		}
-		defer destFp.Close()
-
-		if _, err := io.Copy(destFp, srcFp); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred copying source static file '%v' to destination '%v'", srcAbsFilepath, destAbsFilepath)
-		}
-
-		result[staticFileId] = src.GetFilepathRelativeToVolRoot()
-	}
-	return result, nil
+	return ip, serviceDirectory.GetDirpathRelativeToVolRoot(), nil
 }
 
 // TODO add tests for this
@@ -500,6 +404,21 @@ func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.
 	}
 
 	return registrationInfo.ipAddr, nil
+}
+
+func (network *ServiceNetworkImpl) GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	if network.isDestroyed {
+		return "", stacktrace.NewError("Cannot get relative service directory path; the service network has been destroyed")
+	}
+
+	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
+	if !found {
+		return "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
+	}
+
+	return registrationInfo.serviceDirectory.GetDirpathRelativeToVolRoot(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {

@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Add the relative service directory path in `RegisterService` and `GetServiceInfo` methods
+
+### Breaking Changes
+* Remove`RegisterStaticFiles()`, `GenerateFiles()` and `LoadStaticFiles()` methods from `ApiContainerService`
+  * Users should manually create, generate and copy static and dynamic files into the service container with the help of the `RelativeServiceDirpath` field added in `RegisterService` and `GetServiceInfo` methods
 
 # 1.19.12
 ### Features

@@ -100,28 +100,6 @@ func (service ApiContainerService) GetLambdaInfo(ctx context.Context, args *kurt
 	return response, nil
 }
 
-func (service ApiContainerService) RegisterStaticFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterStaticFilesArgs) (*kurtosis_core_rpc_api_bindings.RegisterStaticFilesResponse, error) {
-	staticFilesCache, err := service.enclaveDataVolume.GetStaticFileCache()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the static files cache")
-	}
-
-	usedStaticFiles := args.StaticFilesSet
-	staticFileRelativeFilepaths := map[string]string{}
-	for staticFileId := range usedStaticFiles {
-		file, err := staticFilesCache.RegisterStaticFile(staticFileId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred registering static file key '%v' in the static file cache", staticFileId)
-		}
-		staticFileRelativeFilepaths[staticFileId] = file.GetFilepathRelativeToVolRoot()
-	}
-
-	result := &kurtosis_core_rpc_api_bindings.RegisterStaticFilesResponse{
-		StaticFileDestRelativeFilepaths: staticFileRelativeFilepaths,
-	}
-	return result, nil
-}
-
 func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
 	filesArtifactCache, err := service.enclaveDataVolume.GetFilesArtifactCache()
 	if err != nil {
@@ -144,37 +122,15 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *ku
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
-	ip, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
+	ip, relativeServiceDirpath, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		IpAddr:                          ip.String(),
-	}, nil
-}
-
-func (service ApiContainerService) GenerateFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GenerateFilesArgs) (*kurtosis_core_rpc_api_bindings.GenerateFilesResponse, error) {
-	serviceId := service_network_types.ServiceID(args.ServiceId)
-	filesToGenerate := args.FilesToGenerate
-	generatedFileRelativeFilepaths, err := service.serviceNetwork.GenerateFiles(serviceId, filesToGenerate)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating files for service '%v'", serviceId)
-	}
-	return &kurtosis_core_rpc_api_bindings.GenerateFilesResponse{
-		GeneratedFileRelativeFilepaths: generatedFileRelativeFilepaths,
-	}, nil
-}
-
-func (service ApiContainerService) LoadStaticFiles(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadStaticFilesArgs) (*kurtosis_core_rpc_api_bindings.LoadStaticFilesResponse, error) {
-	serviceId := service_network_types.ServiceID(args.ServiceId)
-	copiedStaticFileRelativeFilepaths, err := service.serviceNetwork.LoadStaticFiles(serviceId, args.StaticFiles)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading static files for service '%v'", serviceId)
-	}
-	return &kurtosis_core_rpc_api_bindings.LoadStaticFilesResponse{
-		CopiedStaticFileRelativeFilepaths: copiedStaticFileRelativeFilepaths,
+		IpAddr:					ip.String(),
+		RelativeServiceDirpath:	relativeServiceDirpath,
 	}, nil
 }
 
@@ -267,15 +223,21 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 
 	serviceID := service_network_types.ServiceID(args.ServiceId)
-	enclaveDataVolMntDirpath, err :=service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
+	enclaveDataVolMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service enclave data volume directory path by service ID: '%v'",
+			serviceID)
+	}
+	relativeServiceDirpath, err := service.serviceNetwork.GetRelativeServiceDirpath(serviceID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,"An error occurred when trying to get relative service directory path by service ID: '%v'",
 			serviceID)
 	}
 
 	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
 		IpAddr:                        serviceIP.String(),
 		EnclaveDataVolumeMountDirpath: enclaveDataVolMntDirpath,
+		RelativeServiceDirpath: relativeServiceDirpath,
 	}
 	return serviceInfoResponse, nil
 }
