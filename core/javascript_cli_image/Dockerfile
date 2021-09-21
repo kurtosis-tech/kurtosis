@@ -4,7 +4,7 @@ FROM node:16.7.0-alpine
 WORKDIR /repl
 
 # TODO Make this auto-update somehow??? Or add a CI check to make sure that it matches the dependencies used in the internal testsuite??
-RUN npm install kurtosis-core-api-lib@0.12.3
+RUN npm install kurtosis-core-api-lib@0.16.0
 
 CMD node -i --experimental-repl-await -e " \
     let kurtosis; \
