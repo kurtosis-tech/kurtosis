@@ -1,5 +1,9 @@
 # TBD
 
+# 1.20.1
+### Fixes
+* Fixed `kurtosis.sh` and `build-and-run-core.sh` not getting published to the right subdirectory in the public-access S3 bucket
+
 # 1.20.0
 ### Changes
 * Upgraded to `kurtosis-client` 0.16.0, which has `execCommand` returning strings rather than bytes
