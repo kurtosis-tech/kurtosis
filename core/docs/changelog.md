@@ -1,5 +1,12 @@
 # TBD
 
+# 1.20.0
+### Changes
+* Upgraded to `kurtosis-client` 0.16.0, which has `execCommand` returning strings rather than bytes
+
+### Breaking Changes
+* The `execCommand` call now returns strings rather than bytes for its logs, necessitating users to use Kurt Client 0.16.0 or higher
+
 # 1.19.14
 ### Changes
 * Changed the name of the CLI's published Homebrew formula to `kurtosis` (was `cli`) so that users can do `brew upgrade kurtosis`
