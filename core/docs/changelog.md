@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgraded to `minimal-grpc-server` 0.3.7, which has debug logging for every request/response to the server
 
 # 1.20.1
 ### Fixes
