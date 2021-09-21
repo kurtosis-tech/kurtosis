@@ -455,18 +455,18 @@ func (network *ServiceNetworkImpl) RemoveService(
 func (network *ServiceNetworkImpl) ExecCommand(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
-		command []string) (int32, *bytes.Buffer, error) {
+		command []string) (int32, string, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return 0, nil, stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
+		return 0, "", stacktrace.NewError("Cannot run exec command; the service network has been destroyed")
 	}
 
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
-		return 0, nil, stacktrace.NewError(
+		return 0, "", stacktrace.NewError(
 			"Could not run exec command '%v' against service '%v'; no container has been created for the service yet",
 			command,
 			serviceId)
@@ -478,13 +478,14 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	execOutputBuf := &bytes.Buffer{}
 	exitCode, err := network.dockerManager.RunExecCommand(ctx, runInfo.containerId, command, execOutputBuf)
 	if err != nil {
-		return 0, nil, stacktrace.Propagate(
+		return 0, "", stacktrace.Propagate(
 			err,
 			"An error occurred running exec command '%v' against service '%v'",
 			command,
 			serviceId)
 	}
-	return exitCode, execOutputBuf, nil
+
+	return exitCode, execOutputBuf.String(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error) {

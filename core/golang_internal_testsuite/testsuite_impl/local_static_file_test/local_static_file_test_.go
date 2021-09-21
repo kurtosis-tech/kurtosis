@@ -81,14 +81,13 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 		"cat",
 		testFile1AbsFilepath,
 	}
-	exitCode1, outputBytes1, err := serviceCtx.ExecCommand(catStaticFile1Cmd)
+	exitCode1, file1Contents, err := serviceCtx.ExecCommand(catStaticFile1Cmd)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static test file 1 contents", catStaticFile1Cmd)
 	}
 	if exitCode1 != execCommandSuccessExitCode {
 		return stacktrace.NewError("Command '%+v' to cat the static test file 1 exited with non-successful exit code '%v'", catStaticFile1Cmd, exitCode1)
 	}
-	file1Contents := string(*outputBytes1)
 	if file1Contents != expectedTestFile1Contents {
 		return stacktrace.NewError("Static file contents '%v' don't match expected test file 1 contents '%v'", file1Contents, expectedTestFile1Contents)
 	}
@@ -99,14 +98,13 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 		"cat",
 		testFile2AbsFilepath,
 	}
-	exitCode2, outputBytes2, err := serviceCtx.ExecCommand(catStaticFile2Cmd)
+	exitCode2, file2Contents, err := serviceCtx.ExecCommand(catStaticFile2Cmd)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static test file 2 contents", catStaticFile2Cmd)
 	}
 	if exitCode2 != execCommandSuccessExitCode {
 		return stacktrace.NewError("Command '%+v' to cat the static test file 2 exited with non-successful exit code '%v'", catStaticFile2Cmd, exitCode2)
 	}
-	file2Contents := string(*outputBytes2)
 	if file2Contents != expectedTestFile2Contents {
 		return stacktrace.NewError("Static file contents '%v' don't match expected test file 2 contents '%v'", file2Contents, expectedTestFile2Contents)
 	}

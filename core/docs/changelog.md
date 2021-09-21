@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to `kurtosis-client` 0.16.0, which has `execCommand` returning strings rather than bytes
 
 # 1.19.14
 ### Changes
