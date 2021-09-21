@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Swapped networking sidecar naming convention from `ENCLAVEID__SERVICEGUID__networking-sidecar` to `ENCLAVEID__networking-sidecar__SERVICEGUID`
+* Standardized files artifact expansion container & volume name format to `ENCLAVEID__files-artifact-expander/expansion__for__SERVICEGUID__using__ARTIFACTID__at__TIMESTAMP`
 
 # 1.19.14
 ### Changes
