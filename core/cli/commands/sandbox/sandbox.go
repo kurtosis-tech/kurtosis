@@ -52,6 +52,11 @@ const (
 	javascriptReplImageArg = "javascript-repl-image"
 	kurtosisLogLevelArg = "kurtosis-log-level"
 
+	// This is the directory in which the node REPL is running inside the REPL container, which is where
+	//  we'll bind-mount the host machine's current directory into the container so the user can access
+	//  files on their host machine
+	workingDirpathInsideReplContainer = "/repl"
+
 	replContainerSuccessExitCode = 0
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -171,6 +176,18 @@ func runReplContainer(
 		Width:  uint(windowSize.Col),
 	}
 
+	// Map of host_path -> path_on_container that will mounted
+	var bindMounts map[string]string
+	hostMachineWorkingDirpath, err := os.Getwd()
+	if err != nil {
+		logrus.Warn("Couldn't get the current working directory; local files will not be available")
+		bindMounts = map[string]string{}
+	} else {
+		bindMounts = map[string]string{
+			hostMachineWorkingDirpath: workingDirpathInsideReplContainer,
+		}
+	}
+
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(
 		context.Background(),
@@ -191,7 +208,7 @@ func runReplContainer(
 			"KURTOSIS_API_SOCKET":            kurtosisApiContainerSocket,
 			"ENCLAVE_DATA_VOLUME_MOUNTPOINT": enclaveDataVolMountpointOnReplContainer,
 		},
-		map[string]string{},	// TODO bind-mount a local directory so the user can give files to the REPL
+		bindMounts,
 		map[string]string{
 			enclaveId: enclaveDataVolMountpointOnReplContainer,
 		},
