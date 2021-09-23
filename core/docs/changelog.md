@@ -1,4 +1,6 @@
 # TBD
+
+# 1.20.2
 ### Features
 * Upgraded to `minimal-grpc-server` 0.3.7, which has debug logging for every request/response to the server
 * The current directory is now bind-mounted into the Javascript REPL container, making it accessible inside the REPL
