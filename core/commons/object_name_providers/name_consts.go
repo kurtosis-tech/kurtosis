@@ -11,10 +11,10 @@ const (
 	// The name that a testsuite container will receive
 	testsuiteContainerNameSuffix = "testsuite"
 
-	apiContainerNameSuffix       = "kurtosis-api"
-	userServiceContainerNameLabel        = "user-service"
-	networkingSidecarContainerNameSuffix = "networking-sidecar"
-	artifactExpanderContainerNameLabel   = "files-artifact-expander"
-	artifactExpansionVolumeNameLabel     = "files-artifact-expansion"
-	lambdaContainerNameLabel             = "lambda"
+	apiContainerNameSuffix              = "kurtosis-api"
+	userServiceContainerNameLabel       = "user-service"
+	networkingSidecarContainerNameLabel = "networking-sidecar"
+	artifactExpanderContainerNameLabel  = "files-artifact-expander"
+	artifactExpansionVolumeNameLabel    = "files-artifact-expansion"
+	lambdaContainerNameLabel            = "lambda"
 )

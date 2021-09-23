@@ -17,7 +17,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210803203144-801fd9867a7f
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153929-e5305a8ffc52
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177

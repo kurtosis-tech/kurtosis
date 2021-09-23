@@ -49,28 +49,26 @@ func (nameProvider *EnclaveObjectNameProvider) ForUserServiceContainer(serviceGU
 }
 
 func (nameProvider *EnclaveObjectNameProvider) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service_network_types.ServiceGUID) string {
-	return nameProvider.combineElementsWithEnclaveId([]string{// TODO Switch order of these
+	return nameProvider.combineElementsWithEnclaveId([]string{
+		networkingSidecarContainerNameLabel,
 		string(serviceGUIDSidecarAttachedTo),
-		networkingSidecarContainerNameSuffix,
 	})
 }
 
 func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpanderContainer(serviceGUID service_network_types.ServiceGUID, artifactId string) string {
-	return nameProvider.combineElementsWithEnclaveId([]string{
-		string(serviceGUID),
+	return nameProvider.getArtifactExpansionObjectName(
 		artifactExpanderContainerNameLabel,
+		serviceGUID,
 		artifactId,
-		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
-	})
+	)
 }
 
 func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(serviceGUID service_network_types.ServiceGUID, artifactId string) string {
-	return nameProvider.combineElementsWithEnclaveId([]string{
+	return nameProvider.getArtifactExpansionObjectName(
 		artifactExpansionVolumeNameLabel,
-		string(serviceGUID),
+		serviceGUID,
 		artifactId,
-		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
-	})
+	)
 }
 
 func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID lambda_store_types.LambdaGUID) string {
@@ -88,4 +86,20 @@ func (nameProvider *EnclaveObjectNameProvider) combineElementsWithEnclaveId(elem
 		toJoin,
 		objectNameElementSeparator,
 	)
+}
+
+func (nameProvider *EnclaveObjectNameProvider) getArtifactExpansionObjectName(
+	objectLabel string,
+	forServiceGUID service_network_types.ServiceGUID,
+	artifactId string,
+) string {
+	return nameProvider.combineElementsWithEnclaveId([]string{
+		objectLabel,
+		"for",
+		string(forServiceGUID),
+		"using",
+		artifactId,
+		"at",
+		time.Now().Format(uniqueTimestampFormat), // We add this timestamp so that if the same artifact for the same service GUID expanded twice, we won't get collisions
+	})
 }

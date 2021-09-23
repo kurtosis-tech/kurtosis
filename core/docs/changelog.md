@@ -1,5 +1,14 @@
 # TBD
 
+# 1.20.2
+### Features
+* Upgraded to `minimal-grpc-server` 0.3.7, which has debug logging for every request/response to the server
+* The current directory is now bind-mounted into the Javascript REPL container, making it accessible inside the REPL
+
+### Fixes
+* Swapped networking sidecar naming convention from `ENCLAVEID__SERVICEGUID__networking-sidecar` to `ENCLAVEID__networking-sidecar__SERVICEGUID`
+* Standardized files artifact expansion container & volume name format to `ENCLAVEID__files-artifact-expander/expansion__for__SERVICEGUID__using__ARTIFACTID__at__TIMESTAMP`
+
 # 1.20.1
 ### Fixes
 * Fixed `kurtosis.sh` and `build-and-run-core.sh` not getting published to the right subdirectory in the public-access S3 bucket
