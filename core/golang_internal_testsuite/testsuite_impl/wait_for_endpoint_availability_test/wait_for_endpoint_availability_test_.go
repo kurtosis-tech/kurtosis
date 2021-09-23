@@ -46,9 +46,9 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 	// Necessary because Go doesn't have generics
 	castedNetworkContext := network.(*networks.NetworkContext)
 
-	containerCreationConfig, runConfigFunc := getDatastoreServiceConfigurations()
+	datastoreContainerConfigSupplier := getDatastoreContainerConfigSupplier()
 
-	_, _, err := castedNetworkContext.AddService(datastoreServiceId, containerCreationConfig, runConfigFunc)
+	_, _, err := castedNetworkContext.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -66,26 +66,14 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-
-func getDatastoreServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
-	containerCreationConfig := getDatastoreServiceContainerCreationConfig()
-
-	runConfigFunc := getDatastoreServiceRunConfigFunc()
-	return containerCreationConfig, runConfigFunc
-}
-
-func getDatastoreServiceContainerCreationConfig() *services.ContainerCreationConfig {
-	containerCreationConfig := services.NewContainerCreationConfigBuilder(
-		datastoreImage,
-	).WithUsedPorts(
-		map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
-	).Build()
-	return containerCreationConfig
-}
-
-func getDatastoreServiceRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-	runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-		return services.NewContainerRunConfigBuilder().Build(), nil
+func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+		containerConfig := services.NewContainerConfigBuilder(
+			datastoreImage,
+		).WithUsedPorts(
+			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
+		).Build()
+		return containerConfig, nil
 	}
-	return runConfigFunc
+	return containerConfigSupplier
 }

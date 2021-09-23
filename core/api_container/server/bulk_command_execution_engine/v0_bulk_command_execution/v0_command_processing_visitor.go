@@ -79,40 +79,6 @@ func (visitor *v0CommandProcessingVisitor) VisitRegisterService() error {
 	return nil
 }
 
-// NOTE: Because the user can't manipulate the resulting generated files, this command doesn't make much sense to use
-//  in bulk. Nonetheless, we implement it for completeness.
-func (visitor *v0CommandProcessingVisitor) VisitGenerateFiles() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.GenerateFilesArgs)
-	if !ok {
-		return stacktrace.NewError("An error occurred downcasting the generic args object to generate files args")
-	}
-	generateFilesResp, err := visitor.apiService.GenerateFiles(visitor.ctx, castedArgs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred generating the requested files")
-	}
-	logrus.Info("Successfully generated files at the given relative filepaths of the enclave data volume:")
-	for fileKey, relativeFilepath := range generateFilesResp.GeneratedFileRelativeFilepaths {
-		logrus.Infof(" - %v: %v", fileKey, relativeFilepath)
-	}
-	return nil
-}
-
-func (visitor *v0CommandProcessingVisitor) VisitLoadStaticFiles() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.LoadStaticFilesArgs)
-	if !ok {
-		return stacktrace.NewError("An error occurred downcasting the generic args object to load static files args")
-	}
-	loadStaticFilesResp, err := visitor.apiService.LoadStaticFiles(visitor.ctx, castedArgs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred loading the requested static files")
-	}
-	logrus.Infof("Successfully loaded static files for service '%v' at the given relative filepaths of the enclave data volume:", castedArgs.ServiceId)
-	for staticFileId, relativeFilepath := range loadStaticFilesResp.CopiedStaticFileRelativeFilepaths {
-		logrus.Infof(" - %v: %v", staticFileId, relativeFilepath)
-	}
-	return nil
-}
-
 func (visitor *v0CommandProcessingVisitor) VisitStartService() error {
 	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.StartServiceArgs)
 	if !ok {

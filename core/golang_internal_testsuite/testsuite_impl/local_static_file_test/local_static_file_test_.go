@@ -12,13 +12,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/static_files_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 const (
 	dockerImage                    = "alpine:3.12.4"
 	testService services.ServiceID = "test-service"
-
-
 
 	execCommandSuccessExitCode = 0
 	expectedTestFile1Contents  = "This is a test static file"
@@ -32,17 +33,14 @@ func (l LocalStaticFileTest) Configure(builder *testsuite.TestConfigurationBuild
 		60,
 	).WithRunTimeoutSeconds(
 		60,
-	).WithStaticFileFilepaths(map[services.StaticFileID]string{
-		static_files_consts.TestStaticFile1ID: static_files_consts.StaticFileFilepaths[static_files_consts.TestStaticFile1ID],
-		static_files_consts.TestStaticFile2ID: static_files_consts.StaticFileFilepaths[static_files_consts.TestStaticFile2ID],
-	})
+	)
 }
 
 func (l LocalStaticFileTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 
-	containerCreationConfig, runConfigFunc := getServiceConfigurations()
+	containerConfigSupplier := getContainerConfigSupplier()
 
-	_, _, err := networkCtx.AddService(testService, containerCreationConfig, runConfigFunc)
+	_, _, err := networkCtx.AddService(testService, containerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
@@ -60,57 +58,31 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting service '%v'", testService)
 	}
 
-	staticFileAbsFilepaths, err := serviceCtx.LoadStaticFiles(map[services.StaticFileID]bool{
-		static_files_consts.TestStaticFile1ID: true,
-		static_files_consts.TestStaticFile2ID: true,
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred loading the static file corresponding to key '%v'", static_files_consts.TestStaticFile1ID)
-	}
-	testFile1AbsFilepath, found := staticFileAbsFilepaths[static_files_consts.TestStaticFile1ID]
-	if !found {
-		return stacktrace.Propagate(err, "No filepath found for test file 1 key '%v'; this is a bug in Kurtosis!", static_files_consts.TestStaticFile1ID)
-	}
-	testFile2AbsFilepath, found := staticFileAbsFilepaths[static_files_consts.TestStaticFile2ID]
-	if !found {
-		return stacktrace.Propagate(err, "No filepath found for test file 2 key '%v'; this is a bug in Kurtosis!", static_files_consts.TestStaticFile2ID)
-	}
+	expectedTestFilesContent := []string{expectedTestFile1Contents, expectedTestFile2Contents}
+	for staticFileNameKey, staticFileName := range static_files_consts.StaticFilesNames {
+		testFileObj, err := serviceCtx.GetSharedDirectory().GetSharedFileObject(staticFileName)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting file object with filename '%v'", staticFileName)
+		}
 
-	// Test file 1
-	catStaticFile1Cmd := []string{
-		"cat",
-		testFile1AbsFilepath,
-	}
-	exitCode1, outputBytes1, err := serviceCtx.ExecCommand(catStaticFile1Cmd)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static test file 1 contents", catStaticFile1Cmd)
-	}
-	if exitCode1 != execCommandSuccessExitCode {
-		return stacktrace.NewError("Command '%+v' to cat the static test file 1 exited with non-successful exit code '%v'", catStaticFile1Cmd, exitCode1)
-	}
-	file1Contents := string(*outputBytes1)
-	if file1Contents != expectedTestFile1Contents {
-		return stacktrace.NewError("Static file contents '%v' don't match expected test file 1 contents '%v'", file1Contents, expectedTestFile1Contents)
-	}
-	logrus.Infof("Static file 1 contents were '%v' as expected", expectedTestFile1Contents)
+		catStaticFileCmd := []string{
+			"cat",
+			testFileObj.GetAbsFilepathOnServiceContainer(),
+		}
 
-	// Test file 2
-	catStaticFile2Cmd := []string{
-		"cat",
-		testFile2AbsFilepath,
+		exitCode, outputBytes, err := serviceCtx.ExecCommand(catStaticFileCmd)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static file '%v' contents", catStaticFileCmd, staticFileName)
+		}
+		if exitCode != execCommandSuccessExitCode {
+			return stacktrace.NewError("Command '%+v' to cat the static file '%v' exited with non-successful exit code '%v'", catStaticFileCmd, staticFileName, exitCode)
+		}
+		fileContents := string(*outputBytes)
+		if fileContents != expectedTestFilesContent[staticFileNameKey] {
+			return stacktrace.NewError("Static file contents '%v' don't match expected static file '%v' contents '%v'", fileContents, staticFileName, expectedTestFilesContent[staticFileNameKey])
+		}
+		logrus.Infof("Static file '%v' contents were '%v' as expected", staticFileName, expectedTestFilesContent[staticFileNameKey])
 	}
-	exitCode2, outputBytes2, err := serviceCtx.ExecCommand(catStaticFile2Cmd)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static test file 2 contents", catStaticFile2Cmd)
-	}
-	if exitCode2 != execCommandSuccessExitCode {
-		return stacktrace.NewError("Command '%+v' to cat the static test file 2 exited with non-successful exit code '%v'", catStaticFile2Cmd, exitCode2)
-	}
-	file2Contents := string(*outputBytes2)
-	if file2Contents != expectedTestFile2Contents {
-		return stacktrace.NewError("Static file contents '%v' don't match expected test file 2 contents '%v'", file2Contents, expectedTestFile2Contents)
-	}
-	logrus.Infof("Static file 2 contents were '%v' as expected", expectedTestFile2Contents)
 
 	return nil
 }
@@ -118,31 +90,57 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
+func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
 
-func getServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
-	containerCreationConfig := getContainerCreationConfig()
+		//Copy static files from the static_files folder in testsuite container to the service's folder in the service container
+		if err := copyStaticFilesInServiceContainer(static_files_consts.StaticFilesNames, static_files_consts.StaticFilesDirpathOnTestsuiteContainer, sharedDirectory); err != nil{
+			return nil, stacktrace.Propagate(err, "An error occurred copying static files into the service's folder in the service container")
+		}
 
-	runConfigFunc := getRunConfigFunc()
-	return containerCreationConfig, runConfigFunc
-}
-
-func getContainerCreationConfig() *services.ContainerCreationConfig {
-	return services.NewContainerCreationConfigBuilder(dockerImage).Build()
-}
-
-func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-	runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-		// We sleep because the only function of this container is to test Docker exec'ing a command while it's running
+		// We sleep because the only function of this container is to test Docker executing a command while it's running
 		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
 		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
 		entrypointArgs := []string{"sleep"}
 		cmdArgs := []string{"30"}
-		result := services.NewContainerRunConfigBuilder().WithEntrypointOverride(
+
+		containerConfig := services.NewContainerConfigBuilder(
+			dockerImage,
+		).WithEntrypointOverride(
 			entrypointArgs,
 		).WithCmdOverride(
 			cmdArgs,
 		).Build()
-		return result, nil
+		return containerConfig, nil
 	}
-	return runConfigFunc
+	return containerConfigSupplier
+}
+
+func copyStaticFilesInServiceContainer(staticFilesNames []string, staticFilesFolder string, sharedDirectory *services.SharedDirectory) error {
+	for _, staticFileName := range staticFilesNames {
+		if err := copyStaticFileInServiceContainer(staticFileName, staticFilesFolder, sharedDirectory); err != nil {
+			return stacktrace.Propagate(err, "An error occurred copying file with filename '%v' to service's folder in service container", staticFileName)
+		}
+	}
+	return nil
+}
+
+func copyStaticFileInServiceContainer(staticFileName string, staticFilesFolder string,sharedDirectory *services.SharedDirectory) error {
+	testStaticFileObj, err := sharedDirectory.GetSharedFileObject(staticFileName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", staticFileName)
+	}
+
+	testStaticFilepath := filepath.Join(staticFilesFolder, staticFileName)
+
+	testStaticFileContent, err := ioutil.ReadFile(testStaticFilepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred reading file from '%v'", testStaticFilepath)
+	}
+
+	err = ioutil.WriteFile(testStaticFileObj.GetAbsFilepathOnThisContainer(), testStaticFileContent, os.ModePerm)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred writing file '%v'", testStaticFileObj.GetAbsFilepathOnThisContainer())
+	}
+	return nil
 }

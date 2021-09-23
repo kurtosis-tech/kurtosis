@@ -47,9 +47,9 @@ func (e ExecCommandTest) Configure(builder *testsuite.TestConfigurationBuilder) 
 }
 
 func (e ExecCommandTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	containerCreationConfig, runConfigFunc := getServiceConfigurations()
+	containerConfigSupplier := getContainerConfigSupplier()
 
-	_, _, err := networkCtx.AddService(testServiceId, containerCreationConfig, runConfigFunc)
+	_, _, err := networkCtx.AddService(testServiceId, containerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -107,32 +107,25 @@ func (e ExecCommandTest) Run(uncastedNetwork networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
+func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
 
-func getServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
-	containerCreationConfig := getContainerCreationConfig()
-
-	runConfigFunc := getRunConfigFunc()
-	return containerCreationConfig, runConfigFunc
-}
-
-func getContainerCreationConfig() *services.ContainerCreationConfig {
-	return services.NewContainerCreationConfigBuilder(execCmdTestImage).Build()
-}
-
-func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-	return func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-		// We sleep because the only function of this container is to test Docker exec'ing a command while it's running
+		// We sleep because the only function of this container is to test Docker executing a command while it's running
 		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
 		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
 		entrypointArgs := []string{"sleep"}
 		cmdArgs := []string{"30"}
-		result := services.NewContainerRunConfigBuilder().WithEntrypointOverride(
+
+		containerConfig := services.NewContainerConfigBuilder(
+			execCmdTestImage,
+		).WithEntrypointOverride(
 			entrypointArgs,
 		).WithCmdOverride(
 			cmdArgs,
 		).Build()
-		return result, nil
+		return containerConfig, nil
 	}
+	return containerConfigSupplier
 }
 
 func runExecCmd(serviceContext *services.ServiceContext, command []string) (int32, *[]byte, error) {
