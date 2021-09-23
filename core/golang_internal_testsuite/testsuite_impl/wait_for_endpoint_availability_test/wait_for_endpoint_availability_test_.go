@@ -66,8 +66,8 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			datastoreImage,
 		).WithUsedPorts(

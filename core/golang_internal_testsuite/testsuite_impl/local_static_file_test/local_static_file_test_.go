@@ -60,14 +60,14 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 
 	expectedTestFilesContent := []string{expectedTestFile1Contents, expectedTestFile2Contents}
 	for staticFileNameKey, staticFileName := range static_files_consts.StaticFilesNames {
-		testFileObj, err := serviceCtx.GetSharedDirectory().GetSharedFileObject(staticFileName)
+		testFileFilePath, err := serviceCtx.GetSharedDirectory().GetChildPath(staticFileName)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting file object with filename '%v'", staticFileName)
 		}
 
 		catStaticFileCmd := []string{
 			"cat",
-			testFileObj.GetAbsFilepathOnServiceContainer(),
+			testFileFilePath.GetAbsPathOnServiceContainer(),
 		}
 
 		exitCode, outputBytes, err := serviceCtx.ExecCommand(catStaticFileCmd)
@@ -90,8 +90,8 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedDirectory) (*services.ContainerConfig, error) {
+func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
 		//Copy static files from the static_files folder in testsuite container to the service's folder in the service container
 		if err := copyStaticFilesInServiceContainer(static_files_consts.StaticFilesNames, static_files_consts.StaticFilesDirpathOnTestsuiteContainer, sharedDirectory); err != nil{
@@ -116,7 +116,7 @@ func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.
 	return containerConfigSupplier
 }
 
-func copyStaticFilesInServiceContainer(staticFilesNames []string, staticFilesFolder string, sharedDirectory *services.SharedDirectory) error {
+func copyStaticFilesInServiceContainer(staticFilesNames []string, staticFilesFolder string, sharedDirectory *services.SharedPath) error {
 	for _, staticFileName := range staticFilesNames {
 		if err := copyStaticFileInServiceContainer(staticFileName, staticFilesFolder, sharedDirectory); err != nil {
 			return stacktrace.Propagate(err, "An error occurred copying file with filename '%v' to service's folder in service container", staticFileName)
@@ -125,8 +125,8 @@ func copyStaticFilesInServiceContainer(staticFilesNames []string, staticFilesFol
 	return nil
 }
 
-func copyStaticFileInServiceContainer(staticFileName string, staticFilesFolder string,sharedDirectory *services.SharedDirectory) error {
-	testStaticFileObj, err := sharedDirectory.GetSharedFileObject(staticFileName)
+func copyStaticFileInServiceContainer(staticFileName string, staticFilesFolder string,sharedDirectory *services.SharedPath) error {
+	testStaticFileFilePath, err := sharedDirectory.GetChildPath(staticFileName)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", staticFileName)
 	}
@@ -138,9 +138,9 @@ func copyStaticFileInServiceContainer(staticFileName string, staticFilesFolder s
 		return stacktrace.Propagate(err, "An error occurred reading file from '%v'", testStaticFilepath)
 	}
 
-	err = ioutil.WriteFile(testStaticFileObj.GetAbsFilepathOnThisContainer(), testStaticFileContent, os.ModePerm)
+	err = ioutil.WriteFile(testStaticFileFilePath.GetAbsPathOnThisContainer(), testStaticFileContent, os.ModePerm)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred writing file '%v'", testStaticFileObj.GetAbsFilepathOnThisContainer())
+		return stacktrace.Propagate(err, "An error occurred writing file '%v'", testStaticFileFilePath.GetAbsPathOnThisContainer())
 	}
 	return nil
 }
