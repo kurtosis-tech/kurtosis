@@ -6,7 +6,6 @@
 package exec_command_test
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -95,9 +94,8 @@ func (e ExecCommandTest) Run(uncastedNetwork networks.Network) error {
 	if shouldHaveLogOutputExitCode != successExitCode {
 		return stacktrace.NewError("Exec command '%v' should work, but got unsuccessful exit code %v", execCommandThatShouldHaveLogOutput, shouldHaveLogOutputExitCode)
 	}
-	logOutputStr := fmt.Sprintf("%s", *logOutput)
-	if logOutputStr != expectedLogOutput {
-		return stacktrace.NewError("Exec command '%v' should return %v, but got %v.", execCommandThatShouldHaveLogOutput, inputForLogOutputTest, logOutputStr)
+	if logOutput != expectedLogOutput {
+		return stacktrace.NewError("Exec command '%v' should return %v, but got %v.", execCommandThatShouldHaveLogOutput, inputForLogOutputTest, logOutput)
 	}
 	logrus.Info("Exec command returned error exit code as expected")
 
@@ -128,10 +126,10 @@ func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.
 	return containerConfigSupplier
 }
 
-func runExecCmd(serviceContext *services.ServiceContext, command []string) (int32, *[]byte, error) {
+func runExecCmd(serviceContext *services.ServiceContext, command []string) (int32, string, error) {
 	exitCode, logOutput, err := serviceContext.ExecCommand(command)
 	if err != nil {
-		return 0, nil, stacktrace.Propagate(
+		return 0, "", stacktrace.Propagate(
 			err,
 			"An error occurred executing command '%v'", command)
 	}

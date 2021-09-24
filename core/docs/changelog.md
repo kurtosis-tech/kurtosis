@@ -11,6 +11,49 @@
 ### Changes
 * Updated Golang internal testsuite tests in order to use the latest changes made on `Kurtosis Client` which adds the new `ContainerConfig` object and remove some methods related to file generation
 
+# 1.20.4
+### Features
+* Added a new test to the internal testsuite to verify that test-internal state set in `Test.setup` is persisted in `Test.run`
+
+# 1.20.3
+### Fixes
+* Fix an issue with testing framework where debug logging was getting incorrectly printed to STDOUT when it should have gone to the test-specific log
+
+# 1.20.2
+### Features
+* Upgraded to `minimal-grpc-server` 0.3.7, which has debug logging for every request/response to the server
+* The current directory is now bind-mounted into the Javascript REPL container, making it accessible inside the REPL
+
+### Fixes
+* Swapped networking sidecar naming convention from `ENCLAVEID__SERVICEGUID__networking-sidecar` to `ENCLAVEID__networking-sidecar__SERVICEGUID`
+* Standardized files artifact expansion container & volume name format to `ENCLAVEID__files-artifact-expander/expansion__for__SERVICEGUID__using__ARTIFACTID__at__TIMESTAMP`
+
+# 1.20.1
+### Fixes
+* Fixed `kurtosis.sh` and `build-and-run-core.sh` not getting published to the right subdirectory in the public-access S3 bucket
+
+# 1.20.0
+### Changes
+* Upgraded to `kurtosis-client` 0.16.0, which has `execCommand` returning strings rather than bytes
+
+### Breaking Changes
+* The `execCommand` call now returns strings rather than bytes for its logs, necessitating users to use Kurt Client 0.16.0 or higher
+
+# 1.19.14
+### Changes
+* Changed the name of the CLI's published Homebrew formula to `kurtosis` (was `cli`) so that users can do `brew upgrade kurtosis`
+* Required the subcommand `sandbox` to be passed in to start a sandbox enclave, to make room for extra commands
+
+### Fixes
+* Fix `launch-interactive.sh` for Cobra arg-parsing
+
+# 1.19.13
+### Features
+* The CLI makes a best-effort attempt to pull the latest version of the API container & Javascript REPL images on each run
+
+### Fixes
+* Upgrade to `container-engine-lib` 0.2.9, which fixes the issue with host ports not getting bound
+
 # 1.19.12
 ### Features
 * Add a global unique identifier for services `ServiceGUID` to avoid docker containers collisions and to match docker container name with services folders in enclave data volume

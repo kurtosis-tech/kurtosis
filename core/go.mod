@@ -10,21 +10,21 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20210924010213-b54618807de9
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210924133831-13bd1650d753
 	github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924135607-b4d9aa202f82
-	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b // indirect
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153929-e5305a8ffc52
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
-	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
+	golang.org/x/sys v0.0.0-20210510120138-977fb7262007
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 	gotest.tools v2.2.0+incompatible

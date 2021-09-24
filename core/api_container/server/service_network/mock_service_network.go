@@ -6,7 +6,6 @@
 package service_network
 
 import (
-	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
@@ -41,7 +40,7 @@ func (m MockServiceNetwork) RemoveService(ctx context.Context, serviceId service
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service_network_types.ServiceID, command []string) (int32, *bytes.Buffer, error) {
+func (m MockServiceNetwork) ExecCommand(ctx context.Context, serviceId service_network_types.ServiceID, command []string) (int32, string, error) {
 	panic("This is unimplemented for the mock network")
 }
 

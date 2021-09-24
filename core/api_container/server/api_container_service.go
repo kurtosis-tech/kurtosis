@@ -314,17 +314,18 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtos
 			command,
 			serviceId)
 	}
-	logOutputSize := logOutput.Len()
-	if logOutputSize > maxLogOutputSizeBytes {
-		return nil, stacktrace.NewError("Log output from docker exec command %+v was %v bytes, but maximum size allowed by Kurtosis is %v",
+	numLogOutputBytes := len(logOutput)
+	if numLogOutputBytes > maxLogOutputSizeBytes {
+		return nil, stacktrace.NewError(
+			"Log output from docker exec command '%+v' was %v bytes, but maximum size allowed by Kurtosis is %v",
 			command,
-			logOutputSize,
+			numLogOutputBytes,
 			maxLogOutputSizeBytes,
 		)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
 		ExitCode: exitCode,
-		LogOutput: logOutput.Bytes(),
+		LogOutput: logOutput,
 	}
 	return resp, nil
 }

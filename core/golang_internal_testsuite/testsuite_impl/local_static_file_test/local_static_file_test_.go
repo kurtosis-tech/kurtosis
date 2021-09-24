@@ -70,14 +70,14 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 			testFileFilePath.GetAbsPathOnServiceContainer(),
 		}
 
-		exitCode, outputBytes, err := serviceCtx.ExecCommand(catStaticFileCmd)
+		exitCode, logOutput, err := serviceCtx.ExecCommand(catStaticFileCmd)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred executing command '%+v' to cat the static file '%v' contents", catStaticFileCmd, staticFileName)
 		}
 		if exitCode != execCommandSuccessExitCode {
 			return stacktrace.NewError("Command '%+v' to cat the static file '%v' exited with non-successful exit code '%v'", catStaticFileCmd, staticFileName, exitCode)
 		}
-		fileContents := string(*outputBytes)
+		fileContents := logOutput
 		if fileContents != expectedTestFilesContent[staticFileNameKey] {
 			return stacktrace.NewError("Static file contents '%v' don't match expected static file '%v' contents '%v'", fileContents, staticFileName, expectedTestFilesContent[staticFileNameKey])
 		}

@@ -6,7 +6,6 @@
 package service_network
 
 import (
-	"bytes"
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
@@ -64,7 +63,7 @@ type ServiceNetwork interface {
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
 		command []string,
-	) (int32, *bytes.Buffer, error)
+	) (int32, string, error)
 
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
 
