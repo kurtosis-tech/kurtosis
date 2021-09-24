@@ -12,10 +12,10 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20210916190238-e5bc60031782
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210923195621-759b16d949cf
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210924133831-13bd1650d753
 	github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
-	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210921213032-df826aaaeaf5
+	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924135607-b4d9aa202f82
 	github.com/kurtosis-tech/minimal-grpc-server v0.0.0-20210504182615-82226e94877b // indirect
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
