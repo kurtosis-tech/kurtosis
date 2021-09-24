@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.10
 ### Fixes
 * Fixed some logging that was being incorrectly being done through `logrus`, rather than `DockerManager.log`
 
