@@ -1,5 +1,9 @@
 # TBD
 
+# 1.20.3
+### Fixes
+* Fix an issue with testing framework where debug logging was getting incorrectly printed to STDOUT when it should have gone to the test-specific log
+
 # 1.20.2
 ### Features
 * Upgraded to `minimal-grpc-server` 0.3.7, which has debug logging for every request/response to the server
