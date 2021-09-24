@@ -275,20 +275,20 @@ func (manager DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	manager.log.Tracef("Checking if image '%v' is available locally...", dockerImage)
 	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
-	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
+	manager.log.Tracef("Is image available locally?: %v", imageExistsLocally)
 
 	if !imageExistsLocally {
-		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		manager.log.Tracef("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.PullImage(context, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
-		logrus.Tracef("Image successfully pulled from remote to local")
+		manager.log.Tracef("Image successfully pulled from remote to local")
 	}
 
 	networks, err := manager.getNetworksByFilter(context, "id", networkId)
@@ -337,7 +337,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage,
 		)
 	}
-	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
+	manager.log.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if staticIp != nil {
@@ -389,7 +389,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
-			logrus.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
+			manager.log.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
 			containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
@@ -398,7 +398,7 @@ func (manager DockerManager) CreateAndStartContainer(
 						"container which is necessary for determining which host ports the container's ports were bound to",
 				)
 			}
-			logrus.Tracef("Container inspect response: %+v", containerInspectResp)
+			manager.log.Tracef("Container inspect response: %+v", containerInspectResp)
 			networkSettings := containerInspectResp.NetworkSettings
 			if networkSettings == nil {
 				return "", nil, stacktrace.NewError(
@@ -407,7 +407,7 @@ func (manager DockerManager) CreateAndStartContainer(
 					containerId,
 				)
 			}
-			logrus.Tracef("Network settings: %+v", networkSettings)
+			manager.log.Tracef("Network settings: %+v", networkSettings)
 			allInterfaceHostPortBindings := networkSettings.Ports
 			if allInterfaceHostPortBindings == nil {
 				return "", nil, stacktrace.NewError(
@@ -415,10 +415,10 @@ func (manager DockerManager) CreateAndStartContainer(
 					containerId,
 				)
 			}
-			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
+			manager.log.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := getHostPortBindingsFromDockerInspectResult(usedPortsSet, allInterfaceHostPortBindings)
+			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(usedPortsSet, allInterfaceHostPortBindings)
 			if len(candidatePortBindingsOnExpectedInterface) == len(usedPortsSet) {
 				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
 				break
@@ -843,26 +843,26 @@ func (manager *DockerManager) getContainerCfg(
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
 // If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
-func getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
+func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
 	result := map[nat.Port]*nat.PortBinding{}
 	for port, allInterfaceBindings := range allInterfaceHostPortBindings {
 		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
 		//  result will have a 1:1 mapping
 		if _, found := usedPortsSet[port]; !found {
-			logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
+			manager.log.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
 			continue
 		}
 
 		foundHostPortBinding := false
 		for _, interfaceBinding := range allInterfaceBindings {
-			logrus.Tracef(
+			manager.log.Tracef(
 				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
 				interfaceBinding.HostIP,
 				interfaceBinding.HostPort,
 				port,
 			)
 			if interfaceBinding.HostIP == expectedHostIp {
-				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
+				manager.log.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
 				result[port] = &nat.PortBinding{
 					HostIP:   interfaceBinding.HostIP,
 					HostPort: interfaceBinding.HostPort,
