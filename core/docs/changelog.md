@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added a new test to the internal testsuite to verify that test-internal state set in `Test.setup` is persisted in `Test.run`
 
 # 1.20.3
 ### Fixes
