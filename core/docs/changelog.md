@@ -1,7 +1,7 @@
 # TBD
 ### Features
 * Add the relative service directory path in `RegisterService` and `GetServiceInfo` methods
-* Upgraded to [Kurt Client API 0.17.0](https://github.com/kurtosis-tech/kurtosis-client/blob/develop/docs/changelog.md#0170)
+* Upgraded to [Kurt Client API 0.17.1](https://github.com/kurtosis-tech/kurtosis-client/blob/develop/docs/changelog.md#0171)
 * Upgraded to [testsuite API lib 0.8.1](https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/blob/develop/docs/changelog.md#081)
 
 ### Breaking Changes

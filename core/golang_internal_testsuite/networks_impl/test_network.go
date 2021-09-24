@@ -28,9 +28,9 @@ const (
 	apiServiceIdPrefix = "api-"
 	apiServicePort     = 2434
 
-	waitForStartupDelayMilliseconds = 1000
-	waitForStartupMaxNumPolls       = 15
-	configFileKey                   = "config-file.txt"
+	waitForStartupDelayMilliseconds       = 1000
+	waitForStartupMaxNumPolls             = 15
+	configFilepathRelativeToSharedDirRoot = "config-file.txt"
 )
 
 type datastoreConfig struct {
@@ -193,9 +193,9 @@ func getApiServiceContainerConfigSupplier(network *TestNetwork) func(ipAddr stri
 }
 
 func createDatastoreConfigFileInServiceDirectory(network *TestNetwork, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
-	configFileFilePath, err := sharedDirectory.GetChildPath(configFileKey)
+	configFileFilePath, err := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", configFileKey)
+		return nil, stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", configFilepathRelativeToSharedDirRoot)
 	}
 
 	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
