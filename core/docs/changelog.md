@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix an issue with testing framework where debug logging was getting incorrectly printed to STDOUT when it should have gone to the test-specific log
 
 # 1.20.2
 ### Features
