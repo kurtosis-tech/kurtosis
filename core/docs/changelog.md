@@ -1,5 +1,18 @@
 # TBD
 
+# 1.21.0
+### Features
+* Add the relative service directory path in `RegisterService` and `GetServiceInfo` methods
+* Upgraded to [Kurt Client API 0.17.1](https://github.com/kurtosis-tech/kurtosis-client/blob/develop/docs/changelog.md#0171)
+* Upgraded to [testsuite API lib 0.8.1](https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/blob/develop/docs/changelog.md#081)
+
+### Breaking Changes
+* Remove`RegisterStaticFiles()`, `GenerateFiles()` and `LoadStaticFiles()` methods from `ApiContainerService`
+  * Users should manually create, generate and copy static and dynamic files into the service container with the help of the `RelativeServiceDirpath` field added in `RegisterService` and `GetServiceInfo` methods
+
+### Changes
+* Updated Golang internal testsuite tests in order to use the latest changes made on `Kurtosis Client` which adds the new `ContainerConfig` object and remove some methods related to file generation
+
 # 1.20.4
 ### Features
 * Added a new test to the internal testsuite to verify that test-internal state set in `Test.setup` is persisted in `Test.run`

@@ -231,8 +231,8 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// NOTE: We could add a timeout here if necessary
 	log.Tracef("%vRegistering test files...", initializerLogPrefix)
-	registerFilesArgs := &kurtosis_testsuite_rpc_api_bindings.RegisterFilesArgs{TestName: testName}
-	if _, err := testsuiteServiceClient.RegisterFiles(testSetupExecutionCtx, registerFilesArgs); err != nil {
+	registerFilesArgs := &kurtosis_testsuite_rpc_api_bindings.RegisterFilesArtifactsArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.RegisterFilesArtifacts(testSetupExecutionCtx, registerFilesArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred registering the files for test '%v'", testName)
 	}
 	log.Tracef("%vTest files registered successfully", initializerLogPrefix)
