@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.10
+### Fixes
+* Fixed some logging that was being incorrectly being done through `logrus`, rather than `DockerManager.log`
+
 # 0.2.9
 ### Fixes
 * Added retry logic when trying to get host port bindings for a container, to account for https://github.com/moby/moby/issues/42860
