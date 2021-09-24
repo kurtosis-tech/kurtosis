@@ -1,5 +1,9 @@
 # TBD
 
+# 1.20.4
+### Features
+* Added a new test to the internal testsuite to verify that test-internal state set in `Test.setup` is persisted in `Test.run`
+
 # 1.20.3
 ### Fixes
 * Fix an issue with testing framework where debug logging was getting incorrectly printed to STDOUT when it should have gone to the test-specific log
