@@ -12,12 +12,19 @@ import (
 )
 
 const (
+	startingInternalState = "This definitely needs to chang"
 	newInternalState = "Wow, what a change!"
 )
 
 // Tests that the internal state of a test that gets modified in the Setup method gets persisted to the Run method
 type TestInternalStatePersistenceTest struct {
 	internalState string
+}
+
+func NewTestInternalStatePersistenceTest() *TestInternalStatePersistenceTest {
+	return &TestInternalStatePersistenceTest{
+		internalState: startingInternalState,
+	}
 }
 
 func (t *TestInternalStatePersistenceTest) Configure(builder *testsuite.TestConfigurationBuilder) {

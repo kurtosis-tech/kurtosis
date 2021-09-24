@@ -53,7 +53,7 @@ func (suite InternalTestsuite) GetTests() map[string]testsuite.Test {
 		"localStaticFileTest": local_static_file_test.LocalStaticFileTest{},
 		"bulkCommandExecutionTest": bulk_command_execution_test.NewBulkCommandExecutionTest(suite.datastoreServiceImage),
 		"lambdaTest": lambda_test.LambdaTest{},
-		"testInternalStatePersistenceTest": test_internal_state_persistence_test.TestInternalStatePersistenceTest{},
+		"testInternalStatePersistenceTest": test_internal_state_persistence_test.NewTestInternalStatePersistenceTest(),
 	}
 	return tests
 }
