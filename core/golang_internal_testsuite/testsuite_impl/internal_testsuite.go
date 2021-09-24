@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/testsuite_impl/lambda_test"
 	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/testsuite_impl/local_static_file_test"
 	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/testsuite_impl/network_partition_test"
+	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/testsuite_impl/test_internal_state_persistence_test"
 	"github.com/kurtosis-tech/kurtosis/golang_internal_testsuite/testsuite_impl/wait_for_endpoint_availability_test"
 )
 
@@ -52,6 +53,7 @@ func (suite InternalTestsuite) GetTests() map[string]testsuite.Test {
 		"localStaticFileTest": local_static_file_test.LocalStaticFileTest{},
 		"bulkCommandExecutionTest": bulk_command_execution_test.NewBulkCommandExecutionTest(suite.datastoreServiceImage),
 		"lambdaTest": lambda_test.LambdaTest{},
+		"testInternalStatePersistenceTest": test_internal_state_persistence_test.TestInternalStatePersistenceTest{},
 	}
 	return tests
 }
