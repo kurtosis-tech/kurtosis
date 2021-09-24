@@ -20,16 +20,16 @@ type TestInternalStatePersistenceTest struct {
 	internalState string
 }
 
-func (t TestInternalStatePersistenceTest) Configure(builder *testsuite.TestConfigurationBuilder) {
+func (t *TestInternalStatePersistenceTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 	builder.WithSetupTimeoutSeconds(10).WithRunTimeoutSeconds(10)
 }
 
-func (t TestInternalStatePersistenceTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (t *TestInternalStatePersistenceTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	t.internalState = newInternalState
 	return networkCtx, nil
 }
 
-func (t TestInternalStatePersistenceTest) Run(network networks.Network) error {
+func (t *TestInternalStatePersistenceTest) Run(network networks.Network) error {
 	if t.internalState != newInternalState {
 		return stacktrace.NewError("Expected test's internal state in the run method to be '%v' but was '%v'", newInternalState, t.internalState)
 	}
