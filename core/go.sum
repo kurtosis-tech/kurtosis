@@ -487,6 +487,12 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20210918011244-673cbdd59ec5
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210918011244-673cbdd59ec5/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210924010213-b54618807de9 h1:/ej64T3n4u+mwO6dNNSTXKE7T8D+pUV61l7GQaTmWDA=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20210924010213-b54618807de9/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927191607-46138729c75c h1:qrqQGTxZKkDO7QxToVA998dHaEbXunMJE/TYLCzfY28=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927191607-46138729c75c/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927192349-f95b3cd7e58f h1:KVMzYLqJ0Gb44/55LCq6TVDKAyOHoCjO/wFDYuMqY78=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927192349-f95b3cd7e58f/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927194118-b5b131ee861c h1:c1dsHa1MBtdJMr3J4sXdPEbnv6b+ODg3QPABngBaHTY=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927194118-b5b131ee861c/go.mod h1:fZxFsK8z7zlIIWBjjq+kx/jSwQ3AQQarKVEdOFKwHrM=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b h1:opxsLysuegttd+dYDKi+DEoiKQ+swJ419ujGPhHSIGg=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210803193237-d8bcc867ae0e/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
@@ -498,6 +504,10 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210921005707-7242df8ee3
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210921005707-7242df8ee323/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf h1:Pf6YVl1dIpqh/xSaXo8ToBLbD1VPdlUgOTZ2UGggdYU=
 github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf/go.mod h1:Xkqf4qesQy7ZhmCtt4WO6un0QVntQpSBOsOMHwGpjmA=
+github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210927192807-43d4f6283e99 h1:r8z3a8K/GmfRNgnbUx4XELy5/3jfQrIIcYNamdgvl40=
+github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210927192807-43d4f6283e99/go.mod h1:fboDcFhsvn+BCrD3h0eCYz3IfBFLniBGe4Hmc24xowM=
+github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210927194459-d128ccf5522b h1:mgxUfWAEVcnXhiV6PWdgbnJSUO90kuFvWlZQ5iBpECY=
+github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210927194459-d128ccf5522b/go.mod h1:015s4dn+e2WSF/CVoTf/oD+bLiWZ1o6YIp4OiZBlGLY=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c h1:hBA/N93ibR0O1f4tXzQ5hsokIdcaZ8Qkiwlhlls3odA=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210803203144-801fd9867a7f h1:CqcFa1qRlMAE1BjdwL37UwsNaKMLwEP9Qh8XkJ7geMQ=

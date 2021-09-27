@@ -94,25 +94,28 @@ func (launcher UserServiceLauncher) Launch(
 		volumeMounts[artifactVolName] = mountpoint
 	}
 
-	containerId, hostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
-		ctx,
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		imageName,
 		launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceGUID),
-		dockerContainerAlias,
-		nil,	// User services won't run in interactive mode
 		dockerNetworkId,
+	).WithAlias(
+		dockerContainerAlias,
+	).WithStaticIP(
 		ipAddr,
-		map[docker_manager.ContainerCapability]bool{},
-		docker_manager.DefaultNetworkMode,
+	).WithUsedPorts(
 		usedPorts,
+	).ShouldPublishAllPorts(
 		launcher.shouldPublishPorts,
+	).WithEntrypointArgs(
 		entrypointArgs,
+	).WithCmdArgs(
 		cmdArgs,
+	).WithEnvironmentVariables(
 		dockerEnvVars,
-		map[string]string{}, // no bind mounts for services created via the Kurtosis API
+	).WithVolumeMounts(
 		volumeMounts,
-		false,		// User services definitely shouldn't be able to access the Docker host machine
-	)
+	).Build()
+	containerId, hostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
 	}

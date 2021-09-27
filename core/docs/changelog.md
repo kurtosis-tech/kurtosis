@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
 
 # 1.20.4
 ### Features

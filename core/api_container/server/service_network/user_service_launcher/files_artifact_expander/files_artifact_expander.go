@@ -7,7 +7,6 @@ package files_artifact_expander
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
@@ -117,25 +116,18 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 	}
 	defer expander.freeIpAddrTracker.ReleaseIpAddr(containerIp)
 
-	containerId, _, err := expander.dockerManager.CreateAndStartContainer(
-		ctx,
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		dockerImage,
 		containerName,
-		"",
-		nil,	// Files artifact expansion containers don't need interactive mode
 		expander.testNetworkId,
+	).WithStaticIP(
 		containerIp,
-		map[docker_manager.ContainerCapability]bool{},
-		docker_manager.DefaultNetworkMode,
-		map[nat.Port]bool{},
-		false, // We don't need to publish any ports for the files artifact-expanding image
-		nil, // No ENTRYPOINT overriding needed
+	).WithCmdArgs(
 		containerCmd,
-		map[string]string{}, // No env variables
-		map[string]string{}, // No bind mounts
+	).WithVolumeMounts(
 		volumeMounts,
-		false,		// Files artifact expander doesn't need access to the Docker host machine
-	)
+	).Build()
+	containerId, _, err := expander.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the artifact into the volume")
 	}
