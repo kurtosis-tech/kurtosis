@@ -88,25 +88,25 @@ func (launcher LambdaLauncher) Launch(
 
 	lambdaGUID := newLambdaGUID(lambdaID)
 
-	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(
-		ctx,
+	containerName := launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaGUID)
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
-		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaGUID),
-		launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaGUID),
-		nil,	// Lambda containers don't run in interactive mode
+		containerName,
 		launcher.dockerNetworkId,
+	).WithAlias(
+		containerName,
+	).WithStaticIP(
 		lambdaIpAddr,
-		map[docker_manager.ContainerCapability]bool{}, // No extra capabilities needed for modules
-		docker_manager.DefaultNetworkMode,
+	).WithUsedPorts(
 		usedPorts,
+	).ShouldPublishAllPorts(
 		launcher.shouldPublishPorts,
-		nil, // No ENTRYPOINT overrides; modules are configured using env vars
-		nil, // No CMD overrides; modules are configured using env vars
+	).WithEnvironmentVariables(
 		envVars,
-		nil, // No bind mounts needed
+	).WithVolumeMounts(
 		volumeMounts,
-		false, // Lambdas shouldn't have access to the host machine, for security purposes!
-	)
+	).Build()
+	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the module container")
 	}

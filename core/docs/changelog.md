@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
+
+### Fixes
+* Actually depend on Kurt Client 0.17.1
 
 # 1.21.0
 ### Features

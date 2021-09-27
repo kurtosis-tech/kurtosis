@@ -10,10 +10,10 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20210924010213-b54618807de9
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20210927194118-b5b131ee861c
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210924133831-13bd1650d753
-	github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210904011652-624b6d90bdaf
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210924194127-cd7e6fb28798
+	github.com/kurtosis-tech/kurtosis-core-launcher-lib v0.0.0-20210927194459-d128ccf5522b
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153929-e5305a8ffc52

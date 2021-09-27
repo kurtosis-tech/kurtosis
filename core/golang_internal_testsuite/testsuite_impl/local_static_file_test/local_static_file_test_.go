@@ -60,10 +60,7 @@ func (l LocalStaticFileTest) Run(network networks.Network) error {
 
 	expectedTestFilesContent := []string{expectedTestFile1Contents, expectedTestFile2Contents}
 	for staticFileNameKey, staticFileName := range static_files_consts.StaticFilesNames {
-		testFileFilePath, err := serviceCtx.GetSharedDirectory().GetChildPath(staticFileName)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting file object with filename '%v'", staticFileName)
-		}
+		testFileFilePath := serviceCtx.GetSharedDirectory().GetChildPath(staticFileName)
 
 		catStaticFileCmd := []string{
 			"cat",
@@ -126,10 +123,7 @@ func copyStaticFilesInServiceContainer(staticFilesNames []string, staticFilesFol
 }
 
 func copyStaticFileInServiceContainer(staticFileName string, staticFilesFolder string,sharedDirectory *services.SharedPath) error {
-	testStaticFileFilePath, err := sharedDirectory.GetChildPath(staticFileName)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", staticFileName)
-	}
+	testStaticFileFilePath := sharedDirectory.GetChildPath(staticFileName)
 
 	testStaticFilepath := filepath.Join(staticFilesFolder, staticFileName)
 

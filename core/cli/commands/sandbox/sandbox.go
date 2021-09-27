@@ -10,7 +10,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
@@ -58,6 +57,15 @@ const (
 	workingDirpathInsideReplContainer = "/repl"
 
 	replContainerSuccessExitCode = 0
+
+	interactiveReplContainerNameSuffix = "_interactive-repl"
+
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	// vvvvvvvvvvvvvvv If you change these, update the REPL Dockerfile!!! vvvvvvvvvvvv
+	replContainerKurtosisSocketEnvVar = "KURTOSIS_API_SOCKET"
+	replContainerEnclaveDataVolMountpointEnvVar = "ENCLAVE_DATA_VOLUME_MOUNTPOINT"
+	// ^^^^^^^^^^^^^^^ If you change these, update the REPL Dockerfile!!! ^^^^^^^^^^^^
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -189,31 +197,23 @@ func runReplContainer(
 	}
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
-	replContainerId, _, err := dockerManager.CreateAndStartContainer(
-		context.Background(),
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
-		enclaveId + "_INTERACTIVE",
-		"",
-		interactiveModeTtySize,  // REPL container needs to run in interactive mode
+		enclaveId + interactiveReplContainerNameSuffix,  // Container name
 		networkId,
+	).WithInteractiveModeTtySize(
+		interactiveModeTtySize,
+	).WithStaticIP(
 		replContainerIpAddr,
-		map[docker_manager.ContainerCapability]bool{},
-		docker_manager.DefaultNetworkMode,
-		map[nat.Port]bool{},
-		false,	// REPL container doesn't have any ports for publishing
-		nil,
-		nil,
-		map[string]string{
-			// TODO Extract to named constant
-			"KURTOSIS_API_SOCKET":            kurtosisApiContainerSocket,
-			"ENCLAVE_DATA_VOLUME_MOUNTPOINT": enclaveDataVolMountpointOnReplContainer,
-		},
+	).WithEnvironmentVariables(map[string]string{
+		replContainerKurtosisSocketEnvVar:            kurtosisApiContainerSocket,
+		replContainerEnclaveDataVolMountpointEnvVar: enclaveDataVolMountpointOnReplContainer,
+	}).WithBindMounts(
 		bindMounts,
-		map[string]string{
-			enclaveId: enclaveDataVolMountpointOnReplContainer,
-		},
-		false,	// The REPL doesn't need access to the host machine
-	)
+	).WithVolumeMounts(map[string]string{
+		enclaveId: enclaveDataVolMountpointOnReplContainer,
+	}).Build()
+	replContainerId, _, err := dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")
 	}
