@@ -1,5 +1,12 @@
 # TBD
 
+# 0.3.0
+### Features
+* `CreateAndStartContainer` now accepts args as built by a builder (hallelujah!)
+
+### Breaking Changes
+* `CreateAndStartContainer` now accepts a `CreateAndStartContainerArgs` object, rather than the gigantic list of parameters
+
 # 0.2.10
 ### Fixes
 * Fixed some logging that was being incorrectly being done through `logrus`, rather than `DockerManager.log`
