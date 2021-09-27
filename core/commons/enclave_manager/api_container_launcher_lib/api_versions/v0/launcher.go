@@ -3,8 +3,8 @@ package v0
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_starter"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_starter"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"

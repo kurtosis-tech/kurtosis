@@ -2,8 +2,8 @@ package api_versions
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_launcher"
-	v02 "github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_versions/v0"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
+	v02 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
 	"github.com/sirupsen/logrus"
 )
 

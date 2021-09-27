@@ -2,7 +2,7 @@ package v0
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
 	"github.com/palantir/stacktrace"
 	"os"
 )
