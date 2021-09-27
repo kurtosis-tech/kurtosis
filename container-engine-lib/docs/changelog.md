@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.0
 ### Features
 * `CreateAndStartContainerArgsBuilder`'s boolean-setting functions now accept a boolean
 
