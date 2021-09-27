@@ -133,8 +133,8 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUsedPorts(portsSet map[na
 
 // If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
 //  to the container
-func (builder *CreateAndStartContainerArgsBuilder) ShouldPublishAllPorts() *CreateAndStartContainerArgsBuilder {
-	builder.shouldPublishAllPorts = true
+func (builder *CreateAndStartContainerArgsBuilder) ShouldPublishAllPorts(shouldPublishAllPorts bool) *CreateAndStartContainerArgsBuilder {
+	builder.shouldPublishAllPorts = shouldPublishAllPorts
 	return builder
 }
 
@@ -172,7 +172,7 @@ func (builder *CreateAndStartContainerArgsBuilder) WithVolumeMounts(volumeMounts
 // Will provide the container with a magic "host.docker.internal" domain name
 //  that it can use to access ports of the machine running Docker itself (useful if, e.g., the container
 //  needs to check the host machine's free ports)
-func (builder *CreateAndStartContainerArgsBuilder) NeedsAccessToDockerHostMachine() *CreateAndStartContainerArgsBuilder {
-	builder.needsAccessToDockerHostMachine = true
+func (builder *CreateAndStartContainerArgsBuilder) NeedsAccessToDockerHostMachine(needsAccess bool) *CreateAndStartContainerArgsBuilder {
+	builder.needsAccessToDockerHostMachine = needsAccess
 	return builder
 }
