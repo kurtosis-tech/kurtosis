@@ -1,4 +1,9 @@
 # TBD
+### Features
+* `CreateAndStartContainer` now accepts args as built by a builder (hallelujah!)
+
+### Breaking Changes
+* `CreateAndStartContainer` now accepts a `CreateAndStartContainerArgs` object, rather than the gigantic list of parameters
 
 # 0.2.10
 ### Fixes
