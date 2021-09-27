@@ -1,6 +1,7 @@
 # TBD
 ### Changes
 * Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
+* Absorb `kurtosis-core-launcher-lib` into here
 
 ### Fixes
 * Actually depend on Kurt Client 0.17.1
