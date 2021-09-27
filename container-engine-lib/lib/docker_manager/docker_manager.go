@@ -222,61 +222,25 @@ func (manager DockerManager) CreateVolume(context context.Context, volumeName st
 /*
 Creates a Docker container with the given args and starts it.
 
-Args:
-	context: The Context that this request is running in (useful for cancellation)
-	dockerImage: Image to start
-	name: The name to give the container to be created
-	interactiveModeTerminalSize: If non-nil, the container will be started in interactive mode, with a container TTY
-		set to the specified dimensions
-	networkId: The ID of the Docker network that this container should be attached to
-	staticIp: IP the container will be assigned (leave nil to not assign any IP, which only works with the bridge network)
-	addedCapabilities: A "set" of capabilities to add to the container, corresponding to the --cap-add Docker flag
-		For more info, see the --cap-add section of https://docs.docker.com/engine/reference/run/
-	networkMode: When a non-empty string, sets the Docker --network flag to be this given string
-	usedPorts: A set of ports that the container will listen on
-	shouldPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
-		to the container
-	entrypointArgs: The args that will be used to override the ENTRYPOINT of the image (leave as nil to not override)
-	cmdArgs: The args that will be used to run the container (leave as nil to run the CMD in the image)
-	envVariables: A key-value mapping of Docker environment variables which will be passed to the container during startup
-	bindMounts: Mapping of (host file) -> (mountpoint on container) that will be mounted on container startup
-	volumeMounts: Mapping of (volume name) -> (mountpoint on container) to mount during container launch
-	needsAccessToDockerHostMachine: Will provide the container with a magic "host.docker.internal" domain name
-		that it can use to access ports of the machine running Docker itself (useful if, e.g., the container
-		needs to check the host machine's free ports)
-
 Returns:
 	containerId: The Docker container ID of the newly-created container
 	containerHostPortBindings: If shouldPublishAllPorts is true, returns the ports on the host container interface where each of the
 		container's exposed ports can be found; if shouldPublishAllPorts is false, this will be an empty map
  */
 func (manager DockerManager) CreateAndStartContainer(
-			context context.Context,
-			dockerImage string,
-			name string,
-			alias string,
-			interactiveModeTtySize *InteractiveModeTtySize, // If nil, interactive mode will be disabled; if non-nil, then interactive mode will be enabled
-			networkId string,
-			staticIp net.IP,
-			addedCapabilities map[ContainerCapability]bool,
-			networkMode DockerManagerNetworkMode,
-			usedPortsSet map[nat.Port]bool,
-			shouldPublishAllPorts bool,
-			entrypointArgs []string,
-			cmdArgs []string,
-			envVariables map[string]string,
-			bindMounts map[string]string,
-			volumeMounts map[string]string,
-			needsAccessToDockerHostMachine bool) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
+	ctx context.Context,
+	args *CreateAndStartContainerArgs,
+) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
 
 	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
+	dockerImage := args.dockerImage
 	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
 	manager.log.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	imageExistsLocally, err := manager.isImageAvailableLocally(context, dockerImage)
+	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
@@ -284,76 +248,79 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	if !imageExistsLocally {
 		manager.log.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.PullImage(context, dockerImage)
+		err = manager.PullImage(ctx, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
 		manager.log.Tracef("Image successfully pulled from remote to local")
 	}
 
-	networks, err := manager.getNetworksByFilter(context, "id", networkId)
+	networks, err := manager.getNetworksByFilter(ctx, "id", args.networkId)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", networkId)
+		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
 	}
 	if len(networks) == 0 {
-		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.", networkId)
+		return "", nil, stacktrace.NewError(
+			"Kurtosis Docker network with ID %v was never created before trying to launch containers. Please call DockerManager.CreateNetwork first.",
+			args.networkId,
+		)
 	} else if len(networks) > 1 {
-		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", networkId)
+		return "", nil, stacktrace.NewError("Kurtosis Docker network with ID %v matches several networks!", args.networkId)
 	}
 
-	isInteractiveMode := interactiveModeTtySize != nil
+	isInteractiveMode := args.interactiveModeTtySize != nil
 
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
-		usedPortsSet,
-		entrypointArgs,
-		cmdArgs,
-		envVariables,
+		args.usedPortsSet,
+		args.entrypointArgs,
+		args.cmdArgs,
+		args.envVariables,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
 	}
 	containerHostConfigPtr, err := manager.getContainerHostConfig(
-		addedCapabilities,
-		networkMode,
-		bindMounts,
-		volumeMounts,
-		usedPortsSet,
-		shouldPublishAllPorts,
-		needsAccessToDockerHostMachine)
+		args.addedCapabilities,
+		args.networkMode,
+		args.bindMounts,
+		args.volumeMounts,
+		args.usedPortsSet,
+		args.shouldPublishAllPorts,
+		args.needsAccessToDockerHostMachine)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
-	containerCreateResp, err := manager.dockerClient.ContainerCreate(context, containerConfigPtr, containerHostConfigPtr, nil, name)
+	containerCreateResp, err := manager.dockerClient.ContainerCreate(ctx, containerConfigPtr, containerHostConfigPtr, nil, args.name)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", name, dockerImage)
+		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
 	containerId = containerCreateResp.ID
 	if containerId == "" {
 		return "", nil, stacktrace.NewError(
 			"Creation of container '%v' from image '%v' succeeded without error, but we didn't get a container ID back - this is VERY strange!",
-			name,
+			args.name,
 			dockerImage,
 		)
 	}
 	manager.log.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
-	if staticIp != nil {
-		if err := manager.ConnectContainerToNetwork(context, networkId, containerId, staticIp, alias); err != nil {
+	if args.staticIp != nil {
+		if err := manager.ConnectContainerToNetwork(ctx, args.networkId, containerId, args.staticIp, args.alias); err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to connect container %s to network.", containerId)
 		}
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	if err := manager.dockerClient.ContainerStart(context, containerId, types.ContainerStartOptions{}); err != nil {
+	if err := manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
 	}
 	functionFinishedSuccessfully := false
 	defer func() {
 		if !functionFinishedSuccessfully {
-			if err := manager.KillContainer(context, containerId); err != nil {
+			if err := manager.KillContainer(ctx, containerId); err != nil {
 				manager.log.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
 				fmt.Fprintln(manager.log.Out, err)
 				manager.log.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
@@ -369,15 +336,15 @@ func (manager DockerManager) CreateAndStartContainer(
 			 lines longer than the user's terminal
 		*/
 		resizeOpts := types.ResizeOptions{
-			Height: interactiveModeTtySize.Height,
-			Width:  interactiveModeTtySize.Width,
+			Height: args.interactiveModeTtySize.Height,
+			Width:  args.interactiveModeTtySize.Width,
 		}
-		if err := manager.dockerClient.ContainerResize(context, containerId, resizeOpts); err != nil {
+		if err := manager.dockerClient.ContainerResize(ctx, containerId, resizeOpts); err != nil {
 			return "", nil, stacktrace.Propagate(
 				err,
 				"An error occurred resizing the new container's TTY size to height %v and width %v to match the user's terminal",
-				interactiveModeTtySize.Height,
-				interactiveModeTtySize.Width,
+				args.interactiveModeTtySize.Height,
+				args.interactiveModeTtySize.Width,
 			)
 		}
 	}
@@ -385,12 +352,12 @@ func (manager DockerManager) CreateAndStartContainer(
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
-	if shouldPublishAllPorts {
+	if args.shouldPublishAllPorts {
 		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
 			manager.log.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
-			containerInspectResp, err := manager.dockerClient.ContainerInspect(context, containerId)
+			containerInspectResp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
 					err,
@@ -418,8 +385,8 @@ func (manager DockerManager) CreateAndStartContainer(
 			manager.log.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(usedPortsSet, allInterfaceHostPortBindings)
-			if len(candidatePortBindingsOnExpectedInterface) == len(usedPortsSet) {
+			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(args.usedPortsSet, allInterfaceHostPortBindings)
+			if len(candidatePortBindingsOnExpectedInterface) == len(args.usedPortsSet) {
 				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
 				break
 			}
@@ -427,7 +394,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 
 		// Final verification that all used ports get a host machine port bindings
-		if len(resultHostPortBindings) != len(usedPortsSet) {
+		if len(resultHostPortBindings) != len(args.usedPortsSet) {
 			return "", nil, stacktrace.NewError(
 				"Publishing all ports was requested, but container '%v' never got host port bindings for all the user ports on host machine interface '%v'",
 				containerId,
