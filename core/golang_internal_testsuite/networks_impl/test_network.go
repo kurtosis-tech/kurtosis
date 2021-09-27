@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"strconv"
 )
@@ -27,9 +28,9 @@ const (
 	apiServiceIdPrefix = "api-"
 	apiServicePort     = 2434
 
-	waitForStartupDelayMilliseconds = 1000
-	waitForStartupMaxNumPolls       = 15
-	configFileKey                   = "config-file"
+	waitForStartupDelayMilliseconds       = 1000
+	waitForStartupMaxNumPolls             = 15
+	configFilepathRelativeToSharedDirRoot = "config-file.txt"
 )
 
 type datastoreConfig struct {
@@ -73,9 +74,9 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() error {
 		return stacktrace.NewError("Cannot add API services to network; one or more API services already exists")
 	}
 
-	datastoreContainerCreationConfig, datastoreRunConfigFunc := getDatastoreServiceConfigurations()
+	datastoreContainerConfigSupplier := getDatastoreContainerConfigSupplier()
 
-	datastoreServiceContext, hostPortBindings, err := network.networkCtx.AddService(datastoreServiceId, datastoreContainerCreationConfig, datastoreRunConfigFunc)
+	datastoreServiceContext, hostPortBindings, err := network.networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -134,9 +135,9 @@ func (network *TestNetwork) addApiService() (*api_service_client.APIClient, erro
 	network.nextApiServiceId = network.nextApiServiceId + 1
 	serviceId := services.ServiceID(serviceIdStr)
 
-	apiServiceContainerCreationConfig, apiServiceGenerateRunConfigFunc := getApiServiceConfigurations(network)
+	apiServiceContainerConfigSupplier := getApiServiceContainerConfigSupplier(network)
 
-	apiServiceContext, hostPortBindings, err := network.networkCtx.AddService(serviceId, apiServiceContainerCreationConfig, apiServiceGenerateRunConfigFunc)
+	apiServiceContext, hostPortBindings, err := network.networkCtx.AddService(serviceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -152,85 +153,71 @@ func (network *TestNetwork) addApiService() (*api_service_client.APIClient, erro
 	return apiClient, nil
 }
 
-func getDatastoreServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
-	datastoreContainerCreationConfig := getDataStoreContainerCreationConfig()
-
-	datastoreRunConfigFunc := getDataStoreRunConfigFunc()
-	return datastoreContainerCreationConfig, datastoreRunConfigFunc
-}
-
-func getDataStoreContainerCreationConfig() *services.ContainerCreationConfig {
-	containerCreationConfig := services.NewContainerCreationConfigBuilder(
-		datastoreImage,
-	).WithUsedPorts(
-		map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
-	).Build()
-	return containerCreationConfig
-}
-
-func getDataStoreRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-	runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-		return services.NewContainerRunConfigBuilder().Build(), nil
+func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+		containerConfig := services.NewContainerConfigBuilder(
+				datastoreImage,
+			).WithUsedPorts(
+				map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
+		    ).Build()
+		return containerConfig, nil
 	}
-	return runConfigFunc
+	return containerConfigSupplier
 }
 
-func getApiServiceConfigurations(network *TestNetwork) (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
-	configInitializingFunc := getApiServiceConfigInitializingFunc(network.datastoreClient)
+func getApiServiceContainerConfigSupplier(network *TestNetwork) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
-	apiServiceContainerCreationConfig := getApiServiceContainerCreationConfig(configInitializingFunc)
+	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
-	apiServiceGenerateRunConfigFunc := getApiServiceRunConfigFunc()
-	return apiServiceContainerCreationConfig, apiServiceGenerateRunConfigFunc
-}
-
-func getApiServiceConfigInitializingFunc(datastoreClient *datastore_service_client.DatastoreClient) func(fp *os.File) error {
-	configInitializingFunc := func(fp *os.File) error {
-		logrus.Debugf("Datastore IP: %v , port: %v", datastoreClient.IpAddr(), datastoreClient.Port())
-		configObj := datastoreConfig{
-			DatastoreIp:   datastoreClient.IpAddr(),
-			DatastorePort: datastoreClient.Port(),
-		}
-		configBytes, err := json.Marshal(configObj)
+		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(network, sharedDirectory)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
+			return nil, stacktrace.Propagate(err, "An error occurred creating data store config file in service container")
 		}
 
-		logrus.Debugf("API config JSON: %v", string(configBytes))
-
-		if _, err := fp.Write(configBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
-		}
-
-		return nil
-	}
-	return configInitializingFunc
-}
-
-func getApiServiceContainerCreationConfig(configInitializingFunc func(fp *os.File) error) *services.ContainerCreationConfig {
-	apiServiceContainerCreationConfig := services.NewContainerCreationConfigBuilder(
-		apiServiceImage,
-	).WithUsedPorts(
-		map[string]bool{fmt.Sprintf("%v/tcp", apiServicePort): true},
-	).WithGeneratedFiles(map[string]func(*os.File) error{
-		configFileKey: configInitializingFunc,
-	}).Build()
-	return apiServiceContainerCreationConfig
-}
-
-func getApiServiceRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-	apiServiceRunConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-		configFilepath, found := generatedFileFilepaths[configFileKey]
-		if !found {
-			return nil, stacktrace.NewError("No filepath found for config file key '%v'", configFileKey)
-		}
 		startCmd := []string{
 			"./api.bin",
 			"--config",
-			configFilepath,
+			datastoreConfigFileFilePath.GetAbsPathOnServiceContainer(),
 		}
-		result := services.NewContainerRunConfigBuilder().WithCmdOverride(startCmd).Build()
-		return result, nil
+
+		containerConfig := services.NewContainerConfigBuilder(
+				apiServiceImage,
+			).WithUsedPorts(
+				map[string]bool{fmt.Sprintf("%v/tcp", apiServicePort): true},
+			).WithCmdOverride(startCmd).Build()
+
+		return containerConfig, nil
 	}
-	return apiServiceRunConfigFunc
+
+	return containerConfigSupplier
+}
+
+func createDatastoreConfigFileInServiceDirectory(network *TestNetwork, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
+	configFileFilePath, err := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", configFilepathRelativeToSharedDirRoot)
+	}
+
+	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
+
+	datastoreClient := network.datastoreClient
+
+	logrus.Debugf("Datastore IP: %v , port: %v", datastoreClient.IpAddr(), datastoreClient.Port())
+
+	configObj := datastoreConfig{
+		DatastoreIp:   datastoreClient.IpAddr(),
+		DatastorePort: datastoreClient.Port(),
+	}
+	configBytes, err := json.Marshal(configObj)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
+	}
+
+	logrus.Debugf("API config JSON: %v", string(configBytes))
+
+	if err := ioutil.WriteFile(configFileFilePath.GetAbsPathOnThisContainer(), configBytes, os.ModePerm); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
+	}
+
+	return configFileFilePath, nil
 }
