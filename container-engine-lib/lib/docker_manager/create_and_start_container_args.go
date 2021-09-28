@@ -180,7 +180,7 @@ func (builder *CreateAndStartContainerArgsBuilder) NeedsAccessToDockerHostMachin
 	return builder
 }
 
-// A key-value maps tha represents container's labels usefull to search containers inside an enclave
+// A key-value maps tha represents container's labels useful to search containers inside an enclave
 func (builder *CreateAndStartContainerArgsBuilder) WithLabels(labels map[string]string) *CreateAndStartContainerArgsBuilder {
 	builder.labels = labels
 	return builder

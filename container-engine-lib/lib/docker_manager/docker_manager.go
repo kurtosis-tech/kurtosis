@@ -30,8 +30,8 @@ import (
 /*
 WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 
-This manager is used on a per-test basis. Because tests can run in parallel but we need to pretty-print
-each test's logs in a single block, we need to have a seprate logger per test. As such, this class takes in a
+This manager is used on a per-test basis. Because tests can run in parallel, but we need to pretty-print
+each test's logs in a single block, we need to have a separate logger per test. As such, this class takes in a
 logrus.Logger, and *all log messages should be sent through this logger rather than the systemwide logger!!!*
 
 No logrus.Info, logrus.Debug, etc. calls should happen in this file - only manager.log.Info, manager.log.Debug, etc.!
@@ -651,7 +651,7 @@ func (manager DockerManager) GetContainerIdsByLabels(ctx context.Context, labels
 func getLabelsFilterList(labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
 	for labelsKey, labelsValue := range labels {
-		labelFilterValue := strings.Join([]string{labelsKey, "=", labelsValue}, "")
+		labelFilterValue := strings.Join([]string{labelsKey,  labelsValue}, "=")
 		filterArg := filters.Arg(labelFilterKey, labelFilterValue)
 		filtersArgs = append(filtersArgs, filterArg)
 	}

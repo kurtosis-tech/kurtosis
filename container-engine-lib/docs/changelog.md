@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Add container's labels configuration when a container is started
+* Add a new method `DockerManager.GetContainerIdsByLabels` to get a container ids list by container's labels
 
 # 0.4.0
 ### Features
