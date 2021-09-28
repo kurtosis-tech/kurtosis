@@ -13,9 +13,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
-	v0 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
+	"github.com/kurtosis-tech/kurtosis/api_container/server/external_container_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
@@ -25,6 +24,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
+	v0 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/palantir/stacktrace"
@@ -73,6 +74,18 @@ func runMain () error {
 	}
 	logrus.SetLevel(logLevel)
 
+	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
+	}
+	freeIpAddrTracker := commons.NewFreeIpAddrTracker(
+		logrus.StandardLogger(),
+		parsedSubnetMask,
+		args.TakenIpAddrs,
+	)
+
+	externalContainerStore := external_container_store.NewExternalContainerStore(freeIpAddrTracker)
+
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
@@ -88,7 +101,7 @@ func runMain () error {
 				dockerManager,
 				args.NetworkId,
 				ownContainerId,
-				args.ExternalMountedContainerIds); err != nil {
+				externalContainerStore); err != nil {
 			// TODO propagate this to the user somehow - likely in the exit code of the API container
 			logrus.Errorf("An error occurred when disconnecting external containers and killing everything else:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -97,7 +110,7 @@ func runMain () error {
 
 	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
 
-	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, args)
+	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
 	}
@@ -116,7 +129,12 @@ func runMain () error {
 	}()
 
 	//Creation of ApiContainerService
-	apiContainerService, err := server.NewApiContainerService(enclaveDataVol, serviceNetwork, lambdaStore)
+	apiContainerService, err := server.NewApiContainerService(
+		enclaveDataVol,
+		externalContainerStore,
+		serviceNetwork,
+		lambdaStore,
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
 	}
@@ -156,18 +174,10 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
+		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
-	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
-	}
-	freeIpAddrTracker := commons.NewFreeIpAddrTracker(
-		logrus.StandardLogger(),
-		parsedSubnetMask,
-		args.TakenIpAddrs,
-	)
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
@@ -232,12 +242,14 @@ func disconnectExternalContainersAndKillEverythingElse(
 		dockerManager *docker_manager.DockerManager,
 		networkId string,
 		ownContainerId string,
-		externalContainerIds map[string]bool) error {
+		externalContainerStore *external_container_store.ExternalContainerStore) error {
 	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
 	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the containers connected to network '%v', which is necessary for stopping them", networkId)
 	}
+
+	externalContainerIds := externalContainerStore.GetContainerIDs()
 
 	allContainerHandlingErrors := map[string]error{}
 	for _, containerId := range containerIds {

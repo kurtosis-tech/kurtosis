@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 )
 
@@ -28,9 +29,9 @@ func StartAPIContainer(
 		ipAddr net.IP,
 		enclaveDataVolName string,
 		args APIContainerArgs,
-) (string, error) {
+) (string, *nat.PortBinding, error) {
 	if err := args.Validate(); err != nil {
-		return "", stacktrace.Propagate(err, "Can't start API container because args didn't pass validation")
+		return "", nil, stacktrace.Propagate(err, "Can't start API container because args didn't pass validation")
 	}
 
 	kurtosisApiPort := nat.Port(fmt.Sprintf(
@@ -41,7 +42,7 @@ func StartAPIContainer(
 
 	serializedArgsBytes, err := json.Marshal(args)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred serializing API container args to JSON")
+		return "", nil, stacktrace.Propagate(err, "An error occurred serializing API container args to JSON")
 	}
 	serializedArgsStr := string(serializedArgsBytes)
 
@@ -49,7 +50,6 @@ func StartAPIContainer(
 		api_container_docker_consts.SerializedArgsEnvVar: serializedArgsStr,
 	}
 
-	// For now, we don't publish the API container's port to the host machine (though maybe this will change in the future)
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
@@ -58,7 +58,9 @@ func StartAPIContainer(
 		ipAddr,
 	).WithUsedPorts(map[nat.Port]bool{
 		kurtosisApiPort: true,
-	}).WithEnvironmentVariables(
+	}).ShouldPublishAllPorts(
+		true,
+	).WithEnvironmentVariables(
 		envVars,
 	).WithBindMounts(map[string]string{
 		dockerSocket: dockerSocket,
@@ -66,10 +68,25 @@ func StartAPIContainer(
 		enclaveDataVolName: api_container_docker_consts.EnclaveDataVolumeMountpoint,
 	}).Build()
 
-	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred starting the API container")
+		return "", nil, stacktrace.Propagate(err, "An error occurred starting the API container")
+	}
+	shouldDeleteContainer := true
+	defer func() {
+		if shouldDeleteContainer {
+			if killErr := dockerManager.KillContainer(context.Background(), containerId); killErr != nil {
+				logrus.Errorf("The function to create the API container didn't finish successful so we tried to kill the container we created, but the killing threw an error:")
+				logrus.Error(killErr)
+			}
+		}
+	}()
+
+	hostPortBinding, found := hostPortBindings[kurtosisApiPort]
+	if !found {
+		return "", nil, stacktrace.NewError("No host port binding was found for API container port '%v' - this is very strange!", kurtosisApiPort)
 	}
 
-	return containerId, nil
+	shouldDeleteContainer = false
+	return containerId, hostPortBinding, nil
 }

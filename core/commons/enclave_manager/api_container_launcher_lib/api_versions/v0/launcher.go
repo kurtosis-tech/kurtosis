@@ -2,6 +2,7 @@ package v0
 
 import (
 	"context"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_starter"
@@ -47,7 +48,7 @@ func (launcher V0APIContainerLauncher) Launch(
 		otherTakenIpAddrsInEnclave []net.IP,
 		isPartitioningEnabled bool,
 		externalMountedContainerIds map[string]bool,
-		shouldPublishAllPorts bool) (string, error){
+		shouldPublishAllPorts bool) (string, *nat.PortBinding, error){
 	takenIpAddrStrSet := map[string]bool{
 		gatewayIpAddr.String(): true,
 		apiContainerIpAddr.String(): true,
@@ -68,7 +69,7 @@ func (launcher V0APIContainerLauncher) Launch(
 		externalMountedContainerIds,
 	)
 	
-	containerId, err := api_container_starter.StartAPIContainer(
+	containerId, hostPortBinding, err := api_container_starter.StartAPIContainer(
 		ctx,
 		launcher.dockerManager,
 		launcher.containerImage,
@@ -81,7 +82,7 @@ func (launcher V0APIContainerLauncher) Launch(
 		args,
 	)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred starting the API container using the V0 launch API")
+		return "", nil, stacktrace.Propagate(err, "An error occurred starting the API container using the V0 launch API")
 	}
-	return containerId, nil
+	return containerId, hostPortBinding, nil
 }

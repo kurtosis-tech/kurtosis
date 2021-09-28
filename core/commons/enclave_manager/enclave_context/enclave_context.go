@@ -6,6 +6,7 @@
 package enclave_context
 
 import (
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"net"
 )
@@ -17,6 +18,7 @@ type EnclaveContext struct {
 	networkIpAndMask *net.IPNet
 	apiContainerId string
 	apiContainerIpAddr net.IP
+	apiContainerHostPortBinding *nat.PortBinding
 
 	// A preallocated IP for a REPL (if any) that can be created inside the enclave
 	// NOTE: this is kiiiinda janky; a better way would be having the API container create it
@@ -48,8 +50,8 @@ type EnclaveContext struct {
 	dockerManager *docker_manager.DockerManager
 }
 
-func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, replContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
-	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, replContainerIpAddr: replContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
+func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, apiContainerHostPortBinding *nat.PortBinding, replContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
+	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, apiContainerHostPortBinding: apiContainerHostPortBinding, replContainerIpAddr: replContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
 }
 
 func (enclaveCtx *EnclaveContext) GetEnclaveID() string {
@@ -70,6 +72,10 @@ func (enclaveCtx *EnclaveContext) GetAPIContainerID() string {
 
 func (enclaveCtx *EnclaveContext) GetAPIContainerIPAddr() net.IP {
 	return enclaveCtx.apiContainerIpAddr
+}
+
+func (enclaveCtx *EnclaveContext) GetAPIContainerHostPortBinding() *nat.PortBinding {
+	return enclaveCtx.apiContainerHostPortBinding
 }
 
 func (enclaveCtx *EnclaveContext) GetREPLContainerIPAddr() net.IP {

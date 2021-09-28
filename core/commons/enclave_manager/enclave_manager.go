@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
@@ -177,7 +177,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the API container launcher for launch API version '%v'", launchApiVersion)
 	}
 
-	apiContainerId, err := apiContainerLauncher.Launch(
+	apiContainerId, apiContainerHostPortBinding, err := apiContainerLauncher.Launch(
 		setupCtx,
 		apiContainerName,
 		enclaveId,
@@ -217,6 +217,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		networkIpAndMask,
 		apiContainerId,
 		apiContainerIpAddr,
+		apiContainerHostPortBinding,
 		replContainerIpAddr,
 		testsuiteContainerIpAddr,
 		enclaveObjNameProvider.ForTestRunningTestsuiteContainer(),

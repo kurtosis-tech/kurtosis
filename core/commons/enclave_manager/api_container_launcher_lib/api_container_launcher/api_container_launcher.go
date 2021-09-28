@@ -2,6 +2,7 @@ package api_container_launcher
 
 import (
 	"context"
+	"github.com/docker/go-connections/nat"
 	"net"
 )
 
@@ -20,5 +21,5 @@ type APIContainerLauncher interface {
 		isPartitioningEnabled bool,
 		externalMountedContainerIds map[string]bool,
 		shouldPublishAllPorts bool,
-	) (string, error)
+	) (string, *nat.PortBinding, error)
 }
