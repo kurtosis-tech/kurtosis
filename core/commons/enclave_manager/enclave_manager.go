@@ -218,10 +218,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerId,
 		apiContainerIpAddr,
 		apiContainerHostPortBinding,
-		replContainerIpAddr,
-		testsuiteContainerIpAddr,
-		enclaveObjNameProvider.ForTestRunningTestsuiteContainer(),
 		dockerManager,
+		enclaveObjNameProvider,
 	)
 
 	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller

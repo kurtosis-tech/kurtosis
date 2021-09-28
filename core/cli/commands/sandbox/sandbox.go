@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
@@ -20,8 +21,11 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"math/rand"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -57,8 +61,6 @@ const (
 	workingDirpathInsideReplContainer = "/repl"
 
 	replContainerSuccessExitCode = 0
-
-	interactiveReplContainerNameSuffix = "_interactive-repl"
 
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 	// vvvvvvvvvvvvvvv If you change these, update the REPL Dockerfile!!! vvvvvvvvvvvv
@@ -168,11 +170,38 @@ func run(cmd *cobra.Command, args []string) error {
 func runReplContainer(
 	dockerManager *docker_manager.DockerManager,
 	enclaveCtx *enclave_context.EnclaveContext,
-	javascriptReplImage string) error {
+	javascriptReplImage string,
+) error {
 	enclaveId := enclaveCtx.GetEnclaveID()
 	networkId := enclaveCtx.GetNetworkID()
+	apiContainerHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
-	replContainerIpAddr := enclaveCtx.GetREPLContainerIPAddr()
+	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
+
+	apiContainerUrlOnHostMachine := fmt.Sprintf(
+		"%v:%v",
+		apiContainerHostMachinePortBinding.HostIP,
+		apiContainerHostMachinePortBinding.HostPort,
+	)
+	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine port binding")
+	}
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+
+	startRegistrationResp, err := apiContainerClient.StartExternalContainerRegistration(context.Background(), &emptypb.Empty{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred starting the registration of the interactive REPL container")
+	}
+	replContainerRegistrationKey := startRegistrationResp.RegistrationKey
+	replContainerIpAddrStr := startRegistrationResp.IpAddr
+	replContainerIpAddr := net.ParseIP(replContainerIpAddrStr)
+	if replContainerIpAddr == nil {
+		return stacktrace.NewError(
+			"Received an IP, '%v', from the API container to give the interactive REPL container, but it wasn't parseable to an IP",
+			replContainerIpAddr,
+		)
+	}
 
 	stdoutFd := int(os.Stdout.Fd())
 	windowSize, err := unix.IoctlGetWinsize(stdoutFd, unix.TIOCGWINSZ)
@@ -197,9 +226,10 @@ func runReplContainer(
 	}
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
+	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
-		enclaveId + interactiveReplContainerNameSuffix,  // Container name
+		containerName,
 		networkId,
 	).WithInteractiveModeTtySize(
 		interactiveModeTtySize,
@@ -224,6 +254,14 @@ func runReplContainer(
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
 	}()
+
+	finishRegistrationArgs := &kurtosis_core_rpc_api_bindings.FinishExternalContainerRegistrationArgs{
+		RegistrationKey: replContainerRegistrationKey,
+		ContainerId:     replContainerId,
+	}
+	if _, err := apiContainerClient.FinishExternalContainerRegistration(context.Background(), finishRegistrationArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred finishing the registration of the interactive REPL container")
+	}
 
 	hijackedResponse, err := dockerManager.AttachToContainer(context.Background(), replContainerId)
 	if err != nil {
