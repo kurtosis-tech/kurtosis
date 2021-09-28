@@ -643,7 +643,7 @@ func (manager DockerManager) GetContainerIdsByLabels(ctx context.Context, labels
 	labelsFilterList := getLabelsFilterList(labels)
 	result, err := manager.getContainerIdsByFilterArgs(ctx, labelsFilterList)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with container's labels '%+v'", labelsFilterList)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with labels '%+v'", labelsFilterList)
 	}
 	return result, nil
 }
@@ -798,7 +798,7 @@ func (manager *DockerManager) getContainerCfg(
 			entrypointArgs []string,
 			cmdArgs []string,
 			envVariables map[string]string,
-			labelsArgs map[string]string) (config *container.Config, err error) {
+			labels map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
 		portSet[port] = struct{}{}
@@ -814,13 +814,13 @@ func (manager *DockerManager) getContainerCfg(
 		AttachStdin:  isInteractiveMode,	// Analogous to `-a STDIN` option to `docker run`
 		AttachStdout: isInteractiveMode,	// Analogous to `-a STDOUT` option to `docker run`
 		Tty:          isInteractiveMode,	// Analogous to the `-t` option to `docker run`
-		OpenStdin: true,	// Analogous to the `-i` option to `docker run`
+		OpenStdin:    true,	// Analogous to the `-i` option to `docker run`
 		Image:        dockerImage,
 		ExposedPorts: portSet,
 		Cmd:          cmdArgs,
 		Entrypoint:   entrypointArgs,
 		Env:          envVariablesSlice,
-		Labels:       labelsArgs,
+		Labels:       labels,
 	}
 	return nodeConfigPtr, nil
 }
