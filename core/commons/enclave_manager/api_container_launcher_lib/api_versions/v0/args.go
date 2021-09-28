@@ -31,12 +31,6 @@ type V0LaunchAPIArgs struct {
 
 	// Whether the ports of the containers that the API service starts should be published to the Docker host machine
 	ShouldPublishPorts bool		`json:"shouldPublishPorts"`
-
-	// When shutting down, the API container will tear down everything in the enclave network that it knows about
-	// However, there can be containers which have been connected to the network which should NOT be stopped (e.g. the
-	// testing framework initializer container), which should merely be disconnected from the network
-	// This is a set of those containers
-	ExternalMountedContainerIds	map[string]bool 	`json:"externalMountedContainerIds"`
 }
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
@@ -50,8 +44,7 @@ func newV0LaunchAPIArgs(
 		apiContainerIpAddr string,
 		takenIpAddrs map[string]bool,
 		isPartitioningEnabled bool,
-		shouldPublishPorts bool,
-		externalMountedContainerIds map[string]bool) *V0LaunchAPIArgs {
+		shouldPublishPorts bool) *V0LaunchAPIArgs {
 	return &V0LaunchAPIArgs{
 		ContainerName:               containerName,
 		LogLevel:                    logLevel,
@@ -62,7 +55,6 @@ func newV0LaunchAPIArgs(
 		TakenIpAddrs:                takenIpAddrs,
 		IsPartitioningEnabled:       isPartitioningEnabled,
 		ShouldPublishPorts:          shouldPublishPorts,
-		ExternalMountedContainerIds: externalMountedContainerIds,
 	}
 }
 

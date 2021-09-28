@@ -47,7 +47,6 @@ func (launcher V0APIContainerLauncher) Launch(
 		apiContainerIpAddr net.IP,
 		otherTakenIpAddrsInEnclave []net.IP,
 		isPartitioningEnabled bool,
-		externalMountedContainerIds map[string]bool,
 		shouldPublishAllPorts bool) (string, *nat.PortBinding, error){
 	takenIpAddrStrSet := map[string]bool{
 		gatewayIpAddr.String(): true,
@@ -66,7 +65,6 @@ func (launcher V0APIContainerLauncher) Launch(
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
 		shouldPublishAllPorts,
-		externalMountedContainerIds,
 	)
 	
 	containerId, hostPortBinding, err := api_container_starter.StartAPIContainer(

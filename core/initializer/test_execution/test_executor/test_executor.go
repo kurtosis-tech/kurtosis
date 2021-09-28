@@ -110,7 +110,7 @@ func RunTest(
 		testSetupExecutionCtx,
 		log,
 		kurtosisLogLevel,
-		map[string]bool{initializerContainerId: true},
+		// TODO get rid of this when we get rid of the initializer
 		enclaveId,
 		isPartitioningEnabled,
 		isDebugModeEnabled,
@@ -130,7 +130,48 @@ func RunTest(
 	networkId := enclaveCtx.GetNetworkID()
 	kurtosisApiIp := enclaveCtx.GetAPIContainerIPAddr()
 	testsuiteContainerIp := enclaveCtx.GetTestsuiteContainerIPAddr()
-	testsuiteContainerName := enclaveCtx.GetTestsuiteContainerName()
+	testsuiteContainerName := enclaveCtx.GetObjectNameProvider().ForTestRunningTestsuiteContainer()
+
+	// We need to a) mount the initializer container inside the enclave network and b) have it register itself with the API container so the
+	//  API container knows that it's a
+	if err := dockerManager.ConnectContainerToNetwork(
+		testSetupExecutionCtx,
+		networkId,
+		initializerContainerId,
+		ipInsideEnclaveNetwork,
+		"",
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
+	}
+
+	/*
+
+		log.Debugf("Connecting external containers to the enclave network so that they can interact with the containers in the enclave...")
+		externalContainerIpAddrs := []net.IP{}
+		externalContainerIdsToDisconnectSet := map[string]bool{}
+		defer func() {
+			for containerId := range externalContainerIdsToDisconnectSet {
+				if err := dockerManager.DisconnectContainerFromNetwork(teardownCtx, containerId, networkId); err != nil {
+					log.Errorf("Creating the enclave didn't complete successfully, so we tried to disconnect container with ID '%v' from enclave network but an error was thrown:", containerId)
+					fmt.Fprintln(log.Out, err)
+					log.Errorf("ACTION REQUIRED: You'll need to manually disconnect container with ID '%v' from network with ID '%v'!!!!!!!", containerId, networkId)
+				}
+			}
+		}()
+		for containerId := range externalContainerIdsToMount {
+			ipInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting external container with ID '%v' inside the enclave", containerId)
+			}
+			externalContainerIpAddrs = append(externalContainerIpAddrs, ipInsideEnclaveNetwork)
+			if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork, ""); err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
+			}
+			externalContainerIdsToDisconnectSet[containerId] = true
+		}
+		log.Debugf("Successfully connected external containers to the enclave network so that they can interact with the containers in the enclave")
+
+	*/
 
 	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,

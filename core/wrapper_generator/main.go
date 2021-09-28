@@ -138,7 +138,7 @@ var wrapperArgs = []WrapperArg{
 		Flag:       "--parallelism",
 		Variable:   "parallelism",
 		DefaultVal: "4",
-		HelpText:   "The number of texts to execute in parallel",
+		HelpText:   "The number of tests to execute in parallel",
 		Action:     StoreValue,
 	},
 	{

@@ -19,7 +19,6 @@ type APIContainerLauncher interface {
 		apiContainerIpAddr net.IP,
 		otherTakenIpAddrsInEnclave []net.IP,
 		isPartitioningEnabled bool,
-		externalMountedContainerIds map[string]bool,
 		shouldPublishAllPorts bool,
 	) (string, *nat.PortBinding, error)
 }
