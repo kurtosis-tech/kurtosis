@@ -49,6 +49,7 @@ const (
 	dockerKillSignal = "KILL"
 
 	nameFilterKey = "name"
+	labelFilterKey = "label"
 
 	expectedHostIp = "0.0.0.0"
 
@@ -277,6 +278,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.entrypointArgs,
 		args.cmdArgs,
 		args.envVariables,
+		args.labels,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure container from service.")
@@ -630,18 +632,31 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
 	filterArg := filters.Arg(nameFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
-	opts := types.ContainerListOptions{
-		Filters: nameFilterList,
-	}
-	containers, err := manager.dockerClient.ContainerList(ctx, opts)
+	result, err := manager.getContainerIdsByFilterArgs(ctx, nameFilterList)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with names matching string '%v'", nameStr)
-	}
-	result := []string{}
-	for _, containerObj := range containers {
-		result = append(result, containerObj.ID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with name '%v'", nameStr)
 	}
 	return result, nil
+}
+
+func (manager DockerManager) GetContainerIdsByLabels(ctx context.Context, labels map[string]string) ([]string, error) {
+	labelsFilterList := getLabelsFilterList(labels)
+	result, err := manager.getContainerIdsByFilterArgs(ctx, labelsFilterList)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with container's labels '%+v'", labelsFilterList)
+	}
+	return result, nil
+}
+
+func getLabelsFilterList(labels map[string]string) filters.Args {
+	filtersArgs := []filters.KeyValuePair{}
+	for labelsKey, labelsValue := range labels {
+		labelFilterValue := strings.Join([]string{labelsKey, "=", labelsValue}, "")
+		filterArg := filters.Arg(labelFilterKey, labelFilterValue)
+		filtersArgs = append(filtersArgs, filterArg)
+	}
+	labelsFilterList := filters.NewArgs(filtersArgs...)
+	return labelsFilterList
 }
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
@@ -782,7 +797,8 @@ func (manager *DockerManager) getContainerCfg(
 			usedPorts map[nat.Port]bool,
 			entrypointArgs []string,
 			cmdArgs []string,
-			envVariables map[string]string) (config *container.Config, err error) {
+			envVariables map[string]string,
+			labelsArgs map[string]string) (config *container.Config, err error) {
 	portSet := nat.PortSet{}
 	for port, _ := range usedPorts {
 		portSet[port] = struct{}{}
@@ -804,6 +820,7 @@ func (manager *DockerManager) getContainerCfg(
 		Cmd:          cmdArgs,
 		Entrypoint:   entrypointArgs,
 		Env:          envVariablesSlice,
+		Labels:       labelsArgs,
 	}
 	return nodeConfigPtr, nil
 }
@@ -846,4 +863,20 @@ func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPor
 		}
 	}
 	return result
+}
+
+// Returns a list of Container Ids by filter arguments previously set, these containers can be running or stopped
+func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, filterArgs filters.Args) ([]string, error) {
+	opts := types.ContainerListOptions{
+		Filters: filterArgs,
+	}
+	containers, err := manager.dockerClient.ContainerList(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with filter args '%+v'", filterArgs)
+	}
+	result := []string{}
+	for _, containerObj := range containers {
+		result = append(result, containerObj.ID)
+	}
+	return result, nil
 }

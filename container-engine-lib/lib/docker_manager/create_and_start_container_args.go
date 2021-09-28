@@ -23,6 +23,7 @@ type CreateAndStartContainerArgs struct {
 	bindMounts map[string]string
 	volumeMounts map[string]string
 	needsAccessToDockerHostMachine bool
+	labels map[string]string
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -43,6 +44,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	bindMounts map[string]string
 	volumeMounts map[string]string
 	needsAccessToDockerHostMachine bool
+	labels map[string]string
 }
 
 /*
@@ -69,6 +71,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		bindMounts: map[string]string{},
 		volumeMounts: map[string]string{},
 		needsAccessToDockerHostMachine: false,
+		labels: map[string]string{},
 	}
 }
 
@@ -174,5 +177,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithVolumeMounts(volumeMounts
 //  needs to check the host machine's free ports)
 func (builder *CreateAndStartContainerArgsBuilder) NeedsAccessToDockerHostMachine(needsAccess bool) *CreateAndStartContainerArgsBuilder {
 	builder.needsAccessToDockerHostMachine = needsAccess
+	return builder
+}
+
+// A key-value maps tha represents container's labels usefull to search containers inside an enclave
+func (builder *CreateAndStartContainerArgsBuilder) WithLabels(labels map[string]string) *CreateAndStartContainerArgsBuilder {
+	builder.labels = labels
 	return builder
 }
