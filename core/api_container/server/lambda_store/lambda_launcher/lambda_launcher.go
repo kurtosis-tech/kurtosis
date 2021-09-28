@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -38,6 +39,8 @@ type LambdaLauncher struct {
 
 	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
+	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	shouldPublishPorts bool
@@ -47,8 +50,8 @@ type LambdaLauncher struct {
 	enclaveDataVolName string
 }
 
-func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
-	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
+func NewLambdaLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataVolName string) *LambdaLauncher {
+	return &LambdaLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
 }
 
 func (launcher LambdaLauncher) Launch(
@@ -89,6 +92,7 @@ func (launcher LambdaLauncher) Launch(
 	lambdaGUID := newLambdaGUID(lambdaID)
 
 	containerName := launcher.enclaveObjNameProvider.ForLambdaContainer(lambdaGUID)
+	containerLabels := launcher.enclaveObjLabelsProvider.ForLambdaContainer(lambdaGUID)
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
@@ -105,6 +109,8 @@ func (launcher LambdaLauncher) Launch(
 		envVars,
 	).WithVolumeMounts(
 		volumeMounts,
+	).WithLabels(
+		containerLabels,
 	).Build()
 	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

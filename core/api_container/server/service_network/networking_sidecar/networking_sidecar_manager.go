@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"strings"
@@ -57,13 +58,15 @@ type StandardNetworkingSidecarManager struct {
 	
 	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
+	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -80,6 +83,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 	}
 
 	containerName := manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID)
+	containerLabels := manager.enclaveObjLabelsProvider.ForNetworkingSidecarContainer(serviceGUID)
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		networkingSidecarImageName,
 		containerName,
@@ -94,6 +98,8 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		docker_manager.NewContainerNetworkMode(serviceContainerId),
 	).WithCmdArgs(
 		sidecarContainerCommand,
+	).WithLabels(
+		containerLabels,
 	).Build()
 	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

@@ -14,6 +14,7 @@ type V0APIContainerLauncher struct {
 	dockerManager *docker_manager.DockerManager
 	log *logrus.Logger
 	containerImage string
+	containerLabels map[string]string
 	listenPort uint
 	listenProtocol string
 	logLevel logrus.Level
@@ -39,6 +40,7 @@ func NewV0APIContainerLauncher(
 func (launcher V0APIContainerLauncher) Launch(
 		ctx context.Context,
 		containerName string,
+		containerLabels map[string]string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,
@@ -57,6 +59,7 @@ func (launcher V0APIContainerLauncher) Launch(
 	}
 	args := newV0LaunchAPIArgs(
 		containerName,
+		containerLabels,
 		launcher.logLevel.String(),
 		enclaveId,
 		networkId,
@@ -73,6 +76,7 @@ func (launcher V0APIContainerLauncher) Launch(
 		launcher.dockerManager,
 		launcher.containerImage,
 		containerName,
+		containerLabels,
 		launcher.listenPort,
 		launcher.listenProtocol,
 		networkId,
