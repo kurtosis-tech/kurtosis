@@ -69,3 +69,9 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForLambdaContainer(lambdaGUID
 	labels[labelGUIDKey] = string(lambdaGUID)
 	return labels
 }
+
+func GetLabelsForListEnclaves() map[string]string {
+	labels := map[string]string{}
+	labels[labelContainerTypeKey] = containerTypeApiContainer
+	return labels
+}
