@@ -158,35 +158,6 @@ func RunTest(
 		return false, stacktrace.NewError("The API container returned an IP address string, '%v', for the testsuite container, but it wasn't parseable to an IP", testsuiteIpAddrStr)
 	}
 
-	/*
-
-		log.Debugf("Connecting external containers to the enclave network so that they can interact with the containers in the enclave...")
-		externalContainerIpAddrs := []net.IP{}
-		externalContainerIdsToDisconnectSet := map[string]bool{}
-		defer func() {
-			for containerId := range externalContainerIdsToDisconnectSet {
-				if err := dockerManager.DisconnectContainerFromNetwork(teardownCtx, containerId, networkId); err != nil {
-					log.Errorf("Creating the enclave didn't complete successfully, so we tried to disconnect container with ID '%v' from enclave network but an error was thrown:", containerId)
-					fmt.Fprintln(log.Out, err)
-					log.Errorf("ACTION REQUIRED: You'll need to manually disconnect container with ID '%v' from network with ID '%v'!!!!!!!", containerId, networkId)
-				}
-			}
-		}()
-		for containerId := range externalContainerIdsToMount {
-			ipInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting external container with ID '%v' inside the enclave", containerId)
-			}
-			externalContainerIpAddrs = append(externalContainerIpAddrs, ipInsideEnclaveNetwork)
-			if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork, ""); err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
-			}
-			externalContainerIdsToDisconnectSet[containerId] = true
-		}
-		log.Debugf("Successfully connected external containers to the enclave network so that they can interact with the containers in the enclave")
-
-	*/
-
 	testsuiteContainerId, hostMachineRpcPortBinding, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
 		log,
