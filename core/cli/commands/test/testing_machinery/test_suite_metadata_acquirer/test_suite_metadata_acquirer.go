@@ -12,8 +12,8 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	banner_printer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
-	test_suite_launcher2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	banner_printer "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
+	test_suite_launcher "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -37,7 +37,7 @@ const (
 
 func GetTestSuiteMetadata(
 		dockerClient *client.Client,
-		launcher *test_suite_launcher2.TestsuiteContainerLauncher) (*kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata, error) {
+		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
@@ -145,7 +145,7 @@ func printContainerLogsWithBanners(
 		useDockerLogDemultiplexing = true
 	}
 
-	banner_printer2.PrintSection(log, containerDescription + " Logs", false)
+	banner_printer.PrintSection(log, containerDescription + " Logs", false)
 	var copyErr error
 	if useDockerLogDemultiplexing {
 		// Docker logs multiplex STDOUT and STDERR into a single stream, and need to be demultiplexed
@@ -158,7 +158,7 @@ func printContainerLogsWithBanners(
 		log.Errorf("Could not print the test suite container's logs due to the following error when copying log contents:")
 		fmt.Fprintln(log.Out, err)
 	}
-	banner_printer2.PrintSection(log, "End " + containerDescription + " Logs", false)
+	banner_printer.PrintSection(log, "End " + containerDescription + " Logs", false)
 }
 
 func validateTestSuiteMetadata(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {

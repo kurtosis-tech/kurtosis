@@ -7,10 +7,10 @@ package test_suite_runner
 
 import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	parallel_test_params2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
-	test_executor_parallelizer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
-	test_suite_launcher2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	permissions "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	parallel_test_params "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
+	test_executor_parallelizer "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
+	test_suite_launcher "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -53,14 +53,14 @@ Returns:
 		being retrieved. If this is non-nil, the allTestsPassed value is undefined!
  */
 func RunTests(
-		permissions *permissions2.Permissions,
+		permissions *permissions.Permissions,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
-		testsuiteLauncher *test_suite_launcher2.TestsuiteContainerLauncher,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		isDebugModeEnabled bool,
 	) (allTestsPassed bool, executionErr error) {
 	numTestsInSuite := len(testSuiteMetadata.TestMetadata)
@@ -101,7 +101,7 @@ func RunTests(
 		return false, stacktrace.Propagate(err, "An error occurred building the test params map")
 	}
 
-	allTestsPassed = test_executor_parallelizer2.RunInParallelAndPrintResults(
+	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider,
 		enclaveManager,
 		kurtosisLogLevel,
@@ -121,15 +121,15 @@ Args:
  */
 func buildTestParams(
 		testNamesToRun map[string]bool,
-		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) (map[string]parallel_test_params2.ParallelTestParams, error) {
-	testParams := make(map[string]parallel_test_params2.ParallelTestParams)
+		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) (map[string]parallel_test_params.ParallelTestParams, error) {
+	testParams := make(map[string]parallel_test_params.ParallelTestParams)
 	for testName, _ := range testNamesToRun {
 		testMetadata, found := testSuiteMetadata.TestMetadata[testName]
 		if !found {
 			return nil, stacktrace.NewError("Could not find test metadata for test '%v'", testName)
 		}
 
-		testParamsForTest := *parallel_test_params2.NewParallelTestParams(
+		testParamsForTest := *parallel_test_params.NewParallelTestParams(
 			testName,
 			testMetadata.TestSetupTimeoutInSeconds,
 			testMetadata.TestRunTimeoutInSeconds,

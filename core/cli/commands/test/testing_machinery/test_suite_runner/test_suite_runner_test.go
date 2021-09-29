@@ -7,7 +7,7 @@ package test_suite_runner
 
 import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	permissions "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"strconv"
@@ -16,7 +16,7 @@ import (
 
 func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 	suiteMetadata := getTestingSuiteMetadata(1)
-	perms := permissions2.FromPermissionsSet(map[string]bool{})
+	perms := permissions.FromPermissionsSet(map[string]bool{})
 	result, err := RunTests(
 		perms,
 		nil,
@@ -34,8 +34,8 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 
 func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	suiteMetadata := getTestingSuiteMetadata(4)
-	perms := permissions2.FromPermissionsSet(map[string]bool{
-		permissions2.RestrictedTestExecutionPermission: true,
+	perms := permissions.FromPermissionsSet(map[string]bool{
+		permissions.RestrictedTestExecutionPermission: true,
 	})
 	result, err := RunTests(
 		perms,

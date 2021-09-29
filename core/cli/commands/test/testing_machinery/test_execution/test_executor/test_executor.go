@@ -11,10 +11,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	banner_printer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
-	output2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/output"
-	parallel_test_params2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
-	test_suite_launcher2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	banner_printer "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
+	output "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/output"
+	parallel_test_params "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
+	test_suite_launcher "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -90,8 +90,8 @@ func RunTest(
 		log *logrus.Logger,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
-		testsuiteLauncher *test_suite_launcher2.TestsuiteContainerLauncher,
-		testParams parallel_test_params2.ParallelTestParams,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		testParams parallel_test_params.ParallelTestParams,
 		isDebugModeEnabled bool) (bool, error) {
 
 	testName := testParams.TestName
@@ -228,16 +228,16 @@ func streamTestsuiteLogsWhileRunningTest(
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
-		testParams parallel_test_params2.ParallelTestParams,
+		testParams parallel_test_params.ParallelTestParams,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	banner_printer2.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
+	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	// After this point, we can go back to printing initializer logs
-	defer banner_printer2.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
+	defer banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
 
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
 
-	logStreamer := output2.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
 
 	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
 		testsuiteContainerId); startStreamingErr != nil {
