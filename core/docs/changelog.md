@@ -2,6 +2,11 @@
 ### Features
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
 
+# 1.21.1
+### Features
+* Add  labels when a container is created
+* Add `EnclaveObjectLabelsProvider` object to centralize container labels creation and labels keys and container types values
+
 ### Changes
 * Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
 * Absorb `kurtosis-core-launcher-lib` into here

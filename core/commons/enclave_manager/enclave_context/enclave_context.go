@@ -46,12 +46,14 @@ type EnclaveContext struct {
 	//  make it unspecial until the API container supports log streaming
 	testsuiteContainerName string
 
+	testsuiteContainerLabels map[string]string
+
 	// A DockerManager that logs to the log passed in when the enclave was created
 	dockerManager *docker_manager.DockerManager
 }
 
-func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, apiContainerHostPortBinding *nat.PortBinding, replContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
-	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, apiContainerHostPortBinding: apiContainerHostPortBinding, replContainerIpAddr: replContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, dockerManager: dockerManager}
+func NewEnclaveContext(enclaveId string, networkId string, networkIpAndMask *net.IPNet, apiContainerId string, apiContainerIpAddr net.IP, apiContainerHostPortBinding *nat.PortBinding, replContainerIpAddr net.IP, testsuiteContainerIpAddr net.IP, testsuiteContainerName string, testsuiteContainerLabels map[string]string, dockerManager *docker_manager.DockerManager) *EnclaveContext {
+	return &EnclaveContext{enclaveId: enclaveId, networkId: networkId, networkIpAndMask: networkIpAndMask, apiContainerId: apiContainerId, apiContainerIpAddr: apiContainerIpAddr, apiContainerHostPortBinding: apiContainerHostPortBinding, replContainerIpAddr: replContainerIpAddr, testsuiteContainerIpAddr: testsuiteContainerIpAddr, testsuiteContainerName: testsuiteContainerName, testsuiteContainerLabels: testsuiteContainerLabels, dockerManager: dockerManager}
 }
 
 func (enclaveCtx *EnclaveContext) GetEnclaveID() string {
