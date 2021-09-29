@@ -12,10 +12,6 @@ GORELEASER_OUTPUT_DIRNAME="dist"
 GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-fixed-docker-images-tag.sh"
 
 # ------------------------ Testing  -------------------------------------------------------
-WRAPPER_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/kurtosis.sh"
-
-INITIALIZER_IMAGE="${DOCKER_ORG}/${REPO_BASE}_initializer"
-
 INTERNAL_TESTSUITE_IMAGE_SUFFIX="internal-testsuite"
 
 # ---------------------- Interactive  -----------------------------------------------------

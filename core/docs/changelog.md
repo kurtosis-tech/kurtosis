@@ -8,12 +8,19 @@
 * Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
 * Absorb `kurtosis-core-launcher-lib` into here
 * All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
+* Moved all the code that used to be under the `initializer` directory into `cli/commands/test/test_machinery`
 
 ### Fixes
 * Actually depend on Kurt Client 0.17.1
 
+### Removals
+* Removed the initializer container
+* Removed the wrapper script
+
 ### Breaking Changes
 * Removed the initializer container!!!
+* The wrapper script has been removed
+    * Users should use the CLI's `test` subcommand to run testsuites now
 
 # 1.21.0
 ### Features
