@@ -12,7 +12,6 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
 	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
 	"github.com/palantir/stacktrace"
@@ -44,7 +43,7 @@ func GetTestSuiteMetadata(
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
 	logrus.Debugf("Launching metadata-providing testsuite...")
-	containerId, ipAddr, err := launcher.LaunchMetadataAcquiringContainer(
+	containerId, hostMachineRpcPortBinding, err := launcher.LaunchMetadataAcquiringContainer(
 		parentContext,
 		logrus.StandardLogger(),
 		dockerManager)
@@ -61,7 +60,7 @@ func GetTestSuiteMetadata(
 	}()
 	logrus.Debugf("Metadata-providing testsuite container launched")
 
-	testsuiteSocket := fmt.Sprintf("%v:%v", ipAddr, kurtosis_testsuite_rpc_api_consts.ListenPort)
+	testsuiteSocket := fmt.Sprintf("%v:%v", hostMachineRpcPortBinding.HostIP, hostMachineRpcPortBinding.HostPort)
 	conn, err := grpc.Dial(
 		testsuiteSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct testsuite

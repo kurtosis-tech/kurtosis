@@ -61,8 +61,8 @@ dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile
     image_templates:
-      - "{{ .Env.API_IMAGE }}:latest"
       - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:latest"
     ids:
       - api-container
       - api-container-availability-waiter
@@ -73,16 +73,16 @@ dockers:
       - initializer
     dockerfile: initializer/Dockerfile
     image_templates:
-      - "{{ .Env.INITIALIZER_IMAGE }}:latest"
       - "{{ .Env.INITIALIZER_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.INITIALIZER_IMAGE }}:latest"
     goos: linux
     goarch: amd64
   - id: javascript-repl-image
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
     image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite

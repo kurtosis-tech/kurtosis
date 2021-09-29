@@ -65,47 +65,48 @@ var positionalArgs = []string{
 }
 
 var TestCmd = &cobra.Command{
-	Use:   "test",
+	Use:   "test [flags] testsuite_image api_container_image",
 	Short: "Runs a Kurtosis testsuite using the specified Kurtosis Core version",
 	RunE:  run,
 }
 
-var clientId *string
-var clientSecret *string
-var customParamsJson *string
-var isDebugMode *bool
-var kurtosisLogLevelStr *string
-var doList *bool
-var parallelism *uint32
-var delimitedTestNamesToRun *string
-var suiteLogLevelStr *string
+var clientId string
+var clientSecret string
+var customParamsJson string
+var isDebugMode bool
+var kurtosisLogLevelStr string
+var doList bool
+var parallelism uint32
+var delimitedTestNamesToRun string
+var suiteLogLevelStr string
 
 func init() {
 	TestCmd.Flags().StringVar(
-		clientId,
+		&clientId,
 		clientIdArg,
 		"",
 		"An OAuth client ID which is needed for running Kurtosis in CI, and should be left empty when running Kurtosis on a local machine",
 	)
 	TestCmd.Flags().StringVar(
-		clientSecret,
+		&clientSecret,
 		clientSecretArg,
 		"",
 		"An OAuth client secret which is needed for running Kurtosis in CI, and should be left empty when running Kurtosis on a local machine",
 	)
 	TestCmd.Flags().StringVar(
-		customParamsJson,
+		&customParamsJson,
 		customParamsJsonArg,
 		"{}",
 		"JSON string containing arbitrary data that will be passed as-is to your testsuite, so it can modify its behaviour based on input",
 	)
-	isDebugMode = TestCmd.Flags().Bool(
+	TestCmd.Flags().BoolVar(
+		&isDebugMode,
 		isDebugModeArg,
 		false,
 		"Turns on debug mode, which will: 1) set parallelism == 1 (overriding any other parallelism argument) 2) connect a port on the local machine a port on the testsuite container, for use in running a debugger in the testsuite container 3) bind every used port for every service to a port on the local machine, for making requests to the services",
 	)
 	TestCmd.Flags().StringVarP(
-		kurtosisLogLevelStr,
+		&kurtosisLogLevelStr,
 		kurtosisLogLevelArg,
 		"",
 		defaultKurtosisLogLevel,
@@ -114,24 +115,26 @@ func init() {
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
-	isDebugMode = TestCmd.Flags().Bool(
+	TestCmd.Flags().BoolVar(
+		&doList,
 		doListArg,
 		false,
 		"Rather than running the tests, lists the tests available to run",
 	)
-	TestCmd.Flags().Uint32(
+	TestCmd.Flags().Uint32Var(
+		&parallelism,
 		parallelismArg,
 		defaultParallelism,
 		"The number of tests to execute in parallel",
 	)
 	TestCmd.Flags().StringVar(
-		delimitedTestNamesToRun,
+		&delimitedTestNamesToRun,
 		testNamesArg,
 		"",
 		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
 	)
 	TestCmd.Flags().StringVar(
-		suiteLogLevelStr,
+		&suiteLogLevelStr,
 		testSuiteLogLevelArg,
 		defaultSuiteLogLevelStr,
 		"A string that will be passed as-is to the test suite container to indicate what log level the test suite container should output at; this string should be meaningful to the test suite container because Kurtosis won't know what logging framework the testsuite uses",
@@ -139,7 +142,7 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	kurtosisLogLevel, err := logrus.ParseLevel(*kurtosisLogLevelStr)
+	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the Kurtosis log level string '%v'", kurtosisLogLevelStr)
 	}
@@ -153,8 +156,8 @@ func run(cmd *cobra.Command, args []string) error {
 	apiContainerImage := parsedPositionalArgs[apiContainerImageArg]
 
 	accessController, err := getAccessController(
-		*clientId,
-		*clientSecret,
+		clientId,
+		clientSecret,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the access controller")
@@ -173,12 +176,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 
-	logrus.Infof("Using custom params: \n%v", *customParamsJson)
+	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		testsuiteExObjNameProvider,
 		testsuiteImage,
-		*suiteLogLevelStr,
-		*customParamsJson,
+		suiteLogLevelStr,
+		customParamsJson,
 	)
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
@@ -195,19 +198,19 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred verifying no test name delimiter in the test names")
 	}
 
-	if *doList {
+	if doList {
 		printTestsInSuite(suiteMetadata)
 		return nil
 	}
 
-	testNamesToRun := splitTestsStrIntoTestsSet(*delimitedTestNamesToRun)
+	testNamesToRun := splitTestsStrIntoTestsSet(delimitedTestNamesToRun)
 
 	var parallelismUint uint
-	if *isDebugMode {
+	if isDebugMode {
 		logrus.Infof("NOTE: Due to debug mode being set to true, parallelism is set to %v", debugModeParallelism)
 		parallelismUint = debugModeParallelism
 	} else {
-		parallelismUint = uint(*parallelism)
+		parallelismUint = uint(parallelism)
 	}
 
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
@@ -220,7 +223,7 @@ func run(cmd *cobra.Command, args []string) error {
 		testNamesToRun,
 		parallelismUint,
 		testsuiteLauncher,
-		*isDebugMode,
+		isDebugMode,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the tests")
