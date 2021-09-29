@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where `CreateAndStartContainerArgsBuilder.Build` method wasn't setting container labels
 
 # 0.4.2
 ### Fixes

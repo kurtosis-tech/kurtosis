@@ -889,7 +889,7 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	result := make([]*Container, len(dockerContainers))
+	result := make([]*Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		container := NewContainer(
 			dockerContainer.ID,
