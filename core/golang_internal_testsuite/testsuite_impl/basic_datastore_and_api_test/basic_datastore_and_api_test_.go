@@ -183,10 +183,7 @@ func getApiServiceContainerConfigSupplier(datastoreClient *datastore_service_cli
 }
 
 func createDatastoreConfigFileInServiceDirectory(datastoreClient *datastore_service_client.DatastoreClient, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
-	configFileFilePath, err := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting file object '%v' from shared directory", configFilepathRelativeToSharedDirRoot)
-	}
+	configFileFilePath := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
 
 	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
 

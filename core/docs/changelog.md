@@ -1,5 +1,17 @@
 # TBD
 
+# 1.21.1
+### Features
+* Add  labels when a container is created
+* Add `EnclaveObjectLabelsProvider` object to centralize container labels creation and labels keys and container types values
+
+### Changes
+* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
+* Absorb `kurtosis-core-launcher-lib` into here
+
+### Fixes
+* Actually depend on Kurt Client 0.17.1
+
 # 1.21.0
 ### Features
 * Add the relative service directory path in `RegisterService` and `GetServiceInfo` methods

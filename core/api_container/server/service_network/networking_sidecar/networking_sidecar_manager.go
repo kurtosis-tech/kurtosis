@@ -7,10 +7,10 @@ package networking_sidecar
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"strings"
@@ -58,13 +58,15 @@ type StandardNetworkingSidecarManager struct {
 	
 	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
+	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -79,27 +81,27 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			"An error occurred getting a free IP address for the sidecar container attached to service with GUID '%v'",
 			serviceGUID)
 	}
-	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(
-		ctx,
+
+	containerName := manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID)
+	containerLabels := manager.enclaveObjLabelsProvider.ForNetworkingSidecarContainer(serviceGUID)
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		networkingSidecarImageName,
-		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID),
-		manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID),
-		nil,	// Sidecar containers don't run in interactive mode
+		containerName,
 		manager.dockerNetworkId,
+	).WithAlias(
+		containerName,
+	).WithStaticIP(
 		sidecarIp,
-		map[docker_manager.ContainerCapability]bool{
-			docker_manager.NetAdmin: true,
-		},
+	).WithAddedCapabilities(map[docker_manager.ContainerCapability]bool{
+		docker_manager.NetAdmin: true,
+	}).WithNetworkMode(
 		docker_manager.NewContainerNetworkMode(serviceContainerId),
-		map[nat.Port]bool{},
-		false, // We don't publish network sidecar ports
-		nil, // No entrypoint overriding needed
+	).WithCmdArgs(
 		sidecarContainerCommand,
-		map[string]string{}, // No environment variables
-		map[string]string{}, // no bind mounts for services created via the Kurtosis API
-		map[string]string{}, // No volume mounts either
-		false, // The sidecar images definitely don't need to access the Docker host machine
-	)
+	).WithLabels(
+		containerLabels,
+	).Build()
+	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

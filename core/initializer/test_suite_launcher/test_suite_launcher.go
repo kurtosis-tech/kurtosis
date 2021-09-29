@@ -186,25 +186,22 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		testsuiteDebuggerPort: true,
 	}
 
-	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(
-		ctx,
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		launcher.testsuiteImage,
 		name,
-		"",
-		nil,	// Test suites won't run in interactive mode
 		networkId,
+	).WithStaticIP(
 		containerIpAddr,
-		map[docker_manager.ContainerCapability]bool{}, 	// No extra capabilities needed for testsuite containers
-		docker_manager.DefaultNetworkMode,  			// No special networking modes for testsuite containers
+	).WithUsedPorts(
 		usedPorts,
+	).ShouldPublishAllPorts(
 		launcher.shouldPublishPorts,
-		nil, // Nil ENTRYPOINT args because we expect the test suite image to be parameterized with variables
-		nil, // Nil CMD args because we expect the test suite image to be parameterized with variables
+	).WithEnvironmentVariables(
 		envVars,
-		map[string]string{}, 		// No bind mounts for a testsuite container
+	).WithVolumeMounts(
 		volumeMountpoints,
-		false, // The testsuite container should never be able to access the machine hosting Docker
-	)
+	).Build()
+	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating and starting the testsuite container")
 	}

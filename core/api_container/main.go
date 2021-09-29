@@ -13,8 +13,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_container_docker_consts"
-	v0 "github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_launcher"
@@ -25,6 +23,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons"
 	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
+	v0 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/palantir/stacktrace"
@@ -159,6 +160,7 @@ func createServiceNetworkAndLambdaStore(
 		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
@@ -191,6 +193,7 @@ func createServiceNetworkAndLambdaStore(
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
@@ -200,6 +203,7 @@ func createServiceNetworkAndLambdaStore(
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
@@ -216,6 +220,7 @@ func createServiceNetworkAndLambdaStore(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,

@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core-launcher-lib/lib"
 	"github.com/kurtosis-tech/kurtosis/api_container_availability_waiter/api_container_availability_waiter_consts"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -77,6 +78,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
 
@@ -157,6 +159,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
+	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer()
 	alreadyTakenIps := append(
 		[]net.IP{testsuiteContainerIpAddr, replContainerIpAddr},
 		externalContainerIpAddrs...
@@ -180,6 +183,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerId, err := apiContainerLauncher.Launch(
 		setupCtx,
 		apiContainerName,
+		apiContainerLabels,
 		enclaveId,
 		networkId,
 		networkIpAndMask.String(),
@@ -220,6 +224,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		replContainerIpAddr,
 		testsuiteContainerIpAddr,
 		enclaveObjNameProvider.ForTestRunningTestsuiteContainer(),
+		enclaveObjLabelsProvider.ForTestRunningTestsuiteContainer(),
 		dockerManager,
 	)
 
