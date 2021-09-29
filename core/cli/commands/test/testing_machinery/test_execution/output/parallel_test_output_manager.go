@@ -7,7 +7,7 @@ package output
 
 import (
 	"fmt"
-	banner_printer "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"

@@ -7,7 +7,7 @@ package test_mocks
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	auth0_token_claims "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
 	"github.com/palantir/stacktrace"
 	"time"
 )

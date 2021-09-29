@@ -6,7 +6,7 @@
 package auth0_token_claims
 
 import (
-	auth0_constants "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"testing"
 	"time"
 )

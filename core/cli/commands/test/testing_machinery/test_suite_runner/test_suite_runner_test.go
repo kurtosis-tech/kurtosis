@@ -7,7 +7,7 @@ package test_suite_runner
 
 import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	permissions "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"strconv"
