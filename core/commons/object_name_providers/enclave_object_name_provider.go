@@ -15,6 +15,8 @@ import (
 const (
 	// These should represent the same format of YYYY-MM-DDTHH.mm.ss.SSS
 	uniqueTimestampFormat = "2006-01-02T15.04.05.000"
+
+	interactiveReplContainerLabel = "interactive-repl"
 )
 
 type EnclaveObjectNameProvider struct {
@@ -37,6 +39,18 @@ func (nameProvider *EnclaveObjectNameProvider) ForApiContainer() string {
 func (nameProvider *EnclaveObjectNameProvider) ForTestRunningTestsuiteContainer() string {
 	return strings.Join(
 		[]string{nameProvider.enclaveId, testsuiteContainerNameSuffix},
+		objectNameElementSeparator,
+	)
+}
+
+func (nameProvider *EnclaveObjectNameProvider) ForInteractiveREPLContainer() string {
+
+	return strings.Join(
+		[]string{
+			nameProvider.enclaveId,
+			interactiveReplContainerLabel,
+			time.Now().Format(uniqueTimestampFormat),
+		},
 		objectNameElementSeparator,
 	)
 }

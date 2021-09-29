@@ -9,8 +9,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/banner_printer"
@@ -21,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"net"
 	"strings"
 	"time"
 )
@@ -86,7 +87,6 @@ Returns:
 func RunTest(
 		testSetupExecutionCtx context.Context,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		initializerContainerId string,
 		log *logrus.Logger,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
@@ -110,7 +110,7 @@ func RunTest(
 		testSetupExecutionCtx,
 		log,
 		kurtosisLogLevel,
-		map[string]bool{initializerContainerId: true},
+		// TODO get rid of this when we get rid of the initializer
 		enclaveId,
 		isPartitioningEnabled,
 		isDebugModeEnabled,
@@ -129,33 +129,68 @@ func RunTest(
 	dockerManager := enclaveCtx.GetDockerManager()
 	networkId := enclaveCtx.GetNetworkID()
 	kurtosisApiIp := enclaveCtx.GetAPIContainerIPAddr()
-	testsuiteContainerIp := enclaveCtx.GetTestsuiteContainerIPAddr()
-	testsuiteContainerName := enclaveCtx.GetTestsuiteContainerName()
+	kurtosisApiHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
+	testsuiteContainerName := enclaveCtx.GetObjectNameProvider().ForTestRunningTestsuiteContainer()
 
-	testsuiteContainerId, err := testsuiteLauncher.LaunchTestRunningContainer(
+	apiContainerUrlOnHostMachine := fmt.Sprintf(
+		"%v:%v",
+		kurtosisApiHostMachinePortBinding.HostIP,
+		kurtosisApiHostMachinePortBinding.HostPort,
+	)
+	apiContainerConn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred dialling the API container using its host machine port binding '%v'", apiContainerUrlOnHostMachine)
+	}
+	defer apiContainerConn.Close()
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(apiContainerConn)
+
+	startTestsuiteContainerRegistrationResp, err := apiContainerClient.StartExternalContainerRegistration(
+		testSetupExecutionCtx,
+		&emptypb.Empty{},
+	)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred when starting the registration of the testsuite container")
+	}
+	testsuiteRegistrationKey := startTestsuiteContainerRegistrationResp.RegistrationKey
+	testsuiteIpAddrStr := startTestsuiteContainerRegistrationResp.IpAddr
+	testsuiteIpAddr := net.ParseIP(testsuiteIpAddrStr)
+	if testsuiteIpAddr == nil {
+		return false, stacktrace.NewError("The API container returned an IP address string, '%v', for the testsuite container, but it wasn't parseable to an IP", testsuiteIpAddrStr)
+	}
+
+	testsuiteContainerId, hostMachineRpcPortBinding, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
 		log,
 		dockerManager,
 		networkId,
 		testsuiteContainerName,
 		kurtosisApiIp,
-		testsuiteContainerIp,
+		testsuiteIpAddr,
 		enclaveId,
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the test-running testsuite container")
 	}
-	// No need to have a deferred function that tears down the testsuite container if things don't work because the enclave
-	//  teardown logic that we have earlier will handle it
+	finishRegistrationArgs := &kurtosis_core_rpc_api_bindings.FinishExternalContainerRegistrationArgs{
+		RegistrationKey: testsuiteRegistrationKey,
+		ContainerId:     testsuiteContainerId,
+	}
+	if _, err := apiContainerClient.FinishExternalContainerRegistration(testSetupExecutionCtx, finishRegistrationArgs); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred finishing the testsuite container registration with the API container")
+	}
 
-	testsuiteEndpointUri := fmt.Sprintf("%v:%v", testsuiteContainerIp.String(), kurtosis_testsuite_rpc_api_consts.ListenPort)
+	testsuiteEndpointUri := fmt.Sprintf(
+		"%v:%v",
+		hostMachineRpcPortBinding.HostIP,
+		hostMachineRpcPortBinding.HostPort,
+	)
 	// TODO SECURITY: Use HTTPS
-	conn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
+	testsuiteContainerConn, err := grpc.Dial(testsuiteEndpointUri, grpc.WithInsecure())
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred dialing the testsuite container endpoint")
 	}
-	defer conn.Close()
-	testsuiteServiceClient := kurtosis_testsuite_rpc_api_bindings.NewTestSuiteServiceClient(conn)
+	defer testsuiteContainerConn.Close()
+	testsuiteServiceClient := kurtosis_testsuite_rpc_api_bindings.NewTestSuiteServiceClient(testsuiteContainerConn)
 
 	if err := waitUntilTestsuiteContainerIsAvailable(testSetupExecutionCtx, testsuiteServiceClient); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred while waiting for the testsuite container to become available")

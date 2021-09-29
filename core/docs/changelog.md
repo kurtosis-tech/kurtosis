@@ -1,4 +1,15 @@
 # TBD
+### Features
+* Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
+* Always bind the API container's RPC port to a host machine port
+* Always bind the testsuite container's RPC port to a host machine port
+
+### Changes
+* All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
+
+### Breaking Changes
+* Testsuites are now run via the `kurtosis test` command, and the wrapper script (`kurtosis.sh` is now deprecated)
+    * Users should swap out their calls to `kurtosis.sh` with calls to the Kurtosis CLI
 
 # 1.21.1
 ### Features

@@ -65,8 +65,12 @@ if ! "${is_lang_valid}"; then
 fi
 
 testsuite_image="${DOCKER_ORG}/${testsuite_lang}-${INTERNAL_TESTSUITE_IMAGE_SUFFIX}:${docker_tag}"
-wrapper_filepath="${root_dirpath}/${WRAPPER_OUTPUT_REL_FILEPATH}"
+api_container_image="${API_IMAGE}:${docker_tag}"
+goarch="$(go env GOARCH)"
+goos="$(go env GOOS)"
+cli_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
+
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips 'set -e' if no arguments are passed, so this incantation says, "if and only if 
 #  ${1} exists, evaluate ${@}"
-bash "${wrapper_filepath}" --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}"
+"${cli_binary_filepath}" test --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}" "${api_container_image}"

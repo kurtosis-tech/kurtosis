@@ -36,7 +36,6 @@ Runs the tests with the given names and prints the results to STDOUT. If no test
 Args:
 	permissions: The permissions the user is running the test suite with
 	executionInstanceUuid: The UUID  uniquely identifying this testsuite execution
-	initializerContainerId: The ID of the initializer contianer
 	dockerClient: Docker client to use when interacting with the Docker engine
 	artifactCache: The artifact cache where artifacts needed by the tests-to-run will be downloaded
 	testSuiteMetadata: Metadata about the test suite - e.g. name of tests, network width bits, etc.
@@ -56,7 +55,6 @@ Returns:
 func RunTests(
 		permissions *permissions.Permissions,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		initializerContainerId string,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
@@ -105,7 +103,6 @@ func RunTests(
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider,
-		initializerContainerId,
 		enclaveManager,
 		kurtosisLogLevel,
 		testParallelism,

@@ -37,7 +37,6 @@ Returns:
  */
 func RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		initializerContainerId string,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 		parallelism uint,
@@ -80,7 +79,6 @@ func RunInParallelAndPrintResults(
 	disableSystemLogAndRunTestThreads(
 		ctx,
 		testsuiteExObjNameProvider,
-		initializerContainerId,
 		erroneousSystemLogCaptureWriter,
 		outputManager,
 		testParamsChan,
@@ -109,7 +107,6 @@ func RunInParallelAndPrintResults(
 func disableSystemLogAndRunTestThreads(
 		parentContext context.Context,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		initializerContainerId string,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
 		outputManager *output.ParallelTestOutputManager,
 		testParamsChan chan parallel_test_params.ParallelTestParams,
@@ -134,7 +131,6 @@ func disableSystemLogAndRunTestThreads(
 		go runTestWorkerGoroutine(
 			parentContext,
 			testsuiteExObjNameProvider,
-			initializerContainerId,
 			&waitGroup,
 			testParamsChan,
 			outputManager,
@@ -154,7 +150,6 @@ push the result to the test results channel
 func runTestWorkerGoroutine(
 			parentContext context.Context,
 			testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-			initializerContainerId string,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
@@ -171,7 +166,6 @@ func runTestWorkerGoroutine(
 		passed, executionErr := test_executor.RunTest(
 			parentContext,
 			testsuiteExObjNameProvider,
-			initializerContainerId,
 			testLog,
 			enclaveManager,
 			kurtosisLogLevel,

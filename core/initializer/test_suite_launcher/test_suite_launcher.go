@@ -42,12 +42,10 @@ type TestsuiteContainerLauncher struct {
 
 	// The JSON-serialized custom params object that will be passed as-is to the testsuite
 	customParamsJson string
-
-	shouldPublishPorts bool
 }
 
-func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string, shouldPublishPorts bool) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, shouldPublishPorts: shouldPublishPorts}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
 }
 
 /*
@@ -56,18 +54,18 @@ Launches a new testsuite container for providing testsuite metadata to the initi
 func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		ctx context.Context,
 		log *logrus.Logger,
-		dockerManager *docker_manager.DockerManager) (containerId string, containerIpAddr string, err error) {
+		dockerManager *docker_manager.DockerManager) (containerId string, hostMachineRpcPortBinding *nat.PortBinding, err error) {
 	functionCompletedSuccessfully := false
 
 	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(ctx, bridgeNetworkName)
 	if err != nil {
-		return "", "", stacktrace.Propagate(
+		return "", nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting the network IDs matching the '%v' network",
 			bridgeNetworkName)
 	}
 	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
-		return "", "", stacktrace.NewError(
+		return "", nil, stacktrace.NewError(
 			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
 			len(bridgeNetworkIds),
 			bridgeNetworkName)
@@ -76,13 +74,13 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 
 	testsuiteEnvVars, err := launcher.generateMetadataProvidingEnvVars()
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
+		return "", nil, stacktrace.Propagate(err, "An error occurred generating the testsuite container env vars")
 	}
 
 	suiteContainerDesc := "metadata-providing testsuite container"
 	log.Debugf("Launching %v...", suiteContainerDesc)
 	containerName := launcher.testsuiteExObjNameProvider.ForMetadataAcquiringTestsuiteContainer()
-	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+	testsuiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
 		dockerManager,
 		containerName,
@@ -92,7 +90,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		map[string]string{},
 	)
 	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
+		return "", nil, stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
@@ -101,15 +99,15 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		testsuiteContainerId,
 		func() bool { return functionCompletedSuccessfully},
 	)
-	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, debuggerPortHostBinding)
+	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, hostPortBindings)
 
-	ipAddr, err := dockerManager.GetContainerIP(ctx, bridgeNetworkName, testsuiteContainerId)
-	if err != nil {
-		return "", "", stacktrace.Propagate(err, "An error occurred getting the metadata-providing testsuite IP addr on network '%v'", bridgeNetworkName)
+	rpcPortOnHostMachine, found := hostPortBindings[testsuiteRpcPort]
+	if !found {
+		return "", nil, stacktrace.NewError("No host machine port binding found for the testsuite RPC port; this should never happen since testsuite RPC ports should always be bound to the host machine")
 	}
 
 	functionCompletedSuccessfully = true
-	return testsuiteContainerId, ipAddr, nil
+	return testsuiteContainerId, rpcPortOnHostMachine, nil
 }
 
 /*
@@ -123,7 +121,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		containerName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
-		enclaveDataVolName string) (containerId string, resultErr error){
+		enclaveDataVolName string) (string, *nat.PortBinding, error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
 		testsuiteContainerIp.String(),
@@ -133,7 +131,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	testSuiteEnvVars, err := launcher.generateTestRunningEnvVars(kurtosisApiContainerIp.String())
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
+		return "", nil, stacktrace.Propagate(err, "An error occurred generating the test-running testsuite container env vars")
 	}
 
 	suiteContainerDesc := "test-running testsuite container"
@@ -141,7 +139,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
-	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
 		dockerManager,
 		containerName,
@@ -151,7 +149,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		volumeMountpoints,
 	)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
 	}
 	defer killContainerIfNotFunctionSuccess(
 		ctx,
@@ -162,15 +160,20 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	)
 	logSuccessfulSuiteContainerLaunch(log, suiteContainerDesc, hostPortBindings)
 
+	rpcPortOnHostMachine, found := hostPortBindings[testsuiteRpcPort]
+	if !found {
+		return "", nil, stacktrace.NewError("No host machine port binding found for the testsuite RPC port; this should never happen since testsuite RPC ports should always be bound to the host machine")
+	}
+
 	functionCompletedSuccessfully = true
-	return suiteContainerId, nil
+	return suiteContainerId, rpcPortOnHostMachine, nil
 }
 
 // ===============================================================================================
 //                                 Private helper functions
 // ===============================================================================================
 // NOTE: The port binding will be nil if no host port was bound
-func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		name string,
@@ -183,6 +186,8 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 
 	usedPorts := map[nat.Port]bool{
 		testsuiteRpcPort: true,
+		// TODO only set the debugger port if we're in debug mode, which would allow the Dockerfile
+		//  to conditionally start the testsuite in dlv
 		testsuiteDebuggerPort: true,
 	}
 
@@ -195,7 +200,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 	).WithUsedPorts(
 		usedPorts,
 	).ShouldPublishAllPorts(
-		launcher.shouldPublishPorts,
+		true,		// We always publish the testsuite container's ports so that the CLI can call setup/run methods from outside the enclave
 	).WithEnvironmentVariables(
 		envVars,
 	).WithVolumeMounts(
