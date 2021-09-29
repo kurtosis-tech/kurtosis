@@ -65,7 +65,7 @@ const (
 	apiContainerImageArg = "api-container-image"
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
-	defaultParallelism = uint32(2)
+	defaultParallelism = uint32(4)
 	testNameArgSeparator = ","
 	defaultSuiteLogLevelStr = "info"
 
