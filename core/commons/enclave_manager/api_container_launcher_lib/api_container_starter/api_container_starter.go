@@ -59,7 +59,7 @@ func StartAPIContainer(
 	).WithUsedPorts(map[nat.Port]bool{
 		kurtosisApiPort: true,
 	}).ShouldPublishAllPorts(
-		true,
+		true,	// We always publish the API container's ports so that we can call its external container registration functions from the CLI
 	).WithEnvironmentVariables(
 		envVars,
 	).WithBindMounts(map[string]string{

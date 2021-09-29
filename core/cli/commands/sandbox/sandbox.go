@@ -7,12 +7,12 @@ package sandbox
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -24,11 +24,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"math/rand"
 	"net"
 	"os"
 	"strings"
-	"time"
 )
 
 const (
@@ -43,11 +41,6 @@ const (
 	defaultJavascriptReplImage = "kurtosistech/javascript-interactive-repl"
 
 	shouldPublishPorts = true
-
-	kurtosisInteractiveIdentifier = "KTI"
-	// TODO centralize this between the Bash wrapper script and this!!
-	// YYYY-MM-DDTHH.MM.SS
-	enclaveIdTimestampFormat = "2006-01-02T15.04.05"
 
 	isPartitioningEnabled = true
 
@@ -130,7 +123,7 @@ func run(cmd *cobra.Command, args []string) error {
 	pullImageBestEffort(dockerManager, apiContainerImage)
 	pullImageBestEffort(dockerManager, jsReplImage)
 
-	enclaveId := getEnclaveId()
+	enclaveId := execution_ids.GetExecutionID()
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
 
@@ -138,7 +131,6 @@ func run(cmd *cobra.Command, args []string) error {
 		context.Background(),
 		logrus.StandardLogger(),
 		kurtosisLogLevel,
-		map[string]bool{},
 		enclaveId,
 		isPartitioningEnabled,
 		shouldPublishPorts,
@@ -187,6 +179,7 @@ func runReplContainer(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine port binding")
 	}
+	defer conn.Close()
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	startRegistrationResp, err := apiContainerClient.StartExternalContainerRegistration(context.Background(), &emptypb.Empty{})
@@ -297,21 +290,6 @@ func runReplContainer(
 	terminal.Restore(stdinFd, oldState)
 
 	return nil
-}
-
-// TODO Merge this with the Bash enclave ID generation so that it's standardized!!!!!
-func getEnclaveId() string {
-	rand.Seed(time.Now().UnixNano())
-	// We make this uint16 to approximate Bash's RANDOM
-	randomNumUint16Bytes := make([]byte, 2)
-	rand.Read(randomNumUint16Bytes)
-	randomNumUint16 := binary.BigEndian.Uint16(randomNumUint16Bytes)
-	return fmt.Sprintf(
-		"%v%v-%v",
-		kurtosisInteractiveIdentifier,
-		time.Now().Format(enclaveIdTimestampFormat),
-		randomNumUint16,
-	)
 }
 
 func pullImageBestEffort(dockerManager *docker_manager.DockerManager, image string) {

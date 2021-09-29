@@ -42,12 +42,10 @@ type TestsuiteContainerLauncher struct {
 
 	// The JSON-serialized custom params object that will be passed as-is to the testsuite
 	customParamsJson string
-
-	shouldPublishPorts bool
 }
 
-func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string, shouldPublishPorts bool) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson, shouldPublishPorts: shouldPublishPorts}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
 }
 
 /*
@@ -195,7 +193,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 	).WithUsedPorts(
 		usedPorts,
 	).ShouldPublishAllPorts(
-		launcher.shouldPublishPorts,
+		true,		// We always publish the testsuite container's ports so that the CLI can call setup/run methods from outside the enclave
 	).WithEnvironmentVariables(
 		envVars,
 	).WithVolumeMounts(

@@ -6,16 +6,11 @@
 package test
 
 import (
-	"encoding/binary"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
+	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
@@ -29,17 +24,10 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/ssh/terminal"
-	"golang.org/x/sys/unix"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"net"
 	"os"
 	"path"
 	"sort"
 	"strings"
-	"time"
 )
 
 const (
@@ -53,18 +41,33 @@ const (
 	testNamesArg         = "tests"
 	testSuiteLogLevelArg = "suite-log-level"
 
+	// Positional args
+	testsuiteImageArg = "testsuite-image"
+	apiContainerImageArg = "api-container-image"
+
 	defaultParallelism = uint32(4)
 	testNameArgSeparator = ","
 	defaultSuiteLogLevelStr = "info"
+
+	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
+	debugModeParallelism = 1
+
+	// Name of the file within the Kurtosis storage directory where the session cache will be stored
+	kurtosisDirname = ".kurtosis"
+	sessionCacheFilename = "session-cache"
+	sessionCacheFileMode os.FileMode = 0600
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
+var positionalArgs = []string{
+	testsuiteImageArg,
+	apiContainerImageArg,
+}
 
 var TestCmd = &cobra.Command{
 	Use:   "test",
 	Short: "Runs a Kurtosis testsuite using the specified Kurtosis Core version",
 	RunE:  run,
-	Args: cobra.ExactArgs(len(positionalArgsPointers)),
 }
 
 var clientId *string
@@ -74,16 +77,8 @@ var isDebugMode *bool
 var kurtosisLogLevelStr *string
 var doList *bool
 var parallelism *uint32
-var commaSeparatedTests *string
+var delimitedTestNamesToRun *string
 var suiteLogLevelStr *string
-
-// TODO Positional args???
-var testsuiteImage string
-var kurtosisCoreVersionStr string
-var positionalArgsPointers = []*string{
-	&testsuiteImage,
-	&kurtosisCoreVersionStr,
-}
 
 func init() {
 	TestCmd.Flags().StringVar(
@@ -130,7 +125,7 @@ func init() {
 		"The number of tests to execute in parallel",
 	)
 	TestCmd.Flags().StringVar(
-		commaSeparatedTests,
+		delimitedTestNamesToRun,
 		testNamesArg,
 		"",
 		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
@@ -144,16 +139,26 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
+	kurtosisLogLevel, err := logrus.ParseLevel(*kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the Kurtosis log level string '%v'", kurtosisLogLevelStr)
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	accessController := getAccessController(
+	parsedPositionalArgs, err := parsePositionalArgs(args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+	}
+	testsuiteImage := parsedPositionalArgs[testsuiteImageArg]
+	apiContainerImage := parsedPositionalArgs[apiContainerImageArg]
+
+	accessController, err := getAccessController(
 		*clientId,
 		*clientSecret,
 	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the access controller")
+	}
 	permissions, err := accessController.Authenticate()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred when authenticating this Kurtosis instance")
@@ -164,98 +169,87 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 
-	executionId := parsedFlags.GetString(executionIdArg)
+	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 
-	// We need the initializer container's ID so that we can connect it to the subnetworks so that it can
-	//  call the testsuite containers, and the least fragile way we have to find it is to use the execution UUID
-	// We must do this before starting any other containers though, else we won't know which one is the initializer
-	//  (since using the image name is very fragile)
-	initializerContainerId, err := container_own_id_finder.GetOwnContainerIdByName(
-		context.Background(),
-		docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient),
-		executionId,
-	)
-	if err != nil {
-		logrus.Errorf("An error occurred getting the initializer container's ID: %v", err)
-		os.Exit(failureExitCode)
-	}
-
-	isDebugMode := parsedFlags.GetBool(isDebugModeArg)
-
-	customParamsJson := parsedFlags.GetString(customParamsJsonArg)
-	logrus.Infof("Using custom params: \n%v", customParamsJson)
+	logrus.Infof("Using custom params: \n%v", *customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		testsuiteExObjNameProvider,
-		parsedFlags.GetString(testSuiteImageArg),
-		parsedFlags.GetString(testSuiteLogLevelArg),
-		customParamsJson,
-		isDebugMode,
+		testsuiteImage,
+		*suiteLogLevelStr,
+		*customParamsJson,
+		*isDebugMode,
 	)
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, parsedFlags.GetString(kurtosisApiImageArg))
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher,
 	)
 	if err != nil {
-		logrus.Errorf("An error occurred getting the test suite metadata: %v", err)
-		os.Exit(failureExitCode)
+		return stacktrace.Propagate(err, "An error occurred getting the test suite metadata")
 	}
 
 	if err := verifyNoDelimiterCharInTestNames(suiteMetadata); err != nil {
-		logrus.Errorf("An error occurred verifying no delimiter in the test names: %v", err)
-		os.Exit(failureExitCode)
+		return stacktrace.Propagate(err, "An error occurred verifying no test name delimiter in the test names")
 	}
 
-	if parsedFlags.GetBool(doListArg) {
+	if *doList {
 		printTestsInSuite(suiteMetadata)
-		os.Exit(successExitCode)
+		return nil
 	}
 
-	testNamesToRun := splitTestsStrIntoTestsSet(parsedFlags.GetString(testNamesArg))
+	testNamesToRun := splitTestsStrIntoTestsSet(*delimitedTestNamesToRun)
 
 	var parallelismUint uint
-	if isDebugMode {
+	if *isDebugMode {
 		logrus.Infof("NOTE: Due to debug mode being set to true, parallelism is set to %v", debugModeParallelism)
 		parallelismUint = debugModeParallelism
 	} else {
-		parallelismUint = uint(parsedFlags.GetInt(parallelismArg))
+		parallelismUint = uint(*parallelism)
 	}
 
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		testsuiteExObjNameProvider,
-		initializerContainerId,
 		enclaveManager,
 		kurtosisLogLevel,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
 		testsuiteLauncher,
-		isDebugMode,
+		*isDebugMode,
 	)
 	if err != nil {
-		logrus.Errorf("An error occurred running the tests:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
+		return stacktrace.Propagate(err, "An error occurred running the tests")
 	}
 
-	var exitCode int
-	if allTestsPassed {
-		exitCode = successExitCode
-	} else {
-		exitCode = failureExitCode
+	if !allTestsPassed {
+		return stacktrace.Propagate(err, "One or more tests didn't pass")
 	}
-	os.Exit(exitCode)
+	return nil
+}
+
+// Parses the args into a map of positional_arg_name -> value
+func parsePositionalArgs(args []string) (map[string]string, error) {
+	if len(args) != len(positionalArgs) {
+		return nil, stacktrace.NewError("Expected %v positional arguments but got %v", len(positionalArgs), len(args))
+	}
+
+	result := map[string]string{}
+	for idx, argValue := range args {
+		arg := positionalArgs[idx]
+		result[arg] = argValue
+	}
+	return result, nil
 }
 
 func getAccessController(
 	clientId string,
-	clientSecret string) access_controller.AccessController {
+	clientSecret string) (access_controller.AccessController, error) {
 	var accessController access_controller.AccessController
 	if len(clientId) > 0 && len(clientSecret) > 0 {
 		logrus.Debugf("Running CI machine-to-machine auth flow...")
@@ -266,7 +260,11 @@ func getAccessController(
 			clientSecret)
 	} else {
 		logrus.Debugf("Running developer device auth flow...")
-		sessionCacheFilepath := path.Join(storageDirectoryBindMountDirpath, sessionCacheFilename)
+		homeDirpath, err := os.UserHomeDir()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the home directory")
+		}
+		sessionCacheFilepath := path.Join(homeDirpath, kurtosisDirname, sessionCacheFilename)
 		sessionCache := session_cache.NewEncryptedSessionCache(
 			sessionCacheFilepath,
 			sessionCacheFileMode,
@@ -277,7 +275,7 @@ func getAccessController(
 			auth0_authenticators.NewStandardDeviceCodeAuthenticator(),
 		)
 	}
-	return accessController
+	return accessController, nil
 }
 
 func verifyNoDelimiterCharInTestNames(suiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata) error {
