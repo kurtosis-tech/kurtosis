@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Add new Kurtosis CLI command `enclave ls` to show a list of Kurtosis enclave ids 
+ 
+### Changes
+* Export `LabelEnclaveIDKey`, `LabelContainerTypeKey` and `LabelGUIDKey` constants
 
 # 1.21.1
 ### Features

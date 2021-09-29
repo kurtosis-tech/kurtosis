@@ -12,14 +12,10 @@ import (
 
 var EnclaveCmd = &cobra.Command{
 	Use:   "enclave",
-	Short: "Group all enclave commands",
-	RunE:  run,
+	Short: "Manage enclaves",
+	RunE:  nil,
 }
 
 func init() {
 	EnclaveCmd.AddCommand(ls.LsCmd)
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	return nil
 }

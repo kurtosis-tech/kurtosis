@@ -13,9 +13,9 @@ import (
 const (
 	labelNamespace = "com.kurtosistech."
 
-	labelEnclaveIDKey     = labelNamespace + "enclave-id"
-	labelContainerTypeKey = labelNamespace + "container-type"
-	labelGUIDKey          = labelNamespace + "guid"
+	LabelEnclaveIDKey     = labelNamespace + "enclave-id"
+	LabelContainerTypeKey = labelNamespace + "container-type"
+	LabelGUIDKey          = labelNamespace + "guid"
 
 	containerTypeApiContainer               = "api-container"
 	containerTypeTestsuiteContainer         = "testsuite"
@@ -34,7 +34,7 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer() map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabels()
-	labels[labelContainerTypeKey] = containerTypeApiContainer
+	labels[LabelContainerTypeKey] = containerTypeApiContainer
 	return labels
 }
 
@@ -42,42 +42,42 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer() map[string]
 //  unspecial (and thus delete this method) until the API container supports a container log-streaming endpoint
 func (labelsProvider *EnclaveObjectLabelsProvider) ForTestRunningTestsuiteContainer() map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabels()
-	labels[labelContainerTypeKey] = containerTypeTestsuiteContainer
+	labels[LabelContainerTypeKey] = containerTypeTestsuiteContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForUserServiceContainer(serviceGUID service_network_types.ServiceGUID) map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabelsAndGUIDLabel(string(serviceGUID))
-	labels[labelContainerTypeKey] = containerTypeUserServiceContainer
+	labels[LabelContainerTypeKey] = containerTypeUserServiceContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForNetworkingSidecarContainer(serviceGUID service_network_types.ServiceGUID) map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabelsAndGUIDLabel(string(serviceGUID))
-	labels[labelContainerTypeKey] = containerTypeNetworkingSidecarContainer
+	labels[LabelContainerTypeKey] = containerTypeNetworkingSidecarContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForLambdaContainer(lambdaGUID lambda_store_types.LambdaGUID) map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabelsAndGUIDLabel(string(lambdaGUID))
-	labels[labelContainerTypeKey] = containerTypeLambdaContainer
+	labels[LabelContainerTypeKey] = containerTypeLambdaContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsMapWithCommonsLabels() map[string]string {
 	labels := map[string]string{}
-	labels[labelEnclaveIDKey] = labelsProvider.enclaveId
+	labels[LabelEnclaveIDKey] = labelsProvider.enclaveId
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsMapWithCommonsLabelsAndGUIDLabel(guid string) map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabels()
-	labels[labelGUIDKey] = guid
+	labels[LabelGUIDKey] = guid
 	return labels
 }
 
 func GetLabelsForListEnclaves() map[string]string {
 	labels := map[string]string{}
-	labels[labelContainerTypeKey] = containerTypeApiContainer
+	labels[LabelContainerTypeKey] = containerTypeApiContainer
 	return labels
 }

@@ -65,15 +65,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	labels := object_labels_providers.GetLabelsForListEnclaves()
 
-	containerIds, err := dockerManager.GetContainerIdsByLabels(ctx, labels)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting container ids by labels: '%+v'", labels)
+		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
 	}
 
-	fmt.Println("==== Listing enclave container ids ====")
-	fmt.Printf("Container ids var: '%+v'", containerIds)
-	for _, containerId := range containerIds {
-		fmt.Printf("Container ID: %v", containerId)
+	if containers != nil {
+		for _, container := range containers {
+			if container != nil {
+				fmt.Println(container.GetLabels()[object_labels_providers.LabelEnclaveIDKey])
+			}
+		}
 	}
 
 	return nil
