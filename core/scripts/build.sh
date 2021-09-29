@@ -12,9 +12,9 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
 
-INITIALIZER_DIRNAME="initializer"
+GET_AUTOUPDATING_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-autoupdating-docker-images-tag.sh"
 
-GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
+INITIALIZER_DIRNAME="initializer"
 
 WRAPPER_GENERATOR_DIRNAME="wrapper_generator"
 WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME="wrapper-generator"
@@ -23,6 +23,7 @@ WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh
 WRAPPER_SCRIPT_GENERATOR_GORELEASER_BUILD_ID="wrapper-generator"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
+
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -50,8 +51,12 @@ if ! mkdir -p "${build_dirpath}"; then
     exit 1
 fi
 
-if ! docker_image_tag="$(bash "${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
-    echo "Error: Couldn't get the Docker images tag" >&2
+if ! fixed_docker_image_tag="$(bash "${script_dirpath}/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+    echo "Error: Couldn't get fixed Docker image tag" >&2
+    exit 1
+fi
+if ! autoupdating_docker_image_tag="$(bash "${script_dirpath}/${GET_AUTOUPDATING_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+    echo "Error: Couldn't get autoupdating Docker image tag" >&2
     exit 1
 fi
 
@@ -65,7 +70,8 @@ export API_IMAGE \
     WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME \
     JAVASCRIPT_REPL_IMAGE \
     CLI_BINARY_FILENAME
-export DOCKER_IMAGE_TAG="${docker_image_tag}"
+export FIXED_DOCKER_IMAGE_TAG="${fixed_docker_image_tag}"
+export AUTOUPDATING_DOCKER_IMAGE_TAG="${autoupdating_docker_image_tag}"
 
 # We want to run goreleaser from the root
 cd "${root_dirpath}"
@@ -79,7 +85,7 @@ if ! goreleaser build --rm-dist --snapshot --id "${WRAPPER_SCRIPT_GENERATOR_GORE
     exit 1
 fi
 if ! "${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME}" \
-        -kurtosis-core-version "${docker_image_tag}" \
+        -kurtosis-core-version "${fixed_docker_image_tag}" \
         -template "${WRAPPER_TEMPLATE_REL_FILEPATH}" \
         -output "${WRAPPER_OUTPUT_REL_FILEPATH}"; then
     echo "Error: Failed to generate wrapper script" >&2

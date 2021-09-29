@@ -9,7 +9,7 @@ KURTOSIS_DIRPATH="$HOME/.kurtosis"
 BUILD_DIRNAME="build"
 GORELEASER_OUTPUT_DIRNAME="dist"
 
-GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
+GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-fixed-docker-images-tag.sh"
 
 # ------------------------ Testing  -------------------------------------------------------
 WRAPPER_OUTPUT_REL_FILEPATH="${BUILD_DIRNAME}/kurtosis.sh"

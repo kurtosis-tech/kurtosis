@@ -2,6 +2,7 @@
 ### Features
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
 * Always bind the API container to a host machine port
+* Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
 
 ### Changes
 * Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
