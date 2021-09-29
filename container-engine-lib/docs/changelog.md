@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.2
 ### Fixes
 * Fixed a bug where the defer function in `CreateAndStartContainer` would try to kill an empty container ID
 
