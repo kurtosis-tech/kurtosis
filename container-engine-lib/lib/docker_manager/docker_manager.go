@@ -231,7 +231,7 @@ Returns:
 func (manager DockerManager) CreateAndStartContainer(
 	ctx context.Context,
 	args *CreateAndStartContainerArgs,
-) (containerId string, containerPortHostBindings map[nat.Port]*nat.PortBinding, err error) {
+) (string, map[nat.Port]*nat.PortBinding, error) {
 
 	// If the user passed in a Docker image that doesn't have a tag separator (indicating no tag was specified), manually append
 	//  the Docker default tag so that when we search for the image we're searching for a very specific image
@@ -298,7 +298,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Could not create Docker container '%v' from image '%v'", args.name, dockerImage)
 	}
-	containerId = containerCreateResp.ID
+	containerId := containerCreateResp.ID
 	if containerId == "" {
 		return "", nil, stacktrace.NewError(
 			"Creation of container '%v' from image '%v' succeeded without error, but we didn't get a container ID back - this is VERY strange!",
