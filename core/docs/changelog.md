@@ -11,6 +11,9 @@
 ### Fixes
 * Actually depend on Kurt Client 0.17.1
 
+### Breaking Changes
+* Removed the initializer container!!!
+
 # 1.21.0
 ### Features
 * Add the relative service directory path in `RegisterService` and `GetServiceInfo` methods
