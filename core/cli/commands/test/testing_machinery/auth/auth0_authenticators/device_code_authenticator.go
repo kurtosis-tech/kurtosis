@@ -8,7 +8,7 @@ package auth0_authenticators
 import (
 	"encoding/json"
 	"fmt"
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	auth0_constants "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -71,11 +71,11 @@ func (authenticator StandardDeviceCodeAuthenticator) AuthorizeDeviceAndAuthentic
 	logrus.Trace("Authorizing user device...")
 
 	// Prepare to request device code.
-	url := auth0_constants2.Issuer + auth0DeviceAuthPath
+	url := auth0_constants.Issuer + auth0DeviceAuthPath
 	payloadContents := fmt.Sprintf(
 		"client_id=%s&audience=%s",
 		localDevClientId,
-		auth0_constants2.Audience)
+		auth0_constants.Audience)
 	logrus.Debugf("Payload contents: %v", payloadContents)
 	payload := strings.NewReader(payloadContents)
 	req, err := http.NewRequest("POST", url, payload)

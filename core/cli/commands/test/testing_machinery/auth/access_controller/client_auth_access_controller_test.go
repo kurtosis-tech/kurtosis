@@ -6,15 +6,15 @@
 package access_controller
 
 import (
-	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
-	test_mocks2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/test_mocks"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/test_mocks"
 	"testing"
 )
 
 func Test_UnableToAuth(t *testing.T) {
-	errorThrowingAuthorizer := test_mocks2.NewMockClientCredentialsAuthorizer(true, "")
-	accessController := NewClientAuthAccessController(test_mocks2.TestAuth0PublicKeys, errorThrowingAuthorizer, "id", "secret")
+	errorThrowingAuthorizer := test_mocks.NewMockClientCredentialsAuthorizer(true, "")
+	accessController := NewClientAuthAccessController(test_mocks.TestAuth0PublicKeys, errorThrowingAuthorizer, "id", "secret")
 
 	_, err := accessController.Authenticate()
 	if err == nil {
@@ -63,21 +63,21 @@ rxDITHSZGsHhPFMD1p2F7Jp8Hm1ja5flaDP6IdjLtqj1RfMmYcuQ0rkBgC+PN14Z
 P++/eqe7bHhyQg2uH7nv/kNv0GX02qUtk8zZqMOyE6fW3wg1e/k=
 -----END RSA PRIVATE KEY-----`
 
-	token, err := test_mocks2.CreateTestToken(
+	token, err := test_mocks.CreateTestToken(
 		randomPrivateKey,
-		auth0_constants2.Audience,
-		auth0_constants2.Issuer,
+		auth0_constants.Audience,
+		auth0_constants.Issuer,
 		3600,
-		[]string{permissions2.UnlimitedTestExecutionPermission},
+		[]string{permissions.UnlimitedTestExecutionPermission},
 	)
 	if err != nil {
 		t.Fatalf("An error occurred getting a test token signed by the unknown private key: %v", err)
 	}
-	clientCredsAuthorizer := test_mocks2.NewMockClientCredentialsAuthorizer(false, token)
+	clientCredsAuthorizer := test_mocks.NewMockClientCredentialsAuthorizer(false, token)
 
 	// These public keys don't match the private key we've signed the token with; we expect a rejection
 	accessController := NewClientAuthAccessController(
-		test_mocks2.TestAuth0PublicKeys,
+		test_mocks.TestAuth0PublicKeys,
 		clientCredsAuthorizer,
 		"id",
 		"secret",

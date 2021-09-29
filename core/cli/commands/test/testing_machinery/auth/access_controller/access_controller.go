@@ -7,8 +7,8 @@ package access_controller
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	auth0_token_claims2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
 	"github.com/palantir/stacktrace"
 	"time"
 )
@@ -31,7 +31,7 @@ const (
 // NOTE: If we wanted, we could also refactor this into "abstract class" syntax, where it contains a couple
 //  a copule interfaces that are responsible for each little bit of functionality
 type AccessController interface {
-	Authenticate() (*permissions2.Permissions, error)
+	Authenticate() (*permissions.Permissions, error)
 }
 
 
@@ -82,17 +82,17 @@ Args:
 	tokenStr: The signed token string
  */
 
-func parseTokenClaims(rsaPubKeysPem map[string]string, tokenStr string) (*auth0_token_claims2.Auth0TokenClaims, error) {
+func parseTokenClaims(rsaPubKeysPem map[string]string, tokenStr string) (*auth0_token_claims.Auth0TokenClaims, error) {
 	token, err := new(jwt.Parser).ParseWithClaims(
 		tokenStr,
-		&auth0_token_claims2.Auth0TokenClaims{},
+		&auth0_token_claims.Auth0TokenClaims{},
 		generatePubKeyExtractorFunc(rsaPubKeysPem),
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing or validating the JWT token")
 	}
 
-	claims, ok := token.Claims.(*auth0_token_claims2.Auth0TokenClaims)
+	claims, ok := token.Claims.(*auth0_token_claims.Auth0TokenClaims)
 	if !ok {
 		return nil, stacktrace.NewError("Could not cast token claims to Auth0 token claims object, indicating an invalid token")
 	}
@@ -100,11 +100,11 @@ func parseTokenClaims(rsaPubKeysPem map[string]string, tokenStr string) (*auth0_
 	return claims, nil
 }
 
-func parsePermissionsFromClaims(claims *auth0_token_claims2.Auth0TokenClaims) (*permissions2.Permissions) {
+func parsePermissionsFromClaims(claims *auth0_token_claims.Auth0TokenClaims) (*permissions.Permissions) {
 	permsSet := map[string]bool{}
 	for _, permStr := range claims.Permissions {
 		permsSet[permStr] = true
 	}
-	result := permissions2.FromPermissionsSet(permsSet)
+	result := permissions.FromPermissionsSet(permsSet)
 	return result
 }

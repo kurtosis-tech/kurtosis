@@ -9,14 +9,14 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	access_controller2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller"
-	auth0_authenticators2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
-	session_cache2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
-	initializer_container_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/initializer_container_constants"
-	test_suite_launcher2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
-	test_suite_metadata_acquirer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
-	test_suite_runner2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_runner"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/initializer_container_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -199,7 +199,7 @@ func run(cmd *cobra.Command, args []string) error {
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
-	testsuiteLauncher := test_suite_launcher2.NewTestsuiteContainerLauncher(
+	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		testsuiteExObjNameProvider,
 		testsuiteImage,
 		suiteLogLevelStr,
@@ -208,7 +208,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
 
-	suiteMetadata, err := test_suite_metadata_acquirer2.GetTestSuiteMetadata(
+	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerClient,
 		testsuiteLauncher,
 	)
@@ -236,7 +236,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
-	allTestsPassed, err := test_suite_runner2.RunTests(
+	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		testsuiteExObjNameProvider,
 		enclaveManager,
@@ -273,13 +273,13 @@ func parsePositionalArgs(args []string) (map[string]string, error) {
 
 func getAccessController(
 	clientId string,
-	clientSecret string) (access_controller2.AccessController, error) {
-	var accessController access_controller2.AccessController
+	clientSecret string) (access_controller.AccessController, error) {
+	var accessController access_controller.AccessController
 	if len(clientId) > 0 && len(clientSecret) > 0 {
 		logrus.Debugf("Running CI machine-to-machine auth flow...")
-		accessController = access_controller2.NewClientAuthAccessController(
-			auth0_constants2.RsaPublicKeyCertsPem,
-			auth0_authenticators2.NewStandardClientCredentialsAuthenticator(),
+		accessController = access_controller.NewClientAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
+			auth0_authenticators.NewStandardClientCredentialsAuthenticator(),
 			clientId,
 			clientSecret)
 	} else {
@@ -289,14 +289,14 @@ func getAccessController(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the home directory")
 		}
 		sessionCacheFilepath := path.Join(homeDirpath, kurtosisDirname, sessionCacheFilename)
-		sessionCache := session_cache2.NewEncryptedSessionCache(
+		sessionCache := session_cache.NewEncryptedSessionCache(
 			sessionCacheFilepath,
 			sessionCacheFileMode,
 		)
-		accessController = access_controller2.NewDeviceAuthAccessController(
-			auth0_constants2.RsaPublicKeyCertsPem,
+		accessController = access_controller.NewDeviceAuthAccessController(
+			auth0_constants.RsaPublicKeyCertsPem,
 			sessionCache,
-			auth0_authenticators2.NewStandardDeviceCodeAuthenticator(),
+			auth0_authenticators.NewStandardDeviceCodeAuthenticator(),
 		)
 	}
 	return accessController, nil
@@ -306,11 +306,11 @@ func verifyNoDelimiterCharInTestNames(suiteMetadata *kurtosis_testsuite_rpc_api_
 	// If any test names have our special test name arg separator, we won't be able to select the test so throw an
 	//  error and loudly alert the user
 	for testName, _ := range suiteMetadata.TestMetadata {
-		if strings.Contains(testName, initializer_container_constants2.TestNameArgSeparator) {
+		if strings.Contains(testName, initializer_container_constants.TestNameArgSeparator) {
 			return stacktrace.NewError(
 				"Test '%v' contains illegal character '%v'; we use this character for delimiting when choosing which tests to run so test names cannot contain it!",
 				testName,
-				initializer_container_constants2.TestNameArgSeparator)
+				initializer_container_constants.TestNameArgSeparator)
 		}
 	}
 	return nil
@@ -335,7 +335,7 @@ func splitTestsStrIntoTestsSet(testsStr string) map[string]bool {
 	testNamesArgStr := strings.TrimSpace(testsStr)
 	testNamesToRun := map[string]bool{}
 	if len(testNamesArgStr) > 0 {
-		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants2.TestNameArgSeparator)
+		testNamesList := strings.Split(testNamesArgStr, initializer_container_constants.TestNameArgSeparator)
 		for _, name := range testNamesList {
 			testNamesToRun[name] = true
 		}
