@@ -8,7 +8,7 @@ executors:
   ubuntu_vm:
     machine:
       image: ubuntu-1604:202007-01
-      size: large
+      resource_class: large
       # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
       # docker_layer_caching: true
 
