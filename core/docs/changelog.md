@@ -2,6 +2,7 @@
 ### Features
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
 * Always bind the API container to a host machine port
+* The `test `command will always try to pull the latest images
 
 ### Changes
 * Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder

@@ -6,9 +6,12 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -194,6 +197,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
+
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, apiContainerImage)
+
 	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
@@ -209,7 +217,7 @@ func run(cmd *cobra.Command, args []string) error {
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		dockerClient,
+		dockerManager,
 		testsuiteLauncher,
 	)
 	if err != nil {
