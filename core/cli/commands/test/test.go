@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
@@ -31,6 +32,24 @@ import (
 )
 
 const (
+	// Logo generated from https://www.ascii-art-generator.org/, and then hand-modified to look better
+	watermark = `
+         :@X88@.        .888888888888%  
+       :X888888X:     .888S@XSS8@88@;   
+      tS%S; 't8@8:   :X8X%'  :8@88:     
+    .X88X  .8888t  .888X%  .888:X.      
+    't8' .88@8'  .8888%  .8888X                   KURTOSIS TESTING SUPPORT
+        .t8XX   :SXX'   :S8SX;          Documentation: ` + user_support_constants.DocumentationUrl +`
+      .888S   .888t   .8888X            Github Issues: ` + user_support_constants.GithubIssuesUrl + `
+     :88@:  .8@8S'  .8@@8;                    Discord: ` + user_support_constants.DiscordUrl + `
+    .88;:  :X@S;   .%tSt.  @88:.                Email: ` + user_support_constants.SupportEmail + `
+    .8X   :88t'   8888XX    @8@8:       
+    .t8X   ''  .88;8:88@X:    %S@8.     
+     ';%X..  .:t8@X:'  8@8.    888S.    
+       X888tXX88X:      %8'XS    %XX8:  
+        .%8888X'          ;888888@888S  
+`
+
 	clientIdArg          = "client-id"
 	clientSecretArg      = "client-secret"
 	customParamsJsonArg  = "custom-params"
@@ -45,15 +64,16 @@ const (
 	testsuiteImageArg = "testsuite-image"
 	apiContainerImageArg = "api-container-image"
 
-	defaultParallelism = uint32(4)
+	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
+	defaultParallelism = uint32(2)
 	testNameArgSeparator = ","
 	defaultSuiteLogLevelStr = "info"
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
 
-	// Name of the file within the Kurtosis storage directory where the session cache will be stored
 	kurtosisDirname = ".kurtosis"
+	// Name of the file within the Kurtosis storage directory where the session cache will be stored
 	sessionCacheFilename = "session-cache"
 	sessionCacheFileMode os.FileMode = 0600
 )
@@ -154,6 +174,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	testsuiteImage := parsedPositionalArgs[testsuiteImageArg]
 	apiContainerImage := parsedPositionalArgs[apiContainerImageArg]
+
+	fmt.Println(watermark)
 
 	accessController, err := getAccessController(
 		clientId,
