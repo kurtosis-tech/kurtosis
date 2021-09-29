@@ -1,25 +1,35 @@
 # TBD
 ### Features
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
-* Always bind the API container to a host machine port
+* Always bind the API container's RPC port to a host machine port
+* Always bind the testsuite container's RPC port to a host machine port
 
 ### Changes
-* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
-* Absorb `kurtosis-core-launcher-lib` into here
 * All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
 * Moved all the code that used to be under the `initializer` directory into `cli/commands/test/test_machinery`
-
-### Fixes
-* Actually depend on Kurt Client 0.17.1
 
 ### Removals
 * Removed the initializer container
 * Removed the wrapper script
 
 ### Breaking Changes
+* Testsuites are now run via the `kurtosis test` command, and the wrapper script (`kurtosis.sh` is now deprecated)
+    * Users should swap out their calls to `kurtosis.sh` with calls to the Kurtosis CLI
 * Removed the initializer container!!!
 * The wrapper script has been removed
     * Users should use the CLI's `test` subcommand to run testsuites now
+
+# 1.21.1
+### Features
+* Add  labels when a container is created
+* Add `EnclaveObjectLabelsProvider` object to centralize container labels creation and labels keys and container types values
+
+### Changes
+* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
+* Absorb `kurtosis-core-launcher-lib` into here
+
+### Fixes
+* Actually depend on Kurt Client 0.17.1
 
 # 1.21.0
 ### Features

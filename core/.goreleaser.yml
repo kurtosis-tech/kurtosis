@@ -19,6 +19,9 @@ builds:
     goarch:
       - amd64
   - id: cli
+    env:
+      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
+      - CGO_ENABLED=0
     main: ./cli
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:

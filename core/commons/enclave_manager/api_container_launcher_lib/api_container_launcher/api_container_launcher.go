@@ -12,6 +12,7 @@ type APIContainerLauncher interface {
 	Launch(
 		ctx context.Context,
 		containerName string,
+		containerLabels map[string]string,
 		enclaveId string,
 		networkId string,
 		subnetMask string,

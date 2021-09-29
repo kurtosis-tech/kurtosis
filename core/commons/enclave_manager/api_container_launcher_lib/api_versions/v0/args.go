@@ -15,6 +15,8 @@ type V0LaunchAPIArgs struct {
 	// The name of the API container itself (will be used to get its own container ID)
 	ContainerName			 string	`json:"containerName"`
 
+	ContainerLabels          map[string] string `json:"containerLabels"`
+
 	LogLevel                 string `json:"logLevel"`
 
 	EnclaveId				 string `json:"enclaveId"'`
@@ -37,6 +39,7 @@ type V0LaunchAPIArgs struct {
 //  we get compile errors if there are missing fields
 func newV0LaunchAPIArgs(
 		containerName string,
+		containerLabels map[string]string,
 		logLevel string,
 		enclaveId string,
 		networkId string,
@@ -47,6 +50,7 @@ func newV0LaunchAPIArgs(
 		shouldPublishPorts bool) *V0LaunchAPIArgs {
 	return &V0LaunchAPIArgs{
 		ContainerName:               containerName,
+		ContainerLabels:             containerLabels,
 		LogLevel:                    logLevel,
 		EnclaveId:                   enclaveId,
 		NetworkId:                   networkId,
