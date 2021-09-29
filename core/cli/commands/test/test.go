@@ -179,7 +179,6 @@ func run(cmd *cobra.Command, args []string) error {
 		testsuiteImage,
 		*suiteLogLevelStr,
 		*customParamsJson,
-		*isDebugMode,
 	)
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)

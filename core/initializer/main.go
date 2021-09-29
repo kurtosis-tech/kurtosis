@@ -6,15 +6,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/commons/container_own_id_finder"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
@@ -22,9 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
 	"github.com/kurtosis-tech/kurtosis/initializer/docker_flag_parser"
 	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -178,6 +169,8 @@ var flagConfigs = map[string]docker_flag_parser.FlagConfig{
 
 
 func main() {
+	// TODO DEBUGGING
+	/*
 	fmt.Println(watermark)
 
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
@@ -307,6 +300,7 @@ func main() {
 		exitCode = failureExitCode
 	}
 	os.Exit(exitCode)
+	*/
 }
 
 func getAccessController(

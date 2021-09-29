@@ -80,7 +80,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	suiteContainerDesc := "metadata-providing testsuite container"
 	log.Debugf("Launching %v...", suiteContainerDesc)
 	containerName := launcher.testsuiteExObjNameProvider.ForMetadataAcquiringTestsuiteContainer()
-	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+	testsuiteContainerId, debuggerPortHostBinding, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
 		dockerManager,
 		containerName,
@@ -139,7 +139,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 	volumeMountpoints := map[string]string{
 		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
 	}
-	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
 		dockerManager,
 		containerName,
@@ -168,7 +168,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 //                                 Private helper functions
 // ===============================================================================================
 // NOTE: The port binding will be nil if no host port was bound
-func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPortIfNecessary(
+func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
 		name string,
@@ -181,6 +181,8 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 
 	usedPorts := map[nat.Port]bool{
 		testsuiteRpcPort: true,
+		// TODO only set the debugger port if we're in debug mode, which would allow the Dockerfile
+		//  to conditionally start the testsuite in dlv
 		testsuiteDebuggerPort: true,
 	}
 
