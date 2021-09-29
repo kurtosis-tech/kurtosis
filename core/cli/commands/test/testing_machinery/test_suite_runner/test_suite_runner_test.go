@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
+package test_suite_runner
+
+import (
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"strconv"
+	"testing"
+)
+
+func TestBlockedExecutionWhenNoPerms(t *testing.T) {
+	suiteMetadata := getTestingSuiteMetadata(1)
+	perms := permissions2.FromPermissionsSet(map[string]bool{})
+	result, err := RunTests(
+		perms,
+		nil,
+		nil,
+		logrus.InfoLevel,
+		suiteMetadata,
+		map[string]bool{},
+		1,
+		nil,
+		false,
+	)
+	assert.False(t, result)
+	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
+}
+
+func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
+	suiteMetadata := getTestingSuiteMetadata(4)
+	perms := permissions2.FromPermissionsSet(map[string]bool{
+		permissions2.RestrictedTestExecutionPermission: true,
+	})
+	result, err := RunTests(
+		perms,
+		nil,
+		nil,
+		logrus.InfoLevel,
+		suiteMetadata,
+		map[string]bool{},
+		1,
+		nil,
+		false,
+	)
+	assert.False(t, result)
+	assert.Contains(t, err.Error(), suiteExecutionPermissionDeniedErrStr)
+}
+
+func getTestingSuiteMetadata(numTests int) *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata {
+	testMetadata := map[string]*kurtosis_testsuite_rpc_api_bindings.TestMetadata{}
+	for i := 0; i < numTests; i++ {
+		testMetadata["test" + strconv.Itoa(i)] = &kurtosis_testsuite_rpc_api_bindings.TestMetadata{
+			IsPartitioningEnabled:     false,
+			TestSetupTimeoutInSeconds: 60,
+			TestRunTimeoutInSeconds:   60,
+		}
+	}
+	return &kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata{
+		TestMetadata: testMetadata,
+	}
+}
