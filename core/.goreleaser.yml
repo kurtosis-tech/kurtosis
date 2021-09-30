@@ -135,7 +135,7 @@ publishers:
     - cli-linux-packages
     dir: "{{ dir .ArtifactPath }}"
     env:
-    - 'FURY_TOKEN={{ .Env.GEMFURY_PUBLISH_TOKEN }}'
+    - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
     cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
