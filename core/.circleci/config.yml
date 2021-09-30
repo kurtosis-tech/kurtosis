@@ -129,6 +129,7 @@ workflows:
             - docker-user
             - kurtosis-user
             - s3-upload-user
+            - gemfury-publisher
           filters:
             branches:
               ignore: /.*/

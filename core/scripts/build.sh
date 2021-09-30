@@ -62,6 +62,9 @@ export API_IMAGE \
     JAVASCRIPT_REPL_IMAGE \
     CLI_BINARY_FILENAME
 export DOCKER_IMAGE_TAG="${docker_image_tag}"
+if "${should_publish_arg}"; then
+    export GEMFURY_PUBLISH_TOKEN
+fi
 
 # We want to run goreleaser from the root
 cd "${root_dirpath}"
@@ -79,8 +82,9 @@ if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_arg
     exit 1
 fi
 
-# Build a CLI binary, compatible with the current OS & arch, so that we can run interactive & testing locally
-if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
-    echo "Error: Couldn't build the wrapper script-generating binary" >&2
-    exit 1
-fi
+# TODO DEBUGGING
+# # Build a CLI binary, compatible with the current OS & arch, so that we can run interactive & testing locally
+# if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
+#     echo "Error: Couldn't build the wrapper script-generating binary" >&2
+#     exit 1
+# fi
