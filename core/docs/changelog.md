@@ -1,5 +1,13 @@
 # TBD
 
+# 1.22.3
+### Features
+* Add new Kurtosis CLI command `enclave ls` to show a list of Kurtosis enclave ids 
+* Upgraded to Kurt Core Engine Libs 0.4.3 which includes `Container`type
+ 
+### Changes
+* Export `LabelEnclaveIDKey`, `LabelContainerTypeKey` and `LabelGUIDKey` constants
+
 # 1.22.2
 ### Fixes
 * Correct naming on Linux packages to `kurtosis-cli_.......`
