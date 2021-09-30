@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.3
 ### Features
 * Add `Container` type to store container's information as ID, names, labels and status
 * Add `GetContainersByLabels` method to get a container list by labels
