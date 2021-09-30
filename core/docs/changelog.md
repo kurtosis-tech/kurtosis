@@ -1,5 +1,9 @@
 # TBD
 
+# 1.22.2
+### Fixes
+* Correct naming on Linux packages to `kurtosis-cli_.......`
+
 # 1.22.1
 ### Fixes
 * Fixed a bug with Fury publish token not getting passed down to Goreleaser
