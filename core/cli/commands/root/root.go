@@ -6,6 +6,7 @@
 package root
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test"
 	"github.com/spf13/cobra"
@@ -24,4 +25,5 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(sandbox.SandboxCmd)
 	RootCmd.AddCommand(test.TestCmd)
+	RootCmd.AddCommand(enclave.EnclaveCmd)
 }
