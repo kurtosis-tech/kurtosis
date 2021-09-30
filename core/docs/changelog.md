@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.2
 ### Fixes
 * Correct naming on Linux packages to `kurtosis-cli_.......`
 
