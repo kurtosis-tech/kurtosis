@@ -3,6 +3,7 @@
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
 * Always bind the API container's RPC port to a host machine port
 * Always bind the testsuite container's RPC port to a host machine port
+* Support publishing Debian and RPM packages to Gemfury
 
 ### Changes
 * All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
