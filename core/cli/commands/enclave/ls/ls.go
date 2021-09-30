@@ -63,7 +63,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := object_labels_providers.GetLabelsForListEnclaves()
+	labels := getLabelsForListEnclaves()
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
 	if err != nil {
@@ -79,4 +79,10 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func getLabelsForListEnclaves() map[string]string {
+	labels := map[string]string{}
+	labels[object_labels_providers.LabelContainerTypeKey] = object_labels_providers.ContainerTypeApiContainer
+	return labels
 }
