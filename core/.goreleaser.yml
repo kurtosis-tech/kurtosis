@@ -120,7 +120,7 @@ brews:
 nfpms:
   - id: cli-linux-packages
     homepage: https://kurtosistech.com
-    description: Run the Kurtosis CLI
+    description: "Install the Kurtosis CLI"
     vendor: Kurtosis Technologies Inc.
     builds:
       - cli
