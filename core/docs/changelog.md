@@ -1,9 +1,14 @@
 # TBD
 ### Features
 * Add new Kurtosis CLI command `enclave ls` to show a list of Kurtosis enclave ids 
+* Upgraded to Kurt Core Engine Libs 0.4.3 which includes `Container`type
  
 ### Changes
 * Export `LabelEnclaveIDKey`, `LabelContainerTypeKey` and `LabelGUIDKey` constants
+
+# 1.22.1
+### Fixes
+* Fixed a bug with Fury publish token not getting passed down to Goreleaser
 
 # 1.22.0
 ### Features
