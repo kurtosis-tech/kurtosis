@@ -110,7 +110,6 @@ func RunTest(
 		testSetupExecutionCtx,
 		log,
 		kurtosisLogLevel,
-		// TODO get rid of this when we get rid of the initializer
 		enclaveId,
 		isPartitioningEnabled,
 		isDebugModeEnabled,
