@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.0
 ### Features
 * Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
 * Always bind the API container's RPC port to a host machine port
