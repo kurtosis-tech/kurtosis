@@ -639,15 +639,6 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
-func (manager DockerManager) GetContainerIdsByLabels(ctx context.Context, labels map[string]string) ([]string, error) {
-	labelsFilterList := getLabelsFilterList(labels)
-	result, err := manager.getContainerIdsByFilterArgs(ctx, labelsFilterList, false)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the container ids with labels '%+v'", labelsFilterList)
-	}
-	return result, nil
-}
-
 func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*Container, error) {
 	labelsFilterList := getLabelsFilterList(labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, all)
@@ -891,17 +882,22 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	}
 	result := make([]*Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
-		container := NewContainer(
+		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
+		container, err := NewContainer(
 			dockerContainer.ID,
 			dockerContainer.Names,
 			dockerContainer.Labels,
-			dockerContainer.Status)
-
+			containerStatus)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
+		}
 		result = append(result, container)
 	}
 
 	return result, nil
 }
+
+
 
 func getLabelsFilterList(labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
