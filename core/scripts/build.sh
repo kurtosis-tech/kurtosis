@@ -63,7 +63,9 @@ export API_IMAGE \
     CLI_BINARY_FILENAME
 export DOCKER_IMAGE_TAG="${docker_image_tag}"
 if "${should_publish_arg}"; then
-    export GEMFURY_PUBLISH_TOKEN
+    # This environment variable will be set ONLY when publishing, in the CI environment
+    # See the CI config for details on how this gets set
+    export FURY_TOKEN
 fi
 
 # We want to run goreleaser from the root

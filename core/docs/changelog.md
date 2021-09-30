@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug with Fury publish token not getting passed down to Goreleaser
 
 # 1.22.0
 ### Features
