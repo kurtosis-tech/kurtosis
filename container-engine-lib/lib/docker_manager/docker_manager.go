@@ -883,9 +883,13 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	result := make([]*Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
+		containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container name from docker container names '%+v'", dockerContainer.Names)
+		}
 		container, err := NewContainer(
 			dockerContainer.ID,
-			dockerContainer.Names,
+			containerName,
 			dockerContainer.Labels,
 			containerStatus)
 		if err != nil {

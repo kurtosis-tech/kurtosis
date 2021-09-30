@@ -18,24 +18,24 @@ const (
 
 type Container struct {
 	id     string
-	names  []string
+	name   string
 	labels map[string]string
 	status Status
 }
 
-func NewContainer(id string, names []string, labels map[string]string, status Status) (*Container, error) {
+func NewContainer(id string, name string, labels map[string]string, status Status) (*Container, error) {
 	if status == numStatus {
 		return nil, stacktrace.NewError("It is not allowed to create a Container with status value = numStatus")
 	}
-	return &Container{id: id, names: names, labels: labels, status: status}, nil
+	return &Container{id: id, name: name, labels: labels, status: status}, nil
 }
 
 func (c Container) GetId() string {
 	return c.id
 }
 
-func (c Container) GetNames() []string {
-	return c.names
+func (c Container) GetName() string {
+	return c.name
 }
 
 func (c Container) GetLabels() map[string]string {
@@ -83,4 +83,11 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) Statu
 		}
 	}
 	 return unknown
+}
+
+func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
+	if len(dockerContainerNames) > 0 {
+		return dockerContainerNames[0], nil
+	}
+	return "", stacktrace.NewError("There is not any docker container name to get")
 }
