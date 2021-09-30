@@ -46,7 +46,6 @@ func init() {
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
-	InspectCmd.
 
 	InspectCmd.Flags().StringVarP(
 		&enclaveId,
@@ -83,7 +82,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers != nil {
-		containersNames := getContainersNames(containers)
+		containersNames := getContainersName(containers)
 		for _, containerNames := range containersNames {
 			fmt.Println(containerNames)
 		}
@@ -102,7 +101,7 @@ func getLabelsForListEnclaveUserServices() map[string]string {
 	return labels
 }
 
-func getContainersNames(containers []*docker_manager.Container) []string{
+func getContainersName(containers []*docker_manager.Container) []string{
 	containersSet := map[string]*docker_manager.Container{}
 	for _, container := range containers {
 		if container != nil {
@@ -111,15 +110,12 @@ func getContainersNames(containers []*docker_manager.Container) []string{
 		}
 	}
 
-	containersNames := []string{}
+	containersName := []string{}
 	for _, container := range containersSet {
-		containerNames := container.GetNames()
-		sort.Strings(containerNames)
-		containerNamesJoined := strings.Join(containerNames,", ")
-		containersNames = append(containersNames, containerNamesJoined)
+		containersName = append(containersName, container.GetName())
 	}
 
-	sort.Strings(containersNames)
+	sort.Strings(containersName)
 
-	return containersNames
+	return containersName
 }
