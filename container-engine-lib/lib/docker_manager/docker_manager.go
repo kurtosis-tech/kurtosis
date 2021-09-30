@@ -632,31 +632,20 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
 	filterArg := filters.Arg(nameFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
-	result, err := manager.getContainerIdsByFilterArgs(ctx, nameFilterList)
+	result, err := manager.getContainerIdsByFilterArgs(ctx, nameFilterList, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with name '%v'", nameStr)
 	}
 	return result, nil
 }
 
-func (manager DockerManager) GetContainerIdsByLabels(ctx context.Context, labels map[string]string) ([]string, error) {
+func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*Container, error) {
 	labelsFilterList := getLabelsFilterList(labels)
-	result, err := manager.getContainerIdsByFilterArgs(ctx, labelsFilterList)
+	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, all)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with labels '%+v'", labelsFilterList)
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
 	}
 	return result, nil
-}
-
-func getLabelsFilterList(labels map[string]string) filters.Args {
-	filtersArgs := []filters.KeyValuePair{}
-	for labelsKey, labelsValue := range labels {
-		labelFilterValue := strings.Join([]string{labelsKey,  labelsValue}, "=")
-		filterArg := filters.Arg(labelFilterKey, labelFilterValue)
-		filtersArgs = append(filtersArgs, filterArg)
-	}
-	labelsFilterList := filters.NewArgs(filtersArgs...)
-	return labelsFilterList
 }
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
@@ -866,9 +855,10 @@ func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPor
 }
 
 // Returns a list of Container Ids by filter arguments previously set, these containers can be running or stopped
-func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, filterArgs filters.Args) ([]string, error) {
+func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]string, error) {
 	opts := types.ContainerListOptions{
 		Filters: filterArgs,
+		All: all,
 	}
 	containers, err := manager.dockerClient.ContainerList(ctx, opts)
 	if err != nil {
@@ -879,4 +869,47 @@ func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, fi
 		result = append(result, containerObj.ID)
 	}
 	return result, nil
+}
+
+func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*Container, error) {
+	opts := types.ContainerListOptions{
+		Filters: filterArgs,
+		All: all,
+	}
+	dockerContainers, err := manager.dockerClient.ContainerList(ctx, opts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
+	}
+	result := make([]*Container, 0, len(dockerContainers))
+	for _, dockerContainer := range dockerContainers {
+		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
+		containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting container name from docker container names '%+v'", dockerContainer.Names)
+		}
+		container, err := NewContainer(
+			dockerContainer.ID,
+			containerName,
+			dockerContainer.Labels,
+			containerStatus)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
+		}
+		result = append(result, container)
+	}
+
+	return result, nil
+}
+
+
+
+func getLabelsFilterList(labels map[string]string) filters.Args {
+	filtersArgs := []filters.KeyValuePair{}
+	for labelsKey, labelsValue := range labels {
+		labelFilterValue := strings.Join([]string{labelsKey,  labelsValue}, "=")
+		filterArg := filters.Arg(labelFilterKey, labelFilterValue)
+		filtersArgs = append(filtersArgs, filterArg)
+	}
+	labelsFilterList := filters.NewArgs(filtersArgs...)
+	return labelsFilterList
 }

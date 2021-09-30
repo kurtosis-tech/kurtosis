@@ -1,5 +1,16 @@
 # TBD
 
+# 0.4.3
+### Features
+* Add `Container` type to store container's information as ID, names, labels and status
+* Add `GetContainersByLabels` method to get a container list by labels
+
+### Changes
+* Removes `GetContainerIdsByLabels` it'll be replaced by `GetContainersByLabels`which returns container ids as well along with other container info
+
+### Fixes
+* Fixed a bug where `CreateAndStartContainerArgsBuilder.Build` method wasn't setting container labels
+
 # 0.4.2
 ### Fixes
 * Fixed a bug where the defer function in `CreateAndStartContainer` would try to kill an empty container ID

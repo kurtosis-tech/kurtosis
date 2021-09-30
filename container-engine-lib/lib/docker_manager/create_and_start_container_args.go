@@ -7,44 +7,44 @@ import (
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
 type CreateAndStartContainerArgs struct {
-	dockerImage string
-	name string
-	alias string
-	interactiveModeTtySize *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
-	networkId string
-	staticIp net.IP
-	addedCapabilities map[ContainerCapability]bool
-	networkMode DockerManagerNetworkMode
-	usedPortsSet map[nat.Port]bool
-	shouldPublishAllPorts bool
-	entrypointArgs []string
-	cmdArgs []string
-	envVariables map[string]string
-	bindMounts map[string]string
-	volumeMounts map[string]string
+	dockerImage                    string
+	name                           string
+	alias                          string
+	interactiveModeTtySize         *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
+	networkId                      string
+	staticIp                       net.IP
+	addedCapabilities              map[ContainerCapability]bool
+	networkMode                    DockerManagerNetworkMode
+	usedPortsSet                   map[nat.Port]bool
+	shouldPublishAllPorts          bool
+	entrypointArgs                 []string
+	cmdArgs                        []string
+	envVariables                   map[string]string
+	bindMounts                     map[string]string
+	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
-	labels map[string]string
+	labels                         map[string]string
 }
 
 // Builder for creating CreateAndStartContainerArgs object
 type CreateAndStartContainerArgsBuilder struct {
-	dockerImage string
-	name string
-	alias string
-	interactiveModeTtySize *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
-	networkId string
-	staticIp net.IP
-	addedCapabilities map[ContainerCapability]bool
-	networkMode DockerManagerNetworkMode
-	usedPortsSet map[nat.Port]bool
-	shouldPublishAllPorts bool
-	entrypointArgs []string
-	cmdArgs []string
-	envVariables map[string]string
-	bindMounts map[string]string
-	volumeMounts map[string]string
+	dockerImage                    string
+	name                           string
+	alias                          string
+	interactiveModeTtySize         *InteractiveModeTtySize // If nil interactive mode will be disabled; if non-nil then interactive mode will be enabled
+	networkId                      string
+	staticIp                       net.IP
+	addedCapabilities              map[ContainerCapability]bool
+	networkMode                    DockerManagerNetworkMode
+	usedPortsSet                   map[nat.Port]bool
+	shouldPublishAllPorts          bool
+	entrypointArgs                 []string
+	cmdArgs                        []string
+	envVariables                   map[string]string
+	bindMounts                     map[string]string
+	volumeMounts                   map[string]string
 	needsAccessToDockerHostMachine bool
-	labels map[string]string
+	labels                         map[string]string
 }
 
 /*
@@ -52,26 +52,26 @@ Args:
 	dockerImage: Image to start
 	name: The name to give the container to be created
 	networkId: The ID of the Docker network that this container should be attached to
- */
+*/
 func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, networkId string) *CreateAndStartContainerArgsBuilder {
 	return &CreateAndStartContainerArgsBuilder{
-		dockerImage: dockerImage,
-		name: name,
-		alias: "",
-		interactiveModeTtySize: nil,
-		networkId: networkId,
-		staticIp: nil,
-		addedCapabilities: map[ContainerCapability]bool{},
-		networkMode: DefaultNetworkMode,
-		usedPortsSet: map[nat.Port]bool{},
-		shouldPublishAllPorts: false,
-		entrypointArgs: nil,
-		cmdArgs: nil,
-		envVariables: map[string]string{},
-		bindMounts: map[string]string{},
-		volumeMounts: map[string]string{},
+		dockerImage:                    dockerImage,
+		name:                           name,
+		alias:                          "",
+		interactiveModeTtySize:         nil,
+		networkId:                      networkId,
+		staticIp:                       nil,
+		addedCapabilities:              map[ContainerCapability]bool{},
+		networkMode:                    DefaultNetworkMode,
+		usedPortsSet:                   map[nat.Port]bool{},
+		shouldPublishAllPorts:          false,
+		entrypointArgs:                 nil,
+		cmdArgs:                        nil,
+		envVariables:                   map[string]string{},
+		bindMounts:                     map[string]string{},
+		volumeMounts:                   map[string]string{},
 		needsAccessToDockerHostMachine: false,
-		labels: map[string]string{},
+		labels:                         map[string]string{},
 	}
 }
 
@@ -79,6 +79,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 	return &CreateAndStartContainerArgs{
 		dockerImage:                    builder.dockerImage,
 		name:                           builder.name,
+		labels:                         builder.labels,
 		alias:                          builder.alias,
 		interactiveModeTtySize:         builder.interactiveModeTtySize,
 		networkId:                      builder.networkId,
@@ -146,7 +147,6 @@ func (builder *CreateAndStartContainerArgsBuilder) WithEntrypointArgs(args []str
 	builder.entrypointArgs = args
 	return builder
 }
-
 
 // The args that will be used to run the container (leave as nil to run the CMD in the image)
 func (builder *CreateAndStartContainerArgsBuilder) WithCmdArgs(args []string) *CreateAndStartContainerArgsBuilder {
