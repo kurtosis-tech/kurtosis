@@ -6,7 +6,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/root"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -25,7 +24,7 @@ func main() {
 	})
 
 	if err := root.RootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		// We don't actually need to print the error because Cobra will do it for us
 		os.Exit(errorExitCode)
 	}
 	os.Exit(successExitCode)

@@ -1,5 +1,27 @@
 # TBD
 
+# 1.22.0
+### Features
+* Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
+* Always bind the API container's RPC port to a host machine port
+* Always bind the testsuite container's RPC port to a host machine port
+* Support publishing Debian and RPM packages to Gemfury
+
+### Changes
+* All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
+* Moved all the code that used to be under the `initializer` directory into `cli/commands/test/test_machinery`
+
+### Removals
+* Removed the initializer container
+* Removed the wrapper script
+
+### Breaking Changes
+* Testsuites are now run via the `kurtosis test` command, and the wrapper script (`kurtosis.sh` is now deprecated)
+    * Users should swap out their calls to `kurtosis.sh` with calls to the Kurtosis CLI
+* Removed the initializer container!!!
+* The wrapper script has been removed
+    * Users should use the CLI's `test` subcommand to run testsuites now
+
 # 1.21.1
 ### Features
 * Add  labels when a container is created

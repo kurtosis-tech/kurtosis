@@ -94,12 +94,6 @@ jobs:
           aws-access-key-id: S3_ACCESS_KEY
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
-          from: build/kurtosis.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/kurtosis.sh"
-      - aws-s3/copy:
-          aws-access-key-id: S3_ACCESS_KEY
-          aws-region: S3_REGION
-          aws-secret-access-key: S3_SECRET_KEY
           from: testsuite_scripts/build-and-run-core.sh
           to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/build-and-run-core.sh"
 
@@ -135,6 +129,7 @@ workflows:
             - docker-user
             - kurtosis-user
             - s3-upload-user
+            - gemfury-publisher
           filters:
             branches:
               ignore: /.*/
