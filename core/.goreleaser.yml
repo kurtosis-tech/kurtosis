@@ -3,20 +3,7 @@
 before:
   hooks: []
 
-# AFTER HOOK TO GENERATE WRAPPER SCRIPT
 builds:
-  # TODO DELETE THIS WHEN WE NO LONGER HAVE A WRAPPER SCRIPT
-  - id: wrapper-generator
-    main: ./wrapper_generator
-    binary: "{{ .Env.WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME }}"
-    # NOTE: The goos and goarch don't really matter here, because we build this
-    #  wrapper script generator binary with --single-target anyways
-    goos:
-      - "darwin"
-    goarch:
-      - "amd64"
-    # We don't want a unique dist dir so that it's easy to get the filepath to the outputted binary
-    no_unique_dist_dir: true
   - id: api-container-availability-waiter
     main: ./api_container_availability_waiter
     binary: api-container-availability-waiter
@@ -32,6 +19,9 @@ builds:
     goarch:
       - amd64
   - id: cli
+    env:
+      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
+      - CGO_ENABLED=0
     main: ./cli
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
@@ -41,13 +31,6 @@ builds:
       - 386
       - amd64
       - arm64
-  - id: initializer
-    main: ./initializer
-    binary: initializer
-    goos:
-      - linux # For Alpine Docker image
-    goarch:
-      - amd64
   - id: golang-internal-testsuite
     main: ./golang_internal_testsuite
     binary: golang-internal-testsuite
@@ -61,28 +44,19 @@ dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile
     image_templates:
-      - "{{ .Env.API_IMAGE }}:latest"
       - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:latest"
     ids:
       - api-container
       - api-container-availability-waiter
-    goos: linux
-    goarch: amd64
-  - id: initializer-image
-    ids:
-      - initializer
-    dockerfile: initializer/Dockerfile
-    image_templates:
-      - "{{ .Env.INITIALIZER_IMAGE }}:latest"
-      - "{{ .Env.INITIALIZER_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
   - id: javascript-repl-image
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
     image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite
@@ -142,6 +116,27 @@ brews:
     install: |
       bin.install "kurtosis"
 
+# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+nfpms:
+  - id: cli-linux-packages
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - deb
+      - rpm
+
+publishers:
+  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
+  - name: fury.io
+    ids:
+    - cli-linux-packages
+    dir: "{{ dir .ArtifactPath }}"
+    env:
+    - 'FURY_TOKEN={{ .Env.GEMFURY_PUBLISH_TOKEN }}'
+    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code
