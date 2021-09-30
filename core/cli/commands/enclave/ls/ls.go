@@ -10,11 +10,12 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"sort"
 	"strings"
 )
 
@@ -71,18 +72,40 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers != nil {
-		for _, container := range containers {
-			if container != nil {
-				fmt.Println(container.GetLabels()[object_labels_providers.LabelEnclaveIDKey])
-			}
+		enclaveIds := getContainersEnclaveIds(containers)
+		for _, enclaveId := range enclaveIds {
+			fmt.Println(enclaveId)
 		}
 	}
 
 	return nil
 }
 
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
 func getLabelsForListEnclaves() map[string]string {
 	labels := map[string]string{}
-	labels[object_labels_providers.LabelContainerTypeKey] = object_labels_providers.ContainerTypeApiContainer
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeApiContainer
 	return labels
+}
+
+func getContainersEnclaveIds(containers []*docker_manager.Container) []string{
+	containersSet := map[string]*docker_manager.Container{}
+	for _, container := range containers {
+		if container != nil {
+			containerId := container.GetId()
+			containersSet[containerId] = container
+		}
+	}
+
+	enclaveIds := []string{}
+	for _, container := range containersSet {
+		enclaveId := container.GetLabels()[enclave_object_labels.EnclaveIDContainerLabel]
+		enclaveIds = append(enclaveIds, enclaveId)
+	}
+
+	sort.Strings(enclaveIds)
+
+	return enclaveIds
 }
