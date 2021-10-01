@@ -29,7 +29,7 @@ var positionalArgs = []string{
 }
 
 var InspectCmd = &cobra.Command{
-	Use:   "inspect " + strings.Join(positionalArgs, " "),
+	Use:   "inspect [flags ] " + strings.Join(positionalArgs, " "),
 	Short: "Inspect Kurtosis enclaves",
 	RunE:  run,
 }
@@ -86,9 +86,16 @@ func run(cmd *cobra.Command, args []string) error {
 
 	if containers != nil {
 		fmt.Println("GUID\tName")
-		sortedContainers := getContainersSortedByGUID(containers)
+		sortedContainers, err := getContainersSortedByGUID(containers)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting containers sorted by GUID")
+		}
 		for _, container := range sortedContainers {
-			fmt.Printf("%v\t%v\n", container.GetLabels()[enclave_object_labels.GUIDLabel], container.GetName())
+			containerGUIDLabel, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
+			if !found {
+				return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
+			}
+			fmt.Printf("%v\t%v\n", containerGUIDLabel, container.GetName())
 		}
 	}
 
@@ -119,28 +126,26 @@ func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	return labels
 }
 
-func getContainersSortedByGUID(containers []*docker_manager.Container) []*docker_manager.Container{
+func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docker_manager.Container, error){
 	containersSet := map[string]*docker_manager.Container{}
 	for _, container := range containers {
 		if container != nil {
-			containerGUID := container.GetLabels()[enclave_object_labels.GUIDLabel]
+			containerGUID, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
+			if !found {
+				return nil, stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
+			}
 			containersSet[containerGUID] = container
 		}
 	}
 
-	containersGUID := []string{}
+	containersResult := make([]*docker_manager.Container, 0, len(containersSet))
 	for _, container := range containersSet {
-		guid := container.GetLabels()[enclave_object_labels.GUIDLabel]
-		containersGUID = append(containersGUID, guid)
+		containersResult = append(containersResult, container)
 	}
 
-	sort.Strings(containersGUID)
+	sort.Slice(containersResult, func(i, j int) bool {
+		return containersResult[i].GetLabels()[enclave_object_labels.GUIDLabel] < containersResult[j].GetLabels()[enclave_object_labels.GUIDLabel]
+	})
 
-	sortedContainers := make([]*docker_manager.Container, 0, len(containersGUID))
-	for _, containerGUID := range containersGUID {
-		container := containersSet[containerGUID]
-		sortedContainers = append(sortedContainers, container)
-	}
-
-	return sortedContainers
+	return containersResult, nil
 }

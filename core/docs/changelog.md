@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.4
 ### Features
 * Add new Kurtosis CLI command `enclave inspect` to show a list of user services inside an enclave
 
