@@ -93,7 +93,7 @@ func run(cmd *cobra.Command, args []string) error {
 		for _, container := range sortedContainers {
 			containerGUIDLabel, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
 			if !found {
-				return stacktrace.NewError("No '%v' container label was found in container ID with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
+				return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
 			}
 			fmt.Printf("%v\t%v\n", containerGUIDLabel, container.GetName())
 		}
@@ -132,7 +132,7 @@ func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docke
 		if container != nil {
 			containerGUID, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
 			if !found {
-				return nil, stacktrace.NewError("No '%v' container label was found in container ID with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
+				return nil, stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
 			}
 			containersSet[containerGUID] = container
 		}
