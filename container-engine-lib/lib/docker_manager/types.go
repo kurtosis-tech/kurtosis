@@ -1,6 +1,9 @@
 package docker_manager
 
-import "github.com/palantir/stacktrace"
+import (
+	"github.com/palantir/stacktrace"
+	"strings"
+)
 
 type Status uint32
 
@@ -87,7 +90,9 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) Statu
 
 func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
 	if len(dockerContainerNames) > 0 {
-		return dockerContainerNames[0], nil
+		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
+		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
+		return containerName, nil
 	}
 	return "", stacktrace.NewError("There is not any docker container name to get")
 }
