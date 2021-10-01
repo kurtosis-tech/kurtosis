@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.4
 ### Changes
 * Removes Docker container name prefix `/` before using it to set a Container's name
 
