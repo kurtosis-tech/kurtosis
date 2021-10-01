@@ -1,5 +1,9 @@
 # TBD
 
+# 0.4.4
+### Changes
+* Removes Docker container name prefix `/` before using it to set a Container's name
+
 # 0.4.3
 ### Features
 * Add `Container` type to store container's information as ID, names, labels and status
