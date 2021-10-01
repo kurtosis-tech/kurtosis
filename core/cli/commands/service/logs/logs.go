@@ -16,8 +16,7 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -92,26 +91,33 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
 	}
 
-	if containers != nil {
+	if containers != nil && len(containers) > 0 {
 		if len(containers) > 1 {
 			return stacktrace.NewError("Should exist only one container with enclave-id '%v' and guid '%v' but there are '%v' containers with these properties", enclaveId, guid, len(containers))
 		}
 
 		serviceContainer := containers[0]
 
+		functionExitedSuccessfully := false
 		readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainer.GetId(), false)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", serviceContainer.GetId())
 		}
-		if readCloserLogs != nil {
-			defer readCloserLogs.Close()
+
+		defer func() {
+			if !functionExitedSuccessfully {
+				readCloserLogs.Close()
+			}
+		}()
+
+		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, readCloserLogs)
+		if err == nil {
+			return stacktrace.Propagate(err, "An error occurred executing StdCopy")
 		}
 
-		//_, err = stdcopy.StdCopy(ioutil.Discard., io.Discard, readCloserLogs)
-
-
+		functionExitedSuccessfully = true
 	}
-
+	return nil
 }
 
 // ====================================================================================================
@@ -135,6 +141,6 @@ func getContainerLabelsWithEnclaveIdAndGUID(enclaveId string, guid string) map[s
 	labels := map[string]string{}
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
-	labels[enclave_object_labels.GUIDLabel] = enclaveId
+	labels[enclave_object_labels.GUIDLabel] = guid
 	return labels
 }
