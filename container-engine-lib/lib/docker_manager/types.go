@@ -90,23 +90,9 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) Statu
 
 func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
 	if len(dockerContainerNames) > 0 {
-		containerName := dockerContainerNames[0]
-		if strings.HasPrefix(containerName, "/") {
-			containerName = trimFirstRune(containerName)
-		}
+		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
+		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
 		return containerName, nil
 	}
 	return "", stacktrace.NewError("There is not any docker container name to get")
-}
-
-func trimFirstRune(s string) string {
-	for i := range s {
-		if i > 0 {
-			// The value i is the index in s of the second
-			// rune. Slice to remove the first rune.
-			return s[i:]
-		}
-	}
-	// There are 0 or 1 runes in the string.
-	return ""
 }
