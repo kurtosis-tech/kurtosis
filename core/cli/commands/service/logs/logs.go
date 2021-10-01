@@ -32,8 +32,8 @@ var positionalArgs = []string{
 }
 
 var LogsCmd = &cobra.Command{
-	Use:   "logs " + strings.Join(positionalArgs, " "),
-	Short: "Show service logs by enclave-id and guid",
+	Use:   "logs [flags ] " + strings.Join(positionalArgs, " "),
+	Short: "Show logs for a service inside of an enclave",
 	RunE:  run,
 }
 
@@ -98,24 +98,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 		serviceContainer := containers[0]
 
-		functionExitedSuccessfully := false
 		readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainer.GetId(), false)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", serviceContainer.GetId())
 		}
-
-		defer func() {
-			if !functionExitedSuccessfully {
-				readCloserLogs.Close()
-			}
-		}()
+		defer readCloserLogs.Close()
 
 		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, readCloserLogs)
 		if err == nil {
 			return stacktrace.Propagate(err, "An error occurred executing StdCopy")
 		}
 
-		functionExitedSuccessfully = true
 	}
 	return nil
 }
