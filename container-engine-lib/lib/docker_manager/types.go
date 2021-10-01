@@ -1,6 +1,9 @@
 package docker_manager
 
-import "github.com/palantir/stacktrace"
+import (
+	"github.com/palantir/stacktrace"
+	"strings"
+)
 
 type Status uint32
 
@@ -87,7 +90,23 @@ func getContainerStatusByDockerContainerState(dockerContainerState string) Statu
 
 func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
 	if len(dockerContainerNames) > 0 {
-		return dockerContainerNames[0], nil
+		containerName := dockerContainerNames[0]
+		if strings.HasPrefix(containerName, "/") {
+			containerName = trimFirstRune(containerName)
+		}
+		return containerName, nil
 	}
 	return "", stacktrace.NewError("There is not any docker container name to get")
+}
+
+func trimFirstRune(s string) string {
+	for i := range s {
+		if i > 0 {
+			// The value i is the index in s of the second
+			// rune. Slice to remove the first rune.
+			return s[i:]
+		}
+	}
+	// There are 0 or 1 runes in the string.
+	return ""
 }
