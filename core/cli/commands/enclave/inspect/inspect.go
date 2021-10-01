@@ -23,17 +23,18 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg = "enclave-id"
 )
-
-var kurtosisLogLevelStr string
-var enclaveId string
-
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
+var positionalArgs = []string{
+	enclaveIdArg,
+}
 
 var InspectCmd = &cobra.Command{
-	Use:   "inspect",
+	Use:   "inspect " + strings.Join(positionalArgs, " "),
 	Short: "Inspect Kurtosis enclaves",
 	RunE:  run,
 }
+
+var kurtosisLogLevelStr string
 
 func init() {
 	InspectCmd.Flags().StringVarP(
@@ -47,13 +48,6 @@ func init() {
 		),
 	)
 
-	InspectCmd.Flags().StringVarP(
-		&enclaveId,
-		enclaveIdArg,
-		"i",
-		"",
-		"ID value of the enclave that is going to be inspected",
-	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -65,6 +59,15 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
+	parsedPositionalArgs, err := parsePositionalArgs(args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+	}
+	enclaveId, found := parsedPositionalArgs[enclaveIdArg]
+	if !found {
+		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", enclaveIdArg, parsedPositionalArgs)
+	}
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
@@ -74,7 +77,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getLabelsForListEnclaveUserServices()
+	labels := getLabelsForListEnclaveUserServices(enclaveId)
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
 	if err != nil {
@@ -82,9 +85,10 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers != nil {
-		containersNames := getContainersName(containers)
-		for _, containerNames := range containersNames {
-			fmt.Println(containerNames)
+		fmt.Println("GUID\tName")
+		sortedContainers := getContainersSortedByGUID(containers)
+		for _, container := range sortedContainers {
+			fmt.Printf("%v\t%v\n", container.GetLabels()[enclave_object_labels.GUIDLabel], container.GetName())
 		}
 	}
 
@@ -94,28 +98,49 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getLabelsForListEnclaveUserServices() map[string]string {
+// Parses the args into a map of positional_arg_name -> value
+func parsePositionalArgs(args []string) (map[string]string, error) {
+	if len(args) != len(positionalArgs) {
+		return nil, stacktrace.NewError("Expected %v positional arguments but got %v", len(positionalArgs), len(args))
+	}
+
+	result := map[string]string{}
+	for idx, argValue := range args {
+		arg := positionalArgs[idx]
+		result[arg] = argValue
+	}
+	return result, nil
+}
+
+func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	labels := map[string]string{}
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }
 
-func getContainersName(containers []*docker_manager.Container) []string{
+func getContainersSortedByGUID(containers []*docker_manager.Container) []*docker_manager.Container{
 	containersSet := map[string]*docker_manager.Container{}
 	for _, container := range containers {
 		if container != nil {
-			containerId := container.GetId()
-			containersSet[containerId] = container
+			containerGUID := container.GetLabels()[enclave_object_labels.GUIDLabel]
+			containersSet[containerGUID] = container
 		}
 	}
 
-	containersName := []string{}
+	containersGUID := []string{}
 	for _, container := range containersSet {
-		containersName = append(containersName, container.GetName())
+		guid := container.GetLabels()[enclave_object_labels.GUIDLabel]
+		containersGUID = append(containersGUID, guid)
 	}
 
-	sort.Strings(containersName)
+	sort.Strings(containersGUID)
 
-	return containersName
+	sortedContainers := make([]*docker_manager.Container, 0, len(containersGUID))
+	for _, containerGUID := range containersGUID {
+		container := containersSet[containerGUID]
+		sortedContainers = append(sortedContainers, container)
+	}
+
+	return sortedContainers
 }
