@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Build APK versions of the CLI Linux package as well
 
 # 1.22.5
 ### Fixes
