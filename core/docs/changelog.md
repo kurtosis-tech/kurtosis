@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.5
 ### Fixes
 * Set Linux package name to `kurtosis`
 
