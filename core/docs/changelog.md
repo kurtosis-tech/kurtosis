@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Disable test setup and run timeouts when test execution is in debug mode
 
 # 1.22.4
 ### Features
