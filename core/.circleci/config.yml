@@ -79,6 +79,7 @@ jobs:
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -e "FURY_TOKEN=${GEMFURY_PUBLISH_TOKEN}" \
             --entrypoint bash \
             ci-running-image -c "/login.sh && ./scripts/build.sh true"
 
@@ -90,12 +91,6 @@ jobs:
           echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
 
       # All the variables here from the s3-upload-user context that we attach
-      - aws-s3/copy:
-          aws-access-key-id: S3_ACCESS_KEY
-          aws-region: S3_REGION
-          aws-secret-access-key: S3_SECRET_KEY
-          from: build/kurtosis.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/kurtosis.sh"
       - aws-s3/copy:
           aws-access-key-id: S3_ACCESS_KEY
           aws-region: S3_REGION
@@ -135,6 +130,7 @@ workflows:
             - docker-user
             - kurtosis-user
             - s3-upload-user
+            - gemfury-publisher
           filters:
             branches:
               ignore: /.*/

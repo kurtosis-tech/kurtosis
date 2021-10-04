@@ -26,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
 	v0 "github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/palantir/stacktrace"
@@ -178,6 +179,7 @@ func createServiceNetworkAndLambdaStore(
 		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
@@ -201,6 +203,7 @@ func createServiceNetworkAndLambdaStore(
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
@@ -210,6 +213,7 @@ func createServiceNetworkAndLambdaStore(
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
@@ -226,6 +230,7 @@ func createServiceNetworkAndLambdaStore(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,

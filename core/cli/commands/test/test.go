@@ -12,19 +12,19 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/initializer_container_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/access_controller"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_authenticators"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/auth0_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/auth/session_cache"
-	"github.com/kurtosis-tech/kurtosis/initializer/initializer_container_constants"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_metadata_acquirer"
-	"github.com/kurtosis-tech/kurtosis/initializer/test_suite_runner"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -53,23 +53,23 @@ const (
         .%8888X'          ;888888@888S  
 `
 
-	clientIdArg          = "client-id"
-	clientSecretArg      = "client-secret"
-	customParamsJsonArg  = "custom-params"
-	doListArg            = "list"
-	isDebugModeArg       = "debug"
-	kurtosisLogLevelArg  = "kurtosis-log-level"
-	parallelismArg       = "parallelism"
-	testNamesArg         = "tests"
-	testSuiteLogLevelArg = "suite-log-level"
+	clientIdArg           = "client-id"
+	clientSecretArg       = "client-secret"
+	customParamsJsonArg   = "custom-params"
+	doListArg             = "list"
+	isDebugModeArg        = "debug"
+	kurtosisLogLevelArg   = "kurtosis-log-level"
+	parallelismArg        = "parallelism"
+	delimitedTestNamesArg = "tests"
+	testSuiteLogLevelArg  = "suite-log-level"
 
 	// Positional args
-	testsuiteImageArg = "testsuite-image"
-	apiContainerImageArg = "api-container-image"
+	testsuiteImageArg = "testsuite_image"
+	apiContainerImageArg = "api_container_image"
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
-	defaultParallelism = uint32(2)
-	testNameArgSeparator = ","
+	defaultParallelism      = uint32(4)
+	testNamesDelimiter      = ","
 	defaultSuiteLogLevelStr = "info"
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
@@ -88,7 +88,7 @@ var positionalArgs = []string{
 }
 
 var TestCmd = &cobra.Command{
-	Use:   "test [flags] testsuite_image api_container_image",
+	Use:   "test [flags] " + strings.Join(positionalArgs, " "),
 	Short: "Runs a Kurtosis testsuite using the specified Kurtosis Core version",
 	RunE:  run,
 }
@@ -100,7 +100,7 @@ var isDebugMode bool
 var kurtosisLogLevelStr string
 var doList bool
 var parallelism uint32
-var delimitedTestNamesToRun string
+var delimitedTestNames string
 var suiteLogLevelStr string
 
 func init() {
@@ -151,10 +151,10 @@ func init() {
 		"The number of tests to execute in parallel",
 	)
 	TestCmd.Flags().StringVar(
-		&delimitedTestNamesToRun,
-		testNamesArg,
+		&delimitedTestNames,
+		delimitedTestNamesArg,
 		"",
-		"List of test names to run, separated by '" + testNameArgSeparator + "' (default or empty: run all tests)",
+		"List of test names to run, separated by '" +testNamesDelimiter+ "' (default or empty: run all tests)",
 	)
 	TestCmd.Flags().StringVar(
 		&suiteLogLevelStr,
@@ -233,7 +233,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	testNamesToRun := splitTestsStrIntoTestsSet(delimitedTestNamesToRun)
+	testNamesToRun := splitTestsStrIntoTestsSet(delimitedTestNames)
 
 	var parallelismUint uint
 	if isDebugMode {
