@@ -132,6 +132,7 @@ nfpms:
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
   - name: fury.io
+    package_name: kurtosis
     ids:
     - cli-linux-packages
     dir: "{{ dir .ArtifactPath }}"
