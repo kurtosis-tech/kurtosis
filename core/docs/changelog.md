@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add new Kurtosis CLI command `service logs` to print user service logs
 
 # 1.22.5
 ### Fixes
