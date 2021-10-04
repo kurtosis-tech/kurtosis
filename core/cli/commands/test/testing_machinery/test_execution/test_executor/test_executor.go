@@ -240,7 +240,7 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
 	if isDebugModeEnabled {
-		log.Infof("Debug mode is enable, test setup and run method will be executed without timeouts")
+		log.Infof("Debug mode is enabled, test setup and run method will be executed without timeouts")
 	}
 
 	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,

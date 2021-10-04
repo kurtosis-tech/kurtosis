@@ -1,6 +1,10 @@
 # TBD
 ### Features
 * Disable test setup and run timeouts when test execution is in debug mode
+* Add new Kurtosis CLI command `service logs` to print user service logs
+
+# 1.22.5
+* Set Linux package name to `kurtosis`
 
 # 1.22.4
 ### Features
