@@ -1,5 +1,9 @@
 # TBD
 
+# 1.22.5
+### Fixes
+* Set Linux package name to `kurtosis`
+
 # 1.22.4
 ### Features
 * Add new Kurtosis CLI command `enclave inspect` to show a list of user services inside an enclave
