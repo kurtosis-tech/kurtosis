@@ -3,6 +3,9 @@
 * The `test `command will always try to pull the latest images
 * Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
 
+### Changes
+* Made the API container image argument to the `test` CLI command an optional flag instead
+
 # 1.22.7
 ### Features
 * Disable test setup and run timeouts when test execution is in debug mode
