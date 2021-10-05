@@ -73,4 +73,4 @@ cli_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_C
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips 'set -e' if no arguments are passed, so this incantation says, "if and only if 
 #  ${1} exists, evaluate ${@}"
-"${cli_binary_filepath}" test --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}" "${api_container_image}"
+"${cli_binary_filepath}" test --kurtosis-api-image "${api_container_image}" --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}"
