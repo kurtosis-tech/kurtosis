@@ -84,6 +84,20 @@ archives:
       - "*THIS_FILE_DOES_NOT_EXIST*"
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
+# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+nfpms:
+  - id: cli-linux-packages
+    package_name: kurtosis
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - apk
+      - deb
+      - rpm
+
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
 release:
   github:
@@ -93,6 +107,7 @@ release:
   # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
+    - cli-linux-packages
 
 brews:
   - name: kurtosis
@@ -115,20 +130,6 @@ brews:
     # When this is fixed, we can remove this section
     install: |
       bin.install "kurtosis"
-
-# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
-nfpms:
-  - id: cli-linux-packages
-    package_name: kurtosis
-    homepage: https://kurtosistech.com
-    description: "Install the Kurtosis CLI"
-    vendor: Kurtosis Technologies Inc.
-    builds:
-      - cli
-    formats:
-      - apk
-      - deb
-      - rpm
 
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
