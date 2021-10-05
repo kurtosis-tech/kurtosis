@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed some bugs related to `build-and-run-core.sh` and the wrapper script references not being removed
 
 # 1.22.8
 ### Features
