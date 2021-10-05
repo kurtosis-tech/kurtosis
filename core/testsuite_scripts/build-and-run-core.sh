@@ -20,6 +20,10 @@ RUN_ACTION="run"
 BOTH_ACTION="all"
 HELP_ACTION="help"
 
+KURTOSIS_DOCKER_ORG="kurtosistech"
+API_CONTAINER_DOCKER_REPO="kurtosis-core_api"
+API_CONTAINER_VERSION="1.22.8"
+
 # ====================== ARG PARSING =======================================================
 show_help_and_exit() {
     echo "$(basename ${0}) action suite_image_name repo_dirpath dockerfile_filepath [run_arg1] [run_arg2]..."
@@ -146,7 +150,7 @@ if "${do_run}"; then
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
     # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
     #  ${1} exists, evaluate ${@}"
-    if ! bash "${wrapper_filepath}" ${1+"${@}"} "${suite_image}:${docker_tag}"; then
+    if ! kurtosis test --kurtosis-api-image "${KURTOSIS_DOCKER_ORG}/${API_CONTAINER_DOCKER_REPO}:${API_CONTAINER_VERSION}" ${1+"${@}"} "${suite_image}:${docker_tag}"; then
         echo "Error: Testsuite execution failed"
         exit 1
     fi

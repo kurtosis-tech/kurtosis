@@ -6,9 +6,12 @@
 package test
 
 import (
+	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
@@ -59,15 +62,16 @@ const (
 	parallelismArg        = "parallelism"
 	delimitedTestNamesArg = "tests"
 	testSuiteLogLevelArg  = "suite-log-level"
+	kurtosisApiImageArg = "kurtosis-api-image"
 
 	// Positional args
 	testsuiteImageArg = "testsuite_image"
-	apiContainerImageArg = "api_container_image"
 
 	// We don't want to overwhelm slow machines, since it becomes not-obvious what's happening
 	defaultParallelism      = uint32(4)
 	testNamesDelimiter      = ","
 	defaultSuiteLogLevelStr = "info"
+	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api"
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
@@ -81,7 +85,6 @@ const (
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	testsuiteImageArg,
-	apiContainerImageArg,
 }
 
 var TestCmd = &cobra.Command{
@@ -99,6 +102,7 @@ var doList bool
 var parallelism uint32
 var delimitedTestNames string
 var suiteLogLevelStr string
+var kurtosisApiImage string
 
 func init() {
 	TestCmd.Flags().StringVar(
@@ -159,6 +163,12 @@ func init() {
 		defaultSuiteLogLevelStr,
 		"A string that will be passed as-is to the test suite container to indicate what log level the test suite container should output at; this string should be meaningful to the test suite container because Kurtosis won't know what logging framework the testsuite uses",
 	)
+	TestCmd.Flags().StringVar(
+		&kurtosisApiImage,
+		kurtosisApiImageArg,
+		defaultKurtosisApiImage,
+		"The image of the Kurtosis API container that should be used inside the enclave that the tests run inside",
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -173,7 +183,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
 	testsuiteImage := parsedPositionalArgs[testsuiteImageArg]
-	apiContainerImage := parsedPositionalArgs[apiContainerImageArg]
 
 	fmt.Println(watermark)
 
@@ -194,6 +203,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
+
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, kurtosisApiImage)
+
 	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
@@ -206,10 +220,10 @@ func run(cmd *cobra.Command, args []string) error {
 		customParamsJson,
 	)
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, kurtosisApiImage)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
-		dockerClient,
+		dockerManager,
 		testsuiteLauncher,
 	)
 	if err != nil {

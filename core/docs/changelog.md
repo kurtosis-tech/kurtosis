@@ -1,5 +1,14 @@
 # TBD
 
+# 1.22.8
+### Features
+* The `test `command will always try to pull the latest images
+* Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
+* `build-and-run-core.sh` will now hardcode the version of Kurtosis to be used (like `kurtosis.sh` used to)
+
+### Changes
+* Made the API container image argument to the `test` CLI command an optional flag instead
+
 # 1.22.7
 ### Features
 * Disable test setup and run timeouts when test execution is in debug mode

@@ -15,14 +15,6 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #  a Docker image tag
 GIT_REF_SANITIZING_SED_REGEX="s,[/:],_,g"
 
-# We release X.Y versions of this repo, so that patches will automatically get
-#  applied for users
-SHORTENED_RELEASE_VERSION_REGEX="^[0-9]+\.[0-9]+"
-
-# Versions matching this regex will get shortened
-RELEASE_VERSION_REGEX="${SHORTENED_RELEASE_VERSION_REGEX}\.[0-9]+$"
-
-
 
 # ==================================================================================================
 #                                             Main Logic
@@ -36,12 +28,6 @@ fi
 if ! docker_tag="$(echo "${git_ref}" | sed "${GIT_REF_SANITIZING_SED_REGEX}")"; then
     echo "Error: Couldn't sanitize Git ref to acceptable Docker tag format" >&2
     exit 1
-fi
-
-# If we're building a tag of X.Y.Z, then we need to actually build the Docker images and generate the wrapper script with tag X.Y so that users will
-#  get patch updates transparently
-if [[ "${docker_tag}" =~ ${RELEASE_VERSION_REGEX} ]]; then
-    docker_tag="$(echo "${docker_tag}" | egrep -o "${SHORTENED_RELEASE_VERSION_REGEX}")"
 fi
 
 echo "${docker_tag}"
