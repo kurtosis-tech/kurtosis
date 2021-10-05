@@ -90,7 +90,7 @@ func (store *LambdaStore) UnloadLambda(ctx context.Context, lambdaId lambda_stor
 
 	 lambdaInfo, found := store.lambdas[lambdaId]
 	 if !found {
-		return stacktrace.NewError("Lambda ID '%v' do not exists in the lambda map", lambdaId)
+		return stacktrace.NewError("Lambda ID '%v' does not exist in the lambda map", lambdaId)
 	}
 
 	containerId := lambdaInfo.containerId
