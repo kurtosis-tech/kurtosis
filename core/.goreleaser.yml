@@ -126,6 +126,7 @@ nfpms:
     builds:
       - cli
     formats:
+      - apk
       - deb
       - rpm
 
