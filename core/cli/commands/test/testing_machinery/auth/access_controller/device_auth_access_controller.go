@@ -7,10 +7,10 @@ package access_controller
 
 import (
 	"fmt"
-	permissions2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	auth0_authenticators2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
-	auth0_token_claims2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
-	session_cache2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -19,14 +19,14 @@ import (
 type DeviceAuthAccessController struct {
 	// Mapping of key_id -> pem_encoded_pubkey_cert for validating tokens
 	tokenValidationPubKeys  map[string]string
-	sessionCache            session_cache2.SessionCache
-	deviceCodeAuthenticator auth0_authenticators2.DeviceCodeAuthenticator
+	sessionCache            session_cache.SessionCache
+	deviceCodeAuthenticator auth0_authenticators.DeviceCodeAuthenticator
 }
 
 func NewDeviceAuthAccessController(
 		tokenValidationPubKeys map[string]string,
-		sessionCache session_cache2.SessionCache,
-		deviceAuthenticator auth0_authenticators2.DeviceCodeAuthenticator) *DeviceAuthAccessController {
+		sessionCache session_cache.SessionCache,
+		deviceAuthenticator auth0_authenticators.DeviceCodeAuthenticator) *DeviceAuthAccessController {
 	return &DeviceAuthAccessController{
 		tokenValidationPubKeys:  tokenValidationPubKeys,
 		sessionCache:            sessionCache,
@@ -43,7 +43,7 @@ Used for a developer running Kurtosis on their local machine. This will:
 Returns:
 	An error if and only if an irrecoverable login error occurred
 */
-func (accessController DeviceAuthAccessController) Authenticate() (*permissions2.Permissions, error) {
+func (accessController DeviceAuthAccessController) Authenticate() (*permissions.Permissions, error) {
 	/*
 		NOTE: As of 2020-10-24, we actually don't strictly *need* to encrypt anything on disk because we hardcode the
 		 Auth0 public keys used for verifying tokens so unless the user cracks Auth0 and gets the private key, there's
@@ -79,7 +79,7 @@ func (accessController DeviceAuthAccessController) Authenticate() (*permissions2
 /*
 Gets the token string, either by reading a valid cache or by prompting the user for their login credentials
 */
-func getTokenStr(deviceAuthorizer auth0_authenticators2.DeviceCodeAuthenticator, cache session_cache2.SessionCache) (string, error) {
+func getTokenStr(deviceAuthorizer auth0_authenticators.DeviceCodeAuthenticator, cache session_cache.SessionCache) (string, error) {
 	var result string
 	session, err := cache.LoadSession()
 	if err != nil {
@@ -106,7 +106,7 @@ Checks the token expiration and, if the expiration is date is passed but still w
 
 Returns a new claims object if we were able to retrieve the new token
 */
-func parseAndCheckTokenClaims(rsaPubKeysPem map[string]string, tokenStr string, deviceAuthorizer auth0_authenticators2.DeviceCodeAuthenticator, cache session_cache2.SessionCache) (*auth0_token_claims2.Auth0TokenClaims, error) {
+func parseAndCheckTokenClaims(rsaPubKeysPem map[string]string, tokenStr string, deviceAuthorizer auth0_authenticators.DeviceCodeAuthenticator, cache session_cache.SessionCache) (*auth0_token_claims.Auth0TokenClaims, error) {
 	claims, err := parseTokenClaims(rsaPubKeysPem, tokenStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing/validating the token claims")
@@ -161,13 +161,13 @@ func parseAndCheckTokenClaims(rsaPubKeysPem map[string]string, tokenStr string, 
 }
 
 // Attempts to contact Auth0, get a new token, and save the result to the session cache
-func refreshSession(deviceAuthorizer auth0_authenticators2.DeviceCodeAuthenticator, cache session_cache2.SessionCache) (string, error) {
+func refreshSession(deviceAuthorizer auth0_authenticators.DeviceCodeAuthenticator, cache session_cache.SessionCache) (string, error) {
 	newToken, err := deviceAuthorizer.AuthorizeDeviceAndAuthenticate()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred retrieving a new token from Auth0")
 	}
 
-	newSession := session_cache2.Session{
+	newSession := session_cache.Session{
 		Token: newToken,
 	}
 	if err := cache.SaveSession(newSession); err != nil {

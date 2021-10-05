@@ -11,10 +11,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
-	banner_printer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
-	output2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/output"
-	parallel_test_params2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
-	test_suite_launcher2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/output"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -90,8 +90,8 @@ func RunTest(
 		log *logrus.Logger,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
-		testsuiteLauncher *test_suite_launcher2.TestsuiteContainerLauncher,
-		testParams parallel_test_params2.ParallelTestParams,
+		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
+		testParams parallel_test_params.ParallelTestParams,
 		isDebugModeEnabled bool) (bool, error) {
 
 	testName := testParams.TestName
@@ -110,7 +110,6 @@ func RunTest(
 		testSetupExecutionCtx,
 		log,
 		kurtosisLogLevel,
-		// TODO get rid of this when we get rid of the initializer
 		enclaveId,
 		isPartitioningEnabled,
 		isDebugModeEnabled,
@@ -158,35 +157,6 @@ func RunTest(
 		return false, stacktrace.NewError("The API container returned an IP address string, '%v', for the testsuite container, but it wasn't parseable to an IP", testsuiteIpAddrStr)
 	}
 
-	/*
-
-		log.Debugf("Connecting external containers to the enclave network so that they can interact with the containers in the enclave...")
-		externalContainerIpAddrs := []net.IP{}
-		externalContainerIdsToDisconnectSet := map[string]bool{}
-		defer func() {
-			for containerId := range externalContainerIdsToDisconnectSet {
-				if err := dockerManager.DisconnectContainerFromNetwork(teardownCtx, containerId, networkId); err != nil {
-					log.Errorf("Creating the enclave didn't complete successfully, so we tried to disconnect container with ID '%v' from enclave network but an error was thrown:", containerId)
-					fmt.Fprintln(log.Out, err)
-					log.Errorf("ACTION REQUIRED: You'll need to manually disconnect container with ID '%v' from network with ID '%v'!!!!!!!", containerId, networkId)
-				}
-			}
-		}()
-		for containerId := range externalContainerIdsToMount {
-			ipInsideEnclaveNetwork, err := freeIpAddrTracker.GetFreeIpAddr()
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting a free IP for mounting external container with ID '%v' inside the enclave", containerId)
-			}
-			externalContainerIpAddrs = append(externalContainerIpAddrs, ipInsideEnclaveNetwork)
-			if err := dockerManager.ConnectContainerToNetwork(setupCtx, networkId, containerId, ipInsideEnclaveNetwork, ""); err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred connecting container with ID '%v' to the enclave network", containerId)
-			}
-			externalContainerIdsToDisconnectSet[containerId] = true
-		}
-		log.Debugf("Successfully connected external containers to the enclave network so that they can interact with the containers in the enclave")
-
-	*/
-
 	testsuiteContainerId, hostMachineRpcPortBinding, err := testsuiteLauncher.LaunchTestRunningContainer(
 		testSetupExecutionCtx,
 		log,
@@ -233,6 +203,7 @@ func RunTest(
 		testsuiteContainerId,
 		testParams,
 		testsuiteServiceClient,
+		isDebugModeEnabled,
 	); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred running the test")
 	}
@@ -257,16 +228,20 @@ func streamTestsuiteLogsWhileRunningTest(
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
-		testParams parallel_test_params2.ParallelTestParams,
-		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	banner_printer2.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
+		testParams parallel_test_params.ParallelTestParams,
+		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient,
+		isDebugModeEnabled bool) error {
+	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	// After this point, we can go back to printing initializer logs
-	defer banner_printer2.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
+	defer banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
 
 	// NOTE: We use the testSetupExecutionContext so that the logstream from the testsuite container will be closed
 	// if the user presses Ctrl-C.
 
-	logStreamer := output2.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+	if isDebugModeEnabled {
+		log.Infof("Debug mode is enabled, test setup and run method will be executed without timeouts")
+	}
 
 	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
 		testsuiteContainerId); startStreamingErr != nil {
@@ -303,6 +278,9 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// Setup the test network before running the test
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
+	if isDebugModeEnabled {
+		setupTimeout = 0
+	}
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
 	if err := setupTestWithTimeout(testSetupExecutionCtx, setupTimeout, testName, testsuiteServiceClient); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting up the test")
@@ -311,6 +289,9 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// Run the test using the setup network
 	runTimeout := time.Duration(testParams.TestRunTimeoutSeconds) * time.Second
+	if isDebugModeEnabled {
+		runTimeout = 0
+	}
 	log.Tracef("%vRunning test with run timeout of %v...", initializerLogPrefix, runTimeout)
 	if err := runTestWithTimeout(testSetupExecutionCtx, runTimeout, testName, testsuiteServiceClient); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the test")
@@ -325,18 +306,33 @@ func setupTestWithTimeout(
 		setupTimeout time.Duration,
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
-		testSetupExecutionCtx,
-		setupTimeout,
-	)
-	defer testSetupCtxCancelFunc()
-	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{
-		TestName: testName,
+
+	if setupTimeout > 0{
+		testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
+			testSetupExecutionCtx,
+			setupTimeout,
+		)
+		testSetupExecutionCtx = testSetupCtx
+
+		defer testSetupCtxCancelFunc()
 	}
-	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
+
+	if err := setupTest(testSetupExecutionCtx, testName, testsuiteServiceClient); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test setup timeout exceeded")
 		}
+		return stacktrace.Propagate(err, "An error occurred setting up the test network with timeout '%v'", setupTimeout)
+	}
+	return nil
+}
+
+func setupTest(
+	testSetupExecutionCtx context.Context,
+	testName string,
+	testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
+
+	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.SetupTest(testSetupExecutionCtx, setupArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
 	}
 	return nil
@@ -347,16 +343,33 @@ func runTestWithTimeout(
 		runTimeout time.Duration,
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
-		testSetupExecutionCtx,
-		runTimeout,
-	)
-	defer testRunCtxCancelFunc()
+
+	if runTimeout > 0{
+		testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
+			testSetupExecutionCtx,
+			runTimeout,
+		)
+		defer testRunCtxCancelFunc()
+		testSetupExecutionCtx = testRunCtx
+	}
+
 	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
-	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
+	if _, err := testsuiteServiceClient.RunTest(testSetupExecutionCtx, runArgs); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test run timeout exceeded")
 		}
+		return stacktrace.Propagate(err, "An error occurred running the test with timeout '%v'", runTimeout)
+	}
+	return nil
+}
+
+func runTest(
+	testSetupExecutionCtx context.Context,
+	testName string,
+	testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
+
+	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.RunTest(testSetupExecutionCtx, runArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	return nil

@@ -6,7 +6,7 @@
 package auth0_token_claims
 
 import (
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 )
 
@@ -25,12 +25,12 @@ func (claims Auth0TokenClaims) Valid() error {
 	// An error here means the entire token is invalid and should be rejected, but we want to retry if a token is expired
 	// Instead, we check the expiration after the token is parsed
 
-	if claims.Audience != auth0_constants2.Audience {
-		return stacktrace.NewError("Claims audience '%v' != expected audience '%v'", claims.Audience, auth0_constants2.Audience)
+	if claims.Audience != auth0_constants.Audience {
+		return stacktrace.NewError("Claims audience '%v' != expected audience '%v'", claims.Audience, auth0_constants.Audience)
 	}
 
-	if claims.Issuer != auth0_constants2.Issuer {
-		return stacktrace.NewError("Claims issuer '%v' != expected issuer '%v'", claims.Issuer, auth0_constants2.Issuer)
+	if claims.Issuer != auth0_constants.Issuer {
+		return stacktrace.NewError("Claims issuer '%v' != expected issuer '%v'", claims.Issuer, auth0_constants.Issuer)
 	}
 
 	return nil

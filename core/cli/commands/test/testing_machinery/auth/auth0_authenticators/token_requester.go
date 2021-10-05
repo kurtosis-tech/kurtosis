@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -42,7 +42,7 @@ type TokenResponse struct {
 
 func requestAuthToken(params map[string]string, headers map[string]string) (tokenResponse *TokenResponse, err error) {
 	// Prepare request for token endpoint
-	url := auth0_constants2.Issuer + auth0TokenPath
+	url := auth0_constants.Issuer + auth0TokenPath
 	contentType := headers[contentTypeHeaderName]
 
 	var paramReader io.Reader

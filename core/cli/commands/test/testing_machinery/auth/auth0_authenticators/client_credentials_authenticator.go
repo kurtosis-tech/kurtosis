@@ -6,7 +6,7 @@
 package auth0_authenticators
 
 import (
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -38,7 +38,7 @@ func (authenticator StandardClientCredentialsAuthenticator) AuthenticateClientCr
 		clientIdQueryParamName:     clientId,
 		clientSecretQueryParamName: clientSecret,
 		grantTypeQueryParamName:    clientCredentialGrantType,
-		audienceQueryParam:         auth0_constants2.Audience,
+		audienceQueryParam:         auth0_constants.Audience,
 	}
 	headers := map[string]string{
 		contentTypeHeaderName: jsonHeaderType,

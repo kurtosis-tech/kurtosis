@@ -7,7 +7,7 @@ package output
 
 import (
 	"fmt"
-	banner_printer2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/banner_printer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -189,7 +189,7 @@ func (manager *ParallelTestOutputManager) RegisterTestLaunch(testName string) *l
 			manager.logStreamer = nil
 		} else {
 			// We started the streamer successfully, so print the test name banner before any log messages get outputted
-			banner_printer2.PrintBanner(testOutputLog, testName, logTestNameBannerAsError)
+			banner_printer.PrintBanner(testOutputLog, testName, logTestNameBannerAsError)
 			manager.logStreamer = streamer
 		}
 	}
@@ -237,7 +237,7 @@ func (manager *ParallelTestOutputManager) RegisterTestCompletion(
 			manager.logStreamer = nil
 		}
 	} else {
-		banner_printer2.PrintBanner(manager.threadSafeOutputLogger, testName, logTestNameBannerAsError)
+		banner_printer.PrintBanner(manager.threadSafeOutputLogger, testName, logTestNameBannerAsError)
 
 		// If we've had more than one test running at once (or we couldn't set up a log streamer), we need to copy
 		//  all the test output at once
@@ -292,7 +292,7 @@ func (manager *ParallelTestOutputManager) PrintSummary() (allTestsPassed bool, r
 	}
 	sort.Strings(testPrintOrder)
 
-	banner_printer2.PrintBanner(manager.threadSafeOutputLogger, "TEST RESULTS", logAllTestResultsAsError)
+	banner_printer.PrintBanner(manager.threadSafeOutputLogger, "TEST RESULTS", logAllTestResultsAsError)
 	allTestsPassed = true
 	for _, testName := range testPrintOrder {
 		output := manager.testOutputs[testName]
