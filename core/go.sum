@@ -492,6 +492,8 @@ github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210923031424-3e4ee49686ba/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210929155114-f75f2be4bdc4 h1:shHUIxGpnt20YHOwg+yWgJl9Yj7dWsw/9XKijvCV+dM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210929155114-f75f2be4bdc4/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005143356-fbe7b3bc36ab h1:Sz8f9E916cvieUrrOsgbpwPv0rA95HpL2hPvXHr/CL4=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005143356-fbe7b3bc36ab/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c h1:hBA/N93ibR0O1f4tXzQ5hsokIdcaZ8Qkiwlhlls3odA=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1 h1:qAnRcQEIdOnWG+dGltpxl0HzoTs/iqZQUnYrxWwXQIo=
