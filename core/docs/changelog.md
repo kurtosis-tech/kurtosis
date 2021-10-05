@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.6
 ### Features
 * Add new Kurtosis CLI command `service logs` to print user service logs
 * Build APK versions of the CLI Linux package as well
