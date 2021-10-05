@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * The `test `command will always try to pull the latest images
+* Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
 
 # 1.22.7
 ### Features
