@@ -203,6 +203,7 @@ func RunTest(
 		testsuiteContainerId,
 		testParams,
 		testsuiteServiceClient,
+		isDebugModeEnabled,
 	); err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred running the test")
 	}
@@ -228,7 +229,8 @@ func streamTestsuiteLogsWhileRunningTest(
 		dockerManager *docker_manager.DockerManager,
 		testsuiteContainerId string,
 		testParams parallel_test_params.ParallelTestParams,
-		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
+		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient,
+		isDebugModeEnabled bool) error {
 	banner_printer.PrintSection(log, "Testsuite Logs", printTestsuiteLogSectionAsError)
 	// After this point, we can go back to printing initializer logs
 	defer banner_printer.PrintSection(log, "End Testsuite Logs", printTestsuiteLogSectionAsError)
@@ -237,6 +239,9 @@ func streamTestsuiteLogsWhileRunningTest(
 	// if the user presses Ctrl-C.
 
 	logStreamer := output.NewLogStreamer(dockerLogStreamerLogLineLabel, log)
+	if isDebugModeEnabled {
+		log.Infof("Debug mode is enabled, test setup and run method will be executed without timeouts")
+	}
 
 	if startStreamingErr := logStreamer.StartStreamingFromDockerLogs(testSetupExecutionCtx, dockerManager,
 		testsuiteContainerId); startStreamingErr != nil {
@@ -273,6 +278,9 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// Setup the test network before running the test
 	setupTimeout := time.Duration(testParams.TestSetupTimeoutSeconds) * time.Second
+	if isDebugModeEnabled {
+		setupTimeout = 0
+	}
 	log.Tracef("%vSetting up test with setup timeout of %v...", initializerLogPrefix, setupTimeout)
 	if err := setupTestWithTimeout(testSetupExecutionCtx, setupTimeout, testName, testsuiteServiceClient); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting up the test")
@@ -281,6 +289,9 @@ func streamTestsuiteLogsWhileRunningTest(
 
 	// Run the test using the setup network
 	runTimeout := time.Duration(testParams.TestRunTimeoutSeconds) * time.Second
+	if isDebugModeEnabled {
+		runTimeout = 0
+	}
 	log.Tracef("%vRunning test with run timeout of %v...", initializerLogPrefix, runTimeout)
 	if err := runTestWithTimeout(testSetupExecutionCtx, runTimeout, testName, testsuiteServiceClient); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the test")
@@ -295,18 +306,33 @@ func setupTestWithTimeout(
 		setupTimeout time.Duration,
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
-		testSetupExecutionCtx,
-		setupTimeout,
-	)
-	defer testSetupCtxCancelFunc()
-	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{
-		TestName: testName,
+
+	if setupTimeout > 0{
+		testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
+			testSetupExecutionCtx,
+			setupTimeout,
+		)
+		testSetupExecutionCtx = testSetupCtx
+
+		defer testSetupCtxCancelFunc()
 	}
-	if _, err := testsuiteServiceClient.SetupTest(testSetupCtx, setupArgs); err != nil {
+
+	if err := setupTest(testSetupExecutionCtx, testName, testsuiteServiceClient); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test setup timeout exceeded")
 		}
+		return stacktrace.Propagate(err, "An error occurred setting up the test network with timeout '%v'", setupTimeout)
+	}
+	return nil
+}
+
+func setupTest(
+	testSetupExecutionCtx context.Context,
+	testName string,
+	testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
+
+	setupArgs := &kurtosis_testsuite_rpc_api_bindings.SetupTestArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.SetupTest(testSetupExecutionCtx, setupArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting up the test network before running the test")
 	}
 	return nil
@@ -317,16 +343,33 @@ func runTestWithTimeout(
 		runTimeout time.Duration,
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
-	testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
-		testSetupExecutionCtx,
-		runTimeout,
-	)
-	defer testRunCtxCancelFunc()
+
+	if runTimeout > 0{
+		testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
+			testSetupExecutionCtx,
+			runTimeout,
+		)
+		defer testRunCtxCancelFunc()
+		testSetupExecutionCtx = testRunCtx
+	}
+
 	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
-	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
+	if _, err := testsuiteServiceClient.RunTest(testSetupExecutionCtx, runArgs); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test run timeout exceeded")
 		}
+		return stacktrace.Propagate(err, "An error occurred running the test with timeout '%v'", runTimeout)
+	}
+	return nil
+}
+
+func runTest(
+	testSetupExecutionCtx context.Context,
+	testName string,
+	testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
+
+	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
+	if _, err := testsuiteServiceClient.RunTest(testSetupExecutionCtx, runArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the test")
 	}
 	return nil

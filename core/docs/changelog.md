@@ -2,11 +2,11 @@
 
 # 1.22.6
 ### Features
+* Disable test setup and run timeouts when test execution is in debug mode
 * Add new Kurtosis CLI command `service logs` to print user service logs
 * Build APK versions of the CLI Linux package as well
 
 # 1.22.5
-### Fixes
 * Set Linux package name to `kurtosis`
 
 # 1.22.4
