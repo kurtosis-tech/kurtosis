@@ -1,10 +1,11 @@
 # TBD
+### Features
+* The `test `command will always try to pull the latest images
 
 # 1.22.7
 ### Features
 * Disable test setup and run timeouts when test execution is in debug mode
 * Add new Kurtosis CLI command `service logs` to print user service logs
-* The `test `command will always try to pull the latest images
 
 # 1.22.6
 ### Features
