@@ -2,6 +2,7 @@
 ### Features
 * The `test `command will always try to pull the latest images
 * Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
+* `build-and-run-core.sh` will now hardcode the version of Kurtosis to be used
 
 ### Changes
 * Made the API container image argument to the `test` CLI command an optional flag instead

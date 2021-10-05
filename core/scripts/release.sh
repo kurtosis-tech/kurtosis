@@ -18,12 +18,13 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 RELEASE_SCRIPT_FILENAME="release-repo.sh"     # NOTE: Must be on the path; comes from devtools repo
 
+UPDATE_BUILD_AND_RUN_VERSION_FILENAME="update-build-and-run-core-version.sh"
 
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! bash "${RELEASE_SCRIPT_FILENAME}" "${root_dirpath}"; then
+if ! bash "${RELEASE_SCRIPT_FILENAME}" "${root_dirpath}" "${UPDATE_BUILD_AND_RUN_VERSION_FILENAME}"; then
     echo "Error: Couldn't cut the release" >&2
     exit 1
 fi
