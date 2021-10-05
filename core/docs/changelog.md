@@ -1,4 +1,6 @@
 # TBD
+### Features
+* The `test `command will always try to pull the latest images
 
 # 1.22.7
 ### Features
