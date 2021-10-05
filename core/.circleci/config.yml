@@ -79,6 +79,7 @@ jobs:
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -e "FURY_TOKEN=${GEMFURY_PUBLISH_TOKEN}" \
             --entrypoint bash \
             ci-running-image -c "/login.sh && ./scripts/build.sh true"
 
@@ -131,6 +132,7 @@ workflows:
             - docker-user
             - kurtosis-user
             - s3-upload-user
+            - gemfury-publisher
           filters:
             branches:
               ignore: /.*/

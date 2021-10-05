@@ -1,26 +1,73 @@
 # TBD
 ### Features
-* Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
-* Always bind the API container to a host machine port
+* The `test `command will always try to pull the latest images
 * Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
 
+# 1.22.7
+### Features
+* Disable test setup and run timeouts when test execution is in debug mode
+* Add new Kurtosis CLI command `service logs` to print user service logs
+
+# 1.22.6
+### Features
+* Build APK versions of the CLI Linux package as well
+
+# 1.22.5
+* Set Linux package name to `kurtosis`
+
+# 1.22.4
+### Features
+* Add new Kurtosis CLI command `enclave inspect` to show a list of user services inside an enclave
+
+# 1.22.3
+### Features
+* Add new Kurtosis CLI command `enclave ls` to show a list of Kurtosis enclave ids 
+* Upgraded to Kurt Core Engine Libs 0.4.3 which includes `Container`type
+ 
 ### Changes
-* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
-* Absorb `kurtosis-core-launcher-lib` into here
+* Export `LabelEnclaveIDKey`, `LabelContainerTypeKey` and `LabelGUIDKey` constants
+
+# 1.22.2
+### Fixes
+* Correct naming on Linux packages to `kurtosis-cli_.......`
+
+# 1.22.1
+### Fixes
+* Fixed a bug with Fury publish token not getting passed down to Goreleaser
+
+# 1.22.0
+### Features
+* Implement the `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` endpoints
+* Always bind the API container's RPC port to a host machine port
+* Always bind the testsuite container's RPC port to a host machine port
+* Support publishing Debian and RPM packages to Gemfury
+
+### Changes
 * All execution IDs (sandbox and testing) are now in the format `KTYYYY-MM-DDTHH.MM.SS.sss`
 * Moved all the code that used to be under the `initializer` directory into `cli/commands/test/test_machinery`
-
-### Fixes
-* Actually depend on Kurt Client 0.17.1
 
 ### Removals
 * Removed the initializer container
 * Removed the wrapper script
 
 ### Breaking Changes
+* Testsuites are now run via the `kurtosis test` command, and the wrapper script (`kurtosis.sh` is now deprecated)
+    * Users should swap out their calls to `kurtosis.sh` with calls to the Kurtosis CLI
 * Removed the initializer container!!!
 * The wrapper script has been removed
     * Users should use the CLI's `test` subcommand to run testsuites now
+
+# 1.21.1
+### Features
+* Add  labels when a container is created
+* Add `EnclaveObjectLabelsProvider` object to centralize container labels creation and labels keys and container types values
+
+### Changes
+* Upgraded to container-engine-lib 0.4.0, which replaces the long list of `CreateAndStartContainer` args with a builder
+* Absorb `kurtosis-core-launcher-lib` into here
+
+### Fixes
+* Actually depend on Kurt Client 0.17.1
 
 # 1.21.0
 ### Features

@@ -23,6 +23,7 @@ func StartAPIContainer(
 		dockerManager *docker_manager.DockerManager,
 		containerImage string,
 		containerName string,
+		containerLabels map[string]string,
 		listenPort uint,
 		listenProtocol string,
 		networkId string,
@@ -66,7 +67,9 @@ func StartAPIContainer(
 		dockerSocket: dockerSocket,
 	}).WithVolumeMounts(map[string]string{
 		enclaveDataVolName: api_container_docker_consts.EnclaveDataVolumeMountpoint,
-	}).Build()
+	}).WithLabels(
+		containerLabels,
+	).Build()
 
 	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

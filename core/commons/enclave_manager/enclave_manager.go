@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
+	"github.com/kurtosis-tech/kurtosis/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -76,6 +77,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
 
@@ -132,7 +134,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
+
 	alreadyTakenIps := []net.IP{testsuiteContainerIpAddr, replContainerIpAddr}
+	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer()
 
 	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
 	launchApiVersion := uint(0)
@@ -152,6 +156,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerId, apiContainerHostPortBinding, err := apiContainerLauncher.Launch(
 		setupCtx,
 		apiContainerName,
+		apiContainerLabels,
 		enclaveId,
 		networkId,
 		networkIpAndMask.String(),

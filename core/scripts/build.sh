@@ -68,6 +68,11 @@ export API_IMAGE \
     CLI_BINARY_FILENAME
 export FIXED_DOCKER_IMAGE_TAG="${fixed_docker_image_tag}"
 export AUTOUPDATING_DOCKER_IMAGE_TAG="${autoupdating_docker_image_tag}"
+if "${should_publish_arg}"; then
+    # This environment variable will be set ONLY when publishing, in the CI environment
+    # See the CI config for details on how this gets set
+    export FURY_TOKEN
+fi
 
 # We want to run goreleaser from the root
 cd "${root_dirpath}"

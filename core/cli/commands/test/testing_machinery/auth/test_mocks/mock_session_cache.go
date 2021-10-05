@@ -6,18 +6,18 @@
 package test_mocks
 
 import (
-	session_cache2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
 	"github.com/palantir/stacktrace"
 )
 
 type MockSessionCache struct {
 	throwErrorOnSave bool
 	throwErrorOnLoad bool
-	sessionToReturn *session_cache2.Session
-	sessionsSavedInOrder []session_cache2.Session
+	sessionToReturn *session_cache.Session
+	sessionsSavedInOrder []session_cache.Session
 }
 
-func NewMockSessionCache(throwErrorOnSave bool, throwErrorOnLoad bool, sessionToReturn *session_cache2.Session) *MockSessionCache {
+func NewMockSessionCache(throwErrorOnSave bool, throwErrorOnLoad bool, sessionToReturn *session_cache.Session) *MockSessionCache {
 	return &MockSessionCache{
 		throwErrorOnSave: throwErrorOnSave,
 		throwErrorOnLoad: throwErrorOnLoad,
@@ -25,7 +25,7 @@ func NewMockSessionCache(throwErrorOnSave bool, throwErrorOnLoad bool, sessionTo
 	}
 }
 
-func (m *MockSessionCache) SaveSession(session session_cache2.Session) error {
+func (m *MockSessionCache) SaveSession(session session_cache.Session) error {
 	if m.throwErrorOnSave {
 		return stacktrace.NewError("Test error thrown on session save, as requested")
 	}
@@ -33,14 +33,14 @@ func (m *MockSessionCache) SaveSession(session session_cache2.Session) error {
 	return nil
 }
 
-func (m *MockSessionCache) LoadSession() (tokenResponse *session_cache2.Session, err error) {
+func (m *MockSessionCache) LoadSession() (tokenResponse *session_cache.Session, err error) {
 	if m.throwErrorOnLoad {
 		return nil, stacktrace.NewError("Test error thrown on session load, as requested")
 	}
 	return m.sessionToReturn, nil
 }
 
-func (m *MockSessionCache) GetSavedSessions() []session_cache2.Session {
+func (m *MockSessionCache) GetSavedSessions() []session_cache.Session {
 	return m.sessionsSavedInOrder
 }
 

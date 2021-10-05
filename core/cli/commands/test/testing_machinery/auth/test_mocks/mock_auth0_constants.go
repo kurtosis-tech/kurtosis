@@ -7,7 +7,7 @@ package test_mocks
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	auth0_token_claims2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
 	"github.com/palantir/stacktrace"
 	"time"
 )
@@ -90,7 +90,7 @@ func CreateTestToken(
 		permissions []string) (string, error) {
 	now := time.Now()
 	expiration := now.Add(time.Second * time.Duration(expiresInSeconds))
-	claims := auth0_token_claims2.Auth0TokenClaims{
+	claims := auth0_token_claims.Auth0TokenClaims{
 		Audience:  audience,
 		ExpiresAt: expiration.Unix(),
 		IssuedAt:  now.Unix(),

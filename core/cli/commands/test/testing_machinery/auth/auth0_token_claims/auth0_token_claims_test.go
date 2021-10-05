@@ -6,7 +6,7 @@
 package auth0_token_claims
 
 import (
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
 	"testing"
 	"time"
 )
@@ -49,10 +49,10 @@ func getValidClaim() Auth0TokenClaims {
 	oneHourFromNow := now.Add(24 * time.Hour)
 	oneHourFromNow.Unix()
 	return Auth0TokenClaims{
-		Audience:    auth0_constants2.Audience,
+		Audience:    auth0_constants.Audience,
 		ExpiresAt:   oneHourFromNow.Unix(),
 		IssuedAt:    now.Unix(),
-		Issuer:      auth0_constants2.Issuer,
+		Issuer:      auth0_constants.Issuer,
 		Scope:       "",
 		Subject:     "not-sure-what-goes-here",
 		Permissions: []string{},

@@ -19,6 +19,9 @@ builds:
     goarch:
       - amd64
   - id: cli
+    env:
+      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
+      - CGO_ENABLED=0
     main: ./cli
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     goos:
@@ -115,6 +118,30 @@ brews:
     install: |
       bin.install "kurtosis"
 
+# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+nfpms:
+  - id: cli-linux-packages
+    package_name: kurtosis
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - apk
+      - deb
+      - rpm
+
+publishers:
+  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
+  - name: fury.io
+    ids:
+    - cli-linux-packages
+    dir: "{{ dir .ArtifactPath }}"
+    env:
+      # This will get set by CI; see the CI config for how
+      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
+    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code

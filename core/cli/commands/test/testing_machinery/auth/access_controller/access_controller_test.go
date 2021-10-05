@@ -6,24 +6,24 @@
 package access_controller
 
 import (
-	permissions3 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	auth0_constants2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
-	test_mocks2 "github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/test_mocks"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/test_mocks"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParseTokenClaimsToPermissions(t *testing.T) {
-	audience := auth0_constants2.Audience
-	issuer := auth0_constants2.Issuer
+	audience := auth0_constants.Audience
+	issuer := auth0_constants.Issuer
 	expiredInSeconds := 3600
 	permissions := []string{
-		permissions3.RestrictedTestExecutionPermission,
-		permissions3.UnlimitedTestExecutionPermission,
+		permissions.RestrictedTestExecutionPermission,
+		permissions.UnlimitedTestExecutionPermission,
 	}
 
-	token, err := test_mocks2.CreateTestToken(
-		test_mocks2.TestAuth0PrivateKey,
+	token, err := test_mocks.CreateTestToken(
+		test_mocks.TestAuth0PrivateKey,
 		audience,
 		issuer,
 		expiredInSeconds,
@@ -33,7 +33,7 @@ func TestParseTokenClaimsToPermissions(t *testing.T) {
 
 	parsedClaims, err := parseTokenClaims(
 		map[string]string{
-			test_mocks2.TestAuth0KeyId: test_mocks2.TestAuth0PublicKeys[test_mocks2.TestAuth0KeyId],
+			test_mocks.TestAuth0KeyId: test_mocks.TestAuth0PublicKeys[test_mocks.TestAuth0KeyId],
 		},
 		token)
 	assert.Nil(t, err)
