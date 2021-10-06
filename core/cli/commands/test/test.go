@@ -302,7 +302,15 @@ func getAccessController(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the home directory")
 		}
-		sessionCacheFilepath := path.Join(homeDirpath, kurtosisDirname, sessionCacheFilename)
+		kurtosisDirpath := path.Join(homeDirpath, kurtosisDirname)
+		if err := ensureKurtosisDirpathExists(kurtosisDirpath); err != nil {
+			logrus.Warnf(
+				"An error occurred creating the Kurtosis directory at '%v', which will likely impede saving your session:\n%v",
+				kurtosisDirpath,
+				err,
+			)
+		}
+		sessionCacheFilepath := path.Join(kurtosisDirpath, sessionCacheFilename)
 		sessionCache := session_cache.NewEncryptedSessionCache(
 			sessionCacheFilepath,
 			sessionCacheFileMode,
@@ -355,4 +363,17 @@ func splitTestsStrIntoTestsSet(testsStr string) map[string]bool {
 		}
 	}
 	return testNamesToRun
+}
+
+func ensureKurtosisDirpathExists(kurtosisDirpath string) error {
+	if _, err := os.Stat(kurtosisDirpath); os.IsNotExist(err) {
+		if err := os.Mkdir(kurtosisDirpath, 0777); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"Kurtosis directory '%v' didn't exist, and an error occurred trying to create it",
+				kurtosisDirpath,
+			)
+		}
+	}
+	return nil
 }
