@@ -1,5 +1,9 @@
 # TBD
 
+# 1.22.11
+### Fixes
+* Fixed a bug where the `.kurtosis` directory wouldn't get created in the user's home directory if it didn't exist
+
 # 1.22.10
 ### Features
 * Added `UnloadLambda` endpoint to remove a Kurtosis Lambda from the network
