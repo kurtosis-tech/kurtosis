@@ -15,7 +15,6 @@
 
 ### Changes
 * Made the API container image argument to the `test` CLI command an optional flag instead
->>>>>>> develop
 
 # 1.22.7
 ### Features
