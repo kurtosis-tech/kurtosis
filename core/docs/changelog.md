@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Publish `.deb`, `.apk`, and `.rpm` packages to [the releases page](https://github.com/kurtosis-tech/kurtosis-core-release-artifacts/releases)
 
 # 1.22.9
 ### Fixes
