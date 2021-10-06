@@ -20,18 +20,21 @@ RUN_ACTION="run"
 BOTH_ACTION="all"
 HELP_ACTION="help"
 
+KURTOSIS_DOCKER_ORG="kurtosistech"
+API_CONTAINER_DOCKER_REPO="kurtosis-core_api"
+API_CONTAINER_VERSION="1.22.9"
+
 # ====================== ARG PARSING =======================================================
 show_help_and_exit() {
     echo "$(basename ${0}) action suite_image_name repo_dirpath dockerfile_filepath [run_arg1] [run_arg2]..."
     echo ""
-    echo "  This script will optionally a) build your Kurtosis testsuite into a Docker image and/or b) run it via a call to the kurtosis.sh script"
+    echo "  This script will optionally a) build your Kurtosis testsuite into a Docker image and/or b) run it via a call to the Kurtosis CLI"
     echo ""
     echo "    action                Determines the action this script will execute ('${HELP_ACTION}' to print this message, '${BUILD_ACTION}' to only build the testsuite"
     echo "                              image, '${RUN_ACTION}' to just run the testsuite image, and '${BOTH_ACTION}' to both build and run the testsuite)"
     echo "    suite_image           The name to give the built Docker image containing the testsuite"
     echo "    repo_dirpath          Path to the root of the repo containing the testsuite to build"
     echo "    dockerfile_filepath   Filepath to the Dockerfile for building the testsuite Docker image"
-    echo "    wrapper_filepath      Filepath to the kurtosis.sh wrapper script"
     echo "    run_arg               Argument to pass to kurtosis.sh when running the testsuite (use '--help' here to see all options)"
     echo ""
     echo "  To see the args the kurtosis.sh script accepts for the 'run' phase, call '$(basename ${0}) all --help'"
@@ -53,9 +56,6 @@ repo_dirpath="${1:-}"
 shift 1
 
 dockerfile_filepath="${1:-}"
-shift 1
-
-wrapper_filepath="${1:-}"
 shift 1
 
 do_build=true
@@ -103,14 +103,6 @@ if ! [ -f "${dockerfile_filepath}" ]; then
     echo "Error: Dockerfile filepath '${dockerfile_filepath}' is not a file" >&2
     exit 1
 fi
-if [ -z "${wrapper_filepath}" ]; then
-    echo "Error: Wrapper filepath cannot be empty" >&2
-    exit 1
-fi
-if ! [ -f "${wrapper_filepath}" ]; then
-    echo "Error: Wrapper filepath '${dockerfile_filepath}' is not a file" >&2
-    exit 1
-fi
 
 # ====================== MAIN LOGIC =======================================================
 # Captures the first of tag > branch > commit
@@ -146,7 +138,7 @@ if "${do_run}"; then
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
     # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
     #  ${1} exists, evaluate ${@}"
-    if ! bash "${wrapper_filepath}" ${1+"${@}"} "${suite_image}:${docker_tag}"; then
+    if ! kurtosis test --kurtosis-api-image "${KURTOSIS_DOCKER_ORG}/${API_CONTAINER_DOCKER_REPO}:${API_CONTAINER_VERSION}" ${1+"${@}"} "${suite_image}:${docker_tag}"; then
         echo "Error: Testsuite execution failed"
         exit 1
     fi

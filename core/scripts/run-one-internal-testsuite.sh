@@ -41,7 +41,7 @@ shift 1 # All other args should be passed as-is to the kurtosis.sh script
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+if ! docker_tag="$("${script_dirpath}/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
     echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
     exit 1
 fi
@@ -73,4 +73,4 @@ cli_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_C
 # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
 # ${*} loses quoting and ${@} trips 'set -e' if no arguments are passed, so this incantation says, "if and only if 
 #  ${1} exists, evaluate ${@}"
-"${cli_binary_filepath}" test --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}" "${api_container_image}"
+"${cli_binary_filepath}" test --kurtosis-api-image "${api_container_image}" --custom-params "${INTERNAL_TESTSUITE_PARAMS_JSON}" ${1+"${@}"} "${testsuite_image}"

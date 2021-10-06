@@ -8,7 +8,6 @@ package test_suite_metadata_acquirer
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
@@ -36,11 +35,9 @@ const (
 )
 
 func GetTestSuiteMetadata(
-		dockerClient *client.Client,
+		dockerManager *docker_manager.DockerManager,
 		launcher *test_suite_launcher.TestsuiteContainerLauncher) (*kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata, error) {
 	parentContext := context.Background()
-
-	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
 	logrus.Debugf("Launching metadata-providing testsuite...")
 	containerId, hostMachineRpcPortBinding, err := launcher.LaunchMetadataAcquiringContainer(

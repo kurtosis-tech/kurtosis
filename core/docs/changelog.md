@@ -2,13 +2,29 @@
 ### Features
 * Publish `.deb`, `.apk`, and `.rpm` packages to [the releases page](https://github.com/kurtosis-tech/kurtosis-core-release-artifacts/releases)
 
+# 1.22.9
+### Fixes
+* Fixed some bugs related to `build-and-run-core.sh` and the wrapper script references not being removed
+
+# 1.22.8
+### Features
+* The `test `command will always try to pull the latest images
+* Three tags will now get published to Dockerhub - `X.Y.Z`, `X.Y`, and `latest`
+* `build-and-run-core.sh` will now hardcode the version of Kurtosis to be used (like `kurtosis.sh` used to)
+
+### Changes
+* Made the API container image argument to the `test` CLI command an optional flag instead
+
+# 1.22.7
+### Features
+* Disable test setup and run timeouts when test execution is in debug mode
+* Add new Kurtosis CLI command `service logs` to print user service logs
+
 # 1.22.6
 ### Features
-* Add new Kurtosis CLI command `service logs` to print user service logs
 * Build APK versions of the CLI Linux package as well
 
 # 1.22.5
-### Fixes
 * Set Linux package name to `kurtosis`
 
 # 1.22.4

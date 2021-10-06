@@ -18,7 +18,7 @@ RUN_ONE_TESTSUITE_SCRIPT_FILENAME="run-one-internal-testsuite.sh"
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+if ! docker_tag="$("${script_dirpath}/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
     echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
     exit 1
 fi
@@ -33,8 +33,6 @@ run_one_testsuite_script_filepath="${script_dirpath}/${RUN_ONE_TESTSUITE_SCRIPT_
 had_failures="false"
 for lang in $(cat "${supported_langs_filepath}"); do
     echo "Running internal testsuite for lang '${lang}'..."
-    internal_testsuite_image="${DOCKER_ORG}/${lang}-${INTERNAL_TESTSUITE_IMAGE_SUFFIX}:${docker_tag}"
-
     # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
     # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
     #  ${1} exists, evaluate ${@}"
@@ -42,6 +40,7 @@ for lang in $(cat "${supported_langs_filepath}"); do
         echo "Error: Internal testsuite for lang '${lang}' failed!" >&2
         had_failures="true"
     fi
+    echo "Internal testsuite for lang '${lang}' succeeded"
 done
 
 if "${had_failures}"; then

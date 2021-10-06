@@ -44,7 +44,8 @@ dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile
     image_templates:
-      - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
       - "{{ .Env.API_IMAGE }}:latest"
     ids:
       - api-container
@@ -55,15 +56,16 @@ dockers:
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
     image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite
     dockerfile: golang_internal_testsuite/Dockerfile
     image_templates:
-      # No need to create a "latest" image because this image will never get published to Dockerhub
-      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      # No need to create a "latest" or autoupdating image because this image will never get published to Dockerhub
+      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
     extra_files:
@@ -149,7 +151,7 @@ source:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Env.DOCKER_IMAGE_TAG }}"
+  name_template: "{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
 changelog:
   # We manage our own changelog
   skip: true

@@ -86,9 +86,11 @@ jobs:
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
       - run: |
-          version_to_publish="$(scripts/get-docker-images-tag.sh)"
-          echo "Version that will be published: ${version_to_publish}"
-          echo "export VERSION_TO_PUBLISH=\"${version_to_publish}\"" >> $BASH_ENV
+          source scripts/_constants.sh
+          fixed_version_tag="$(bash "scripts/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"
+          echo "Fixed version: ${fixed_version_tag}"
+
+          echo "export FIXED_VERSION=\"${fixed_version_tag}\"" >> $BASH_ENV
 
       # All the variables here from the s3-upload-user context that we attach
       - aws-s3/copy:
@@ -96,7 +98,7 @@ jobs:
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
           from: testsuite_scripts/build-and-run-core.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${VERSION_TO_PUBLISH}/build-and-run-core.sh"
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${FIXED_VERSION}/build-and-run-core.sh"
 
       # TODO add a step here for uploading the .proto files to the S3 public-access bucket!!! This will be necessary for making Kurtosis upgrades simple
 
