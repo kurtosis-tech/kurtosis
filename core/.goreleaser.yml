@@ -44,7 +44,8 @@ dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile
     image_templates:
-      - "{{ .Env.API_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.API_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
       - "{{ .Env.API_IMAGE }}:latest"
     ids:
       - api-container
@@ -55,15 +56,16 @@ dockers:
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
     image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite
     dockerfile: golang_internal_testsuite/Dockerfile
     image_templates:
-      # No need to create a "latest" image because this image will never get published to Dockerhub
-      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGE_TAG }}"
+      # No need to create a "latest" or autoupdating image because this image will never get published to Dockerhub
+      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
     goos: linux
     goarch: amd64
     extra_files:
@@ -84,6 +86,20 @@ archives:
       - "*THIS_FILE_DOES_NOT_EXIST*"
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
+# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+nfpms:
+  - id: cli-linux-packages
+    package_name: kurtosis
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - apk
+      - deb
+      - rpm
+
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
 release:
   github:
@@ -93,6 +109,7 @@ release:
   # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
+    - cli-linux-packages
 
 brews:
   - name: kurtosis
@@ -116,20 +133,6 @@ brews:
     install: |
       bin.install "kurtosis"
 
-# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
-nfpms:
-  - id: cli-linux-packages
-    package_name: kurtosis
-    homepage: https://kurtosistech.com
-    description: "Install the Kurtosis CLI"
-    vendor: Kurtosis Technologies Inc.
-    builds:
-      - cli
-    formats:
-      - apk
-      - deb
-      - rpm
-
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
   - name: fury.io
@@ -148,7 +151,7 @@ source:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Env.DOCKER_IMAGE_TAG }}"
+  name_template: "{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
 changelog:
   # We manage our own changelog
   skip: true

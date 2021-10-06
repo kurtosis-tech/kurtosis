@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
@@ -120,8 +121,8 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	pullImageBestEffort(dockerManager, apiContainerImage)
-	pullImageBestEffort(dockerManager, jsReplImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, apiContainerImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
 	enclaveId := execution_ids.GetExecutionID()
 
@@ -290,10 +291,4 @@ func runReplContainer(
 	terminal.Restore(stdinFd, oldState)
 
 	return nil
-}
-
-func pullImageBestEffort(dockerManager *docker_manager.DockerManager, image string) {
-	if err := dockerManager.PullImage(context.Background(), image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of image '%v'; you may be running an out-of-date version", image)
-	}
 }

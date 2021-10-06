@@ -14,7 +14,7 @@ source "${script_dirpath}/_constants.sh"
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
+if ! docker_tag="$("${script_dirpath}/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
     echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
     exit 1
 fi

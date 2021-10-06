@@ -10,7 +10,7 @@ import (
 func RetrieveV0LaunchAPIArgs() (*V0LaunchAPIArgs, error) {
 	serializedParamsStr, found := os.LookupEnv(api_container_docker_consts.SerializedArgsEnvVar)
 	if !found {
-		return nil, stacktrace.NewError("No log level environment variable '%v' defined", api_container_docker_consts.SerializedArgsEnvVar)
+		return nil, stacktrace.NewError("No serialized args variable '%v' defined", api_container_docker_consts.SerializedArgsEnvVar)
 	}
 	if serializedParamsStr == "" {
 		return nil, stacktrace.NewError("No serialized params were provided")
