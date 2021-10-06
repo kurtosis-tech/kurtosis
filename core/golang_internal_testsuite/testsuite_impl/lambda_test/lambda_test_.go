@@ -104,6 +104,17 @@ func (l LambdaTest) Run(rawNetwork networks.Network) error {
 		}
 	}
 	logrus.Info("All services added via the Lambda work as expected")
+
+	logrus.Infof("Unloading lambda '%v'...", datastoreArmyLambdaId)
+	if err := networkCtx.UnloadLambda(datastoreArmyLambdaId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred unloading lambda '%v'", datastoreArmyLambdaId)
+	}
+
+	if _, err := networkCtx.GetLambdaContext(datastoreArmyLambdaId); err == nil {
+		return stacktrace.Propagate(err, "Getting lambda context for lambda '%v' should throw an error because it should had been unloaded", datastoreArmyLambdaId)
+	}
+	logrus.Infof("Lambda '%v' successfully unloaded", datastoreArmyLambdaId)
+
 	return nil
 }
 

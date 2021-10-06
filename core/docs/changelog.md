@@ -1,5 +1,10 @@
 # TBD
 
+# 1.22.10
+### Features
+* Added `UnloadLambda` endpoint to remove a Kurtosis Lambda from the network
+* Publish `.deb`, `.apk`, and `.rpm` packages to [the releases page](https://github.com/kurtosis-tech/kurtosis-core-release-artifacts/releases)
+
 # 1.22.9
 ### Fixes
 * Fixed some bugs related to `build-and-run-core.sh` and the wrapper script references not being removed

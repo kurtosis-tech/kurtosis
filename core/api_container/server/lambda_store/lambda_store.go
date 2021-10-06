@@ -81,6 +81,28 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 	return nil
 }
 
+func (store *LambdaStore) UnloadLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID) error {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+	if store.isDestroyed {
+		return stacktrace.NewError("Cannot unload Lambda; the Lambda store is destroyed")
+	}
+
+	 lambdaInfo, found := store.lambdas[lambdaId]
+	 if !found {
+		return stacktrace.NewError("Lambda ID '%v' does not exist in the lambda map", lambdaId)
+	}
+
+	containerId := lambdaInfo.containerId
+	if err := store.dockerManager.KillContainer(ctx, containerId); err != nil {
+		return  stacktrace.Propagate(err, "An error occurred killing Lambda container '%v' while unloading the Lambda from the store", lambdaId)
+	}
+
+	delete(store.lambdas, lambdaId)
+
+	return nil
+}
+
 func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, serializedParams string) (serializedResult string, resultErr error) {
 	// NOTE: technically we don't need this mutex for this function since we're not modifying internal state, but we do need it to check isDestroyed
 	// TODO PERF: Don't block the entire store on executing a lambda
