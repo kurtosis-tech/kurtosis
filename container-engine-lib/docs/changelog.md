@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add `HostPortBindings` field into `Container` type to store the container public ports 
 
 # 0.4.4
 ### Changes
