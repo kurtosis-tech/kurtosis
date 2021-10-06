@@ -136,7 +136,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
 
 	alreadyTakenIps := []net.IP{testsuiteContainerIpAddr, replContainerIpAddr}
-	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer()
+	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr, apiContainerListenPort)
 
 	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
 	launchApiVersion := uint(0)
