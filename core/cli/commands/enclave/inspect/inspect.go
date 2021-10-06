@@ -15,8 +15,10 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 	"sort"
 	"strings"
+	"text/tabwriter"
 )
 
 const (
@@ -85,7 +87,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers != nil {
-		fmt.Println("GUID\tName")
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
+		fmt.Fprintln(w, "GUID\tName\tHostPortBindings")
 		sortedContainers, err := getContainersSortedByGUID(containers)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting containers sorted by GUID")
@@ -95,11 +98,26 @@ func run(cmd *cobra.Command, args []string) error {
 			if !found {
 				return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
 			}
-			fmt.Printf("%v\t%v\n", containerGUIDLabel, container.GetName())
+			hostPortBindingsString := getContainerHostPortBindingsString(container)
+
+			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + hostPortBindingsString
+
+			fmt.Fprintln(w, line)
 		}
+		w.Flush()
 	}
 
 	return nil
+}
+
+func getContainerHostPortBindingsString(container *docker_manager.Container) string {
+	hostPortBindings := container.GetHostPortBindings()
+	hostPortKeys := make([]string, 0, len(hostPortBindings))
+	for hostPortKey, _ := range hostPortBindings {
+		hostPortKeys = append(hostPortKeys, string(hostPortKey))
+	}
+	hostPortBindingsString := strings.Join(hostPortKeys, " | ")
+	return hostPortBindingsString
 }
 
 // ====================================================================================================

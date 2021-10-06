@@ -1,4 +1,8 @@
 # TBD
+### Features
+* Add Container's host port bindings in the returned list printed by `enclave inspect` CLI command
+* Add `api-container-url` container label which is composed by the api container IP address and the api container listen port
+
 ### Fixes
 * Fixed a bug where the `.kurtosis` directory wouldn't get created in the user's home directory if it didn't exist
 
