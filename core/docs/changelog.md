@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.10
 ### Features
 * Added `UnloadLambda` endpoint to remove a Kurtosis Lambda from the network
 * Publish `.deb`, `.apk`, and `.rpm` packages to [the releases page](https://github.com/kurtosis-tech/kurtosis-core-release-artifacts/releases)
