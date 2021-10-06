@@ -1,8 +1,8 @@
 package docker_manager
 
 import (
+	"github.com/docker/go-connections/nat"
 	"github.com/palantir/stacktrace"
-	"strings"
 )
 
 type Status uint32
@@ -24,13 +24,14 @@ type Container struct {
 	name   string
 	labels map[string]string
 	status Status
+	hostPortBindings map[nat.Port]*nat.PortBinding
 }
 
-func NewContainer(id string, name string, labels map[string]string, status Status) (*Container, error) {
+func NewContainer(id string, name string, labels map[string]string, status Status, hostPortBindings map[nat.Port]*nat.PortBinding) (*Container, error) {
 	if status == numStatus {
 		return nil, stacktrace.NewError("It is not allowed to create a Container with status value = numStatus")
 	}
-	return &Container{id: id, name: name, labels: labels, status: status}, nil
+	return &Container{id: id, name: name, labels: labels, status: status, hostPortBindings: hostPortBindings}, nil
 }
 
 func (c Container) GetId() string {
@@ -47,6 +48,10 @@ func (c Container) GetLabels() map[string]string {
 
 func (c Container) GetStatus() string {
 	return c.status.string()
+}
+
+func (c Container) GetHostPortBindings() map[nat.Port]*nat.PortBinding {
+	return c.hostPortBindings
 }
 
 func (s Status) string() string {
@@ -70,29 +75,10 @@ func (s Status) string() string {
 	}
 }
 
-func getAllStatus() []Status {
+func getAllContainerStatus() []Status {
 	allStatus := make([]Status, numStatus)
 	for i := 0; i < int(numStatus); i++ {
 		allStatus[i] = Status(i)
 	}
 	return allStatus
-}
-
-func getContainerStatusByDockerContainerState(dockerContainerState string) Status {
-	allStatus := getAllStatus()
-	for _, status := range allStatus {
-		if status.string() == dockerContainerState {
-			return status
-		}
-	}
-	 return unknown
-}
-
-func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
-	if len(dockerContainerNames) > 0 {
-		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
-		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
-		return containerName, nil
-	}
-	return "", stacktrace.NewError("There is not any docker container name to get")
 }

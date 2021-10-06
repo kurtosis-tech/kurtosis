@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -884,6 +885,7 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	for _, dockerContainer := range dockerContainers {
 		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
 		containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
+		containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting container name from docker container names '%+v'", dockerContainer.Names)
 		}
@@ -891,7 +893,8 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 			dockerContainer.ID,
 			containerName,
 			dockerContainer.Labels,
-			containerStatus)
+			containerStatus,
+			containerHostPortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
 		}
@@ -899,6 +902,44 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	}
 
 	return result, nil
+}
+
+func getContainerStatusByDockerContainerState(dockerContainerState string) Status {
+	allStatus := getAllContainerStatus()
+	for _, status := range allStatus {
+		if status.string() == dockerContainerState {
+			return status
+		}
+	}
+	return unknown
+}
+
+func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
+	if len(dockerContainerNames) > 0 {
+		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
+		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
+		return containerName, nil
+	}
+	return "", stacktrace.NewError("There is not any docker container name to get")
+}
+
+func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
+	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
+
+	for _, port := range dockerContainerPorts {
+		natPort := nat.Port(strings.Join(
+			[]string{
+				strconv.FormatUint(uint64(port.PublicPort), 10),
+				port.Type},
+				"/"))
+
+		natPortBinding := &nat.PortBinding{
+			HostIP: port.IP,
+			HostPort: strconv.FormatUint(uint64(port.PublicPort),10),
+		}
+		hostPortBindings[natPort] = natPortBinding
+	}
+	return hostPortBindings
 }
 
 
