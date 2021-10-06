@@ -109,6 +109,14 @@ func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosi
 	return &emptypb.Empty{}, nil
 }
 
+func (service ApiContainerService) UnloadLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadLambdaArgs) (*emptypb.Empty, error) {
+	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	if err := service.lambdaStore.UnloadLambda(ctx, lambdaId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unloading Lambda '%v' from the network", lambdaId)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs) (*kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse, error) {
 	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
 	serializedParams := args.SerializedParams

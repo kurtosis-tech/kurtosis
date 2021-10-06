@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211001174915-392121d3f80b
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210929155114-f75f2be4bdc4
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005195321-3134b69ea2c6
 	github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153929-e5305a8ffc52

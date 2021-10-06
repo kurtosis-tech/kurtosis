@@ -307,17 +307,18 @@ func setupTestWithTimeout(
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 
+	testSetupCtx := testSetupExecutionCtx
 	if setupTimeout > 0{
-		testSetupCtx, testSetupCtxCancelFunc := context.WithTimeout(
+		ctxWithTimeout, testSetupCtxCancelFunc := context.WithTimeout(
 			testSetupExecutionCtx,
 			setupTimeout,
 		)
-		testSetupExecutionCtx = testSetupCtx
-
 		defer testSetupCtxCancelFunc()
+
+		testSetupCtx = ctxWithTimeout
 	}
 
-	if err := setupTest(testSetupExecutionCtx, testName, testsuiteServiceClient); err != nil {
+	if err := setupTest(testSetupCtx, testName, testsuiteServiceClient); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test setup timeout exceeded")
 		}
@@ -344,17 +345,18 @@ func runTestWithTimeout(
 		testName string,
 		testsuiteServiceClient kurtosis_testsuite_rpc_api_bindings.TestSuiteServiceClient) error {
 
+	testRunCtx := testSetupExecutionCtx
 	if runTimeout > 0{
-		testRunCtx, testRunCtxCancelFunc := context.WithTimeout(
+		ctxWithTimeout, testRunCtxCancelFunc := context.WithTimeout(
 			testSetupExecutionCtx,
 			runTimeout,
 		)
 		defer testRunCtxCancelFunc()
-		testSetupExecutionCtx = testRunCtx
+		testRunCtx = ctxWithTimeout
 	}
 
 	runArgs := &kurtosis_testsuite_rpc_api_bindings.RunTestArgs{TestName: testName}
-	if _, err := testsuiteServiceClient.RunTest(testSetupExecutionCtx, runArgs); err != nil {
+	if _, err := testsuiteServiceClient.RunTest(testRunCtx, runArgs); err != nil {
 		if strings.Contains(err.Error(), contextDeadlineStringError){
 			return stacktrace.NewError("Test run timeout exceeded")
 		}
