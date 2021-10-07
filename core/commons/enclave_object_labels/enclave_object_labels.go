@@ -11,8 +11,9 @@ const (
 	EnclaveIDContainerLabel = labelNamespace + "enclave-id"
 	ContainerTypeLabel      = labelNamespace + "container-type"
 	GUIDLabel               = labelNamespace + "guid"
+	APIContainerURLLabel    = labelNamespace + "api-container-url"
 
-	ContainerTypeApiContainer               = "api-container"
+	ContainerTypeAPIContainer               = "api-container"
 	ContainerTypeTestsuiteContainer         = "testsuite"
 	ContainerTypeUserServiceContainer       = "user-service"
 	ContainerTypeNetworkingSidecarContainer = "networking-sidecar"

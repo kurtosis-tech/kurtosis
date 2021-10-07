@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
@@ -86,12 +87,12 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func getLabelsForListEnclaves() map[string]string {
 	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeApiContainer
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
 	return labels
 }
 
-func getContainersEnclaveIds(containers []*docker_manager.Container) []string{
-	containersSet := map[string]*docker_manager.Container{}
+func getContainersEnclaveIds(containers []*types.Container) []string{
+	containersSet := map[string]*types.Container{}
 	for _, container := range containers {
 		if container != nil {
 			containerId := container.GetId()
