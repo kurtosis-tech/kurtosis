@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
@@ -111,11 +112,20 @@ func run(cmd *cobra.Command, args []string) error {
 			if !found {
 				return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
 			}
-			hostPortBindingsString := getContainerHostPortBindingsString(container)
+			hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
-			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + hostPortBindingsString
-
+			var firstHosPortBinding string
+			if hostPortBindingsStrings != nil  {
+				firstHosPortBinding = hostPortBindingsStrings[0]
+				hostPortBindingsStrings = hostPortBindingsStrings[1:]
+			}
+			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + firstHosPortBinding
 			fmt.Fprintln(tabWriter, line)
+
+			for _, hostPortBindingsString := range hostPortBindingsStrings {
+				line = "\t\t" + hostPortBindingsString
+				fmt.Fprintln(tabWriter, line)
+			}
 		}
 		tabWriter.Flush()
 	}
@@ -123,15 +133,14 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getContainerHostPortBindingsString(container *docker_manager.Container) string {
+func getContainerHostPortBindingStrings(container *types.Container) []string {
 	var allHosPortBindings []string
 	hostPortBindings := container.GetHostPortBindings()
 	for hostPortBindingKey, hostPortBinding := range hostPortBindings {
-		hostPortBindingString := fmt.Sprintf("%v:%v/%v", hostPortBinding.HostIP, hostPortBinding.HostPort, hostPortBindingKey.Proto())
+		hostPortBindingString := fmt.Sprintf("%v -> %v:%v", hostPortBindingKey, hostPortBinding.HostIP, hostPortBinding.HostPort)
 		allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
 	}
-	allHosPortBindingsString := strings.Join(allHosPortBindings, " | ")
-	return allHosPortBindingsString
+	return allHosPortBindings
 }
 
 // ====================================================================================================
@@ -144,8 +153,8 @@ func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	return labels
 }
 
-func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docker_manager.Container, error) {
-	containersSet := map[string]*docker_manager.Container{}
+func getContainersSortedByGUID(containers []*types.Container) ([]*types.Container, error) {
+	containersSet := map[string]*types.Container{}
 	for _, container := range containers {
 		if container != nil {
 			containerGUID, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
@@ -156,7 +165,7 @@ func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docke
 		}
 	}
 
-	containersResult := make([]*docker_manager.Container, 0, len(containersSet))
+	containersResult := make([]*types.Container, 0, len(containersSet))
 	for _, container := range containersSet {
 		containersResult = append(containersResult, container)
 	}
