@@ -17,13 +17,13 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_constants"
+	dockerManagerTypes "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"math"
 	"net"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -640,7 +640,7 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
-func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*Container, error) {
+func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*dockerManagerTypes.Container, error) {
 	labelsFilterList := getLabelsFilterList(labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, all)
 	if err != nil {
@@ -872,7 +872,7 @@ func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, fi
 	return result, nil
 }
 
-func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*Container, error) {
+func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*dockerManagerTypes.Container, error) {
 	opts := types.ContainerListOptions{
 		Filters: filterArgs,
 		All: all,
@@ -881,37 +881,56 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	result := make([]*Container, 0, len(dockerContainers))
-	for _, dockerContainer := range dockerContainers {
-		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
-		containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
-		containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container name from docker container names '%+v'", dockerContainer.Names)
-		}
-		container, err := NewContainer(
-			dockerContainer.ID,
-			containerName,
-			dockerContainer.Labels,
-			containerStatus,
-			containerHostPortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
-		}
-		result = append(result, container)
+	containers, err:= newContainersListFromDockerContainersList(dockerContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
 
-	return result, nil
+	return containers, nil
 }
 
-func getContainerStatusByDockerContainerState(dockerContainerState string) Status {
-	allStatuses := getAllContainerStatuses()
-	for _, status := range allStatuses {
-		if status.string() == dockerContainerState {
-			return status
+func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*dockerManagerTypes.Container, error) {
+	containers := make([]*dockerManagerTypes.Container, 0, len(dockerContainers))
+	for _, dockerContainer := range dockerContainers {
+		container, err := newContainerFromDockerContainer(dockerContainer)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating new container from Docker container '%+v'", dockerContainer)
 		}
+		containers = append(containers, container)
 	}
-	return unknown
+	return containers, nil
+}
+
+func newContainerFromDockerContainer(dockerContainer types.Container) (*dockerManagerTypes.Container, error) {
+	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State)
+	}
+	containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
+	}
+	containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
+
+	container, err := dockerManagerTypes.NewContainer(
+		dockerContainer.ID,
+		containerName,
+		dockerContainer.Labels,
+		containerStatus,
+		containerHostPortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
+	}
+	return container, nil
+}
+
+func getContainerStatusByDockerContainerState(dockerContainerState string) (dockerManagerTypes.ContainerStatus, error ){
+	containerStatus, err := dockerManagerTypes.GetContainerStatusFromString(dockerContainerState)
+	if err != nil {
+		return "", stacktrace.NewError("No container status matches Docker container state '%v'", dockerContainerState)
+	}
+
+	return containerStatus, nil
 }
 
 func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
@@ -920,29 +939,25 @@ func getContainerNameByDockerContainerNames(dockerContainerNames []string) (stri
 		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
 		return containerName, nil
 	}
-	return "", stacktrace.NewError("There is not any docker container name to get")
+	return "", stacktrace.NewError("There is not any Docker container name to get")
 }
 
 func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
 	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
 
 	for _, port := range dockerContainerPorts {
-		natPort := nat.Port(strings.Join(
-			[]string{
-				strconv.FormatUint(uint64(port.PublicPort), 10),
-				port.Type},
-				"/"))
+		publicPortString :=fmt.Sprintf("%v", port.PublicPort)
+		containerPortNumberAndProtocolString := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
+		natPort := nat.Port(containerPortNumberAndProtocolString)
 
 		natPortBinding := &nat.PortBinding{
 			HostIP: port.IP,
-			HostPort: strconv.FormatUint(uint64(port.PublicPort),10),
+			HostPort: publicPortString,
 		}
 		hostPortBindings[natPort] = natPortBinding
 	}
 	return hostPortBindings
 }
-
-
 
 func getLabelsFilterList(labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
