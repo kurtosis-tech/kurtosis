@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.0
 ### Breaking Changes
 * Renamed `Status` type to `ContainerStatus` which is used in the `Container` struct
   * Users should replace `Status` type with `ContainerStatus` in all places where it being used
