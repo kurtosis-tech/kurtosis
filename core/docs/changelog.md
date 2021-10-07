@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Corrected module name from `github.com/kurtosis-tech/kurtosis` to `github.com/kurtosis-tech/kurtosis-core`
 
 # 1.22.13
 ### Features
