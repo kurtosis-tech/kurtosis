@@ -905,8 +905,8 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 }
 
 func getContainerStatusByDockerContainerState(dockerContainerState string) Status {
-	allStatus := getAllContainerStatus()
-	for _, status := range allStatus {
+	allStatuses := getAllContainerStatuses()
+	for _, status := range allStatuses {
 		if status.string() == dockerContainerState {
 			return status
 		}

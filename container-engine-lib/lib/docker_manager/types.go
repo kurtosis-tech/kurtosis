@@ -16,7 +16,7 @@ const (
 	dead
 	created
 	exited
-	numStatus //it must be the last const in this list, it's a helper it's only used to get all values throw allStatus()
+	numStatuses //it must be the last const in this list, it's a helper it's only used to get all values throw allStatuses()
 )
 
 type Container struct {
@@ -28,8 +28,8 @@ type Container struct {
 }
 
 func NewContainer(id string, name string, labels map[string]string, status Status, hostPortBindings map[nat.Port]*nat.PortBinding) (*Container, error) {
-	if status == numStatus {
-		return nil, stacktrace.NewError("It is not allowed to create a Container with status value = numStatus")
+	if status == numStatuses {
+		return nil, stacktrace.NewError("It is not allowed to create a Container with status value = numStatuses")
 	}
 	return &Container{id: id, name: name, labels: labels, status: status, hostPortBindings: hostPortBindings}, nil
 }
@@ -75,10 +75,10 @@ func (s Status) string() string {
 	}
 }
 
-func getAllContainerStatus() []Status {
-	allStatus := make([]Status, numStatus)
-	for i := 0; i < int(numStatus); i++ {
-		allStatus[i] = Status(i)
+func getAllContainerStatuses() []Status {
+	allStatuses := make([]Status, numStatuses)
+	for i := 0; i < int(numStatuses); i++ {
+		allStatuses[i] = Status(i)
 	}
-	return allStatus
+	return allStatuses
 }
