@@ -1,4 +1,6 @@
 # TBD
+
+# 1.22.12
 ### Features
 * Added a `lambda exec` command, for running a Lambda directly from the CLI
 * Refactored the multiple duplicated `parsePositionalArgs` functions into a single function
