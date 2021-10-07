@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/palantir/stacktrace"
@@ -43,6 +44,7 @@ var positionalArgs = []string{
 
 var InspectCmd = &cobra.Command{
 	Use:   "inspect " + strings.Join(positionalArgs, " "),
+	DisableFlagsInUseLine: true,
 	Short: "Inspect Kurtosis enclaves",
 	RunE:  run,
 }
@@ -72,7 +74,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := parsePositionalArgs(args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgs(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -135,20 +137,6 @@ func getContainerHostPortBindingsString(container *docker_manager.Container) str
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-// Parses the args into a map of positional_arg_name -> value
-func parsePositionalArgs(args []string) (map[string]string, error) {
-	if len(args) != len(positionalArgs) {
-		return nil, stacktrace.NewError("Expected %v positional arguments but got %v", len(positionalArgs), len(args))
-	}
-
-	result := map[string]string{}
-	for idx, argValue := range args {
-		arg := positionalArgs[idx]
-		result[arg] = argValue
-	}
-	return result, nil
-}
-
 func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	labels := map[string]string{}
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer

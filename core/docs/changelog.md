@@ -3,6 +3,19 @@
 * Add Container's host port bindings in the returned list printed by `enclave inspect` CLI command
 * Add `api-container-url` container label which is composed by the api container IP address and the api container listen port
 
+# 1.22.12
+### Features
+* Added a `lambda exec` command, for running a Lambda directly from the CLI
+* Refactored the multiple duplicated `parsePositionalArgs` functions into a single function
+* Added a `launch-cli.sh` script to run the CLI
+
+### Changes
+* Renamed `launch-interactive.sh` script to `create-sandbox.sh`
+* Moved the `root.go` file to directly under the `commands` directory, to mimic the real command tree
+
+### Fixes
+* Fixed CLI helptext double-printing `[flags]` (e.g. `kurtosis enclave inspect -h` used to print `kurtosis enclave inspect [flags] enclave-id [flags]`)
+
 # 1.22.11
 ### Fixes
 * Fixed a bug where the `.kurtosis` directory wouldn't get created in the user's home directory if it didn't exist
