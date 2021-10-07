@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_constants"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -639,7 +640,7 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
-func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*Container, error) {
+func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterList(labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, all)
 	if err != nil {
@@ -871,7 +872,7 @@ func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, fi
 	return result, nil
 }
 
-func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*Container, error) {
+func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
 		Filters: filterArgs,
 		All: all,
@@ -880,28 +881,81 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	result := make([]*Container, 0, len(dockerContainers))
-	for _, dockerContainer := range dockerContainers {
-		containerStatus := getContainerStatusByDockerContainerState(dockerContainer.State)
-		containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting container name from docker container names '%+v'", dockerContainer.Names)
-		}
-		container, err := NewContainer(
-			dockerContainer.ID,
-			containerName,
-			dockerContainer.Labels,
-			containerStatus)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
-		}
-		result = append(result, container)
+	containers, err:= newContainersListFromDockerContainersList(dockerContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
 
-	return result, nil
+	return containers, nil
 }
 
+func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*docker_manager_types.Container, error) {
+	containers := make([]*docker_manager_types.Container, 0, len(dockerContainers))
+	for _, dockerContainer := range dockerContainers {
+		container, err := newContainerFromDockerContainer(dockerContainer)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating new container from Docker container '%+v'", dockerContainer)
+		}
+		containers = append(containers, container)
+	}
+	return containers, nil
+}
 
+func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_manager_types.Container, error) {
+	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State)
+	}
+	containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
+	}
+	containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
+
+	newContainer := docker_manager_types.NewContainer(
+		dockerContainer.ID,
+		containerName,
+		dockerContainer.Labels,
+		containerStatus,
+		containerHostPortBindings)
+
+	return newContainer, nil
+}
+
+func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error ){
+	containerStatus, err := docker_manager_types.GetContainerStatusFromString(dockerContainerState)
+	if err != nil {
+		return "", stacktrace.NewError("No container status matches Docker container state '%v'", dockerContainerState)
+	}
+
+	return containerStatus, nil
+}
+
+func getContainerNameByDockerContainerNames(dockerContainerNames []string) (string, error) {
+	if len(dockerContainerNames) > 0 {
+		containerName := dockerContainerNames[0] //We do this because Docker Container Names is a []strings and the first value is the "actual" container's name. You can check this here: https://github.com/moby/moby/blob/master/integration-cli/docker_api_containers_test.go#L52
+		containerName = strings.TrimPrefix(containerName, "/") //Docker container's names contains "/" prefix
+		return containerName, nil
+	}
+	return "", stacktrace.NewError("There is not any Docker container name to get")
+}
+
+func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
+	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
+
+	for _, port := range dockerContainerPorts {
+		publicPortString :=fmt.Sprintf("%v", port.PublicPort)
+		containerPortNumberAndProtocolString := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
+		natPort := nat.Port(containerPortNumberAndProtocolString)
+
+		natPortBinding := &nat.PortBinding{
+			HostIP: port.IP,
+			HostPort: publicPortString,
+		}
+		hostPortBindings[natPort] = natPortBinding
+	}
+	return hostPortBindings
+}
 
 func getLabelsFilterList(labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
