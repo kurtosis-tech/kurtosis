@@ -3,10 +3,11 @@
  * All Rights Reserved.
  */
 
-package root
+package commands
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/commands/enclave"
+	"github.com/kurtosis-tech/kurtosis/cli/commands/lambda"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test"
@@ -28,4 +29,5 @@ func init() {
 	RootCmd.AddCommand(test.TestCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
+	RootCmd.AddCommand(lambda.LambdaCmd)
 }

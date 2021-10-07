@@ -6,7 +6,7 @@
 package main
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/commands/root"
+	"github.com/kurtosis-tech/kurtosis/cli/commands"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -23,7 +23,7 @@ func main() {
 		FullTimestamp: true,
 	})
 
-	if err := root.RootCmd.Execute(); err != nil {
+	if err := commands.RootCmd.Execute(); err != nil {
 		// We don't actually need to print the error because Cobra will do it for us
 		os.Exit(errorExitCode)
 	}
