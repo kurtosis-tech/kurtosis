@@ -86,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func getLabelsForListEnclaves() map[string]string {
 	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeApiContainer
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
 	return labels
 }
 

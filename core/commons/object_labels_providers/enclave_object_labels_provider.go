@@ -6,11 +6,11 @@
 package object_labels_providers
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_object_labels"
 	"net"
-	"strconv"
 )
 
 type EnclaveObjectLabelsProvider struct {
@@ -21,10 +21,10 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 	return &EnclaveObjectLabelsProvider{enclaveId: enclaveId}
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint) map[string]string {
+func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint16) map[string]string {
 	labels := labelsProvider.getLabelsMapWithCommonsLabels()
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeApiContainer
-	labels[enclave_object_labels.ApiContainerURLLabel] = apiContainerIPAddress.String() + strconv.FormatUint(uint64(apiContainerListenPort), 10)
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
+	labels[enclave_object_labels.APIContainerURLLabel] = fmt.Sprintf("%v:%v", apiContainerIPAddress.String(), apiContainerListenPort)
 	return labels
 }
 

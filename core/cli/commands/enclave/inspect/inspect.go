@@ -23,15 +23,26 @@ import (
 
 const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
-	enclaveIdArg = "enclave-id"
+	enclaveIdArg        = "enclave-id"
+
+	tabWriterMinwidth = 0
+	tabWriterTabwidth = 0
+	tabWriterPadding  = 3
+	tabWriterPadchar  = ' '
+	tabWriterFlags    = 0
+
+	guidHeader             = "GUID"
+	nameHeader             = "Name"
+	hostPortBindingsHeader = "HostPortBindings"
 )
+
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIdArg,
 }
 
 var InspectCmd = &cobra.Command{
-	Use:   "inspect [flags ] " + strings.Join(positionalArgs, " "),
+	Use:   "inspect " + strings.Join(positionalArgs, " "),
 	Short: "Inspect Kurtosis enclaves",
 	RunE:  run,
 }
@@ -87,8 +98,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers != nil {
-		w := tabwriter.NewWriter(os.Stdout, 0, 0, 10, ' ', 0)
-		fmt.Fprintln(w, "GUID\tName\tHostPortBindings")
+		tabWriter := tabwriter.NewWriter(os.Stdout, tabWriterMinwidth, tabWriterTabwidth, tabWriterPadding, tabWriterPadchar, tabWriterFlags)
+		fmt.Fprintln(tabWriter, guidHeader + "\t" + nameHeader + "\t" + hostPortBindingsHeader)
 		sortedContainers, err := getContainersSortedByGUID(containers)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting containers sorted by GUID")
@@ -102,22 +113,23 @@ func run(cmd *cobra.Command, args []string) error {
 
 			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + hostPortBindingsString
 
-			fmt.Fprintln(w, line)
+			fmt.Fprintln(tabWriter, line)
 		}
-		w.Flush()
+		tabWriter.Flush()
 	}
 
 	return nil
 }
 
 func getContainerHostPortBindingsString(container *docker_manager.Container) string {
+	var allHosPortBindings []string
 	hostPortBindings := container.GetHostPortBindings()
-	hostPortKeys := make([]string, 0, len(hostPortBindings))
-	for hostPortKey, _ := range hostPortBindings {
-		hostPortKeys = append(hostPortKeys, string(hostPortKey))
+	for hostPortBindingKey, hostPortBinding := range hostPortBindings {
+		hostPortBindingString := fmt.Sprintf("%v:%v/%v", hostPortBinding.HostIP, hostPortBinding.HostPort, hostPortBindingKey.Proto())
+		allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
 	}
-	hostPortBindingsString := strings.Join(hostPortKeys, " | ")
-	return hostPortBindingsString
+	allHosPortBindingsString := strings.Join(allHosPortBindings, " | ")
+	return allHosPortBindingsString
 }
 
 // ====================================================================================================
@@ -144,7 +156,7 @@ func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	return labels
 }
 
-func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docker_manager.Container, error){
+func getContainersSortedByGUID(containers []*docker_manager.Container) ([]*docker_manager.Container, error) {
 	containersSet := map[string]*docker_manager.Container{}
 	for _, container := range containers {
 		if container != nil {
