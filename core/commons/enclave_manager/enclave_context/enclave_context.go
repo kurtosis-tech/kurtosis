@@ -8,7 +8,7 @@ package enclave_context
 import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"net"
 )
 

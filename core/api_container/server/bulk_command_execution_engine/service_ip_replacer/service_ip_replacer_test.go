@@ -7,8 +7,8 @@ package service_ip_replacer
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"

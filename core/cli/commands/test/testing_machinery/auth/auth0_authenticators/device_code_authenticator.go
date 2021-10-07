@@ -8,8 +8,8 @@ package auth0_authenticators
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_constants"
-	"github.com/kurtosis-tech/kurtosis/commons/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis-core/commons/user_support_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
