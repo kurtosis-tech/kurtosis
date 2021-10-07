@@ -2,6 +2,7 @@
 ### Features
 * Add Container's host port bindings in the returned list printed by `enclave inspect` CLI command
 * Add `api-container-url` container label which is composed by the api container IP address and the api container listen port
+* Upgrade Kurtosis Container Engine Lib to v0.5.0 wich adds `hostPortBindings` field in `Container` struct
 
 # 1.22.12
 ### Features
