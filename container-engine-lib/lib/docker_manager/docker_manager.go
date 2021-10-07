@@ -912,15 +912,13 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*dockerMa
 	}
 	containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
 
-	container, err := dockerManagerTypes.NewContainer(
+	container := dockerManagerTypes.NewContainer(
 		dockerContainer.ID,
 		containerName,
 		dockerContainer.Labels,
 		containerStatus,
 		containerHostPortBindings)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new container")
-	}
+
 	return container, nil
 }
 

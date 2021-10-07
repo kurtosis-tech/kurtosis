@@ -12,8 +12,8 @@ type Container struct {
 	hostPortBindings map[nat.Port]*nat.PortBinding
 }
 
-func NewContainer(id string, name string, labels map[string]string, status ContainerStatus, hostPortBindings map[nat.Port]*nat.PortBinding) (*Container, error) {
-	return &Container{id: id, name: name, labels: labels, status: status, hostPortBindings: hostPortBindings}, nil
+func NewContainer(id string, name string, labels map[string]string, status ContainerStatus, hostPortBindings map[nat.Port]*nat.PortBinding) *Container {
+	return &Container{id: id, name: name, labels: labels, status: status, hostPortBindings: hostPortBindings}
 }
 
 func (c Container) GetId() string {
