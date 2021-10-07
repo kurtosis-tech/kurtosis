@@ -20,7 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/test_suite_runner"
+	"github.com/kurtosis-tech/kurtosis/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
+	"github.com/kurtosis-tech/kurtosis/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/commons/object_name_providers"
@@ -71,7 +73,6 @@ const (
 	defaultParallelism      = uint32(4)
 	testNamesDelimiter      = ","
 	defaultSuiteLogLevelStr = "info"
-	defaultKurtosisApiImage = "kurtosistech/kurtosis-core_api"
 
 	// Debug mode forces parallelism == 1, since it doesn't make much sense without it
 	debugModeParallelism = 1
@@ -89,6 +90,7 @@ var positionalArgs = []string{
 
 var TestCmd = &cobra.Command{
 	Use:   "test [flags] " + strings.Join(positionalArgs, " "),
+	DisableFlagsInUseLine: true,
 	Short: "Runs a Kurtosis testsuite using the specified Kurtosis Core version",
 	RunE:  run,
 }
@@ -166,7 +168,7 @@ func init() {
 	TestCmd.Flags().StringVar(
 		&kurtosisApiImage,
 		kurtosisApiImageArg,
-		defaultKurtosisApiImage,
+		defaults.DefaultApiContainerImage,
 		"The image of the Kurtosis API container that should be used inside the enclave that the tests run inside",
 	)
 }
@@ -178,7 +180,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := parsePositionalArgs(args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgs(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -269,20 +271,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "One or more tests didn't pass")
 	}
 	return nil
-}
-
-// Parses the args into a map of positional_arg_name -> value
-func parsePositionalArgs(args []string) (map[string]string, error) {
-	if len(args) != len(positionalArgs) {
-		return nil, stacktrace.NewError("Expected %v positional arguments but got %v", len(positionalArgs), len(args))
-	}
-
-	result := map[string]string{}
-	for idx, argValue := range args {
-		arg := positionalArgs[idx]
-		result[arg] = argValue
-	}
-	return result, nil
 }
 
 func getAccessController(
