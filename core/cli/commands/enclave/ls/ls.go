@@ -28,7 +28,7 @@ var kurtosisLogLevelStr string
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 var LsCmd = &cobra.Command{
-	Use:   "ls [flags ] ",
+	Use:   "ls",
 	Short: "List Kurtosis enclaves",
 	RunE:  run,
 }

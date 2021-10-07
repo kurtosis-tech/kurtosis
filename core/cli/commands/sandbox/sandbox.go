@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/enclave_context"
@@ -33,13 +34,6 @@ import (
 const (
 	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
 
-	// TODO These defaults aren't great - it will just start a Kurtosis interactive with the latest
-	//  of both images, which may or may not be compatible - what we really need is a system that
-	//  detects what version of the API container/REPL to start based off the Kurt Core API version
-	// TODO It's also not great that these are hardcoded - they should be hooked into the build system,
-	//  to guarantee that they're compatible with each other
-	defaultApiContainerImage = "kurtosistech/kurtosis-core_api"
-	defaultJavascriptReplImage = "kurtosistech/javascript-interactive-repl"
 
 	shouldPublishPorts = true
 
@@ -92,7 +86,7 @@ func init() {
 		&apiContainerImage,
 		apiContainerImageArg,
 		"a",
-		defaultApiContainerImage,
+		defaults.DefaultApiContainerImage,
 		"The image of the Kurtosis API container to use inside the enclave",
 	)
 
@@ -100,7 +94,7 @@ func init() {
 		&jsReplImage,
 		javascriptReplImageArg,
 		"r",
-		defaultJavascriptReplImage,
+		defaults.DefaultJavascriptReplImage,
 		"The image of the Javascript REPL to connect to the enclave with",
 	)
 }
