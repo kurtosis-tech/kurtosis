@@ -114,12 +114,12 @@ func run(cmd *cobra.Command, args []string) error {
 			}
 			hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
-			var firstHosPortBinding string
+			var firstHostPortBinding string
 			if hostPortBindingsStrings != nil  {
-				firstHosPortBinding = hostPortBindingsStrings[0]
+				firstHostPortBinding = hostPortBindingsStrings[0]
 				hostPortBindingsStrings = hostPortBindingsStrings[1:]
 			}
-			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + firstHosPortBinding
+			line := containerGUIDLabel + "\t" + container.GetName() + "\t" + firstHostPortBinding
 			fmt.Fprintln(tabWriter, line)
 
 			for _, hostPortBindingsString := range hostPortBindingsStrings {
