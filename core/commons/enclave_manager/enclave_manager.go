@@ -140,7 +140,7 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
 	launchApiVersion := uint(0)
-	apiContainerLauncher, err := lib.lib.GetAPIContainerLauncherForLaunchAPIVersion(
+	apiContainerLauncher, err := api_container_launcher_lib.GetAPIContainerLauncherForLaunchAPIVersion(
 		launchApiVersion,
 		dockerManager,
 		log,

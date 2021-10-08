@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package lib
+package api_container_launcher_lib
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
