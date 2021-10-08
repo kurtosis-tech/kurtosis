@@ -4,8 +4,6 @@ REPO_BASE="kurtosis-core"
 
 API_IMAGE="${DOCKER_ORG}/${REPO_BASE}_api"
 
-KURTOSIS_DIRPATH="$HOME/.kurtosis"
-
 BUILD_DIRNAME="build"
 GORELEASER_OUTPUT_DIRNAME="dist"
 

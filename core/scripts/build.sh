@@ -11,15 +11,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Constants
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
-
 GET_AUTOUPDATING_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-autoupdating-docker-images-tag.sh"
-
-WRAPPER_GENERATOR_DIRNAME="wrapper_generator"
-WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME="wrapper-generator"
-WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh"
-
-WRAPPER_SCRIPT_GENERATOR_GORELEASER_BUILD_ID="wrapper-generator"
-
 DEFAULT_SHOULD_PUBLISH_ARG="false"
 
 
@@ -58,8 +50,6 @@ if ! autoupdating_docker_image_tag="$(bash "${script_dirpath}/${GET_AUTOUPDATING
     exit 1
 fi
 
-# TODO GENERATE JAVASCRIPT REPL
-
 # These variables are used by Goreleaser
 export API_IMAGE \
     DOCKER_ORG \
@@ -68,11 +58,6 @@ export API_IMAGE \
     CLI_BINARY_FILENAME
 export FIXED_DOCKER_IMAGE_TAG="${fixed_docker_image_tag}"
 export AUTOUPDATING_DOCKER_IMAGE_TAG="${autoupdating_docker_image_tag}"
-if "${should_publish_arg}"; then
-    # This environment variable will be set ONLY when publishing, in the CI environment
-    # See the CI config for details on how this gets set
-    export FURY_TOKEN
-fi
 
 # We want to run goreleaser from the root
 cd "${root_dirpath}"
@@ -87,11 +72,5 @@ else
 fi
 if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_args}; then
     echo "Error: Goreleaser release of all binaries & Docker images failed" >&2
-    exit 1
-fi
-
-# Build a CLI binary, compatible with the current OS & arch, so that we can run interactive & testing locally
-if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
-    echo "Error: Couldn't build the wrapper script-generating binary" >&2
     exit 1
 fi
