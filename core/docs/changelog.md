@@ -1,8 +1,10 @@
 # TBD
+### Fixes
+* Actually disable the `release` Goreleaser stage
 
 # 1.23.1
 ### Fixes
-* 
+* Disable `release` Goreleaser stage, since we're not uploading anything to Github
 
 # 1.23.0
 ### Removals

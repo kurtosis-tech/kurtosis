@@ -37,7 +37,8 @@ dockers:
     goarch: amd64
 
 release: 
-  disable: false
+  # No need to publish releases to Github
+  disable: true
 
 source:
   # Kurt Core is a private project, and we definitely don't want to release source code
