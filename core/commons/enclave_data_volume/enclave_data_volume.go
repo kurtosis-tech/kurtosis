@@ -6,7 +6,7 @@
 package enclave_data_volume
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/palantir/stacktrace"
 	"path"
 )

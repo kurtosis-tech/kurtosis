@@ -7,8 +7,8 @@ package lib
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis/commons/enclave_manager/api_container_launcher_lib/api_versions"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_versions"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )

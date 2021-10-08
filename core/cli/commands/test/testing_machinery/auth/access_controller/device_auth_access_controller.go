@@ -7,10 +7,10 @@ package access_controller
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_authenticators"
-	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/auth0_token_claims"
-	"github.com/kurtosis-tech/kurtosis/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/auth0_authenticators"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/auth0_token_claims"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/session_cache"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"

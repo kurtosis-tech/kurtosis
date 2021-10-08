@@ -8,7 +8,7 @@ package v0_bulk_command_execution
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/service_ip_replacer"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/bulk_command_execution_engine/service_ip_replacer"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/proto"

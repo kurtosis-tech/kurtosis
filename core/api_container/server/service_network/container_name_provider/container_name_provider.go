@@ -6,8 +6,8 @@
 package container_name_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api_container/server/lambda_store/lambda_store_types"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 )
 
 const (

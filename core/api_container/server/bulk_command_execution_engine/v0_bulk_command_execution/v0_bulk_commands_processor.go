@@ -10,8 +10,8 @@ import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/bulk_command_execution/v0_bulk_command_api"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/bulk_command_execution_engine/service_ip_replacer"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/bulk_command_execution_engine/service_ip_replacer"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/palantir/stacktrace"
 )
 
