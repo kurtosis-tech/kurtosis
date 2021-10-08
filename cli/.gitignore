@@ -53,3 +53,6 @@ doc/tags
 
 .gradle
 build
+
+# Ignore Goreleaser dist directory
+dist

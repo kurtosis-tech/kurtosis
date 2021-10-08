@@ -1,0 +1,129 @@
+# This is an example .goreleaser.yml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks: []
+
+builds:
+  - id: cli
+    env:
+      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
+      - CGO_ENABLED=0
+    main: ./cli
+    binary: "{{ .Env.CLI_BINARY_FILENAME }}"
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - 386
+      - amd64
+      - arm64
+  - id: golang-internal-testsuite
+    main: ./golang_internal_testsuite
+    binary: golang-internal-testsuite
+    goos:
+      - linux # For Alpine Docker image
+    goarch:
+      - amd64
+dockers:
+  - id: javascript-repl-image
+    ids: []
+    dockerfile: javascript_cli_image/Dockerfile
+    image_templates:
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGES_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
+  - id: golang-internal-testsuite-image
+    ids:
+      - golang-internal-testsuite
+    dockerfile: golang_internal_testsuite/Dockerfile
+    image_templates:
+      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGES_TAG }}"
+    goos: linux
+    goarch: amd64
+    extra_files:
+      - golang_internal_testsuite/static_files
+    # We don't ever want or need to push our internal testsuites to Docker
+    skip_push: true
+
+# In order for releasing-to-Github to work, we have to create these archives
+archives:
+  - id: cli
+    builds:
+      - cli
+    # Kurtosis is a private repo so we don't want to package any files except the binaries, but GoReleaser by default packages the README, LICENSE, and changelog
+    # Worse, setting this to be emptylist won't work because GoReleaser takes emptylist to mean "package the defaults" per:
+    #  https://github.com/goreleaser/goreleaser/blob/73641c71ac0d9f78e2409b0cea1bf5b42111b933/internal/pipe/archive/archive.go#L61
+    # Therefore, we set this to a glob of files that definitely don't exist
+    files:
+      - "*THIS_FILE_DOES_NOT_EXIST*"
+    name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+nfpms:
+  - id: cli-linux-packages
+    package_name: kurtosis
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - apk
+      - deb
+      - rpm
+
+# In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
+release:
+  github:
+    owner: kurtosis-tech
+    name: kurtosis-cli-release-artifacts
+
+  # NOTE: these are the archive IDs, not the build/binary IDs
+  ids:
+    - cli
+    - cli-linux-packages
+
+# TODO TODO TODO DEBUGGING ONLY; UNCOMMENT
+#brews:
+#  - name: kurtosis
+#    ids:
+#      - cli
+#    tap:
+#      owner: kurtosis-tech
+#      name: homebrew-tap
+#    commit_author:
+#      name: kurtosisbot
+#    commit_msg_template: "Automated formula update for the CLI, version {{ .Tag }}"
+#    homepage: "https://www.kurtosistech.com"
+#    description: "CLI for managing Kurtosis environments."
+#
+#    # One day, we'll probably want to put a license
+#    # license: SOME-SPDX-LICENSE
+#
+#    # NOTE: Goreleaser *should* automatically detect the binaries packaged inside the archives being installed by the Homebrew formula, but it doesn't due to:
+#    #  https://github.com/goreleaser/goreleaser/issues/2488
+#    # When this is fixed, we can remove this section
+#    install: |
+#      bin.install "kurtosis"
+
+publishers:
+  # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
+  - name: fury.io
+    ids:
+    - cli-linux-packages
+    dir: "{{ dir .ArtifactPath }}"
+    env:
+      # This will get set by CI; see the CI config for how
+      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
+    cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
+
+source:
+  # Kurt Core is a private project, and we definitely don't want to release source code
+  enabled: false
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Env.DOCKER_IMAGES_TAG }}"
+changelog:
+  # We manage our own changelog
+  skip: true
