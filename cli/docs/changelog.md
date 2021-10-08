@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.0
 ### Changes
 * Changed the Homebrew/deb/rpm package name to `kurtosis-cli` (was `kurtosis`)
 
