@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -48,7 +48,7 @@ func StartAPIContainer(
 	serializedArgsStr := string(serializedArgsBytes)
 
 	envVars := map[string]string{
-		api_container_docker_consts2.SerializedArgsEnvVar: serializedArgsStr,
+		api_container_docker_consts.SerializedArgsEnvVar: serializedArgsStr,
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -66,7 +66,7 @@ func StartAPIContainer(
 	).WithBindMounts(map[string]string{
 		dockerSocket: dockerSocket,
 	}).WithVolumeMounts(map[string]string{
-		enclaveDataVolName: api_container_docker_consts2.EnclaveDataVolumeMountpoint,
+		enclaveDataVolName: api_container_docker_consts.EnclaveDataVolumeMountpoint,
 	}).WithLabels(
 		containerLabels,
 	).Build()
