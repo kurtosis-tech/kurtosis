@@ -1,5 +1,9 @@
 # TBD
 
+# 0.2.1
+### Fixes
+* Fixed missing `FURY_TOKEN` when publishing
+
 # 0.2.0
 ### Features
 * Ported over the CLI & internal testsuite from `kurtosis-core`
