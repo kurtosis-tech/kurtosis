@@ -7,8 +7,8 @@ package lib
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_versions"
+	api_container_launcher2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_launcher"
+	api_versions2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_versions"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -22,11 +22,11 @@ func GetAPIContainerLauncherForLaunchAPIVersion(
 	listenPort uint,
 	listenProtocol string,
 	logLevel logrus.Level,
-) (api_container_launcher.APIContainerLauncher, error) {
-	if int(launchApiVersion) >= len(api_versions.PerAPIVersionLauncherFactories) {
+) (api_container_launcher2.APIContainerLauncher, error) {
+	if int(launchApiVersion) >= len(api_versions2.PerAPIVersionLauncherFactories) {
 		return nil, stacktrace.NewError("Launch API version '%v' is newer than any version we know about", launchApiVersion)
 	}
-	factory := api_versions.PerAPIVersionLauncherFactories[launchApiVersion]
+	factory := api_versions2.PerAPIVersionLauncherFactories[launchApiVersion]
 	launcher := factory(dockerManager, log, containerImage, listenPort, listenProtocol, logLevel)
 	return launcher, nil
 }

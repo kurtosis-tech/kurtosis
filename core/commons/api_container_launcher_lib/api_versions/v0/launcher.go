@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_container_starter"
+	api_container_launcher2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_launcher"
+	api_container_starter2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_starter"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -27,7 +27,7 @@ func NewV0APIContainerLauncher(
 		containerImage string,
 		listenPort uint,
 		listenProtocol string,
-		logLevel logrus.Level) api_container_launcher.APIContainerLauncher {
+		logLevel logrus.Level) api_container_launcher2.APIContainerLauncher {
 	return &V0APIContainerLauncher{
 		dockerManager: dockerManager,
 		log: log,
@@ -70,7 +70,7 @@ func (launcher V0APIContainerLauncher) Launch(
 		shouldPublishAllPorts,
 	)
 	
-	containerId, hostPortBinding, err := api_container_starter.StartAPIContainer(
+	containerId, hostPortBinding, err := api_container_starter2.StartAPIContainer(
 		ctx,
 		launcher.dockerManager,
 		launcher.containerImage,

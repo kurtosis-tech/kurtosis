@@ -12,7 +12,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
@@ -140,7 +140,7 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
 	launchApiVersion := uint(0)
-	apiContainerLauncher, err := lib.GetAPIContainerLauncherForLaunchAPIVersion(
+	apiContainerLauncher, err := lib.lib.GetAPIContainerLauncherForLaunchAPIVersion(
 		launchApiVersion,
 		dockerManager,
 		log,

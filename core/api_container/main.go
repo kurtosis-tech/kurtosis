@@ -22,10 +22,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
+	api_container_docker_consts2 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
+	v02 "github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis-core/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_container_docker_consts"
-	v0 "github.com/kurtosis-tech/kurtosis-core/commons/enclave_manager/api_container_launcher_lib/api_versions/v0"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -64,7 +64,7 @@ func main() {
 }
 
 func runMain () error {
-	args, err := v0.RetrieveV0LaunchAPIArgs()
+	args, err := v02.RetrieveV0LaunchAPIArgs()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
 	}
@@ -109,7 +109,7 @@ func runMain () error {
 		}
 	}()
 
-	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
+	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts2.EnclaveDataVolumeMountpoint)
 
 	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {
@@ -176,7 +176,7 @@ func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
+		args *v02.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
