@@ -6,7 +6,7 @@
 package permissions
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/commons/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
