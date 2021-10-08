@@ -1,5 +1,12 @@
 # TBD
 
+# 0.3.0
+### Changes
+* Changed the Homebrew/deb/rpm package name to `kurtosis-cli` (was `kurtosis`)
+
+### Breaking Changes
+* The CLI is now installed via the `kurtosis-cli` package (for Homebrew, APT, and Yum) rather than just `kurtosis`
+
 # 0.2.1
 ### Fixes
 * Fixed missing `FURY_TOKEN` when publishing
