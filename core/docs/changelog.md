@@ -1,4 +1,14 @@
 # TBD
+### Removals
+* Removed the internal CI image, in favor of the image now built by `kurtosis-goreleaser-ci-docker-image` repo
+* Removed the following, which have been ported to the `kurtosis-cli` repo:
+    * `cli`
+    * `javascript_cli_image`
+    * `enclave_manager`
+    * `logrus_log_levels`
+    * `golang_internal_testsuite`
+    * All the scripts for running the internal testsuites
+    * All the scripts for running the CLI
 
 # 1.22.14
 ### Fixes

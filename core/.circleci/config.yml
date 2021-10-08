@@ -29,59 +29,32 @@ jobs:
             circleci-agent step halt
           fi
 
-      # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-      - run: |
-          docker build \
-            --build-arg "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
-            --build-arg "DOCKER_USERNAME=${DOCKER_USERNAME}" \
-            --build-arg "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            -t ci-running-image \
-            -f ci_build_docker_image/Dockerfile \
-            ci_build_docker_image
       - run: |
           docker run \
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
-            --entrypoint bash \
-            ci-running-image -c "/login.sh && ./scripts/build.sh"
-
-      # ---------------------------------- Check the Golang testsuite -----------------------------------------------------
-      - run: |
-          scripts/run-one-internal-testsuite.sh golang --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee golang-internal-testsuite-output.txt
-
-      # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
-      # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
-      - run: "! grep 'ERRO' golang-internal-testsuite-output.txt"
-
-      # Checking for running Docker containers after Kurtosis completes testsuite execution
-      - run: |
-          [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
+            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
+            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
+            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+            -e "CMD=bash ./scripts/build.sh" \
+            kurtosistech/kurtosis-goreleaser-ci-image
 
   push_artifacts:
     executor: ubuntu_vm
     steps:
       - checkout
 
-      # Our build requires Goreleaser & Go, so we do this inside a container so we don't have to install all the dependencies
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-      - run: |
-          docker build \
-            --build-arg "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
-            --build-arg "DOCKER_USERNAME=${DOCKER_USERNAME}" \
-            --build-arg "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            -t ci-running-image \
-            -f ci_build_docker_image/Dockerfile \
-            ci_build_docker_image
       - run: |
           docker run \
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -e "FURY_TOKEN=${GEMFURY_PUBLISH_TOKEN}" \
-            --entrypoint bash \
-            ci-running-image -c "/login.sh && ./scripts/build.sh true"
+            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
+            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
+            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+            -e "CMD=bash ./scripts/build.sh true" \
+            kurtosistech/kurtosis-goreleaser-ci-image
 
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
@@ -132,7 +105,6 @@ workflows:
             - docker-user
             - kurtosis-user
             - s3-upload-user
-            - gemfury-publisher
           filters:
             branches:
               ignore: /.*/
