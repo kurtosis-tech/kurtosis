@@ -1,4 +1,6 @@
 # TBD
+
+# 1.23.0
 ### Removals
 * Removed the internal CI image, in favor of the image now built by `kurtosis-goreleaser-ci-docker-image` repo
 * Removed the following, which have been ported to the `kurtosis-cli` repo:
