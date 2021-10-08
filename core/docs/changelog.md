@@ -1,4 +1,6 @@
 # TBD
+
+# 1.23.2
 ### Fixes
 * Actually disable the `release` Goreleaser stage
 
