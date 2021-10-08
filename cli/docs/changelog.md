@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.0
 ### Features
 * Ported over the CLI & internal testsuite from `kurtosis-core`
 
