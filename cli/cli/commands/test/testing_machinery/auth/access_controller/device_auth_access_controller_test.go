@@ -6,10 +6,10 @@
 package access_controller
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/access_controller/permissions"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/auth0_constants"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/session_cache"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/test_mocks"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/auth0_constants"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/test_mocks"
 	"testing"
 )
 

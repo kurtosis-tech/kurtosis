@@ -6,11 +6,11 @@
 package commands
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/enclave"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/lambda"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/sandbox"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/service"
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/lambda"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
 	"github.com/spf13/cobra"
 )
 

@@ -6,7 +6,7 @@
 package test_mocks
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/test/testing_machinery/auth/session_cache"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/session_cache"
 	"github.com/palantir/stacktrace"
 )
 

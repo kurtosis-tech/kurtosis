@@ -6,7 +6,7 @@
 package lambda
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/cli/commands/lambda/exec"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/lambda/exec"
 	"github.com/spf13/cobra"
 )
 
