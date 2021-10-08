@@ -1,5 +1,9 @@
 # TBD
 
+# 1.23.1
+### Fixes
+* 
+
 # 1.23.0
 ### Removals
 * Removed the internal CI image, in favor of the image now built by `kurtosis-goreleaser-ci-docker-image` repo
