@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/palantir/stacktrace"

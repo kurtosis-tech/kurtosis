@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/kurtosis-tech/kurtosis-core/commons/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
