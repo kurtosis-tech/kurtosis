@@ -61,6 +61,7 @@ jobs:
             --privileged \
             -v "${PWD}:/build" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -e "FURY_TOKEN=${GEMFURY_PUBLISH_TOKEN}" \
             -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
             -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
             -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
