@@ -29,16 +29,14 @@ dockers:
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
     image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGES_TAG }}"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
   - id: golang-internal-testsuite-image
     ids:
       - golang-internal-testsuite
     dockerfile: golang_internal_testsuite/Dockerfile
     image_templates:
-      # No need to create a "latest" or autoupdating image because this image will never get published to Dockerhub
-      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
+      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGES_TAG }}"
     goos: linux
     goarch: amd64
     extra_files:
