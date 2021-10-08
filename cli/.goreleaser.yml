@@ -4,20 +4,6 @@ before:
   hooks: []
 
 builds:
-  - id: api-container-availability-waiter
-    main: ./api_container_availability_waiter
-    binary: api-container-availability-waiter
-    goos:
-      - linux # For Alpine Docker image
-    goarch:
-      - amd64
-  - id: api-container
-    main: ./api_container
-    binary: api-container
-    goos:
-      - linux # For Alpine Docker image
-    goarch:
-      - amd64
   - id: cli
     env:
       # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
@@ -39,19 +25,6 @@ builds:
     goarch:
       - amd64
 dockers:
-  # TODO Maybe package the CLI into a Docker image?
-  
-  - id: api-container-image
-    dockerfile: api_container/Dockerfile
-    image_templates:
-      - "{{ .Env.API_IMAGE }}:{{ .Env.FIXED_DOCKER_IMAGE_TAG }}"
-      - "{{ .Env.API_IMAGE }}:{{ .Env.AUTOUPDATING_DOCKER_IMAGE_TAG }}"
-      - "{{ .Env.API_IMAGE }}:latest"
-    ids:
-      - api-container
-      - api-container-availability-waiter
-    goos: linux
-    goarch: amd64
   - id: javascript-repl-image
     ids: []
     dockerfile: javascript_cli_image/Dockerfile
@@ -104,7 +77,7 @@ nfpms:
 release:
   github:
     owner: kurtosis-tech
-    name: kurtosis-core-release-artifacts
+    name: kurtosis-cli-release-artifacts
 
   # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
