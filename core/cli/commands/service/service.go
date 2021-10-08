@@ -6,7 +6,7 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/cli/commands/service/logs"
+	"github.com/kurtosis-tech/kurtosis-core/cli/commands/service/logs"
 	"github.com/spf13/cobra"
 )
 

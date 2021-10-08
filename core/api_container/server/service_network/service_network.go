@@ -8,8 +8,8 @@ package service_network
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"net"
 	"time"
 )

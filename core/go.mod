@@ -1,5 +1,4 @@
-// TODO Refactor last package to be kurtosis-core!
-module github.com/kurtosis-tech/kurtosis
+module github.com/kurtosis-tech/kurtosis-core
 
 go 1.13
 

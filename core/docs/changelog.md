@@ -1,5 +1,9 @@
 # TBD
 
+# 1.22.14
+### Fixes
+* Corrected module name from `github.com/kurtosis-tech/kurtosis` to `github.com/kurtosis-tech/kurtosis-core`
+
 # 1.22.13
 ### Features
 * Add Container's host port bindings in the returned list printed by `enclave inspect` CLI command
