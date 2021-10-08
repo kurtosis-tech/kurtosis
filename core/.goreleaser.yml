@@ -19,6 +19,10 @@ builds:
     goarch:
       - amd64
 
+archives:
+  # Disables archive creation
+  - format: binary
+
 dockers:
   - id: api-container-image
     dockerfile: api_container/Dockerfile

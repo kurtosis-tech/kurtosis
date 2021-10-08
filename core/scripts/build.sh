@@ -51,11 +51,7 @@ if ! autoupdating_docker_image_tag="$(bash "${script_dirpath}/${GET_AUTOUPDATING
 fi
 
 # These variables are used by Goreleaser
-export API_IMAGE \
-    DOCKER_ORG \
-    INTERNAL_TESTSUITE_IMAGE_SUFFIX \
-    JAVASCRIPT_REPL_IMAGE \
-    CLI_BINARY_FILENAME
+export API_IMAGE
 export FIXED_DOCKER_IMAGE_TAG="${fixed_docker_image_tag}"
 export AUTOUPDATING_DOCKER_IMAGE_TAG="${autoupdating_docker_image_tag}"
 
