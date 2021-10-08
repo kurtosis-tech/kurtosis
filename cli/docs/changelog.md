@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.1
 ### Fixes
 * Fixed missing `FURY_TOKEN` when publishing
 
