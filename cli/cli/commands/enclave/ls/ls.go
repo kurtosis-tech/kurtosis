@@ -11,8 +11,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -22,6 +22,8 @@ import (
 
 const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
+
+	enclaveIdColumnHeader = "EnclaveID"
 )
 
 var kurtosisLogLevelStr string
@@ -72,6 +74,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
 	}
 
+	fmt.Println(enclaveIdColumnHeader)
 	if containers != nil {
 		enclaveIds := getContainersEnclaveIds(containers)
 		for _, enclaveId := range enclaveIds {
