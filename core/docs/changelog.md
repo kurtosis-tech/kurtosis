@@ -1,4 +1,6 @@
 # TBD
+
+# 1.23.3
 ### Features
 * Added a `KurtosisCoreVersion` constant that corresponds to this repo's version
 
