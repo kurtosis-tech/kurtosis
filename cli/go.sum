@@ -472,8 +472,8 @@ github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210923031424-3e4ee49686ba/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005195321-3134b69ea2c6 h1:Y8kEOVK6eicaReYqsPHgP/Y31kqlyxlSWsL92mKhDBc=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005195321-3134b69ea2c6/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
-github.com/kurtosis-tech/kurtosis-core v0.0.0-20211008195923-110b278bd5b5 h1:EeX2MIGV444r7aJHpr8Wq2WBgjjAdLzVn+Cg1owGZSI=
-github.com/kurtosis-tech/kurtosis-core v0.0.0-20211008195923-110b278bd5b5/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012161603-cf2a6b80c257 h1:BxfvOlSe9wecUftvwRgSgFCKEd5wor9Hzm1XlyDJXzQ=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012161603-cf2a6b80c257/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1 h1:qAnRcQEIdOnWG+dGltpxl0HzoTs/iqZQUnYrxWwXQIo=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1/go.mod h1:dDCTAqUAhurn5uDGP+P7FEUx9BFHJ9Q6f/LzxX3Z7rg=
@@ -890,7 +890,6 @@ golang.org/x/sys v0.0.0-20190916202348-b4ddaad3f8a3/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20191001151750-bb3f8db39f24/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20191022100944-742c48ecaeb7/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 h1:YyJpGZS1sBuBCzLAR1VEpK193GlqGZbnPFnPV/5Rsb4=
 golang.org/x/sys v0.0.0-20191026070338-33540a1f6037/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20191115151921-52ab43148777/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
