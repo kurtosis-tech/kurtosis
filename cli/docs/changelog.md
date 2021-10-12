@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Print interactive REPLs in `enclave inspect`
 
 # 0.3.0
 ### Changes
