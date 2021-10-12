@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `enclave new` command to create a new enclave
 
 # 0.3.0
 ### Changes

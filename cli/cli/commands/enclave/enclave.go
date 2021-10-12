@@ -8,6 +8,7 @@ package enclave
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/ls"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/new"
 	"github.com/spf13/cobra"
 )
 
@@ -20,4 +21,5 @@ var EnclaveCmd = &cobra.Command{
 func init() {
 	EnclaveCmd.AddCommand(ls.LsCmd)
 	EnclaveCmd.AddCommand(inspect.InspectCmd)
+	EnclaveCmd.AddCommand(new.NewCmd)
 }
