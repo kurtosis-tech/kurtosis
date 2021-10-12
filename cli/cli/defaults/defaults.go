@@ -10,8 +10,10 @@ const (
 	//  to update both of these at the same time!!
 	apiContainerVersion = "1.23.2"
 
+	// vvvv WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS vvvvv
 	// Own version, so that we can start the proper Javascript REPL Docker image
 	ownVersion = "0.3.0"
+	// ^^^^ WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS ^^^^^
 
 	// TODO These defaults aren't great - it will just start a Kurtosis interactive with the latest
 	//  of both images, which may or may not be compatible - what we really need is a system that
