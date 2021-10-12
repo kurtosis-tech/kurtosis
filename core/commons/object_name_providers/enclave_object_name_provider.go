@@ -43,13 +43,12 @@ func (nameProvider *EnclaveObjectNameProvider) ForTestRunningTestsuiteContainer(
 	)
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForInteractiveREPLContainer() string {
-
+func (nameProvider *EnclaveObjectNameProvider) ForInteractiveREPLContainer(interactiveReplGuid string) string {
 	return strings.Join(
 		[]string{
 			nameProvider.enclaveId,
 			interactiveReplContainerLabel,
-			time.Now().Format(uniqueTimestampFormat),
+			interactiveReplGuid,
 		},
 		objectNameElementSeparator,
 	)
@@ -91,7 +90,6 @@ func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID lam
 		string(lambdaGUID),
 	})
 }
-
 
 func (nameProvider *EnclaveObjectNameProvider) combineElementsWithEnclaveId(elems []string) string {
 	toJoin := []string{nameProvider.enclaveId}

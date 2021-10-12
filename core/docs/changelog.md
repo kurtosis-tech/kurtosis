@@ -1,5 +1,11 @@
 # TBD
 
+# 1.23.4
+### Features
+* Added a new `interactive-repl` value to the `container-type` label
+* Added `ForInteractiveREPLContainer` functions to the `EnclaveObjectLabelsProvider` and `EnclaveObjectNameProvider`
+* Added a `GetCurrentTimeStr` function to centralize generation of container GUID suffix strings
+
 # 1.23.3
 ### Features
 * Added a `KurtosisCoreVersion` constant that corresponds to this repo's version

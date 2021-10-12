@@ -11,13 +11,14 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/commons"
+	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_docker_api"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -166,8 +167,6 @@ func waitUntilLambdaContainerIsAvailable(ctx context.Context, client kurtosis_la
 }
 
 func newLambdaGUID(lambdaID lambda_store_types.LambdaID) lambda_store_types.LambdaGUID {
-	now := time.Now()
-	nowSec := now.Unix()
-	registrationTimestampStr := strconv.FormatInt(nowSec, 10)
-	return lambda_store_types.LambdaGUID(string(lambdaID) + "_" + registrationTimestampStr)
+	suffix := current_time_str_provider.GetCurrentTimeStr()
+	return lambda_store_types.LambdaGUID(string(lambdaID) + "_" + suffix)
 }
