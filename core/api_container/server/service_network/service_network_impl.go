@@ -15,11 +15,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
+	"github.com/kurtosis-tech/kurtosis-core/commons/container_guid_suffix_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -257,6 +257,8 @@ func (network *ServiceNetworkImpl) StartService(
 	if _, found := network.serviceRunInfo[serviceId]; found {
 		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
 	}
+	serviceGuid := registrationInfo.serviceGUID
+	serviceIpAddr := registrationInfo.ipAddr
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -286,9 +288,9 @@ func (network *ServiceNetworkImpl) StartService(
 
 	serviceContainerId, hostPortBindings, err := network.userServiceLauncher.Launch(
 		ctx,
-		registrationInfo.serviceGUID,
+		serviceGuid,
 		string(serviceId),
-		registrationInfo.ipAddr,
+		serviceIpAddr,
 		imageName,
 		network.dockerNetworkId,
 		usedPorts,
@@ -592,8 +594,6 @@ func updateIpTables(
 }
 
 func newServiceGUID(serviceID service_network_types.ServiceID) service_network_types.ServiceGUID {
-	now := time.Now()
-	nowSec := now.Unix()
-	registrationTimestampStr := strconv.FormatInt(nowSec, 10)
-	return service_network_types.ServiceGUID(string(serviceID) + "_" + registrationTimestampStr)
+	suffix := container_guid_suffix_provider.GetContainerGUIDSuffix()
+	return service_network_types.ServiceGUID(string(serviceID) + "_" + suffix)
 }
