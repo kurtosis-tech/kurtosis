@@ -8,6 +8,6 @@ package kurtosis_core_version
 const (
 	// vvvv WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS vvvvv
 	// Used for library that consume this and need to know which version of the Docker image to pull
-	KurtosisCoreVersion = "1.23.2"
+	KurtosisCoreVersion = "1.23.3"
 	// ^^^^ WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS ^^^^^
 )
