@@ -18,7 +18,6 @@ import (
 
 const (
 	apiContainerImageArg     = "api-container-image"
-	jsReplImageArg           = "js-repl-image"
 	isPartitioningEnabledArg = "partition-enabled"
 	kurtosisLogLevelArg      = "kurtosis-log-level"
 
@@ -28,7 +27,6 @@ const (
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	apiContainerImageArg,
-	jsReplImageArg,
 }
 
 var kurtosisLogLevelStr string
@@ -84,13 +82,8 @@ func run(cmd *cobra.Command, args []string) error {
 	if !found {
 		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", apiContainerImageArg, parsedPositionalArgs)
 	}
-	jsReplImage, found := parsedPositionalArgs[jsReplImageArg]
-	if !found {
-		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", jsReplImageArg, parsedPositionalArgs)
-	}
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, apiContainerImage)
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
 	enclaveId := execution_ids.GetExecutionID()
 
