@@ -45,7 +45,7 @@ fi
 #                                             Main Logic
 # ==================================================================================================
 constant_file_abs_filepath="${root_dirpath}/${CONSTANT_FILE_RELATIVE_FILEPATH}"
-if ! bash "${script_dirpath}/${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"; then
+if ! bash "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"; then
     echo "Error: Couldn't update file '${constant_file_abs_filepath}' with new version '${new_version}' using pattern '${CONSTANT_PATTERN}'" >&2
     exit 1
 fi
