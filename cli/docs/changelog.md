@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Pinned the default API container version to the same version as in the `go.mod`, so that its version can't silently upgrade under users and break everything
 
 # 0.3.0
 ### Changes
