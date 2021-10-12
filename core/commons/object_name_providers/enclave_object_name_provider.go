@@ -8,7 +8,6 @@ package object_name_providers
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -44,14 +43,12 @@ func (nameProvider *EnclaveObjectNameProvider) ForTestRunningTestsuiteContainer(
 	)
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForInteractiveREPLContainer(interactiveReplTimestampGuid time.Time) string {
+func (nameProvider *EnclaveObjectNameProvider) ForInteractiveREPLContainer(interactiveReplGuid string) string {
 	return strings.Join(
 		[]string{
 			nameProvider.enclaveId,
 			interactiveReplContainerLabel,
-			// TODO Change this to UnixNanos to reduce chances of a collision???
-			// TODO Foramt this as base-16 (hex), to make it more concise?
-			strconv.FormatInt(interactiveReplTimestampGuid.Unix(), 10),
+			interactiveReplGuid,
 		},
 		objectNameElementSeparator,
 	)

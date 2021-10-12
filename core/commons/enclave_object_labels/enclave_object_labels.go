@@ -11,7 +11,7 @@ const (
 	EnclaveIDContainerLabel = labelNamespace + "enclave-id"
 	ContainerTypeLabel      = labelNamespace + "container-type"
 
-	// Used for things like service UUID, lambda UUID, etc.
+	// Used for things like service GUID, lambda GUID, etc.
 	GUIDLabel               = labelNamespace + "guid"
 
 	// A label for the API container itself, which exposes the IP & port that it's running on

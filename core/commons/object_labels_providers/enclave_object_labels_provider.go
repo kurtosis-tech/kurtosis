@@ -11,8 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"net"
-	"strconv"
-	"time"
 )
 
 type EnclaveObjectLabelsProvider struct {
@@ -24,7 +22,7 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint16) map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObject()
+	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
 	labels[enclave_object_labels.APIContainerURLLabel] = fmt.Sprintf("%v:%v", apiContainerIPAddress.String(), apiContainerListenPort)
 	return labels
@@ -33,46 +31,44 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerI
 // TODO We don't want testsuites to be special - they should be Just Another Kurtosis Module - but we can't make them
 //  unspecial (and thus delete this method) until the API container supports a container log-streaming endpoint
 func (labelsProvider *EnclaveObjectLabelsProvider) ForTestRunningTestsuiteContainer() map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObject()
+	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeTestsuiteContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForUserServiceContainer(serviceGUID service_network_types.ServiceGUID) map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObjectWithGUID(string(serviceGUID))
+	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(string(serviceGUID))
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForNetworkingSidecarContainer(serviceGUID service_network_types.ServiceGUID) map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObjectWithGUID(string(serviceGUID))
+	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(string(serviceGUID))
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeNetworkingSidecarContainer
 	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForLambdaContainer(lambdaGUID lambda_store_types.LambdaGUID) map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObjectWithGUID(string(lambdaGUID))
+	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(string(lambdaGUID))
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeLambdaContainer
 	return labels
 }
 
 // This is a liiiiittle strange to have here, since this is only used by the CLI (not anything inside this repo)
-func (labelsProvider *EnclaveObjectLabelsProvider) ForInteractiveREPLContainer(interactiveReplTimestampGuid time.Time) map[string]string {
-	// TODO Format this as base-16 (hex) to make this more concise??
-	interactiveReplTimestampUnixSecsStr := strconv.FormatInt(interactiveReplTimestampGuid.Unix(), 10)
-	labels := labelsProvider.getLabelsMapForEnclaveObjectWithGUID(interactiveReplTimestampUnixSecsStr)
+func (labelsProvider *EnclaveObjectLabelsProvider) ForInteractiveREPLContainer(interactiveReplGuid string) map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(interactiveReplGuid)
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeInteractiveREPL
 	return labels
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsMapForEnclaveObject() map[string]string {
+func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsForEnclaveObject() map[string]string {
 	labels := map[string]string{}
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = labelsProvider.enclaveId
 	return labels
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsMapForEnclaveObjectWithGUID(guid string) map[string]string {
-	labels := labelsProvider.getLabelsMapForEnclaveObject()
+func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsForEnclaveObjectWithGUID(guid string) map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.GUIDLabel] = guid
 	return labels
 }

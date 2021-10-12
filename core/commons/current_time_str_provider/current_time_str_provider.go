@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package container_guid_suffix_provider
+package current_time_str_provider
 
 import (
 	"strconv"
@@ -15,9 +15,9 @@ const (
 	guidBase = 10
 )
 
-// Provides a unique suffix for container GUIDs, so that containers with the same ID (e.g. Lambda ID, service ID, etc.)
-//  won't overlap
-func GetContainerGUIDSuffix() string {
+// Provides the current time in string form, for use as a suffix to a container ID (e.g. service ID, lambda ID) that will
+//  make it unique so it won't collide with other containers with the same ID
+func GetCurrentTimeStr() string {
 	now := time.Now()
 	// TODO make this UnixNano to reduce risk of collisions???
 	nowUnixSecs := now.Unix()

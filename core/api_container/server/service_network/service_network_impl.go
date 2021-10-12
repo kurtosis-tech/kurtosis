@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/container_guid_suffix_provider"
+	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -594,6 +594,6 @@ func updateIpTables(
 }
 
 func newServiceGUID(serviceID service_network_types.ServiceID) service_network_types.ServiceGUID {
-	suffix := container_guid_suffix_provider.GetContainerGUIDSuffix()
+	suffix := current_time_str_provider.GetCurrentTimeStr()
 	return service_network_types.ServiceGUID(string(serviceID) + "_" + suffix)
 }
