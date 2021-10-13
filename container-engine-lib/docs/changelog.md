@@ -1,7 +1,10 @@
 # TBD
 ### Features
 * Add `Network` type to store Docker Network information as ID, name, ip and mask
-* Add `GetNetworkByName` method to get a `Network` by its name
+
+### Breaking Changes
+* Replaced `GetNetworkIdsByName` method with `GetNetworksByName` because it returns a `Network` list which offers more information
+  * Users should replace `GetNetworkIdsByName` calls with `GetNetworksByName` and get the network ID and other network information from the `Network` list returned by this new method
 
 # 0.5.0
 ### Breaking Changes
