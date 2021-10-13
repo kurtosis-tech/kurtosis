@@ -14,8 +14,10 @@ const (
 	// Used for things like service GUID, lambda GUID, etc.
 	GUIDLabel               = labelNamespace + "guid"
 
-	// A label for the API container itself, which exposes the IP & port that it's running on
-	APIContainerURLLabel    = labelNamespace + "api-container-url"
+	// A label for the API container IP address that it's running on
+	APIContainerIPLabel    = labelNamespace + "api-container-ip"
+	// A label for the API container port that it's running on
+	APIContainerPortLabel    = labelNamespace + "api-container-port"
 
 	// Values for ContainerTypeLabel
 	ContainerTypeAPIContainer               = "api-container"

@@ -24,7 +24,8 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint16) map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
-	labels[enclave_object_labels.APIContainerURLLabel] = fmt.Sprintf("%v:%v", apiContainerIPAddress.String(), apiContainerListenPort)
+	labels[enclave_object_labels.APIContainerIPLabel] = apiContainerIPAddress.String()
+	labels[enclave_object_labels.APIContainerPortLabel] = fmt.Sprintf("%v",  apiContainerListenPort)
 	return labels
 }
 
