@@ -484,6 +484,8 @@ github.com/kurtosis-tech/kurtosis-core v0.0.0-20211008195923-110b278bd5b5/go.mod
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211008195923-8f9635fa2e46 h1:jnUBgItOd+NHA31yjzUEyQEU7opg4GIEe4WLZ08rGGY=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012200027-e18666699991 h1:WW6ZIHV8CVhH1uDKi6BinVuSPtknJuABXv6C7ST/5ik=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012200027-e18666699991/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012222224-5bda7f7d4c80 h1:BkNTevBSx15fQMUKxJRppE12eOzEhtoYiElgcbl0vPs=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012222224-5bda7f7d4c80/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib v0.0.0-20210924144702-dac0cddbd2b1 h1:Zj7PoQVrW4z7lXA8L374EIrSJul50CBcbaEX7qnGVQc=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1 h1:qAnRcQEIdOnWG+dGltpxl0HzoTs/iqZQUnYrxWwXQIo=
