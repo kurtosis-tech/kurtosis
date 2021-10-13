@@ -21,6 +21,8 @@ const (
 	isPartitioningEnabledArg = "partition-enabled"
 	kurtosisLogLevelArg      = "kurtosis-log-level"
 
+	defaultIsPartitioningEnabled = false
+
 	shouldPublishPorts = true
 )
 
@@ -32,8 +34,7 @@ var kurtosisLogLevelStr string
 
 var NewCmd = &cobra.Command{
 	Use:                   "new" ,
-	DisableFlagsInUseLine: true,
-	Short:                 "Creates a new Kurtosis enclave",
+	Short:                 "Creates a new empty Kurtosis enclave",
 	RunE:                  run,
 }
 
@@ -55,11 +56,12 @@ func init() {
 		defaults.DefaultApiContainerImage,
 		"The Kurtosis API Container Docker image that will be used to start the enclave's API container server",
 	)
-	NewCmd.Flags().BoolVar(
+	NewCmd.Flags().BoolVarP(
 		&isPartitioningEnabled,
 		isPartitioningEnabledArg,
-		false,
-		"Enable network partition functionality",
+		"p",
+		defaultIsPartitioningEnabled,
+		"Enable network partition functionality (repartitioning won't work if this is set to false)",
 	)
 }
 
