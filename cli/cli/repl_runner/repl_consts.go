@@ -1,4 +1,4 @@
-package repl_launcher
+package repl_runner
 
 const (
 	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
