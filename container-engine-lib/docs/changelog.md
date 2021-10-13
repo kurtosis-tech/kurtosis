@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Clarified that the `all` argument to `GetContainersByLabels` is for whether stopped containers should be shown
 
 # 0.6.0
 ### Features

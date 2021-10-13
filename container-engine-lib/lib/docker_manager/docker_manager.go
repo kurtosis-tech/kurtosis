@@ -678,9 +678,9 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
-func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, all bool) ([]*docker_manager_types.Container, error) {
+func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterList(labels)
-	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, all)
+	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
 	}
@@ -910,10 +910,10 @@ func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, fi
 	return result, nil
 }
 
-func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]*docker_manager_types.Container, error) {
+func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
 		Filters: filterArgs,
-		All: all,
+		All:     shouldShowStoppedContainers,
 	}
 	dockerContainers, err := manager.dockerClient.ContainerList(ctx, opts)
 	if err != nil {
