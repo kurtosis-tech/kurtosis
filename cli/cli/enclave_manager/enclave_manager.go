@@ -194,6 +194,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerHostPortBinding,
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 	)
 
 	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller
@@ -278,6 +279,7 @@ func (manager *EnclaveManager) GetEnclaveContext(ctx context.Context, enclaveId 
 		return nil, stacktrace.NewError("No API container host port binding with nat port '%v' was founded in API container host port bindings '%+v'", apiContainerNatPort, apiContainer.GetHostPortBindings())
 	}
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	enclaveContext := enclave_context.NewEnclaveContext(
 		enclaveId,
@@ -288,6 +290,7 @@ func (manager *EnclaveManager) GetEnclaveContext(ctx context.Context, enclaveId 
 		apiContainerHostPortBinding,
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 			)
 
 	return enclaveContext, nil

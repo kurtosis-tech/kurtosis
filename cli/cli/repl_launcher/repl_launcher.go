@@ -7,13 +7,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_context"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 	"net"
 	"os"
 )
@@ -35,6 +34,7 @@ func (launcher *REPLLauncher) Launch(
 	apiContainerHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
 	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
+	enclaveObjLabelsProvider := enclaveCtx.GetObjectLabelsProvider()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
@@ -84,8 +84,13 @@ func (launcher *REPLLauncher) Launch(
 		}
 	}
 
+	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
+
+
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
-	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer("cualquiera")
+	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	// TODO Add interactive labels!!!
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
 		containerName,
@@ -101,7 +106,9 @@ func (launcher *REPLLauncher) Launch(
 		bindMounts,
 	).WithVolumeMounts(map[string]string{
 		enclaveId: enclaveDataVolMountpointOnReplContainer,
-	}).Build()
+	}).WithLabels(
+		labels,
+	).Build()
 	replContainerId, _, err := launcher.dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")
@@ -127,33 +134,6 @@ func (launcher *REPLLauncher) Launch(
 		return stacktrace.Propagate(err, "Couldn't attack to the REPL container")
 	}
 	defer hijackedResponse.Close()
-
-	// From this point on down, I don't know why it works.... but it does
-	// I just followed the solution here: https://stackoverflow.com/questions/58732588/accept-user-input-os-stdin-to-container-using-golang-docker-sdk-interactive-co
-	go io.Copy(os.Stderr, hijackedResponse.Reader)
-	go io.Copy(os.Stdout, hijackedResponse.Reader)
-	go io.Copy(hijackedResponse.Conn, os.Stdin)
-
-	stdinFd := int(os.Stdin.Fd())
-	var oldState *terminal.State
-	if terminal.IsTerminal(stdinFd) {
-		oldState, err = terminal.MakeRaw(stdinFd)
-		if err != nil {
-			// print error
-			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
-		}
-		defer terminal.Restore(stdinFd, oldState)
-	}
-
-	exitCode, err := launcher.dockerManager.WaitForExit(context.Background(), replContainerId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred waiting for the REPL container to exit")
-	}
-	if exitCode != replContainerSuccessExitCode {
-		logrus.Warnf("The REPL container exited with a non-%v exit code '%v'", replContainerSuccessExitCode, exitCode)
-	}
-
-	terminal.Restore(stdinFd, oldState)
 
 	return nil
 }
