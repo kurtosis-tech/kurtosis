@@ -83,7 +83,7 @@ func run(cmd *cobra.Command, args []string) error {
 	containerId := matchingContainer.GetId()
 
 	cmdToExec := []string{
-		"bash",
+		"sh",
 		"-c",
 		fmt.Sprintf(
 			"cd %v && npm install %v",
