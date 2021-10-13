@@ -162,6 +162,35 @@ func (manager DockerManager) GetNetworkIdsByName(ctx context.Context, name strin
 	return result, nil
 }
 
+func (manager DockerManager) GetNetworkByName(ctx context.Context, name string) (*docker_manager_types.Network, error) {
+	dockerNetworks, err := manager.getNetworksByFilter(ctx, nameFilterKey, name)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
+	}
+	if len(dockerNetworks) == 0 {
+		return  nil, stacktrace.NewError("Kurtosis Docker network with name %v does not exist.", name)
+	} else if len(dockerNetworks) > 1 {
+		return  nil, stacktrace.NewError("Kurtosis Docker network with name %v matches several networks!", name)
+	}
+	dockerNetwork := dockerNetworks[0]
+
+	if len(dockerNetwork.IPAM.Config) == 0 {
+		return nil, stacktrace.NewError("Kurtosis Docker network with name %v does not contains IPAM config.", name)
+	}
+
+	ipamConfig := dockerNetwork.IPAM.Config[0]
+
+	_, ipAndMask, err := net.ParseCIDR(ipamConfig.Subnet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", ipamConfig.Subnet)
+	}
+
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+
+	return network, nil
+
+}
+
 func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
 	if err != nil {
