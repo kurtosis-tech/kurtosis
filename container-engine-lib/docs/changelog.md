@@ -1,5 +1,13 @@
 # TBD
 
+# 0.6.0
+### Features
+* Add `Network` type to store Docker Network information as ID, name, ip and mask
+
+### Breaking Changes
+* Replaced `GetNetworkIdsByName` method with `GetNetworksByName` because it returns a `Network` list which offers more information
+  * Users should replace `GetNetworkIdsByName` calls with `GetNetworksByName` and get the network ID and other network information from the `Network` list returned by this new method
+
 # 0.5.0
 ### Breaking Changes
 * Renamed `Status` type to `ContainerStatus` which is used in the `Container` struct
