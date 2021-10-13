@@ -44,7 +44,7 @@ var positionalArgs = []string{
 }
 
 var InspectCmd = &cobra.Command{
-	Use:   "inspect " + strings.Join(positionalArgs, " "),
+	Use:   "inspect [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short: "Inspect Kurtosis enclaves",
 	RunE:  run,
@@ -79,10 +79,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
-	enclaveId, found := parsedPositionalArgs[enclaveIdArg]
-	if !found {
-		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", enclaveIdArg, parsedPositionalArgs)
-	}
+	enclaveId := parsedPositionalArgs[enclaveIdArg]
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
