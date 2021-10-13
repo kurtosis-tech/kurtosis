@@ -112,7 +112,7 @@ Returns:
 	id: The Docker-managed ID of the network
  */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP) (id string, err error)  {
-	networkIds, err := manager.GetNetworkIdsByName(context, name)
+	networkIds, err := manager.GetNetworksByName(context, name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
@@ -147,20 +147,58 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 }
 
 /*
-Returns the Docker network IDs of the networks matching the given name (if any).
+Returns Network list matching the given name (if any).
  */
-func (manager DockerManager) GetNetworkIdsByName(ctx context.Context, name string) ([]string, error) {
-	networks, err := manager.getNetworksByFilter(ctx, nameFilterKey, name)
+func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
+	dockerNetworks, err := manager.getNetworksByFilter(ctx, nameFilterKey, name)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
 
-	result := []string{}
-	for _, network := range networks {
-		result = append(result, network.ID)
+	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new network list from Docker network list '%+v'", dockerNetworks)
 	}
-	return result, nil
+
+	return networks, nil
+
 }
+
+func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*docker_manager_types.Network, error) {
+	networks := []*docker_manager_types.Network{}
+
+	for _, dockerNetwork := range dockerNetworks {
+		network, err := newNetworkFromDockerNetwork(dockerNetwork)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating new network from Docker network with ID '%v'", dockerNetwork.ID)
+		}
+		networks = append(networks, network)
+	}
+
+	return networks, nil
+}
+
+func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_manager_types.Network, error) {
+	if len(dockerNetwork.IPAM.Config) == 0 {
+		return nil, stacktrace.NewError("Kurtosis Docker network with ID %v does not contains any IPAM config.", dockerNetwork.ID)
+	}
+	if len(dockerNetwork.IPAM.Config) > 1 {
+		return nil, stacktrace.NewError("This is an unexpected error Docker network with ID '%v' shouldn't have more than one IPAM config; this is a bug in Kurtosis itself", dockerNetwork.ID)
+	}
+
+	firstIpamConfig := dockerNetwork.IPAM.Config[0]
+
+	_, ipAndMask, err := net.ParseCIDR(firstIpamConfig.Subnet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
+	}
+
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+
+	return network, nil
+}
+
+
 
 func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
