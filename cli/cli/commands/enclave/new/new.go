@@ -6,10 +6,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -25,15 +25,13 @@ const (
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
-var positionalArgs = []string{
-	apiContainerImageArg,
-}
 
-var kurtosisLogLevelStr string
+var apiContainerImage string
 var isPartitioningEnabled bool
+var kurtosisLogLevelStr string
 
 var NewCmd = &cobra.Command{
-	Use:                   "new " + strings.Join(positionalArgs, " "),
+	Use:                   "new" ,
 	DisableFlagsInUseLine: true,
 	Short:                 "Creates a new Kurtosis enclave",
 	RunE:                  run,
@@ -49,6 +47,13 @@ func init() {
 			"The log level that Kurtosis itself should log at (%v)",
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
+	)
+	NewCmd.Flags().StringVarP(
+		&apiContainerImage,
+		apiContainerImageArg,
+		"a",
+		defaults.DefaultApiContainerImage,
+		"The Kurtosis API Container Docker image that will be used to start the enclave's API container server",
 	)
 	NewCmd.Flags().BoolVar(
 		&isPartitioningEnabled,
@@ -73,15 +78,6 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgs(positionalArgs, args)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
-	}
-	apiContainerImage, found := parsedPositionalArgs[apiContainerImageArg]
-	if !found {
-		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", apiContainerImageArg, parsedPositionalArgs)
-	}
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, apiContainerImage)
 
