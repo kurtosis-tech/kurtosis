@@ -30,4 +30,6 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(lambda.LambdaCmd)
+
+	// TODO Add global flag to set the CLI's log level
 }

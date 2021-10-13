@@ -3,6 +3,7 @@
 * Added `enclave new` command to create a new enclave
 * Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
 * Print interactive REPLs in `enclave inspect`
+* Added a `repl install` command for installing NPM packages to a running REPL container
 
 # 0.3.1
 ### Fixes
