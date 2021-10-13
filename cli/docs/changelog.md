@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added `enclave new` command to create a new enclave
+* Print interactive REPLs in `enclave inspect`
 
 # 0.3.1
 ### Fixes

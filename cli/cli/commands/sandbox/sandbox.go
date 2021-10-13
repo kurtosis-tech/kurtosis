@@ -10,14 +10,15 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_context"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -164,6 +165,7 @@ func runReplContainer(
 	apiContainerHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
 	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
+	enclaveObjLabelsProvider := enclaveCtx.GetObjectLabelsProvider()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
@@ -213,8 +215,13 @@ func runReplContainer(
 		}
 	}
 
+	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
+
+
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
-	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer()
+	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	// TODO Add interactive labels!!!
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
 		containerName,
@@ -230,7 +237,9 @@ func runReplContainer(
 		bindMounts,
 	).WithVolumeMounts(map[string]string{
 		enclaveId: enclaveDataVolMountpointOnReplContainer,
-	}).Build()
+	}).WithLabels(
+		labels,
+	).Build()
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")

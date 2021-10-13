@@ -11,10 +11,10 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_context"
+	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
@@ -193,6 +193,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerHostPortBinding,
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 	)
 
 	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller
