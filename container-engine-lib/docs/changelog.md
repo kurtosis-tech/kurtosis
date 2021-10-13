@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.0
 ### Features
 * Add `Network` type to store Docker Network information as ID, name, ip and mask
 
