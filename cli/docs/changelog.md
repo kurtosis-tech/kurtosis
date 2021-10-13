@@ -8,11 +8,6 @@
 * Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
 * Upgrade Kurtosis Core to v1.24.0 which splits `api-container-url` into `api-container-ip` and `api-container-port`
 
-### Breaking Changes
-* Added `apiContainerImage` argument in `CreateEnclave` method
-* Removed `apiContainerImage` argument from `NewEnclaveManager` constructor
-  * Users should pass the `apiContainerImage` argument in `CreateEnclave` method now instead in the constructor
-
 # 0.3.1
 ### Fixes
 * Pinned the default API container version to the same version as in the `go.mod`, so that its version can't silently upgrade under users and break everything
