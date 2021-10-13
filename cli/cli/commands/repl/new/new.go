@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_launcher"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -90,8 +90,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	logrus.Debug("Running REPL...")
-	REPLLauncher := repl_launcher.NewREPLLauncher(dockerManager)
-	if err := REPLLauncher.Launch(enclaveCtx, jsReplImage); err != nil {
+	if err := repl_runner.RunREPL(enclaveCtx, jsReplImage); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
 	}
 	logrus.Debug("REPL exited")

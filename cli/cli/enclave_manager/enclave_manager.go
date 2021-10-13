@@ -42,6 +42,7 @@ const (
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
 type EnclaveManager struct {
+	// TODO This can now be a DockerManager
 	// Will be wrapped in the DockerManager that logs to the proper location
 	dockerClient *client.Client
 
@@ -57,6 +58,8 @@ func NewEnclaveManager(dockerClient *client.Client) *EnclaveManager {
 	}
 }
 
+// TODO Because this is no longer running inside the test_executor_parallelizer in Kurt Core, we no longer need to pass
+//  in a log, and therefore no longer need to store a DockerManager inside the EnclaveContext
 func (manager *EnclaveManager) CreateEnclave(
 		setupCtx context.Context,
 		log *logrus.Logger,

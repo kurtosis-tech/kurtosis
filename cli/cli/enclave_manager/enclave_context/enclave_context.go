@@ -22,6 +22,7 @@ type EnclaveContext struct {
 	apiContainerIpAddr net.IP
 	apiContainerHostPortBinding *nat.PortBinding
 
+	// TODO We no longer need this here; an outside DockerManager is fine to use
 	// A DockerManager that logs to the log passed in when the enclave was created
 	dockerManager *docker_manager.DockerManager
 
