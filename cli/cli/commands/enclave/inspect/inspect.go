@@ -109,6 +109,7 @@ func run(cmd *cobra.Command, args []string) error {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
+		fmt.Println("")
 	}
 
 	if len(headersWithPrintErrs) > 0 {

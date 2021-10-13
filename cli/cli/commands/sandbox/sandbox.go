@@ -165,7 +165,7 @@ func runReplContainer(
 	apiContainerHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
 	kurtosisApiContainerIpAddr := enclaveCtx.GetAPIContainerIPAddr()
 	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
-	enclaveObjLabelProvider := enclaveCtx.get
+	enclaveObjLabelsProvider := enclaveCtx.GetObjectLabelsProvider()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
@@ -220,7 +220,7 @@ func runReplContainer(
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
-	labels := enclaveObjLa
+	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	// TODO Add interactive labels!!!
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
@@ -237,7 +237,9 @@ func runReplContainer(
 		bindMounts,
 	).WithVolumeMounts(map[string]string{
 		enclaveId: enclaveDataVolMountpointOnReplContainer,
-	}).Build()
+	}).WithLabels(
+		labels,
+	).Build()
 	replContainerId, _, err := dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")

@@ -11,7 +11,6 @@ import (
 
 const (
 	userServiceGUIDColHeader                    = "GUID"
-	userServiceNameColHeader                    = "Name"
 	userServiceHostMachinePortBindingsColHeader = "LocalPortBindings"
 )
 
@@ -24,7 +23,7 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 	}
 
 	tabWriter := getTabWriterForPrinting()
-	writeElemsToTabWriter(tabWriter, userServiceGUIDColHeader, userServiceNameColHeader, userServiceHostMachinePortBindingsColHeader)
+	writeElemsToTabWriter(tabWriter, userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
 	sortedContainers, err := getContainersSortedByGUID(containers)
 	if err != nil {
 			  return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
@@ -41,10 +40,10 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 			firstHostPortBinding = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]
 		}
-		writeElemsToTabWriter(tabWriter, containerGuid, container.GetName(), firstHostPortBinding)
+		writeElemsToTabWriter(tabWriter, containerGuid, firstHostPortBinding)
 
 		for _, hostPortBindingsString := range hostPortBindingsStrings {
-			writeElemsToTabWriter(tabWriter, "", "", hostPortBindingsString)
+			writeElemsToTabWriter(tabWriter, "", hostPortBindingsString)
 		}
 	}
 	tabWriter.Flush()
