@@ -43,7 +43,7 @@ var positionalArgs = []string{
 	enclaveIdArg,
 }
 
-var enclaveObjectPrintingFuncs = map[string]func(context.Context, *docker_manager.DockerManager, string) error {
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
 	"Interactive REPLs": printInteractiveRepls,
 	"User Services": printUserServices,
 }
@@ -98,17 +98,24 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	headersWithPrintErrs := []string{}
 	for header, printingFunc := range enclaveObjectPrintingFuncs {
 		numRunesInHeader := utf8.RuneCountInString(header) + 2	// 2 because there will be a space before and after the header
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
 
-		printingFunc()
+		if err := printingFunc(ctx, dockerManager, enclaveId); err != nil {
+			logrus.Error(err)
+			headersWithPrintErrs = append(headersWithPrintErrs, header)
+		}
 	}
 
-	if err := printUserServices(ctx, dockerManager, enclaveId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred printing the user services for enclave '%v'", enclaveId)
+	if len(headersWithPrintErrs) > 0 {
+		return stacktrace.NewError(
+			"Errors occurred printing the following enclave elements: %v",
+			strings.Join(headersWithPrintErrs, ", "),
+		)
 	}
 
 	return nil
