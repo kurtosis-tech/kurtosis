@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_container_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -95,11 +95,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	enclaveCtx, err := enclaveManager.CreateEnclave(
 		context.Background(),
 		logrus.StandardLogger(),
+		apiContainerImage,
 		kurtosisLogLevel,
 		enclaveId,
 		isPartitioningEnabled,
@@ -121,7 +122,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	logrus.Debug("Running REPL...")
-	if err := repl_container_manager.RunReplContainer(dockerManager, enclaveCtx, jsReplImage); err != nil {
+	REPLLauncher := repl_launcher.NewREPLLauncher(dockerManager)
+	if err := REPLLauncher.Launch(enclaveCtx, jsReplImage); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
 	}
 	logrus.Debug("REPL exited")

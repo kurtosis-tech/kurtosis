@@ -1,4 +1,4 @@
-package attach
+package new
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_context"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_container_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_launcher"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -17,33 +18,28 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg      = "kurtosis-log-level"
-	jsReplImageArg           = "js-repl-image"
-
-	replContainerSuccessExitCode = 0
-
-	// This is the directory in which the node REPL is running inside the REPL container, which is where
-	//  we'll bind-mount the host machine's current directory into the container so the user can access
-	//  files on their host machine
-	workingDirpathInsideReplContainer = "/repl"
+	enclaveIDArg           = "enclave-id"
+	kurtosisLogLevelArg    = "kurtosis-log-level"
+	javascriptReplImageArg = "js-repl-image"
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
-	jsReplImageArg,
+	enclaveIDArg,
 }
 
 var kurtosisLogLevelStr string
+var jsReplImage string
 
-var AttachCmd = &cobra.Command{
-	Use:                   "attach " + strings.Join(positionalArgs, " "),
+var NewCmd = &cobra.Command{
+	Use:                   "new [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short:                 "Attach an interactive Javascript REPL to a Kurtosis Enclave",
+	Short:                 "Create a new Javascript REPL inside a Kurtosis Enclave",
 	RunE:                  run,
 }
 
 func init() {
-	AttachCmd.Flags().StringVarP(
+	NewCmd.Flags().StringVarP(
 		&kurtosisLogLevelStr,
 		kurtosisLogLevelArg,
 		"l",
@@ -52,6 +48,13 @@ func init() {
 			"The log level that Kurtosis itself should log at (%v)",
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
+	)
+	NewCmd.Flags().StringVarP(
+		&jsReplImage,
+		javascriptReplImageArg,
+		"r",
+		defaults.DefaultJavascriptReplImage,
+		"The image of the Javascript REPL to connect to the enclave with",
 	)
 }
 
@@ -75,21 +78,23 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
-	jsReplImage, found := parsedPositionalArgs[jsReplImageArg]
-	if !found {
-		return stacktrace.NewError("No '%v' positional args was found in '%+v' - this is very strange!", jsReplImageArg, parsedPositionalArgs)
-	}
+	enclaveId := parsedPositionalArgs[enclaveIDArg]
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	enclave_context.NewEnclaveContext()
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
+
+	enclaveCtx, err := enclaveManager.GetEnclaveContext(context.Background(), enclaveId, logrus.StandardLogger())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave context for enclave ID '%v'", enclaveId)
+	}
 
 	logrus.Debug("Running REPL...")
-	if err := repl_container_manager.RunReplContainer(dockerManager, enclaveCtx, jsReplImage); err != nil {
+	REPLLauncher := repl_launcher.NewREPLLauncher(dockerManager)
+	if err := REPLLauncher.Launch(enclaveCtx, jsReplImage); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
 	}
 	logrus.Debug("REPL exited")
-
 
 	return nil
 }

@@ -105,7 +105,6 @@ func run(cmd *cobra.Command, args []string) error {
 			return stacktrace.Propagate(err, "An error occurred getting containers sorted by GUID")
 		}
 		for _, container := range sortedContainers {
-			container.
 			containerGUIDLabel, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
 			if !found {
 				return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())

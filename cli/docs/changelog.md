@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added `enclave new` command to create a new enclave
+* Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
 
 # 0.3.1
 ### Fixes

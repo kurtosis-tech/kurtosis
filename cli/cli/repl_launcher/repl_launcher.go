@@ -1,4 +1,4 @@
-package repl_container_manager
+package repl_launcher
 
 import (
 	"context"
@@ -18,8 +18,15 @@ import (
 	"os"
 )
 
-func RunReplContainer(
-	dockerManager *docker_manager.DockerManager,
+type REPLLauncher struct {
+	dockerManager *docker_manager.DockerManager
+}
+
+func NewREPLLauncher(dockerManager *docker_manager.DockerManager) *REPLLauncher {
+	return &REPLLauncher{dockerManager: dockerManager}
+}
+
+func (launcher *REPLLauncher) Launch(
 	enclaveCtx *enclave_context.EnclaveContext,
 	javascriptReplImage string,
 ) error {
@@ -78,7 +85,7 @@ func RunReplContainer(
 	}
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
-	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer()
+	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer("cualquiera")
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
 		containerName,
@@ -95,13 +102,13 @@ func RunReplContainer(
 	).WithVolumeMounts(map[string]string{
 		enclaveId: enclaveDataVolMountpointOnReplContainer,
 	}).Build()
-	replContainerId, _, err := dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
+	replContainerId, _, err := launcher.dockerManager.CreateAndStartContainer(context.Background(), createAndStartArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the REPL container")
 	}
 	defer func() {
 		// Safeguard to ensure we don't leak a container
-		if err := dockerManager.KillContainer(context.Background(), replContainerId); err != nil {
+		if err := launcher.dockerManager.KillContainer(context.Background(), replContainerId); err != nil {
 			logrus.Errorf("An error occurred killing the REPL container:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
@@ -115,7 +122,7 @@ func RunReplContainer(
 		return stacktrace.Propagate(err, "An error occurred finishing the registration of the interactive REPL container")
 	}
 
-	hijackedResponse, err := dockerManager.AttachToContainer(context.Background(), replContainerId)
+	hijackedResponse, err := launcher.dockerManager.AttachToContainer(context.Background(), replContainerId)
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't attack to the REPL container")
 	}
@@ -138,7 +145,7 @@ func RunReplContainer(
 		defer terminal.Restore(stdinFd, oldState)
 	}
 
-	exitCode, err := dockerManager.WaitForExit(context.Background(), replContainerId)
+	exitCode, err := launcher.dockerManager.WaitForExit(context.Background(), replContainerId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the REPL container to exit")
 	}

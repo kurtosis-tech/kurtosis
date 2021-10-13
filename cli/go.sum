@@ -467,6 +467,8 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211007193409-610c9d2e2a45 h1:GpDdMjyJkwqAb/STNit18gwGKH6iJ0+XALjx8Zf8+4A=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211007193409-610c9d2e2a45/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013191503-b01ed3982dcd h1:yPBRc9gb7ZrIMmjmPCu8n8R5wj1WvmwhmliTNArMrw0=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013191503-b01ed3982dcd/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b h1:opxsLysuegttd+dYDKi+DEoiKQ+swJ419ujGPhHSIGg=
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20210923031424-3e4ee49686ba/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
@@ -474,6 +476,8 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005195321-3134b69ea2
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211005195321-3134b69ea2c6/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012161603-cf2a6b80c257 h1:BxfvOlSe9wecUftvwRgSgFCKEd5wor9Hzm1XlyDJXzQ=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211012161603-cf2a6b80c257/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211013195011-0e462d3b2f96 h1:PBZOuvbr6HyIcHBeh9ZfPui51s92G2U19U6SeYeOkVQ=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211013195011-0e462d3b2f96/go.mod h1:1nmLYdeLDaW/YGmSv+0JwbfueCMwOF/NpQ9/Q+slkzo=
 github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang v0.0.0-20210719191644-4ea5a878960c/go.mod h1:w1eQNxjylUFHeY2zq/xCvA08wFOAP3y6twGXcftVZWk=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1 h1:qAnRcQEIdOnWG+dGltpxl0HzoTs/iqZQUnYrxWwXQIo=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20210924144702-dac0cddbd2b1/go.mod h1:dDCTAqUAhurn5uDGP+P7FEUx9BFHJ9Q6f/LzxX3Z7rg=
