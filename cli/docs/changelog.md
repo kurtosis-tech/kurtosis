@@ -1,8 +1,17 @@
 # TBD
 ### Features
 * Added `enclave new` command to create a new enclave
-* Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
+* Added `repl new` command to start a new Javascript REPL
+* Added `REPLLauncher` to reuse the creation and execution of the REPL container
 * Print interactive REPLs in `enclave inspect`
+* Added `GetEnclaveContext` method in `EnclaveManager` in order to get information of a running enclave
+* Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
+* Upgrade Kurtosis Core to v1.24.0 which splits `api-container-url` into `api-container-ip` and `api-container-port`
+
+### Breaking Changes
+* Added `apiContainerImage` argument in `CreateEnclave` method
+* Removed `apiContainerImage` argument from `NewEnclaveManager` constructor
+  * Users should pass the `apiContainerImage` argument in `CreateEnclave` method now instead in the constructor
 
 # 0.3.1
 ### Fixes

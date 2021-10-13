@@ -8,6 +8,7 @@ package commands
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/lambda"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
@@ -30,4 +31,5 @@ func init() {
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(lambda.LambdaCmd)
+	RootCmd.AddCommand(repl.REPLCmd)
 }
