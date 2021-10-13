@@ -1,6 +1,11 @@
 # TBD
 ### Features
+* Added `enclave new` command to create a new enclave
 * Print interactive REPLs in `enclave inspect`
+
+# 0.3.1
+### Fixes
+* Pinned the default API container version to the same version as in the `go.mod`, so that its version can't silently upgrade under users and break everything
 
 # 0.3.0
 ### Changes

@@ -6,10 +6,15 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
 
+
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-UPDATE_PACKAGE_VERSIONS_SCRIPT_FILENAME="pre-release-script_update-package-versions.sh"    # From devtools; expected to be on the PATH
+UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME="update-version-in-file.sh" # From devtools; expected to be on PATH
+
+CONSTANT_FILE_RELATIVE_FILEPATH="cli/defaults/defaults.go"
+CONSTANT_PATTERN="ownVersion = \"%s\""
+
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -17,7 +22,7 @@ UPDATE_PACKAGE_VERSIONS_SCRIPT_FILENAME="pre-release-script_update-package-versi
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") new_version"
     echo ""
-    echo "  new_version   The version of this repo that is about to released"
+    echo "  new_version     The version of this repo that is about to be released"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
@@ -30,7 +35,12 @@ if [ -z "${new_version}" ]; then
 fi
 
 
+
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-bash "${UPDATE_PACKAGE_VERSIONS_SCRIPT_FILENAME}" "${root_dirpath}" "${new_version}"
+constant_file_abs_filepath="${root_dirpath}/${CONSTANT_FILE_RELATIVE_FILEPATH}"
+if ! bash "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"; then
+    echo "Error: Couldn't update file '${constant_file_abs_filepath}' with new version '${new_version}' using pattern '${CONSTANT_PATTERN}'" >&2
+    exit 1
+fi
