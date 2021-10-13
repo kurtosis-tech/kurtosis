@@ -1,4 +1,6 @@
 # TBD
+
+# 1.24.0
 ### Breaking Changes
 * Split `api-container-url` container label into `api-container-ip` and `api-container-port` in order to independently get one of these values
   * Users should to combine `api-container-ip` and `api-container-port` to get the same value of  `api-container-url`
