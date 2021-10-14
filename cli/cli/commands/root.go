@@ -32,4 +32,6 @@ func init() {
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(lambda.LambdaCmd)
 	RootCmd.AddCommand(repl.REPLCmd)
+
+	// TODO Add global flag to set the CLI's log level
 }
