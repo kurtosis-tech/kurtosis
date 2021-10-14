@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.2
 ### Features
 * Added `enclave new` command to create a new enclave
 * Added `repl new` command to start a new Javascript REPL
