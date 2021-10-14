@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.3
 ### Features
 * Added a `repl install` command for installing NPM packages to a running REPL container
 * `ParsePositionalArgs` (renamed to `ParsePositionalArgsAndRejectEmptyStrings`) now also errors on empty strings
