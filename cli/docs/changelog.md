@@ -1,5 +1,10 @@
 # TBD
 
+# 0.3.3
+### Features
+* Added a `repl install` command for installing NPM packages to a running REPL container
+* `ParsePositionalArgs` (renamed to `ParsePositionalArgsAndRejectEmptyStrings`) now also errors on empty strings
+
 # 0.3.2
 ### Features
 * Added `enclave new` command to create a new enclave
