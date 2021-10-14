@@ -39,6 +39,7 @@ func RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
+	    apiContainerImage string,
 		parallelism uint,
 		allTestParams map[string]parallel_test_params.ParallelTestParams,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -85,6 +86,7 @@ func RunInParallelAndPrintResults(
 		parallelism,
 		enclaveManager,
 		kurtosisLogLevel,
+		apiContainerImage,
 		testsuiteLauncher,
 		isDebugModeEnabled)
 	logrus.Info("All tests exited")
@@ -113,6 +115,7 @@ func disableSystemLogAndRunTestThreads(
 		parallelism uint,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
+	    apiContainerImage string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		isDebugModeEnabled bool) {
 	// When we're running tests in parallel, each test needs to have its logs written to an independent file to avoid getting logs all mixed up.
@@ -136,6 +139,7 @@ func disableSystemLogAndRunTestThreads(
 			outputManager,
 			enclaveManager,
 			kurtosisLogLevel,
+			apiContainerImage,
 			testsuiteLauncher,
 			isDebugModeEnabled,
 		)
@@ -155,6 +159,7 @@ func runTestWorkerGoroutine(
 			outputManager *output.ParallelTestOutputManager,
 			enclaveManager *enclave_manager.EnclaveManager,
 			kurtosisLogLevel logrus.Level,
+	        apiContainerImage string,
 			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 			isDebugModeEnabled bool) {
 	// IMPORTANT: make sure that we mark a thread as done!
@@ -167,6 +172,7 @@ func runTestWorkerGoroutine(
 			parentContext,
 			testsuiteExObjNameProvider,
 			testLog,
+			apiContainerImage,
 			enclaveManager,
 			kurtosisLogLevel,
 			testsuiteLauncher,

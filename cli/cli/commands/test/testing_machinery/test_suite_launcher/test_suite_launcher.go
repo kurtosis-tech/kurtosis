@@ -11,9 +11,9 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_docker_api"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -57,20 +57,21 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		dockerManager *docker_manager.DockerManager) (containerId string, hostMachineRpcPortBinding *nat.PortBinding, err error) {
 	functionCompletedSuccessfully := false
 
-	bridgeNetworkIds, err := dockerManager.GetNetworkIdsByName(ctx, bridgeNetworkName)
+	networks, err := dockerManager.GetNetworksByName(ctx, bridgeNetworkName)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the network IDs matching the '%v' network",
+			"An error occurred getting the network  matching the '%v' network name",
 			bridgeNetworkName)
 	}
-	if len(bridgeNetworkIds) == 0 || len(bridgeNetworkIds) > 1 {
+	if len(networks) == 0 || len(networks) > 1 {
 		return "", nil, stacktrace.NewError(
-			"%v Docker network IDs were returned for the '%v' network - this is very strange!",
-			len(bridgeNetworkIds),
+			"%v Docker network were returned for the '%v' network - this is very strange!",
+			len(networks),
 			bridgeNetworkName)
 	}
-	bridgeNetworkId := bridgeNetworkIds[0]
+
+	bridgeNetworkId := networks[0].GetId()
 
 	testsuiteEnvVars, err := launcher.generateMetadataProvidingEnvVars()
 	if err != nil {

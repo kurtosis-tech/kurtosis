@@ -6,8 +6,8 @@
 package test_suite_runner
 
 import (
-	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller/permissions"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"strconv"
@@ -22,6 +22,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 		nil,
 		nil,
 		logrus.InfoLevel,
+		"",
 		suiteMetadata,
 		map[string]bool{},
 		1,
@@ -42,6 +43,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 		nil,
 		nil,
 		logrus.InfoLevel,
+		"",
 		suiteMetadata,
 		map[string]bool{},
 		1,

@@ -1,5 +1,15 @@
 # TBD
 
+# 0.3.2
+### Features
+* Added `enclave new` command to create a new enclave
+* Added `repl new` command to start a new Javascript REPL
+* Added `REPL runner` to reuse the creation and execution of the REPL container
+* Print interactive REPLs in `enclave inspect`
+* Added `GetEnclave` method in `EnclaveManager` in order to get information of a running enclave
+* Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
+* Upgrade Kurtosis Core to v1.24.0 which splits `api-container-url` into `api-container-ip` and `api-container-port`
+
 # 0.3.1
 ### Fixes
 * Pinned the default API container version to the same version as in the `go.mod`, so that its version can't silently upgrade under users and break everything
