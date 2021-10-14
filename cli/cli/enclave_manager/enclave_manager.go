@@ -33,11 +33,15 @@ const (
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 
+	// TODO This should come from the Kurt Client constant!!!
 	// Protocol that the API container listens on
 	apiContainerListenProtocol = "tcp"
 
+	// TODO This should come from the Kurt Client constant!!!
 	// The port that the API container listens on
 	apiContainerListenPort = 7443
+
+	shouldConsiderStoppedAPIContainersWhenGettingEnclaves = true
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -234,52 +238,61 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, log *logrus.L
 	return nil
 }
 
-func (manager *EnclaveManager) GetEnclaveContext(ctx context.Context, enclaveId string, log *logrus.Logger) (*enclave_context.EnclaveContext, error) {
+func (manager *EnclaveManager) GetEnclave(ctx context.Context, enclaveId string, log *logrus.Logger) (*enclave_context.EnclaveContext, error) {
 	dockerManager := docker_manager.NewDockerManager(log, manager.dockerClient)
 
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred finding enclaves with name '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting networks matching name '%v'", enclaveId)
 	}
 	if len(matchingNetworks) == 0 {
-		return nil, stacktrace.NewError("Kurtosis network with name '%v' does not exist.", enclaveId)
+		return nil, stacktrace.NewError("Docker network with name '%v' does not exist.", enclaveId)
 	}
 	if len(matchingNetworks) > 1 {
-		return  nil, stacktrace.NewError("Kurtosis network with name '%v' matches several networks!", enclaveId)
+		return  nil, stacktrace.NewError("Found several networks matching name '%v' - this is very strange!", enclaveId)
 	}
-
 	network := matchingNetworks[0]
 
 	labels := getLabelsForAPIContainer(enclaveId)
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldConsiderStoppedAPIContainersWhenGettingEnclaves)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting API containers by labels: '%+v'", labels)
 	}
 	if len(containers) == 0 {
-		return nil, stacktrace.NewError("Does not exists any API container for enclave ID '%v'; this is a bug in Kurtosis itself", enclaveId)
+		return nil, stacktrace.NewError("No API container was found for enclave ID '%v' matching labels '%+v'; this is a bug in Kurtosis itself", enclaveId, labels)
 	}
 	if len(containers) > 1 {
-		return nil, stacktrace.NewError("Should exist only one API container with enclave ID '%v'; this is a bug in Kurtosis itself", enclaveId)
+		return nil, stacktrace.NewError("Found more than one API container for enclave ID '%v'; this is a bug in Kurtosis itself", enclaveId)
 	}
 
 	apiContainer := containers[0]
 
-	apiContainerIPAddressString, found := apiContainer.GetLabels()[enclave_object_labels.APIContainerIPLabel]
+	apiContainerLabels := apiContainer.GetLabels()
+	apiContainerIPAddressString, found := apiContainerLabels[enclave_object_labels.APIContainerIPLabel]
 	if !found {
-		return nil, stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.APIContainerIPLabel, apiContainer.GetId(), apiContainer.GetLabels())
+		return nil, stacktrace.NewError(
+			"No '%v' container label was found on API container with ID '%v' with labels '%+v'",
+			enclave_object_labels.APIContainerIPLabel,
+			apiContainer.GetId(),
+			apiContainerLabels,
+		)
 	}
 	apiContainerIPAddress := net.ParseIP(apiContainerIPAddressString)
-
-	apiContainerListenPortString := fmt.Sprintf("%v", apiContainerListenPort)
-	apiContainerNatPort, error := nat.NewPort(apiContainerListenProtocol, apiContainerListenPortString)
-	if error != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new API container nat por with protocol '%v' and listen port '%v'", apiContainerListenProtocol, apiContainerListenPortString)
+	if apiContainerIPAddress == nil {
+		return nil, stacktrace.NewError("Couldn't parse API container IP address string '%v' to an IP address", apiContainerIPAddressString)
 	}
 
-	apiContainerHostPortBinding, found := apiContainer.GetHostPortBindings()[apiContainerNatPort]
+	apiContainerListenPortString, found := apiContainerLabels[enclave_object_labels.APIContainerPortLabel]
+	apiContainerNatPort, err := nat.NewPort(apiContainerListenProtocol, apiContainerListenPortString)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating new API container port with protocol '%v' and port number '%v'", apiContainerListenProtocol, apiContainerListenPortString)
+	}
+
+	allApiContainerHostPortBindings := apiContainer.GetHostPortBindings()
+	apiContainerHostPortBinding, found := allApiContainerHostPortBindings[apiContainerNatPort]
 	if !found {
-		return nil, stacktrace.NewError("No API container host port binding with nat port '%v' was founded in API container host port bindings '%+v'", apiContainerNatPort, apiContainer.GetHostPortBindings())
+		return nil, stacktrace.NewError("No API container host port binding found for port '%v' among host port bindings '%+v'", apiContainerNatPort, allApiContainerHostPortBindings)
 	}
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
@@ -294,7 +307,7 @@ func (manager *EnclaveManager) GetEnclaveContext(ctx context.Context, enclaveId 
 		dockerManager,
 		enclaveObjNameProvider,
 		enclaveObjLabelsProvider,
-			)
+	)
 
 	return enclaveContext, nil
 }
