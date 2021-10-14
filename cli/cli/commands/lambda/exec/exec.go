@@ -9,13 +9,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -108,11 +108,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	logrus.Info("Creating enclave for the Lambda to execute inside...")
 	executionId := execution_ids.GetExecutionID()
-	enclaveCtx, err := enclaveManager.CreateEnclave(ctx, logrus.StandardLogger(), kurtosisLogLevel, executionId, shouldEnablePartitioning, shouldPublishAllPorts)
+	enclaveCtx, err := enclaveManager.CreateEnclave(ctx, logrus.StandardLogger(), apiContainerImage, kurtosisLogLevel, executionId, shouldEnablePartitioning, shouldPublishAllPorts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave to execute the Lambda in")
 	}

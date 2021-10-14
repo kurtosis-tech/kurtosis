@@ -6,13 +6,13 @@
 package test_suite_runner
 
 import (
-	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sort"
@@ -57,6 +57,7 @@ func RunTests(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
+	    apiContainerImage string,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
 		testNamesToRun map[string]bool,
 		testParallelism uint,
@@ -105,6 +106,7 @@ func RunTests(
 		testsuiteExObjNameProvider,
 		enclaveManager,
 		kurtosisLogLevel,
+		apiContainerImage,
 		testParallelism,
 		testParams,
 		testsuiteLauncher,

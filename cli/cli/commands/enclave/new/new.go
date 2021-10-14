@@ -85,11 +85,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, apiContainerImage)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	_, err = enclaveManager.CreateEnclave(
 		context.Background(),
 		logrus.StandardLogger(),
+		apiContainerImage,
 		kurtosisLogLevel,
 		enclaveId,
 		isPartitioningEnabled,

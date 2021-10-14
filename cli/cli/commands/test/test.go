@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/auth0_authenticators"
@@ -21,12 +20,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -222,7 +222,7 @@ func run(cmd *cobra.Command, args []string) error {
 		customParamsJson,
 	)
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient, kurtosisApiImage)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerManager,
@@ -257,6 +257,7 @@ func run(cmd *cobra.Command, args []string) error {
 		testsuiteExObjNameProvider,
 		enclaveManager,
 		kurtosisLogLevel,
+		kurtosisApiImage,
 		suiteMetadata,
 		testNamesToRun,
 		parallelismUint,
