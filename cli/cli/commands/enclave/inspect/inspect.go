@@ -80,7 +80,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgs(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}

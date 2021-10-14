@@ -46,7 +46,7 @@ var InstallCmd = &cobra.Command{
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgs(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -63,6 +63,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	// TODO Replace with a better API for getting REPL containers, so that users don't have to construct the labels map manually
 	replContainerLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 		enclave_object_labels.ContainerTypeLabel: enclave_object_labels.ContainerTypeInteractiveREPL,
@@ -111,7 +112,7 @@ func run(cmd *cobra.Command, args []string) error {
 			cmdOutputBuffer.String(),
 		)
 	}
-	logrus.Infof("Successfully installed package '%v'", packageIdentifier)
+	logrus.Infof("Successfully installed package '%v'; it can now be imported in the REPL", packageIdentifier)
 
 	return nil
 }

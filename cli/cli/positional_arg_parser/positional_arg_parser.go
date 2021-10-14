@@ -11,9 +11,11 @@ import (
 )
 
 // Parses the args into a map of positional_arg_name -> value
-// The result map is guaranteed to have one key for every value in the positionalArgNames string
-// Throws an error if any args are empty string or whitespace
-func ParsePositionalArgs(positionalArgNames []string, args []string) (map[string]string, error) {
+// The result map is guaranteed to:
+//  1) have one key for every value in the positionalArgNames string
+//  2) not contain any values that are emptystring or whitespace
+// This means that users won't need to do a map "found" check, nor a "len(strings.TrimSpace(theArg)) == 0" check
+func ParsePositionalArgsAndRejectEmptyStrings(positionalArgNames []string, args []string) (map[string]string, error) {
 	if len(args) != len(positionalArgNames) {
 		return nil, stacktrace.NewError(
 			"Expected positional arguments '%v' but only got %v args",

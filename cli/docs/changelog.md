@@ -8,6 +8,7 @@
 * Upgrade Kurtosis Core Engine Libs to v0.6.0 which adds `Network` type
 * Upgrade Kurtosis Core to v1.24.0 which splits `api-container-url` into `api-container-ip` and `api-container-port`
 * Added a `repl install` command for installing NPM packages to a running REPL container
+* `ParsePositionalArgs` (renamed to `ParsePositionalArgsAndRejectEmptyStrings`) now also errors on empty strings
 
 # 0.3.1
 ### Fixes
