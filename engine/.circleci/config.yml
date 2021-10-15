@@ -1,0 +1,96 @@
+version: 2.1
+
+orbs:
+  npm-publisher: uraway/npm-publisher@0.2.0
+  kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
+
+# NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
+#  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
+#  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
+#  images), so we run everything inside a single job.
+# See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
+jobs:
+  check_golang:
+    docker:
+      - image: cimg/go:1.15.13
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          golang/scripts/build.sh
+
+  check_typescript:
+    docker:
+      - image: cimg/node:14.17.1
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      - run: typescript/scripts/build.sh
+
+  publish_typescript:
+    docker:
+      - image: cimg/node:14.17.1
+    steps:
+      - checkout
+      - run: typescript/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: typescript
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
+workflows:
+  build:
+    jobs:
+      # -- PR check jobs ------------------------------------------
+      - kurtosis-docs-checker/check-docs:
+          markdown-link-check-config-json: "{}"
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_golang:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_typescript:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      # -- End PR check jobs ---------------------------------------
+
+      # -- Artifact-publishing jobs --------------------------------
+      # TODO UNCOMMENT WHEN READY
+      #- publish_typescript:
+      #    context:
+      #      - npmjs-user
+      #    filters:
+      #      branches:
+      #        ignore: /.*/
+      #      tags:
+      #        only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      # -- End artifact-publishing jobs ----------------------------
