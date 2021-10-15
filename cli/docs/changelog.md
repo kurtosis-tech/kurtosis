@@ -1,5 +1,9 @@
 # TBD
 
+# 0.3.4
+### Fixes
+* Stop attempting to upload APK packages to Gemfury (which can't accept APK packages and throws an error)
+
 # 0.3.3
 ### Features
 * Added a `repl install` command for installing NPM packages to a running REPL container
