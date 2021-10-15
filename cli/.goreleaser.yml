@@ -57,9 +57,19 @@ archives:
       - "*THIS_FILE_DOES_NOT_EXIST*"
     name_template: kurtosis-cli_{{ .Version }}_{{ .Os }}_{{ .Arch }}
 
-# This is a tool ( https://github.com/goreleaser/nfpm ) for generating multiple types of Linux packages
+# Gemfury accepts deb & rpm packages but not APK, so we build these two separately
 nfpms:
-  - id: cli-linux-packages
+  - id: deb-and-rpm-packages
+    package_name: kurtosis-cli
+    homepage: https://kurtosistech.com
+    description: "Install the Kurtosis CLI"
+    vendor: Kurtosis Technologies Inc.
+    builds:
+      - cli
+    formats:
+      - deb
+      - rpm
+  - id: apk-package
     package_name: kurtosis-cli
     homepage: https://kurtosistech.com
     description: "Install the Kurtosis CLI"
@@ -68,8 +78,6 @@ nfpms:
       - cli
     formats:
       - apk
-      - deb
-      - rpm
 
 # In order for Homebrew to work, we have to create a repo where the CLI release artifacts will be uploaded
 release:
@@ -108,7 +116,7 @@ publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
   - name: fury.io
     ids:
-    - cli-linux-packages
+    - deb-and-rpm-packages
     dir: "{{ dir .ArtifactPath }}"
     env:
       # This will get set by CI; see the CI config for how
