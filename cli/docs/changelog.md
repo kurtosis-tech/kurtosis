@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.4
 ### Fixes
 * Stop attempting to upload APK packages to Gemfury (which can't accept APK packages and throws an error)
 
