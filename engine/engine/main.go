@@ -1,4 +1,9 @@
-package engine
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
+package main
 
 import (
 	"fmt"
@@ -8,8 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
-	"github.com/sirupsen/logrus"
 	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"os"
 	"time"
@@ -55,7 +60,7 @@ func runMain () error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager, logrus.StandardLogger())
 
 	engineServerService := server.NewEngineServerService(enclaveManager)
 

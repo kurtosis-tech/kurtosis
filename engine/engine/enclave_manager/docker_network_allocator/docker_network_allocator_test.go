@@ -14,7 +14,7 @@ import (
 
 func TestErrorOnInstantiationWithoutConstructor(t *testing.T) {
 	allocator := DockerNetworkAllocator{}
-	_, _, _, _, err := allocator.CreateNewNetwork(context.Background(), nil, nil, "")
+	_, _, _, _, err := allocator.CreateNewNetwork(context.Background(), nil, "")
 	assert.Error(t, err)
 }
 

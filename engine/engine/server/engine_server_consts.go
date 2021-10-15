@@ -7,5 +7,3 @@ const (
 	// The port that the engine server container listens on
 	ListenPort = 7443
 )
-
-

@@ -4,8 +4,9 @@ go 1.15
 
 require (
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/docker/docker v20.10.9+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013224800-47b5d7199d68
+	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
+	github.com/docker/go-connections v0.4.0
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013191503-b01ed3982dcd
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211013195011-74f1fcb1bee6
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211014185242-b5cc89c705a7
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
