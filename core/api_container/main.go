@@ -111,11 +111,11 @@ func runMain () error {
 
 	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
 
-	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
+		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
-	// TODO parallelize Lambda & service network destruction for perf
+	// TODO parallelize module & service network destruction for perf
 	defer func() {
 		if err := serviceNetwork.Destroy(context.Background()); err != nil {
 			logrus.Errorf("An error occurred while destroying the service network:")
@@ -123,8 +123,8 @@ func runMain () error {
 		}
 	}()
 	defer func() {
-		if err := lambdaStore.Destroy(context.Background()); err != nil {
-			logrus.Errorf("An error occurred while destroying the Lambda store:")
+		if err := moduleStore.Destroy(context.Background()); err != nil {
+			logrus.Errorf("An error occurred while destroying the module store:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
 	}()
@@ -134,7 +134,7 @@ func runMain () error {
 		enclaveDataVol,
 		externalContainerStore,
 		serviceNetwork,
-		lambdaStore,
+		moduleStore,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
@@ -172,7 +172,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkAndLambdaStore(
+func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
@@ -226,7 +226,7 @@ func createServiceNetworkAndLambdaStore(
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	lambdaLauncher := module_launcher.NewLambdaLauncher(
+	moduleLauncher := module_launcher.NewModuleLauncher(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
@@ -237,9 +237,9 @@ func createServiceNetworkAndLambdaStore(
 		enclaveId,
 	)
 
-	lambdaStore := module_store.NewModuleStore(dockerManager, lambdaLauncher)
+	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)
 
-	return serviceNetwork, lambdaStore, nil
+	return serviceNetwork, moduleStore, nil
 }
 
 func disconnectExternalContainersAndKillEverythingElse(
