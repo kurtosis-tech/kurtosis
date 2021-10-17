@@ -49,9 +49,9 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForNetworkingSidecarContainer
 	return labels
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) ForLambdaContainer(lambdaGUID module_store_types.ModuleGUID) map[string]string {
-	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(string(lambdaGUID))
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeLambdaContainer
+func (labelsProvider *EnclaveObjectLabelsProvider) ForModuleContainer(moduleGUID module_store_types.ModuleGUID) map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(string(moduleGUID))
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeModuleContainer
 	return labels
 }
 

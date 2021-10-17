@@ -84,10 +84,10 @@ func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(s
 	)
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID module_store_types.ModuleGUID) string {
+func (nameProvider *EnclaveObjectNameProvider) ForModuleContainer(moduleGUID module_store_types.ModuleGUID) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
-		lambdaContainerNameLabel,
-		string(lambdaGUID),
+		moduleContainerNameLabel,
+		string(moduleGUID),
 	})
 }
 

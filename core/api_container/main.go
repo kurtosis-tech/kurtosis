@@ -176,7 +176,7 @@ func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.LambdaStore, error) {
+		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
@@ -237,7 +237,7 @@ func createServiceNetworkAndLambdaStore(
 		enclaveId,
 	)
 
-	lambdaStore := module_store.NewLambdaStore(dockerManager, lambdaLauncher)
+	lambdaStore := module_store.NewModuleStore(dockerManager, lambdaLauncher)
 
 	return serviceNetwork, lambdaStore, nil
 }

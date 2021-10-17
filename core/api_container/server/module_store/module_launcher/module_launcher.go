@@ -59,7 +59,7 @@ func (launcher ModuleLauncher) Launch(
 		ctx context.Context,
 		moduleID module_store_types.ModuleID,
 		containerImage string,
-		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient, lambdaPortHostPortBinding *nat.PortBinding, resultErr error) {
+		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient, moduleHostPortBinding *nat.PortBinding, resultErr error) {
 
 	portNumStr := strconv.Itoa(kurtosis_module_rpc_api_consts.ListenPort)
 	portObj, err := nat.NewPort(kurtosis_module_rpc_api_consts.ListenProtocol, portNumStr)
@@ -93,8 +93,8 @@ func (launcher ModuleLauncher) Launch(
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
 
-	containerName := launcher.enclaveObjNameProvider.ForLambdaContainer(moduleGUID)
-	containerLabels := launcher.enclaveObjLabelsProvider.ForLambdaContainer(moduleGUID)
+	containerName := launcher.enclaveObjNameProvider.ForModuleContainer(moduleGUID)
+	containerLabels := launcher.enclaveObjLabelsProvider.ForModuleContainer(moduleGUID)
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,

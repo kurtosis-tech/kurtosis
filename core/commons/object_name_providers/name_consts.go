@@ -16,5 +16,5 @@ const (
 	networkingSidecarContainerNameLabel = "networking-sidecar"
 	artifactExpanderContainerNameLabel  = "files-artifact-expander"
 	artifactExpansionVolumeNameLabel    = "files-artifact-expansion"
-	lambdaContainerNameLabel            = "lambda"
+	moduleContainerNameLabel            = "module"
 )
