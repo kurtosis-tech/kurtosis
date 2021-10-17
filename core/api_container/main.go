@@ -15,8 +15,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/external_container_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
@@ -111,11 +111,11 @@ func runMain () error {
 
 	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
 
-	serviceNetwork, lambdaStore, err := createServiceNetworkAndLambdaStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the service network & Lambda store")
+		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
-	// TODO parallelize Lambda & service network destruction for perf
+	// TODO parallelize module & service network destruction for perf
 	defer func() {
 		if err := serviceNetwork.Destroy(context.Background()); err != nil {
 			logrus.Errorf("An error occurred while destroying the service network:")
@@ -123,8 +123,8 @@ func runMain () error {
 		}
 	}()
 	defer func() {
-		if err := lambdaStore.Destroy(context.Background()); err != nil {
-			logrus.Errorf("An error occurred while destroying the Lambda store:")
+		if err := moduleStore.Destroy(context.Background()); err != nil {
+			logrus.Errorf("An error occurred while destroying the module store:")
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 		}
 	}()
@@ -134,7 +134,7 @@ func runMain () error {
 		enclaveDataVol,
 		externalContainerStore,
 		serviceNetwork,
-		lambdaStore,
+		moduleStore,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
@@ -172,11 +172,11 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 	return dockerManager, nil
 }
 
-func createServiceNetworkAndLambdaStore(
+func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
+		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
@@ -226,7 +226,7 @@ func createServiceNetworkAndLambdaStore(
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
+	moduleLauncher := module_launcher.NewModuleLauncher(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
@@ -237,9 +237,9 @@ func createServiceNetworkAndLambdaStore(
 		enclaveId,
 	)
 
-	lambdaStore := lambda_store.NewLambdaStore(dockerManager, lambdaLauncher)
+	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)
 
-	return serviceNetwork, lambdaStore, nil
+	return serviceNetwork, moduleStore, nil
 }
 
 func disconnectExternalContainersAndKillEverythingElse(
