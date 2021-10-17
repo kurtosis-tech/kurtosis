@@ -2,6 +2,9 @@
 ### Changes
 * Switched all references to "Lambda" to "module"
 
+### Fixes
+* `ModuleTest` (renamed from `LambdaTest`) now uses the ports returned by the Datastore Army module
+
 ### Breaking Changes
 * Renamed the `lambda` command to `module`
 
