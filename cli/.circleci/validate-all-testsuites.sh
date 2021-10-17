@@ -70,10 +70,10 @@ for lang in $(cat "${supported_langs_abs_filepath}"); do
     fi
     err_keyword="${PER_LANG_ERROR_KEYWORD["${lang}"]}"
 
-      # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the err keyword is detected
+      # Grep exits with 0 if one or more lines match, so we fail the build if the err keyword is detected
       # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
-    if ! grep "${err_keyword}" "${output_filepath}"; then
-        echo "Error: Detected error keyword '${err_keyword}' in testsuite output logfile" >&2
+    if grep "${err_keyword}" "${output_filepath}"; then
+        echo "Error: Detected error keyword '${err_keyword}' in '${lang}' testsuite output logfile" >&2
         had_failures="true"
         continue
     fi
