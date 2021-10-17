@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	testModuleImage = "kurtosistech/datastore-army-module:0.1.2"
+	testModuleImage = "kurtosistech/datastore-army-module:0.1.3"
 
 	datastoreArmyModuleId modules.ModuleID = "datastore-army"
 

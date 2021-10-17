@@ -41,7 +41,7 @@ jobs:
 
       # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-      - run: bash .circleci/validate-all-testsuites.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
+      - run: bash .circleci/validate-all-testsuites.sh "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
 
   push_artifacts:
     executor: ubuntu_vm
