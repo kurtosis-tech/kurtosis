@@ -1,4 +1,6 @@
 # TBD
+
+# 1.25.0
 ### Changes
 * Upgraded to Kurt Client 0.19.0, which renames all the `...Lambda...` endpoints to `...Module...`
 
