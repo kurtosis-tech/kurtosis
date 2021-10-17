@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgrade to testsuite-api-lib 0.11.0, which uses Kurt Client 0.19.0 (already handled in v0.4.0 of this repo)
 
 # 0.4.1
 ### Fixes
