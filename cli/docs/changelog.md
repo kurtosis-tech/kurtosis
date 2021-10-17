@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.0
 ### Changes
 * Switched all references to "Lambda" to "module"
 
