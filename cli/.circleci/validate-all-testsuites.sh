@@ -34,8 +34,8 @@ show_helptext_and_exit() {
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
-client_id="${3:-}"
-client_secret_DO_NOT_EVER_LOG="${4:-}"
+client_id="${1:-}"
+client_secret_DO_NOT_EVER_LOG="${2:-}"
 
 if [ -z "${client_id}" ]; then
     echo "Error: no client ID arg provided" >&2
