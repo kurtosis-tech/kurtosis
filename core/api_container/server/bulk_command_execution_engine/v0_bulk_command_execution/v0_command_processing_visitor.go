@@ -39,29 +39,29 @@ func newV0CommandProcessingVisitor(ctx context.Context, uncastedCommandArgsPtr p
 //                                         Public functions
 // ====================================================================================================
 
-func (visitor *v0CommandProcessingVisitor) VisitLoadLambda() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.LoadLambdaArgs)
+func (visitor *v0CommandProcessingVisitor) VisitLoadModule() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.LoadModuleArgs)
 	if !ok {
-		return stacktrace.NewError("An error occurred downcasting the generic args object to Lambda-loading args")
+		return stacktrace.NewError("An error occurred downcasting the generic args object to module-loading args")
 	}
-	if _, err := visitor.apiService.LoadLambda(visitor.ctx, castedArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred loading Lambda with ID '%v'", castedArgs.LambdaId)
+	if _, err := visitor.apiService.LoadModule(visitor.ctx, castedArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading module with ID '%v'", castedArgs.ModuleId)
 	}
 	return nil
 }
 
-func (visitor *v0CommandProcessingVisitor) VisitExecuteLambda() error {
-	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs)
+func (visitor *v0CommandProcessingVisitor) VisitExecuteModule() error {
+	castedArgs, ok := visitor.uncastedCommandArgsPtr.(*kurtosis_core_rpc_api_bindings.ExecuteModuleArgs)
 	if !ok {
-		return stacktrace.NewError("An error occurred downcasting the generic args object to Lambda-executing args")
+		return stacktrace.NewError("An error occurred downcasting the generic args object to module-executing args")
 	}
-	resp, err := visitor.apiService.ExecuteLambda(visitor.ctx, castedArgs)
+	resp, err := visitor.apiService.ExecuteModule(visitor.ctx, castedArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing Lambda with ID '%v'", castedArgs.LambdaId)
+		return stacktrace.Propagate(err, "An error occurred executing module with ID '%v'", castedArgs.ModuleId)
 	}
 	logrus.Infof(
-		"Executed Lambda '%v' with serialized args '%v', which returned serialized result '%v'",
-		castedArgs.LambdaId,
+		"Executed module '%v' with serialized args '%v', which returned serialized result '%v'",
+		castedArgs.ModuleId,
 		castedArgs.SerializedParams,
 		resp.SerializedResult,
 	)
@@ -210,9 +210,9 @@ func (visitor *v0CommandProcessingVisitor) VisitGetServices() error {
 	return nil
 }
 
-func (visitor *v0CommandProcessingVisitor) VisitGetLambdas() error {
-	if _, err := visitor.apiService.GetLambdas(visitor.ctx, &emptypb.Empty{}); err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing the get lambdas command")
+func (visitor *v0CommandProcessingVisitor) VisitGetModules() error {
+	if _, err := visitor.apiService.GetModules(visitor.ctx, &emptypb.Empty{}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing the module-getting command")
 	}
 	return nil
 }

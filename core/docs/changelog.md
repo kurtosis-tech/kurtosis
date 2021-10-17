@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Upgraded to Kurt Client 0.19.0, which renames all the `...Lambda...` endpoints to `...Module...`
+
+### Breaking Changes
+* Implement the new API of [Kurt Client 0.19.0](https://github.com/kurtosis-tech/kurtosis-client/blob/develop/docs/changelog.md#0190)
+* Implement the new API of the [Module API Lib 0.10.0](https://github.com/kurtosis-tech/kurtosis-testsuite-api-lib/blob/develop/docs/changelog.md#0100), which implements significant renames to replace references of "Lambda" with "Module"
 
 # 1.24.0
 ### Breaking Changes
