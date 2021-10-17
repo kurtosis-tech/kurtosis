@@ -1,5 +1,9 @@
 # TBD
 
+# 0.4.1
+### Fixes
+* Update the Javascript CLI's `core-api-lib` version to 0.19.0, to match the rest of the code
+
 # 0.4.0
 ### Changes
 * Switched all references to "Lambda" to "module"
