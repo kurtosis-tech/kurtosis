@@ -7,7 +7,7 @@ package commands
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/lambda"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
@@ -30,7 +30,7 @@ func init() {
 	RootCmd.AddCommand(test.TestCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
-	RootCmd.AddCommand(lambda.LambdaCmd)
+	RootCmd.AddCommand(module.ModuleCmd)
 	RootCmd.AddCommand(repl.REPLCmd)
 
 	// TODO Add global flag to set the CLI's log level

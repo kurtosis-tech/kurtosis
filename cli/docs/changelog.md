@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Switched all references to "Lambda" to "module"
+
+### Breaking Changes
+* Renamed the `lambda` command to `module`
 
 # 0.3.4
 ### Fixes
