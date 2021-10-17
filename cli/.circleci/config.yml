@@ -39,17 +39,9 @@ jobs:
             -e "CMD=bash ./scripts/build.sh" \
             kurtosistech/kurtosis-goreleaser-ci-image
 
-      # ---------------------------------- Check the Golang testsuite -----------------------------------------------------
-      - run: |
-          scripts/run-one-internal-testsuite.sh golang --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}" 2>&1 | tee golang-internal-testsuite-output.txt
-
-      # Grep exits with 0 if one or more lines match, and 1 if not so we invert this to fail the build if the word 'ERROR' is detected
-      # This helps us catch errors that might show up in the testsuite logs but not get propagated to the actual exit codes
-      - run: "! grep 'ERRO' golang-internal-testsuite-output.txt"
-
-      # Checking for running Docker containers after Kurtosis completes testsuite execution
-      - run: |
-          [ -z "$(docker container ls | grep -v 'CONTAINER ID')" ]
+      # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      - run: bash .circleci/validate-all-testsuites.sh --client-id "${KURTOSIS_INTERNAL_CLIENT_ID}" --client-secret "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
 
   push_artifacts:
     executor: ubuntu_vm

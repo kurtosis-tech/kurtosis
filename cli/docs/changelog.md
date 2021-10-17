@@ -4,6 +4,7 @@
 
 ### Fixes
 * `ModuleTest` (renamed from `LambdaTest`) now uses the ports returned by the Datastore Army module
+* Fixed bug in CI where `pipefail` wasn't set which would result in the testsuite-running step passing when it shouldn't
 
 ### Breaking Changes
 * Renamed the `lambda` command to `module`
