@@ -29,7 +29,7 @@ const (
 	executeParamsStrArg = "execute-params"
 	apiContainerImageArg = "api-container-image"
 
-	lambdaImageArg = "lambda-image"
+	moduleImageArg = "module-image"
 
 	defaultLoadParams = "{}"
 	defaultExecuteParams = "{}"
@@ -37,12 +37,12 @@ const (
 	shouldEnablePartitioning = true
 	shouldPublishAllPorts = true
 
-	lambdaId = "my-lambda"
+	moduleId = "my-module"
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 var positionalArgs = []string{
-	lambdaImageArg,
+	moduleImageArg,
 }
 
 var kurtosisLogLevelStr string
@@ -53,7 +53,7 @@ var apiContainerImage string
 var ExecCmd = &cobra.Command{
 	Use:   "exec [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Creates a new enclave and loads & executes the given Lambda inside it",
+	Short: "Creates a new enclave and loads & executes the given executable module inside it",
 	RunE:  run,
 }
 
@@ -72,19 +72,19 @@ func init() {
 		&loadParamsStr,
 		loadParamsStrArg,
 		defaultLoadParams,
-		"The serialized params that should be passed to the Lambda when loading it",
+		"The serialized params that should be passed to the module when loading it",
 	)
 	ExecCmd.Flags().StringVar(
 		&executeParamsStr,
 		executeParamsStrArg,
 		defaultExecuteParams,
-		"The serialized params that should be passed to the Lambda when executing it",
+		"The serialized params that should be passed to the module when executing it",
 	)
 	ExecCmd.Flags().StringVar(
 		&apiContainerImage,
 		apiContainerImageArg,
 		defaults.DefaultApiContainerImage,
-		"The image of the API container that should be started inside the enclave where the Lambda will execute",
+		"The image of the API container that should be started inside the enclave where the module will execute",
 	)
 }
 
@@ -101,7 +101,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
-	lambdaImage := parsedPositionalArgs[lambdaImageArg]
+	moduleImage := parsedPositionalArgs[moduleImageArg]
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -110,18 +110,18 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
-	logrus.Info("Creating enclave for the Lambda to execute inside...")
+	logrus.Info("Creating enclave for the module to execute inside...")
 	executionId := execution_ids.GetExecutionID()
 	enclaveCtx, err := enclaveManager.CreateEnclave(ctx, logrus.StandardLogger(), apiContainerImage, kurtosisLogLevel, executionId, shouldEnablePartitioning, shouldPublishAllPorts)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave to execute the Lambda in")
+		return stacktrace.Propagate(err, "An error occurred creating an enclave to execute the module in")
 	}
 	shouldDestroyEnclave := true
 	defer func() {
 		if shouldDestroyEnclave {
 			if err := enclaveManager.DestroyEnclave(context.Background(), logrus.StandardLogger(), enclaveCtx); err != nil {
 				logrus.Errorf(
-					"The Lambda didn't execute correctly so we tried to destroy the created enclave, but destroying the enclave threw an error:\n%v",
+					"The module didn't execute correctly so we tried to destroy the created enclave, but destroying the enclave threw an error:\n%v",
 					err,
 				)
 				logrus.Errorf("ACTION NEEDED: You'll need to destroy enclave '%v' manually!!", enclaveCtx.GetEnclaveID())
@@ -148,25 +148,25 @@ func run(cmd *cobra.Command, args []string) error {
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	logrus.Infof(
-		"Loading Lambda '%v' with parameters '%v' inside the enclave...",
-		lambdaImage,
+		"Loading module '%v' with parameters '%v' inside the enclave...",
+		moduleImage,
 		loadParamsStr,
 	)
-	loadLambdaArgs := binding_constructors.NewLoadLambdaArgs(lambdaId, lambdaImage, loadParamsStr)
-	if _, err := apiContainerClient.LoadLambda(ctx, loadLambdaArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred loading the Lambda with image '%v'", lambdaImage)
+	loadModuleArgs := binding_constructors.NewLoadModuleArgs(moduleId, moduleImage, loadParamsStr)
+	if _, err := apiContainerClient.LoadModule(ctx, loadModuleArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading the module with image '%v'", moduleImage)
 	}
-	logrus.Info("Lambda loaded successfully")
+	logrus.Info("Module loaded successfully")
 
-	logrus.Infof("Executing the Lambda with parameters '%v'...", executeParamsStr)
-	executeLambdaArgs := binding_constructors.NewExecuteLambdaArgs(lambdaId, executeParamsStr)
-	executeLambdaResult, err := apiContainerClient.ExecuteLambda(ctx, executeLambdaArgs)
+	logrus.Infof("Executing the module with parameters '%v'...", executeParamsStr)
+	executeModuleArgs := binding_constructors.NewExecuteModuleArgs(moduleId, executeParamsStr)
+	executeModuleResult, err := apiContainerClient.ExecuteModule(ctx, executeModuleArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing the Lambda with params '%v'", executeParamsStr)
+		return stacktrace.Propagate(err, "An error occurred executing the module with params '%v'", executeParamsStr)
 	}
 	logrus.Infof(
-		"Lambda executed successfully and returned the following result:\n%v",
-		executeLambdaResult.SerializedResult,
+		"Module executed successfully and returned the following result:\n%v",
+		executeModuleResult.SerializedResult,
 	)
 
 	shouldDestroyEnclave = false

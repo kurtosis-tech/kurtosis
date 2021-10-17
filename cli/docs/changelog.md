@@ -1,5 +1,16 @@
 # TBD
 
+# 0.4.0
+### Changes
+* Switched all references to "Lambda" to "module"
+
+### Fixes
+* `ModuleTest` (renamed from `LambdaTest`) now uses the ports returned by the Datastore Army module
+* Fixed bug in CI where `pipefail` wasn't set which would result in the testsuite-running step passing when it shouldn't
+
+### Breaking Changes
+* Renamed the `lambda` command to `module`
+
 # 0.3.4
 ### Fixes
 * Stop attempting to upload APK packages to Gemfury (which can't accept APK packages and throws an error)
