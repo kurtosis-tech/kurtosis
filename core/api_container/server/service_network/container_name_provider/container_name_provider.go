@@ -6,7 +6,7 @@
 package container_name_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 )
 
@@ -47,7 +47,7 @@ func (provider ContainerNameElementsProvider) GetForFilesArtifactExpander(servic
 	})
 }
 
-func (provider ContainerNameElementsProvider) GetForLambda(lambdaId lambda_store_types.LambdaID) []string {
+func (provider ContainerNameElementsProvider) GetForLambda(lambdaId module_store_types.ModuleID) []string {
 	return provider.addPrefix([]string{
 		lambdaNameLabel,
 		string(lambdaId),

@@ -6,7 +6,7 @@
 package object_name_providers
 
 import (
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"strings"
 	"time"
@@ -84,7 +84,7 @@ func (nameProvider *EnclaveObjectNameProvider) ForFilesArtifactExpansionVolume(s
 	)
 }
 
-func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID lambda_store_types.LambdaGUID) string {
+func (nameProvider *EnclaveObjectNameProvider) ForLambdaContainer(lambdaGUID module_store_types.ModuleGUID) string {
 	return nameProvider.combineElementsWithEnclaveId([]string{
 		lambdaContainerNameLabel,
 		string(lambdaGUID),

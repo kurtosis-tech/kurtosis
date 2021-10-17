@@ -14,8 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/external_container_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -47,7 +47,7 @@ type ApiContainerService struct {
 
 	serviceNetwork service_network.ServiceNetwork
 
-	lambdaStore *lambda_store.LambdaStore
+	lambdaStore *module_store.LambdaStore
 
 	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
 }
@@ -56,7 +56,7 @@ func NewApiContainerService(
 	enclaveDirectory *enclave_data_volume.EnclaveDataVolume,
 	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
-	lambdaStore *lambda_store.LambdaStore,
+	lambdaStore *module_store.LambdaStore,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		enclaveDataVolume: enclaveDirectory,
@@ -100,7 +100,7 @@ func (service ApiContainerService) FinishExternalContainerRegistration(ctx conte
 }
 
 func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadLambdaArgs) (*emptypb.Empty, error) {
-	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	lambdaId := module_store_types.ModuleID(args.LambdaId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
 	if err := service.lambdaStore.LoadLambda(ctx, lambdaId, image, serializedParams); err != nil {
@@ -110,7 +110,7 @@ func (service ApiContainerService) LoadLambda(ctx context.Context, args *kurtosi
 }
 
 func (service ApiContainerService) UnloadLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadLambdaArgs) (*emptypb.Empty, error) {
-	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	lambdaId := module_store_types.ModuleID(args.LambdaId)
 	if err := service.lambdaStore.UnloadLambda(ctx, lambdaId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unloading Lambda '%v' from the network", lambdaId)
 	}
@@ -118,7 +118,7 @@ func (service ApiContainerService) UnloadLambda(ctx context.Context, args *kurto
 }
 
 func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteLambdaArgs) (*kurtosis_core_rpc_api_bindings.ExecuteLambdaResponse, error) {
-	lambdaId := lambda_store_types.LambdaID(args.LambdaId)
+	lambdaId := module_store_types.ModuleID(args.LambdaId)
 	serializedParams := args.SerializedParams
 	serializedResult, err := service.lambdaStore.ExecuteLambda(ctx, lambdaId, serializedParams)
 	if err != nil {
@@ -130,7 +130,7 @@ func (service ApiContainerService) ExecuteLambda(ctx context.Context, args *kurt
 
 func (service ApiContainerService) GetLambdaInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetLambdaInfoArgs) (*kurtosis_core_rpc_api_bindings.GetLambdaInfoResponse, error) {
 	lambdaIdStr := args.LambdaId
-	ipAddr, err := service.lambdaStore.GetLambdaIPAddrByID(lambda_store_types.LambdaID(lambdaIdStr))
+	ipAddr, err := service.lambdaStore.GetLambdaIPAddrByID(module_store_types.ModuleID(lambdaIdStr))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for Lambda '%v'", lambdaIdStr)
 	}

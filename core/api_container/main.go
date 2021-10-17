@@ -15,8 +15,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/external_container_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
@@ -176,7 +176,7 @@ func createServiceNetworkAndLambdaStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *lambda_store.LambdaStore, error) {
+		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.LambdaStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
@@ -226,7 +226,7 @@ func createServiceNetworkAndLambdaStore(
 		userServiceLauncher,
 		networkingSidecarManager)
 
-	lambdaLauncher := lambda_launcher.NewLambdaLauncher(
+	lambdaLauncher := module_launcher.NewLambdaLauncher(
 		dockerManager,
 		args.ApiContainerIpAddr,
 		enclaveObjNameProvider,
@@ -237,7 +237,7 @@ func createServiceNetworkAndLambdaStore(
 		enclaveId,
 	)
 
-	lambdaStore := lambda_store.NewLambdaStore(dockerManager, lambdaLauncher)
+	lambdaStore := module_store.NewLambdaStore(dockerManager, lambdaLauncher)
 
 	return serviceNetwork, lambdaStore, nil
 }

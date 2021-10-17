@@ -3,15 +3,15 @@
  * All Rights Reserved.
  */
 
-package lambda_store
+package module_store
 
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-lambda-api-lib/golang/kurtosis_lambda_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/lambda_store/lambda_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/palantir/stacktrace"
 	"net"
 	"strings"
@@ -33,22 +33,22 @@ type LambdaStore struct {
 	dockerManager *docker_manager.DockerManager
 
 	// lambda_id -> IP addr, container ID, etc.
-	lambdas map[lambda_store_types.LambdaID]lambdaInfo
+	lambdas map[module_store_types.ModuleID]lambdaInfo
 
-	lambdaLauncher *lambda_launcher.LambdaLauncher
+	lambdaLauncher *module_launcher.ModuleLauncher
 }
 
-func NewLambdaStore(dockerManager *docker_manager.DockerManager, lambdaLauncher *lambda_launcher.LambdaLauncher) *LambdaStore {
+func NewLambdaStore(dockerManager *docker_manager.DockerManager, lambdaLauncher *module_launcher.ModuleLauncher) *LambdaStore {
 	return &LambdaStore{
 		isDestroyed:    false,
 		mutex:          &sync.Mutex{},
 		dockerManager:  dockerManager,
-		lambdas:        map[lambda_store_types.LambdaID]lambdaInfo{},
+		lambdas:        map[module_store_types.ModuleID]lambdaInfo{},
 		lambdaLauncher: lambdaLauncher,
 	}
 }
 
-func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, containerImage string, serializedParams string) error {
+func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId module_store_types.ModuleID, containerImage string, serializedParams string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	if store.isDestroyed {
@@ -81,7 +81,7 @@ func (store *LambdaStore) LoadLambda(ctx context.Context, lambdaId lambda_store_
 	return nil
 }
 
-func (store *LambdaStore) UnloadLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID) error {
+func (store *LambdaStore) UnloadLambda(ctx context.Context, lambdaId module_store_types.ModuleID) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	if store.isDestroyed {
@@ -103,7 +103,7 @@ func (store *LambdaStore) UnloadLambda(ctx context.Context, lambdaId lambda_stor
 	return nil
 }
 
-func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_store_types.LambdaID, serializedParams string) (serializedResult string, resultErr error) {
+func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId module_store_types.ModuleID, serializedParams string) (serializedResult string, resultErr error) {
 	// NOTE: technically we don't need this mutex for this function since we're not modifying internal state, but we do need it to check isDestroyed
 	// TODO PERF: Don't block the entire store on executing a lambda
 	store.mutex.Lock()
@@ -125,7 +125,7 @@ func (store *LambdaStore) ExecuteLambda(ctx context.Context, lambdaId lambda_sto
 	return resp.ResponseJson, nil
 }
 
-func (store *LambdaStore) GetLambdaIPAddrByID(lambdaId lambda_store_types.LambdaID) (net.IP, error) {
+func (store *LambdaStore) GetLambdaIPAddrByID(lambdaId module_store_types.ModuleID) (net.IP, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	if store.isDestroyed {
@@ -164,9 +164,9 @@ func (store *LambdaStore) Destroy(ctx context.Context) error {
 	return nil
 }
 
-func (store *LambdaStore) GetLambdas() map[lambda_store_types.LambdaID]bool {
+func (store *LambdaStore) GetLambdas() map[module_store_types.ModuleID]bool {
 
-	lambdaIDs := make(map[lambda_store_types.LambdaID]bool, len(store.lambdas))
+	lambdaIDs := make(map[module_store_types.ModuleID]bool, len(store.lambdas))
 
 	for key, _ := range store.lambdas {
 		if _, ok := lambdaIDs[key]; !ok{
