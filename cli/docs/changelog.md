@@ -2,6 +2,7 @@
 ### Features
 * `enclave` commands also show enclave state
 * Standardized table-printing logic into a `TablePrinter` object 
+* Added a `KeyValuePrinter` for pretty-printing key-value pairs
 * `enclave inspect` also prints the enclave ID & state
 
 ### Fixes

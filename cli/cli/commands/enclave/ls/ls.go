@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/table_printer"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -117,7 +117,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	sort.Strings(orderedEnclaveIds)
 
-	tablePrinter := table_printer.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
+	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
 	for _, enclaveId := range orderedEnclaveIds {
 		enclaveStatus, found := enclaveStatuses[enclaveId]
 		if !found {

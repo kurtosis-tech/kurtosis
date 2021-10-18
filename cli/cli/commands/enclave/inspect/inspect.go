@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
@@ -28,8 +29,8 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg        = "enclave-id"
 
-	enclaveIdTitleName    = "Enclave ID"
-	enclaveStateTitleName = "State"
+	enclaveIdTitleName     = "Enclave ID"
+	enclaveStatusTitleName = "State"
 
 	headerWidthChars = 100
 	headerPadChar = "="
@@ -94,13 +95,16 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	enclaveState, err := getEnclaveStatus(ctx, dockerManager, enclaveId)
+	enclaveStatus, err := getEnclaveStatus(ctx, dockerManager, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred determining the state of the enclave")
+		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
 	}
 
-	fmt.Fprintln(logrus.StandardLogger().Out, fmt.Sprintf("%v: %v", enclaveIdTitleName, enclaveId))
-	fmt.Fprintln(logrus.StandardLogger().Out, fmt.Sprintf("%v: %v", enclaveStateTitleName, enclaveState))
+	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
+	keyValuePrinter.AddPair(enclaveStatusTitleName, string(enclaveStatus))
+	keyValuePrinter.Print()
+	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
 	headersWithPrintErrs := []string{}
 	for header, printingFunc := range enclaveObjectPrintingFuncs {

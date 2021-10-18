@@ -1,43 +1,21 @@
-package table_printer
+package output_printers
 
 import (
-	"fmt"
 	"github.com/palantir/stacktrace"
-	"github.com/sirupsen/logrus"
-	"strings"
-	"text/tabwriter"
-)
-
-const (
-	tabWriterMinwidth = 0
-	tabWriterTabwidth = 0
-	tabWriterPadding  = 3
-	tabWriterPadchar  = ' '
-	tabWriterFlags    = 0
-
-	tabWriterElemJoinChar = "\t"
 )
 
 type TablePrinter struct {
-	tabWriter *tabwriter.Writer
+	tabWriter *kurtosisTabWriter
 
 	columnHeaders []string
 
 	dataRows [][]string
 }
 
+// Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
-	tabWriter := tabwriter.NewWriter(
-		logrus.StandardLogger().Out,
-		tabWriterMinwidth,
-		tabWriterTabwidth,
-		tabWriterPadding,
-		tabWriterPadchar,
-		tabWriterFlags,
-	)
-
 	return &TablePrinter{
-		tabWriter:     tabWriter,
+		tabWriter:     newKurtosisTabWriter(),
 		columnHeaders: columnHeaders,
 		dataRows:      [][]string{},
 	}
@@ -60,16 +38,10 @@ func (printer *TablePrinter) AddRow(data ...string) error {
 }
 
 func (printer *TablePrinter) Print() {
-	fmt.Fprintln(
-		printer.tabWriter,
-		strings.Join(printer.columnHeaders, tabWriterElemJoinChar),
-	)
+	printer.tabWriter.writeElems(printer.columnHeaders...)
 	for _, dataRow := range printer.dataRows {
-		fmt.Fprintln(
-			printer.tabWriter,
-			strings.Join(dataRow, tabWriterElemJoinChar),
-		)
+		printer.tabWriter.writeElems(dataRow...)
 	}
-	printer.tabWriter.Flush()
+	printer.tabWriter.flush()
 
 }
