@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.2
 ### Features
 * `enclave` commands also show enclave state
 * Standardized table-printing logic into a `TablePrinter` object 
