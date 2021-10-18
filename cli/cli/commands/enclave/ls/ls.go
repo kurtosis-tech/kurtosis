@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_states"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_state_from_container_state_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/table_printer"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,7 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 
 	enclaveIdColumnHeader = "EnclaveID"
+	enclaveStatusColumnHeader = "Status"
 )
 
 var kurtosisLogLevelStr string
@@ -104,18 +106,26 @@ func run(cmd *cobra.Command, args []string) error {
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
 		enclaveState, err := enclave_state_from_container_state_retriever.GetEnclaveState(enclaveContainers)
 		if err != nil {
-			return stacktrace.NewError("An error occurred getting the state for enclave '%v' from the status of its containers")
+			return stacktrace.NewError(
+				"An error occurred getting the state for enclave '%v' from the status of its containers",
+				enclaveId,
+			)
 		}
 		enclaveStates[enclaveId] = enclaveState
 	}
 	sort.Strings(orderedEnclaveIds)
 
-
-
-	fmt.Fprintln(logrus.StandardLogger().Out, enclaveIdColumnHeader)
+	tablePrinter := table_printer.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
 	for _, enclaveId := range orderedEnclaveIds {
-
+		enclaveState, found := enclaveStates[enclaveId]
+		if !found {
+			return stacktrace.NewError("We're about to print enclave '%v', but it doesn't have a state; this is a bug in Kurtosis!", enclaveId)
+		}
+		if err := tablePrinter.AddRow(enclaveId, string(enclaveState)); err != nil {
+			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
+		}
 	}
+	tablePrinter.Print()
 
 	return nil
 }

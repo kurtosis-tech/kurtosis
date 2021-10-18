@@ -49,7 +49,11 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 
 		for _, additionalHostPortBindingStr := range hostPortBindingsStrings {
 			if err := tablePrinter.AddRow("", additionalHostPortBindingStr); err != nil {
-				return stacktrace.NewError("An error occurred adding additional host port binding '%v' row for user service container '%v' to the table printer", containerGuid)
+				return stacktrace.NewError(
+					"An error occurred adding additional host port binding '%v' row for user service container '%v' to the table printer",
+					additionalHostPortBindingStr,
+					containerGuid,
+				)
 			}
 		}
 	}
