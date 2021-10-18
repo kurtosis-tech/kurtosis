@@ -10,7 +10,7 @@ import "github.com/kurtosis-tech/kurtosis-core/commons/kurtosis_core_version"
 const (
 	// vvvv WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS vvvvv
 	// Own version, so that we can start the proper Javascript REPL Docker image
-	ownVersion = "0.4.1"
+	ownVersion = "0.4.2"
 	// ^^^^ WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS ^^^^^
 
 	DefaultJavascriptReplImage = "kurtosistech/javascript-interactive-repl:" + ownVersion
