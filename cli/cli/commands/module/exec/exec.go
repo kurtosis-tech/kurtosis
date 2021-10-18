@@ -9,6 +9,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
@@ -31,8 +33,8 @@ const (
 
 	moduleImageArg = "module-image"
 
-	defaultLoadParams = "{}"
-	defaultExecuteParams = "{}"
+	defaultLoadParams              = "{}"
+	defaultExecuteParams           = "{}"
 
 	shouldEnablePartitioning = true
 	shouldPublishAllPorts = true
@@ -107,6 +109,10 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
+	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
+
+	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, apiContainerImage)
+	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
 	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 

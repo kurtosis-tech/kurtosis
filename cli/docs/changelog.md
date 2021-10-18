@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* `module exec` will attempt to update the module & API container images before running
+
 ### Changes
 * Upgrade to testsuite-api-lib 0.11.0, which uses Kurt Client 0.19.0 (already handled in v0.4.0 of this repo)
 
