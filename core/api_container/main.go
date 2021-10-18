@@ -55,7 +55,7 @@ func main() {
 
 	err := runMain()
 	if err != nil {
-		logrus.Errorf("An error occurred when running the main function")
+		logrus.Errorf("An error occurred when running the main function:")
 		fmt.Fprintln(logrus.StandardLogger().Out, err)
 		os.Exit(failureExitCode)
 	}
@@ -115,19 +115,6 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
-	// TODO parallelize module & service network destruction for perf
-	defer func() {
-		if err := serviceNetwork.Destroy(context.Background()); err != nil {
-			logrus.Errorf("An error occurred while destroying the service network:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-		}
-	}()
-	defer func() {
-		if err := moduleStore.Destroy(context.Background()); err != nil {
-			logrus.Errorf("An error occurred while destroying the module store:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-		}
-	}()
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
@@ -154,9 +141,7 @@ func runMain () error {
 
 	logrus.Info("Running server...")
 	if err := apiContainerServer.Run(); err != nil {
-		logrus.Errorf("An error occurred running the server:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
+		return stacktrace.Propagate(err, "An error occurred running the API container server")
 	}
 
 	return nil

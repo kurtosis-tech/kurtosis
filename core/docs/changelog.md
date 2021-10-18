@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* The API container will no longer stop anything inside its enclave when it shuts down as this role of cleaning up enclaves is being pushed to the enclave manager, though it still can stop containers when requested
 
 # 1.25.1
 ### Features
