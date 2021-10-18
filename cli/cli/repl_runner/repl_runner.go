@@ -19,6 +19,26 @@ import (
 	"os"
 )
 
+const (
+)
+
+const (
+	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
+
+	// The dirpath inside the REPL container where the user's current directory will be bind-mounted, so the user
+	//  can access files on their local system within the REPL
+	workingDirectoryBindMountDirpathInsideReplContainer = "/local"
+
+	replContainerSuccessExitCode = 0
+
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+	// vvvvvvvvvvvvvvv If you change these, update the REPL Dockerfile!!! vvvvvvvvvvvv
+	replContainerKurtosisSocketEnvVar = "KURTOSIS_API_SOCKET"
+	replContainerEnclaveDataVolMountpointEnvVar = "ENCLAVE_DATA_VOLUME_MOUNTPOINT"
+	// ^^^^^^^^^^^^^^^ If you change these, update the REPL Dockerfile!!! ^^^^^^^^^^^^
+	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+)
+
 // Launches a REPL container and attaches to it, blocking until the REPL container exits
 func RunREPL(
 	enclaveCtx *enclave_context.EnclaveContext,
@@ -70,14 +90,20 @@ func RunREPL(
 
 	// Map of host_path -> path_on_container that will mounted
 	var bindMounts map[string]string
+	postContainerStartLogMsg := "REPL container started"
 	hostMachineWorkingDirpath, err := os.Getwd()
 	if err != nil {
-		logrus.Warn("Couldn't get the current working directory; local files will not be available")
+		logrus.Warn("Couldn't get the current working directory; local files will not be available inside the REPL")
 		bindMounts = map[string]string{}
 	} else {
 		bindMounts = map[string]string{
-			hostMachineWorkingDirpath: workingDirpathInsideReplContainer,
+			hostMachineWorkingDirpath: workingDirectoryBindMountDirpathInsideReplContainer,
 		}
+		postContainerStartLogMsg = postContainerStartLogMsg + fmt.Sprintf(
+			", and the files in your current directory (%v) are available at path '%v' within the REPL",
+			hostMachineWorkingDirpath,
+			workingDirectoryBindMountDirpathInsideReplContainer,
+		)
 	}
 
 	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
@@ -124,6 +150,7 @@ func RunREPL(
 	if _, err := apiContainerClient.FinishExternalContainerRegistration(context.Background(), finishRegistrationArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred finishing the registration of the interactive REPL container")
 	}
+	logrus.Info(postContainerStartLogMsg)
 
 	hijackedResponse, err := dockerManager.AttachToContainer(context.Background(), replContainerId)
 	if err != nil {
