@@ -1,0 +1,12 @@
+.circleci
+.git
+.github
+.gitignore
+.idea
+.vscode
+
+LICENSE
+*.md
+
+scripts
+engine/Dockerfile
