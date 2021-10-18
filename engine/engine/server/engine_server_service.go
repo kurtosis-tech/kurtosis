@@ -24,14 +24,13 @@ func NewEngineServerService(enclaveManager *enclave_manager.EnclaveManager) *Eng
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
-	logrus.Debugf("Received request to create new enclave with the following args: %+v", args)
 
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
-	networkId, networkIpAndMask, apiContainerId, apiContainerIpAddr, apiContainerHostPortBinding, err := service.enclaveManager.CreateEnclave(
+	enclave, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		args.ApiContainerImage,
 		apiContainerLogLevel,
@@ -44,39 +43,37 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		NetworkId:                   networkId,
-		NetworkCidr:                 networkIpAndMask.String(),
-		ApiContainerId:              apiContainerId,
-		ApiContainerIpInsideNetwork: apiContainerIpAddr.String(),
-		ApiContainerHostIp:          apiContainerHostPortBinding.HostIP,
-		ApiContainerHostPort:        apiContainerHostPortBinding.HostPort,
+		NetworkId:                   enclave.GetNetworkId(),
+		NetworkCidr:                 enclave.GetNetworkIpAndMask().String(),
+		ApiContainerId:              enclave.GetApiContainerId(),
+		ApiContainerIpInsideNetwork: enclave.GetApiContainerIpAddr().String(),
+		ApiContainerHostIp:          enclave.GetApiContainerHostPortBinding().HostIP,
+		ApiContainerHostPort:        enclave.GetApiContainerHostPortBinding().HostPort,
 	}
 
 	return response, nil
 }
 
 func (service *EngineServerService) GetEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.GetEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclaveResponse, error) {
-	logrus.Debugf("Received request to get enclave with the following args: %+v", args)
 
-	networkId, networkIpAndMask, apiContainerId, apiContainerIpAddr, apiContainerHostPortBinding, err := service.enclaveManager.GetEnclave(ctx, args.EnclaveId)
+	enclave, err := service.enclaveManager.GetEnclave(ctx, args.EnclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave with ID '%v'", args.EnclaveId)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclaveResponse{
-		NetworkId:                   networkId,
-		NetworkCidr:                 networkIpAndMask.String(),
-		ApiContainerId:              apiContainerId,
-		ApiContainerIpInsideNetwork: apiContainerIpAddr.String(),
-		ApiContainerHostIp:          apiContainerHostPortBinding.HostIP,
-		ApiContainerHostPort:        apiContainerHostPortBinding.HostPort,
+		NetworkId:                   enclave.GetNetworkId(),
+		NetworkCidr:                 enclave.GetNetworkIpAndMask().String(),
+		ApiContainerId:              enclave.GetApiContainerId(),
+		ApiContainerIpInsideNetwork: enclave.GetApiContainerIpAddr().String(),
+		ApiContainerHostIp:          enclave.GetApiContainerHostPortBinding().HostIP,
+		ApiContainerHostPort:        enclave.GetApiContainerHostPortBinding().HostPort,
 	}
 
 	return response, nil
 }
 
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
-	logrus.Debugf("Received request to destroy enclave with the following args: %+v", args)
 
 	if err := service.enclaveManager.DestroyEnclave(ctx, args.EnclaveId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
