@@ -7,6 +7,7 @@
 * Added `Docker` file for Kurtosis Engine Server Docker image
 * Added `get-docker-image-tag` script to automatize Docker image tag creation process
 * Added `.dockerignore` to enable Docker caching
+* Added `Enclave` struct in `enclave_manager` packaged
 
 ### Changes
 * Removed check Typescript job and publish Typescript artifact job in Circle CI configuration
