@@ -17,22 +17,14 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 	"sort"
 	"strings"
-	"text/tabwriter"
 	"unicode/utf8"
 )
 
 const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg        = "enclave-id"
-
-	tabWriterMinwidth = 0
-	tabWriterTabwidth = 0
-	tabWriterPadding  = 3
-	tabWriterPadchar  = ' '
-	tabWriterFlags    = 0
 
 	headerWidthChars = 100
 	headerPadChar = "="
@@ -122,24 +114,6 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getTabWriterForPrinting() *tabwriter.Writer {
-	return tabwriter.NewWriter(
-		os.Stdout,
-		tabWriterMinwidth,
-		tabWriterTabwidth,
-		tabWriterPadding,
-		tabWriterPadchar,
-		tabWriterFlags,
-	)
-}
-
-func writeElemsToTabWriter(writer *tabwriter.Writer, elems... string) {
-	fmt.Fprintln(
-		writer,
-		strings.Join(elems, "\t"),
-	)
-}
-
 func getContainersSortedByGUID(containers []*types.Container) ([]*types.Container, error) {
 	containersSet := map[string]*types.Container{}
 	for _, container := range containers {

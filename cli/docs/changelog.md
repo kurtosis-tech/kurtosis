@@ -1,4 +1,8 @@
 # TBD
+### Features
+* `enclave` commands also show enclave state
+* Standardized table-printing logic into a `TablePrinter` object 
+
 ### Fixes
 * `module exec` will attempt to update the module & API container images before running
 
