@@ -6,8 +6,6 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
@@ -24,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_versions/v0"
-	"github.com/kurtosis-tech/kurtosis-core/commons/container_own_id_finder"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -34,7 +31,6 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -91,23 +87,6 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
-	ownContainerId, err := container_own_id_finder.GetOwnContainerIdByName(context.Background(), dockerManager, args.ContainerName)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting this container's ID")
-	}
-	defer func() {
-		// This is a catch-all safeguard, to leave the network absolutely empty by the time the API container shuts down
-		if err := disconnectExternalContainersAndKillEverythingElse(
-				context.Background(),
-				dockerManager,
-				args.NetworkId,
-				ownContainerId,
-				externalContainerStore); err != nil {
-			// TODO propagate this to the user somehow - likely in the exit code of the API container
-			logrus.Errorf("An error occurred when disconnecting external containers and killing everything else:")
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-		}
-	}()
 
 	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
 
@@ -225,53 +204,4 @@ func createServiceNetworkAndModuleStore(
 	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
-}
-
-func disconnectExternalContainersAndKillEverythingElse(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		networkId string,
-		ownContainerId string,
-		externalContainerStore *external_container_store.ExternalContainerStore) error {
-	logrus.Debugf("Disconnecting external containers and killing everything else on network '%v'...", networkId)
-	containerIds, err := dockerManager.GetContainerIdsConnectedToNetwork(ctx, networkId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers connected to network '%v', which is necessary for stopping them", networkId)
-	}
-
-	externalContainerIds := externalContainerStore.GetContainerIDs()
-
-	allContainerHandlingErrors := map[string]error{}
-	for _, containerId := range containerIds {
-		if containerId == ownContainerId {
-			continue
-		}
-
-		var containerHandlingErr error = nil
-		if _, found := externalContainerIds[containerId]; found {
-			// We don't want to kill the external containers since we don't own them, but we need them gone from the network
-			if err := dockerManager.DisconnectContainerFromNetwork(ctx, containerId, networkId); err != nil {
-				containerHandlingErr = stacktrace.Propagate(err, "An error occurred disconnecting container '%v' from the network", containerId)
-			}
-		} else {
-			if err := dockerManager.KillContainer(ctx, containerId); err != nil {
-				containerHandlingErr = stacktrace.Propagate(err, "An error occurred killing container '%v'", containerId)
-			}
-		}
-		if containerHandlingErr != nil {
-			allContainerHandlingErrors[containerId] = containerHandlingErr
-		}
-	}
-
-	if len(allContainerHandlingErrors) > 0 {
-		errorStrs := []string{}
-		for containerId, err := range allContainerHandlingErrors {
-			strToAppend := fmt.Sprintf("An error occurred removing container '%v':\n%v", containerId, err.Error())
-			errorStrs = append(errorStrs, strToAppend)
-		}
-		resultErrStr := strings.Join(errorStrs, "\n\n")
-		return errors.New(resultErrStr)
-	}
-	logrus.Debugf("Successfully disconnected external containers and killed everything else on network '%v'", networkId)
-	return nil
 }

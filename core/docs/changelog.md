@@ -2,6 +2,9 @@
 ### Changes
 * The API container will no longer stop anything inside its enclave when it shuts down as this role of cleaning up enclaves is being pushed to the enclave manager, though it still can stop containers when requested
 
+### Removals
+* Removed `ContainerOwnIDFinder` as it's no longer needed now that the API container no longer shuts down any other containers upon shutdown
+
 # 1.25.1
 ### Features
 * All enclave containers get a `com.kurtosistech.app-id` = `kurtosis` label, so that we can easily filter for only Kurtosis objects
