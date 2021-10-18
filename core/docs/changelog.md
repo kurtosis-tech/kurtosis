@@ -1,4 +1,6 @@
 # TBD
+
+# 1.25.1
 ### Features
 * All enclave containers get a `com.kurtosistech.app-id` = `kurtosis` label, so that we can easily filter for only Kurtosis objects
 
