@@ -1,5 +1,9 @@
 # TBD
 
+# 1.25.1
+### Features
+* All enclave containers get a `com.kurtosistech.app-id` = `kurtosis` label, so that we can easily filter for only Kurtosis objects
+
 # 1.25.0
 ### Changes
 * Upgraded to Kurt Client 0.19.0, which renames all the `...Lambda...` endpoints to `...Module...`
