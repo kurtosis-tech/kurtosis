@@ -8,7 +8,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013191503-b01ed3982dcd
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211013195011-74f1fcb1bee6
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211018175822-ab38e8d8ee6a
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211018203119-4b4b78e5dc96
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177

@@ -182,17 +182,57 @@ func (manager *EnclaveManager) CreateEnclave(
 	return networkId, networkIpAndMask, apiContainerId, &apiContainerIpAddr, apiContainerHostPortBinding, nil
 }
 
+func (manager *EnclaveManager) GetEnclave(ctx context.Context, enclaveId string) (string, *net.IPNet, string, *net.IP, *nat.PortBinding, error) {
+
+	network, err := manager.getEnclaveNetwork(ctx, enclaveId)
+	if err != nil {
+		return  "", nil, "", nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+	networkId := network.GetId()
+
+	apiContainer, err := manager.getAPIContainer(ctx, enclaveId)
+	if err != nil {
+		return "", nil, "", nil, nil, stacktrace.Propagate(err, "An error occurred getting API container for enclave ID '%v'", enclaveId)
+	}
+	apiContainerId := apiContainer.GetId()
+
+	apiContainerLabels := apiContainer.GetLabels()
+	apiContainerIPAddressString, found := apiContainerLabels[enclave_object_labels.APIContainerIPLabel]
+	if !found {
+		return "", nil, "", nil, nil, stacktrace.NewError(
+			"No '%v' container label was found on API container with ID '%v' with labels '%+v'",
+			enclave_object_labels.APIContainerIPLabel,
+			apiContainer.GetId(),
+			apiContainerLabels,
+		)
+	}
+	apiContainerIpAddr := net.ParseIP(apiContainerIPAddressString)
+	if apiContainerIpAddr == nil {
+		return "", nil, "", nil, nil, stacktrace.NewError("Couldn't parse API container IP address string '%v' to an IP address", apiContainerIPAddressString)
+	}
+
+	apiContainerListenPortString, found := apiContainerLabels[enclave_object_labels.APIContainerPortLabel]
+	apiContainerNatPort, err := nat.NewPort(apiContainerListenProtocol, apiContainerListenPortString)
+	if err != nil {
+		return "", nil, "", nil, nil, stacktrace.Propagate(err, "An error occurred creating new API container port with protocol '%v' and port number '%v'", apiContainerListenProtocol, apiContainerListenPortString)
+	}
+
+	allApiContainerHostPortBindings := apiContainer.GetHostPortBindings()
+	apiContainerHostPortBinding, found := allApiContainerHostPortBindings[apiContainerNatPort]
+	if !found {
+		return "", nil, "", nil, nil, stacktrace.NewError("No API container host port binding found for port '%v' among host port bindings '%+v'", apiContainerNatPort, allApiContainerHostPortBindings)
+	}
+
+	return networkId, network.GetIpAndMask(), apiContainerId, &apiContainerIpAddr, apiContainerHostPortBinding, nil
+}
+
 func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId string) error {
 
-	networks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
+	network, err := manager.getEnclaveNetwork(ctx, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the network  matching the '%v' network name", enclaveId)
+		return  stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
-	if len(networks) == 0 || len(networks) > 1 {
-		return stacktrace.NewError("%v Docker network were returned for the '%v' network - this is very strange!", len(networks), enclaveId)
-	}
-
-	networkId := networks[0].GetId()
+	networkId := network.GetId()
 
 	apiContainer, err := manager.getAPIContainer(ctx, enclaveId)
 	if err != nil {
@@ -225,6 +265,21 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId string) (*types.Network, error) {
+	matchingNetworks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting networks matching name '%v'", enclaveId)
+	}
+	if len(matchingNetworks) == 0 {
+		return nil, stacktrace.NewError("Docker network with name '%v' does not exist.", enclaveId)
+	}
+	if len(matchingNetworks) > 1 {
+		return nil, stacktrace.NewError("Found several networks matching name '%v' - this is very strange!", enclaveId)
+	}
+	network := matchingNetworks[0]
+	return network, nil
+}
+
 func (manager *EnclaveManager) getAPIContainer(ctx context.Context, enclaveId string) (*types.Container, error) {
 	labels := getLabelsForAPIContainer(enclaveId)
 	containers, err := manager.dockerManager.GetContainersByLabels(ctx, labels, shouldFetchStoppedContainers)
