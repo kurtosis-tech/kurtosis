@@ -30,12 +30,12 @@ const (
 	enclaveIdArg        = "enclave-id"
 
 	enclaveIdTitleName     = "Enclave ID"
-	enclaveStatusTitleName = "State"
+	enclaveStatusTitleName = "Status"
 
 	headerWidthChars = 100
 	headerPadChar = "="
 
-	shouldExamineStoppedContainersWhenPrintingEnclaveState = true
+	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -137,7 +137,7 @@ func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerM
 	searchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 	}
-	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveState)
+	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
 	}
