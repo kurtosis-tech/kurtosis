@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.0
 ### Features
 * Added `EngineServerService` which will be in charge of receive requests for creating and destroying Kurtosis Enclaves
 * Ported the `EnclaveManager` from `Kurtosis CLI` to here and it also includes `DockerNetworkAllocator`
