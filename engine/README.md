@@ -1,3 +1,3 @@
-TODO REPLACE WITH REPO NAME
-===========================
-TODO replace with repo description
+Kurtosis Engine Server
+======================
+Kurtosis Engine Server description
