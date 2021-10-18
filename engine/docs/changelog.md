@@ -10,3 +10,6 @@
 
 ### Changes
 * Removed check Typescript job and publish Typescript artifact job in Circle CI configuration
+
+### Removals
+* Removed the `log` inside `EnclaveManager`, as it's no longer needed

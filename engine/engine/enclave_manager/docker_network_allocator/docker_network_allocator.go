@@ -136,7 +136,6 @@ func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *Doc
 
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		ctx context.Context,
-		log *logrus.Logger,
 		networkName string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
 	if !provider.isConstructedViaConstructor {
 		return "", nil, nil, nil, stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
@@ -171,7 +170,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
-		freeIpAddrTracker := commons.NewFreeIpAddrTracker(log, freeNetworkIpAndMask, map[string]bool{})
+		freeIpAddrTracker := commons.NewFreeIpAddrTracker(logrus.StandardLogger(), freeNetworkIpAndMask, map[string]bool{})
 		gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
@@ -194,7 +193,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			)
 		}
 
-		log.Debugf(
+		logrus.Debugf(
 			"Tried to create network '%v' with CIDR '%v', but Docker returned the '%v' error indicating that either:\n" +
 				" 1) there used to be a Docker network that used those IPs that was just deleted (Docker will report a network as deleted earlier than its IPs are freed)\n" +
 				" 2) a new network was created after we scanned for used IPs but before we made the call to create the network\n" +
