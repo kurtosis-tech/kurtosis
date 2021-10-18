@@ -55,6 +55,26 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	return response, nil
 }
 
+func (service *EngineServerService) GetEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.GetEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclaveResponse, error) {
+	logrus.Debugf("Received request to get enclave with the following args: %+v", args)
+
+	networkId, networkIpAndMask, apiContainerId, apiContainerIpAddr, apiContainerHostPortBinding, err := service.enclaveManager.GetEnclave(ctx, args.EnclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave with ID '%v'", args.EnclaveId)
+	}
+
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclaveResponse{
+		NetworkId:                   networkId,
+		NetworkCidr:                 networkIpAndMask.String(),
+		ApiContainerId:              apiContainerId,
+		ApiContainerIpInsideNetwork: apiContainerIpAddr.String(),
+		ApiContainerHostIp:          apiContainerHostPortBinding.HostIP,
+		ApiContainerHostPort:        apiContainerHostPortBinding.HostPort,
+	}
+
+	return response, nil
+}
+
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	logrus.Debugf("Received request to destroy enclave with the following args: %+v", args)
 
