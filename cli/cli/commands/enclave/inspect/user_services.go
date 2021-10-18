@@ -24,7 +24,7 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 	}
 
 	tablePrinter := table_printer.NewTablePrinter(userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
-	sortedContainers, err := getContainersSortedByGUID(containers)
+	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {
 			  return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
 			  }

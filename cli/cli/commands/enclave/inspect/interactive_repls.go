@@ -22,7 +22,7 @@ func printInteractiveRepls(ctx context.Context, dockerManager *docker_manager.Do
 
 	tablePrinter := table_printer.NewTablePrinter(interactiveReplGUIDColHeader)
 
-	sortedContainers, err := getContainersSortedByGUID(containers)
+	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred sorting interactive REPL containers by GUID")
 	}

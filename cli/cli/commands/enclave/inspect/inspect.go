@@ -11,6 +11,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
@@ -26,8 +28,13 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg        = "enclave-id"
 
+	enclaveIdTitleName    = "Enclave ID"
+	enclaveStateTitleName = "State"
+
 	headerWidthChars = 100
 	headerPadChar = "="
+
+	shouldExamineStoppedContainersWhenPrintingEnclaveState = true
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -87,6 +94,14 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	enclaveState, err := getEnclaveStatus(ctx, dockerManager, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred determining the state of the enclave")
+	}
+
+	fmt.Fprintln(logrus.StandardLogger().Out, fmt.Sprintf("%v: %v", enclaveIdTitleName, enclaveId))
+	fmt.Fprintln(logrus.StandardLogger().Out, fmt.Sprintf("%v: %v", enclaveStateTitleName, enclaveState))
+
 	headersWithPrintErrs := []string{}
 	for header, printingFunc := range enclaveObjectPrintingFuncs {
 		numRunesInHeader := utf8.RuneCountInString(header) + 2	// 2 because there will be a space before and after the header
@@ -114,7 +129,27 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getContainersSortedByGUID(containers []*types.Container) ([]*types.Container, error) {
+func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (enclave_statuses.EnclaveStatus, error) {
+	searchLabels := map[string]string{
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveState)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
+	}
+
+	enclaveStatus, err := enclave_status_from_container_status_retriever.GetEnclaveStatus(enclaveContainers)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting the status of enclave '%v' from its containers' statuses",
+			enclaveId,
+		)
+	}
+	return enclaveStatus, nil
+}
+
+func sortContainersByGUID(containers []*types.Container) ([]*types.Container, error) {
 	containersSet := map[string]*types.Container{}
 	for _, container := range containers {
 		if container != nil {
