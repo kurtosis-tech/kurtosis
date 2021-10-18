@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/docker_network_allocator"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -43,16 +43,13 @@ type EnclaveManager struct {
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
-
-	log *logrus.Logger
 }
 
-func NewEnclaveManager(dockerManager *docker_manager.DockerManager, log *logrus.Logger) *EnclaveManager {
+func NewEnclaveManager(dockerManager *docker_manager.DockerManager) *EnclaveManager {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
 		dockerManager:           dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
-		log: log,
 	}
 }
 
@@ -79,10 +76,9 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
 
-	manager.log.Debugf("Creating Docker network for enclave '%v'...", enclaveId)
+	logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveId)
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := manager.dockerNetworkAllocator.CreateNewNetwork(
 		setupCtx,
-		manager.log,
 		enclaveId,
 	)
 	if err != nil {
@@ -96,13 +92,13 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer func() {
 		if shouldDeleteNetwork {
 			if err := manager.dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
-				manager.log.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:", networkId)
-				fmt.Fprintln(manager.log.Out, err)
-				manager.log.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
+				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:", networkId)
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
 			}
 		}
 	}()
-	manager.log.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
+	logrus.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
 
 	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
@@ -139,7 +135,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerLauncher, err := api_container_launcher_lib.GetAPIContainerLauncherForLaunchAPIVersion(
 		launchApiVersion,
 		manager.dockerManager,
-		manager.log,
+		logrus.StandardLogger(),
 		apiContainerImage,
 		apiContainerListenPort,
 		apiContainerListenProtocol,
@@ -169,9 +165,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer func() {
 		if shouldStopApiContainer {
 			if err := manager.dockerManager.StopContainer(teardownCtx, apiContainerId, apiContainerStopTimeout); err != nil {
-				manager.log.Errorf("Creating the enclave didn't complete successfully, so we tried to stop the API container but an error was thrown:")
-				fmt.Fprintln(manager.log.Out, err)
-				manager.log.Errorf("ACTION REQUIRED: You'll need to manually stop API container with ID '%v'", apiContainerId)
+				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to stop the API container but an error was thrown:")
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop API container with ID '%v'", apiContainerId)
 			}
 		}
 	}()

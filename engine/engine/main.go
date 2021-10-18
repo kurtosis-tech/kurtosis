@@ -61,7 +61,7 @@ func runMain () error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager, logrus.StandardLogger())
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager)
 
 	engineServerService := server.NewEngineServerService(enclaveManager)
 
