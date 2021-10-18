@@ -1,9 +1,11 @@
 # TBD
 ### Fixes
 * `module exec` will attempt to update the module & API container images before running
+* Fixed a bug where having a `node_modules` directory in your current directory when starting a REPL will cause the REPL to fail
 
 ### Changes
 * Upgrade to testsuite-api-lib 0.11.0, which uses Kurt Client 0.19.0 (already handled in v0.4.0 of this repo)
+* When running a REPL, your current directory is now mounted at `/local` rather than the present directory
 
 # 0.4.1
 ### Fixes
