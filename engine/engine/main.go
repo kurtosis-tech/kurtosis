@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	kurtosis_engine_server_consts "github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis-engine-server-consts"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_server_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -69,8 +69,8 @@ func runMain () error {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		kurtosis_engine_server_consts.ListenPort,
-		kurtosis_engine_server_consts.ListenProtocol,
+		kurtosis_engine_server_rpc_api_consts.ListenPort,
+		kurtosis_engine_server_rpc_api_consts.ListenProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,
