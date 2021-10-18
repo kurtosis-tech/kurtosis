@@ -15,7 +15,7 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GIT_REF_SANITIZING_SED_REGEX="s,[/:],_,g"
 
 # Versions matching this regex will get shortened
-RELEASE_VERSION_REGEX="${SHORTENED_RELEASE_VERSION_REGEX}\.[0-9]+$"
+RELEASE_VERSION_REGEX="^[0-9]+\.[0-9]+\.[0-9]+$"
 
 # ==================================================================================================
 #                                             Main Logic
