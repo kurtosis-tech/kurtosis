@@ -11,7 +11,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,6 +27,9 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 
 	enclaveIdColumnHeader = "EnclaveID"
+	enclaveStatusColumnHeader = "Status"
+
+	shouldExamineStoppedContainersForListingEnclaves = true
 )
 
 var kurtosisLogLevelStr string
@@ -67,49 +73,61 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getLabelsForListEnclaves()
-
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
+	searchLabels := map[string]string{
+		enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+	}
+	kurtosisContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersForListingEnclaves)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
+		return stacktrace.Propagate(err, "An error occurred getting Kurtosis containers by labels: '%+v'", searchLabels)
 	}
 
-	fmt.Println(enclaveIdColumnHeader)
-	if containers != nil {
-		enclaveIds := getContainersEnclaveIds(containers)
-		for _, enclaveId := range enclaveIds {
-			fmt.Println(enclaveId)
+	kurtosisContainersByEnclaveId := map[string][]*types.Container{}
+	for _, container := range kurtosisContainers {
+		containerLabels := container.GetLabels()
+		enclaveId, found := containerLabels[enclave_object_labels.EnclaveIDContainerLabel]
+		if !found {
+			return stacktrace.NewError(
+				"No '%v' label found for container '%v'; this is a bug in Kurtosis!",
+				enclave_object_labels.EnclaveIDContainerLabel,
+				container.GetId(),
+			)
+		}
+
+		enclaveContainers, found := kurtosisContainersByEnclaveId[enclaveId]
+		if !found {
+			enclaveContainers = []*types.Container{}
+		}
+		enclaveContainers = append(enclaveContainers, container)
+
+		kurtosisContainersByEnclaveId[enclaveId] = enclaveContainers
+	}
+
+	orderedEnclaveIds := []string{}
+	enclaveStatuses := map[string]enclave_statuses.EnclaveStatus{}
+	for enclaveId, enclaveContainers := range kurtosisContainersByEnclaveId {
+		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
+		enclaveStatus, err := enclave_status_from_container_status_retriever.GetEnclaveStatus(enclaveContainers)
+		if err != nil {
+			return stacktrace.NewError(
+				"An error occurred getting the status for enclave '%v' from the status of its containers",
+				enclaveId,
+			)
+		}
+		enclaveStatuses[enclaveId] = enclaveStatus
+	}
+	sort.Strings(orderedEnclaveIds)
+
+	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
+	for _, enclaveId := range orderedEnclaveIds {
+		enclaveStatus, found := enclaveStatuses[enclaveId]
+		if !found {
+			return stacktrace.NewError("We're about to print enclave '%v', but it doesn't have a status; this is a bug in Kurtosis!", enclaveId)
+		}
+		if err := tablePrinter.AddRow(enclaveId, string(enclaveStatus)); err != nil {
+			return stacktrace.NewError("An error occurred adding row for enclave '%v' to the table printer", enclaveId)
 		}
 	}
+	tablePrinter.Print()
 
 	return nil
-}
-
-// ====================================================================================================
-// 									   Private helper methods
-// ====================================================================================================
-func getLabelsForListEnclaves() map[string]string {
-	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
-	return labels
-}
-
-func getContainersEnclaveIds(containers []*types.Container) []string{
-	containersSet := map[string]*types.Container{}
-	for _, container := range containers {
-		if container != nil {
-			containerId := container.GetId()
-			containersSet[containerId] = container
-		}
-	}
-
-	enclaveIds := []string{}
-	for _, container := range containersSet {
-		enclaveId := container.GetLabels()[enclave_object_labels.EnclaveIDContainerLabel]
-		enclaveIds = append(enclaveIds, enclaveId)
-	}
-
-	sort.Strings(enclaveIds)
-
-	return enclaveIds
 }

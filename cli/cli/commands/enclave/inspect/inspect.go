@@ -11,16 +11,17 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 	"sort"
 	"strings"
-	"text/tabwriter"
 	"unicode/utf8"
 )
 
@@ -28,14 +29,13 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg        = "enclave-id"
 
-	tabWriterMinwidth = 0
-	tabWriterTabwidth = 0
-	tabWriterPadding  = 3
-	tabWriterPadchar  = ' '
-	tabWriterFlags    = 0
+	enclaveIdTitleName     = "Enclave ID"
+	enclaveStatusTitleName = "Status"
 
 	headerWidthChars = 100
 	headerPadChar = "="
+
+	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -95,6 +95,17 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	enclaveStatus, err := getEnclaveStatus(ctx, dockerManager, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
+	}
+
+	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
+	keyValuePrinter.AddPair(enclaveStatusTitleName, string(enclaveStatus))
+	keyValuePrinter.Print()
+	fmt.Fprintln(logrus.StandardLogger().Out, "")
+
 	headersWithPrintErrs := []string{}
 	for header, printingFunc := range enclaveObjectPrintingFuncs {
 		numRunesInHeader := utf8.RuneCountInString(header) + 2	// 2 because there will be a space before and after the header
@@ -122,25 +133,27 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getTabWriterForPrinting() *tabwriter.Writer {
-	return tabwriter.NewWriter(
-		os.Stdout,
-		tabWriterMinwidth,
-		tabWriterTabwidth,
-		tabWriterPadding,
-		tabWriterPadchar,
-		tabWriterFlags,
-	)
+func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (enclave_statuses.EnclaveStatus, error) {
+	searchLabels := map[string]string{
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
+	}
+
+	enclaveStatus, err := enclave_status_from_container_status_retriever.GetEnclaveStatus(enclaveContainers)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting the status of enclave '%v' from its containers' statuses",
+			enclaveId,
+		)
+	}
+	return enclaveStatus, nil
 }
 
-func writeElemsToTabWriter(writer *tabwriter.Writer, elems... string) {
-	fmt.Fprintln(
-		writer,
-		strings.Join(elems, "\t"),
-	)
-}
-
-func getContainersSortedByGUID(containers []*types.Container) ([]*types.Container, error) {
+func sortContainersByGUID(containers []*types.Container) ([]*types.Container, error) {
 	containersSet := map[string]*types.Container{}
 	for _, container := range containers {
 		if container != nil {
