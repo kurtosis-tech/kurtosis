@@ -8,6 +8,13 @@ package enclave_object_labels
 const (
 	labelNamespace = "com.kurtosistech."
 
+	// This label will get created on every Kurtosis object, and has the same value every time
+	// This allows us to easily filter down to only Kurtosis objects
+	AppIDLabel = labelNamespace + "app-id"
+
+	// This is the static value that every single Kurtosis object will receive for the app ID label
+	AppIDValue = "kurtosis"
+
 	EnclaveIDContainerLabel = labelNamespace + "enclave-id"
 	ContainerTypeLabel      = labelNamespace + "container-type"
 
