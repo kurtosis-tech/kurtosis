@@ -10,4 +10,3 @@
 
 ### Changes
 * Removed check Typescript job and publish Typescript artifact job in Circle CI configuration
-

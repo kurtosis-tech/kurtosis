@@ -8,8 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var defaultApiContainerLogLevel = logrus.InfoLevel.String()
-
 type EngineServerService struct {
 	// This embedding is required by gRPC
 	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
@@ -24,12 +22,12 @@ func NewEngineServerService(enclaveManager *enclave_manager.EnclaveManager) *Eng
 	return service
 }
 
-func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error){
+func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
 	logrus.Debugf("Received request to create new enclave with the following args: %+v", args)
 
-	apiContainerLogLevel, err := logrus.ParseLevel(defaultApiContainerLogLevel)
+	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", defaultApiContainerLogLevel)
+		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
 	networkId, networkIpAndMask, apiContainerId, apiContainerIpAddr, apiContainerHostPortBinding, err := service.enclaveManager.CreateEnclave(
@@ -39,18 +37,18 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		args.EnclaveId,
 		args.IsPartitioningEnabled,
 		args.ShouldPublishAllPorts,
-		)
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with ID '%v'", args.EnclaveId)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		NetworkId:            networkId,
-		NetworkIp:            networkIpAndMask.String(),
-		ApiContainerId:       apiContainerId,
-		ApiContainerIp:       apiContainerIpAddr.String(),
-		ApiContainerHostIp:   apiContainerHostPortBinding.HostIP,
-		ApiContainerHostPort: apiContainerHostPortBinding.HostPort,
+		NetworkId:                   networkId,
+		NetworkCidr:                 networkIpAndMask.String(),
+		ApiContainerId:              apiContainerId,
+		ApiContainerIpInsideNetwork: apiContainerIpAddr.String(),
+		ApiContainerHostIp:          apiContainerHostPortBinding.HostIP,
+		ApiContainerHostPort:        apiContainerHostPortBinding.HostPort,
 	}
 
 	return response, nil

@@ -27,7 +27,7 @@ fi
 # Test code
 echo "Running unit tests..."
 if ! go test "${root_dirpath}/..."; then
-  echo "Tests failed!"
+  echo "Tests failed!" >&2
   exit 1
 fi
 echo "Tests succeeded"

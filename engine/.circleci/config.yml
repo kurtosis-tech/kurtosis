@@ -22,6 +22,8 @@ jobs:
             circleci-agent step halt
           fi
 
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -50,3 +52,15 @@ workflows:
                 - develop
                 - master
       # -- End PR check jobs ---------------------------------------
+
+      # -- Artifact-publishing jobs --------------------------------
+      # TODO UNCOMMENT WHEN READY
+      #- publish_typescript:
+      #    context:
+      #      - npmjs-user
+      #    filters:
+      #      branches:
+      #        ignore: /.*/
+      #      tags:
+      #        only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      # -- End artifact-publishing jobs ----------------------------

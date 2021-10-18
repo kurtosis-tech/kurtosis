@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	kurtosis_engine_server_consts "github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis-engine-server-consts"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
@@ -68,8 +69,8 @@ func runMain () error {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		server.ListenPort,
-		server.ListenProtocol,
+		kurtosis_engine_server_consts.ListenPort,
+		kurtosis_engine_server_consts.ListenProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,
@@ -78,9 +79,7 @@ func runMain () error {
 
 	logrus.Info("Running server...")
 	if err := engineServer.Run(); err != nil {
-		logrus.Errorf("An error occurred running the server:")
-		fmt.Fprintln(logrus.StandardLogger().Out, err)
-		os.Exit(failureExitCode)
+		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil
 }
