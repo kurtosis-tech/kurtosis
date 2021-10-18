@@ -1,5 +1,20 @@
 # TBD
 
+# 0.4.2
+### Features
+* `enclave` commands also show enclave state
+* Standardized table-printing logic into a `TablePrinter` object 
+* Added a `KeyValuePrinter` for pretty-printing key-value pairs
+* `enclave inspect` also prints the enclave ID & state
+
+### Fixes
+* `module exec` will attempt to update the module & API container images before running
+* Fixed a bug where having a `node_modules` directory in your current directory when starting a REPL will cause the REPL to fail
+
+### Changes
+* Upgrade to testsuite-api-lib 0.11.0, which uses Kurt Client 0.19.0 (already handled in v0.4.0 of this repo)
+* When running a REPL, your current directory is now mounted at `/local` rather than the present directory
+
 # 0.4.1
 ### Fixes
 * Update the Javascript CLI's `core-api-lib` version to 0.19.0, to match the rest of the code

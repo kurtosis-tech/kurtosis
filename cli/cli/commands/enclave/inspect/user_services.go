@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 )
@@ -22,9 +23,8 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		return stacktrace.Propagate(err, "An error occurred getting user service containers by labels: '%+v'", userServiceLabels)
 	}
 
-	tabWriter := getTabWriterForPrinting()
-	writeElemsToTabWriter(tabWriter, userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
-	sortedContainers, err := getContainersSortedByGUID(containers)
+	tablePrinter := output_printers.NewTablePrinter(userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
+	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {
 			  return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
 			  }
@@ -35,18 +35,29 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		}
 		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
-		var firstHostPortBinding string
+		firstHostPortBindingStr := ""
 		if hostPortBindingsStrings != nil  {
-			firstHostPortBinding = hostPortBindingsStrings[0]
+			firstHostPortBindingStr = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]
 		}
-		writeElemsToTabWriter(tabWriter, containerGuid, firstHostPortBinding)
+		if err := tablePrinter.AddRow(containerGuid, firstHostPortBindingStr); err != nil {
+			return stacktrace.NewError(
+				"An error occurred adding row for user service container '%v' to the table printer",
+				containerGuid,
+			)
+		}
 
-		for _, hostPortBindingsString := range hostPortBindingsStrings {
-			writeElemsToTabWriter(tabWriter, "", hostPortBindingsString)
+		for _, additionalHostPortBindingStr := range hostPortBindingsStrings {
+			if err := tablePrinter.AddRow("", additionalHostPortBindingStr); err != nil {
+				return stacktrace.NewError(
+					"An error occurred adding additional host port binding '%v' row for user service container '%v' to the table printer",
+					additionalHostPortBindingStr,
+					containerGuid,
+				)
+			}
 		}
 	}
-	tabWriter.Flush()
+	tablePrinter.Print()
 
 	return nil
 }
