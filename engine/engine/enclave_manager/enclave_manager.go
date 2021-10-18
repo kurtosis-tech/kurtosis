@@ -8,9 +8,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/docker_network_allocator"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -32,6 +34,8 @@ const (
 
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
+
+	shouldFetchStoppedContainers = false
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -182,9 +186,64 @@ func (manager *EnclaveManager) CreateEnclave(
 	return networkId, networkIpAndMask, apiContainerId, &apiContainerIpAddr, apiContainerHostPortBinding, nil
 }
 
+func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId string) error {
+
+	networks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the network  matching the '%v' network name", enclaveId)
+	}
+	if len(networks) == 0 || len(networks) > 1 {
+		return stacktrace.NewError("%v Docker network were returned for the '%v' network - this is very strange!", len(networks), enclaveId)
+	}
+
+	networkId := networks[0].GetId()
+
+	apiContainer, err := manager.getAPIContainer(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting API container for enclave ID '%v'", enclaveId)
+	}
+	apiContainerId := apiContainer.GetId()
+
+	if err := manager.dockerManager.StopContainer(ctx, apiContainerId, apiContainerStopTimeout); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred stopping the API container with ID '%v' for enclave '%v'",
+			apiContainerId,
+			enclaveId,
+		)
+	}
+
+	// The API container's shutdown logic disconnects/stops all other containers, so we're good to remove the network now
+	if err := manager.dockerManager.RemoveNetwork(ctx, networkId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred deleting the network with ID '%v' for enclave '%v'",
+			networkId,
+			enclaveId,
+		)
+	}
+
+	return nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func (manager *EnclaveManager) getAPIContainer(ctx context.Context, enclaveId string) (*types.Container, error) {
+	labels := getLabelsForAPIContainer(enclaveId)
+	containers, err := manager.dockerManager.GetContainersByLabels(ctx, labels, shouldFetchStoppedContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting API container by labels: '%+v'", labels)
+	}
+	if len(containers) == 0 || len(containers) > 1 {
+		return nil, stacktrace.NewError("%v Docker container were returned for labels '%+v' and should be only one API container running on each enclave - this is very strange!", len(containers), labels)
+	}
+
+	apiContainer := containers[0]
+
+	return apiContainer, nil
+}
+
 func waitForApiContainerAvailability(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
@@ -214,4 +273,11 @@ func waitForApiContainerAvailability(
 		)
 	}
 	return nil
+}
+
+func getLabelsForAPIContainer(enclaveId string) map[string]string {
+	labels := map[string]string{}
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
+	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
+	return labels
 }

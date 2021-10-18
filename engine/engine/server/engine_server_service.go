@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type EngineServerService struct {
@@ -52,4 +53,14 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	}
 
 	return response, nil
+}
+
+func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
+	logrus.Debugf("Received request to destroy enclave with the following args: %+v", args)
+
+	if err := service.enclaveManager.DestroyEnclave(ctx, args.EnclaveId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
+	}
+
+	return &emptypb.Empty{}, nil
 }
