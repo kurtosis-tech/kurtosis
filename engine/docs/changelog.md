@@ -1,5 +1,12 @@
 # TBD
 
+# 0.1.4
+### Features
+* Added a `KurtosisEngineServerVersion` constant that gets set to this repo's version
+
+### Removals
+* Removed non-functioning, unused `update-package-version.sh` script
+
 # 0.1.3
 ### Features
 * Publish server as a Docker image to `kurtosistech/kurtosis-engine-server`
