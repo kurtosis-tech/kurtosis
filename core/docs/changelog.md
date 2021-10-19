@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgrade to `container-engine-lib` TOODOOOOOOOOOOO, which refactors the container-starting API to allow for fixed host machine ports
 
 # 1.25.1
 ### Features
