@@ -5,6 +5,9 @@ import (
 	"net"
 )
 
+// TODO Refactor this a bit - an enclave will ALWAYS have a networkId, networkIpAndMask, and status but
+//  it MAY NOT have an API container inside it (either because of a failed Destroy, or because it hasn't been
+//  started yet)
 type Enclave struct {
 	networkId string
 	networkIpAndMask *net.IPNet
