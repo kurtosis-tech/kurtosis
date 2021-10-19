@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.1
 ### Features
 * Added `RemoveVolume` and `RemoveContainer` functions
 * Added a `GetVolumesByName` function
