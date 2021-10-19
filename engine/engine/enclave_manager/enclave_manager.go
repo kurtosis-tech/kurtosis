@@ -293,17 +293,45 @@ func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string
 		}
 	}
 
-	var resultErr error = nil
 	if len(containerKillErrorStrs) > 0 {
 		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
-		resultErr = stacktrace.NewError(
+		return stacktrace.NewError(
 			"One or more errors occurred killing the containers in enclave '%v':\n%v",
 			enclaveId,
 			errorStr,
 		)
 	}
-	return resultErr
 
+	// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
+	//  before we return
+	containerWaitErrorStrs := []string{}
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerName := enclaveContainer.GetName()
+		containerId := enclaveContainer.GetId()
+		if _, err := manager.dockerManager.WaitForExit(ctx, containerId); err != nil {
+			wrappedContainerWaitErr := stacktrace.Propagate(
+				err,
+				"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
+				containerName,
+				containerId,
+			)
+			containerWaitErrorStrs = append(
+				containerWaitErrorStrs,
+				wrappedContainerWaitErr.Error(),
+			)
+		}
+	}
+
+	if len(containerWaitErrorStrs) > 0 {
+		errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	return nil
 }
 
 func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId string) error {
