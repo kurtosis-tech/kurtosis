@@ -2,6 +2,11 @@
 ### Features
 * The ability to specify fixed host machine port bindings when starting a container is now available via the key of the map in `CreateAndStartContainerArgsBuilder.WithUsedPorts` function
 
+# 0.6.1
+### Features
+* Added `RemoveVolume` and `RemoveContainer` functions
+* Added a `GetVolumesByName` function
+
 ### Changes
 * Clarified that the `all` argument to `GetContainersByLabels` is for whether stopped containers should be shown
 

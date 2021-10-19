@@ -60,12 +60,22 @@ const (
 	// If no tag is specified for an image, this is the tag Dock
 	dockerDefaultTag = "latest"
 
+	// From https://docs.docker.com/engine/api/v1.41/#operation/VolumeList
+	volumeNameSearchFilterKey = "name"
+
 	// For some reason, when publish-all-ports is requested, Docker will return successfully from starting a
 	//  container, but without having bound the host ports
 	// See: https://github.com/moby/moby/issues/42860
 	// To work around this, we retry a few times
 	timeBetweenHostPortBindingChecks = 500 * time.Millisecond
 	maxNumHostPortBindingChecks = 4
+
+	// Not sure why we'd ever want 'force' set to false when removing volumes & containers
+	shouldForceVolumeRemoval         = true
+
+	shouldRemoveAnonymousVolumesWhenRemovingContainers = true
+	shouldRemoveLinksWhenRemovingContainers            = false  // We don't use container links
+	shouldKillContainersWhenRemovingContainers         = true
 )
 
 // The dimensions of the TTY that the container should output to when in interactive mode
@@ -164,42 +174,6 @@ func (manager DockerManager) GetNetworksByName(ctx context.Context, name string)
 
 }
 
-func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*docker_manager_types.Network, error) {
-	networks := []*docker_manager_types.Network{}
-
-	for _, dockerNetwork := range dockerNetworks {
-		network, err := newNetworkFromDockerNetwork(dockerNetwork)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating new network from Docker network with ID '%v'", dockerNetwork.ID)
-		}
-		networks = append(networks, network)
-	}
-
-	return networks, nil
-}
-
-func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_manager_types.Network, error) {
-	if len(dockerNetwork.IPAM.Config) == 0 {
-		return nil, stacktrace.NewError("Kurtosis Docker network with ID %v does not contains any IPAM config.", dockerNetwork.ID)
-	}
-	if len(dockerNetwork.IPAM.Config) > 1 {
-		return nil, stacktrace.NewError("This is an unexpected error Docker network with ID '%v' shouldn't have more than one IPAM config; this is a bug in Kurtosis itself", dockerNetwork.ID)
-	}
-
-	firstIpamConfig := dockerNetwork.IPAM.Config[0]
-
-	_, ipAndMask, err := net.ParseCIDR(firstIpamConfig.Subnet)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
-	}
-
-	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
-
-	return network, nil
-}
-
-
-
 func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
 	inspectResponse, err := manager.dockerClient.NetworkInspect(context, networkId, types.NetworkInspectOptions{})
 	if err != nil {
@@ -258,6 +232,49 @@ func (manager DockerManager) CreateVolume(context context.Context, volumeName st
 	return nil
 }
 
+/*
+Searches for volumes whose names match the given one
+
+Args:
+	context: The Context that this request is running in (useful for cancellation)
+	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
+		even give volumes IDs - this name is all there is)
+
+Returns: A list of names of volumes matching the search term
+*/
+func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName string) ([]string, error) {
+	nameFilter := filters.KeyValuePair{
+		Key:   volumeNameSearchFilterKey,
+		Value: volumeName,
+	}
+	filterArgs := filters.NewArgs(nameFilter)
+	resp, err := manager.dockerClient.VolumeList(ctx, filterArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
+	}
+
+	respNames := []string{}
+	for _, foundVolume := range resp.Volumes {
+		respNames = append(respNames, foundVolume.Name)
+	}
+	return respNames, nil
+}
+
+
+
+/*
+Removes a Docker volume identified by the given name, deleting it permanently
+
+Args:
+	context: The Context that this request is running in (useful for cancellation)
+	volumeName: The unique identifier used by Docker to identify the volume that will get removed
+*/
+func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName string) error {
+	if err := manager.dockerClient.VolumeRemove(ctx, volumeName, shouldForceVolumeRemoval); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing volume '%v'", volumeName)
+	}
+	return nil
+}
 
 /*
 Creates a Docker container with the given args and starts it.
@@ -528,6 +545,25 @@ func (manager DockerManager) KillContainer(context context.Context, containerId 
 			return nil
 		}
 		return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
+	}
+	return nil
+}
+
+/*
+Removes the container with the given ID, deleting it permanently
+
+Args:
+	context: The context that the removal runs in
+	containerId: ID of Docker container to remove
+*/
+func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
+	removeOpts := types.ContainerRemoveOptions{
+		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
+		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
+		Force:         shouldKillContainersWhenRemovingContainers,
+	}
+	if err := manager.dockerClient.ContainerRemove(ctx, containerId, removeOpts); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing container with ID '%v'", containerId)
 	}
 	return nil
 }
@@ -1038,4 +1074,38 @@ func getLabelsFilterList(labels map[string]string) filters.Args {
 	}
 	labelsFilterList := filters.NewArgs(filtersArgs...)
 	return labelsFilterList
+}
+
+func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*docker_manager_types.Network, error) {
+	networks := []*docker_manager_types.Network{}
+
+	for _, dockerNetwork := range dockerNetworks {
+		network, err := newNetworkFromDockerNetwork(dockerNetwork)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating new network from Docker network with ID '%v'", dockerNetwork.ID)
+		}
+		networks = append(networks, network)
+	}
+
+	return networks, nil
+}
+
+func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_manager_types.Network, error) {
+	if len(dockerNetwork.IPAM.Config) == 0 {
+		return nil, stacktrace.NewError("Kurtosis Docker network with ID %v does not contains any IPAM config.", dockerNetwork.ID)
+	}
+	if len(dockerNetwork.IPAM.Config) > 1 {
+		return nil, stacktrace.NewError("This is an unexpected error Docker network with ID '%v' shouldn't have more than one IPAM config; this is a bug in Kurtosis itself", dockerNetwork.ID)
+	}
+
+	firstIpamConfig := dockerNetwork.IPAM.Config[0]
+
+	_, ipAndMask, err := net.ParseCIDR(firstIpamConfig.Subnet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
+	}
+
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+
+	return network, nil
 }
