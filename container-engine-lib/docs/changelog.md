@@ -1,5 +1,13 @@
 # TBD
 
+# 0.6.1
+### Features
+* Added `RemoveVolume` and `RemoveContainer` functions
+* Added a `GetVolumesByName` function
+
+### Changes
+* Clarified that the `all` argument to `GetContainersByLabels` is for whether stopped containers should be shown
+
 # 0.6.0
 ### Features
 * Add `Network` type to store Docker Network information as ID, name, ip and mask
