@@ -60,6 +60,9 @@ const (
 	// If no tag is specified for an image, this is the tag Dock
 	dockerDefaultTag = "latest"
 
+	// From https://docs.docker.com/engine/api/v1.41/#operation/VolumeList
+	volumeNameSearchFilterKey = "name"
+
 	// For some reason, when publish-all-ports is requested, Docker will return successfully from starting a
 	//  container, but without having bound the host ports
 	// See: https://github.com/moby/moby/issues/42860
@@ -228,6 +231,36 @@ func (manager DockerManager) CreateVolume(context context.Context, volumeName st
 
 	return nil
 }
+
+/*
+Searches for volumes whose names match the given one
+
+Args:
+	context: The Context that this request is running in (useful for cancellation)
+	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
+		even give volumes IDs - this name is all there is)
+
+Returns: A list of names of volumes matching the search term
+*/
+func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName string) ([]string, error) {
+	nameFilter := filters.KeyValuePair{
+		Key:   volumeNameSearchFilterKey,
+		Value: volumeName,
+	}
+	filterArgs := filters.NewArgs(nameFilter)
+	resp, err := manager.dockerClient.VolumeList(ctx, filterArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
+	}
+
+	respNames := []string{}
+	for _, foundVolume := range resp.Volumes {
+		respNames = append(respNames, foundVolume.Name)
+	}
+	return respNames, nil
+}
+
+
 
 /*
 Removes a Docker volume identified by the given name, deleting it permanently
