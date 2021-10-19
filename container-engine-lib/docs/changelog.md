@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `RemoveVolume` and `RemoveContainer` functions
+
 ### Changes
 * Clarified that the `all` argument to `GetContainersByLabels` is for whether stopped containers should be shown
 
