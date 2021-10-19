@@ -10,10 +10,10 @@ const (
 	// The port should not be published to the host machine at all
 	noPublishing portPublishSpecType = "NONE"
 
-	// The port should be published to an ephemeral port on the host machine
+	// The port should be published to the host machine on a port that is chosen automatically by the container engine
 	automaticPublishing portPublishSpecType = "AUTOMATIC"
 
-	// The port should be published to the manually-specified port on the host machine
+	// The port should be published to a specified, known port on the host machine
 	manualPublishing portPublishSpecType = "MANUAL"
 )
 

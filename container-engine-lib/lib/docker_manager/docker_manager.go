@@ -469,7 +469,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		// Final verification that all published ports get a host machine port bindings
 		if len(resultHostPortBindings) != numPublishedPorts {
 			return "", nil, stacktrace.NewError(
-				"%v ports were to be published to the host machine, but container '%v' never got host port bindings on host machine interface %v for all published ports even after %v checks with %v between checks",
+				"%v ports were to be published to the host machine, but container '%v' never got host machine port bindings on interface %v for all published ports even after %v checks with %v between checks",
 				numPublishedPorts,
 				containerId,
 				expectedHostIp,
@@ -805,9 +805,8 @@ Args:
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
-	exposedPorts: Set of container ports to expose
-	shouldAutoPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
-		to the container
+	usedPortsWithPublishSpec: Ports that are used by the container, with a specification for how they should be published to the
+		host machine (if at all)
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
 
