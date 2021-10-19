@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.1
 ### Features
 * Try to pull `api-container` latest image before running the API container Docker container
 * Upgraded to Kurt Core 1.25.1, which add `com.kurtosistech.app-id` container label to all enclave containers
