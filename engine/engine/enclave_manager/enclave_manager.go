@@ -368,7 +368,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 		)
 	}
 
-	// First, delete all containers in the network (which is necessary to delete the network)
+	// First, delete all enclave containers
 	enclaveContainersSearchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 	}
@@ -446,6 +446,8 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+// There is a 1:1 mapping between Docker network and enclave - no network, no enclave, and vice versa
+// We therefore use this function to check for the existence of an enclave, as well as get network info about existing enclaves
 func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId string) (*types.Network, bool, error) {
 	matchingNetworks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
 	if err != nil {
