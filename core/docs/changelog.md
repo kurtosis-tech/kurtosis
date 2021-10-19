@@ -1,5 +1,9 @@
 # TBD
 
+# 1.25.2
+### Features
+* Upgrade to `container-engine-lib` 0.7.0, which refactors the container-starting API to allow for fixed host machine ports
+
 # 1.25.1
 ### Features
 * All enclave containers get a `com.kurtosistech.app-id` = `kurtosis` label, so that we can easily filter for only Kurtosis objects
