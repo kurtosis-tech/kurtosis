@@ -1,5 +1,9 @@
 # TBD
 
+# 0.1.2
+### Changes
+* Upgraded to `kurtosis-core` 1.25.2, which brings in container-engine-lib 0.7.0 (and with it, the ability to specify host machine port bindings for containers)
+
 # 0.1.1
 ### Features
 * Try to pull `api-container` latest image before running the API container Docker container
