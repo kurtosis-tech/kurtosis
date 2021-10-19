@@ -39,10 +39,13 @@ jobs:
           scripts/build.sh
 
   push_artifacts:
-    executor: ubuntu_vm
+    docker:
+      - image: cimg/go:1.15.13
     steps:
       - checkout
 
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
