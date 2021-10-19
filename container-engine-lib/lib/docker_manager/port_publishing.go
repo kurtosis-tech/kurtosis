@@ -21,6 +21,10 @@ const (
 type PortPublishSpec interface {
 	// Used internally, for downcasting the interface to the appropriate implementation
 	getType() portPublishSpecType
+
+	// If true, after the container starts then this port must be found in the host machine ports list and reported
+	//  to the user as part of container start
+	mustBeFoundAfterContainerStart() bool
 }
 
 // ====================================================================================================
@@ -29,40 +33,52 @@ type PortPublishSpec interface {
 // A PortPublishSpec implementation that only contains a type
 type simplePortPublishSpec struct {
 	publishType portPublishSpecType
+	shouldFindAfterContainerStart bool
 }
 func (spec *simplePortPublishSpec) getType() portPublishSpecType {
 	return spec.publishType
 }
 
+func (spec *simplePortPublishSpec) mustBeFoundAfterContainerStart() bool {
+	return spec.shouldFindAfterContainerStart
+}
+
 // Returns a PortPublishSpec indicating that the port shouldn't be published to the host machine at all
 func NewNoPublishingSpec() PortPublishSpec {
-	return &simplePortPublishSpec{publishType: noPublishing}
+	return &simplePortPublishSpec{
+		publishType:                   noPublishing,
+		shouldFindAfterContainerStart: false,
+	}
 }
 
 // Returns a PortPublishSpec indicating that the port should be published to an automatically-assigned port on the host machine
 func NewAutomaticPublishingSpec() PortPublishSpec {
-	return &simplePortPublishSpec{publishType: automaticPublishing}
+	return &simplePortPublishSpec{
+		publishType:                   automaticPublishing,
+		shouldFindAfterContainerStart: true,
+	}
 }
 
 // ====================================================================================================
 //                                         Manual Publish Spec
 // ====================================================================================================
 // A PortPublishSpec implementation, used for the manualPublishing option type, that also contains the manual port to publish to
-type manualPublishingOption struct {
+type manuallySpecifiedPortPublishSpec struct {
 	simplePortPublishSpec
 
-	hostMachinePortSpec string
+	hostMachinePortNum uint16
 }
-func (option *manualPublishingOption) getHostMachinePortSpec() string {
-	return option.hostMachinePortSpec
+func (option *manuallySpecifiedPortPublishSpec) getHostMachinePortNum() uint16 {
+	return option.hostMachinePortNum
 }
 
 // Returns a PortPublishSpec indicating that the port should be published to the given port on the host machine
-func NewManualPublishingSpec(hostMachinePort string) PortPublishSpec {
-	return &manualPublishingOption{
+func NewManualPublishingSpec(hostMachinePortNum uint16) PortPublishSpec {
+	return &manuallySpecifiedPortPublishSpec{
 		simplePortPublishSpec: simplePortPublishSpec{
-			publishType: manualPublishing,
+			publishType:                   manualPublishing,
+			shouldFindAfterContainerStart: true,
 		},
-		hostMachinePortSpec:        hostMachinePort,
+		hostMachinePortNum: hostMachinePortNum,
 	}
 }
