@@ -1,5 +1,9 @@
 # TBD
 
+# 0.1.3
+### Features
+* Publish server as a Docker image to `kurtosistech/kurtosis-engine-server`
+
 # 0.1.2
 ### Changes
 * Upgraded to `kurtosis-core` 1.25.2, which brings in container-engine-lib 0.7.0 (and with it, the ability to specify host machine port bindings for containers)
