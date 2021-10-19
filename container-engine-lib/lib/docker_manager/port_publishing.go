@@ -1,46 +1,55 @@
 package docker_manager
 
+// ====================================================================================================
+//                                            Interface
+// ====================================================================================================
 // "Enum" dictating the various types of port publishing available; this enum will be used for downcasting the
-//  PortPublishingOption
-type portPublishingOptionType string
+//  PortPublishSpec
+type portPublishSpecType string
 const (
 	// The port should not be published to the host machine at all
-	noPublishing portPublishingOptionType = "NONE"
+	noPublishing portPublishSpecType = "NONE"
 
-	// The port should be publlished to an ephemeral port on the host machine
-	automaticPublishing portPublishingOptionType = "AUTOMATIC"
+	// The port should be published to an ephemeral port on the host machine
+	automaticPublishing portPublishSpecType = "AUTOMATIC"
 
 	// The port should be published to the manually-specified port on the host machine
-	manualPublishing portPublishingOptionType = "MANUAL"
+	manualPublishing portPublishSpecType = "MANUAL"
 )
 
-// To get an instance of this type, use the
-type PortPublishingOption interface {
+// To get an instance of this type, use the NewNoPublishingSpec, NewAutomaticPublishingSpec, etc. functions
+type PortPublishSpec interface {
 	// Used internally, for downcasting the interface to the appropriate implementation
-	getType() portPublishingOptionType
+	getType() portPublishSpecType
 }
 
-// A PortPublishingOption implementation that only contains a type
-type simplePortPublishingOption struct {
-	publishType portPublishingOptionType
+// ====================================================================================================
+//                                         Simple Publish Spec
+// ====================================================================================================
+// A PortPublishSpec implementation that only contains a type
+type simplePortPublishSpec struct {
+	publishType portPublishSpecType
 }
-func (option *simplePortPublishingOption) getType() portPublishingOptionType {
-	return option.publishType
-}
-
-// Returns a PortPublishingOption indicating that the port shouldn't be published to the host machine at all
-func NewNoPortPublishingOption() PortPublishingOption {
-	return &simplePortPublishingOption{publishType: noPublishing}
+func (spec *simplePortPublishSpec) getType() portPublishSpecType {
+	return spec.publishType
 }
 
-// Returns a PortPublishingOption indicating that the port should be published to an automatically-assigned port on the host machine
-func NewAutomaticPortPublishingOption() PortPublishingOption {
-	return &simplePortPublishingOption{publishType: automaticPublishing}
+// Returns a PortPublishSpec indicating that the port shouldn't be published to the host machine at all
+func NewNoPublishingSpec() PortPublishSpec {
+	return &simplePortPublishSpec{publishType: noPublishing}
 }
 
-// A PortPublishingOption implementation, used for the manualPublishing option type, that also contains the manual port to publish to
+// Returns a PortPublishSpec indicating that the port should be published to an automatically-assigned port on the host machine
+func NewAutomaticPublishingSpec() PortPublishSpec {
+	return &simplePortPublishSpec{publishType: automaticPublishing}
+}
+
+// ====================================================================================================
+//                                         Manual Publish Spec
+// ====================================================================================================
+// A PortPublishSpec implementation, used for the manualPublishing option type, that also contains the manual port to publish to
 type manualPublishingOption struct {
-	simplePortPublishingOption
+	simplePortPublishSpec
 
 	hostMachinePortSpec string
 }
@@ -48,12 +57,12 @@ func (option *manualPublishingOption) getHostMachinePortSpec() string {
 	return option.hostMachinePortSpec
 }
 
-func NewManualPortPublishingOption(hostMachinePortSpec string) PortPublishingOption {
+// Returns a PortPublishSpec indicating that the port should be published to the given port on the host machine
+func NewManualPublishingSpec(hostMachinePort string) PortPublishSpec {
 	return &manualPublishingOption{
-		simplePortPublishingOption: simplePortPublishingOption{
+		simplePortPublishSpec: simplePortPublishSpec{
 			publishType: manualPublishing,
 		},
-		hostMachinePortSpec:        "",
+		hostMachinePortSpec:        hostMachinePort,
 	}
 }
-
