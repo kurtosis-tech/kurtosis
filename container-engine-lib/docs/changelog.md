@@ -1,4 +1,6 @@
 # TBD
+
+# 0.7.0
 ### Features
 * Added the ability to specify fixed host machine port bindings when starting a container is now available via the key of the map in `CreateAndStartContainerArgsBuilder.WithUsedPorts` function
 
