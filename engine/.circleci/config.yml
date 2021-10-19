@@ -37,6 +37,25 @@ jobs:
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           scripts/build.sh
 
+  push_artifacts:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      - run: bash ./scripts/build.sh
+
+      - run: |
+          set -euo pipefail
+          source scripts/_constants.env
+          version_to_publish="$(bash "scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
 workflows:
   build:
     jobs:
@@ -60,13 +79,12 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      # TODO UNCOMMENT WHEN READY
-      #- publish_typescript:
-      #    context:
-      #      - npmjs-user
-      #    filters:
-      #      branches:
-      #        ignore: /.*/
-      #      tags:
-      #        only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - push_artifacts:
+          context:
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------

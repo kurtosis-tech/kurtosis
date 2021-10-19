@@ -6,14 +6,13 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+source "${script_dirpath}/_constants.env"
+
 BUILD_DIRNAME="build"
-IMAGE_ORG_AND_REPO="kurtosistech/kurtosis-engine-server"
 ENGINE_DIRNAME="engine"
 MAIN_BINARY_OUTPUT_FILE="kurtosis-engine.bin"
 MAIN_BINARY_OUTPUT_PATH="${root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILE}"
 MAIN_GO_FILEPATH="${root_dirpath}/${ENGINE_DIRNAME}/main.go"
-
-GET_DOCKER_TAG_SCRIPT_FILENAME="get-docker-image-tag.sh"
 
 # =============================================================================
 #                                 Main Code
@@ -40,7 +39,7 @@ if ! GOOS=linux go build -o "${MAIN_BINARY_OUTPUT_PATH}" "${MAIN_GO_FILEPATH}"; 
 fi
 
 # Generate Docker image tag
-get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_TAG_SCRIPT_FILENAME}"
+get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"
 if ! docker_tag="$(bash "${get_docker_image_tag_script_filepath}")"; then
     echo "Error: Couldn't get the Docker image tag" >&2
     exit 1
