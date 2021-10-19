@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Replaced `EnclaveManager` with `Kurtosis Engine API Libs` which handle all the interactions with the `Kurtosis Engine Server`
+
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
 

@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
@@ -55,7 +54,6 @@ Returns:
 func RunTests(
 		permissions *permissions.Permissions,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
 		testSuiteMetadata *kurtosis_testsuite_rpc_api_bindings.TestSuiteMetadata,
@@ -104,7 +102,6 @@ func RunTests(
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider,
-		enclaveManager,
 		kurtosisLogLevel,
 		apiContainerImage,
 		testParallelism,

@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
@@ -208,7 +207,6 @@ func run(cmd *cobra.Command, args []string) error {
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, kurtosisApiImage)
 
 	executionId := execution_ids.GetExecutionID()
 
@@ -221,8 +219,6 @@ func run(cmd *cobra.Command, args []string) error {
 		suiteLogLevelStr,
 		customParamsJson,
 	)
-
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerManager,
@@ -255,7 +251,6 @@ func run(cmd *cobra.Command, args []string) error {
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
 		testsuiteExObjNameProvider,
-		enclaveManager,
 		kurtosisLogLevel,
 		kurtosisApiImage,
 		suiteMetadata,

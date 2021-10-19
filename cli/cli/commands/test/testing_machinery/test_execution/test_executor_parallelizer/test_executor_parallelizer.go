@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -37,7 +36,6 @@ Returns:
  */
 func RunInParallelAndPrintResults(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
 		parallelism uint,
@@ -84,7 +82,6 @@ func RunInParallelAndPrintResults(
 		outputManager,
 		testParamsChan,
 		parallelism,
-		enclaveManager,
 		kurtosisLogLevel,
 		apiContainerImage,
 		testsuiteLauncher,
@@ -113,7 +110,6 @@ func disableSystemLogAndRunTestThreads(
 		outputManager *output.ParallelTestOutputManager,
 		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -137,7 +133,6 @@ func disableSystemLogAndRunTestThreads(
 			&waitGroup,
 			testParamsChan,
 			outputManager,
-			enclaveManager,
 			kurtosisLogLevel,
 			apiContainerImage,
 			testsuiteLauncher,
@@ -157,7 +152,6 @@ func runTestWorkerGoroutine(
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
-			enclaveManager *enclave_manager.EnclaveManager,
 			kurtosisLogLevel logrus.Level,
 	        apiContainerImage string,
 			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -173,7 +167,6 @@ func runTestWorkerGoroutine(
 			testsuiteExObjNameProvider,
 			testLog,
 			apiContainerImage,
-			enclaveManager,
 			kurtosisLogLevel,
 			testsuiteLauncher,
 			testParams,

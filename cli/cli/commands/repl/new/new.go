@@ -6,9 +6,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_service_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -44,6 +45,8 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
 	// TODO Set CLI loglevel from a global flag
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -63,15 +66,30 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
+	engineServiceClient, closeEngineServiceClient, err := engine_service_client.NewEngineServiceClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting engine service client")
+	}
+	defer closeEngineServiceClient()
 
-	enclaveCtx, err := enclaveManager.GetEnclave(context.Background(), enclaveId, logrus.StandardLogger())
+	getEnclaveArgs := &kurtosis_engine_rpc_api_bindings.GetEnclaveArgs{
+		EnclaveId: enclaveId,
+	}
+
+	enclaveCtx, err := engineServiceClient.GetEnclave(ctx, getEnclaveArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclave context for enclave ID '%v'", enclaveId)
 	}
 
 	logrus.Debug("Running REPL...")
-	if err := repl_runner.RunREPL(enclaveCtx, jsReplImage); err != nil {
+	if err := repl_runner.RunREPL(
+		enclaveId,
+		enclaveCtx.NetworkId,
+		enclaveCtx.ApiContainerHostIp,
+		enclaveCtx.ApiContainerHostPort,
+		enclaveCtx.ApiContainerIpInsideNetwork,
+		jsReplImage,
+		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
 	}
 	logrus.Debug("REPL exited")

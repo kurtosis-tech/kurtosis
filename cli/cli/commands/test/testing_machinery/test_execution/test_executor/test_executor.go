@@ -8,14 +8,16 @@ package test_executor
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/banner_printer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_service_client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -89,7 +91,6 @@ func RunTest(
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		log *logrus.Logger,
 	    apiContainerImage string,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
 		testParams parallel_test_params.ParallelTestParams,
@@ -107,36 +108,54 @@ func RunTest(
 	enclaveId := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
-	enclaveCtx, err := enclaveManager.CreateEnclave(
-		testSetupExecutionCtx,
-		log,
-		apiContainerImage,
-		kurtosisLogLevel,
-		enclaveId,
-		isPartitioningEnabled,
-		isDebugModeEnabled,
-	)
+	engineServiceClient, closeEngineServiceClient, err := engine_service_client.NewEngineServiceClient()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating a Kurtosis enclave for test '%v'", testName)
+		return false, stacktrace.Propagate(err, "An error occurred getting engine service client")
+	}
+	defer closeEngineServiceClient()
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveId: enclaveId,
+		ApiContainerImage: apiContainerImage,
+		ApiContainerLogLevel: kurtosisLogLevel.String(),
+		IsPartitioningEnabled: isPartitioningEnabled,
+		ShouldPublishAllPorts: isDebugModeEnabled,
+	}
+
+	enclaveCtx, err := engineServiceClient.CreateEnclave(testTeardownContext, createEnclaveArgs)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating an enclave")
 	}
 	defer func() {
-		if err := enclaveManager.DestroyEnclave(testTeardownContext, log, enclaveCtx); err != nil {
+		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+			EnclaveId: enclaveId,
+		}
+		if _, err := engineServiceClient.DestroyEnclave(testTeardownContext, destroyEnclaveArgs); err != nil {
 			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
 			fmt.Fprintln(log.Out, err)
 			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
 		}
 	}()
 
-	dockerManager := enclaveCtx.GetDockerManager()
-	networkId := enclaveCtx.GetNetworkID()
-	kurtosisApiIp := enclaveCtx.GetAPIContainerIPAddr()
-	kurtosisApiHostMachinePortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
-	testsuiteContainerName := enclaveCtx.GetObjectNameProvider().ForTestRunningTestsuiteContainer()
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating the Docker client")
+	}
+	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
+		dockerClient,
+	)
+
+	networkId := enclaveCtx.NetworkId
+	kurtosisApiIp := net.ParseIP(enclaveCtx.ApiContainerIpInsideNetwork)
+
+	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	testsuiteContainerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		kurtosisApiHostMachinePortBinding.HostIP,
-		kurtosisApiHostMachinePortBinding.HostPort,
+		enclaveCtx.ApiContainerHostIp,
+		enclaveCtx.ApiContainerHostPort,
 	)
 	apiContainerConn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
