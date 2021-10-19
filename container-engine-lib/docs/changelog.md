@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added the ability to specify fixed host machine port bindings when starting a container is now available via the key of the map in `CreateAndStartContainerArgsBuilder.WithUsedPorts` function
 
 # 0.6.1
 ### Features
@@ -7,6 +9,11 @@
 
 ### Changes
 * Clarified that the `all` argument to `GetContainersByLabels` is for whether stopped containers should be shown
+
+### Breaking Changes
+* The `CreateAndStartContainerArgsBuilder.WithUsedPorts`'s parameter now has a value of `PortPublishSpec`, which defines how the port should be published
+* `CreateAndStartContainerArgsBuilder.ShouldPublishAllPorts` parameter has been removed
+    * Users should migrate to `CreateAndStartContainerArgsBuilder.WithUsedPorts` instead
 
 # 0.6.0
 ### Features

@@ -281,8 +281,8 @@ Creates a Docker container with the given args and starts it.
 
 Returns:
 	containerId: The Docker container ID of the newly-created container
-	containerHostPortBindings: If shouldPublishAllPorts is true, returns the ports on the host container interface where each of the
-		container's exposed ports can be found; if shouldPublishAllPorts is false, this will be an empty map
+	hostMachinePortBindings: For every port in the args' "usedPorts" object that has publishing turned on, an entry
+		will be generated in this map with the binding on the host machine where the port can be found
  */
 func (manager DockerManager) CreateAndStartContainer(
 	ctx context.Context,
@@ -327,10 +327,15 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	isInteractiveMode := args.interactiveModeTtySize != nil
 
+	usedPortsSet := nat.PortSet{}
+	for port, _ := range args.usedPorts {
+		usedPortsSet[port] = struct{}{}
+	}
+
 	containerConfigPtr, err := manager.getContainerCfg(
 		dockerImage,
 		isInteractiveMode,
-		args.usedPortsSet,
+		usedPortsSet,
 		args.entrypointArgs,
 		args.cmdArgs,
 		args.envVariables,
@@ -344,8 +349,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.networkMode,
 		args.bindMounts,
 		args.volumeMounts,
-		args.usedPortsSet,
-		args.shouldPublishAllPorts,
+		args.usedPorts,
 		args.needsAccessToDockerHostMachine)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
@@ -407,20 +411,30 @@ func (manager DockerManager) CreateAndStartContainer(
 		}
 	}
 
+	publishedPortsSet := map[nat.Port]bool{}
+	for containerPort, publishSpec := range args.usedPorts {
+		if publishSpec.mustBeFoundAfterContainerStart() {
+			publishedPortsSet[containerPort] = true
+		}
+	}
+	manager.log.Tracef("Published ports set: %+v", publishedPortsSet)
+
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
-	if args.shouldPublishAllPorts {
+	numPublishedPorts := len(publishedPortsSet)
+	if numPublishedPorts > 0 {
 		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
-			manager.log.Tracef("Trying to get host port bindings (%v previous attempts)...", i)
+			manager.log.Tracef("Trying to get host machine port bindings (%v previous attempts)...", i)
 			containerInspectResp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
 					err,
-					"Publishing all ports was requested, but an error occurred inspecting the newly-started "+
-						"container which is necessary for determining which host ports the container's ports were bound to",
+					"%v ports were published to the host machine, but an error occurred inspecting the newly-started "+
+						"container which is necessary for determining which host machine ports the container's ports were bound to",
+					numPublishedPorts,
 				)
 			}
 			manager.log.Tracef("Container inspect response: %+v", containerInspectResp)
@@ -428,7 +442,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			if networkSettings == nil {
 				return "", nil, stacktrace.NewError(
 					"We got a response from inspecting container '%v' which is necessary for determining the "+
-						"exposed host ports, but the network settings object was nil",
+						"ports published to the host machine, but the network settings object was nil",
 					containerId,
 				)
 			}
@@ -436,27 +450,31 @@ func (manager DockerManager) CreateAndStartContainer(
 			allInterfaceHostPortBindings := networkSettings.Ports
 			if allInterfaceHostPortBindings == nil {
 				return "", nil, stacktrace.NewError(
-					"Publishing all ports was requested for container '%v', but the container host port bindings were null",
+					"%v ports on container '%v' were to be published to the host machine, but the container host port bindings were null",
+					numPublishedPorts,
 					containerId,
 				)
 			}
 			manager.log.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(args.usedPortsSet, allInterfaceHostPortBindings)
-			if len(candidatePortBindingsOnExpectedInterface) == len(args.usedPortsSet) {
+			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(publishedPortsSet, allInterfaceHostPortBindings)
+			if len(candidatePortBindingsOnExpectedInterface) == numPublishedPorts {
 				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
 				break
 			}
 			time.Sleep(timeBetweenHostPortBindingChecks)
 		}
 
-		// Final verification that all used ports get a host machine port bindings
-		if len(resultHostPortBindings) != len(args.usedPortsSet) {
+		// Final verification that all published ports get a host machine port bindings
+		if len(resultHostPortBindings) != numPublishedPorts {
 			return "", nil, stacktrace.NewError(
-				"Publishing all ports was requested, but container '%v' never got host port bindings for all the user ports on host machine interface '%v'",
+				"%v ports were to be published to the host machine, but container '%v' never got host machine port bindings on interface %v for all published ports even after %v checks with %v between checks",
+				numPublishedPorts,
 				containerId,
 				expectedHostIp,
+				maxNumHostPortBindingChecks,
+				timeBetweenHostPortBindingChecks,
 			)
 		}
 	}
@@ -787,9 +805,8 @@ Args:
 	volumeMounts: Mapping of (volume name) -> (mountpoint on container) that will be mounted at container startup (used
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
-	exposedPorts: Set of container ports to expose
-	shouldPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
-		to the container
+	usedPortsWithPublishSpec: Ports that are used by the container, with a specification for how they should be published to the
+		host machine (if at all)
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
 
@@ -799,8 +816,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		networkMode DockerManagerNetworkMode,
 		bindMounts map[string]string,
 		volumeMounts map[string]string,
-		exposedPorts map[nat.Port]bool,
-		shouldPublishAllPorts bool,
+		usedPortsWithPublishSpec map[nat.Port]PortPublishSpec,
 		needsToAccessDockerHostMachine bool) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -816,12 +832,33 @@ func (manager *DockerManager) getContainerHostConfig(
 	manager.log.Debugf("Binds: %v", bindsList)
 
 	portMap := nat.PortMap{}
-	if shouldPublishAllPorts {
-		for containerPort := range exposedPorts {
+	for containerPort, publishSpec := range usedPortsWithPublishSpec {
+		publishSpecType := publishSpec.getType()
+		switch publishSpecType {
+		case noPublishing:
+			continue
+		case automaticPublishing:
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
 				{},
 			}
+		case manualPublishing:
+			manualSpec, ok := publishSpec.(*manuallySpecifiedPortPublishSpec)
+			if !ok {
+				return nil, stacktrace.NewError(
+					"The port publish spec had type '%v', but downcasting it failed; this is very strange!",
+					publishSpecType,
+				)
+			}
+			hostMachinePortNumStr := fmt.Sprintf("%v", manualSpec.getHostMachinePortNum())
+			portMap[containerPort] = []nat.PortBinding{
+				{
+					HostIP:   expectedHostIp,
+					HostPort: hostMachinePortNumStr,
+				},
+			}
+		default:
+			return nil, stacktrace.NewError("Unrecognized port publish spec type '%v'; this is a bug in this library", publishSpecType)
 		}
 	}
 
@@ -858,15 +895,11 @@ func (manager *DockerManager) getContainerHostConfig(
 func (manager *DockerManager) getContainerCfg(
 			dockerImage string,
 			isInteractiveMode bool,
-			usedPorts map[nat.Port]bool,
+			usedPorts nat.PortSet,
 			entrypointArgs []string,
 			cmdArgs []string,
 			envVariables map[string]string,
 			labels map[string]string) (config *container.Config, err error) {
-	portSet := nat.PortSet{}
-	for port, _ := range usedPorts {
-		portSet[port] = struct{}{}
-	}
 
 	envVariablesSlice := make([]string, 0, len(envVariables))
 	for key, val := range envVariables {
@@ -880,7 +913,7 @@ func (manager *DockerManager) getContainerCfg(
 		Tty:          isInteractiveMode,	// Analogous to the `-t` option to `docker run`
 		OpenStdin:    true,	// Analogous to the `-i` option to `docker run`
 		Image:        dockerImage,
-		ExposedPorts: portSet,
+		ExposedPorts: usedPorts,
 		Cmd:          cmdArgs,
 		Entrypoint:   entrypointArgs,
 		Env:          envVariablesSlice,
