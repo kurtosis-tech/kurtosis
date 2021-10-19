@@ -73,6 +73,14 @@ func (service *EngineServerService) GetEnclave(ctx context.Context, args *kurtos
 	return response, nil
 }
 
+func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
+	enclaveId := args.EnclaveId
+	if err := service.enclaveManager.StopEnclave(ctx, enclaveId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 
 	if err := service.enclaveManager.DestroyEnclave(ctx, args.EnclaveId); err != nil {

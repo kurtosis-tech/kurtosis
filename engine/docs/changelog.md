@@ -1,5 +1,17 @@
 # TBD
 
+# 0.1.1
+### Features
+* Try to pull `api-container` latest image before running the API container Docker container
+* Upgraded to Kurt Core 1.25.1, which add `com.kurtosistech.app-id` container label to all enclave containers
+* Added a `StopEnclave` endpoint
+
+### Changes
+* `DestroyEnclave` endpoint actually destroys the objects associated with the enclave (e.g. network, containers, volume, etc.)
+
+### Fixes
+* Added a mutex to `EnclaveManager` to fix race conditions when modifying enclaves
+
 # 0.1.0
 ### Features
 * Added `EngineServerService` which will be in charge of receive requests for creating and destroying Kurtosis Enclaves

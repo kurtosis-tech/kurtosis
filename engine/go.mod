@@ -6,9 +6,9 @@ require (
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211013191503-b01ed3982dcd
-	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211013195011-74f1fcb1bee6
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211018203119-4b4b78e5dc96
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211019192546-0b45bf3c741f
+	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211018165703-86ed1577a258
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211019002658-fc6ee53f0cb0
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
