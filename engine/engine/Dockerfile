@@ -8,4 +8,3 @@ COPY ./build/kurtosis-engine.bin .
 
 # Execute Kurtosis Engine
 CMD ./kurtosis-engine.bin
-

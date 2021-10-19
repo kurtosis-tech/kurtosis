@@ -131,6 +131,11 @@ func (manager *EnclaveManager) CreateEnclave(
 	alreadyTakenIps := []net.IP{testsuiteContainerIpAddr, replContainerIpAddr}
 	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr, apiContainerListenPort)
 
+	//Pulling latest image version
+	if err = manager.dockerManager.PullImage(setupCtx, apiContainerImage); err != nil {
+		logrus.Warnf("Failed to pull the latest version of image '%v'; you may be running an out-of-date version", apiContainerImage)
+	}
+
 	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
 	launchApiVersion := uint(0)
 	apiContainerLauncher, err := api_container_launcher_lib.GetAPIContainerLauncherForLaunchAPIVersion(
