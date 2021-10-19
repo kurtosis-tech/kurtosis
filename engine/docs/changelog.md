@@ -4,6 +4,9 @@
 * Upgraded to Kurt Core 1.25.1, which add `com.kurtosistech.app-id` container label to all enclave containers
 * Added a `StopEnclave` endpoint
 
+### Changes
+* `DestroyEnclave` endpoint actually destroys the objects associated with the enclave (e.g. network, containers, volume, etc.)
+
 ### Fixes
 * Added a mutex to `EnclaveManager` to fix race conditions when modifying enclaves
 

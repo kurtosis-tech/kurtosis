@@ -361,7 +361,11 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	}
 
 	if err := manager.StopEnclave(ctx, enclaveId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave")
+		return stacktrace.Propagate(
+			err,
+			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
+			enclaveId,
+		)
 	}
 
 	// First, delete all containers in the network (which is necessary to delete the network)
@@ -381,7 +385,12 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 		containerName := container.GetName()
 		containerId := container.GetId()
 		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing container '%v' with ID '%v'", containerName, containerId)
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing container '%v' with ID '%v'",
+				containerName,
+				containerId,
+			)
 			removeContainerErrorStrs = append(
 				removeContainerErrorStrs,
 				wrappedErr.Error(),
@@ -391,6 +400,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	if len(removeContainerErrorStrs) > 0 {
 		return stacktrace.NewError(
 			"An error occurred removing one or more containers in enclave '%v':\n%v",
+			enclaveId,
 			strings.Join(
 				removeContainerErrorStrs,
 				"\n\n",
