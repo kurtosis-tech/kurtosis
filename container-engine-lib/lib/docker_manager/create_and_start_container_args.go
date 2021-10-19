@@ -5,6 +5,12 @@ import (
 	"net"
 )
 
+type PortPublishOption string
+
+const (
+	NoPortPUblishing
+)
+
 var noManualPortPublishings = map[nat.Port]nat.PortBinding{}
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
