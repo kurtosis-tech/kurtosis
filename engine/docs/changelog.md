@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.3
 ### Features
 * Publish server as a Docker image to `kurtosistech/kurtosis-engine-server`
 
