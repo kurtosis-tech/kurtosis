@@ -51,16 +51,19 @@ func StartAPIContainer(
 		api_container_docker_consts.SerializedArgsEnvVar: serializedArgsStr,
 	}
 
+	// We always publish the API container's ports so that we can call its external container registration functions from the CLI
+	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
+		kurtosisApiPort: docker_manager.NewAutomaticPublishingSpec(),
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
 		networkId,
 	).WithStaticIP(
 		ipAddr,
-	).WithUsedPorts(map[nat.Port]bool{
-		kurtosisApiPort: true,
-	}).ShouldPublishAllPorts(
-		true,	// We always publish the API container's ports so that we can call its external container registration functions from the CLI
+	).WithUsedPorts(
+		usedPorts,
 	).WithEnvironmentVariables(
 		envVars,
 	).WithBindMounts(map[string]string{
