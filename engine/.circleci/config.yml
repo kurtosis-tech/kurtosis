@@ -30,6 +30,7 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
+
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
@@ -43,7 +44,13 @@ jobs:
       - checkout
 
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-      - run: bash ./scripts/build.sh
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          scripts/build.sh
 
       - run: |
           set -euo pipefail
@@ -81,6 +88,8 @@ workflows:
       # -- Artifact-publishing jobs --------------------------------
       - push_artifacts:
           context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
             - docker-user
           filters:
             branches:
