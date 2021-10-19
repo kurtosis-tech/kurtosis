@@ -5,6 +5,8 @@ import (
 	"net"
 )
 
+var noManualPortPublishings = map[nat.Port]nat.PortBinding{}
+
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
 type CreateAndStartContainerArgs struct {
 	dockerImage                    string
@@ -16,7 +18,8 @@ type CreateAndStartContainerArgs struct {
 	addedCapabilities              map[ContainerCapability]bool
 	networkMode                    DockerManagerNetworkMode
 	usedPortsSet                   map[nat.Port]bool
-	shouldPublishAllPorts          bool
+	shouldAutoPublishAllPorts      bool	   // Incompatible with manual port publishing
+	manualPortPublishings          map[nat.Port]nat.PortBinding // Incompatible with auto port publishing
 	entrypointArgs                 []string
 	cmdArgs                        []string
 	envVariables                   map[string]string
@@ -37,7 +40,8 @@ type CreateAndStartContainerArgsBuilder struct {
 	addedCapabilities              map[ContainerCapability]bool
 	networkMode                    DockerManagerNetworkMode
 	usedPortsSet                   map[nat.Port]bool
-	shouldPublishAllPorts          bool
+	shouldAutoPublishAllPorts      bool	   // Incompatible with manual port publishing
+	manualPortPublishings          map[nat.Port]nat.PortBinding // Incompatible with auto port publishing
 	entrypointArgs                 []string
 	cmdArgs                        []string
 	envVariables                   map[string]string
@@ -64,7 +68,8 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		addedCapabilities:              map[ContainerCapability]bool{},
 		networkMode:                    DefaultNetworkMode,
 		usedPortsSet:                   map[nat.Port]bool{},
-		shouldPublishAllPorts:          false,
+		shouldAutoPublishAllPorts:      false,
+		manualPortPublishings:          noManualPortPublishings,
 		entrypointArgs:                 nil,
 		cmdArgs:                        nil,
 		envVariables:                   map[string]string{},
@@ -87,7 +92,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		addedCapabilities:              builder.addedCapabilities,
 		networkMode:                    builder.networkMode,
 		usedPortsSet:                   builder.usedPortsSet,
-		shouldPublishAllPorts:          builder.shouldPublishAllPorts,
+		shouldAutoPublishAllPorts:      builder.shouldAutoPublishAllPorts,
 		entrypointArgs:                 builder.entrypointArgs,
 		cmdArgs:                        builder.cmdArgs,
 		envVariables:                   builder.envVariables,
@@ -135,12 +140,17 @@ func (builder *CreateAndStartContainerArgsBuilder) WithUsedPorts(portsSet map[na
 	return builder
 }
 
-// If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
+// If true, we'll publish all the exposed ports to the Docker host on ephemeral ports so that the outside world can connect
 //  to the container
-func (builder *CreateAndStartContainerArgsBuilder) ShouldPublishAllPorts(shouldPublishAllPorts bool) *CreateAndStartContainerArgsBuilder {
-	builder.shouldPublishAllPorts = shouldPublishAllPorts
+func (builder *CreateAndStartContainerArgsBuilder) ShouldAutoPublishAllPorts(shouldAutoPublishAllPorts bool) *CreateAndStartContainerArgsBuilder {
+	builder.shouldAutoPublishAllPorts = shouldAutoPublishAllPorts
+	builder.with
 	return builder
 }
+
+// Defines a manual mapping of container ports -> ports on the host machine
+// If set, will disable ShouldAutoPublishAllPorts
+func (builder *CreateAndStartContainerArgsBuilder) WithManualPortPublishings
 
 // The args that will be used to override the ENTRYPOINT of the image (leave as nil to not override)
 func (builder *CreateAndStartContainerArgsBuilder) WithEntrypointArgs(args []string) *CreateAndStartContainerArgsBuilder {

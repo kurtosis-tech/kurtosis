@@ -264,8 +264,8 @@ Creates a Docker container with the given args and starts it.
 
 Returns:
 	containerId: The Docker container ID of the newly-created container
-	containerHostPortBindings: If shouldPublishAllPorts is true, returns the ports on the host container interface where each of the
-		container's exposed ports can be found; if shouldPublishAllPorts is false, this will be an empty map
+	containerHostPortBindings: If shouldAutoPublishAllPorts is true, returns the ports on the host container interface where each of the
+		container's exposed ports can be found; if shouldAutoPublishAllPorts is false, this will be an empty map
  */
 func (manager DockerManager) CreateAndStartContainer(
 	ctx context.Context,
@@ -328,7 +328,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		args.bindMounts,
 		args.volumeMounts,
 		args.usedPortsSet,
-		args.shouldPublishAllPorts,
+		args.shouldAutoPublishAllPorts,
 		args.needsAccessToDockerHostMachine)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
@@ -393,7 +393,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
 	resultHostPortBindings := map[nat.Port]*nat.PortBinding{}
-	if args.shouldPublishAllPorts {
+	if args.shouldAutoPublishAllPorts {
 		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
@@ -752,7 +752,7 @@ Args:
 		when sharing data between containers). This is distinct from a bind mount because the host filesystem can't easily
 		read from a Docker volume - you need to be inside a Docker container to do so.
 	exposedPorts: Set of container ports to expose
-	shouldPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
+	shouldAutoPublishAllPorts: If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
 		to the container
 	needsToAccessDockerHostMachine: If true, adds a "host.docker.internal:host-gateway" extra host binding, which is necessary
 		for machines that will need to access the machine hosting Docker itself.
