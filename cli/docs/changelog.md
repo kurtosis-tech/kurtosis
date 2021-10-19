@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added documentation in README about how to develop on this repo
+* Upgraded to `kurtosis-core` vTODOOOO, which contains fixes for the latest `container-engine-lib` feature that allows binding container ports to specific host machine ports
 
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
