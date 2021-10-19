@@ -17,6 +17,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -37,10 +39,17 @@ const (
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 
 	shouldFetchStoppedContainers = false
+
+	// We set this to true in case there are any race conditions with a container starting as we're trying to stop the enclave
+	shouldKillAlreadyStoppedContainersWhenStoppingEnclave = true
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
 type EnclaveManager struct {
+	// We use Docker as our backing datastore, but it has tons of race conditions so we use this mutex to ensure
+	//  enclave modifications are atomic
+	mutex *sync.Mutex
+	
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
@@ -49,7 +58,8 @@ type EnclaveManager struct {
 func NewEnclaveManager(dockerManager *docker_manager.DockerManager) *EnclaveManager {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
-		dockerManager:           dockerManager,
+		mutex:                  &sync.Mutex{},
+		dockerManager:          dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
 	}
 }
@@ -63,6 +73,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	enclaveId string,
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool) (*enclave_manager_types.Enclave, error) {
+
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	matchingNetworks, err := manager.dockerManager.GetNetworksByName(setupCtx, enclaveId)
 	if err != nil {
@@ -197,6 +210,8 @@ func (manager *EnclaveManager) CreateEnclave(
 }
 
 func (manager *EnclaveManager) GetEnclave(ctx context.Context, enclaveId string) (*enclave_manager_types.Enclave, error) {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	network, err := manager.getEnclaveNetwork(ctx, enclaveId)
 	if err != nil {
@@ -247,7 +262,81 @@ func (manager *EnclaveManager) GetEnclave(ctx context.Context, enclaveId string)
 	return enclave, nil
 }
 
+func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	enclaveContainerSearchLabels := map[string]string{
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldKillAlreadyStoppedContainersWhenStoppingEnclave)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting containers for enclave '%v'", enclaveId)
+	}
+
+	// TODO Parallelize for perf
+	containerKillErrorStrs := []string{}
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerId := enclaveContainer.GetId()
+		containerName := enclaveContainer.GetName()
+		if err := manager.dockerManager.KillContainer(ctx, containerId); err != nil {
+			wrappedContainerKillErr := stacktrace.Propagate(
+				err,
+				"An error occurred killing container '%v' with ID '%v'",
+				containerName,
+				containerId,
+			)
+			containerKillErrorStrs = append(
+				containerKillErrorStrs,
+				wrappedContainerKillErr.Error(),
+			)
+		}
+	}
+
+	if len(containerKillErrorStrs) > 0 {
+		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more errors occurred killing the containers in enclave '%v':\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
+	//  before we return
+	containerWaitErrorStrs := []string{}
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerName := enclaveContainer.GetName()
+		containerId := enclaveContainer.GetId()
+		if _, err := manager.dockerManager.WaitForExit(ctx, containerId); err != nil {
+			wrappedContainerWaitErr := stacktrace.Propagate(
+				err,
+				"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
+				containerName,
+				containerId,
+			)
+			containerWaitErrorStrs = append(
+				containerWaitErrorStrs,
+				wrappedContainerWaitErr.Error(),
+			)
+		}
+	}
+
+	if len(containerWaitErrorStrs) > 0 {
+		errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	return nil
+}
+
 func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId string) error {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
 	network, err := manager.getEnclaveNetwork(ctx, enclaveId)
 	if err != nil {

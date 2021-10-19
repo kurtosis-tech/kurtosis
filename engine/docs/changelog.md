@@ -2,6 +2,10 @@
 ### Features
 * Try to pull `api-container` latest image before running the API container Docker container
 * Upgraded to Kurt Core 1.25.1, which add `com.kurtosistech.app-id` container label to all enclave containers
+* Added a `StopEnclave` endpoint
+
+### Fixes
+* Added a mutex to `EnclaveManager` to fix race conditions when modifying enclaves
 
 # 0.1.0
 ### Features
