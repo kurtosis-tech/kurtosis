@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.4
 ### Features
 * Added a `KurtosisEngineServerVersion` constant that gets set to this repo's version
 
