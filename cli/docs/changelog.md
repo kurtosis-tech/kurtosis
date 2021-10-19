@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Clarified the difference between the two types of params in `module exec`
 
 # 0.4.2
 ### Features

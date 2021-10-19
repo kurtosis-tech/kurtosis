@@ -154,7 +154,7 @@ func run(cmd *cobra.Command, args []string) error {
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	logrus.Infof(
-		"Loading module '%v' with parameters '%v' inside the enclave...",
+		"Loading module '%v' with load params '%v'...",
 		moduleImage,
 		loadParamsStr,
 	)
@@ -164,7 +164,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.Info("Module loaded successfully")
 
-	logrus.Infof("Executing the module with parameters '%v'...", executeParamsStr)
+	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	executeModuleArgs := binding_constructors.NewExecuteModuleArgs(moduleId, executeParamsStr)
 	executeModuleResult, err := apiContainerClient.ExecuteModule(ctx, executeModuleArgs)
 	if err != nil {
