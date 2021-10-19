@@ -298,6 +298,7 @@ func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string
 		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
 		resultErr = stacktrace.NewError(
 			"One or more errors occurred killing the containers in enclave '%v':\n%v",
+			enclaveId,
 			errorStr,
 		)
 	}
