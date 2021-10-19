@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added documentation in README about how to develop on this repo
+
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
 
