@@ -15,8 +15,7 @@ type CreateAndStartContainerArgs struct {
 	staticIp                       net.IP
 	addedCapabilities              map[ContainerCapability]bool
 	networkMode                    DockerManagerNetworkMode
-	usedPortsSet                   map[nat.Port]bool
-	shouldPublishAllPorts          bool
+	usedPorts                      map[nat.Port]PortPublishSpec
 	entrypointArgs                 []string
 	cmdArgs                        []string
 	envVariables                   map[string]string
@@ -36,8 +35,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	staticIp                       net.IP
 	addedCapabilities              map[ContainerCapability]bool
 	networkMode                    DockerManagerNetworkMode
-	usedPortsSet                   map[nat.Port]bool
-	shouldPublishAllPorts          bool
+	usedPorts                      map[nat.Port]PortPublishSpec
 	entrypointArgs                 []string
 	cmdArgs                        []string
 	envVariables                   map[string]string
@@ -63,8 +61,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		staticIp:                       nil,
 		addedCapabilities:              map[ContainerCapability]bool{},
 		networkMode:                    DefaultNetworkMode,
-		usedPortsSet:                   map[nat.Port]bool{},
-		shouldPublishAllPorts:          false,
+		usedPorts:                      map[nat.Port]PortPublishSpec{},
 		entrypointArgs:                 nil,
 		cmdArgs:                        nil,
 		envVariables:                   map[string]string{},
@@ -86,8 +83,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		staticIp:                       builder.staticIp,
 		addedCapabilities:              builder.addedCapabilities,
 		networkMode:                    builder.networkMode,
-		usedPortsSet:                   builder.usedPortsSet,
-		shouldPublishAllPorts:          builder.shouldPublishAllPorts,
+		usedPorts:                      builder.usedPorts,
 		entrypointArgs:                 builder.entrypointArgs,
 		cmdArgs:                        builder.cmdArgs,
 		envVariables:                   builder.envVariables,
@@ -129,16 +125,9 @@ func (builder *CreateAndStartContainerArgsBuilder) WithNetworkMode(mode DockerMa
 	return builder
 }
 
-// A set of ports that the container will listen on
-func (builder *CreateAndStartContainerArgsBuilder) WithUsedPorts(portsSet map[nat.Port]bool) *CreateAndStartContainerArgsBuilder {
-	builder.usedPortsSet = portsSet
-	return builder
-}
-
-// If true, we'll publish all the exposed ports to the Docker host so that the outside world can connect
-//  to the container
-func (builder *CreateAndStartContainerArgsBuilder) ShouldPublishAllPorts(shouldPublishAllPorts bool) *CreateAndStartContainerArgsBuilder {
-	builder.shouldPublishAllPorts = shouldPublishAllPorts
+// A set of ports that the container will listen on, mapped to a specification for how they should be published to the host machine (if at all)
+func (builder *CreateAndStartContainerArgsBuilder) WithUsedPorts(usedPorts map[nat.Port]PortPublishSpec) *CreateAndStartContainerArgsBuilder {
+	builder.usedPorts = usedPorts
 	return builder
 }
 
