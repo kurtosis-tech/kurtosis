@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added a `KurtosisEngineServerVersion` constant that gets set to this repo's version
+
+### Removals
+* Removed non-functioning, unused `update-package-version.sh` script
 
 # 0.1.3
 ### Features
