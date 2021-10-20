@@ -1,5 +1,9 @@
 # TBD
 
+# 0.1.8
+### Features
+* Upgrade to `engine-api-lib` 0.4.2, which adds the `GetEngineInfo` endpoint
+
 # 0.1.7
 ### Fixes
 * Try again to fix the binary working inside Alpine Linux
