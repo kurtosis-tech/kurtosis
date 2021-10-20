@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgrade to `engine-api-lib` 0.4.2, which adds the `GetEngineInfo` endpoint
 
 # 0.1.7
 ### Fixes
