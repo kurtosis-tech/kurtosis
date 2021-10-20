@@ -7,6 +7,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
@@ -60,7 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred getting network networks matching the network we want to start the engine in, '%v'",
+			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
 			networkToStartEngineContainerIn,
 		)
 	}
@@ -101,7 +102,7 @@ func run(cmd *cobra.Command, args []string) error {
 		// TODO These need refactoring!!! "ContainerTypeLabel" and "AppIDLabel" aren't just for enclave objects!!!
 		//  See https://github.com/kurtosis-tech/kurtosis-cli/issues/24
 		enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
-		enclave_object_labels.ContainerTypeLabel: enclave_object_labels.ContainerTypeLabel,
+		enclave_object_labels.ContainerTypeLabel: engine_labels_schema.ContainerTypeKurtosisEngine,
 	}
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		engineImage,
