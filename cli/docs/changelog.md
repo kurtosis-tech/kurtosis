@@ -4,10 +4,12 @@
 * Upgraded to `kurtosis-core` 1.25.2, which contains fixes for `container-engine-lib` 0.7.0 feature that allows binding container ports to specific host machine ports
 * Added `engine start` command to the CLI
 * Added `engine stop` command to the CLI
+* `engine start` waits until the engine is responding to gRPC requests before it reports the engine as up
 
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
 * `engine start` won't start another container if one is already running
+* `engine start` waits for gRPC availability before it reports the engine up
 
 # 0.4.2
 ### Features
