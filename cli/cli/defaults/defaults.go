@@ -14,7 +14,7 @@ const (
 	kurtosisDockerOrg = "kurtosistech"
 	// vvvv WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS vvvvv
 	// Own version, so that we can start the proper Javascript REPL Docker image
-	ownVersion = "0.4.2"
+	ownVersion = "0.4.3"
 	// ^^^^ WARNING: DO NOT MODIFY THIS MANUALLY! IT WILL BE UPDATED DURING THE RELEASE PROCESS ^^^^^
 
 	DefaultJavascriptReplImage = kurtosisDockerOrg + "/javascript-interactive-repl:" + ownVersion
