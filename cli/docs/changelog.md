@@ -5,6 +5,7 @@
 * Added `engine start` command to the CLI
 * Added `engine stop` command to the CLI
 * `engine start` waits until the engine is responding to gRPC requests before it reports the engine as up
+* Added `engine status` command to the CLI
 
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
