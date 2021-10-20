@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.6
 ### Fixes
 * Fix issue with binary not being able to run on Alpine Linux
 
