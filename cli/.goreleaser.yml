@@ -4,6 +4,17 @@ before:
   hooks: []
 
 builds:
+  - id: repl-dockerfile-generator
+    main: ./repl_dockerfile_generator
+    binary: "{{ .Env.REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME }}"
+    # NOTE: The goos and goarch don't really matter here, because we build this
+    #  wrapper script generator binary with --single-target anyways
+    goos:
+      - "darwin"
+    goarch:
+      - "amd64"
+    # We don't want a unique dist dir so that it's easy to get the filepath to the outputted binary
+    no_unique_dist_dir: true
   - id: cli
     env:
       # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
@@ -27,7 +38,8 @@ builds:
 dockers:
   - id: javascript-repl-image
     ids: []
-    dockerfile: javascript_cli_image/Dockerfile
+    # This Dockerfile will be placed here by the REPL Dockerfile generator binary
+    dockerfile: {{ .Env.BUILD_DIRNAME }}/{{ .Env.JS_REPL_DIRNAME }}{{ .Env.REPL_OUTPUT_DOCKERFILE_SUFFIX }}
     image_templates:
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGES_TAG }}"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"

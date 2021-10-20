@@ -1,10 +1,9 @@
-# TODO must match the Kurt Client Javascript SDK version
+# IMPORTANT: must match the Kurt Client Javascript SDK version
 FROM node:16.7.0-alpine
 
 WORKDIR /preinstalled-node-modules
 
-# TODO Make this auto-update somehow??? Or add a CI check to make sure that it matches the dependencies used in the internal testsuite??
-RUN npm install kurtosis-core-api-lib@0.19.0
+RUN npm install kurtosis-core-api-lib@{{ .KurtosisClientVersion }}
 
 WORKDIR /repl
 
