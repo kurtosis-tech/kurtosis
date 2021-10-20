@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.3
 ### Features
 * Added documentation in README about how to develop on this repo
 * Upgraded to `kurtosis-core` 1.25.2, which contains fixes for `container-engine-lib` 0.7.0 feature that allows binding container ports to specific host machine ports
