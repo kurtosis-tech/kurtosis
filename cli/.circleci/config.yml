@@ -50,7 +50,7 @@ jobs:
       - run: bash .circleci/validate-all-testsuites.sh "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
 
       # Finally, stop the engine to verify that stopping works
-      - run: ./scripts/launch-cli.sh engine start
+      - run: ./scripts/launch-cli.sh engine stop
 
   push_artifacts:
     executor: ubuntu_vm
