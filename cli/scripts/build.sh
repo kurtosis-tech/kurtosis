@@ -13,9 +13,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 source "${script_dirpath}/_constants.sh"
 
 REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
-JS_REPL_DIRNAME="javascript_repl_image"
 REPL_DIRNAMES_TO_BUILD=(
-    "${JS_REPL_DIRNAME}"
+    "javascript_repl_image"
 )
 
 REPL_OUTPUT_DOCKERFILE_SUFFIX=".Dockerfile"
@@ -62,10 +61,7 @@ export DOCKER_ORG \
     INTERNAL_TESTSUITE_IMAGE_SUFFIX \
     JAVASCRIPT_REPL_IMAGE \
     CLI_BINARY_FILENAME \
-    BUILD_DIRNAME \
-    REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME \
-    REPL_OUTPUT_DOCKERFILE_SUFFIX \
-    JS_REPL_DIRNAME
+    REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME
 export DOCKER_IMAGES_TAG="${docker_images_tag}"
 if "${should_publish_arg}"; then
     # This environment variable will be set ONLY when publishing, in the CI environment
