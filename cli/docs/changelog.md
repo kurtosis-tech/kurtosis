@@ -2,6 +2,9 @@
 ### Features
 * Add a `version` command to print the CLI's version
 
+### Fixes
+* The Kurtosis Client version used by the JS REPL image will now use the `KurtosisApiVersion` constant published by Kurt Client
+
 # 0.4.3
 ### Features
 * Added documentation in README about how to develop on this repo

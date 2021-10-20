@@ -38,8 +38,8 @@ builds:
 dockers:
   - id: javascript-repl-image
     ids: []
-    # This Dockerfile will be placed here by the REPL Dockerfile generator binary
-    dockerfile: {{ .Env.BUILD_DIRNAME }}/{{ .Env.JS_REPL_DIRNAME }}{{ .Env.REPL_OUTPUT_DOCKERFILE_SUFFIX }}
+      # NOTE: This is created here by the REPL Dockerfile generator
+    dockerfile: "./build/javascript_repl_image.Dockerfile"
     image_templates:
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGES_TAG }}"
       - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"

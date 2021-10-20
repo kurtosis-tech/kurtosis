@@ -25,12 +25,12 @@ func main() {
 }
 
 func runMain() error {
-	if len(os.Args) != 2 {
+	// 3, because arg 0 is the filepath of the binary
+	if len(os.Args) != 3 {
 		return stacktrace.NewError("Expected exactly two args 1) path to the Dockerfile template 2) output filepath")
-
 	}
-	templateFilepath := os.Args[0]
-	outputFilepath := os.Args[1]
+	templateFilepath := os.Args[1]
+	outputFilepath := os.Args[2]
 
 	// For some reason, the template name has to match teh basename of the file:
 	//  https://stackoverflow.com/questions/49043292/error-template-is-an-incomplete-or-empty-template

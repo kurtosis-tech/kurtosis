@@ -95,14 +95,7 @@ for repl_dirname in "${REPL_DIRNAMES_TO_BUILD[@]}"; do
         echo "Error: An error occurred rendering template for REPL '${repl_dirname}' at path '${repl_dockerfile_template_filepath}' to output filepath '${output_filepath}'" >&2
         exit 1
     fi
-fi
-
-
-# First we need to generate the Javascript REPL image Dockerfile
-if ! goreleaser --rm-dist --skip-announce ${goreleaser_release_extra_args}; then
-    echo "Error: Goreleaser release of all binaries & Docker images failed" >&2
-    exit 1
-fi
+done
 
 # Build all the Docker images
 if "${should_publish_arg}"; then
