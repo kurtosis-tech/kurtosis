@@ -78,9 +78,10 @@ cd "${root_dirpath}"
 
 go test ./...
 
-# Generate REPL image Dockerfiles
+# Use a first pass of Goreleaser to build ONLY the REPL Dockerfile-generating binary, and then generate the REPL Dockerfiles so that the second
+#  pass of Goreleaser (which generates the Dockerfiles) can pick them up
 if ! goreleaser build --rm-dist --snapshot --id "${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}" --single-target; then
-    echo "Error: Couldn't build the wrapper script-generating binary" >&2
+    echo "Error: Couldn't build the REPL Dockerfile-generating binary" >&2
     exit 1
 fi
 repl_dockerfile_generator_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}"
@@ -108,7 +109,7 @@ if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_arg
     exit 1
 fi
 
-# Build a CLI binary, compatible with the current OS & arch, so that we can run interactive & testing locally
+# As a last step, build a CLI binary (compatible with the current OS & arch) so that we can run interactive & testing locally via the launch-cli.sh script
 if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
     echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
     exit 1

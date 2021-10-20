@@ -7,8 +7,9 @@ builds:
   - id: repl-dockerfile-generator
     main: ./repl_dockerfile_generator
     binary: "{{ .Env.REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME }}"
-    # NOTE: The goos and goarch don't really matter here, because we build this
-    #  wrapper script generator binary with --single-target anyways
+    # NOTE: The goos and goarch don't really matter here, because we build this binary
+    #  with --single-target as part of the build.sh script anyways, which overrides the
+    #  below 'goos' and 'goarch' settings
     goos:
       - "darwin"
     goarch:
