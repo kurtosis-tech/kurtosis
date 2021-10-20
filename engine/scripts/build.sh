@@ -33,7 +33,7 @@ echo "Tests succeeded"
 
 # Build binary for packaging inside an Alpine Linux image
 echo "Building Kurtosis Engine Server code '${MAIN_GO_FILEPATH}'..."
-if ! CGO_ENABLED=false GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_PATH}" "${MAIN_GO_FILEPATH}"; then
+if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_PATH}" "${MAIN_GO_FILEPATH}"; then
   echo "Error: Code build of the Kurtosis Engine Server failed" >&2
   exit 1
 fi
