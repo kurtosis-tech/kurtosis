@@ -22,6 +22,8 @@ PER_LANG_ERROR_KEYWORD["golang"]="ERRO"
 
 DOCKER_CONTAINER_LS_CONTAINER_ID_COL_HEADER="CONTAINER ID"
 
+KURTOSIS_ENGINE_CONTAINER_NAME_FRAGMENT="kurtosis-engine"
+
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
