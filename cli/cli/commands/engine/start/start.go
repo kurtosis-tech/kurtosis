@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,6 +23,8 @@ const (
 	networkToStartEngineContainerIn = "bridge"
 
 	dockerSocketFilepath = "/var/run.docker.sock"
+
+	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 )
 
 var engineImage string
@@ -31,6 +32,7 @@ var engineImage string
 var StartCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Starts the Kurtosis engine",
+	Long: "Starts the Kurtosis engine, doing nothing if an engine is already running",
 	RunE:  run,
 }
 
@@ -56,6 +58,24 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
+
+	// Don't start an engine if one is already running
+	matchingEngineContainers, err := dockerManager.GetContainersByLabels(
+		ctx,
+		engine_labels_schema.EngineContainerLabels,
+		shouldGetStoppedContainersWhenCheckingForExistingEngines,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting existing engine containers")
+	}
+	numMatchingEngineContainers := len(matchingEngineContainers)
+	if numMatchingEngineContainers > 1 {
+		return stacktrace.NewError("Found %v running engine containers; there should never be more than 1 engine container!", numMatchingEngineContainers)
+	}
+	if numMatchingEngineContainers > 0 {
+		logrus.Info("A Kurtosis engine is already running; exiting")
+		return nil
+	}
 
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
 	if err != nil {
@@ -98,12 +118,6 @@ func run(cmd *cobra.Command, args []string) error {
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		enginePortObj: docker_manager.NewManualPublishingSpec(kurtosis_engine_rpc_api_consts.ListenPort),
 	}
-	labels := map[string]string{
-		// TODO These need refactoring!!! "ContainerTypeLabel" and "AppIDLabel" aren't just for enclave objects!!!
-		//  See https://github.com/kurtosis-tech/kurtosis-cli/issues/24
-		enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
-		enclave_object_labels.ContainerTypeLabel: engine_labels_schema.ContainerTypeKurtosisEngine,
-	}
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		engineImage,
 		containerName,
@@ -114,7 +128,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
-		labels,
+		engine_labels_schema.EngineContainerLabels,
 	).Build()
 
 	if _, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs); err != nil {
