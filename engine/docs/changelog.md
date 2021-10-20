@@ -1,4 +1,6 @@
 # TBD
+
+# 0.1.7
 ### Fixes
 * Try again to fix the binary working inside Alpine Linux
 
