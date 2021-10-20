@@ -73,7 +73,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.NewError("Found %v running engine containers; there should never be more than 1 engine container!", numMatchingEngineContainers)
 	}
 	if numMatchingEngineContainers > 0 {
-		logrus.Info("A Kurtosis engine is already running; exiting")
+		logrus.Info("A Kurtosis engine is already running; nothing to do")
 		return nil
 	}
 
@@ -134,6 +134,8 @@ func run(cmd *cobra.Command, args []string) error {
 	if _, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
 	}
+
+	// TODO Query the availability endpoint so that we don't return until the engine is ACTUALLY available
 
 	logrus.Info("Kurtosis engine started successfully")
 	return nil

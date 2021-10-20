@@ -51,7 +51,7 @@ func run(cmd *cobra.Command, args []string) error {
 	)
 	numMatchingEngineContainers := len(matchingEngineContainers)
 	if numMatchingEngineContainers == 0 {
-		logrus.Info("No Kurtosis engine is running; exiting")
+		logrus.Info("No Kurtosis engine is running; nothing to do")
 	}
 	if numMatchingEngineContainers > 1 {
 		logrus.Warnf(
@@ -85,5 +85,6 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
+	logrus.Info("Kurtosis engine successfully stopped")
 	return nil
 }
