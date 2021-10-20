@@ -32,6 +32,9 @@ const (
 var testsuiteRpcPort = nat.Port(fmt.Sprintf("%v/%v", kurtosis_testsuite_rpc_api_consts.ListenPort, kurtosis_testsuite_rpc_api_consts.ListenProtocol))
 var testsuiteDebuggerPort = nat.Port(fmt.Sprintf("%v/%v", portForDebuggersRunningOnTestsuite, protocolForDebuggersRunningOnTestsuite))
 
+// We always publish the testsuite container's ports so that the CLI can call setup/run methods from outside the enclave
+var testsuitePortPublishSpec = docker_manager.NewAutomaticPublishingSpec()
+
 type TestsuiteContainerLauncher struct {
 	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 
@@ -184,12 +187,11 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		volumeMountpoints map[string]string,
 	) (string, map[nat.Port]*nat.PortBinding, error) {
 
-
-	usedPorts := map[nat.Port]bool{
-		testsuiteRpcPort: true,
+	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
+		testsuiteRpcPort: testsuitePortPublishSpec,
 		// TODO only set the debugger port if we're in debug mode, which would allow the Dockerfile
 		//  to conditionally start the testsuite in dlv
-		testsuiteDebuggerPort: true,
+		testsuiteDebuggerPort: testsuitePortPublishSpec,
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -200,8 +202,6 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		containerIpAddr,
 	).WithUsedPorts(
 		usedPorts,
-	).ShouldPublishAllPorts(
-		true,		// We always publish the testsuite container's ports so that the CLI can call setup/run methods from outside the enclave
 	).WithEnvironmentVariables(
 		envVars,
 	).WithVolumeMounts(

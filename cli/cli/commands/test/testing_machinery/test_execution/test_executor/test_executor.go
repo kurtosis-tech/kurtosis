@@ -14,10 +14,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_service_client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -108,29 +107,24 @@ func RunTest(
 	enclaveId := testsuiteExObjNameProvider.ForTestEnclave(testName)
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
-	engineServiceClient, closeEngineServiceClient, err := engine_service_client.NewEngineServiceClient()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred getting engine service client")
-	}
-	defer closeEngineServiceClient()
 
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId: enclaveId,
-		ApiContainerImage: apiContainerImage,
-		ApiContainerLogLevel: kurtosisLogLevel.String(),
-		IsPartitioningEnabled: isPartitioningEnabled,
-		ShouldPublishAllPorts: isDebugModeEnabled,
+	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
-	enclaveCtx, err := engineServiceClient.CreateEnclave(testTeardownContext, createEnclaveArgs)
+	enclaveCtx, err := kurtosisContext.CreateEnclave(
+		enclaveId,
+		apiContainerImage,
+		kurtosisLogLevel.String(),
+		isPartitioningEnabled,
+		isDebugModeEnabled)
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating an enclave")
+		return false, stacktrace.Propagate(err, "An error occurred creating an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
 	}
+
 	defer func() {
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
-			EnclaveId: enclaveId,
-		}
-		if _, err := engineServiceClient.DestroyEnclave(testTeardownContext, destroyEnclaveArgs); err != nil {
+		if err := kurtosisContext.DestroyEnclave(enclaveId); err != nil {
 			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
 			fmt.Fprintln(log.Out, err)
 			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
@@ -146,16 +140,16 @@ func RunTest(
 		dockerClient,
 	)
 
-	networkId := enclaveCtx.NetworkId
-	kurtosisApiIp := net.ParseIP(enclaveCtx.ApiContainerIpInsideNetwork)
+	networkId := enclaveCtx.GetNetworkID()
+	kurtosisApiIp := net.ParseIP(enclaveCtx.GetApiContainerContext().GetIpInsideNetwork())
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	testsuiteContainerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		enclaveCtx.ApiContainerHostIp,
-		enclaveCtx.ApiContainerHostPort,
+		enclaveCtx.GetApiContainerContext().GetHostIp(),
+		enclaveCtx.GetApiContainerContext().GetHostPort(),
 	)
 	apiContainerConn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {

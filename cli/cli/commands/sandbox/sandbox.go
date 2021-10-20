@@ -12,11 +12,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_service_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -76,7 +75,6 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
 
 	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
@@ -97,31 +95,25 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	engineServiceClient, closeEngineServiceClient, err := engine_service_client.NewEngineServiceClient()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting engine service client")
-	}
-	defer closeEngineServiceClient()
-
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId: enclaveId,
-		ApiContainerImage: apiContainerImage,
-		ApiContainerLogLevel: kurtosisLogLevelStr,
-		IsPartitioningEnabled: isPartitioningEnabled,
-		ShouldPublishAllPorts: shouldPublishPorts,
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
-	enclaveCtx, err := engineServiceClient.CreateEnclave(ctx, createEnclaveArgs)
+	enclaveCtx, err := kurtosisContext.CreateEnclave(
+		enclaveId,
+		apiContainerImage,
+		kurtosisLogLevelStr,
+		isPartitioningEnabled,
+		shouldPublishPorts)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave")
+		return stacktrace.Propagate(err, "An error occurred creating an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
 	}
+
 	defer func() {
 		// Ensure we don't leak enclaves
 		logrus.Info("Removing enclave...")
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
-			EnclaveId: enclaveId,
-		}
-		if _, err := engineServiceClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+		if err := kurtosisContext.DestroyEnclave(enclaveId); err != nil {
 			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
@@ -132,11 +124,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	logrus.Debug("Running REPL...")
 	if err := repl_runner.RunREPL(
-		enclaveId,
-		enclaveCtx.NetworkId,
-		enclaveCtx.ApiContainerHostIp,
-		enclaveCtx.ApiContainerHostPort,
-		enclaveCtx.ApiContainerIpInsideNetwork,
+		enclaveCtx,
 		jsReplImage,
 		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")

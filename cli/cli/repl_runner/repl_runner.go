@@ -7,8 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/enclave_context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -42,22 +41,21 @@ const (
 
 // Launches a REPL container and attaches to it, blocking until the REPL container exits
 func RunREPL(
-	enclaveId string,
-	networkId string,
-	apiContainerHostIp string,
-	apiContainerHostPort string,
-	ApiContainerIpInsideNetwork string,
+	enclaveCtx *enclave_context.EnclaveContext,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
-	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
-
+	enclaveId := enclaveCtx.GetEnclaveID()
+	networkId := enclaveCtx.GetNetworkID()
+	kurtosisApiContainerIpAddr := enclaveCtx.GetApiContainerContext().GetIpInsideNetwork()
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		apiContainerHostIp,
-		apiContainerHostPort,
+		enclaveCtx.GetApiContainerContext().GetHostIp(),
+		enclaveCtx.GetApiContainerContext().GetHostPort(),
 	)
+	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
+	enclaveObjLabelsProvider := enclaveCtx.GetObjectLabelsProvider()
+
 	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine port binding")
@@ -110,7 +108,7 @@ func RunREPL(
 	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
 
 
-	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", ApiContainerIpInsideNetwork, kurtosis_core_rpc_api_consts.ListenPort)
+	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	// TODO Add interactive labels!!!
