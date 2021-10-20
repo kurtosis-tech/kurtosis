@@ -11,8 +11,8 @@ require (
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211019220539-090c147d934e
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020000332-f87a4ff868aa
-	github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020005923-46c89e5ba990
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020174948-29d1153d81fe
+	github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020175458-d2567d4bca6b
 	github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20211017202144-7eaa9e801188
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
 	github.com/sirupsen/logrus v1.8.1

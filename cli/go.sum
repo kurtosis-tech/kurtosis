@@ -485,8 +485,12 @@ github.com/kurtosis-tech/kurtosis-core v0.0.0-20211019220539-090c147d934e h1:P7A
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211019220539-090c147d934e/go.mod h1:ZlEGAIqOHqZ1PtsoOeywj0whyxL/bwk/zAjbgTY+tWU=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020000332-f87a4ff868aa h1:slQe1xs3xQUwy2J4B4veaqkzF9egLjycyvAHbPjuMuA=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020000332-f87a4ff868aa/go.mod h1:fyMyqBTuiteZVMqDkPi+UnlxNg7UhhLu1aWU6AVG5D4=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020174948-29d1153d81fe h1:FkDW9yPB3xvudT3eJZWyHAKjMB24WmGr+9+oYZ5aiIo=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211020174948-29d1153d81fe/go.mod h1:fyMyqBTuiteZVMqDkPi+UnlxNg7UhhLu1aWU6AVG5D4=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020005923-46c89e5ba990 h1:s1r9b0HT7NTXIyP7DuP2A7Zy2L6iNJBBYBIB/d5D8do=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020005923-46c89e5ba990/go.mod h1:ZfX2oSac8NXf3ZfkS3KjRd1KurFv9oJRecK1ZUg0ySE=
+github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020175458-d2567d4bca6b h1:5hkBJPOrqu4uw8wdVl7r7Qhypsv/gWfMD03hnCnVPRQ=
+github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211020175458-d2567d4bca6b/go.mod h1:UueH7TdAyQnuvdCOS1bWyceDMdbwaVOCf5uv4CaVnr4=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211014234818-e876c11fa02e/go.mod h1:vrsMp+drMF/bVCiDD91OxUmPIkwg41KS6NOQ78dLkBs=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20211017202144-7eaa9e801188 h1:g7BTGKkbuvGBhGw4vQbER48oAbbzITTvdHdNOr/k670=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20211017202144-7eaa9e801188/go.mod h1:u1Msr9vN/V9iXa8RhepNSG2ifYDHneZdr0z/wzp8Ld8=
