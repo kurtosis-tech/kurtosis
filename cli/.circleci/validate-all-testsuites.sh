@@ -80,8 +80,8 @@ for lang in $(cat "${supported_langs_abs_filepath}"); do
         continue
     fi
 
-    # Finally, verify that no containers were left hanging around (i.e. that Kurtosis cleans up after itself)
-    if [ -n "$(docker container ls | grep -v "${DOCKER_CONTAINER_LS_CONTAINER_ID_COL_HEADER}")" ]; then
+    # Finally, verify that no containers besides the Kurtosis engine were left hanging around (i.e. that Kurtosis cleans up after itself)
+    if [ -n "$(docker container ls | grep -v "${DOCKER_CONTAINER_LS_CONTAINER_ID_COL_HEADER}" | grep -v "${KURTOSIS_ENGINE_CONTAINER_NAME_FRAGMENT}")" ]; then
         echo "Error: Kurtosis left one or more containers hanging around after executing the '${lang}' testsuite; this is a Kurtosis bug!" >&2
         had_failures="true"
         continue
