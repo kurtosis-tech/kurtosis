@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add a `version` command to print the CLI's version
 
 # 0.4.3
 ### Features
