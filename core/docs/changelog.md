@@ -1,4 +1,11 @@
 # TBD
+### Features
+* Label the API container with a  as well, so we can programmatically get its host machine port bindings
+
+### Breaking Changes
+* Renamed the `APIContainerPortLabel` to `APIContainerPortNumLabel`
+* Changed the value of the label to `api-container-port-number` (was `api-container-port`)
+* The `EnclaveObjectLabelsProvider.ForAPIContainer` no longer takes in API container port number, and instead uses the constants from `core-api-lib`
 
 # 1.25.3
 ### Features
