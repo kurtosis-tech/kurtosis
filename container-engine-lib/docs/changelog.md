@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Added the ability to add labels to networks & volumes
+
+### Breaking Changes
+* `CreateNetwork` now also takes in a list of labels to give the network
+* `CreateVolume` now also takes in a list of labels to give the volume
 
 # 0.7.0
 ### Features
