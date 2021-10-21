@@ -18,7 +18,7 @@ func TestGetLabelsFilterList(t *testing.T) {
 
 	labels[enclaveKey] = enclaveID
 
-	labelsFilterList := getLabelsFilterList(labels)
+	labelsFilterList := getLabelsFilterArgs(labels)
 
 	assert.False(t, labelsFilterList.MatchKVList("label", nil))
 
@@ -28,7 +28,7 @@ func TestGetLabelsFilterList(t *testing.T) {
 
 	labels[containerTypeKey] = containerTypeValue
 
-	labelsFilterList = getLabelsFilterList(labels)
+	labelsFilterList = getLabelsFilterArgs(labels)
 
 	assert.False(t, labelsFilterList.MatchKVList("label", map[string]string{
 		enclaveKey: enclaveID,
