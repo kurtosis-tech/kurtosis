@@ -30,6 +30,7 @@ const (
 
 	expanderContainerSuccessExitCode = 0
 )
+var filesArtifactExpansionVolumeLabels = map[string]string{}
 
 /*
 Class responsible for taking an artifact containing compressed files and uncompressing its contents
@@ -70,7 +71,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
 		}
 
-		if err := expander.dockerManager.CreateVolume(ctx, destVolName); err != nil {
+		if err := expander.dockerManager.CreateVolume(ctx, destVolName, filesArtifactExpansionVolumeLabels); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", destVolName)
 		}
 

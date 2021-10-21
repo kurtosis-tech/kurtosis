@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgraded to `container-engine-lib` 0.8.0, which allows labelling of volumes & networks
 
 # 1.25.2
 ### Features
