@@ -1,5 +1,15 @@
 # TBD
 
+# 0.2.0
+### Features
+* Upgraded to [engine API lib 0.6.0](https://github.com/kurtosis-tech/kurtosis-engine-api-lib/blob/develop/docs/changelog.md#060)
+
+### Breaking Changes
+* `GetEnclave` endpoint is replaced with `GetEnclaves`
+    * Users should switch to `GetEnclaves` instead
+* `CreateEnclave`'s return value has been replaced with an `EnclaveInfo` object
+    * Users should consume the `EnclaveInfo` object instead
+
 # 0.1.8
 ### Features
 * Upgrade to `engine-api-lib` 0.4.2, which adds the `GetEngineInfo` endpoint

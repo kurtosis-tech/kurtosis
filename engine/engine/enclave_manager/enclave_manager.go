@@ -7,30 +7,36 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/docker_network_allocator"
-	enclave_manager_types "github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/types"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
+//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  2) the user upgrades their CLI, and restarts with the new engine
+//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+var enclaveNetworkLabels = map[string]string{
+	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+}
+var enclaveDataVolLabels = map[string]string{
+	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+}
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 const (
-	// TODO This should come from the Kurt Client constant!!!
-	// The port that the API container listens on
-	apiContainerListenPort = 7443
-
-	// TODO This should come from the Kurt Client constant!!!
-	// Protocol that the API container listens on
-	apiContainerListenProtocol = "tcp"
-
 	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
 	//  to give it some time to do so
 	apiContainerStopTimeout = 3 * time.Minute
@@ -38,12 +44,16 @@ const (
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 
-	shouldFetchStoppedContainersWhenGettingAPIContainer = false
+	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
 
 	// We set this to true in case there are any race conditions with a container starting as we're trying to stop the enclave
 	shouldKillAlreadyStoppedContainersWhenStoppingEnclave = true
 
 	shouldFetchStoppedContainersWhenDestroyingEnclave = true
+
+	// API container port number string parsing constants
+	portNumStrParsingBase = 10
+	portNumStrParsingBits = 32
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -66,6 +76,8 @@ func NewEnclaveManager(dockerManager *docker_manager.DockerManager) *EnclaveMana
 	}
 }
 
+// It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
+//  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// TODO This shouldn't be passed as an argument, but should be auto-detected from the core API version!!!
@@ -74,7 +86,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	// TODO put in coreApiVersion as a param here!
 	enclaveId string,
 	isPartitioningEnabled bool,
-	shouldPublishAllPorts bool) (*enclave_manager_types.Enclave, error) {
+	shouldPublishAllPorts bool,
+) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -96,6 +109,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := manager.dockerNetworkAllocator.CreateNewNetwork(
 		setupCtx,
 		enclaveId,
+		enclaveNetworkLabels,
 	)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
@@ -124,7 +138,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
 
-	if err := manager.dockerManager.CreateVolume(setupCtx, enclaveId); err != nil {
+	if err := manager.dockerManager.CreateVolume(setupCtx, enclaveId, enclaveDataVolLabels); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveId)
 	}
 	// NOTE: We could defer a deletion of this volume unless the function completes successfully - right now, Kurtosis
@@ -144,7 +158,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
 
 	alreadyTakenIps := []net.IP{testsuiteContainerIpAddr, replContainerIpAddr}
-	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr, apiContainerListenPort)
+	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr)
 
 	//Pulling latest image version
 	if err = manager.dockerManager.PullImage(setupCtx, apiContainerImage); err != nil {
@@ -158,8 +172,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		manager.dockerManager,
 		logrus.StandardLogger(),
 		apiContainerImage,
-		apiContainerListenPort,
-		apiContainerListenProtocol,
+		kurtosis_core_rpc_api_consts.ListenPort,
+		kurtosis_core_rpc_api_consts.ListenProtocol,
 		apiContainerLogLevel,
 	)
 	if err != nil {
@@ -197,74 +211,64 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
 	}
 
+	hostMachinePortNumStr := apiContainerHostPortBinding.HostPort
+	hostMachinePortUint32, err := parsePortNumStrToUint32(hostMachinePortNumStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing the API container host machine port string '%v' to uint32", hostMachinePortNumStr)
+	}
+
+	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+		EnclaveId:          enclaveId,
+		NetworkId:          networkId,
+		NetworkCidr:        networkIpAndMask.String(),
+		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
+		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
+		ApiContainerInfo:   &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+			ContainerId:       apiContainerId,
+			IpInsideEnclave:   apiContainerIpAddr.String(),
+			PortInsideEnclave: kurtosis_core_rpc_api_consts.ListenPort,
+			IpOnHostMachine:   apiContainerHostPortBinding.HostIP,
+			PortOnHostMachine: hostMachinePortUint32,
+		},
+	}
+
 	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller
 	shouldDeleteNetwork = false
 	shouldStopApiContainer = false
-
-	enclave := enclave_manager_types.NewEnclave(
-		networkId,
-		networkIpAndMask,
-		apiContainerId,
-		&apiContainerIpAddr,
-		apiContainerHostPortBinding)
-
-	return enclave, nil
+	return result, nil
 }
 
-func (manager *EnclaveManager) GetEnclave(ctx context.Context, enclaveId string) (*enclave_manager_types.Enclave, error) {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
-
-	network, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
+// It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
+//  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
+func (manager *EnclaveManager) GetEnclaves(
+	ctx context.Context,
+) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+	networks, err := manager.dockerManager.GetNetworksByLabels(ctx, enclaveNetworkLabels)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting network for enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
 	}
-	if !found {
-		return nil, stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
-	}
-	networkId := network.GetId()
+	result := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+	for _, network := range networks {
+		enclaveId := network.GetName()
+		// Container retrieval requires an extra call to the Docker engine per enclave, so therefore could be expensive
+		//  if you have a LOT of enclaves. Maybe we want to make the getting of enclave container information be a separate
+		//  engine server endpoint??
+		containersStatus, apiContainerStatus, apiContainerInfo, err := getEnclaveContainerInformation(ctx, manager.dockerManager, enclaveId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting information about the containers in enclave '%v'", enclaveId)
+		}
 
-	apiContainer, err := manager.getAPIContainer(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting API container for enclave ID '%v'", enclaveId)
+		enclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+			EnclaveId:          enclaveId,
+			NetworkId:          network.GetId(),
+			NetworkCidr:        network.GetIpAndMask().String(),
+			ContainersStatus:   containersStatus,
+			ApiContainerStatus: apiContainerStatus,
+			ApiContainerInfo:   apiContainerInfo,
+		}
+		result[enclaveId] = enclaveInfo
 	}
-	apiContainerId := apiContainer.GetId()
-
-	apiContainerLabels := apiContainer.GetLabels()
-	apiContainerIPAddressString, found := apiContainerLabels[enclave_object_labels.APIContainerIPLabel]
-	if !found {
-		return nil, stacktrace.NewError(
-			"No '%v' container label was found on API container with ID '%v' with labels '%+v'",
-			enclave_object_labels.APIContainerIPLabel,
-			apiContainer.GetId(),
-			apiContainerLabels,
-		)
-	}
-	apiContainerIpAddr := net.ParseIP(apiContainerIPAddressString)
-	if apiContainerIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse API container IP address string '%v' to an IP address", apiContainerIPAddressString)
-	}
-
-	apiContainerListenPortString, found := apiContainerLabels[enclave_object_labels.APIContainerPortLabel]
-	apiContainerNatPort, err := nat.NewPort(apiContainerListenProtocol, apiContainerListenPortString)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating new API container port with protocol '%v' and port number '%v'", apiContainerListenProtocol, apiContainerListenPortString)
-	}
-
-	allApiContainerHostPortBindings := apiContainer.GetHostPortBindings()
-	apiContainerHostPortBinding, found := allApiContainerHostPortBindings[apiContainerNatPort]
-	if !found {
-		return nil, stacktrace.NewError("No API container host port binding found for port '%v' among host port bindings '%+v'", apiContainerNatPort, allApiContainerHostPortBindings)
-	}
-
-	enclave := enclave_manager_types.NewEnclave(
-		networkId,
-		network.GetIpAndMask(),
-		apiContainerId,
-		&apiContainerIpAddr,
-		apiContainerHostPortBinding)
-
-	return enclave, nil
+	return result, nil
 }
 
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
@@ -468,21 +472,6 @@ func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId 
 	return network, true, nil
 }
 
-func (manager *EnclaveManager) getAPIContainer(ctx context.Context, enclaveId string) (*types.Container, error) {
-	labels := getLabelsForAPIContainer(enclaveId)
-	containers, err := manager.dockerManager.GetContainersByLabels(ctx, labels, shouldFetchStoppedContainersWhenGettingAPIContainer)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting API container by labels: '%+v'", labels)
-	}
-	if len(containers) == 0 || len(containers) > 1 {
-		return nil, stacktrace.NewError("%v Docker container were returned for labels '%+v' and should be only one API container running on each enclave - this is very strange!", len(containers), labels)
-	}
-
-	apiContainer := containers[0]
-
-	return apiContainer, nil
-}
-
 func waitForApiContainerAvailability(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
@@ -514,9 +503,138 @@ func waitForApiContainerAvailability(
 	return nil
 }
 
-func getLabelsForAPIContainer(enclaveId string) map[string]string {
-	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
-	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
-	return labels
+func getEnclaveContainerInformation(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveId string,
+) (kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus, kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus, *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo, error) {
+	containers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
+	if err != nil {
+		return 0, 0, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
+	}
+	if len(containers) == 0 {
+		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY,
+			kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT,
+			nil,
+			nil
+	}
+
+	resultContainersStatus := kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED
+	resultApiContainerStatus := kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT
+	var resultApiContainerInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo = nil
+	for _, container := range containers {
+		containerStatus := container.GetStatus()
+		isContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
+		if isContainerRunning {
+			resultContainersStatus = kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
+		}
+
+		// Parse API container info, if it exists
+		containerLabels := container.GetLabels()
+		containerTypeLabelValue, found := containerLabels[enclave_object_labels.ContainerTypeLabel]
+		if found && containerTypeLabelValue == enclave_object_labels.ContainerTypeAPIContainer {
+			if resultApiContainerInfo != nil {
+				return 0, 0, nil, stacktrace.NewError("Found a second API container inside the network; this should never happen!")
+			}
+
+			if isContainerRunning {
+				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
+			} else {
+				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED
+			}
+
+			apiContainerIpInsideNetwork, found := containerLabels[enclave_object_labels.APIContainerIPLabel]
+			if !found {
+				return 0, 0, nil, stacktrace.NewError(
+					"No label '%v' was found on the API container indicating its IP inside the network",
+					enclave_object_labels.APIContainerIPLabel,
+				)
+			}
+
+			apiContainerPortNumStr, found := containerLabels[enclave_object_labels.APIContainerPortNumLabel]
+			if !found {
+				return 0, 0, nil, stacktrace.NewError(
+					"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
+					enclave_object_labels.APIContainerPortNumLabel,
+				)
+			}
+
+			apiContainerPortProtocol, found := containerLabels[enclave_object_labels.APIContainerPortProtocolLabel]
+			if !found {
+				return 0, 0, nil, stacktrace.NewError(
+					"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
+					enclave_object_labels.APIContainerPortProtocolLabel,
+				)
+			}
+
+			apiContainerPortObj, err := nat.NewPort(apiContainerPortProtocol, apiContainerPortNumStr)
+			if err != nil {
+				return 0, 0, nil, stacktrace.Propagate(
+					err,
+					"An error occurred creating the API container port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
+					apiContainerPortNumStr,
+					apiContainerPortProtocol,
+				)
+			}
+
+			containerHostMachinePortBindings := container.GetHostPortBindings()
+			apiContainerPortHostMachineBinding, found := containerHostMachinePortBindings[apiContainerPortObj]
+			if !found {
+				return 0, 0, nil, stacktrace.NewError(
+					"No host machine port binding was found for API container port '%v'; this is a bug in Kurtosis!",
+					apiContainerPortObj,
+				)
+			}
+
+			apiContainerInternalPortNumUint32, err := parsePortNumStrToUint32(apiContainerPortNumStr)
+			if err != nil {
+				return 0, 0, nil, stacktrace.Propagate(err, "An error occurred converting the API container internal port string '%v' to uint32", apiContainerPortNumStr)
+			}
+
+			apiContainerHostMachinePortNumStr := apiContainerPortHostMachineBinding.HostPort
+			apiContainerHostMachinePortNumUint32, err := parsePortNumStrToUint32(apiContainerHostMachinePortNumStr)
+			if err != nil {
+				return 0, 0, nil, stacktrace.Propagate(err, "An error occurred converting the API container host machine port string '%v' to uint32", apiContainerHostMachinePortNumStr)
+			}
+
+			resultApiContainerInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+				ContainerId:       container.GetId(),
+				IpInsideEnclave:   apiContainerIpInsideNetwork,
+				PortInsideEnclave: apiContainerInternalPortNumUint32,
+				IpOnHostMachine:   apiContainerPortHostMachineBinding.HostIP,
+				PortOnHostMachine: apiContainerHostMachinePortNumUint32,
+			}
+		}
+	}
+
+	return resultContainersStatus, resultApiContainerStatus, resultApiContainerInfo, nil
+}
+
+func getEnclaveContainers(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	enclaveId string,
+) ([]*types.Container, error) {
+	searchLabels := map[string]string{
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	containers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingEnclaveStatus)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v' by labels '%+v'", enclaveId, searchLabels)
+	}
+	return containers, nil
+}
+
+func parsePortNumStrToUint32(input string) (uint32, error) {
+	portNumUint64, err := strconv.ParseUint(input, portNumStrParsingBase, portNumStrParsingBits)
+	if err != nil {
+		return 0, stacktrace.Propagate(
+			err,
+			"An error occurred parsing port number string '%v' to an integer of base %v with %v bits",
+			input,
+			portNumStrParsingBase,
+			portNumStrParsingBits,
+		)
+	}
+	return uint32(portNumUint64), nil
 }
