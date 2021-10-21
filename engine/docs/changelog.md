@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.0
 ### Features
 * Upgraded to [engine API lib 0.6.0](https://github.com/kurtosis-tech/kurtosis-engine-api-lib/blob/develop/docs/changelog.md#060)
 
