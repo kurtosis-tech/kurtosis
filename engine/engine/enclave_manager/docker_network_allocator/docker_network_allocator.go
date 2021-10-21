@@ -136,7 +136,8 @@ func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *Doc
 
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		ctx context.Context,
-		networkName string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
+		networkName string,
+		labels map[string]string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
 	if !provider.isConstructedViaConstructor {
 		return "", nil, nil, nil, stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
 	}
@@ -176,7 +177,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
 		}
 
-		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp)
+		networkId, err := provider.dockerManager.CreateNetwork(ctx, networkName, freeNetworkIpAndMask.String(), gatewayIp, labels)
 		if err == nil {
 			return networkId, freeNetworkIpAndMask, gatewayIp, freeIpAddrTracker, nil
 		}
