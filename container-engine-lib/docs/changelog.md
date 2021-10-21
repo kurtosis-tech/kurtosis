@@ -1,5 +1,13 @@
 # TBD
 
+# 0.8.0
+### Features
+* Added the ability to add labels to networks & volumes
+
+### Breaking Changes
+* `CreateNetwork` now also takes in a list of labels to give the network
+* `CreateVolume` now also takes in a list of labels to give the volume
+
 # 0.7.0
 ### Features
 * Added the ability to specify fixed host machine port bindings when starting a container is now available via the key of the map in `CreateAndStartContainerArgsBuilder.WithUsedPorts` function

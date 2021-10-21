@@ -117,11 +117,12 @@ Args:
 	name: The name to give the new Docker network
 	subnetMask: The subnet mask defining allowed IPs for the Docker network
 	gatewayIP: The IP to give the network gateway
+	labels: Labels to give the network object
 
 Returns:
 	id: The Docker-managed ID of the network
  */
-func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP) (id string, err error)  {
+func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error)  {
 	networkIds, err := manager.GetNetworksByName(context, name)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
@@ -141,6 +142,7 @@ func (manager DockerManager) CreateNetwork(context context.Context, name string,
 		IPAM: &network.IPAM{
 			Config: ipamConfig,
 		},
+		Labels: labels,
 	})
 	if err != nil {
 		return "", stacktrace.Propagate( err, "Failed to create network %s with subnet %s", name, subnetMask)
@@ -211,10 +213,12 @@ Args:
 	context: The Context that this request is running in (useful for cancellation)
 	volumeName: The unique identifier used by Docker to identify this volume (NOTE: at time of writing, Docker doesn't
 		even give volumes IDs - this name is all there is)
+	labels: Labels to attach to the volume object
  */
-func (manager DockerManager) CreateVolume(context context.Context, volumeName string) error {
+func (manager DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
 	volumeConfig := volume.VolumeCreateBody{
 		Name:       volumeName,
+		Labels: labels,
 	}
 
 	/*
