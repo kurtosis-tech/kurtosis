@@ -1,5 +1,9 @@
 # TBD
 
+# 1.25.3
+### Features
+* Upgraded to `container-engine-lib` 0.8.1, which allows labelling of volumes & networks, and search for volumes & networks by labels
+
 # 1.25.2
 ### Features
 * Upgrade to `container-engine-lib` 0.7.0, which refactors the container-starting API to allow for fixed host machine ports

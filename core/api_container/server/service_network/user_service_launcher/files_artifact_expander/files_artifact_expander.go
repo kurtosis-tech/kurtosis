@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"path"
@@ -30,6 +31,9 @@ const (
 
 	expanderContainerSuccessExitCode = 0
 )
+var filesArtifactExpansionVolumeLabels = map[string]string{
+	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+}
 
 /*
 Class responsible for taking an artifact containing compressed files and uncompressing its contents
@@ -70,7 +74,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
 		}
 
-		if err := expander.dockerManager.CreateVolume(ctx, destVolName); err != nil {
+		if err := expander.dockerManager.CreateVolume(ctx, destVolName, filesArtifactExpansionVolumeLabels); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", destVolName)
 		}
 
