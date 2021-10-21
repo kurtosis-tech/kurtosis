@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Upgraded to [engine API lib TODOOOOOOO](TODOOOO)
+* Upgraded to Core v1.26.0, which brings with it [engine API lib TODOOOO](TODOOO)
 
 ### Breaking Changes
 * `GetEnclave` endpoint is replaced with `GetEnclaves`
