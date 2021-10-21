@@ -23,8 +23,10 @@ const (
 
 	// A label for the API container IP address that it's running on
 	APIContainerIPLabel    = labelNamespace + "api-container-ip"
-	// A label for the API container port that it's running on
-	APIContainerPortLabel    = labelNamespace + "api-container-port"
+	// Port number that the API container is listening on, INSIDE the network
+	APIContainerPortNumLabel = labelNamespace + "api-container-port-number"
+	// Protocol of the port that the API container is listening on
+	APIContainerPortProtocolLabel = labelNamespace + "api-container-port-protocol"
 
 	// Values for ContainerTypeLabel
 	ContainerTypeAPIContainer               = "api-container"
