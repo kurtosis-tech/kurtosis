@@ -7,6 +7,7 @@ package object_labels_providers
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
@@ -21,11 +22,14 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 	return &EnclaveObjectLabelsProvider{enclaveId: enclaveId}
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint16) map[string]string {
+func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(
+	ipAddr net.IP,
+) map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
-	labels[enclave_object_labels.APIContainerIPLabel] = apiContainerIPAddress.String()
-	labels[enclave_object_labels.APIContainerPortLabel] = fmt.Sprintf("%v",  apiContainerListenPort)
+	labels[enclave_object_labels.APIContainerIPLabel] = ipAddr.String()
+	labels[enclave_object_labels.APIContainerPortNumLabel] = fmt.Sprintf("%v", kurtosis_core_rpc_api_consts.ListenPort)
+	labels[enclave_object_labels.APIContainerPortProtocolLabel] = kurtosis_core_rpc_api_consts.ListenProtocol
 	return labels
 }
 
