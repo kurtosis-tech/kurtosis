@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.0
 ### Features
 * Added the ability to add labels to networks & volumes
 
