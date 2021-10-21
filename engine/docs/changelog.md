@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Upgraded to Core v1.26.0, which brings with it [engine API lib TODOOOO](TODOOO)
+* Upgraded to [engine API lib 0.6.0](https://github.com/kurtosis-tech/kurtosis-engine-api-lib/blob/develop/docs/changelog.md#060)
 
 ### Breaking Changes
 * `GetEnclave` endpoint is replaced with `GetEnclaves`
