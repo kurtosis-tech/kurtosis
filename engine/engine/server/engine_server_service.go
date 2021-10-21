@@ -12,7 +12,7 @@ import (
 
 type EngineServerService struct {
 	// This embedding is required by gRPC
-	// kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
+	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
 
 	enclaveManager *enclave_manager.EnclaveManager
 }
@@ -38,7 +38,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
-	enclave, err := service.enclaveManager.CreateEnclave(
+	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		args.ApiContainerImage,
 		apiContainerLogLevel,
@@ -51,32 +51,18 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		NetworkId:                   enclave.GetNetworkId(),
-		NetworkCidr:                 enclave.GetNetworkIpAndMask().String(),
-		ApiContainerId:              enclave.GetApiContainerId(),
-		ApiContainerIpInsideNetwork: enclave.GetApiContainerIpAddr().String(),
-		ApiContainerHostIp:          enclave.GetApiContainerHostPortBinding().HostIP,
-		ApiContainerHostPort:        enclave.GetApiContainerHostPortBinding().HostPort,
+		EnclaveInfo: enclaveInfo,
 	}
 
 	return response, nil
 }
 
-func (service *EngineServerService) GetEnclaves(ctx context.Context, empty *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
-	enclave, err := service.enclaveManager.GetEnclave(ctx, args.EnclaveId)
+func (service *EngineServerService) GetEnclaves(ctx context.Context, _ *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
+	infoForEnclaves, err := service.enclaveManager.GetEnclaves(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave with ID '%v'", args.EnclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
-
-	response := &kurtosis_engine_rpc_api_bindings.GetEnclaveResponse{
-		NetworkId:                   enclave.GetNetworkId(),
-		NetworkCidr:                 enclave.GetNetworkIpAndMask().String(),
-		ApiContainerId:              enclave.GetApiContainerId(),
-		ApiContainerIpInsideNetwork: enclave.GetApiContainerIpAddr().String(),
-		ApiContainerHostIp:          enclave.GetApiContainerHostPortBinding().HostIP,
-		ApiContainerHostPort:        enclave.GetApiContainerHostPortBinding().HostPort,
-	}
-
+	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{EnclaveInfo: infoForEnclaves}
 	return response, nil
 }
 
