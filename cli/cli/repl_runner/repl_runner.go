@@ -7,7 +7,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/enclave_context"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -47,14 +49,15 @@ func RunREPL(
 ) error {
 	enclaveId := enclaveCtx.GetEnclaveID()
 	networkId := enclaveCtx.GetNetworkID()
-	kurtosisApiContainerIpAddr := enclaveCtx.GetApiContainerContext().GetIpInsideNetwork()
+	kurtosisApiContainerIpAddr := enclaveCtx.GetApiContainerContext().GetIPInsideEnclave()
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		enclaveCtx.GetApiContainerContext().GetHostIp(),
-		enclaveCtx.GetApiContainerContext().GetHostPort(),
+		enclaveCtx.GetApiContainerContext().GetIPOnHostMachine(),
+		enclaveCtx.GetApiContainerContext().GetPortOnHostMachine(),
 	)
-	enclaveObjNameProvider := enclaveCtx.GetObjectNameProvider()
-	enclaveObjLabelsProvider := enclaveCtx.GetObjectLabelsProvider()
+
+	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {

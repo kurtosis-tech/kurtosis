@@ -1,6 +1,7 @@
 package new
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
@@ -62,6 +63,8 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 
+	ctx := context.Background()
+
 	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
@@ -70,12 +73,13 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
 	_, err = kurtosisContext.CreateEnclave(
+		ctx,
 		enclaveId,
 		apiContainerImage,
 		kurtosisLogLevelStr,

@@ -116,12 +116,13 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Info("Creating enclave for the module to execute inside...")
 	executionId := execution_ids.GetExecutionID()
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
 	enclaveCtx, err := kurtosisContext.CreateEnclave(
+		ctx,
 		executionId,
 		apiContainerImage,
 		kurtosisLogLevelStr,
@@ -134,7 +135,7 @@ func run(cmd *cobra.Command, args []string) error {
 	shouldDestroyEnclave := true
 	defer func() {
 		if shouldDestroyEnclave {
-			if  err := kurtosisContext.DestroyEnclave(executionId); err != nil {
+			if  err := kurtosisContext.DestroyEnclave(ctx, executionId); err != nil {
 				logrus.Errorf(
 					"The module didn't execute correctly so we tried to destroy the created enclave, but destroying the enclave threw an error:\n%v",
 					err,
@@ -147,8 +148,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 	apiContainerHostUrl := fmt.Sprintf(
 		"%v:%v",
-		enclaveCtx.GetApiContainerContext().GetHostIp(),
-		enclaveCtx.GetApiContainerContext().GetHostPort(),
+		enclaveCtx.GetApiContainerContext().GetIPOnHostMachine(),
+		enclaveCtx.GetApiContainerContext().GetPortOnHostMachine(),
 	)
 	conn, err := grpc.Dial(apiContainerHostUrl, grpc.WithInsecure())
 	if err != nil {

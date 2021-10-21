@@ -76,6 +76,8 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 
+	ctx := context.Background()
+
 	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
@@ -95,12 +97,13 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
 	enclaveCtx, err := kurtosisContext.CreateEnclave(
+		ctx,
 		enclaveId,
 		apiContainerImage,
 		kurtosisLogLevelStr,
@@ -113,7 +116,7 @@ func run(cmd *cobra.Command, args []string) error {
 	defer func() {
 		// Ensure we don't leak enclaves
 		logrus.Info("Removing enclave...")
-		if err := kurtosisContext.DestroyEnclave(enclaveId); err != nil {
+		if err := kurtosisContext.DestroyEnclave(ctx, enclaveId); err != nil {
 			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")

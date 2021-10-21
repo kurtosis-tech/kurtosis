@@ -8,14 +8,10 @@ package ls
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -64,56 +60,21 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
 
-	searchLabels := map[string]string{
-		enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
-	}
-	kurtosisContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersForListingEnclaves)
+	enclaves, err := kurtosisContext.GetEnclaves(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Kurtosis containers by labels: '%+v'", searchLabels)
-	}
-
-	kurtosisContainersByEnclaveId := map[string][]*types.Container{}
-	for _, container := range kurtosisContainers {
-		containerLabels := container.GetLabels()
-		enclaveId, found := containerLabels[enclave_object_labels.EnclaveIDContainerLabel]
-		if !found {
-			return stacktrace.NewError(
-				"No '%v' label found for container '%v'; this is a bug in Kurtosis!",
-				enclave_object_labels.EnclaveIDContainerLabel,
-				container.GetId(),
-			)
-		}
-
-		enclaveContainers, found := kurtosisContainersByEnclaveId[enclaveId]
-		if !found {
-			enclaveContainers = []*types.Container{}
-		}
-		enclaveContainers = append(enclaveContainers, container)
-
-		kurtosisContainersByEnclaveId[enclaveId] = enclaveContainers
+		return stacktrace.Propagate(err, "An error occurred creating an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
 	}
 
 	orderedEnclaveIds := []string{}
 	enclaveStatuses := map[string]enclave_statuses.EnclaveStatus{}
-	for enclaveId, enclaveContainers := range kurtosisContainersByEnclaveId {
+	for enclaveId, enclaveContext := range enclaves {
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
-		enclaveStatus, err := enclave_status_from_container_status_retriever.GetEnclaveStatus(enclaveContainers)
-		if err != nil {
-			return stacktrace.NewError(
-				"An error occurred getting the status for enclave '%v' from the status of its containers",
-				enclaveId,
-			)
-		}
-		enclaveStatuses[enclaveId] = enclaveStatus
+		enclaveStatuses[enclaveId] = enclaveContext.GetStatus()
 	}
 	sort.Strings(orderedEnclaveIds)
 

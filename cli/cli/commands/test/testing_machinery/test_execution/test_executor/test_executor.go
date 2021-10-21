@@ -108,12 +108,13 @@ func RunTest(
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
 	enclaveCtx, err := kurtosisContext.CreateEnclave(
+		testSetupExecutionCtx,
 		enclaveId,
 		apiContainerImage,
 		kurtosisLogLevel.String(),
@@ -124,7 +125,7 @@ func RunTest(
 	}
 
 	defer func() {
-		if err := kurtosisContext.DestroyEnclave(enclaveId); err != nil {
+		if err := kurtosisContext.DestroyEnclave(testSetupExecutionCtx, enclaveId); err != nil {
 			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
 			fmt.Fprintln(log.Out, err)
 			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
@@ -141,15 +142,15 @@ func RunTest(
 	)
 
 	networkId := enclaveCtx.GetNetworkID()
-	kurtosisApiIp := net.ParseIP(enclaveCtx.GetApiContainerContext().GetIpInsideNetwork())
+	kurtosisApiIp := net.ParseIP(enclaveCtx.GetApiContainerContext().GetIPInsideEnclave())
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	testsuiteContainerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		enclaveCtx.GetApiContainerContext().GetHostIp(),
-		enclaveCtx.GetApiContainerContext().GetHostPort(),
+		enclaveCtx.GetApiContainerContext().GetIPOnHostMachine(),
+		enclaveCtx.GetApiContainerContext().GetPortOnHostMachine(),
 	)
 	apiContainerConn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {

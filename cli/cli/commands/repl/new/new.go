@@ -63,14 +63,19 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContext()
+	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
 	}
 
-	enclaveCtx, err := kurtosisContext.GetEnclave(enclaveId)
+	enclaves, err := kurtosisContext.GetEnclaves()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
+	}
+
+	enclaveCtx, found := enclaves[enclaveId]
+	if !found {
+		return stacktrace.Propagate(err, "An error occurred founding enclave with ID '%v' from enclaves map '%+v'", enclaveId, enclaves)
 	}
 
 	logrus.Debug("Running REPL...")
