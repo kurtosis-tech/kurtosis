@@ -12,7 +12,7 @@ import (
 
 type EngineServerService struct {
 	// This embedding is required by gRPC
-	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
+	// kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
 
 	enclaveManager *enclave_manager.EnclaveManager
 }
@@ -62,8 +62,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	return response, nil
 }
 
-func (service *EngineServerService) GetEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.GetEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.GetEnclaveResponse, error) {
-
+func (service *EngineServerService) GetEnclaves(ctx context.Context, empty *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	enclave, err := service.enclaveManager.GetEnclave(ctx, args.EnclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave with ID '%v'", args.EnclaveId)

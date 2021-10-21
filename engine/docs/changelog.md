@@ -1,4 +1,12 @@
 # TBD
+### Features
+* Upgraded to [engine API lib TODOOOOOOO](TODOOOO)
+
+### Breaking Changes
+* `GetEnclave` endpoint is replaced with `GetEnclaves`
+    * Users should switch to `GetEnclaves` instead
+* `CreateEnclave`'s return value has been replaced with an `EnclaveInfo` object
+    * Users should consume the `EnclaveInfo` object instead
 
 # 0.1.8
 ### Features
