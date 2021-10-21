@@ -1,4 +1,6 @@
 # TBD
+
+# 1.26.0
 ### Features
 * Label the API container with a  as well, so we can programmatically get its host machine port bindings
 
