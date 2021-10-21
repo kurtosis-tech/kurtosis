@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+const (
+	labelSearchFilterKey = "label"
+)
+
 func TestGetLabelsFilterList(t *testing.T) {
 	//Enclave ID label
 	enclaveKey := "enclaveID"
@@ -18,23 +22,23 @@ func TestGetLabelsFilterList(t *testing.T) {
 
 	labels[enclaveKey] = enclaveID
 
-	labelsFilterList := getLabelsFilterArgs(labels)
+	labelsFilterList := getLabelsFilterArgs(labelSearchFilterKey, labels)
 
-	assert.False(t, labelsFilterList.MatchKVList("label", nil))
+	assert.False(t, labelsFilterList.MatchKVList(labelSearchFilterKey, nil))
 
-	assert.True(t, labelsFilterList.MatchKVList("label", map[string]string{
+	assert.True(t, labelsFilterList.MatchKVList(labelSearchFilterKey, map[string]string{
 		enclaveKey: enclaveID,
 	}))
 
 	labels[containerTypeKey] = containerTypeValue
 
-	labelsFilterList = getLabelsFilterArgs(labels)
+	labelsFilterList = getLabelsFilterArgs(labelSearchFilterKey, labels)
 
-	assert.False(t, labelsFilterList.MatchKVList("label", map[string]string{
+	assert.False(t, labelsFilterList.MatchKVList(labelSearchFilterKey, map[string]string{
 		enclaveKey: enclaveID,
 	}))
 
-	assert.True(t, labelsFilterList.MatchKVList("label", map[string]string{
+	assert.True(t, labelsFilterList.MatchKVList(labelSearchFilterKey, map[string]string{
 		enclaveKey: enclaveID,
 		containerTypeKey: containerTypeValue,
 	}))
