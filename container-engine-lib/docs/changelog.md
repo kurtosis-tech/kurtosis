@@ -1,5 +1,12 @@
 # TBD
 
+# 0.8.1
+### Features
+* Added `GetVolumesByLabels` and `GetNetworksByLabels` functions
+
+### Fixes
+* For comments on the public functions, added the function name as the first line of the comment to make GoLand stop complaining
+
 # 0.8.0
 ### Features
 * Added the ability to add labels to networks & volumes

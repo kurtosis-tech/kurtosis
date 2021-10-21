@@ -49,9 +49,6 @@ const (
 	//  kill signal"
 	dockerKillSignal = "KILL"
 
-	nameFilterKey = "name"
-	labelFilterKey = "label"
-
 	expectedHostIp = "0.0.0.0"
 
 	// Character Docker uses to separate the repo from
@@ -60,8 +57,19 @@ const (
 	// If no tag is specified for an image, this is the tag Dock
 	dockerDefaultTag = "latest"
 
-	// From https://docs.docker.com/engine/api/v1.41/#operation/VolumeList
+	// ------------------ Filter Search Keys ----------------------
+	// All these defined in https://docs.docker.com/engine/api/v1.24
+
+	containerNameSearchFilterKey  = "name"
+	containerLabelSearchFilterKey = "label"
+
 	volumeNameSearchFilterKey = "name"
+	volumeLabelSearchFilterKey = "label"
+
+	networkNameSearchFilterKey = "name"
+	networkIdSearchFilterKey = "id"
+	networkLabelSearchFilterKey = "label"
+	// ---------------- End Filter Search Keys ----------------------
 
 	// For some reason, when publish-all-ports is requested, Docker will return successfully from starting a
 	//  container, but without having bound the host ports
@@ -78,13 +86,17 @@ const (
 	shouldKillContainersWhenRemovingContainers         = true
 )
 
-// The dimensions of the TTY that the container should output to when in interactive mode
+/*
+InteractiveModeTtySize
+The dimensions of the TTY that the container should output to when in interactive mode
+ */
 type InteractiveModeTtySize struct {
 	Height uint
 	Width uint
 }
 
 /*
+DockerManager
 A handle to interacting with the Docker environment running a test.
  */
 type DockerManager struct {
@@ -96,6 +108,7 @@ type DockerManager struct {
 }
 
 /*
+NewDockerManager
 Creates a new Docker manager for manipulating the Docker engine using the given client.
 
 Args:
@@ -110,6 +123,7 @@ func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) *DockerMa
 }
 
 /*
+CreateNetwork
 Creates a new Docker network with the given parameters; does nothing if a network with the given name already exists.
 
 Args:
@@ -159,10 +173,16 @@ func (manager DockerManager) ListNetworks(ctx context.Context) ([]types.NetworkR
 }
 
 /*
+GetNetworksByName
 Returns Network list matching the given name (if any).
  */
+// TODO Combine with GetNetworksByLabel using a search filter builder
 func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
-	dockerNetworks, err := manager.getNetworksByFilter(ctx, nameFilterKey, name)
+	nameSearchArgs := filters.NewArgs(filters.KeyValuePair{
+		Key:   networkNameSearchFilterKey,
+		Value: name,
+	})
+	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, nameSearchArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with name %v", name)
 	}
@@ -173,7 +193,25 @@ func (manager DockerManager) GetNetworksByName(ctx context.Context, name string)
 	}
 
 	return networks, nil
+}
 
+/*
+GetNetworksByLabels
+Gets networks matching the given labels
+ */
+func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
+	labelsSearchArgs := getLabelsFilterArgs(networkLabelSearchFilterKey, labels)
+	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, labelsSearchArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for existence of network with labels '%+v'", labels)
+	}
+
+	networks, err := newNetworkListFromDockerNetworkList(dockerNetworks)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new network list from Docker network list '%+v'", dockerNetworks)
+	}
+
+	return networks, nil
 }
 
 func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.Context, networkId string) ([]string, error) {
@@ -190,6 +228,7 @@ func (manager DockerManager) GetContainerIdsConnectedToNetwork(context context.C
 
 
 /*
+RemoveNetwork
 Removes the Docker network with the given id
 
 NOTE: All containers attached to the network must be shut off or disconnected, else the call will fail!
@@ -207,6 +246,7 @@ func (manager DockerManager) RemoveNetwork(context context.Context, networkId st
 }
 
 /*
+CreateVolume
 Creates a Docker volume identified by the given name.
 
 Args:
@@ -237,6 +277,7 @@ func (manager DockerManager) CreateVolume(context context.Context, volumeName st
 }
 
 /*
+GetVolumesByName
 Searches for volumes whose names match the given one
 
 Args:
@@ -264,9 +305,26 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 	return respNames, nil
 }
 
+/*
+GetVolumesByLabels
+Gets the volumes matching the given labels
+ */
+func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]string, error) {
+	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
+	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
+	}
 
+	respNames := []string{}
+	for _, foundVolume := range resp.Volumes {
+		respNames = append(respNames, foundVolume.Name)
+	}
+	return respNames, nil
+}
 
 /*
+RemoveVolume
 Removes a Docker volume identified by the given name, deleting it permanently
 
 Args:
@@ -281,6 +339,7 @@ func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName strin
 }
 
 /*
+CreateAndStartContainer
 Creates a Docker container with the given args and starts it.
 
 Returns:
@@ -316,7 +375,11 @@ func (manager DockerManager) CreateAndStartContainer(
 		manager.log.Tracef("Image successfully pulled from remote to local")
 	}
 
-	networks, err := manager.getNetworksByFilter(ctx, "id", args.networkId)
+	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
+		Key:   networkIdSearchFilterKey,
+		Value: args.networkId,
+	})
+	networks, err := manager.getNetworksByFilterArgs(ctx, idFilterArgs)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for the existence of network with ID %v", args.networkId)
 	}
@@ -332,7 +395,7 @@ func (manager DockerManager) CreateAndStartContainer(
 	isInteractiveMode := args.interactiveModeTtySize != nil
 
 	usedPortsSet := nat.PortSet{}
-	for port, _ := range args.usedPorts {
+	for port := range args.usedPorts {
 		usedPortsSet[port] = struct{}{}
 	}
 
@@ -487,9 +550,12 @@ func (manager DockerManager) CreateAndStartContainer(
 	return containerId, resultHostPortBindings, nil
 }
 
-// Gets the container's ID on a given network
-// NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we need to use network name here even though
-//  everywhere else in the Docker API uses network ID
+/*
+GetContainerIP
+Gets the container's IP on a given network
+NOTE: Yes, it's a testament to how poorly-designed the Docker API is that we need to use network name here even though
+ everywhere else in the Docker API uses network ID
+ */
 func (manager DockerManager) GetContainerIP(ctx context.Context, networkName string, containerId string) (string, error) {
 	resp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 	if err != nil {
@@ -518,6 +584,7 @@ func (manager DockerManager) AttachToContainer(ctx context.Context, containerId 
 }
 
 /*
+StopContainer
 Stops the container with the given container ID, waiting for the provided timeout before forcefully terminating the container
 
 Args:
@@ -534,6 +601,7 @@ func (manager DockerManager) StopContainer(context context.Context, containerId 
 }
 
 /*
+KillContainer
 Kills the container with the given ID if it's running, giving it no opportunity to gracefully exit
 
 Args:
@@ -554,6 +622,7 @@ func (manager DockerManager) KillContainer(context context.Context, containerId 
 }
 
 /*
+RemoveContainer
 Removes the container with the given ID, deleting it permanently
 
 Args:
@@ -573,6 +642,7 @@ func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId s
 }
 
 /*
+WaitForExit
 Blocks until the given container exits or the context is cancelled.
 
 Args:
@@ -599,6 +669,7 @@ func (manager DockerManager) WaitForExit(context context.Context, containerId st
 }
 
 /*
+GetContainerLogs
 Gets the logs for the given container as a io.ReadCloser. The caller is responsible for closing the ReadCloser!!!
 
 NOTE: These logs have STDOUT and STDERR multiplexed together, and the 'stdcopy' package needs to be used to
@@ -618,6 +689,7 @@ func (manager DockerManager) GetContainerLogs(context context.Context, container
 }
 
 /*
+RunExecCommand
 Executes the given command inside the container with the given ID, blocking until the command completes
  */
 func (manager DockerManager) RunExecCommand(context context.Context, containerId string, command []string, logOutput io.Writer) (int32, error) {
@@ -685,6 +757,7 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 }
 
 /*
+ConnectContainerToNetwork
 Connects the container with the given container ID to the network with the given network ID, using the given IP address
 */
 func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
@@ -727,7 +800,7 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 }
 
 func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
-	filterArg := filters.Arg(nameFilterKey, nameStr)
+	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
 	result, err := manager.getContainerIdsByFilterArgs(ctx, nameFilterList, false)
 	if err != nil {
@@ -737,7 +810,7 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 }
 
 func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
-	labelsFilterList := getLabelsFilterList(labels)
+	labelsFilterList := getLabelsFilterArgs(containerLabelSearchFilterKey, labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers with labels '%+v'", labelsFilterList)
@@ -785,16 +858,14 @@ func (manager DockerManager) isImageAvailableLocally(ctx context.Context, imageN
 	return numMatchingImages > 0, nil
 }
 
-func (manager DockerManager) getNetworksByFilter(ctx context.Context, filterKey string, filterValue string) ([]types.NetworkResource, error) {
-	referenceArg := filters.Arg(filterKey, filterValue)
-	filters := filters.NewArgs(referenceArg)
+func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{
-			Filters: filters,
+			Filters: args,
 		})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search for %v = %v", filterKey, filterValue)
+		return nil, stacktrace.Propagate(err, "Failed to list networks while doing a filter search using args '%+v'", args)
 	}
 	return networks, nil
 }
@@ -1068,11 +1139,11 @@ func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.P
 	return hostPortBindings
 }
 
-func getLabelsFilterList(labels map[string]string) filters.Args {
+func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filters.Args {
 	filtersArgs := []filters.KeyValuePair{}
 	for labelsKey, labelsValue := range labels {
 		labelFilterValue := strings.Join([]string{labelsKey,  labelsValue}, "=")
-		filterArg := filters.Arg(labelFilterKey, labelFilterValue)
+		filterArg := filters.Arg(searchFilterKey, labelFilterValue)
 		filtersArgs = append(filtersArgs, filterArg)
 	}
 	labelsFilterList := filters.NewArgs(filtersArgs...)
