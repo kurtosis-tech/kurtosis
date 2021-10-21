@@ -1,4 +1,9 @@
 # TBD
+### Fixes
+* Upgraded to engine-api-lib 0.7.1, which contains various bugfixes
+
+### Breaking Changes
+* All Go `KurtosisContext` methods now take a context
 
 # 0.2.0
 ### Features
