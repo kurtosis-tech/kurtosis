@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.0
 ### Fixes
 * Upgraded to engine-api-lib 0.7.1, which contains various bugfixes
 
