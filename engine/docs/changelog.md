@@ -4,6 +4,9 @@
 * Upgraded to engine-api-lib 0.7.2, which allows for the case where the API container isn't running (which means it won't have host machine info)
 * Fixed bug where `DestroyEnclave` would hang due to reentrant mutex issues
 
+### Breaking Changes
+* The `EnclaveAPIContainerInfo` object that gets returned inside `EnclaveInfo` has had its host machine info split off into `EnclaveAPIContainerHostMachineInfo`, which will only be populated if the API container is running
+
 # 0.3.0
 ### Fixes
 * Upgraded to engine-api-lib 0.7.1, which contains various bugfixes
