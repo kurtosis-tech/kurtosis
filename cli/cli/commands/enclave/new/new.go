@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -73,20 +74,23 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
+		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+	}
+	defer closeClientFunc()
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveId: enclaveId,
+		ApiContainerImage: apiContainerImage,
+		ApiContainerLogLevel: kurtosisLogLevelStr,
+		IsPartitioningEnabled: isPartitioningEnabled,
+		ShouldPublishAllPorts: shouldPublishPorts,
 	}
 
-	_, err = kurtosisContext.CreateEnclave(
-		ctx,
-		enclaveId,
-		apiContainerImage,
-		kurtosisLogLevelStr,
-		isPartitioningEnabled,
-		shouldPublishPorts)
+	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
 
 	return nil

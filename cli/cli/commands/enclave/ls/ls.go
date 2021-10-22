@@ -8,13 +8,13 @@ package ls
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 )
@@ -60,21 +60,23 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
+		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
 	}
+	defer closeClientFunc()
 
-	enclaves, err := kurtosisContext.GetEnclaves(ctx)
+	response, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
+		return stacktrace.Propagate(err,"An error occurred getting enclaves")
 	}
+	enclaveInfoMap := response.GetEnclaveInfo()
 
 	orderedEnclaveIds := []string{}
-	enclaveStatuses := map[string]enclave_statuses.EnclaveStatus{}
-	for enclaveId, enclaveContext := range enclaves {
+	enclaveStatuses := map[string]string{}
+	for enclaveId, enclaveInfo := range enclaveInfoMap {
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
-		enclaveStatuses[enclaveId] = enclaveContext.GetStatus()
+		enclaveStatuses[enclaveId] = enclaveInfo.GetContainersStatus().String()
 	}
 	sort.Strings(orderedEnclaveIds)
 

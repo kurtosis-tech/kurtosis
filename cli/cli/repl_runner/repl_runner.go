@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/enclave_context"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -43,17 +42,18 @@ const (
 
 // Launches a REPL container and attaches to it, blocking until the REPL container exits
 func RunREPL(
-	enclaveCtx *enclave_context.EnclaveContext,
+	enclaveId string,
+	networkId string,
+	kurtosisApiContainerIpAddr string,
+	apiContainerIpOnHostMachine string,
+	apiContainerPortOnHostMachine uint32,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
 ) error {
-	enclaveId := enclaveCtx.GetEnclaveID()
-	networkId := enclaveCtx.GetNetworkID()
-	kurtosisApiContainerIpAddr := enclaveCtx.GetApiContainerContext().GetIPInsideEnclave()
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		enclaveCtx.GetApiContainerContext().GetIPOnHostMachine(),
-		enclaveCtx.GetApiContainerContext().GetPortOnHostMachine(),
+		apiContainerIpOnHostMachine,
+		apiContainerPortOnHostMachine,
 	)
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)

@@ -6,12 +6,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/lib/kurtosis_context"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"strings"
 )
 
@@ -46,6 +47,8 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	// TODO Set CLI loglevel from a global flag
 
+	ctx := context.Background()
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
@@ -63,24 +66,29 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	kurtosisContext, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis Context")
+		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
 	}
+	defer closeClientFunc()
 
-	enclaves, err := kurtosisContext.GetEnclaves()
+	response, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting an enclave, make sure that you already started Kurtosis Engine Sever with `kurtosis engine start` command")
+		return stacktrace.Propagate(err,"An error occurred getting enclaves")
 	}
-
-	enclaveCtx, found := enclaves[enclaveId]
+	enclaveInfoMap := response.GetEnclaveInfo()
+	enclaveInfo, found := enclaveInfoMap[enclaveId]
 	if !found {
-		return stacktrace.Propagate(err, "An error occurred founding enclave with ID '%v' from enclaves map '%+v'", enclaveId, enclaves)
+		return stacktrace.Propagate(err, "An error occurred finding enclave with ID '%v' on enclave info map '%+v'", enclaveId, enclaveInfoMap)
 	}
 
 	logrus.Debug("Running REPL...")
 	if err := repl_runner.RunREPL(
-		enclaveCtx,
+		enclaveInfo.GetEnclaveId(),
+		enclaveInfo.GetNetworkId(),
+		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
+		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
+		enclaveInfo.GetApiContainerInfo().GetPortOnHostMachine(),
 		jsReplImage,
 		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
