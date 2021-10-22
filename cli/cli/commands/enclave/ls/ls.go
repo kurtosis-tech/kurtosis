@@ -76,6 +76,7 @@ func run(cmd *cobra.Command, args []string) error {
 	enclaveStatuses := map[string]string{}
 	for enclaveId, enclaveInfo := range enclaveInfoMap {
 		orderedEnclaveIds = append(orderedEnclaveIds, enclaveId)
+		//TODO refactor in order to print users friendly status strings and not the enum value
 		enclaveStatuses[enclaveId] = enclaveInfo.GetContainersStatus().String()
 	}
 	sort.Strings(orderedEnclaveIds)

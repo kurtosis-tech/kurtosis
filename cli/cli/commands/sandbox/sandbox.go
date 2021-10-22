@@ -139,7 +139,7 @@ func run(cmd *cobra.Command, args []string) error {
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
 		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
-		enclaveInfo.GetApiContainerInfo().GetPortInsideEnclave(),
+		enclaveInfo.GetApiContainerInfo().GetPortOnHostMachine(),
 		jsReplImage,
 		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
