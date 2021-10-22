@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
@@ -154,10 +155,15 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 	logrus.Infof("Enclave '%v' created successfully", executionId)
 
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
+	}
+
 	apiContainerHostUrl := fmt.Sprintf(
 		"%v:%v",
-		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
-		enclaveInfo.GetApiContainerInfo().GetPortOnHostMachine(),
+		apicHostMachineIp,
+		apicHostMachinePort,
 	)
 	conn, err := grpc.Dial(apiContainerHostUrl, grpc.WithInsecure())
 	if err != nil {
