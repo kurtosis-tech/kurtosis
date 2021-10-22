@@ -278,80 +278,9 @@ func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	_, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for the existence of a network for enclave '%v'", enclaveId)
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
 	}
-	if !found {
-		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
-	}
-
-	enclaveContainerSearchLabels := map[string]string{
-		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
-	}
-	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldKillAlreadyStoppedContainersWhenStoppingEnclave)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting containers for enclave '%v'", enclaveId)
-	}
-	logrus.Debugf("Containers in enclave '%v' that will be killed: %+v", enclaveId, allEnclaveContainers)
-
-	// TODO Parallelize for perf
-	containerKillErrorStrs := []string{}
-	for _, enclaveContainer := range allEnclaveContainers {
-		containerId := enclaveContainer.GetId()
-		containerName := enclaveContainer.GetName()
-		if err := manager.dockerManager.KillContainer(ctx, containerId); err != nil {
-			wrappedContainerKillErr := stacktrace.Propagate(
-				err,
-				"An error occurred killing container '%v' with ID '%v'",
-				containerName,
-				containerId,
-			)
-			containerKillErrorStrs = append(
-				containerKillErrorStrs,
-				wrappedContainerKillErr.Error(),
-			)
-		}
-	}
-
-	if len(containerKillErrorStrs) > 0 {
-		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
-		return stacktrace.NewError(
-			"One or more errors occurred killing the containers in enclave '%v':\n%v",
-			enclaveId,
-			errorStr,
-		)
-	}
-
-	// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
-	//  before we return
-	containerWaitErrorStrs := []string{}
-	for _, enclaveContainer := range allEnclaveContainers {
-		containerName := enclaveContainer.GetName()
-		containerId := enclaveContainer.GetId()
-		if _, err := manager.dockerManager.WaitForExit(ctx, containerId); err != nil {
-			wrappedContainerWaitErr := stacktrace.Propagate(
-				err,
-				"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
-				containerName,
-				containerId,
-			)
-			containerWaitErrorStrs = append(
-				containerWaitErrorStrs,
-				wrappedContainerWaitErr.Error(),
-			)
-		}
-	}
-
-	if len(containerWaitErrorStrs) > 0 {
-		errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
-		return stacktrace.NewError(
-			"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
-			enclaveId,
-			errorStr,
-		)
-	}
-
 	return nil
 }
 
@@ -368,7 +297,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveId)
 	}
 
-	if err := manager.StopEnclave(ctx, enclaveId); err != nil {
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
@@ -656,4 +585,84 @@ func parsePortNumStrToUint32(input string) (uint32, error) {
 		)
 	}
 	return uint32(portNumUint64), nil
+}
+
+// Both StopEnclave and DestroyEnclave need to be able to stop enclaves, but both have a mutex guard. Because Go mutexes
+//  aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
+func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
+	_, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking for the existence of a network for enclave '%v'", enclaveId)
+	}
+	if !found {
+		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
+	}
+
+	enclaveContainerSearchLabels := map[string]string{
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldKillAlreadyStoppedContainersWhenStoppingEnclave)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting containers for enclave '%v'", enclaveId)
+	}
+	logrus.Debugf("Containers in enclave '%v' that will be killed: %+v", enclaveId, allEnclaveContainers)
+
+	// TODO Parallelize for perf
+	containerKillErrorStrs := []string{}
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerId := enclaveContainer.GetId()
+		containerName := enclaveContainer.GetName()
+		if err := manager.dockerManager.KillContainer(ctx, containerId); err != nil {
+			wrappedContainerKillErr := stacktrace.Propagate(
+				err,
+				"An error occurred killing container '%v' with ID '%v'",
+				containerName,
+				containerId,
+			)
+			containerKillErrorStrs = append(
+				containerKillErrorStrs,
+				wrappedContainerKillErr.Error(),
+			)
+		}
+	}
+
+	if len(containerKillErrorStrs) > 0 {
+		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more errors occurred killing the containers in enclave '%v':\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
+	//  before we return
+	containerWaitErrorStrs := []string{}
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerName := enclaveContainer.GetName()
+		containerId := enclaveContainer.GetId()
+		if _, err := manager.dockerManager.WaitForExit(ctx, containerId); err != nil {
+			wrappedContainerWaitErr := stacktrace.Propagate(
+				err,
+				"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
+				containerName,
+				containerId,
+			)
+			containerWaitErrorStrs = append(
+				containerWaitErrorStrs,
+				wrappedContainerWaitErr.Error(),
+			)
+		}
+	}
+
+	if len(containerWaitErrorStrs) > 0 {
+		errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
+		return stacktrace.NewError(
+			"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
+			enclaveId,
+			errorStr,
+		)
+	}
+
+	return nil
 }

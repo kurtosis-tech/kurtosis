@@ -2,6 +2,7 @@
 ### Fixes
 * Fixed bug where the nonexistent enclave check wasn't working
 * Upgraded to engine-api-lib 0.7.2, which allows for the case where the API container isn't running (which means it won't have host machine info)
+* Fixed bug where `DestroyEnclave` would hang due to reentrant mutex issues
 
 # 0.3.0
 ### Fixes
