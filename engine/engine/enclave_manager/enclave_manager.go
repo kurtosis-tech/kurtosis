@@ -346,29 +346,21 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	}
 
 	// Next, remove the volume (if it exists)
-	matchingVolumeNames, err := manager.dockerManager.GetVolumesByName(ctx, enclaveId)
+	volumeSearchLabels := map[string]string{
+		// TODO This is bad!!! We're using a container label for a volume!!! We really need to create a new
+		//  EnclaveIDVolumeLabel type
+		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
+	}
+	matchingVolumeNames, err := manager.dockerManager.GetVolumesByLabels(
+		ctx,
+		volumeSearchLabels,
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking for volumes for enclave '%v'", enclaveId)
 	}
-	numMatchingVolumeNames := len(matchingVolumeNames)
-	if numMatchingVolumeNames > 1 {
-		return stacktrace.NewError(
-			"Couldn't remove enclave volumes because we found %v volumes matching enclave '%v' when we expect just one; this is a bug in Kurtosis!",
-			numMatchingVolumeNames,
-			enclaveId,
-		)
-	}
-	if numMatchingVolumeNames > 0 {
-		enclaveVolumeName := matchingVolumeNames[0]
-		if enclaveVolumeName != enclaveId {
-			return stacktrace.NewError(
-				"Couldn't remove volume for enclave ID '%v' because volume name '%v' doesn't match enclave ID; this is a Kurtosis bug",
-				enclaveId,
-				enclaveVolumeName,
-			)
-		}
+	for _, volumeName := range matchingVolumeNames {
 		if err := manager.dockerManager.RemoveVolume(ctx, enclaveId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing volume '%v' for enclave '%v'", enclaveVolumeName, enclaveId)
+			return stacktrace.Propagate(err, "An error occurred removing volume '%v' for enclave '%v'", volumeName, enclaveId)
 		}
 	}
 
