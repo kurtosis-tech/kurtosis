@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.4
 ### Fixes
 * Fixed bug where files artifact expansion volume wouldn't get deleted
 
