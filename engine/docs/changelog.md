@@ -1,4 +1,6 @@
 # TBD
+
+# 0.4.3
 ### Fixes
 * Use the `EnclaveObjectLabelsProvider` for finding Kurtosis networks & enclave data volumes
 
