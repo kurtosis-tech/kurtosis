@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed issue where `DestroyEnclave` would expect exactly one enclave volume (which isn't true for enclaves where files artifact expansion is done)
 
 # 0.4.1
 ### Features
