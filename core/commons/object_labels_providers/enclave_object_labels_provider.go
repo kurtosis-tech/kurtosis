@@ -67,8 +67,7 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForInteractiveREPLContainer(i
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsForEnclaveObject() map[string]string {
-	labels := map[string]string{}
-	labels[enclave_object_labels.AppIDLabel] = enclave_object_labels.AppIDValue
+	labels := getLabelsForKurtosisObject()
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = labelsProvider.enclaveId
 	return labels
 }
