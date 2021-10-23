@@ -1,4 +1,6 @@
 # TBD
+
+# 1.26.1
 ### Features
 * Added labelling functions for testsuite containers (both metadata-providing & test-running)
 
