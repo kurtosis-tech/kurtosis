@@ -22,6 +22,15 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 	return &EnclaveObjectLabelsProvider{enclaveId: enclaveId}
 }
 
+func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveNetwork() map[string]string {
+	return labelsProvider.getLabelsForEnclaveObject()
+}
+
+func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveDataVolume() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
+	return labels
+}
+
 func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(
 	ipAddr net.IP,
 ) map[string]string {
@@ -63,6 +72,17 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForModuleContainer(moduleGUID
 func (labelsProvider *EnclaveObjectLabelsProvider) ForInteractiveREPLContainer(interactiveReplGuid string) map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObjectWithGUID(interactiveReplGuid)
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeInteractiveREPL
+	return labels
+}
+
+func (labelsProvider *EnclaveObjectLabelsProvider) ForFilesArtifactExpanderContainer() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeFilesArtifactExpander
+	return labels
+}
+
+func (labelsProvider *EnclaveObjectLabelsProvider) ForFilesArtifactExpansionVolume() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
 	return labels
 }
 

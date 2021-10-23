@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added functions to the enclave object labels provider for enclave network, enclave data volume, files artifact expander container, and files artifact expansion volume
 
 # 1.26.1
 ### Features

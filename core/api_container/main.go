@@ -195,6 +195,7 @@ func createServiceNetworkAndModuleStore(
 		enclaveId,
 		dockerManager,
 		enclaveObjNameProvider,
+		enclaveObjLabelsProvider,
 		dockerNetworkId,
 		freeIpAddrTracker,
 		filesArtifactCache,

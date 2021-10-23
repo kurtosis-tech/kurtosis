@@ -36,4 +36,5 @@ const (
 	ContainerTypeModuleContainer            = "module"
 	// This is a little weird to have here because  this is only used by the CLI (which depends on this repo)
 	ContainerTypeInteractiveREPL            = "interactive-repl"
+	ContainerTypeFilesArtifactExpander      = "files-artifact-expander"
 )
