@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgraded to Kurt Core 1.26.1, which adds a framework for labelling testsuite containers
 
 # 0.4.0
 ### Fixes
