@@ -352,7 +352,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 		return stacktrace.Propagate(err, "An error occurred checking for volumes for enclave '%v'", enclaveId)
 	}
 	for _, volumeName := range matchingVolumeNames {
-		if err := manager.dockerManager.RemoveVolume(ctx, enclaveId); err != nil {
+		if err := manager.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
 			return stacktrace.Propagate(err, "An error occurred removing volume '%v' for enclave '%v'", volumeName, enclaveId)
 		}
 	}
