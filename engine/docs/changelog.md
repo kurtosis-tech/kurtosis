@@ -1,5 +1,9 @@
 # TBD
 
+# 0.4.3
+### Fixes
+* Use the `EnclaveObjectLabelsProvider` for finding Kurtosis networks & enclave data volumes
+
 # 0.4.2
 ### Fixes
 * Fixed issue where `DestroyEnclave` would expect exactly one enclave volume (which isn't true for enclaves where files artifact expansion is done)

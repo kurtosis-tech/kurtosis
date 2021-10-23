@@ -23,19 +23,6 @@ import (
 	"sync"
 	"time"
 )
-// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
-//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
-//  2) the user upgrades their CLI, and restarts with the new engine
-//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
-var enclaveNetworkLabels = map[string]string{
-	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
-}
-var enclaveDataVolLabels = map[string]string{
-	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
-}
-// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 const (
 	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
 	//  to give it some time to do so
@@ -109,7 +96,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := manager.dockerNetworkAllocator.CreateNewNetwork(
 		setupCtx,
 		enclaveId,
-		enclaveNetworkLabels,
+		enclaveObjLabelsProvider.ForEnclaveNetwork(),
 	)
 	if err != nil {
 		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
@@ -138,6 +125,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
 
+	enclaveDataVolLabels := enclaveObjLabelsProvider.ForEnclaveDataVolume()
 	if err := manager.dockerManager.CreateVolume(setupCtx, enclaveId, enclaveDataVolLabels); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveId)
 	}
@@ -245,7 +233,12 @@ func (manager *EnclaveManager) CreateEnclave(
 func (manager *EnclaveManager) GetEnclaves(
 	ctx context.Context,
 ) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	networks, err := manager.dockerManager.GetNetworksByLabels(ctx, enclaveNetworkLabels)
+	// TODO this is janky; we need a better way to find enclave networks!!! Ideally, we shouldn't actually know the label keys or values here
+	kurtosisNetworkLabels := map[string]string{
+		enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+	}
+
+	networks, err := manager.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
 	}
