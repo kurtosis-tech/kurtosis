@@ -478,16 +478,10 @@ github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b/go.mod h1:KiXXUled3vCITYLTigmhDiXz0V9CFthPlv9C2B1ZfI8=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc h1:AG9plVB1p1bYEKH2EmGwA4BPCcUKsherJozGvnD5ips=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
-github.com/kurtosis-tech/kurtosis-core v0.0.0-20211021180706-7c1ccbdd087c h1:Bz5aoENWYL/WV4qbEbJrh1EvMsC6C8HsQiFJ4sYKUmA=
-github.com/kurtosis-tech/kurtosis-core v0.0.0-20211021180706-7c1ccbdd087c/go.mod h1:ngH6FpgjvEH/JTXfk5xC5BKgkahn4LfqpVC8Jmm4SDs=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211023210444-080e7beee6f7 h1:ilZR9KKb98xg1O5VERrDQzXIChC7uDQgA69Y94H6554=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211023210444-080e7beee6f7/go.mod h1:ngH6FpgjvEH/JTXfk5xC5BKgkahn4LfqpVC8Jmm4SDs=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211022215258-2285c4a920b6 h1:g8kK25VIgqxvX3vKq4+k2uRvH5PnLy08n7xN2nzvI2s=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211022215258-2285c4a920b6/go.mod h1:bm9Yk2W/IuotlYsFXEKeNlstr6f71zoY3mtNLHeddkk=
-github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211022222340-5eddeb03a3b9 h1:6pO62EqdRTJ59rDFH07wIfjIHmnDso9h6NFtRLi6o1o=
-github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211022222340-5eddeb03a3b9/go.mod h1:/Fb9dRjk6fw94lqqM4YD+72pR2x2XmZasA2KOXeVghw=
-github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211023210724-69dba81a959c h1:rJ50VhfXk5NOz8rscKU8VjdbkEa9qOPzSTcJkNjpIcA=
-github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211023210724-69dba81a959c/go.mod h1:lY5LYcMlSGP8ARoIFH/0MEAr+Pv6XFanDK7n9dKFg/c=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211023211420-242c7916b006 h1:DKGyfDZfONILD/bWtheIyNJP1m+34bzCZc+U3hUlyL0=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211023211420-242c7916b006/go.mod h1:lY5LYcMlSGP8ARoIFH/0MEAr+Pv6XFanDK7n9dKFg/c=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211014234818-e876c11fa02e/go.mod h1:vrsMp+drMF/bVCiDD91OxUmPIkwg41KS6NOQ78dLkBs=
