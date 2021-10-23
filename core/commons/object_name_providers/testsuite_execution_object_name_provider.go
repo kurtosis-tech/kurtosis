@@ -11,7 +11,7 @@ const (
 	metadataAcquisitionContainerNameLabel = "metadata-acquisition"
 )
 
-
+// TODO Move this to the CLI which contains the testing machinery
 // This struct is responsible for providing names to the objects used in the testing framework
 type TestsuiteExecutionObjectNameProvider struct {
 	executionId string // Execution ID identifying a run of a testsuite
