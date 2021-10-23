@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
@@ -160,6 +161,7 @@ func RunTest(
 	kurtosisApiIp := net.ParseIP(enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave())
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 	testsuiteContainerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
@@ -197,6 +199,7 @@ func RunTest(
 		kurtosisApiIp,
 		testsuiteIpAddr,
 		enclaveId,
+		enclaveObjLabelsProvider.ForTestRunningTestsuiteContainer(),
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the test-running testsuite container")
