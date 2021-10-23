@@ -3,14 +3,25 @@
 * Replaced `EnclaveManager` with `Kurtosis Engine API Libs` which handle all the interactions with the `Kurtosis Engine Server`
 
 ### Features
+* Add a `version` command to print the CLI's version
+
+### Fixes
+* The Kurtosis Client version used by the JS REPL image will now use the `KurtosisApiVersion` constant published by Kurt Client
+
+# 0.4.3
+### Features
 * Added documentation in README about how to develop on this repo
 * Upgraded to `kurtosis-core` 1.25.2, which contains fixes for `container-engine-lib` 0.7.0 feature that allows binding container ports to specific host machine ports
 * Added `engine start` command to the CLI
 * Added `engine stop` command to the CLI
+* `engine start` waits until the engine is responding to gRPC requests before it reports the engine as up
+* Added `engine status` command to the CLI
+* Start a Kurtosis engine server in the CI environment
 
 ### Fixes
 * Clarified the difference between the two types of params in `module exec`
 * `engine start` won't start another container if one is already running
+* `engine start` waits for gRPC availability before it reports the engine up
 
 # 0.4.2
 ### Features

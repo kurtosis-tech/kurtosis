@@ -8,10 +8,14 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"time"
 )
 
@@ -25,6 +29,11 @@ const (
 	dockerSocketFilepath = "/var/run/docker.sock"
 
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
+
+	engineWaitForReadyTimeout = 10 * time.Second
+
+	engineImageInfoLabel = "Image"
+	engineApiVersionInfoLabel = "API Version"
 )
 
 var engineImage string
@@ -131,12 +140,45 @@ func run(cmd *cobra.Command, args []string) error {
 		engine_labels_schema.EngineContainerLabels,
 	).Build()
 
-	if _, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs); err != nil {
+	_, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
 	}
+	hostMachineEnginePortBinding, found := hostMachinePortBindings[enginePortObj]
+	if !found {
+		return stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
+	}
 
-	// TODO Query the availability endpoint so that we don't return until the engine is ACTUALLY available
+	engineInfo, err := waitUntilAvailableAndGetEngineInfo(ctx, hostMachineEnginePortBinding)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying that the engine is up by getting the engine info")
+	}
 
-	logrus.Info("Kurtosis engine started successfully")
+	engineInfoPrinter := output_printers.NewKeyValuePrinter()
+	engineInfoPrinter.AddPair(engineImageInfoLabel, engineImage)
+	engineInfoPrinter.AddPair(engineApiVersionInfoLabel, engineInfo.EngineApiVersion)
+
+	logrus.Info("Kurtosis engine started successfully with the following info:")
+	engineInfoPrinter.Print()
+
 	return nil
+}
+
+// NOTE: We can't replace this with the higher-level API because we need to set the WaitForReady flag
+func waitUntilAvailableAndGetEngineInfo(ctx context.Context, hostMachineEnginePortBinding *nat.PortBinding) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
+	ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, engineWaitForReadyTimeout)
+	defer cancelFunc()
+	engineUrl := fmt.Sprintf("%v:%v", hostMachineEnginePortBinding.HostIP, hostMachineEnginePortBinding.HostPort)
+	conn, err := grpc.Dial(engineUrl, grpc.WithInsecure())
+	engineClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
+	engineInfo, err := engineClient.GetEngineInfo(ctxWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true))
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for %v for the engine to become available and return engine info",
+			engineWaitForReadyTimeout,
+		)
+	}
+	return engineInfo, nil
+
 }
