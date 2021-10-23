@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
@@ -133,13 +134,19 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	if err != nil {
+		return stacktrace.Propagate(err, "Cannot create sandbox; an error occurred verifying enclave liveness")
+	}
+
 	logrus.Debug("Running REPL...")
 	if err := repl_runner.RunREPL(
 		enclaveInfo.GetEnclaveId(),
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
-		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
 		enclaveInfo.GetApiContainerInfo().GetPortInsideEnclave(),
+		apicHostMachineIp,
+		apicHostMachinePort,
 		jsReplImage,
 		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
