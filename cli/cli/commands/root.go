@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/spf13/cobra"
 )
 
@@ -34,6 +35,7 @@ func init() {
 	RootCmd.AddCommand(module.ModuleCmd)
 	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
+	RootCmd.AddCommand(version.VersionCmd)
 
 	// TODO Add global flag to set the CLI's log level
 }

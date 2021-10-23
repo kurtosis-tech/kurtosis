@@ -28,6 +28,9 @@ jobs:
             circleci-agent step halt
           fi
 
+      # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
       - run: |
           docker run \
             --privileged \
@@ -39,9 +42,15 @@ jobs:
             -e "CMD=bash ./scripts/build.sh" \
             kurtosistech/kurtosis-goreleaser-ci-image
 
-      # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      # Make sure to start a Kurtosis engine server before we try to do anything with Kurtosis, and verify that status-checking works
+      - run: ./scripts/launch-cli.sh engine start
+      - run: ./scripts/launch-cli.sh engine status
+
+      # Now that the engine is started, run our verification testsuites
       - run: bash .circleci/validate-all-testsuites.sh "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
+
+      # Finally, stop the engine to verify that stopping works
+      - run: ./scripts/launch-cli.sh engine stop
 
   push_artifacts:
     executor: ubuntu_vm
