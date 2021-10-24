@@ -123,18 +123,17 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
-	enclaveInfo := response.GetEnclaveInfo()
-
 	defer func() {
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+		stopEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 			EnclaveId: enclaveId,
 		}
-		if _, err := engineClient.DestroyEnclave(testSetupExecutionCtx, destroyEnclaveArgs); err != nil {
-			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
+		if _, err := engineClient.StopEnclave(testSetupExecutionCtx, stopEnclaveArgs); err != nil {
+			log.Errorf("An error occurred stopping enclave '%v':", enclaveId)
 			fmt.Fprintln(log.Out, err)
-			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
+			log.Errorf("ACTION REQUIRED: You'll need to manually stop enclave '%v'!", enclaveId)
 		}
 	}()
+	enclaveInfo := response.GetEnclaveInfo()
 
 	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
