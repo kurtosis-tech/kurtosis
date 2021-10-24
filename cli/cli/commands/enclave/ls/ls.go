@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
+	engine_client2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_client"
+	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 }
@@ -71,7 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
+	engineClient, closeClientFunc, err := engine_client2.NewEngineClientFromLocalEngine(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -92,7 +92,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	sort.Strings(orderedEnclaveIds)
 
-	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
+	tablePrinter := output_printers2.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
 	for _, enclaveId := range orderedEnclaveIds {
 		enclaveStatus, found := enclaveStatuses[enclaveId]
 		if !found {

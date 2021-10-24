@@ -7,8 +7,8 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
+	engine_labels_schema2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
+	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
@@ -73,7 +73,7 @@ func run(cmd *cobra.Command, args []string) error {
 	// Don't start an engine if one is already running
 	matchingEngineContainers, err := dockerManager.GetContainersByLabels(
 		ctx,
-		engine_labels_schema.EngineContainerLabels,
+		engine_labels_schema2.EngineContainerLabels,
 		shouldGetStoppedContainersWhenCheckingForExistingEngines,
 	)
 	if err != nil {
@@ -139,7 +139,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
-		engine_labels_schema.EngineContainerLabels,
+		engine_labels_schema2.EngineContainerLabels,
 	).Build()
 
 	_, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
@@ -156,7 +156,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred verifying that the engine is up by getting the engine info")
 	}
 
-	engineInfoPrinter := output_printers.NewKeyValuePrinter()
+	engineInfoPrinter := output_printers2.NewKeyValuePrinter()
 	engineInfoPrinter.AddPair(engineImageInfoLabel, engineImage)
 	engineInfoPrinter.AddPair(engineApiVersionInfoLabel, engineInfo.EngineApiVersion)
 

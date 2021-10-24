@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
+	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 )
@@ -23,7 +23,7 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		return stacktrace.Propagate(err, "An error occurred getting user service containers by labels: '%+v'", userServiceLabels)
 	}
 
-	tablePrinter := output_printers.NewTablePrinter(userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
+	tablePrinter := output_printers2.NewTablePrinter(userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
 	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {
 			  return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
+	engine_labels_schema2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
@@ -16,9 +16,9 @@ import (
 
 type EngineStatus string
 const (
-	EngineStatus_Stopped EngineStatus = "STOPPED"
+	EngineStatus_Stopped                                EngineStatus = "STOPPED"
 	EngineStatus_ContainerRunningButServerNotResponding EngineStatus = "CONTAINER_RUNNING_BUT_SERVER_NOT_RESPONDING"
-	EngineStatus_Running EngineStatus = "RUNNING"
+	EngineStatus_Running                                EngineStatus = "RUNNING"
 
 	waitForEngineResponseTimeout = 5 * time.Second
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
@@ -26,7 +26,7 @@ const (
 
 // NOTE: The first second value, the engine API version, will only be filled in if the engine status is "running"
 func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.DockerManager) (EngineStatus, string, error) {
-	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema2.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}

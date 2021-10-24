@@ -16,6 +16,6 @@ const (
 var EngineContainerLabels = map[string]string{
 	// TODO These need refactoring!!! "ContainerTypeLabel" and "AppIDLabel" aren't just for enclave objects!!!
 	//  See https://github.com/kurtosis-tech/kurtosis-cli/issues/24
-	enclave_object_labels.AppIDLabel: enclave_object_labels.AppIDValue,
+	enclave_object_labels.AppIDLabel:         enclave_object_labels.AppIDValue,
 	enclave_object_labels.ContainerTypeLabel: ContainerTypeKurtosisEngine,
 }

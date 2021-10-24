@@ -2,19 +2,19 @@ package enclave_status_from_container_status_retriever
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
+	enclave_statuses2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
 	"github.com/palantir/stacktrace"
 )
 
 // Helper function, used in the enclave commands, for getting an enclave state from the states of the containers
 //  inside the enclave
-func GetEnclaveStatus(containerStates []*types.Container) (enclave_statuses.EnclaveStatus, error) {
-	result := enclave_statuses.Stopped
+func GetEnclaveStatus(containerStates []*types.Container) (enclave_statuses2.EnclaveStatus, error) {
+	result := enclave_statuses2.Stopped
 	for _, containerState := range containerStates {
 		containerStatus := containerState.GetStatus()
 		switch containerStatus {
 		case types.Running, types.Restarting:
-			result = enclave_statuses.Running
+			result = enclave_statuses2.Running
 		case types.Paused, types.Removing, types.Dead, types.Created, types.Exited:
 			continue
 		default:

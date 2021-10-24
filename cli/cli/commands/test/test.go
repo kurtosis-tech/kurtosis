@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/auth0_authenticators"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/auth0_constants"
@@ -20,10 +19,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
+	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	engine_client2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_client"
+	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -139,7 +139,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 	TestCmd.Flags().BoolVar(
@@ -183,7 +183,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -210,9 +210,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
+	best_effort_image_puller2.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
 
-	executionId := execution_ids.GetExecutionID()
+	executionId := execution_ids2.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 	testsuiteExLabelsProvider := object_labels_providers.NewTestsuiteExecutionObjectLabelsProvider(executionId)
@@ -253,7 +253,7 @@ func run(cmd *cobra.Command, args []string) error {
 		parallelismUint = uint(parallelism)
 	}
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
+	engineClient, closeClientFunc, err := engine_client2.NewEngineClientFromLocalEngine(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

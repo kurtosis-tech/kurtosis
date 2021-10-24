@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_labels_schema"
+	engine_labels_schema2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -48,7 +48,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	matchingEngineContainers, err := dockerManager.GetContainersByLabels(
 		ctx,
-		engine_labels_schema.EngineContainerLabels,
+		engine_labels_schema2.EngineContainerLabels,
 		shouldGetStoppedContainersWhenCheckingForExistingEngines,
 	)
 	numMatchingEngineContainers := len(matchingEngineContainers)

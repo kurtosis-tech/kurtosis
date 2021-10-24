@@ -11,11 +11,11 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
+	enclave_status_from_container_status_retriever2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_from_container_status_retriever"
+	enclave_statuses2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
+	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -65,7 +65,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 
@@ -80,7 +80,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -100,7 +100,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
 	}
 
-	keyValuePrinter := output_printers.NewKeyValuePrinter()
+	keyValuePrinter := output_printers2.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
 	keyValuePrinter.AddPair(enclaveStatusTitleName, string(enclaveStatus))
 	keyValuePrinter.Print()
@@ -133,7 +133,7 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (enclave_statuses.EnclaveStatus, error) {
+func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (enclave_statuses2.EnclaveStatus, error) {
 	searchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 	}
@@ -143,7 +143,7 @@ func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerM
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
 	}
 
-	enclaveStatus, err := enclave_status_from_container_status_retriever.GetEnclaveStatus(enclaveContainers)
+	enclaveStatus, err := enclave_status_from_container_status_retriever2.GetEnclaveStatus(enclaveContainers)
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,

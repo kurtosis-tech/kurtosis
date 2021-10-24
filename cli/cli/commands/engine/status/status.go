@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_status_retriever"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
+	engine_status_retriever2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_status_retriever"
+	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,18 +38,18 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	status, apiVersion, err := engine_status_retriever.RetrieveEngineStatus(ctx, dockerManager)
+	status, apiVersion, err := engine_status_retriever2.RetrieveEngineStatus(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't get the Kurtosis engine status")
 	}
 
 	switch status {
-	case engine_status_retriever.EngineStatus_Stopped:
+	case engine_status_retriever2.EngineStatus_Stopped:
 		fmt.Fprintln(logrus.StandardLogger().Out, "No Kurtosis engine is running")
-	case engine_status_retriever.EngineStatus_ContainerRunningButServerNotResponding:
+	case engine_status_retriever2.EngineStatus_ContainerRunningButServerNotResponding:
 		fmt.Fprintln(logrus.StandardLogger().Out, "A Kurtosis engine container is running, but the server inside couldn't be reached")
-	case engine_status_retriever.EngineStatus_Running:
-		engineInfoPrinter := output_printers.NewKeyValuePrinter()
+	case engine_status_retriever2.EngineStatus_Running:
+		engineInfoPrinter := output_printers2.NewKeyValuePrinter()
 		engineInfoPrinter.AddPair(engineApiVersionInfoLabel, apiVersion)
 
 		fmt.Fprintln(logrus.StandardLogger().Out, "A Kurtosis engine is running with the following info:")
