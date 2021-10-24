@@ -3,7 +3,7 @@ package inspect
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	output_printers "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 )
