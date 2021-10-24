@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
@@ -35,7 +37,7 @@ var kurtosisLogLevelStr string
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 var LsCmd = &cobra.Command{
-	Use:   "ls",
+	Use:   command_str_consts.EnclaveLsCmdStr,
 	Short: "List Kurtosis enclaves",
 	RunE:  run,
 }
@@ -71,7 +73,8 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

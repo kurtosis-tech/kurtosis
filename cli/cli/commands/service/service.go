@@ -6,12 +6,13 @@
 package service
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service/logs"
 	"github.com/spf13/cobra"
 )
 
 var ServiceCmd = &cobra.Command{
-	Use:   "service",
+	Use:   command_str_consts.ServiceCmdStr,
 	Short: "Manage services",
 	RunE:  nil,
 }

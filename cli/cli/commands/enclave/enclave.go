@@ -6,6 +6,7 @@
 package enclave
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/ls"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/new"
@@ -13,7 +14,7 @@ import (
 )
 
 var EnclaveCmd = &cobra.Command{
-	Use:   "enclave",
+	Use:   command_str_consts.EnclaveCmdStr,
 	Short: "Manage enclaves",
 	RunE:  nil,
 }

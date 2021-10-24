@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
@@ -32,7 +33,7 @@ var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 
 var NewCmd = &cobra.Command{
-	Use:                   "new" ,
+	Use:                   command_str_consts.EnclaveNewCmdStr,
 	Short:                 "Creates a new empty Kurtosis enclave",
 	RunE:                  run,
 }
@@ -85,9 +86,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids2.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 

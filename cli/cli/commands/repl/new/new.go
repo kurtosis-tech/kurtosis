@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
@@ -29,7 +30,7 @@ var positionalArgs = []string{
 var jsReplImage string
 
 var NewCmd = &cobra.Command{
-	Use:                   "new [flags] " + strings.Join(positionalArgs, " "),
+	Use:                   command_str_consts.ReplNewCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short:                 "Create a new Javascript REPL inside the given Kurtosis enclave",
 	RunE:                  run,
@@ -67,7 +68,8 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller2.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

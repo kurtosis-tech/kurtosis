@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
@@ -55,7 +56,7 @@ var executeParamsStr string
 var apiContainerImage string
 
 var ExecCmd = &cobra.Command{
-	Use:   "exec [flags] " + strings.Join(positionalArgs, " "),
+	Use:   command_str_consts.ModuleCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short: "Creates a new enclave and loads & executes the given executable module inside it",
 	RunE:  run,
@@ -118,7 +119,8 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Info("Creating enclave for the module to execute inside...")
 	executionId := execution_ids2.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
