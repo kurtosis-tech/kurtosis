@@ -8,13 +8,14 @@ package test_executor_parallelizer
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/banner_printer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -36,8 +37,9 @@ Returns:
 	True if all tests passed, false otherwise
  */
 func RunInParallelAndPrintResults(
+		dockerClient *client.Client,
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
 		parallelism uint,
@@ -79,12 +81,13 @@ func RunInParallelAndPrintResults(
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
 		ctx,
+		dockerClient,
+		engineClient,
 		testsuiteExObjNameProvider,
 		erroneousSystemLogCaptureWriter,
 		outputManager,
 		testParamsChan,
 		parallelism,
-		enclaveManager,
 		kurtosisLogLevel,
 		apiContainerImage,
 		testsuiteLauncher,
@@ -108,12 +111,13 @@ func RunInParallelAndPrintResults(
 // ====================================================================================================
 func disableSystemLogAndRunTestThreads(
 		parentContext context.Context,
+		dockerClient *client.Client,
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
 		outputManager *output.ParallelTestOutputManager,
 		testParamsChan chan parallel_test_params.ParallelTestParams,
 		parallelism uint,
-		enclaveManager *enclave_manager.EnclaveManager,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
 		testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -133,11 +137,12 @@ func disableSystemLogAndRunTestThreads(
 		waitGroup.Add(1)
 		go runTestWorkerGoroutine(
 			parentContext,
+			dockerClient,
+			engineClient,
 			testsuiteExObjNameProvider,
 			&waitGroup,
 			testParamsChan,
 			outputManager,
-			enclaveManager,
 			kurtosisLogLevel,
 			apiContainerImage,
 			testsuiteLauncher,
@@ -153,11 +158,12 @@ push the result to the test results channel
  */
 func runTestWorkerGoroutine(
 			parentContext context.Context,
+			dockerClient *client.Client,
+			engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 			testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan parallel_test_params.ParallelTestParams,
 			outputManager *output.ParallelTestOutputManager,
-			enclaveManager *enclave_manager.EnclaveManager,
 			kurtosisLogLevel logrus.Level,
 	        apiContainerImage string,
 			testsuiteLauncher *test_suite_launcher.TestsuiteContainerLauncher,
@@ -170,10 +176,11 @@ func runTestWorkerGoroutine(
 		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
 			parentContext,
+			dockerClient,
+			engineClient,
 			testsuiteExObjNameProvider,
 			testLog,
 			apiContainerImage,
-			enclaveManager,
 			kurtosisLogLevel,
 			testsuiteLauncher,
 			testParams,

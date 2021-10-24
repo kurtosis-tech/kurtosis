@@ -12,12 +12,14 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -111,36 +113,57 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, apiContainerImage)
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
-
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	logrus.Info("Creating enclave for the module to execute inside...")
 	executionId := execution_ids.GetExecutionID()
-	enclaveCtx, err := enclaveManager.CreateEnclave(ctx, logrus.StandardLogger(), apiContainerImage, kurtosisLogLevel, executionId, shouldEnablePartitioning, shouldPublishAllPorts)
+
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave to execute the module in")
+		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
 	}
+	defer closeClientFunc()
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveId: executionId,
+		ApiContainerImage: apiContainerImage,
+		ApiContainerLogLevel: kurtosisLogLevelStr,
+		IsPartitioningEnabled: shouldEnablePartitioning,
+		ShouldPublishAllPorts: shouldPublishAllPorts,
+	}
+
+	response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", executionId)
+	}
+	enclaveInfo := response.GetEnclaveInfo()
+
 	shouldDestroyEnclave := true
 	defer func() {
 		if shouldDestroyEnclave {
-			if err := enclaveManager.DestroyEnclave(context.Background(), logrus.StandardLogger(), enclaveCtx); err != nil {
+			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+				EnclaveId: executionId,
+			}
+			if  _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Errorf(
 					"The module didn't execute correctly so we tried to destroy the created enclave, but destroying the enclave threw an error:\n%v",
 					err,
 				)
-				logrus.Errorf("ACTION NEEDED: You'll need to destroy enclave '%v' manually!!", enclaveCtx.GetEnclaveID())
+				logrus.Errorf("ACTION NEEDED: You'll need to destroy enclave '%v' manually!!", executionId)
 			}
 		}
 	}()
-	logrus.Infof("Enclave '%v' created successfully", enclaveCtx.GetEnclaveID())
+	logrus.Infof("Enclave '%v' created successfully", executionId)
 
-	apiContainerHostPortBinding := enclaveCtx.GetAPIContainerHostPortBinding()
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
+	}
+
 	apiContainerHostUrl := fmt.Sprintf(
 		"%v:%v",
-		apiContainerHostPortBinding.HostIP,
-		apiContainerHostPortBinding.HostPort,
+		apicHostMachineIp,
+		apicHostMachinePort,
 	)
 	conn, err := grpc.Dial(apiContainerHostUrl, grpc.WithInsecure())
 	if err != nil {
@@ -148,7 +171,7 @@ func run(cmd *cobra.Command, args []string) error {
 			err,
 			"An error occurred connecting to the API container at '%v' in enclave '%v'",
 			apiContainerHostUrl,
-			enclaveCtx.GetEnclaveID(),
+			executionId,
 		)
 	}
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)

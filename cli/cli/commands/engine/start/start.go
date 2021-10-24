@@ -26,7 +26,7 @@ const (
 
 	networkToStartEngineContainerIn = "bridge"
 
-	dockerSocketFilepath = "/var/run.docker.sock"
+	dockerSocketFilepath = "/var/run/docker.sock"
 
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 

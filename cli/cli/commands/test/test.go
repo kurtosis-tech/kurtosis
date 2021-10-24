@@ -20,11 +20,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
@@ -208,21 +209,20 @@ func run(cmd *cobra.Command, args []string) error {
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, kurtosisApiImage)
 
 	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
+	testsuiteExLabelsProvider := object_labels_providers.NewTestsuiteExecutionObjectLabelsProvider(executionId)
 
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		testsuiteExObjNameProvider,
+		testsuiteExLabelsProvider,
 		testsuiteImage,
 		suiteLogLevelStr,
 		customParamsJson,
 	)
-
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
 
 	suiteMetadata, err := test_suite_metadata_acquirer.GetTestSuiteMetadata(
 		dockerManager,
@@ -251,11 +251,19 @@ func run(cmd *cobra.Command, args []string) error {
 		parallelismUint = uint(parallelism)
 	}
 
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
+	}
+	defer closeClientFunc()
+
+
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
+		dockerClient,
+		engineClient,
 		testsuiteExObjNameProvider,
-		enclaveManager,
 		kurtosisLogLevel,
 		kurtosisApiImage,
 		suiteMetadata,
