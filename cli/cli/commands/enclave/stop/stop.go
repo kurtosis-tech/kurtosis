@@ -23,7 +23,7 @@ const (
 var StopCmd = &cobra.Command{
 	Use:   command_str_consts.EnclaveStopCmdStr + " [flags] " + enclaveIdArg + " [" + enclaveIdArg + "...]",
 	DisableFlagsInUseLine: true,
-	Short: "Stops the specified enclave",
+	Short: "Stops the specified enclaves",
 	RunE:  run,
 }
 
