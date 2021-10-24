@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Add instructions for users on what to do if no Kurtosis engine is running
+* If an engine isn't running, the CLI will try to start one automatically
 
 # 0.5.0
 ### Changes

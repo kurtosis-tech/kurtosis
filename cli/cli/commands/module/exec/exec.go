@@ -10,13 +10,14 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
@@ -55,7 +56,7 @@ var executeParamsStr string
 var apiContainerImage string
 
 var ExecCmd = &cobra.Command{
-	Use:   "exec [flags] " + strings.Join(positionalArgs, " "),
+	Use:   command_str_consts.ModuleCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short: "Creates a new enclave and loads & executes the given executable module inside it",
 	RunE:  run,
@@ -118,9 +119,10 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Info("Creating enclave for the module to execute inside...")
 	executionId := execution_ids.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 

@@ -2,7 +2,7 @@ package enclave_status_from_container_status_retriever
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
 	"github.com/palantir/stacktrace"
 )
 
