@@ -56,7 +56,7 @@ var executeParamsStr string
 var apiContainerImage string
 
 var ExecCmd = &cobra.Command{
-	Use:   command_str_consts.ModuleCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
+	Use:   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short: "Creates a new enclave and loads & executes the given executable module inside it",
 	RunE:  run,
