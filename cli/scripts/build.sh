@@ -12,13 +12,17 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
 
-WRAPPER_GENERATOR_DIRNAME="wrapper_generator"
-WRAPPER_GENERATOR_BINARY_OUTPUT_FILENAME="wrapper-generator"
-WRAPPER_TEMPLATE_REL_FILEPATH="${WRAPPER_GENERATOR_DIRNAME}/kurtosis.template.sh"
+REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
+REPL_DIRNAMES_TO_BUILD=(
+    "javascript_repl_image"
+)
 
-WRAPPER_SCRIPT_GENERATOR_GORELEASER_BUILD_ID="wrapper-generator"
+REPL_OUTPUT_DOCKERFILE_SUFFIX=".Dockerfile"
+REPL_DOCKERFILE_GENERATOR_GORELEASER_BUILD_ID="repl-dockerfile-generator"
+REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME="repl-dockerfile-generator"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
+
 
 
 # ==================================================================================================
@@ -56,7 +60,8 @@ fi
 export DOCKER_ORG \
     INTERNAL_TESTSUITE_IMAGE_SUFFIX \
     JAVASCRIPT_REPL_IMAGE \
-    CLI_BINARY_FILENAME
+    CLI_BINARY_FILENAME \
+    REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME
 export DOCKER_IMAGES_TAG="${docker_images_tag}"
 if "${should_publish_arg}"; then
     # This environment variable will be set ONLY when publishing, in the CI environment
@@ -69,6 +74,26 @@ cd "${root_dirpath}"
 
 go test ./...
 
+# Use a first pass of Goreleaser to build ONLY the REPL Dockerfile-generating binary, and then generate the REPL Dockerfiles so that the second
+#  pass of Goreleaser (which generates the Dockerfiles) can pick them up
+if ! goreleaser build --rm-dist --snapshot --id "${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}" --single-target; then
+    echo "Error: Couldn't build the REPL Dockerfile-generating binary" >&2
+    exit 1
+fi
+repl_dockerfile_generator_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}"
+for repl_dirname in "${REPL_DIRNAMES_TO_BUILD[@]}"; do
+    repl_dockerfile_template_filepath="${root_dirpath}/${repl_dirname}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"
+    if ! [ -f "${repl_dockerfile_template_filepath}" ]; then
+        echo "Error: Tried to generate Dockerfile for REPL '${repl_dirname}' but no template file was found at path '${repl_dockerfile_template_filepath}'" >&2
+        exit 1
+    fi
+    output_filepath="${build_dirpath}/${repl_dirname}${REPL_OUTPUT_DOCKERFILE_SUFFIX}"
+    if ! "${repl_dockerfile_generator_binary_filepath}" "${repl_dockerfile_template_filepath}" "${output_filepath}"; then
+        echo "Error: An error occurred rendering template for REPL '${repl_dirname}' at path '${repl_dockerfile_template_filepath}' to output filepath '${output_filepath}'" >&2
+        exit 1
+    fi
+done
+
 # Build all the Docker images
 if "${should_publish_arg}"; then
     goreleaser_release_extra_args=""
@@ -80,7 +105,7 @@ if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_arg
     exit 1
 fi
 
-# Build a CLI binary, compatible with the current OS & arch, so that we can run interactive & testing locally
+# As a last step, build a CLI binary (compatible with the current OS & arch) so that we can run interactive & testing locally via the launch-cli.sh script
 if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
     echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
     exit 1

@@ -12,8 +12,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME="update-version-in-file.sh" # From devtools; expected to be on PATH
 
-CONSTANT_FILE_RELATIVE_FILEPATH="cli/defaults/defaults.go"
-CONSTANT_PATTERN="ownVersion = \"%s\""
+CONSTANT_FILE_RELATIVE_FILEPATH="cli/kurtosis_cli_version/kurtosis_cli_version.go"
+CONSTANT_PATTERN="KurtosisCLIVersion = \"%s\""
 
 
 # ==================================================================================================

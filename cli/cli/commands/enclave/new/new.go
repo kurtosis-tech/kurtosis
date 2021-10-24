@@ -3,13 +3,11 @@ package new
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -22,7 +20,6 @@ const (
 	kurtosisLogLevelArg      = "kurtosis-log-level"
 
 	defaultIsPartitioningEnabled = false
-
 	shouldPublishPorts = true
 )
 
@@ -66,38 +63,35 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+
+	ctx := context.Background()
+
 	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
-
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, apiContainerImage)
-
 	enclaveId := execution_ids.GetExecutionID()
 
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerClient)
-
-	_, err = enclaveManager.CreateEnclave(
-		context.Background(),
-		logrus.StandardLogger(),
-		apiContainerImage,
-		kurtosisLogLevel,
-		enclaveId,
-		isPartitioningEnabled,
-		shouldPublishPorts,
-	)
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave")
+		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
 	}
+	defer closeClientFunc()
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveId: enclaveId,
+		ApiContainerImage: apiContainerImage,
+		ApiContainerLogLevel: kurtosisLogLevelStr,
+		IsPartitioningEnabled: isPartitioningEnabled,
+		ShouldPublishAllPorts: shouldPublishPorts,
+	}
+
+	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
+	}
+
 	return nil
 }

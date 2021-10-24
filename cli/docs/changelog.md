@@ -1,5 +1,21 @@
 # TBD
 
+# 0.5.0
+### Changes
+* Replaced `EnclaveManager` with `Kurtosis Engine API Libs` which handle all the interactions with the `Kurtosis Engine Server`
+
+### Features
+* Add a `version` command to print the CLI's version, with a test
+* Added a global `--cli-log-level` flag that controls what level the CLI will log at
+
+### Fixes
+* The Kurtosis Client version used by the JS REPL image will now use the `KurtosisApiVersion` constant published by Kurt Client
+* Fixed bug where testsuite containers weren't getting any labels
+
+### Breaking Changes
+* Interactions with the CLI now require a Kurtosis engine to be running
+    * Users should run `kurtosis engine start` to start an engine
+
 # 0.4.3
 ### Features
 * Added documentation in README about how to develop on this repo

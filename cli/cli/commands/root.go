@@ -13,8 +13,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
+	"github.com/palantir/stacktrace"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"strings"
 )
+
+const (
+	logLevelStrArg = "cli-log-level"
+)
+
+var logLevelStr string
+var defaultLogLevelStr = logrus.InfoLevel.String()
 
 var RootCmd = &cobra.Command{
 	// Leaving out the "use" will auto-use os.Args[0]
@@ -24,9 +36,17 @@ var RootCmd = &cobra.Command{
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
 	SilenceUsage: true,
+	PersistentPreRunE: globalSetup,
 }
 
 func init() {
+	RootCmd.PersistentFlags().StringVar(
+		&logLevelStr,
+		logLevelStrArg,
+		defaultLogLevelStr,
+		"Sets the level that the CLI will log at (" + strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|") + ")",
+	)
+
 	RootCmd.AddCommand(sandbox.SandboxCmd)
 	RootCmd.AddCommand(test.TestCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
@@ -34,6 +54,17 @@ func init() {
 	RootCmd.AddCommand(module.ModuleCmd)
 	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
+	RootCmd.AddCommand(version.VersionCmd)
 
 	// TODO Add global flag to set the CLI's log level
+}
+
+func globalSetup(cmd *cobra.Command, args []string) error {
+	logLevel, err := logrus.ParseLevel(logLevelStr)
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not parse log level string '%v'", logLevelStr)
+	}
+	logrus.SetOutput(cmd.OutOrStdout())
+	logrus.SetLevel(logLevel)
+	return nil
 }

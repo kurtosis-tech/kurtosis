@@ -11,8 +11,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_manager/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
@@ -137,6 +137,7 @@ func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerM
 	searchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 	}
+	// TODO Replace with a call to the engine server!
 	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
