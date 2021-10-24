@@ -24,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
@@ -211,10 +212,12 @@ func run(cmd *cobra.Command, args []string) error {
 	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
+	testsuiteExLabelsProvider := object_labels_providers.NewTestsuiteExecutionObjectLabelsProvider(executionId)
 
 	logrus.Infof("Using custom params: \n%v", customParamsJson)
 	testsuiteLauncher := test_suite_launcher.NewTestsuiteContainerLauncher(
 		testsuiteExObjNameProvider,
+		testsuiteExLabelsProvider,
 		testsuiteImage,
 		suiteLogLevelStr,
 		customParamsJson,

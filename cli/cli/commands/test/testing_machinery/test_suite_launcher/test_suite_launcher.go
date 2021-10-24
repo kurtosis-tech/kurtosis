@@ -50,8 +50,8 @@ type TestsuiteContainerLauncher struct {
 	customParamsJson string
 }
 
-func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteExObjLabelsProvider *object_labels_providers.TestsuiteExecutionObjectLabelsProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteExObjLabelsProvider: testsuiteExObjLabelsProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
 }
 
 /*
