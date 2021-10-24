@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -53,6 +54,7 @@ Returns:
  */
 func RunTests(
 		permissions *permissions.Permissions,
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
@@ -101,6 +103,7 @@ func RunTests(
 	}
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
+		engineClient,
 		testsuiteExObjNameProvider,
 		kurtosisLogLevel,
 		apiContainerImage,
