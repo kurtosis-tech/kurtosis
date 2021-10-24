@@ -7,8 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	CommandStr = "engine"
+)
+
 var EngineCmd = &cobra.Command{
-	Use:   "engine",
+	Use:   CommandStr,
 	Short: "Manage the Kurtosis engine server",
 	RunE:  nil,
 }

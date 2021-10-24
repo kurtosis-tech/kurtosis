@@ -20,6 +20,8 @@ import (
 )
 
 const (
+	CommandStr = "start"
+
 	engineImageArg = "image"
 
 	containerNamePrefix = "kurtosis-engine"
@@ -39,7 +41,7 @@ const (
 var engineImage string
 
 var StartCmd = &cobra.Command{
-	Use:   "start",
+	Use:   CommandStr,
 	Short: "Starts the Kurtosis engine",
 	Long: "Starts the Kurtosis engine, doing nothing if an engine is already running",
 	RunE:  run,

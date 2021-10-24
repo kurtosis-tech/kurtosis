@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add instructions for users on what to do if no Kurtosis engine is running
 
 # 0.5.0
 ### Changes

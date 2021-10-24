@@ -14,13 +14,15 @@ import (
 
 
 const (
+	CommandStr = "stop"
+
 	engineStopTimeout = 30 * time.Second
 
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 )
 
 var StopCmd = &cobra.Command{
-	Use:   "stop",
+	Use:   CommandStr,
 	Short: "Stops the Kurtosis engine",
 	Long: "Stops the Kurtosis engine, doing nothing if no engine is running",
 	RunE:  run,

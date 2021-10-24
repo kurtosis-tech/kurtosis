@@ -3,6 +3,8 @@ package new
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
@@ -72,9 +74,18 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+	}
+	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
+		dockerClient,
+	)
+
 	enclaveId := execution_ids.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
 	}

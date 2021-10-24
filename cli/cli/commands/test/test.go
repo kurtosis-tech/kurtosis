@@ -175,6 +175,8 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	ctx := context.Background()
+
 	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the Kurtosis log level string '%v'", kurtosisLogLevelStr)
@@ -251,7 +253,7 @@ func run(cmd *cobra.Command, args []string) error {
 		parallelismUint = uint(parallelism)
 	}
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

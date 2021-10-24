@@ -99,9 +99,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 

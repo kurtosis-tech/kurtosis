@@ -8,6 +8,8 @@ package ls
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
@@ -60,9 +62,18 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+	}
+	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
+		dockerClient,
+	)
+
+	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine(ctx, dockerManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 
