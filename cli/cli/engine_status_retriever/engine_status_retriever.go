@@ -45,7 +45,7 @@ func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.Doc
 		fmt.Sprintf("%v", kurtosis_engine_rpc_api_consts.ListenPort),
 	)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(
+		return "", "", stacktrace.Propagate(
 			err,
 			"An error occurred creating an engine port object from port num '%v' and protocol '%v'",
 			kurtosis_engine_rpc_api_consts.ListenPort,
