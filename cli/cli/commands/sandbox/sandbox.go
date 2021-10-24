@@ -10,13 +10,14 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/execution_ids"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,7 @@ const (
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 var SandboxCmd = &cobra.Command{
-	Use:   "sandbox",
+	Use:   command_str_consts.SandboxCmdStr,
 	Short: "Creates a new Kurtosis enclave and attaches a REPL for manipulating it",
 	RunE:  run,
 }
@@ -99,9 +100,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new engine client")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 

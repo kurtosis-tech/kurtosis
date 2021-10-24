@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine/start"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine/status"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine/stop"
@@ -8,7 +9,7 @@ import (
 )
 
 var EngineCmd = &cobra.Command{
-	Use:   "engine",
+	Use:   command_str_consts.EngineCmdStr,
 	Short: "Manage the Kurtosis engine server",
 	RunE:  nil,
 }

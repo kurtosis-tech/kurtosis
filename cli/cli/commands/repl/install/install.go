@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,7 @@ var positionalArgs = []string{
 }
 
 var InstallCmd = &cobra.Command{
-	Use:   "install [flags] " + strings.Join(positionalArgs, " "),
+	Use:   command_str_consts.ReplInstallCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short: "Installs packages (identified by the same string as your package manager, e.g. 'web3@1.6.0' for Javascript) into the given REPL container so they'll be available in the REPL",
 	RunE:  run,

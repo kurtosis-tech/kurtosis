@@ -11,11 +11,12 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_status_from_container_status_retriever"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_statuses"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_from_container_status_retriever"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -49,9 +50,9 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 }
 
 var InspectCmd = &cobra.Command{
-	Use:   "inspect [flags] " + strings.Join(positionalArgs, " "),
+	Use:   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Inspect Kurtosis enclaves",
+	Short: "Lists detailed information about an enclave",
 	RunE:  run,
 }
 
