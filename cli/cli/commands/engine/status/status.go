@@ -45,7 +45,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	switch status {
 	case engine_status_retriever.EngineStatus_Stopped:
-		fmt.Fprintln(logrus.StandardLogger().Out, "No Kurtosis engine is not running")
+		fmt.Fprintln(logrus.StandardLogger().Out, "No Kurtosis engine is running")
 	case engine_status_retriever.EngineStatus_ContainerRunningButServerNotResponding:
 		fmt.Fprintln(logrus.StandardLogger().Out, "A Kurtosis engine container is running, but the server inside couldn't be reached")
 	case engine_status_retriever.EngineStatus_Running:

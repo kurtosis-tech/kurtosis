@@ -14,11 +14,11 @@ import (
 	"time"
 )
 
-type EngineStatus int
+type EngineStatus string
 const (
-	EngineStatus_Running EngineStatus = iota
-	EngineStatus_ContainerRunningButServerNotResponding
-	EngineStatus_Stopped
+	EngineStatus_Stopped EngineStatus = "STOPPED"
+	EngineStatus_ContainerRunningButServerNotResponding EngineStatus = "CONTAINER_RUNNING_BUT_SERVER_NOT_RESPONDING"
+	EngineStatus_Running EngineStatus = "RUNNING"
 
 	waitForEngineResponseTimeout = 5 * time.Second
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
@@ -28,12 +28,12 @@ const (
 func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.DockerManager) (EngineStatus, string, error) {
 	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
+		return "", "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
 
 	numRunningEngineContainers := len(runningEngineContainers)
 	if numRunningEngineContainers > 1 {
-		return 0, "", stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
+		return "", "", stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
 	}
 	if numRunningEngineContainers == 0 {
 		return EngineStatus_Stopped, "", nil
@@ -55,7 +55,7 @@ func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.Doc
 
 	hostMachineEnginePortBinding, found := engineContainer.GetHostPortBindings()[enginePortObj]
 	if !found {
-		return 0, "", stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
+		return "", "", stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
 	}
 
 	engineInfo, err := getEngineInfoWithTimeout(ctx, hostMachineEnginePortBinding)
