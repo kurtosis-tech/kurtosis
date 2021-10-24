@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/inspect"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/ls"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/new"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave/stop"
 	"github.com/spf13/cobra"
 )
 
@@ -23,4 +24,5 @@ func init() {
 	EnclaveCmd.AddCommand(ls.LsCmd)
 	EnclaveCmd.AddCommand(inspect.InspectCmd)
 	EnclaveCmd.AddCommand(new.NewCmd)
+	EnclaveCmd.AddCommand(stop.StopCmd)
 }
