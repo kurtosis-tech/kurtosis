@@ -3,7 +3,7 @@ package inspect
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	output_printers "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 )
@@ -20,7 +20,7 @@ func printInteractiveRepls(ctx context.Context, dockerManager *docker_manager.Do
 		return stacktrace.Propagate(err, "An error occurred getting interactive REPL containers by labels: '%+v'", interactiveReplLabels)
 	}
 
-	tablePrinter := output_printers2.NewTablePrinter(interactiveReplGUIDColHeader)
+	tablePrinter := output_printers.NewTablePrinter(interactiveReplGUIDColHeader)
 
 	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {

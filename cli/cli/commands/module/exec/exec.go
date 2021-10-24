@@ -12,12 +12,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
-	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	best_effort_image_puller "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	enclave_liveness_validator "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
+	execution_ids "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
@@ -70,7 +70,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 	ExecCmd.Flags().StringVar(
@@ -102,7 +102,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -114,10 +114,10 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	best_effort_image_puller2.PullImageBestEffort(ctx, dockerManager, moduleImage)
+	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
 	logrus.Info("Creating enclave for the module to execute inside...")
-	executionId := execution_ids2.GetExecutionID()
+	executionId := execution_ids.GetExecutionID()
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
@@ -157,7 +157,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 	logrus.Infof("Enclave '%v' created successfully", executionId)
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator2.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
 	}

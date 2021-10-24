@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -44,7 +44,7 @@ func init() {
 		&logLevelStr,
 		logLevelStrArg,
 		defaultLogLevelStr,
-		"Sets the level that the CLI will log at (" + strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|") + ")",
+		"Sets the level that the CLI will log at (" + strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|") + ")",
 	)
 
 	RootCmd.AddCommand(sandbox.SandboxCmd)

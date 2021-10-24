@@ -6,11 +6,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
-	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	best_effort_image_puller "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	enclave_liveness_validator "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
-	repl_runner2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
+	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
+	repl_runner "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -60,13 +60,13 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
 	enclaveId := parsedPositionalArgs[enclaveIDArg]
 
-	best_effort_image_puller2.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
@@ -85,13 +85,13 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred finding enclave with ID '%v' on enclave info map '%+v'", enclaveId, enclaveInfoMap)
 	}
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator2.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred validating that the enclave was running")
 	}
 
 	logrus.Debug("Running REPL...")
-	if err := repl_runner2.RunREPL(
+	if err := repl_runner.RunREPL(
 		enclaveInfo.GetEnclaveId(),
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),

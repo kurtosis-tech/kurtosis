@@ -20,11 +20,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_metadata_acquirer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	best_effort_image_puller "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
+	execution_ids "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -140,7 +140,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 	TestCmd.Flags().BoolVar(
@@ -184,7 +184,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetLevel(kurtosisLogLevel)
 
-	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
@@ -211,9 +211,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
 
-	best_effort_image_puller2.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, testsuiteImage)
 
-	executionId := execution_ids2.GetExecutionID()
+	executionId := execution_ids.GetExecutionID()
 
 	testsuiteExObjNameProvider := object_name_providers.NewTestsuiteExecutionObjectNameProvider(executionId)
 	testsuiteExLabelsProvider := object_labels_providers.NewTestsuiteExecutionObjectLabelsProvider(executionId)

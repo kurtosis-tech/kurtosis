@@ -13,8 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	output_printers "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -50,7 +50,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 }
@@ -95,7 +95,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	sort.Strings(orderedEnclaveIds)
 
-	tablePrinter := output_printers2.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
+	tablePrinter := output_printers.NewTablePrinter(enclaveIdColumnHeader, enclaveStatusColumnHeader)
 	for _, enclaveId := range orderedEnclaveIds {
 		enclaveStatus, found := enclaveStatuses[enclaveId]
 		if !found {

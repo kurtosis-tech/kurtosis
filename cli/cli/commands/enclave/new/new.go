@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	execution_ids "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -46,7 +46,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 	NewCmd.Flags().StringVarP(
@@ -84,7 +84,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	enclaveId := execution_ids2.GetExecutionID()
+	enclaveId := execution_ids.GetExecutionID()
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)

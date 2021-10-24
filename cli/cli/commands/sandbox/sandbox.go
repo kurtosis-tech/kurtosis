@@ -12,12 +12,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
-	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	best_effort_image_puller "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	enclave_liveness_validator "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
-	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	repl_runner2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
+	execution_ids "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
+	logrus_log_levels "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	repl_runner "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -56,7 +56,7 @@ func init() {
 		defaultKurtosisLogLevel,
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels2.GetAcceptableLogLevelStrs(), "|"),
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
 
@@ -96,9 +96,9 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	best_effort_image_puller2.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	enclaveId := execution_ids2.GetExecutionID()
+	enclaveId := execution_ids.GetExecutionID()
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
@@ -136,13 +136,13 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator2.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "Cannot create sandbox; an error occurred verifying enclave liveness")
 	}
 
 	logrus.Debug("Running REPL...")
-	if err := repl_runner2.RunREPL(
+	if err := repl_runner.RunREPL(
 		enclaveInfo.GetEnclaveId(),
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
