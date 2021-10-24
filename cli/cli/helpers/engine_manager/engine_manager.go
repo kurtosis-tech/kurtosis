@@ -1,16 +1,21 @@
-package engine_status_retriever
+package engine_manager
 
 import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	engine_labels_schema2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine/start"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine/stop"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/palantir/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"os"
+	"path"
 	"time"
 )
 
@@ -22,11 +27,21 @@ const (
 
 	waitForEngineResponseTimeout = 5 * time.Second
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
+
+	localHostIPAddressStr = "0.0.0.0"
 )
 
+type EngineManager struct {
+	// Make engine IP & port configurable in the future
+}
+
+func NewEngineManager() *EngineManager {
+	return &EngineManager{}
+}
+
 // NOTE: The first second value, the engine API version, will only be filled in if the engine status is "running"
-func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.DockerManager) (EngineStatus, string, error) {
-	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema2.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+func GetEngineStatus(ctx context.Context, dockerManager *docker_manager.DockerManager) (EngineStatus, string, error) {
+	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
@@ -66,6 +81,62 @@ func RetrieveEngineStatus(ctx context.Context, dockerManager *docker_manager.Doc
 	return EngineStatus_Running, engineInfo.EngineApiVersion, nil
 }
 
+// Gets an engine client connected to the local engine
+// If no engine is running, attempts to start one first
+func GetEngineClient(ctx context.Context, dockerManager *docker_manager.DockerManager) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	// Check the engine status first so we can print a helpful message in case the engine isn't running
+	status, _, err := GetEngineStatus(ctx, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
+	}
+	binaryFilename := path.Base(os.Args[0])
+	switch status {
+	case EngineStatus_Stopped:
+		return nil, nil, stacktrace.NewError(
+			"No Kurtosis engine is running; you'll need to start one by running '%v %v %v'",
+			binaryFilename,
+			engine.CommandStr,
+			start.CommandStr,
+		)
+	case EngineStatus_ContainerRunningButServerNotResponding:
+		return nil, nil, stacktrace.NewError(
+			"A Kurtosis engine container is running, but it's not responding; this shouldn't happen and you'll likely " +
+				"want to restart the engine by running '%v %v %v && %v %v %v'",
+			binaryFilename,
+			engine.CommandStr,
+			stop.CommandStr,
+			binaryFilename,
+			engine.CommandStr,
+			start.CommandStr,
+		)
+	case EngineStatus_Running:
+		// This is the happy case; nothing to do
+	default:
+		return nil, nil, stacktrace.NewError("Unrecognized engine status '%v'; this is a bug in Kurtosis", status)
+	}
+
+	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, kurtosis_engine_rpc_api_consts.ListenPort)
+
+	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
+	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a connection to the Kurtosis Engine Server at '%v'",
+			kurtosisEngineSocketStr,
+		)
+	}
+
+	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
+
+	return engineServiceClient, conn.Close, nil
+}
+
+// TODO StopEngine
+
+// ====================================================================================================
+//                                       Private Helper Functions
+// ====================================================================================================
 func getEngineInfoWithTimeout(ctx context.Context, hostMachineEnginePortBinding *nat.PortBinding) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
 	ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForEngineResponseTimeout)
 	defer cancelFunc()
@@ -82,3 +153,4 @@ func getEngineInfoWithTimeout(ctx context.Context, hostMachineEnginePortBinding 
 	}
 	return engineInfo, nil
 }
+

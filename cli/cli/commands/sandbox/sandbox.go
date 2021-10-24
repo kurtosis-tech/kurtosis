@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	best_effort_image_puller2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	enclave_liveness_validator2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
-	engine_client2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_client"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	execution_ids2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	repl_runner2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
@@ -99,7 +99,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveId := execution_ids2.GetExecutionID()
 
-	engineClient, closeClientFunc, err := engine_client2.NewEngineClientFromLocalEngine(ctx, dockerManager)
+	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	engine_client2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_client"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	logrus_log_levels2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/palantir/stacktrace"
@@ -71,7 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	engineClient, closeClientFunc, err := engine_client2.NewEngineClientFromLocalEngine(ctx, dockerManager)
+	engineClient, closeClientFunc, err := engine_manager.GetEngineClient(ctx, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

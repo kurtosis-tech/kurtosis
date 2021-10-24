@@ -8,6 +8,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	engine_labels_schema2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_problem_fix_command_provider"
 	output_printers2 "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
@@ -57,9 +59,8 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
-
 	ctx := context.Background()
+	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -70,22 +71,24 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	// Don't start an engine if one is already running
-	matchingEngineContainers, err := dockerManager.GetContainersByLabels(
-		ctx,
-		engine_labels_schema2.EngineContainerLabels,
-		shouldGetStoppedContainersWhenCheckingForExistingEngines,
-	)
+	status, _, err := engine_manager.GetEngineStatus(ctx, dockerManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting existing engine containers")
+		return stacktrace.Propagate(err, "An error occurred getting the current engine status, which is necessary to ensure we don't start an engine when one is already running")
 	}
-	numMatchingEngineContainers := len(matchingEngineContainers)
-	if numMatchingEngineContainers > 1 {
-		return stacktrace.NewError("Found %v running engine containers; there should never be more than 1 engine container!", numMatchingEngineContainers)
-	}
-	if numMatchingEngineContainers > 0 {
+
+	switch status {
+	case engine_manager.EngineStatus_Stopped:
+		// Continue; this is fine
+	case engine_manager.EngineStatus_ContainerRunningButServerNotResponding:
+		return stacktrace.NewError(
+			"An engine container is running but the server inside isn't responding; you'll likely want to restart the engine server by running '%v'",
+			engine_problem_fix_command_provider.GetEngineRunningButServerNotRespondingCmd(),
+		)
+	case engine_manager.EngineStatus_Running:
 		logrus.Info("A Kurtosis engine is already running; nothing to do")
 		return nil
+	default:
+		return stacktrace.NewError("Unrecognized engine status '%v'; this is a bug in Kurtosis", status)
 	}
 
 	matchingNetworks, err := dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
