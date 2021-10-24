@@ -14,8 +14,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_bindings"
@@ -88,6 +89,7 @@ Returns:
 */
 func RunTest(
 		testSetupExecutionCtx context.Context,
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		log *logrus.Logger,
 	    apiContainerImage string,
@@ -109,12 +111,6 @@ func RunTest(
 
 	log.Debugf("Creating enclave for test '%v'....", testName)
 
-	engineClient, closeClientFunc, err := engine_client.NewEngineClientFromLocalEngine()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating a new engine client")
-	}
-	defer closeClientFunc()
-
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId: enclaveId,
 		ApiContainerImage: apiContainerImage,
@@ -127,18 +123,23 @@ func RunTest(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
-	enclaveInfo := response.GetEnclaveInfo()
-
 	defer func() {
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+		stopEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 			EnclaveId: enclaveId,
 		}
-		if _, err := engineClient.DestroyEnclave(testSetupExecutionCtx, destroyEnclaveArgs); err != nil {
-			log.Errorf("An error occurred destroying enclave '%v':", enclaveId)
+		if _, err := engineClient.StopEnclave(testSetupExecutionCtx, stopEnclaveArgs); err != nil {
+			log.Errorf("An error occurred stopping enclave '%v':", enclaveId)
 			fmt.Fprintln(log.Out, err)
-			log.Errorf("ACTION REQUIRED: You'll need to manually clean up the containers and network of enclave '%v'!!!!!", enclaveId)
+			log.Errorf("ACTION REQUIRED: You'll need to manually stop enclave '%v'!", enclaveId)
 		}
 	}()
+	enclaveInfo := response.GetEnclaveInfo()
+
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred verifying the liveness of the enclave created for the test")
+	}
+
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -153,12 +154,13 @@ func RunTest(
 	kurtosisApiIp := net.ParseIP(enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave())
 
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
+	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 	testsuiteContainerName := enclaveObjNameProvider.ForTestRunningTestsuiteContainer()
 
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
-		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
-		enclaveInfo.GetApiContainerInfo().GetPortOnHostMachine(),
+		apicHostMachineIp,
+		apicHostMachinePort,
 	)
 	apiContainerConn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
@@ -190,6 +192,7 @@ func RunTest(
 		kurtosisApiIp,
 		testsuiteIpAddr,
 		enclaveId,
+		enclaveObjLabelsProvider.ForTestRunningTestsuiteContainer(),
 	)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred launching the test-running testsuite container")

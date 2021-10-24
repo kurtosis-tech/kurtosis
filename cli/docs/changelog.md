@@ -3,10 +3,12 @@
 * Replaced `EnclaveManager` with `Kurtosis Engine API Libs` which handle all the interactions with the `Kurtosis Engine Server`
 
 ### Features
-* Add a `version` command to print the CLI's version
+* Add a `version` command to print the CLI's version, with a test
+* Added a global `--cli-log-level` flag that controls what level the CLI will log at
 
 ### Fixes
 * The Kurtosis Client version used by the JS REPL image will now use the `KurtosisApiVersion` constant published by Kurt Client
+* Fixed bug where testsuite containers weren't getting any labels
 
 # 0.4.3
 ### Features

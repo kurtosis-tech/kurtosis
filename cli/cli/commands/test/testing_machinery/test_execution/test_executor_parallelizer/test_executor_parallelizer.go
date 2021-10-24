@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
@@ -35,6 +36,7 @@ Returns:
 	True if all tests passed, false otherwise
  */
 func RunInParallelAndPrintResults(
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		kurtosisLogLevel logrus.Level,
 	    apiContainerImage string,
@@ -77,6 +79,7 @@ func RunInParallelAndPrintResults(
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
 		ctx,
+		engineClient,
 		testsuiteExObjNameProvider,
 		erroneousSystemLogCaptureWriter,
 		outputManager,
@@ -105,6 +108,7 @@ func RunInParallelAndPrintResults(
 // ====================================================================================================
 func disableSystemLogAndRunTestThreads(
 		parentContext context.Context,
+		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
 		outputManager *output.ParallelTestOutputManager,
@@ -129,6 +133,7 @@ func disableSystemLogAndRunTestThreads(
 		waitGroup.Add(1)
 		go runTestWorkerGoroutine(
 			parentContext,
+			engineClient,
 			testsuiteExObjNameProvider,
 			&waitGroup,
 			testParamsChan,
@@ -148,6 +153,7 @@ push the result to the test results channel
  */
 func runTestWorkerGoroutine(
 			parentContext context.Context,
+			engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 			testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 			waitGroup *sync.WaitGroup,
 			testParamsChan chan parallel_test_params.ParallelTestParams,
@@ -164,6 +170,7 @@ func runTestWorkerGoroutine(
 		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
 			parentContext,
+			engineClient,
 			testsuiteExObjNameProvider,
 			testLog,
 			apiContainerImage,

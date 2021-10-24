@@ -20,6 +20,7 @@ func TestBlockedExecutionWhenNoPerms(t *testing.T) {
 	result, err := RunTests(
 		perms,
 		nil,
+		nil,
 		logrus.InfoLevel,
 		"",
 		suiteMetadata,
@@ -39,6 +40,7 @@ func TestBlockedExecutionWhenRestrictedPerms(t *testing.T) {
 	})
 	result, err := RunTests(
 		perms,
+		nil,
 		nil,
 		logrus.InfoLevel,
 		"",

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -44,7 +43,8 @@ const (
 func RunREPL(
 	enclaveId string,
 	networkId string,
-	kurtosisApiContainerIpAddr string,
+	apiContainerIpInsideEnclave string,
+	apiContainerPortInsideEnclave uint32,
 	apiContainerIpOnHostMachine string,
 	apiContainerPortOnHostMachine uint32,
 	javascriptReplImage string,
@@ -111,7 +111,7 @@ func RunREPL(
 	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
 
 
-	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", kurtosisApiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
+	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	// TODO Add interactive labels!!!

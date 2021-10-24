@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/engine_client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/repl_runner"
@@ -82,13 +83,19 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred finding enclave with ID '%v' on enclave info map '%+v'", enclaveId, enclaveInfoMap)
 	}
 
+	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating that the enclave was running")
+	}
+
 	logrus.Debug("Running REPL...")
 	if err := repl_runner.RunREPL(
 		enclaveInfo.GetEnclaveId(),
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
-		enclaveInfo.GetApiContainerInfo().GetIpOnHostMachine(),
-		enclaveInfo.GetApiContainerInfo().GetPortOnHostMachine(),
+		enclaveInfo.GetApiContainerInfo().GetPortInsideEnclave(),
+		apicHostMachineIp,
+		apicHostMachinePort,
 		jsReplImage,
 		dockerManager); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")

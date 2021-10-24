@@ -11,6 +11,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_docker_api"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/kurtosis_testsuite_rpc_api_consts"
@@ -38,6 +39,8 @@ var testsuitePortPublishSpec = docker_manager.NewAutomaticPublishingSpec()
 type TestsuiteContainerLauncher struct {
 	testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider
 
+	testsuiteExObjLabelsProvider *object_labels_providers.TestsuiteExecutionObjectLabelsProvider
+
 	testsuiteImage string
 
 	// The log level string that will be passed as-is to the testsuite (should be meaningful to the testsuite)
@@ -47,8 +50,8 @@ type TestsuiteContainerLauncher struct {
 	customParamsJson string
 }
 
-func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
-	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
+func NewTestsuiteContainerLauncher(testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider, testsuiteExObjLabelsProvider *object_labels_providers.TestsuiteExecutionObjectLabelsProvider, testsuiteImage string, suiteLogLevel string, customParamsJson string) *TestsuiteContainerLauncher {
+	return &TestsuiteContainerLauncher{testsuiteExObjNameProvider: testsuiteExObjNameProvider, testsuiteExObjLabelsProvider: testsuiteExObjLabelsProvider, testsuiteImage: testsuiteImage, suiteLogLevel: suiteLogLevel, customParamsJson: customParamsJson}
 }
 
 /*
@@ -84,6 +87,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 	suiteContainerDesc := "metadata-providing testsuite container"
 	log.Debugf("Launching %v...", suiteContainerDesc)
 	containerName := launcher.testsuiteExObjNameProvider.ForMetadataAcquiringTestsuiteContainer()
+	labels := launcher.testsuiteExObjLabelsProvider.ForMetadataAcquiringTestsuiteContainer()
 	testsuiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
 		dockerManager,
@@ -92,6 +96,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		testsuiteEnvVars,
 		map[string]string{},
+		labels,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred launching the testsuite container to provide metadata to the Kurtosis API container")
@@ -125,7 +130,8 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		containerName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
-		enclaveDataVolName string) (string, *nat.PortBinding, error){
+		enclaveDataVolName string,
+		labels map[string]string) (string, *nat.PortBinding, error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
 		testsuiteContainerIp.String(),
@@ -151,6 +157,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		testsuiteContainerIp,
 		testSuiteEnvVars,
 		volumeMountpoints,
+		labels,
 	)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating the test-running testsuite container")
@@ -185,6 +192,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		containerIpAddr net.IP,
 		envVars map[string]string,
 		volumeMountpoints map[string]string,
+		labels map[string]string,
 	) (string, map[nat.Port]*nat.PortBinding, error) {
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
@@ -206,6 +214,8 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		envVars,
 	).WithVolumeMounts(
 		volumeMountpoints,
+	).WithLabels(
+		labels,
 	).Build()
 	containerId, hostPortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
