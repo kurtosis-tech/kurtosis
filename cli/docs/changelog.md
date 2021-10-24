@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.0
 ### Changes
 * Replaced `EnclaveManager` with `Kurtosis Engine API Libs` which handle all the interactions with the `Kurtosis Engine Server`
 
