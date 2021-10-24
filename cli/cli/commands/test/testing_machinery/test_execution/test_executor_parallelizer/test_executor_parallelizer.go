@@ -8,6 +8,7 @@ package test_executor_parallelizer
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/banner_printer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/output"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
@@ -36,6 +37,7 @@ Returns:
 	True if all tests passed, false otherwise
  */
 func RunInParallelAndPrintResults(
+		dockerClient *client.Client,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		kurtosisLogLevel logrus.Level,
@@ -79,6 +81,7 @@ func RunInParallelAndPrintResults(
 	logrus.Infof("Launching %v tests with parallelism %v...", len(allTestParams), parallelism)
 	disableSystemLogAndRunTestThreads(
 		ctx,
+		dockerClient,
 		engineClient,
 		testsuiteExObjNameProvider,
 		erroneousSystemLogCaptureWriter,
@@ -108,6 +111,7 @@ func RunInParallelAndPrintResults(
 // ====================================================================================================
 func disableSystemLogAndRunTestThreads(
 		parentContext context.Context,
+		dockerClient *client.Client,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		erroneousSystemLogWriter *output.ErroneousSystemLogCaptureWriter,
@@ -133,6 +137,7 @@ func disableSystemLogAndRunTestThreads(
 		waitGroup.Add(1)
 		go runTestWorkerGoroutine(
 			parentContext,
+			dockerClient,
 			engineClient,
 			testsuiteExObjNameProvider,
 			&waitGroup,
@@ -153,6 +158,7 @@ push the result to the test results channel
  */
 func runTestWorkerGoroutine(
 			parentContext context.Context,
+			dockerClient *client.Client,
 			engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 			testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 			waitGroup *sync.WaitGroup,
@@ -170,6 +176,7 @@ func runTestWorkerGoroutine(
 		testLog := outputManager.RegisterTestLaunch(testName)
 		passed, executionErr := test_executor.RunTest(
 			parentContext,
+			dockerClient,
 			engineClient,
 			testsuiteExObjNameProvider,
 			testLog,

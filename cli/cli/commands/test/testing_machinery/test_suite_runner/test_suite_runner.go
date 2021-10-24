@@ -6,6 +6,7 @@
 package test_suite_runner
 
 import (
+	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/access_controller/permissions"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/parallel_test_params"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_execution/test_executor_parallelizer"
@@ -54,6 +55,7 @@ Returns:
  */
 func RunTests(
 		permissions *permissions.Permissions,
+		dockerClient *client.Client,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		kurtosisLogLevel logrus.Level,
@@ -103,6 +105,7 @@ func RunTests(
 	}
 
 	allTestsPassed = test_executor_parallelizer.RunInParallelAndPrintResults(
+		dockerClient,
 		engineClient,
 		testsuiteExObjNameProvider,
 		kurtosisLogLevel,

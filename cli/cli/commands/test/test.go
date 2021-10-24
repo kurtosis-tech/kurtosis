@@ -261,6 +261,7 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Infof("Running testsuite with execution ID '%v'...", executionId)
 	allTestsPassed, err := test_suite_runner.RunTests(
 		permissions,
+		dockerClient,
 		engineClient,
 		testsuiteExObjNameProvider,
 		kurtosisLogLevel,

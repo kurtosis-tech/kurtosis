@@ -114,7 +114,7 @@ func RunREPL(
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
-	// TODO Add interactive labels!!!
+	// TODO Replace all this with a call to the engine server!!!
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
 		containerName,

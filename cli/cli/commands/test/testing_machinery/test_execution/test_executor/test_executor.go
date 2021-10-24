@@ -89,6 +89,7 @@ Returns:
 */
 func RunTest(
 		testSetupExecutionCtx context.Context,
+		dockerClient *client.Client,
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		testsuiteExObjNameProvider *object_name_providers.TestsuiteExecutionObjectNameProvider,
 		log *logrus.Logger,
@@ -140,13 +141,8 @@ func RunTest(
 		return false, stacktrace.Propagate(err, "An error occurred verifying the liveness of the enclave created for the test")
 	}
 
-
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
 	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
+		log,
 		dockerClient,
 	)
 

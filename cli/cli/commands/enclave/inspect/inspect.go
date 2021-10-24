@@ -137,6 +137,7 @@ func getEnclaveStatus(ctx context.Context, dockerManager *docker_manager.DockerM
 	searchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 	}
+	// TODO Replace with a call to the engine server!
 	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave containers by labels '%+v'", searchLabels)
