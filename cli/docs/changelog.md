@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.2
 ### Features
 * Added `enclave stop` and `enclave rm` commands
 
