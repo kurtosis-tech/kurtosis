@@ -193,12 +193,12 @@ func cleanContainers(ctx context.Context, dockerManager *docker_manager.DockerMa
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
 	}
 
-	stoppedContainers := []*types.Container{}
+	containersToDestroy := []*types.Container{}
 	for _, container := range matchingContainers {
 		containerName := container.GetName()
 		containerStatus := container.GetStatus()
 		if shouldKillRunningContainers {
-			stoppedContainers = append(stoppedContainers, container)
+			containersToDestroy = append(containersToDestroy, container)
 			continue
 		}
 
@@ -207,13 +207,13 @@ func cleanContainers(ctx context.Context, dockerManager *docker_manager.DockerMa
 			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
 		}
 		if !isRunning {
-			stoppedContainers = append(stoppedContainers, container)
+			containersToDestroy = append(containersToDestroy, container)
 		}
 	}
 
 	successfullyDestroyedContainerNames := []string{}
 	removeContainerErrors := []error{}
-	for _, container := range stoppedContainers {
+	for _, container := range containersToDestroy {
 		containerId := container.GetId()
 		containerName := container.GetName()
 		if err := dockerManager.RemoveContainer(ctx, containerId); err != nil {
