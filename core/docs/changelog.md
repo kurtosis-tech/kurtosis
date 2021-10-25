@@ -1,5 +1,12 @@
 # TBD
 
+# 1.26.3
+### Features
+* Added a `com.kurtosistech.testsuite-type` label, with values `metadata-acquisition` and `test-running` for distinguishing between types of testsuites
+
+### Changes
+* Use a fixed version (0.1.1) of the `goreleaser-ci-image`, rather than `latest` so our builds remain reproducible
+
 # 1.26.2
 ### Features
 * Added functions to the enclave object labels provider for enclave network, enclave data volume, files artifact expander container, and files artifact expansion volume

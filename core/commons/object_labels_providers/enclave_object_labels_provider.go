@@ -22,10 +22,22 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 	return &EnclaveObjectLabelsProvider{enclaveId: enclaveId}
 }
 
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
+//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  2) the user upgrades their CLI, and restarts with the new engine
+//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveNetwork() map[string]string {
 	return labelsProvider.getLabelsForEnclaveObject()
 }
 
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
+//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  2) the user upgrades their CLI, and restarts with the new engine
+//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveDataVolume() map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	return labels
@@ -47,6 +59,7 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(
 func (labelsProvider *EnclaveObjectLabelsProvider) ForTestRunningTestsuiteContainer() map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeTestsuiteContainer
+	labels[enclave_object_labels.TestsuiteTypeLabelKey] = enclave_object_labels.TestsuiteTypeLabelValue_TestRunning
 	return labels
 }
 
