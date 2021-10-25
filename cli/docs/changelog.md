@@ -1,8 +1,15 @@
 # TBD
+### Features
+* `enclave new` prints the new enclave's ID
+* Information about how to stop or remove the enclave created by `sandbox` is printed after the REPL exits
+
 ### Fixes
 * Use `--image` flag in `kurtosis engine start` command, it was not being used when the engine is being executed
 * Fix the returning values order when `DestroyEnclave` method is called in `kurtosis sandbox` command
 * Fixed a bug where `engine status` wouldn't check the error value from getting the engine status object
+
+### Changes
+* The `sandbox` command no longer destroys the enclave after the REPL exits
 
 # 0.5.3
 ### Fixes
