@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where `engine status` wouldn't check the error value from getting the engine status object
 
 # 0.5.3
 ### Fixes
