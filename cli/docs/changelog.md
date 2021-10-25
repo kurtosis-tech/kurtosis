@@ -1,5 +1,9 @@
 # TBD
 
+# 0.5.2
+### Features
+* Added `enclave stop` and `enclave rm` commands
+
 # 0.5.1
 ### Features
 * Add instructions for users on what to do if no Kurtosis engine is running
