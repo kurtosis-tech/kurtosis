@@ -38,7 +38,7 @@ jobs:
             -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
             -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
             -e "CMD=bash ./scripts/build.sh" \
-            kurtosistech/kurtosis-goreleaser-ci-image
+            kurtosistech/kurtosis-goreleaser-ci-image:0.1.1
 
   push_artifacts:
     executor: ubuntu_vm
