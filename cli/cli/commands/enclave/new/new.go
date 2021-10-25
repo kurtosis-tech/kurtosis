@@ -83,9 +83,6 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-
-	enclaveId := execution_ids.GetExecutionID()
-
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
 	if err != nil {
@@ -93,6 +90,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer closeClientFunc()
 
+	logrus.Info("Creating new enclave...")
+	enclaveId := execution_ids.GetExecutionID()
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId: enclaveId,
 		ApiContainerImage: apiContainerImage,
@@ -100,11 +99,11 @@ func run(cmd *cobra.Command, args []string) error {
 		IsPartitioningEnabled: isPartitioningEnabled,
 		ShouldPublishAllPorts: shouldPublishPorts,
 	}
-
 	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
+	logrus.Infof("Successfully created new enclave '%v'", enclaveId)
 
 	return nil
 }
