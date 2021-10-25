@@ -12,7 +12,7 @@ func IsContainerRunning(status types.ContainerStatus) (bool, error) {
 	case types.Paused, types.Removing, types.Dead, types.Created, types.Exited:
 		return false, nil
 	default:
-		return false, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis")
+		return false, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status)
 
 	}
 }
