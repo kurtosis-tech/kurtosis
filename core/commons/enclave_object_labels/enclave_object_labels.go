@@ -41,4 +41,9 @@ const (
 	// This is a little weird to have here because  this is only used by the CLI (which depends on this repo)
 	ContainerTypeInteractiveREPL            = "interactive-repl"
 	ContainerTypeFilesArtifactExpander      = "files-artifact-expander"
+
+	// Testsuite type label + values
+	TestsuiteTypeLabelKey = labelNamespace + "testsuite-type"
+	TestsuiteTypeLabelValue_MetadataAcquisition = "metadata-acquisition"
+	TestsuiteTypeLabelValue_TestRunning = "test-running"
 )
