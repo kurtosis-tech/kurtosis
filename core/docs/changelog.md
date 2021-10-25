@@ -1,4 +1,6 @@
 # TBD
+
+# 1.26.3
 ### Features
 * Added a `com.kurtosistech.testsuite-type` label, with values `metadata-acquisition` and `test-running` for distinguishing between types of testsuites
 
