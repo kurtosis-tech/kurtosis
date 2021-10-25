@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Use `--image` flag in `kurtosis engine start` command, it was not being used when the engine is being executed
+* Fix the returning values order when `DestroyEnclave` method is called in `kurtosis sandbox` command
 
 # 0.5.3
 ### Fixes
