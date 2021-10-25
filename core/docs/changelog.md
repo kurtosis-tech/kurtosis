@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Use a fixed version (0.1.1) of the `goreleaser-ci-image`, rather than `latest` so our builds remain reproducible
 
 # 1.26.2
 ### Features
