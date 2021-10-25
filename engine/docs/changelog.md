@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgrade to Kurt Core 1.26.3, which tags testsuite containers with their type
 
 # 0.4.4
 ### Fixes
