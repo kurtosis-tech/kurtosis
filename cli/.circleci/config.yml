@@ -40,7 +40,7 @@ jobs:
             -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
             -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
             -e "CMD=bash ./scripts/build.sh" \
-            kurtosistech/kurtosis-goreleaser-ci-image
+            kurtosistech/kurtosis-goreleaser-ci-image:0.1.1
 
       # Make sure to start a Kurtosis engine server before we try to do anything with Kurtosis, and verify that status-checking works
       - run: ./scripts/launch-cli.sh engine start
