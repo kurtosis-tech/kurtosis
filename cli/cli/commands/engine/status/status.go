@@ -38,6 +38,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	status, _, maybeApiVersion, err := engineManager.GetEngineStatus(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine status")
+	}
 	prettyPrintingStatusVisitor := newPrettyPrintingEngineStatusVisitor(maybeApiVersion)
 	if err := status.Accept(prettyPrintingStatusVisitor); err != nil {
 		return stacktrace.Propagate(err, "An error occurred printing the engine status")
