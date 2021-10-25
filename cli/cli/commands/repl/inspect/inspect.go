@@ -1,4 +1,4 @@
-package install
+package inspect
 
 import (
 	"bytes"
@@ -7,48 +7,51 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	positional_arg_parser2 "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"path"
+	"sort"
 	"strings"
 )
 
 const (
 	enclaveIdArg        = "enclave-id"
 	replGuidArg         = "repl-guid"
-	packageIdentifierArg = "package-identifier"
 
 	shouldFetchStoppedContainers = false
 
-	installCmdSuccessExitCode = 0
+	listPackagesCmdExitCode = 0
+
+	installedPackagesTitleKey = "Installed Packages"
+
+	hiddenDirectoryPrefix = "."
 )
 
 var positionalArgs = []string{
 	enclaveIdArg,
 	replGuidArg,
-	packageIdentifierArg,
 }
 
-var InstallCmd = &cobra.Command{
-	Use:   command_str_consts.ReplInstallCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
+var InspectCmd = &cobra.Command{
+	Use:   command_str_consts.ReplInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Installs packages (identified by the same string as your package manager, e.g. 'web3@1.6.0' for Javascript) into the given REPL container so they'll be available in the REPL",
+	Short: "Lists detailed information about the given REPL",
 	RunE:  run,
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	parsedPositionalArgs, err := positional_arg_parser2.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
 	enclaveId := parsedPositionalArgs[enclaveIdArg]
 	replGuid := parsedPositionalArgs[replGuidArg]
-	packageIdentifier := parsedPositionalArgs[packageIdentifierArg]
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -82,41 +85,56 @@ func run(cmd *cobra.Command, args []string) error {
 	// TODO Get this from the REPL itself somehow - likely using labels!!
 	replType := repl_consts.ReplType_Javascript
 
-	packageInstallationDirpath, found := repl_consts.PackageInstallationDirpaths[replType]
+	installedPackagesDirpath, found := repl_consts.InstalledPackagesDirpath[replType]
 	if !found {
-		return stacktrace.NewError("No package installation dirpath defined for REPL type '%v' - this is a bug in Kurtosis", replType)
+		return stacktrace.NewError("No installed packages dirpath defined for REPL type '%v' - this is a bug in Kurtosis", replType)
 	}
 
 	cmdToExec := []string{
-		"sh",
-		"-c",
-		fmt.Sprintf(
-			"cd %v && npm install %v",
-			packageInstallationDirpath,
-			packageIdentifier,
-		),
+		"find",
+		installedPackagesDirpath,
+		"-type",
+		"d",
+		"-mindepth",
+		"1",
+		"-maxdepth",
+		"1",
 	}
 
-	logrus.Infof("Installing package '%v'...", packageIdentifier)
 	cmdOutputBuffer := &bytes.Buffer{}
 	exitCode, err := dockerManager.RunExecCommand(ctx, containerId, cmdToExec, cmdOutputBuffer)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred running install command '%v' on the REPL container",
+			"An error occurred running package-listing command '%v' on the REPL container",
 			strings.Join(cmdToExec, " "),
 		)
 	}
-	if exitCode != installCmdSuccessExitCode {
+	cmdOutputStr := cmdOutputBuffer.String()
+	if exitCode != listPackagesCmdExitCode {
 		return stacktrace.NewError(
-			"Install command '%v' exited with non-%v exit code '%v' and the following logs:\n%v",
+			"Package-listing command '%v' exited with non-%v exit code '%v' and the following logs:\n%v",
 			strings.Join(cmdToExec, " "),
-			installCmdSuccessExitCode,
+			listPackagesCmdExitCode,
 			exitCode,
-			cmdOutputBuffer.String(),
+			cmdOutputStr,
 		)
 	}
-	logrus.Infof("Successfully installed package '%v'; it can now be imported in the REPL", packageIdentifier)
+
+	allPackageNames := []string{}
+	for _, packageFilepath := range strings.Split(cmdOutputStr, "\n") {
+		packageName := path.Base(packageFilepath)
+		if strings.HasPrefix(packageName, hiddenDirectoryPrefix) {
+			continue
+		}
+		allPackageNames = append(allPackageNames, packageName)
+	}
+	sort.Strings(allPackageNames)
+
+	fmt.Fprintln(logrus.StandardLogger().Out, installedPackagesTitleKey+ ":")
+	for _, packageName := range allPackageNames {
+		fmt.Fprintln(logrus.StandardLogger().Out, packageName)
+	}
 
 	return nil
 }

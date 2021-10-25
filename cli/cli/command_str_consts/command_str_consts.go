@@ -25,6 +25,7 @@ const (
 	ReplCmdStr = "repl"
 		ReplInstallCmdStr = "install"
 		ReplNewCmdStr = "new"
+		ReplInspectCmdStr = "inspect"
 	SandboxCmdStr = "sandbox"
 	ServiceCmdStr = "service"
 		ServiceLogsCmdStr = "logs"

@@ -1,17 +1,13 @@
 # IMPORTANT: must match the Kurt Client Javascript SDK version
 FROM node:16.7.0-alpine
 
-WORKDIR /preinstalled-node-modules
+WORKDIR {{ .PackageInstallationDirpath }}
 
 RUN npm install kurtosis-core-api-lib@{{ .KurtosisClientVersion }}
 
 WORKDIR /repl
 
-# vvvvvvvvvvvvvvvvvvvvvvvvvv WARNING vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-# If this path changes, then the corresponding constant in the 'repl install'
-#  command must change too!
-ENV NODE_PATH="/preinstalled-node-modules/node_modules"
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^ WARNING ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ENV NODE_PATH="{{ .InstalledPackagesDirpath }}"
 
 # Even though async/await is enabled for the REPL, for some reason the code ran with "-e" can't use it so we have to use
 #  the old callback syntax to load Kurtosis (not a big deal though)
