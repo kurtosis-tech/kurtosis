@@ -56,7 +56,7 @@ func run(cmd *cobra.Command, args []string) error {
 	)
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
+	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineImage)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
 	}

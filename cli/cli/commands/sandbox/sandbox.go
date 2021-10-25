@@ -127,7 +127,7 @@ func run(cmd *cobra.Command, args []string) error {
 		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
 			EnclaveId: enclaveId,
 		}
-		if err, _ := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+		if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)
 			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
