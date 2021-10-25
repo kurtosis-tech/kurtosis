@@ -5,6 +5,8 @@
 
 package object_labels_providers
 
+import "github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+
 // TODO Move this to the CLI, which contains the testing machinery
 // This struct is responsible for providing labels to the objects used in the testing framework
 type TestsuiteExecutionObjectLabelsProvider struct {
@@ -17,5 +19,8 @@ func NewTestsuiteExecutionObjectLabelsProvider(executionId string) *TestsuiteExe
 
 
 func (provider *TestsuiteExecutionObjectLabelsProvider) ForMetadataAcquiringTestsuiteContainer() map[string]string {
-	return getLabelsForKurtosisObject()
+	labels := getLabelsForKurtosisObject()
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeTestsuiteContainer
+	labels[enclave_object_labels.TestsuiteTypeLabelKey] = enclave_object_labels.TestsuiteTypeLabelValue_MetadataAcquisition
+	return labels
 }

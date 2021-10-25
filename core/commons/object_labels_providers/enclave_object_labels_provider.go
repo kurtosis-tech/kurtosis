@@ -59,6 +59,7 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(
 func (labelsProvider *EnclaveObjectLabelsProvider) ForTestRunningTestsuiteContainer() map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeTestsuiteContainer
+	labels[enclave_object_labels.TestsuiteTypeLabelKey] = enclave_object_labels.TestsuiteTypeLabelValue_TestRunning
 	return labels
 }
 
