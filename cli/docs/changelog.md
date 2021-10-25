@@ -1,5 +1,9 @@
 # TBD
 
+# 0.5.3
+### Fixes
+* Upgrade to the `goreleaser-ci-image` 0.1.1 to publish a new Homebrew formula with a fix for the `bottle :unneeded` deprecation warning
+
 # 0.5.2
 ### Features
 * Added `enclave stop` and `enclave rm` commands
