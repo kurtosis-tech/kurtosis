@@ -105,9 +105,12 @@ func run(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		logrus.Info("Successfully removed the following %v:", phaseTitle)
-		for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-			fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+		if len(successfullyRemovedArtifactIds) > 0 {
+			logrus.Infof("Successfully removed the following %v:", phaseTitle)
+			sort.Strings(successfullyRemovedArtifactIds)
+			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
+				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+			}
 		}
 
 		if len(removalErrors) > 0 {
@@ -117,9 +120,9 @@ func run(cmd *cobra.Command, args []string) error {
 				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
 			}
 			phasesWithErrors = append(phasesWithErrors, phaseTitle)
-		} else {
-			logrus.Infof("Successfully cleaned %v", phaseTitle)
+			continue
 		}
+		logrus.Infof("Successfully cleaned %v", phaseTitle)
 	}
 
 	if len(phasesWithErrors) > 0 {
@@ -155,7 +158,7 @@ func cleanMetadataAcquisitionTestsuites(ctx context.Context, dockerManager *dock
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) ([]string, []error, error) {
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
 	}
 
 	enclaveIdsToDestroy := []string{}
@@ -166,40 +169,18 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 		}
 	}
 
-	if len(enclaveIdsToDestroy) == 0 {
-		return nil
-	}
-
 	successfullyDestroyedEnclaveIds := []string{}
-	enclaveDestructionErrorStrs := []string{}
+	enclaveDestructionErrors := []error{}
 	for _, enclaveId := range enclaveIdsToDestroy {
 		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: enclaveId}
 		if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v'", enclaveId)
-			enclaveDestructionErrorStrs = append(enclaveDestructionErrorStrs, wrappedErr.Error())
+			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
 			continue
 		}
 		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
 	}
-
-	sort.Strings(successfullyDestroyedEnclaveIds)
-	logrus.Info("Successfully removed the following enclaves:")
-	for _, enclaveId := range successfullyDestroyedEnclaveIds {
-		fmt.Fprintln(logrus.StandardLogger().Out, enclaveId)
-	}
-
-	if len(enclaveDestructionErrorStrs) > 0 {
-		errorStr := fmt.Sprintf(
-			"One or more errors occurred removing enclaves:\n%v",
-			strings.Join(
-				enclaveDestructionErrorStrs,
-				"\n\n",
-			),
-		)
-		// We don't use stacktrace here because the container stacktraces are what's important, not this stacktrace
-		return errors.New(errorStr)
-	}
-	return nil
+	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
 }
 
 func cleanContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
