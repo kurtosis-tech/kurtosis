@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added a `com.kurtosistech.testsuite-type` label, with values `metadata-acquisition` and `test-running` for distinguishing between types of testsuites
+
 ### Changes
 * Use a fixed version (0.1.1) of the `goreleaser-ci-image`, rather than `latest` so our builds remain reproducible
 
