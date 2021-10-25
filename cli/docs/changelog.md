@@ -2,6 +2,7 @@
 ### Features
 * `enclave new` prints the new enclave's ID
 * Information about how to stop or remove the enclave created by `sandbox` is printed after the REPL exits
+* Added a `clean` command, to clean up accumulated Kurtosis artifacts
 
 ### Fixes
 * Use `--image` flag in `kurtosis engine start` command, it was not being used when the engine is being executed
