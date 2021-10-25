@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added a `clean` command, to clean up accumulated Kurtosis artifacts
 
 # 0.5.3
 ### Fixes

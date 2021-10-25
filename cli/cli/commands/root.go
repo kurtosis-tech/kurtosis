@@ -6,6 +6,7 @@
 package commands
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
@@ -55,8 +56,7 @@ func init() {
 	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
-
-	// TODO Add global flag to set the CLI's log level
+	RootCmd.AddCommand(clean.CleanCmd)
 }
 
 func globalSetup(cmd *cobra.Command, args []string) error {
