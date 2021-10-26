@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* A failed `module exec` or `sandbox` stops, rather than destroys, the enclave it created
 
 # 0.5.4
 ### Features

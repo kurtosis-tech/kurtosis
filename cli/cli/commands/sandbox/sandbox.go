@@ -120,18 +120,18 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
 	enclaveInfo := response.GetEnclaveInfo()
-	shouldDestroyEnclave := true
+	shouldStopEnclave := true
 	defer func() {
-		if shouldDestroyEnclave {
-			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+		if shouldStopEnclave {
+			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 				EnclaveId: enclaveId,
 			}
-			if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
-				logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
+			if _, err := engineClient.StopEnclave(ctx, destroyEnclaveArgs); err != nil {
+				logrus.Errorf("An error occurred so we tried to stop enclave '%v' that we started, but an error was thrown:", enclaveId)
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
+				logrus.Errorf("ACTION REQUIRED: You'll need to stop enclave '%v' manually!!!!", enclaveId)
 			} else {
-				logrus.Info("Enclave removed")
+				logrus.Info("Enclave stopped")
 			}
 		}
 	}()
@@ -141,7 +141,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	// The enclave was set up successfully, so from this point on the user should be using enclave lifecycle management
 	//  tools to get rid of it
-	shouldDestroyEnclave = false
+	shouldStopEnclave = false
 	logrus.Infof("New enclave '%v' created successfully", enclaveId)
 
 	logrus.Debug("Running REPL...")
