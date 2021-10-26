@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Pull in Kurt Core 1.26.4, which no longer stops containers when the API container is exiting
 
 # 0.4.5
 ### Features
