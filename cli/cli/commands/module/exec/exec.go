@@ -140,18 +140,18 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	enclaveInfo := response.GetEnclaveInfo()
 
-	shouldDestroyEnclave := true
+	shouldStopEnclave := true
 	defer func() {
-		if shouldDestroyEnclave {
-			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+		if shouldStopEnclave {
+			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
 				EnclaveId: executionId,
 			}
-			if  _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+			if  _, err := engineClient.StopEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Errorf(
-					"The module didn't execute correctly so we tried to destroy the created enclave, but destroying the enclave threw an error:\n%v",
+					"The module didn't execute correctly so we tried to stop the created enclave, but doing so threw an error:\n%v",
 					err,
 				)
-				logrus.Errorf("ACTION NEEDED: You'll need to destroy enclave '%v' manually!!", executionId)
+				logrus.Errorf("ACTION NEEDED: You'll need to stop enclave '%v' manually!!", executionId)
 			}
 		}
 	}()
@@ -200,6 +200,6 @@ func run(cmd *cobra.Command, args []string) error {
 		executeModuleResult.SerializedResult,
 	)
 
-	shouldDestroyEnclave = false
+	shouldStopEnclave = false
 	return nil
 }
