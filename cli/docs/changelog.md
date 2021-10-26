@@ -1,5 +1,9 @@
 # TBD
 
+# 0.5.5
+### Fixes
+* A failed `module exec` or `sandbox` stops, rather than destroys, the enclave it created
+
 # 0.5.4
 ### Features
 * `enclave new` prints the new enclave's ID
