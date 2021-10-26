@@ -64,10 +64,6 @@ func (m MockServiceNetwork) GetRelativeServiceDirpath(serviceId service_network_
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) Destroy(ctx context.Context) error {
-	panic("This is unimplemented for the mock network")
-}
-
 func (m MockServiceNetwork) GetServiceIDs() map[service_network_types.ServiceID]bool {
 	panic("This is unimplemented for the mock network")
 }
