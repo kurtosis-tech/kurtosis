@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.4
 ### Features
 * `enclave new` prints the new enclave's ID
 * Information about how to stop or remove the enclave created by `sandbox` is printed after the REPL exits
