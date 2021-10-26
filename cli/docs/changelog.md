@@ -13,6 +13,7 @@
 
 ### Changes
 * The `sandbox` command no longer destroys the enclave after the REPL exits
+* Upgrade to engine server 0.4.7, where API container doesn't shut down the containers after it exits (instead relying on the engine server to do that)
 
 # 0.5.3
 ### Fixes
