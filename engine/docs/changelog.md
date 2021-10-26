@@ -1,5 +1,9 @@
 # TBD
 
+# 0.4.7
+### Changes
+* When `CreateEnclave` fails halfway through, the created API container will be killed rather than stopped (as there's no reason to wait)
+
 # 0.4.6
 ### Changes
 * Pull in Kurt Core 1.26.4, which no longer stops containers when the API container is exiting
