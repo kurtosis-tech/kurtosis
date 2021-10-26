@@ -22,7 +22,7 @@ HELP_ACTION="help"
 
 KURTOSIS_DOCKER_ORG="kurtosistech"
 API_CONTAINER_DOCKER_REPO="kurtosis-core_api"
-API_CONTAINER_VERSION="1.26.3"
+API_CONTAINER_VERSION="1.26.4"
 
 # ====================== ARG PARSING =======================================================
 show_help_and_exit() {

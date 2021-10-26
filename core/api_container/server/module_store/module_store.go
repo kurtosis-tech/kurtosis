@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"net"
-	"strings"
 	"sync"
 )
 
@@ -26,8 +25,6 @@ type moduleInfo struct {
 }
 
 type ModuleStore struct {
-	isDestroyed bool
-
 	mutex *sync.Mutex
 
 	dockerManager *docker_manager.DockerManager
@@ -40,7 +37,6 @@ type ModuleStore struct {
 
 func NewModuleStore(dockerManager *docker_manager.DockerManager, moduleLauncher *module_launcher.ModuleLauncher) *ModuleStore {
 	return &ModuleStore{
-		isDestroyed:    false,
 		mutex:          &sync.Mutex{},
 		dockerManager:  dockerManager,
 		modules:        map[module_store_types.ModuleID]moduleInfo{},
@@ -51,9 +47,6 @@ func NewModuleStore(dockerManager *docker_manager.DockerManager, moduleLauncher 
 func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_types.ModuleID, containerImage string, serializedParams string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	if store.isDestroyed {
-		return stacktrace.NewError("Cannot load module; the module store is destroyed")
-	}
 
 	if _, found := store.modules[moduleId]; found {
 		return stacktrace.NewError("Module ID '%v' already exists in the module map", moduleId)
@@ -84,9 +77,6 @@ func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_
 func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module_store_types.ModuleID) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	if store.isDestroyed {
-		return stacktrace.NewError("Cannot unload module; the module store is destroyed")
-	}
 
 	 infoForModule, found := store.modules[moduleId]
 	 if !found {
@@ -108,9 +98,6 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module_sto
 	// TODO PERF: Don't block the entire store on executing a module
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	if store.isDestroyed {
-		return "", stacktrace.NewError("Cannot execute module '%v'; the module store is destroyed", moduleId)
-	}
 
 	info, found := store.modules[moduleId]
 	if !found {
@@ -128,41 +115,12 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module_sto
 func (store *ModuleStore) GetModuleIPAddrByID(moduleId module_store_types.ModuleID) (net.IP, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	if store.isDestroyed {
-		return nil, stacktrace.NewError("Cannot get IP address for module '%v'; the module store is destroyed", moduleId)
-	}
 
 	info, found := store.modules[moduleId]
 	if !found {
 		return nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
 	}
 	return info.ipAddr, nil
-}
-
-func (store *ModuleStore) Destroy(ctx context.Context) error {
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
-	if store.isDestroyed {
-		return stacktrace.NewError("Cannot destroy the module store because it's already destroyed")
-	}
-
-	moduleKillErrorTexts := []string{}
-	for moduleId, infoForModule := range store.modules {
-		containerId := infoForModule.containerId
-		// TODO Use ContainerStop rather than Kill, to give modules the chance to do any cleanup
-		if err := store.dockerManager.KillContainer(ctx, containerId); err != nil {
-			killError := stacktrace.Propagate(err, "An error occurred killing module container '%v' while destroying the module store", moduleId)
-			moduleKillErrorTexts = append(moduleKillErrorTexts, killError.Error())
-		}
-	}
-	store.isDestroyed = true
-
-	if len(moduleKillErrorTexts) > 0 {
-		resultErrText := strings.Join(moduleKillErrorTexts, "\n\n")
-		return stacktrace.NewError("One or more error(s) occurred killing the module containers during module store destruction:\n%v", resultErrText)
-	}
-
-	return nil
 }
 
 func (store *ModuleStore) GetModules() map[module_store_types.ModuleID]bool {

@@ -28,9 +28,6 @@ import (
 const (
 	defaultPartitionId                   service_network_types.PartitionID = "default"
 	startingDefaultConnectionBlockStatus                                   = false
-
-	// We don't give any time whatsoever for services to stop when we're destroying the service network (because there's no need)
-	destructionContainerStopTimeout = 1 * time.Millisecond
 )
 
 // Information that gets created with a service's registration
@@ -437,55 +434,6 @@ func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId 
 	}
 
 	return runInfo.enclaveDataVolMntDirpath, nil
-}
-
-// Destroy all services the network is tracking, as well as make the network not usable anymore
-func (network *ServiceNetworkImpl) Destroy(ctx context.Context) error {
-
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return stacktrace.NewError("Cannot destroy service; the service network has been destroyed")
-	}
-
-	// Copy service IDs to remove to a set, since we'll be modifying all the maps of the service network
-	serviceIdsToRemove := map[service_network_types.ServiceID]bool{}
-	for serviceId := range network.serviceRegistrationInfo {
-		serviceIdsToRemove[serviceId] = true
-	}
-
-	// TODO Parallelize this to increase perf!
-	//Adding an array that holds any services that are not removed successfully
-	containerStopErrors := []error{}
-	for serviceId := range serviceIdsToRemove {
-		if err := network.removeServiceWithoutMutex(ctx, serviceId, destructionContainerStopTimeout); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing service with ID '%v'",
-				serviceId)
-			containerStopErrors = append(containerStopErrors, wrappedErr)
-		}
-	}
-
-	//Make the network unusable
-	network.isDestroyed = true
-
-	//Return the appropriate error message if needed
-	if len(containerStopErrors) > 0 {
-		errorStrs := []string{}
-		for _, err := range containerStopErrors {
-			errStr := err.Error()
-			errorStrs = append(errorStrs, errStr)
-		}
-		joinedErrStrings := strings.Join(errorStrs, "\n\n")
-		return stacktrace.NewError(
-			"One or more error(s) occurred stopping the services in the test network "+
-				"during service network destruction:\n%s",
-			joinedErrStrings)
-	}
-
-	return nil
-
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {

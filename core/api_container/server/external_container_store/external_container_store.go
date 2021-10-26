@@ -22,9 +22,8 @@ type registeredContainerInfo struct {
 }
 
 
-// Sometimes, containers not started by the API container will need to run inside the enclave
-// Since the API container controls all IPs inside the enclave, it needs to know about these containers
-//  so that it can a) give out an IP address and b) not kill the containers when it exits
+// Sometimes, containers not started by the API container will need to run inside the enclave; this is how the API container tracks those containers
+// NOTE: As of 2021-10-18, we actually don't use the stored information in any way
 type ExternalContainerStore struct {
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 	
@@ -82,18 +81,6 @@ func (store *ExternalContainerStore) FinishRegistration(registrationKey, contain
 	}
 	delete(store.openRegistrations, registrationKey)
 	return nil
-}
-
-// Returns a "set" of the registered external container IDs
-func (store *ExternalContainerStore) GetContainerIDs() map[string]bool {
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
-
-	result := map[string]bool{}
-	for containerId, _ := range store.registeredContainers {
-		result[containerId] = true
-	}
-	return result
 }
 
 // ====================================================================================================

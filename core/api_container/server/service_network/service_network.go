@@ -71,7 +71,5 @@ type ServiceNetwork interface {
 
 	GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error)
 
-	Destroy(ctx context.Context) error
-
 	GetServiceIDs() map[service_network_types.ServiceID]bool
 }
