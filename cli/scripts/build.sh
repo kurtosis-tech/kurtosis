@@ -13,9 +13,10 @@ root_dirpath="$(dirname "${script_dirpath}")"
 source "${script_dirpath}/_constants.sh"
 
 REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
-REPL_DIRNAMES_TO_BUILD=(
-    "javascript_repl_image"
-)
+
+# Mapping of ReplType (as declared in the generator Go code) -> name of directory where the REPL Dockerfile template lives
+declare -A REPL_DIRNAMES_TO_BUILD
+REPL_DIRNAMES_TO_BUILD["javascript"]="javascript_repl_image"
 
 REPL_OUTPUT_DOCKERFILE_SUFFIX=".Dockerfile"
 REPL_DOCKERFILE_GENERATOR_GORELEASER_BUILD_ID="repl-dockerfile-generator"
@@ -23,6 +24,7 @@ REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME="repl-dockerfile-generator"
 
 DEFAULT_SHOULD_PUBLISH_ARG="false"
 
+JAVASCRIPT_REPL_TYPE="javascript"
 
 
 # ==================================================================================================
@@ -81,14 +83,15 @@ if ! goreleaser build --rm-dist --snapshot --id "${REPL_DOCKERFILE_GENERATOR_BIN
     exit 1
 fi
 repl_dockerfile_generator_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}"
-for repl_dirname in "${REPL_DIRNAMES_TO_BUILD[@]}"; do
+for repl_type in "${!REPL_DIRNAMES_TO_BUILD[@]}"; do
+    repl_dirname="${REPL_DIRNAMES_TO_BUILD["${repl_type}"]}"
     repl_dockerfile_template_filepath="${root_dirpath}/${repl_dirname}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"
     if ! [ -f "${repl_dockerfile_template_filepath}" ]; then
         echo "Error: Tried to generate Dockerfile for REPL '${repl_dirname}' but no template file was found at path '${repl_dockerfile_template_filepath}'" >&2
         exit 1
     fi
     output_filepath="${build_dirpath}/${repl_dirname}${REPL_OUTPUT_DOCKERFILE_SUFFIX}"
-    if ! "${repl_dockerfile_generator_binary_filepath}" "${repl_dockerfile_template_filepath}" "${output_filepath}"; then
+    if ! "${repl_dockerfile_generator_binary_filepath}" "${repl_dockerfile_template_filepath}" "${output_filepath}" "${repl_type}"; then
         echo "Error: An error occurred rendering template for REPL '${repl_dirname}' at path '${repl_dockerfile_template_filepath}' to output filepath '${output_filepath}'" >&2
         exit 1
     fi

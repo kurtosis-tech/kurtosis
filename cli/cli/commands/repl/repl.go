@@ -7,6 +7,7 @@ package repl
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl/inspect"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl/install"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl/new"
 	"github.com/spf13/cobra"
@@ -21,4 +22,5 @@ var REPLCmd = &cobra.Command{
 func init() {
 	REPLCmd.AddCommand(new.NewCmd)
 	REPLCmd.AddCommand(install.InstallCmd)
+	REPLCmd.AddCommand(inspect.InspectCmd)
 }
