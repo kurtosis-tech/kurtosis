@@ -1,5 +1,9 @@
 # TBD
 
+# 0.4.6
+### Changes
+* Pull in Kurt Core 1.26.4, which no longer stops containers when the API container is exiting
+
 # 0.4.5
 ### Features
 * Upgrade to Kurt Core 1.26.3, which tags testsuite containers with their type
