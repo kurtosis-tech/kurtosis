@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* When `CreateEnclave` fails halfway through, the created API container will be killed rather than stopped (as there's no reason to wait)
 
 # 0.4.6
 ### Changes

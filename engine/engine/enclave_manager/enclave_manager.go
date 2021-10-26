@@ -21,13 +21,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 const (
-	// The API container is responsible for disconnecting/stopping everything in its network when stopped, so we need
-	//  to give it some time to do so
-	apiContainerStopTimeout = 3 * time.Minute
-
 	// This is set in the API container Dockerfile
 	availabilityWaiterBinaryFilepath = "/run/api-container-availability-waiter"
 
@@ -187,8 +182,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	shouldStopApiContainer := true
 	defer func() {
 		if shouldStopApiContainer {
-			if err := manager.dockerManager.StopContainer(teardownCtx, apiContainerId, apiContainerStopTimeout); err != nil {
-				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to stop the API container but an error was thrown:")
+			if err := manager.dockerManager.KillContainer(teardownCtx, apiContainerId); err != nil {
+				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to kill the API container but an error was thrown:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop API container with ID '%v'", apiContainerId)
 			}
