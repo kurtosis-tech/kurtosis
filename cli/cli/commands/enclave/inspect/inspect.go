@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/positional_arg_parser"
+	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"

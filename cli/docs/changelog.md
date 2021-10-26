@@ -1,5 +1,22 @@
 # TBD
 
+# 0.5.4
+### Features
+* `enclave new` prints the new enclave's ID
+* Information about how to stop or remove the enclave created by `sandbox` is printed after the REPL exits
+* Added a `clean` command, to clean up accumulated Kurtosis artifacts
+* Added a `repl inspect` command to list installed packages on the REPL
+
+### Fixes
+* Use `--image` flag in `kurtosis engine start` command, it was not being used when the engine is being executed
+* Fix the returning values order when `DestroyEnclave` method is called in `kurtosis sandbox` command
+* Fixed a bug where `engine status` wouldn't check the error value from getting the engine status object
+* The Javascript REPL's module installation paths in the Dockerfile are now filled from Go code constants (rather than being hardcoded)
+
+### Changes
+* The `sandbox` command no longer destroys the enclave after the REPL exits
+* Upgrade to engine server 0.4.7, where API container doesn't shut down the containers after it exits (instead relying on the engine server to do that)
+
 # 0.5.3
 ### Fixes
 * Upgrade to the `goreleaser-ci-image` 0.1.1 to publish a new Homebrew formula with a fix for the `bottle :unneeded` deprecation warning

@@ -9,6 +9,7 @@ import (
 //  commands they need to run
 var KurtosisCmdStr = path.Base(os.Args[0])
 const (
+	CleanCmdStr = "clean"
 	EnclaveCmdStr = "enclave"
 		EnclaveInspectCmdStr = "inspect"
 		EnclaveLsCmdStr = "ls"
@@ -24,6 +25,7 @@ const (
 	ReplCmdStr = "repl"
 		ReplInstallCmdStr = "install"
 		ReplNewCmdStr = "new"
+		ReplInspectCmdStr = "inspect"
 	SandboxCmdStr = "sandbox"
 	ServiceCmdStr = "service"
 		ServiceLogsCmdStr = "logs"

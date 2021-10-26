@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/kurtosis_api_version_const"
 	"github.com/palantir/stacktrace"
 	"os"
@@ -9,8 +11,24 @@ import (
 	"text/template"
 )
 
+const (
+	binaryFilepathArg = "binary-filepath"
+	dockerfileTemplateFilepathArg = "dockerfile-template"
+	outputFilepathArg = "output-filepath"
+	replTypeArg = "repl-type"
+)
+var positionalArgs = []string{
+	binaryFilepathArg,
+	dockerfileTemplateFilepathArg,
+	outputFilepathArg,
+	replTypeArg,
+}
+
+
 type TemplateData struct {
-	KurtosisClientVersion string
+	KurtosisClientVersion      string
+	PackageInstallationDirpath string
+	InstalledPackagesDirpath   string
 }
 
 // This is a tiny Go script that uses the Kurtosis client version exposed in Go code to generate
@@ -24,15 +42,19 @@ func main() {
 	os.Exit(0)
 }
 
-func runMain() error {
-	// 3, because arg 0 is the filepath of the binary
-	if len(os.Args) != 3 {
-		return stacktrace.NewError("Expected exactly two args 1) path to the Dockerfile template 2) output filepath")
-	}
-	templateFilepath := os.Args[1]
-	outputFilepath := os.Args[2]
 
-	// For some reason, the template name has to match teh basename of the file:
+
+
+func runMain() error {
+	parsedArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, os.Args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+	}
+	templateFilepath := parsedArgs[dockerfileTemplateFilepathArg]
+	outputFilepath := parsedArgs[outputFilepathArg]
+	replType := repl_consts.ReplType(parsedArgs[replTypeArg])
+
+	// For some reason, the template name has to match the basename of the file:
 	//  https://stackoverflow.com/questions/49043292/error-template-is-an-incomplete-or-empty-template
 	templateFilename := path.Base(templateFilepath)
 	tmpl, err := template.New(templateFilename).ParseFiles(templateFilepath)
@@ -40,8 +62,19 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred parsing the template '%v'", templateFilepath)
 	}
 
+	packageInstallationDirpath, found := repl_consts.PackageInstallationDirpaths[replType]
+	if !found {
+		return stacktrace.NewError("No package installation dirpath defined for REPL type '%v'", replType)
+	}
+	installedPackagesDirpath, found := repl_consts.InstalledPackagesDirpath[replType]
+	if !found {
+		return stacktrace.NewError("No installed packages dirpath defined for REPL type '%v'", replType)
+	}
+
 	data := TemplateData{
-		KurtosisClientVersion: kurtosis_api_version_const.KurtosisApiVersion,
+		KurtosisClientVersion:      kurtosis_api_version_const.KurtosisApiVersion,
+		PackageInstallationDirpath: packageInstallationDirpath,
+		InstalledPackagesDirpath:   installedPackagesDirpath,
 	}
 
 	fp, err := os.Create(outputFilepath)

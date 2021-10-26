@@ -107,6 +107,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer closeClientFunc()
 
+	logrus.Info("Creating new enclave...")
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId: enclaveId,
 		ApiContainerImage: apiContainerImage,
@@ -114,32 +115,34 @@ func run(cmd *cobra.Command, args []string) error {
 		IsPartitioningEnabled: isPartitioningEnabled,
 		ShouldPublishAllPorts: shouldPublishPorts,
 	}
-
 	response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
 	enclaveInfo := response.GetEnclaveInfo()
-
+	shouldDestroyEnclave := true
 	defer func() {
-		// Ensure we don't leak enclaves
-		logrus.Info("Removing enclave...")
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
-			EnclaveId: enclaveId,
-		}
-		if err, _ := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
-			logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
-			fmt.Fprintln(logrus.StandardLogger().Out, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
-		} else {
-			logrus.Info("Enclave removed")
+		if shouldDestroyEnclave {
+			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{
+				EnclaveId: enclaveId,
+			}
+			if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
+				logrus.Errorf("An error occurred destroying enclave '%v' that the interactive environment was connected to:", enclaveId)
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to clean this up manually!!!!")
+			} else {
+				logrus.Info("Enclave removed")
+			}
 		}
 	}()
-
 	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "Cannot create sandbox; an error occurred verifying enclave liveness")
 	}
+	// The enclave was set up successfully, so from this point on the user should be using enclave lifecycle management
+	//  tools to get rid of it
+	shouldDestroyEnclave = false
+	logrus.Infof("New enclave '%v' created successfully", enclaveId)
 
 	logrus.Debug("Running REPL...")
 	if err := repl_runner.RunREPL(
@@ -154,6 +157,14 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred running the REPL container")
 	}
 	logrus.Debug("REPL exited")
+	logrus.Infof(
+		"NOTE: Enclave '%v' will be left running until stopped by running '%v %v %v %v'",
+		enclaveId,
+		command_str_consts.KurtosisCmdStr,
+		command_str_consts.EnclaveCmdStr,
+		command_str_consts.EnclaveStopCmdStr,
+		enclaveId,
+	)
 
 	return nil
 }
