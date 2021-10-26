@@ -29,7 +29,8 @@ type UserServiceLauncher struct {
 	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
-	
+
+	// TODO Always publish user service ports, to simplify
 	shouldPublishPorts bool
 
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
@@ -67,6 +68,15 @@ func (launcher UserServiceLauncher) Launch(
 	usedArtifactIdSet := map[string]bool{}
 	for artifactId := range filesArtifactIdsToMountpoints {
 		usedArtifactIdSet[artifactId] = true
+	}
+
+	usedPortsWithPublishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
+	for port := range usedPorts {
+		publishSpec := docker_manager.NewNoPublishingSpec()
+		if launcher.shouldPublishPorts {
+			publishSpec = docker_manager.NewAutomaticPublishingSpec()
+		}
+		usedPortsWithPublishSpecs[port] = publishSpec
 	}
 
 	// First expand the files artifacts into volumes, so that any errors get caught early
@@ -108,9 +118,7 @@ func (launcher UserServiceLauncher) Launch(
 	).WithStaticIP(
 		ipAddr,
 	).WithUsedPorts(
-		usedPorts,
-	).ShouldPublishAllPorts(
-		launcher.shouldPublishPorts,
+		usedPortsWithPublishSpecs,
 	).WithEntrypointArgs(
 		entrypointArgs,
 	).WithCmdArgs(

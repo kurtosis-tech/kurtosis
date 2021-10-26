@@ -5,6 +5,38 @@
 ### Removals
 * Removed `ContainerOwnIDFinder` as it's no longer needed now that the API container no longer shuts down any other containers upon shutdown
 
+# 1.26.3
+### Features
+* Added a `com.kurtosistech.testsuite-type` label, with values `metadata-acquisition` and `test-running` for distinguishing between types of testsuites
+
+### Changes
+* Use a fixed version (0.1.1) of the `goreleaser-ci-image`, rather than `latest` so our builds remain reproducible
+
+# 1.26.2
+### Features
+* Added functions to the enclave object labels provider for enclave network, enclave data volume, files artifact expander container, and files artifact expansion volume
+
+# 1.26.1
+### Features
+* Added labelling functions for testsuite containers (both metadata-providing & test-running)
+
+# 1.26.0
+### Features
+* Label the API container with a  as well, so we can programmatically get its host machine port bindings
+
+### Breaking Changes
+* Renamed the `APIContainerPortLabel` to `APIContainerPortNumLabel`
+* Changed the value of the label to `api-container-port-number` (was `api-container-port`)
+* The `EnclaveObjectLabelsProvider.ForAPIContainer` no longer takes in API container port number, and instead uses the constants from `core-api-lib`
+
+# 1.25.3
+### Features
+* Upgraded to `container-engine-lib` 0.8.1, which allows labelling of volumes & networks, and search for volumes & networks by labels
+
+# 1.25.2
+### Features
+* Upgrade to `container-engine-lib` 0.7.0, which refactors the container-starting API to allow for fixed host machine ports
+
 # 1.25.1
 ### Features
 * All enclave containers get a `com.kurtosistech.app-id` = `kurtosis` label, so that we can easily filter for only Kurtosis objects

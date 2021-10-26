@@ -7,6 +7,7 @@ package object_labels_providers
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
@@ -21,11 +22,35 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 	return &EnclaveObjectLabelsProvider{enclaveId: enclaveId}
 }
 
-func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerIPAddress net.IP, apiContainerListenPort uint16) map[string]string {
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
+//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  2) the user upgrades their CLI, and restarts with the new engine
+//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveNetwork() map[string]string {
+	return labelsProvider.getLabelsForEnclaveObject()
+}
+
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
+//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  2) the user upgrades their CLI, and restarts with the new engine
+//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveDataVolume() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
+	return labels
+}
+
+func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(
+	ipAddr net.IP,
+) map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeAPIContainer
-	labels[enclave_object_labels.APIContainerIPLabel] = apiContainerIPAddress.String()
-	labels[enclave_object_labels.APIContainerPortLabel] = fmt.Sprintf("%v",  apiContainerListenPort)
+	labels[enclave_object_labels.APIContainerIPLabel] = ipAddr.String()
+	labels[enclave_object_labels.APIContainerPortNumLabel] = fmt.Sprintf("%v", kurtosis_core_rpc_api_consts.ListenPort)
+	labels[enclave_object_labels.APIContainerPortProtocolLabel] = kurtosis_core_rpc_api_consts.ListenProtocol
 	return labels
 }
 
@@ -34,6 +59,7 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(apiContainerI
 func (labelsProvider *EnclaveObjectLabelsProvider) ForTestRunningTestsuiteContainer() map[string]string {
 	labels := labelsProvider.getLabelsForEnclaveObject()
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeTestsuiteContainer
+	labels[enclave_object_labels.TestsuiteTypeLabelKey] = enclave_object_labels.TestsuiteTypeLabelValue_TestRunning
 	return labels
 }
 
@@ -62,9 +88,19 @@ func (labelsProvider *EnclaveObjectLabelsProvider) ForInteractiveREPLContainer(i
 	return labels
 }
 
+func (labelsProvider *EnclaveObjectLabelsProvider) ForFilesArtifactExpanderContainer() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
+	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeFilesArtifactExpander
+	return labels
+}
+
+func (labelsProvider *EnclaveObjectLabelsProvider) ForFilesArtifactExpansionVolume() map[string]string {
+	labels := labelsProvider.getLabelsForEnclaveObject()
+	return labels
+}
+
 func (labelsProvider *EnclaveObjectLabelsProvider) getLabelsForEnclaveObject() map[string]string {
-	labels := map[string]string{}
-	labels[enclave_object_labels.AppIDLabel] = enclave_object_labels.AppIDValue
+	labels := getLabelsForKurtosisObject()
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = labelsProvider.enclaveId
 	return labels
 }

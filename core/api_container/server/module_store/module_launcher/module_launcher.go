@@ -44,6 +44,7 @@ type ModuleLauncher struct {
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
+	// TODO Publish module ports always, to simplify
 	shouldPublishPorts bool
 
 	dockerNetworkId string
@@ -71,8 +72,12 @@ func (launcher ModuleLauncher) Launch(
 			kurtosis_module_rpc_api_consts.ListenPort,
 		)
 	}
-	usedPorts := map[nat.Port]bool {
-		portObj: true,
+	portPublishSpec := docker_manager.NewNoPublishingSpec()
+	if launcher.shouldPublishPorts {
+		portPublishSpec = docker_manager.NewAutomaticPublishingSpec()
+	}
+	usedPorts := map[nat.Port]docker_manager.PortPublishSpec {
+		portObj: portPublishSpec,
 	}
 
 	ipAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
@@ -105,8 +110,6 @@ func (launcher ModuleLauncher) Launch(
 		ipAddr,
 	).WithUsedPorts(
 		usedPorts,
-	).ShouldPublishAllPorts(
-		launcher.shouldPublishPorts,
 	).WithEnvironmentVariables(
 		envVars,
 	).WithVolumeMounts(

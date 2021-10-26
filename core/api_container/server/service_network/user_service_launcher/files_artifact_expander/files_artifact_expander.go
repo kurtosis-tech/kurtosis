@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"path"
@@ -42,6 +43,8 @@ type FilesArtifactExpander struct {
 
 	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
+	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+
 	testNetworkId string
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
@@ -49,14 +52,15 @@ type FilesArtifactExpander struct {
 	filesArtifactCache *enclave_data_volume.FilesArtifactCache
 }
 
-func NewFilesArtifactExpander(enclaveDataVolName string, dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_volume.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataVolName: enclaveDataVolName, dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataVolName string, dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_volume.FilesArtifactCache) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataVolName: enclaveDataVolName, dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		ctx context.Context,
 		serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-		artifactIdsToExpand map[string]bool) (map[string]string, error) {
+		artifactIdsToExpand map[string]bool,
+) (map[string]string, error) {
 	artifactIdsToVolNames := map[string]string{}
 	for artifactId := range artifactIdsToExpand {
 		destVolName := expander.enclaveObjNameProvider.ForFilesArtifactExpansionVolume(serviceGUID, artifactId)
@@ -70,7 +74,8 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
 		}
 
-		if err := expander.dockerManager.CreateVolume(ctx, destVolName); err != nil {
+		volumeLabels := expander.enclaveObjLabelsProvider.ForFilesArtifactExpansionVolume()
+		if err := expander.dockerManager.CreateVolume(ctx, destVolName, volumeLabels); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", destVolName)
 		}
 
@@ -88,7 +93,8 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		}
 
 		containerName := expander.enclaveObjNameProvider.ForFilesArtifactExpanderContainer(serviceGUID, artifactId)
-		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts); err != nil {
+		containerLabels := expander.enclaveObjLabelsProvider.ForFilesArtifactExpanderContainer()
+		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts, containerLabels); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running the expander container")
 		}
 	}
@@ -105,7 +111,9 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		ctx context.Context,
 		containerName string,
 		containerCmd []string,
-		volumeMounts map[string]string) error {
+		volumeMounts map[string]string,
+		labels map[string]string,
+) error {
 	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a container
 	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
 	//  subnet to fit all _their_ services, but we hit the limit because we have these admin containers too
@@ -126,6 +134,8 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		containerCmd,
 	).WithVolumeMounts(
 		volumeMounts,
+	).WithLabels(
+		labels,
 	).Build()
 	containerId, _, err := expander.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

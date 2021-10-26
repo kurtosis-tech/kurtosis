@@ -7,7 +7,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211007193409-610c9d2e2a45
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc
 	github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211014234818-e876c11fa02e
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
