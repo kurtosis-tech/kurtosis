@@ -1,4 +1,4 @@
-package v0
+package api_container_launcher
 
 import (
 	"github.com/palantir/stacktrace"
@@ -11,7 +11,7 @@ const (
 )
 
 // Fields are public for JSON de/serialization
-type V0LaunchAPIArgs struct {
+type APIContainerArgs struct {
 	// The name of the API container itself (will be used to get its own container ID)
 	ContainerName			 string	`json:"containerName"`
 
@@ -41,12 +41,12 @@ type V0LaunchAPIArgs struct {
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
-func newV0LaunchAPIArgs(containerName string, containerLabels map[string]string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) *V0LaunchAPIArgs {
-	return &V0LaunchAPIArgs{ContainerName: containerName, ContainerLabels: containerLabels, LogLevel: logLevel, EnclaveId: enclaveId, NetworkId: networkId, SubnetMask: subnetMask, ApiContainerIpAddr: apiContainerIpAddr, TakenIpAddrs: takenIpAddrs, IsPartitioningEnabled: isPartitioningEnabled, ShouldPublishPorts: shouldPublishPorts, EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func newAPIContainerArgs(containerName string, containerLabels map[string]string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) *V0LaunchAPIArgs {
+	return &APIContainerArgs{ContainerName: containerName, ContainerLabels: containerLabels, LogLevel: logLevel, EnclaveId: enclaveId, NetworkId: networkId, SubnetMask: subnetMask, ApiContainerIpAddr: apiContainerIpAddr, TakenIpAddrs: takenIpAddrs, IsPartitioningEnabled: isPartitioningEnabled, ShouldPublishPorts: shouldPublishPorts, EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 
-func (args V0LaunchAPIArgs) Validate() error {
+func (args APIContainerArgs) Validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()

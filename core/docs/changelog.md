@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* The API container now assumes the enclave data volume is a directory on the Docker host machine, and bind-mounts it to the containers it starts rather than via volume-mounts
 
 # 1.26.4
 ### Changes

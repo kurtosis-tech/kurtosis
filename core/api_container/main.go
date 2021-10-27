@@ -88,7 +88,7 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
+	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataDirMountpoint)
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {

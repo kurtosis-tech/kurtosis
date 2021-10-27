@@ -1,8 +1,12 @@
-package api_container_starter
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
+package api_container_launcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
@@ -16,21 +20,53 @@ const (
 	dockerSocket = "/var/run/docker.sock"
 )
 
-// This is a helper function that should be usable by ALL launcher versions, because the parameters are very unlikely
-//  to change now or ever
-func StartAPIContainer(
-		ctx context.Context,
-		dockerManager *docker_manager.DockerManager,
-		containerImage string,
-		containerName string,
-		containerLabels map[string]string,
-		listenPort uint,
-		listenProtocol string,
-		networkId string,
-		ipAddr net.IP,
-		enclaveDataVolName string,
-		args APIContainerArgs,
-) (string, *nat.PortBinding, error) {
+type APIContainerLauncher struct {
+	dockerManager *docker_manager.DockerManager
+	log *logrus.Logger
+	containerImage string
+	containerLabels map[string]string
+	listenPort uint
+	listenProtocol string
+	logLevel logrus.Level
+}
+
+// TODO constructor
+
+func (launcher *APIContainerLauncher) Launch(
+	ctx context.Context,
+	containerName string,
+	containerLabels map[string]string,
+	enclaveId string,
+	networkId string,
+	subnetMask string,
+	gatewayIpAddr net.IP,
+	apiContainerIpAddr net.IP,
+	otherTakenIpAddrsInEnclave []net.IP,
+	isPartitioningEnabled bool,
+	shouldPublishAllPorts bool,
+	enclaveDataDirpathOnHostMachine string,
+) (string, *nat.PortBinding, error){
+
+	takenIpAddrsStrs := []string{}
+	for _, takenIpAddr := range otherTakenIpAddrsInEnclave {
+		
+	}
+
+	args := newAPIContainerArgs(
+		containerName,
+		containerLabels,
+		launcher.logLevel.String(),
+		enclaveId,
+		networkId,
+		subnetMask,
+		apiContainerIpAddr.String(),
+		otherTakenIpAddrsInEnclave,
+		isPartitioningEnabled,
+		shouldPublishAllPorts,
+		enclaveDataDirpathOnHostMachine,
+	)
+
+	newApiContainer
 	if err := args.Validate(); err != nil {
 		return "", nil, stacktrace.Propagate(err, "Can't start API container because args didn't pass validation")
 	}
@@ -61,7 +97,7 @@ func StartAPIContainer(
 		containerName,
 		networkId,
 	).WithStaticIP(
-		ipAddr,
+		apiContainerIpAddr,
 	).WithUsedPorts(
 		usedPorts,
 	).WithEnvironmentVariables(
