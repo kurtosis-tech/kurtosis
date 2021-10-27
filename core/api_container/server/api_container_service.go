@@ -264,7 +264,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 
 	serviceID := service_network_types.ServiceID(args.ServiceId)
-	enclaveDataVolMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataDirMntDirpath(serviceID)
+	enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataDirMntDirpath(serviceID)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -282,9 +282,9 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 
 	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr:                        serviceIP.String(),
-		EnclaveDataDirMountDirpath: enclaveDataVolMntDirpath,
-		RelativeServiceDirpath: relativeServiceDirpath,
+		IpAddr:                     serviceIP.String(),
+		EnclaveDataDirMountDirpath: enclaveDataDirMntDirpath,
+		RelativeServiceDirpath:     relativeServiceDirpath,
 	}
 	return serviceInfoResponse, nil
 }
