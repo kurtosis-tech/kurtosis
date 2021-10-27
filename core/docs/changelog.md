@@ -1,5 +1,14 @@
 # TBD
 
+# 1.27.0
+### Changes
+* The API container now assumes the enclave data volume is a directory on the Docker host machine, and bind-mounts it to the containers it starts rather than via volume-mounts
+* Swapped the overly-complex `V0LaunchArgs` back to the old way, of a simple `APIContainerLauncher`
+* Upgrade to module API lib to 0.11.1, which supports bind-mounted enclave data volumes
+
+### Breaking Changes
+* Upgraded to Kurt Client v0.20.0, which renames several object properties
+
 # 1.26.4
 ### Changes
 * The API container will no longer stop anything inside its enclave when it shuts down as this role of cleaning up enclaves is being pushed to the enclave manager, though it still can stop containers when requested

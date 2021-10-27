@@ -49,7 +49,7 @@ type ServiceNetwork interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataVolMntDirpath string,
+		enclaveDataDirMountDirpath string,
 		filesArtifactMountDirpaths map[string]string,
 	) (map[nat.Port]*nat.PortBinding, error)
 
@@ -67,7 +67,7 @@ type ServiceNetwork interface {
 
 	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
 
-	GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error)
+	GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error)
 
 	GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error)
 

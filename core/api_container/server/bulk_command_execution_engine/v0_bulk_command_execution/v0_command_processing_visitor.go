@@ -317,11 +317,11 @@ func (visitor *v0CommandProcessingVisitor) doServiceIdToIpReplacementOnStartServ
 	}
 	ipReplacedArgs.FilesArtifactMountDirpaths = replacedFilesArtifactMountDirpaths
 
-	replacedEnclaveDataVolMntDirpath, err := visitor.ipReplacer.ReplaceStr(args.EnclaveDataVolMntDirpath)
+	replacedEnclaveDataDirMntDirpath, err := visitor.ipReplacer.ReplaceStr(args.EnclaveDataDirMntDirpath)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs for the enclave data volume mount dirpath")
+		return nil, stacktrace.Propagate(err, "An error occurred replacing service IDs with IPs for the enclave data dir mount dirpath")
 	}
-	ipReplacedArgs.EnclaveDataVolMntDirpath = replacedEnclaveDataVolMntDirpath
+	ipReplacedArgs.EnclaveDataDirMntDirpath = replacedEnclaveDataDirMntDirpath
 
 	return ipReplacedArgs, nil
 }

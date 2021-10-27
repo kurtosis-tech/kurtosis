@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"bufio"
@@ -23,9 +23,9 @@ type FilesArtifactCache struct {
 	underlying *FileCache
 }
 
-func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *FilesArtifactCache {
+func newFilesArtifactCache(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactCache {
 	return &FilesArtifactCache{
-		underlying: newFileCache(absoluteDirpath, dirpathRelativeToVolRoot),
+		underlying: newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}
 }
 
@@ -53,7 +53,7 @@ func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url str
 }
 
 // Gets the artifact with the given URL, or throws an error if it doesn't exist
-func (cache FilesArtifactCache) GetFilesArtifact(artifactId string) (*EnclaveDataVolFile, error) {
+func (cache FilesArtifactCache) GetFilesArtifact(artifactId string) (*EnclaveDataDirFile, error) {
 	result, err := cache.underlying.GetFile(artifactId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact with ID '%v' from the cache", artifactId)

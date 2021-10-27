@@ -19,7 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -41,7 +41,7 @@ type ApiContainerService struct {
 	// This embedding is required by gRPC
 	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
 
-	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	externalContainerStore *external_container_store.ExternalContainerStore
 
@@ -53,13 +53,13 @@ type ApiContainerService struct {
 }
 
 func NewApiContainerService(
-	enclaveDirectory *enclave_data_volume.EnclaveDataVolume,
+	enclaveDirectory *enclave_data_directory.EnclaveDataDirectory,
 	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
-		enclaveDataVolume:      enclaveDirectory,
+		enclaveDataDir:         enclaveDirectory,
 		externalContainerStore: externalContainerStore,
 		serviceNetwork:         serviceNetwork,
 		moduleStore:            moduleStore,
@@ -139,7 +139,7 @@ func (service ApiContainerService) GetModuleInfo(ctx context.Context, args *kurt
 }
 
 func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterFilesArtifactsArgs) (*emptypb.Empty, error) {
-	filesArtifactCache, err := service.enclaveDataVolume.GetFilesArtifactCache()
+	filesArtifactCache, err := service.enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
@@ -208,7 +208,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
-		args.EnclaveDataVolMntDirpath,
+		args.EnclaveDataDirMntDirpath,
 		args.FilesArtifactMountDirpaths)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
@@ -256,26 +256,35 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get the service IP address by service ID: '%v'",
-			args.ServiceId)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the service IP address by service ID '%v'",
+			args.ServiceId,
+		)
 	}
 
 	serviceID := service_network_types.ServiceID(args.ServiceId)
-	enclaveDataVolMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataVolMntDirpath(serviceID)
+	enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataDirMntDirpath(serviceID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get service enclave data volume directory path by service ID: '%v'",
-			serviceID)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the dirpath where the enclave data directory is mounted on service with ID '%v'",
+			serviceID,
+		)
 	}
 	relativeServiceDirpath, err := service.serviceNetwork.GetRelativeServiceDirpath(serviceID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to get relative service directory path by service ID: '%v'",
-			serviceID)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred when trying to get the service dirpath relative to the enclave data root for service ID: '%v'",
+			serviceID,
+		)
 	}
 
 	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr:                        serviceIP.String(),
-		EnclaveDataVolumeMountDirpath: enclaveDataVolMntDirpath,
-		RelativeServiceDirpath: relativeServiceDirpath,
+		IpAddr:                     serviceIP.String(),
+		EnclaveDataDirMountDirpath: enclaveDataDirMntDirpath,
+		RelativeServiceDirpath:     relativeServiceDirpath,
 	}
 	return serviceInfoResponse, nil
 }
