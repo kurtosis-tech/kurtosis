@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -19,7 +19,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	testServiceGUID := service_network_types.ServiceGUID("test-service")
 	svcDir, err := enclaveDir.GetServiceDirectory(testServiceGUID)
@@ -51,7 +51,7 @@ func TestGetArtifactCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	artifactCache, err := enclaveDir.GetFilesArtifactCache()
 	assert.Nil(t, err)
@@ -70,7 +70,7 @@ func TestGetStaticFileCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	staticFileCache, err := enclaveDir.GetStaticFileCache()
 	assert.Nil(t, err)

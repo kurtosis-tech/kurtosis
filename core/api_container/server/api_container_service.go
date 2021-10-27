@@ -19,7 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -41,7 +41,7 @@ type ApiContainerService struct {
 	// This embedding is required by gRPC
 	kurtosis_core_rpc_api_bindings.UnimplementedApiContainerServiceServer
 
-	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
+	enclaveDataVolume *enclave_data_directory.EnclaveDataDirectory
 
 	externalContainerStore *external_container_store.ExternalContainerStore
 
@@ -53,7 +53,7 @@ type ApiContainerService struct {
 }
 
 func NewApiContainerService(
-	enclaveDirectory *enclave_data_volume.EnclaveDataVolume,
+	enclaveDirectory *enclave_data_directory.EnclaveDataDirectory,
 	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,

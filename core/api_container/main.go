@@ -22,7 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -88,7 +88,7 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataDirMountpoint)
+	enclaveDataVol := enclave_data_directory.NewEnclaveDataDirectory(api_container_docker_consts.EnclaveDataDirMountpoint)
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
 	if err != nil {
@@ -138,7 +138,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 
 func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
-		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
+		enclaveDataVol *enclave_data_directory.EnclaveDataDirectory,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId

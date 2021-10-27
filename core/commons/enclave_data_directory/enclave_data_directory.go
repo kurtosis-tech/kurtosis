@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -24,16 +24,16 @@ const (
 
 // A directory containing all the data associated with a certain enclave (i.e. a Docker subnetwork where services are spun up)
 // An enclave is created either per-test (in the testing framework) or per interactive instance (with Kurtosis Interactive)
-type EnclaveDataVolume struct {
+type EnclaveDataDirectory struct {
 	absMountDirpath string
 }
 
-func NewEnclaveDataVolume(absMountDirpath string) *EnclaveDataVolume {
-	return &EnclaveDataVolume{absMountDirpath: absMountDirpath}
+func NewEnclaveDataDirectory(absMountDirpath string) *EnclaveDataDirectory {
+	return &EnclaveDataDirectory{absMountDirpath: absMountDirpath}
 }
 
 
-func (volume EnclaveDataVolume) GetFilesArtifactCache() (*FilesArtifactCache, error) {
+func (volume EnclaveDataDirectory) GetFilesArtifactCache() (*FilesArtifactCache, error) {
 	relativeDirpath := artifactCacheDirname
 	absoluteDirpath := path.Join(volume.absMountDirpath, artifactCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
@@ -43,7 +43,7 @@ func (volume EnclaveDataVolume) GetFilesArtifactCache() (*FilesArtifactCache, er
 	return newFilesArtifactCache(absoluteDirpath, relativeDirpath), nil
 }
 
-func (volume EnclaveDataVolume) GetStaticFileCache() (*StaticFileCache, error) {
+func (volume EnclaveDataDirectory) GetStaticFileCache() (*StaticFileCache, error) {
 	relativeDirpath := staticFileCacheDirname
 	absoluteDirpath := path.Join(volume.absMountDirpath, staticFileCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
@@ -53,7 +53,7 @@ func (volume EnclaveDataVolume) GetStaticFileCache() (*StaticFileCache, error) {
 }
 
 // Get the unique service directory for a service with the given service GUID
-func (volume EnclaveDataVolume) GetServiceDirectory(serviceGUID service_network_types.ServiceGUID) (*ServiceDirectory, error) {
+func (volume EnclaveDataDirectory) GetServiceDirectory(serviceGUID service_network_types.ServiceGUID) (*ServiceDirectory, error) {
 	allServicesRelativeDirpath := allServicesDirname
 	allServicesAbsoluteDirpath := path.Join(volume.absMountDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {

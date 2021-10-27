@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -18,7 +18,7 @@ func TestGetFile(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	serviceGUID := service_network_types.ServiceGUID("someService")
 

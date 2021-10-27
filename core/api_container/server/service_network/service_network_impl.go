@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -34,7 +34,7 @@ const (
 type serviceRegistrationInfo struct {
 	serviceGUID      service_network_types.ServiceGUID
 	ipAddr           net.IP
-	serviceDirectory *enclave_data_volume.ServiceDirectory
+	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
 
 // Information that gets created when a container is started for a service
@@ -67,7 +67,7 @@ type ServiceNetworkImpl struct {
 
 	dockerNetworkId string
 
-	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
+	enclaveDataVolume *enclave_data_directory.EnclaveDataDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -88,7 +88,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		dockerNetworkId string,
-		enclaveDataVolume *enclave_data_volume.EnclaveDataVolume,
+		enclaveDataVolume *enclave_data_directory.EnclaveDataDirectory,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}

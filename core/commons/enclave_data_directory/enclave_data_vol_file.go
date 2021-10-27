@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 // Represents a file inside the enclave data volume
 type EnclaveDataVolFile struct {
