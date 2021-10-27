@@ -35,12 +35,13 @@ type UserServiceLauncher struct {
 
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 
-	// The name of the Docker volume containing data for the enclave
-	enclaveDataVolName string
+	// The enclave data directory path on the host machine, so the launcher can bind-mount it to module
+	//  containers
+	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataVolName string) *UserServiceLauncher {
-	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataVolName: enclaveDataVolName}
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
+	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 /**
@@ -61,7 +62,7 @@ func (launcher UserServiceLauncher) Launch(
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataVolMntDirpath string,
+		enclaveDataDirMountDirpath string,
 		// Mapping files artifact ID -> mountpoint on the container to launch
 		filesArtifactIdsToMountpoints map[string]string) (string, map[nat.Port]*nat.PortBinding, error) {
 
@@ -100,11 +101,8 @@ func (launcher UserServiceLauncher) Launch(
 		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
-	volumeMounts := map[string]string{
-		launcher.enclaveDataVolName: enclaveDataVolMntDirpath,
-	}
-	for artifactVolName, mountpoint := range artifactVolumeMounts {
-		volumeMounts[artifactVolName] = mountpoint
+	bindMounts := map[string]string{
+		launcher.enclaveDataDirpathOnHostMachine: enclaveDataDirMountDirpath,
 	}
 
 	containerName := launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceGUID)
@@ -125,8 +123,10 @@ func (launcher UserServiceLauncher) Launch(
 		cmdArgs,
 	).WithEnvironmentVariables(
 		dockerEnvVars,
+	).WithBindMounts(
+		bindMounts,
 	).WithVolumeMounts(
-		volumeMounts,
+		artifactVolumeMounts,
 	).WithLabels(
 		containerLabels,
     ).Build()

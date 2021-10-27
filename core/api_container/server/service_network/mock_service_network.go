@@ -17,11 +17,11 @@ import (
 
 type MockServiceNetwork struct {
 	serviceIps                       map[service_network_types.ServiceID]net.IP
-	serviceEnclaveDataVolMntDirpaths map[service_network_types.ServiceID]string
+	serviceEnclaveDataDirMntDirpaths map[service_network_types.ServiceID]string
 }
 
-func NewMockServiceNetwork(serviceIps map[service_network_types.ServiceID]net.IP, serviceEnclaveDataVolMntDirpaths map[service_network_types.ServiceID]string) *MockServiceNetwork {
-	return &MockServiceNetwork{serviceIps: serviceIps, serviceEnclaveDataVolMntDirpaths: serviceEnclaveDataVolMntDirpaths}
+func NewMockServiceNetwork(serviceIps map[service_network_types.ServiceID]net.IP, serviceEnclaveDataDirMntDirpaths map[service_network_types.ServiceID]string) *MockServiceNetwork {
+	return &MockServiceNetwork{serviceIps: serviceIps, serviceEnclaveDataDirMntDirpaths: serviceEnclaveDataDirMntDirpaths}
 }
 
 func (m MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
@@ -52,12 +52,12 @@ func (m MockServiceNetwork) GetServiceIP(serviceId service_network_types.Service
 	return ip, nil
 }
 
-func (m MockServiceNetwork) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
-	volMntDirPath, found := m.serviceEnclaveDataVolMntDirpaths[serviceId]
+func (m MockServiceNetwork) GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+	dataDirMntDirpath, found := m.serviceEnclaveDataDirMntDirpaths[serviceId]
 	if !found {
-		return "", stacktrace.NewError("No volume directory path defined for service with ID '%v'", serviceId)
+		return "", stacktrace.NewError("No enclave data directory mount dirpath defined for service with ID '%v'", serviceId)
 	}
-	return volMntDirPath, nil
+	return dataDirMntDirpath, nil
 }
 
 func (m MockServiceNetwork) GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error) {

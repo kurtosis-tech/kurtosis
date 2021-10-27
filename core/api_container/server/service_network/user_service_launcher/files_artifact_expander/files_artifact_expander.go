@@ -22,9 +22,9 @@ const (
 	//  into a Docker volume
 	dockerImage = "alpine:3.12"
 
-	// Dirpath on the artifact expander container where the enclave data volume (which contains the artifacts)
-	//  will be mounted
-	enclaveDataVolMountpointOnExpanderContainer = "/enclave-data"
+	// Dirpath on the artifact expander container where the enclave data dir (which contains the artifacts)
+	//  will be bind-mounted
+	enclaveDataDirMountpointOnExpanderContainer = "/enclave-data"
 
 	// Dirpath on the artifact expander container where the destination volume containing expanded files will be mounted
 	destVolMntDirpathOnExpander = "/dest"
@@ -37,7 +37,8 @@ Class responsible for taking an artifact containing compressed files and uncompr
 	into a Docker volume that will be mounted on a new service
  */
 type FilesArtifactExpander struct {
-	enclaveDataVolName string
+	// Host machine dirpath so the expander can bind-mount it to the artifact expansion containers
+	enclaveDataDirpathOnHostMachine string
 
 	dockerManager *docker_manager.DockerManager
 
@@ -52,8 +53,8 @@ type FilesArtifactExpander struct {
 	filesArtifactCache *enclave_data_volume.FilesArtifactCache
 }
 
-func NewFilesArtifactExpander(enclaveDataVolName string, dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_volume.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataVolName: enclaveDataVolName, dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_volume.FilesArtifactCache) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
@@ -81,15 +82,14 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToVolRoot()
 		artifactFilepathOnExpanderContainer := path.Join(
-			enclaveDataVolMountpointOnExpanderContainer,
+			enclaveDataDirMountpointOnExpanderContainer,
 			artifactRelativeFilepath,
 		)
 
 		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
 
 		volumeMounts := map[string]string{
-			expander.enclaveDataVolName: enclaveDataVolMountpointOnExpanderContainer,
-			destVolName:                  destVolMntDirpathOnExpander,
+			destVolName:                              destVolMntDirpathOnExpander,
 		}
 
 		containerName := expander.enclaveObjNameProvider.ForFilesArtifactExpanderContainer(serviceGUID, artifactId)
@@ -124,6 +124,10 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 	}
 	defer expander.freeIpAddrTracker.ReleaseIpAddr(containerIp)
 
+	bindMounts := map[string]string{
+		expander.enclaveDataDirpathOnHostMachine: enclaveDataDirMountpointOnExpanderContainer,
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		dockerImage,
 		containerName,
@@ -132,6 +136,8 @@ func (expander *FilesArtifactExpander) runExpanderContainer(
 		containerIp,
 	).WithCmdArgs(
 		containerCmd,
+	).WithBindMounts(
+		bindMounts,
 	).WithVolumeMounts(
 		volumeMounts,
 	).WithLabels(

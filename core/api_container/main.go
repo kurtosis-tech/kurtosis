@@ -156,7 +156,7 @@ func createServiceNetworkAndModuleStore(
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 		dockerManager,
 		enclaveObjNameProvider,
 		enclaveObjLabelsProvider,
@@ -172,7 +172,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -199,7 +199,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)

@@ -43,7 +43,7 @@ type serviceRunInfo struct {
 	containerId string
 
 	// Where the enclave data volume is mounted on the service
-	enclaveDataVolMntDirpath string
+	enclaveDataDirMntDirpath string
 }
 
 /*
@@ -238,7 +238,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataVolMntDirpath string,
+		enclaveDataDirMntDirpath string,
 		filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
@@ -294,7 +294,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
-		enclaveDataVolMntDirpath,
+		enclaveDataDirMntDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -303,7 +303,7 @@ func (network *ServiceNetworkImpl) StartService(
 	}
 	runInfo := serviceRunInfo{
 		containerId:              serviceContainerId,
-		enclaveDataVolMntDirpath: enclaveDataVolMntDirpath,
+		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
 
@@ -421,7 +421,7 @@ func (network *ServiceNetworkImpl) GetRelativeServiceDirpath(serviceId service_n
 	return registrationInfo.serviceDirectory.GetDirpathRelativeToVolRoot(), nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+func (network *ServiceNetworkImpl) GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -433,7 +433,7 @@ func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId 
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
 
-	return runInfo.enclaveDataVolMntDirpath, nil
+	return runInfo.enclaveDataDirMntDirpath, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {
