@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -18,7 +18,7 @@ func TestGetFile(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	serviceGUID := service_network_types.ServiceGUID("someService")
 
@@ -26,7 +26,7 @@ func TestGetFile(t *testing.T) {
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
-	svcRelDirpath := svcDir.dirpathRelativeToVolRoot
+	svcRelDirpath := svcDir.dirpathRelativeToDataDirRoot
 
 	filename := "someFile"
 
@@ -40,7 +40,7 @@ func TestGetFile(t *testing.T) {
 	fileInfo := files[0]
 	assert.True(t, strings.Contains(fileInfo.Name(), filename))
 
-	// Check EnclaveDataVolFile data structure is correct
+	// Check EnclaveDataDirFile data structure is correct
 	assert.Equal(
 		t,
 		svcAbsDirpath,
@@ -49,6 +49,6 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(
 		t,
 		svcRelDirpath,
-		path.Dir(file.GetFilepathRelativeToVolRoot()),
+		path.Dir(file.GetFilepathRelativeToDataDirRoot()),
 	)
 }

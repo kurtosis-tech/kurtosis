@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"fmt"
@@ -14,24 +14,24 @@ import (
 	"sync"
 )
 
-// Represents a write-only file cache, backed by a directory inside the enclave data volume
+// Represents a write-only file cache, backed by a directory inside the enclave data dir
 type FileCache struct {
-	absoluteDirpath string
-	dirpathRelativeToVolRoot string
+	absoluteDirpath              string
+	dirpathRelativeToDataDirRoot string
 
 	// Mutex to ensure we don't get race conditions when adding/getting files from the cache
 	mutex *sync.Mutex
 }
 
-func newFileCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *FileCache {
+func newFileCache(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FileCache {
 	return &FileCache{
-		absoluteDirpath: absoluteDirpath,
-		dirpathRelativeToVolRoot: dirpathRelativeToVolRoot,
-		mutex: &sync.Mutex{},
+		absoluteDirpath:              absoluteDirpath,
+		dirpathRelativeToDataDirRoot: dirpathRelativeToDataDirRoot,
+		mutex:                        &sync.Mutex{},
 	}
 }
 
-func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error) (*EnclaveDataVolFile, error) {
+func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error) (*EnclaveDataDirFile, error) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -70,7 +70,7 @@ func (cache *FileCache) AddFile(key string, supplier func(destFp *os.File) error
 	return newFileObj, nil
 }
 
-func (cache *FileCache) GetFile(key string) (*EnclaveDataVolFile, error) {
+func (cache *FileCache) GetFile(key string) (*EnclaveDataDirFile, error) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -83,8 +83,8 @@ func (cache *FileCache) GetFile(key string) (*EnclaveDataVolFile, error) {
 }
 
 
-func (cache *FileCache) getFileObjFromKey(key string) *EnclaveDataVolFile {
+func (cache *FileCache) getFileObjFromKey(key string) *EnclaveDataDirFile {
 	absoluteFilepath := path.Join(cache.absoluteDirpath, key)
-	relativeFilepath := path.Join(cache.dirpathRelativeToVolRoot, key)
-	return newEnclaveDataVolFile(absoluteFilepath, relativeFilepath)
+	relativeFilepath := path.Join(cache.dirpathRelativeToDataDirRoot, key)
+	return newEnclaveDataDirFile(absoluteFilepath, relativeFilepath)
 }

@@ -20,9 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_versions/v0"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -60,7 +60,7 @@ func main() {
 }
 
 func runMain () error {
-	args, err := v0.RetrieveV0LaunchAPIArgs()
+	args, err := api_container_launcher.RetrieveAPIContainerArgs()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
 	}
@@ -88,16 +88,16 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataVol := enclave_data_volume.NewEnclaveDataVolume(api_container_docker_consts.EnclaveDataVolumeMountpoint)
+	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(api_container_docker_consts.EnclaveDataDirMountpoint)
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
-		enclaveDataVol,
+		enclaveDataDir,
 		externalContainerStore,
 		serviceNetwork,
 		moduleStore,
@@ -138,16 +138,16 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 
 func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
-		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
+		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
-	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
+	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	filesArtifactCache, err := enclaveDataVol.GetFilesArtifactCache()
+	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
@@ -156,7 +156,7 @@ func createServiceNetworkAndModuleStore(
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 		dockerManager,
 		enclaveObjNameProvider,
 		enclaveObjLabelsProvider,
@@ -172,7 +172,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -187,7 +187,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		dockerManager,
 		dockerNetworkId,
-		enclaveDataVol,
+		enclaveDataDir,
 		userServiceLauncher,
 		networkingSidecarManager)
 
@@ -199,7 +199,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,
-		enclaveId,
+		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)

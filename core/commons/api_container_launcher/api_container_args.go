@@ -1,4 +1,4 @@
-package v0
+package api_container_launcher
 
 import (
 	"github.com/palantir/stacktrace"
@@ -11,11 +11,9 @@ const (
 )
 
 // Fields are public for JSON de/serialization
-type V0LaunchAPIArgs struct {
+type APIContainerArgs struct {
 	// The name of the API container itself (will be used to get its own container ID)
 	ContainerName			 string	`json:"containerName"`
-
-	ContainerLabels          map[string] string `json:"containerLabels"`
 
 	LogLevel                 string `json:"logLevel"`
 
@@ -33,36 +31,36 @@ type V0LaunchAPIArgs struct {
 
 	// Whether the ports of the containers that the API service starts should be published to the Docker host machine
 	ShouldPublishPorts bool		`json:"shouldPublishPorts"`
+
+	// The dirpath on the Docker host machine where enclave data is stored, which the API container
+	//  will use to bind-mount the directory into the services that it starts
+	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
 }
+
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
-func newV0LaunchAPIArgs(
-		containerName string,
-		containerLabels map[string]string,
-		logLevel string,
-		enclaveId string,
-		networkId string,
-		subnetMask string,
-		apiContainerIpAddr string,
-		takenIpAddrs map[string]bool,
-		isPartitioningEnabled bool,
-		shouldPublishPorts bool) *V0LaunchAPIArgs {
-	return &V0LaunchAPIArgs{
-		ContainerName:               containerName,
-		ContainerLabels:             containerLabels,
-		LogLevel:                    logLevel,
-		EnclaveId:                   enclaveId,
-		NetworkId:                   networkId,
-		SubnetMask:                  subnetMask,
-		ApiContainerIpAddr:          apiContainerIpAddr,
-		TakenIpAddrs:                takenIpAddrs,
-		IsPartitioningEnabled:       isPartitioningEnabled,
-		ShouldPublishPorts:          shouldPublishPorts,
+func NewAPIContainerArgs(containerName string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) (*APIContainerArgs, error) {
+	result := &APIContainerArgs{
+		ContainerName: containerName,
+		LogLevel: logLevel,
+		EnclaveId: enclaveId,
+		NetworkId: networkId,
+		SubnetMask: subnetMask,
+		ApiContainerIpAddr: apiContainerIpAddr,
+		TakenIpAddrs: takenIpAddrs,
+		IsPartitioningEnabled: isPartitioningEnabled,
+		ShouldPublishPorts: shouldPublishPorts,
+		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
+
+	if err := result.validate(); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
+	}
+	return result, nil
 }
 
-func (args V0LaunchAPIArgs) Validate() error {
+func (args APIContainerArgs) validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()

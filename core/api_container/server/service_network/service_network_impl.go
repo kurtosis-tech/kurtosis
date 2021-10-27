@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
+	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -34,7 +34,7 @@ const (
 type serviceRegistrationInfo struct {
 	serviceGUID      service_network_types.ServiceGUID
 	ipAddr           net.IP
-	serviceDirectory *enclave_data_volume.ServiceDirectory
+	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
 
 // Information that gets created when a container is started for a service
@@ -42,8 +42,8 @@ type serviceRunInfo struct {
 	// Service's container ID
 	containerId string
 
-	// Where the enclave data volume is mounted on the service
-	enclaveDataVolMntDirpath string
+	// Where the enclave data dir is bind-mounted on the service
+	enclaveDataDirMntDirpath string
 }
 
 /*
@@ -67,7 +67,7 @@ type ServiceNetworkImpl struct {
 
 	dockerNetworkId string
 
-	enclaveDataVolume *enclave_data_volume.EnclaveDataVolume
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -88,7 +88,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		dockerNetworkId string,
-		enclaveDataVolume *enclave_data_volume.EnclaveDataVolume,
+		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -98,7 +98,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker:     freeIpAddrTracker,
 		dockerManager:         dockerManager,
 		dockerNetworkId:       dockerNetworkId,
-		enclaveDataVolume:     enclaveDataVolume,
+		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
 		mutex:                 &sync.Mutex{},
 		topology: partition_topology.NewPartitionTopology(
@@ -189,7 +189,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	serviceGUID := newServiceGUID(serviceId)
 
-	serviceDirectory, err := network.enclaveDataVolume.GetServiceDirectory(serviceGUID)
+	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGUID)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
 	}
@@ -219,7 +219,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	shouldFreeIpAddr = false
 	shouldUndoRegistrationInfoAdd = false
-	return ip, serviceDirectory.GetDirpathRelativeToVolRoot(), nil
+	return ip, serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
 // TODO add tests for this
@@ -238,7 +238,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataVolMntDirpath string,
+		enclaveDataDirMntDirpath string,
 		filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
@@ -294,7 +294,7 @@ func (network *ServiceNetworkImpl) StartService(
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
-		enclaveDataVolMntDirpath,
+		enclaveDataDirMntDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -303,7 +303,7 @@ func (network *ServiceNetworkImpl) StartService(
 	}
 	runInfo := serviceRunInfo{
 		containerId:              serviceContainerId,
-		enclaveDataVolMntDirpath: enclaveDataVolMntDirpath,
+		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
 
@@ -418,10 +418,10 @@ func (network *ServiceNetworkImpl) GetRelativeServiceDirpath(serviceId service_n
 		return "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.serviceDirectory.GetDirpathRelativeToVolRoot(), nil
+	return registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
+func (network *ServiceNetworkImpl) GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -433,7 +433,7 @@ func (network *ServiceNetworkImpl) GetServiceEnclaveDataVolMntDirpath(serviceId 
 		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
 
-	return runInfo.enclaveDataVolMntDirpath, nil
+	return runInfo.enclaveDataDirMntDirpath, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {

@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"fmt"
@@ -18,21 +18,21 @@ const (
 	staticFileFilenamePrefix = "static"
 )
 
-// API for interacting with a service's directory inside the enclave data volume
+// API for interacting with a service's directory inside the enclave data dir
 type ServiceDirectory struct {
-	absoluteDirpath          string
-	dirpathRelativeToVolRoot string
+	absoluteDirpath              string
+	dirpathRelativeToDataDirRoot string
 }
 
-func newServiceDirectory(absoluteDirpath string, dirpathRelativeToVolRoot string) *ServiceDirectory {
-	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToVolRoot: dirpathRelativeToVolRoot}
+func newServiceDirectory(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *ServiceDirectory {
+	return &ServiceDirectory{absoluteDirpath: absoluteDirpath, dirpathRelativeToDataDirRoot: dirpathRelativeToDataDirRoot}
 }
 
-func (directory ServiceDirectory) GetDirpathRelativeToVolRoot() string {
-	return directory.dirpathRelativeToVolRoot
+func (directory ServiceDirectory) GetDirpathRelativeToDataDirRoot() string {
+	return directory.dirpathRelativeToDataDirRoot
 }
 
-func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*EnclaveDataVolFile, error) {
+func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*EnclaveDataDirFile, error) {
 	file, err := directory.getNewFilepath(generatedFileFilenamePrefix, generatedFileKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for generated file key '%v'", generatedFileKey)
@@ -40,7 +40,7 @@ func (directory ServiceDirectory) NewGeneratedFile(generatedFileKey string) (*En
 	return file, nil
 }
 
-func (directory ServiceDirectory) NewStaticFile(staticFileKey string) (*EnclaveDataVolFile, error) {
+func (directory ServiceDirectory) NewStaticFile(staticFileKey string) (*EnclaveDataDirFile, error) {
 	file, err := directory.getNewFilepath(staticFileFilenamePrefix, staticFileKey)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting filepath for static file key '%v'", staticFileKey)
@@ -48,7 +48,7 @@ func (directory ServiceDirectory) NewStaticFile(staticFileKey string) (*EnclaveD
 	return file, nil
 }
 
-func (directory ServiceDirectory) getNewFilepath(prefix string, identifierFragment string) (*EnclaveDataVolFile, error) {
+func (directory ServiceDirectory) getNewFilepath(prefix string, identifierFragment string) (*EnclaveDataDirFile, error) {
 	uniqueId := uuid.New()
 	uniqueFilename := fmt.Sprintf("%v_%v_%v", prefix, identifierFragment, uniqueId)
 
@@ -59,8 +59,8 @@ func (directory ServiceDirectory) getNewFilepath(prefix string, identifierFragme
 	}
 	fp.Close()
 
-	relativeFilepath := path.Join(directory.dirpathRelativeToVolRoot, uniqueFilename)
-	return newEnclaveDataVolFile(absoluteFilepath, relativeFilepath), nil
+	relativeFilepath := path.Join(directory.dirpathRelativeToDataDirRoot, uniqueFilename)
+	return newEnclaveDataDirFile(absoluteFilepath, relativeFilepath), nil
 }
 
 

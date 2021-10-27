@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
@@ -19,7 +19,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	testServiceGUID := service_network_types.ServiceGUID("test-service")
 	svcDir, err := enclaveDir.GetServiceDirectory(testServiceGUID)
@@ -42,7 +42,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	assert.Equal(t, allSvcsDirpath, path.Dir(absoluteSvcDirpath))
 	assert.True(t, strings.Contains(absoluteSvcDirpath, string(testServiceGUID)))
 
-	relativeSvcDirpath := svcDir.dirpathRelativeToVolRoot
+	relativeSvcDirpath := svcDir.dirpathRelativeToDataDirRoot
 	assert.Equal(t, path.Join(allServicesDirname), path.Dir(relativeSvcDirpath))
 	assert.True(t, strings.Contains(relativeSvcDirpath, string(testServiceGUID)))
 }
@@ -51,7 +51,7 @@ func TestGetArtifactCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	artifactCache, err := enclaveDir.GetFilesArtifactCache()
 	assert.Nil(t, err)
@@ -62,7 +62,7 @@ func TestGetArtifactCache(t *testing.T) {
 	assert.Equal(t, expectedAbsDirpath, artifactCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := artifactCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, artifactCache.underlying.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, artifactCache.underlying.dirpathRelativeToDataDirRoot)
 
 }
 
@@ -70,7 +70,7 @@ func TestGetStaticFileCache(t *testing.T) {
 	enclaveDirpath, err := ioutil.TempDir("", "")
 	assert.Nil(t, err)
 
-	enclaveDir := NewEnclaveDataVolume(enclaveDirpath)
+	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
 
 	staticFileCache, err := enclaveDir.GetStaticFileCache()
 	assert.Nil(t, err)
@@ -81,6 +81,6 @@ func TestGetStaticFileCache(t *testing.T) {
 	assert.Equal(t, expectedAbsDirpath, staticFileCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := staticFileCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, staticFileCache.underlying.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, staticFileCache.underlying.dirpathRelativeToDataDirRoot)
 
 }

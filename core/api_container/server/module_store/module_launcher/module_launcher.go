@@ -49,11 +49,13 @@ type ModuleLauncher struct {
 
 	dockerNetworkId string
 
-	enclaveDataVolName string
+	// The enclave data directory path on the host machine, so the module launcher can bind-mount it to module
+	//  containers
+	enclaveDataDirpathOnHostMachine string
 }
 
-func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataVolName string) *ModuleLauncher {
-	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataVolName: enclaveDataVolName}
+func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
+	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -91,8 +93,8 @@ func (launcher ModuleLauncher) Launch(
 		kurtosis_module_docker_api.SerializedCustomParamsEnvVar: serializedParams,
 	}
 
-	volumeMounts := map[string]string{
-		launcher.enclaveDataVolName: kurtosis_module_docker_api.ExecutionVolumeMountpoint,
+	bindMounts := map[string]string{
+		launcher.enclaveDataDirpathOnHostMachine: kurtosis_module_docker_api.EnclaveDataDirMountpoint,
 	}
 
 	suffix := current_time_str_provider.GetCurrentTimeStr()
@@ -112,8 +114,8 @@ func (launcher ModuleLauncher) Launch(
 		usedPorts,
 	).WithEnvironmentVariables(
 		envVars,
-	).WithVolumeMounts(
-		volumeMounts,
+	).WithBindMounts(
+		bindMounts,
 	).WithLabels(
 		containerLabels,
 	).Build()

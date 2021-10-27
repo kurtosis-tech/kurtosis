@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package enclave_data_volume
+package enclave_data_directory
 
 import (
 	"github.com/palantir/stacktrace"
@@ -38,13 +38,13 @@ func TestFileCache_AddAndGetArtifact(t *testing.T) {
 	assert.Equal(t, testContents, string(testFileBytes))
 
 	// Check relative filepath was set correctly
-	assert.Equal(t, addedFileObj.GetAbsoluteFilepath(), path.Join(fileCache.absoluteDirpath, addedFileObj.filepathRelativeToVolRoot))
+	assert.Equal(t, addedFileObj.GetAbsoluteFilepath(), path.Join(fileCache.absoluteDirpath, addedFileObj.filepathRelativeToDataDirRoot))
 
 	// Verify the retrieved file matches the file we just created
 	retrievedFileObj, err := fileCache.GetFile(testKey)
 	assert.Nil(t, err)
 	assert.Equal(t, addedFileObj.GetAbsoluteFilepath(), retrievedFileObj.GetAbsoluteFilepath())
-	assert.Equal(t, addedFileObj.GetFilepathRelativeToVolRoot(), retrievedFileObj.GetFilepathRelativeToVolRoot())
+	assert.Equal(t, addedFileObj.GetFilepathRelativeToDataDirRoot(), retrievedFileObj.GetFilepathRelativeToDataDirRoot())
 }
 
 func TestFileCache_GetErrorsOnNonexistentKey(t *testing.T) {
