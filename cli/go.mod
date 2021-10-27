@@ -8,6 +8,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
+	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211027215405-fb858ef86501 // indirect
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211026164217-5513c922552f
