@@ -2,9 +2,10 @@
 ### Changes
 * The API container now assumes the enclave data volume is a directory on the Docker host machine, and bind-mounts it to the containers it starts rather than via volume-mounts
 * Swapped the overly-complex `V0LaunchArgs` back to the old way, of a simple `APIContainerLauncher`
+* Upgrade to module API lib to 0.11.1, which supports bind-mounted enclave data volumes
 
 ### Breaking Changes
-* Upgraded to Kurt Client vTODOOOOOO, which renames several object properties
+* Upgraded to Kurt Client v0.20.0, which renames several object properties
 
 # 1.26.4
 ### Changes
