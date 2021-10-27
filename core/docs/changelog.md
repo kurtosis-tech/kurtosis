@@ -1,4 +1,6 @@
 # TBD
+
+# 1.27.0
 ### Changes
 * The API container now assumes the enclave data volume is a directory on the Docker host machine, and bind-mounts it to the containers it starts rather than via volume-mounts
 * Swapped the overly-complex `V0LaunchArgs` back to the old way, of a simple `APIContainerLauncher`
