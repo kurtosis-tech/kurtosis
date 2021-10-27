@@ -6,12 +6,14 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_docker_api"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/palantir/stacktrace"
@@ -27,8 +29,6 @@ const (
 
 	grpcServerStopGracePeriod = 5 * time.Second
 )
-
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
@@ -47,9 +47,21 @@ func main() {
 }
 
 func runMain () error {
-	logLevel, err := logrus.ParseLevel(defaultKurtosisLogLevel)
+	serializedArgsStr, found := os.LookupEnv(kurtosis_engine_server_docker_api.SerializedArgsEnvVar)
+	if !found {
+		return stacktrace.NewError(
+			"Expected environment variable '%v' containing serialized args to the engine container, but none was found",
+			kurtosis_engine_server_docker_api.SerializedArgsEnvVar,
+		)
+	}
+	var args kurtosis_engine_server_docker_api.EngineServerArgs
+	if err := json.Unmarshal([]byte(serializedArgsStr), &args); err != nil {
+		return stacktrace.Propagate(err, "An error occurred deserializing serialized args string '%v'", serializedArgsStr)
+	}
+
+	logLevel, err := logrus.ParseLevel(args.LogLevelStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", defaultKurtosisLogLevel)
+		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", args.LogLevelStr)
 	}
 	logrus.SetLevel(logLevel)
 
@@ -61,7 +73,7 @@ func runMain () error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager)
+	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager, args.EngineDataDirpathOnHostMachine, kurtosis_engine_server_docker_api.EngineDataDirpathOnEngineContainer)
 
 	engineServerService := server.NewEngineServerService(enclaveManager)
 

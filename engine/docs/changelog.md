@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Changed the way enclave data is stored, which were done in preparation of merging the APIC and engine container:
+    * An "engine data directory" is created on the Docker host machine
+    * That directory is bind-mounted into the engine container
+    * The engine creates enclave directories inside that engine data dir
+    * The enclave directories are bind-mounted into the modules/services of the enclave
 
 # 0.4.7
 ### Changes

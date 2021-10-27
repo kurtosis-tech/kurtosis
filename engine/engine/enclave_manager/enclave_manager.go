@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -18,6 +18,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,6 +38,8 @@ const (
 	// API container port number string parsing constants
 	portNumStrParsingBase = 10
 	portNumStrParsingBits = 32
+
+	allEnclavesDirname = "enclaves"
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -47,14 +51,26 @@ type EnclaveManager struct {
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
+
+	// We need this so that when the engine container starts enclaves & containers, it can tell Docker where the enclave
+	//  data directory is on the host machine os Docker can bind-mount it in
+	engineDataDirpathOnHostMachine string
+
+	engineDataDirpathOnEngineContainer string
 }
 
-func NewEnclaveManager(dockerManager *docker_manager.DockerManager) *EnclaveManager {
+func NewEnclaveManager(
+	dockerManager *docker_manager.DockerManager,
+	engineDataDirpathOnHostMachine string,
+	engineDataDirpathOnEngineContainer string,
+) *EnclaveManager {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
 		mutex:                  &sync.Mutex{},
 		dockerManager:          dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
+		engineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
+		engineDataDirpathOnEngineContainer: engineDataDirpathOnEngineContainer,
 	}
 }
 
@@ -70,9 +86,10 @@ func (manager *EnclaveManager) CreateEnclave(
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
+
+	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
 
 	_, found, err := manager.getEnclaveNetwork(setupCtx, enclaveId)
 	if err != nil {
@@ -82,10 +99,31 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
 	}
 
+	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
+	if err := ensureDirpathExists(allEnclavesDirpathOnEngineContainer); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring enclaves directory '%v' exists", allEnclavesDirpathOnEngineContainer)
+	}
+
+	enclaveDataDirpathOnHostMachine, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	if _, err := os.Stat(enclaveDataDirpathOnEngineContainer); err == nil {
+		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave data directory already exists at '%v'", enclaveId, enclaveDataDirpathOnEngineContainer)
+	}
+	if err := ensureDirpathExists(enclaveDataDirpathOnEngineContainer); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred ensuring enclave data directory '%v' exists", enclaveDataDirpathOnEngineContainer)
+	}
+	shouldDeleteEnclaveDataDir := true
+	defer func() {
+		if shouldDeleteEnclaveDataDir {
+			if err := os.RemoveAll(enclaveDataDirpathOnEngineContainer); err != nil {
+				// 'clean' will remove this dangling directories, so this is a warn rather than an error
+				logrus.Warnf("Enclave creation didn't complete successfully so we tried to remove the enclave data directory '%v', but removing threw the following error; this directory will stay around until a clean is run", enclaveDataDirpathOnEngineContainer)
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+			}
+		}
+	}()
+
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
-
-	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
 
 	logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveId)
 	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := manager.dockerNetworkAllocator.CreateNewNetwork(
@@ -112,7 +150,6 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 	logrus.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
 
-	// TODO use hostnames rather than IPs, which makes things nicer and which we'll need for Docker swarm support
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
 	//  container which will only be started after the testsuite container
 	apiContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
@@ -120,61 +157,29 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
 
-	enclaveDataVolLabels := enclaveObjLabelsProvider.ForEnclaveDataVolume()
-	if err := manager.dockerManager.CreateVolume(setupCtx, enclaveId, enclaveDataVolLabels); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave volume '%v'", enclaveId)
-	}
-	// NOTE: We could defer a deletion of this volume unless the function completes successfully - right now, Kurtosis
-	//  doesn't do any volume deletion
-
-	// TODO We want to get rid of this; see the detailed TODO on EnclaveContext
-	testsuiteContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't reserve an IP address for a possible testsuite container")
-	}
-
-	replContainerIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't reserve an IP address for a possible REPL container")
-	}
-
 	apiContainerName := enclaveObjNameProvider.ForApiContainer()
-
-	alreadyTakenIps := []net.IP{testsuiteContainerIpAddr, replContainerIpAddr}
-	apiContainerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr)
 
 	//Pulling latest image version
 	if err = manager.dockerManager.PullImage(setupCtx, apiContainerImage); err != nil {
 		logrus.Warnf("Failed to pull the latest version of image '%v'; you may be running an out-of-date version", apiContainerImage)
 	}
 
-	// TODO This shouldn't be hardcoded!!! We should instead detect the launch API version from the core API version
-	launchApiVersion := uint(0)
-	apiContainerLauncher, err := api_container_launcher_lib.GetAPIContainerLauncherForLaunchAPIVersion(
-		launchApiVersion,
+	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		manager.dockerManager,
-		logrus.StandardLogger(),
-		apiContainerImage,
-		kurtosis_core_rpc_api_consts.ListenPort,
-		kurtosis_core_rpc_api_consts.ListenProtocol,
-		apiContainerLogLevel,
 	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the API container launcher for launch API version '%v'", launchApiVersion)
-	}
-
 	apiContainerId, apiContainerHostPortBinding, err := apiContainerLauncher.Launch(
 		setupCtx,
+		apiContainerImage,
 		apiContainerName,
-		apiContainerLabels,
+		apiContainerLogLevel,
 		enclaveId,
 		networkId,
 		networkIpAndMask.String(),
 		gatewayIp,
 		apiContainerIpAddr,
-		alreadyTakenIps,
+		[]net.IP{}, // TODO remove this, as we don't need it anymore now that we have the RegisterExternalContainer endpoint
 		isPartitioningEnabled,
-		shouldPublishAllPorts,
+		enclaveDataDirpathOnHostMachine,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
@@ -217,7 +222,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		},
 	}
 
-	// Everything started successfully, so the responsibility of deleting the network is now transferred to the caller
+	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
+	shouldDeleteEnclaveDataDir = false
 	shouldDeleteNetwork = false
 	shouldStopApiContainer = false
 	return result, nil
@@ -333,22 +339,11 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 		)
 	}
 
-	// Next, remove the volume (if it exists)
-	volumeSearchLabels := map[string]string{
-		// TODO This is bad!!! We're using a container label for a volume!!! We really need to create a new
-		//  EnclaveIDVolumeLabel type
-		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
-	}
-	matchingVolumeNames, err := manager.dockerManager.GetVolumesByLabels(
-		ctx,
-		volumeSearchLabels,
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for volumes for enclave '%v'", enclaveId)
-	}
-	for _, volumeName := range matchingVolumeNames {
-		if err := manager.dockerManager.RemoveVolume(ctx, volumeName); err != nil {
-			return stacktrace.Propagate(err, "An error occurred removing volume '%v' for enclave '%v'", volumeName, enclaveId)
+	// Next, remove the enclave data dir (if it exists)
+	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
+		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
+			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
 		}
 	}
 
@@ -645,4 +640,42 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 	}
 
 	return nil
+}
+
+// TODO This is copied from Kurt Core; merge these (likely into an EngineDataVolume object)!!!
+func ensureDirpathExists(absoluteDirpath string) error {
+	if _, err := os.Stat(absoluteDirpath); os.IsNotExist(err) {
+		if err := os.Mkdir(absoluteDirpath, 0777); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"Directory '%v' in the engine data volume didn't exist, and an error occurred trying to create it",
+				absoluteDirpath)
+		}
+	}
+	return nil
+}
+
+func (manager *EnclaveManager) getAllEnclavesDirpaths() (onHostMachine string, onEngineContainer string) {
+	onHostMachine = path.Join(
+		manager.engineDataDirpathOnHostMachine,
+		allEnclavesDirname,
+	)
+	onEngineContainer = path.Join(
+		manager.engineDataDirpathOnEngineContainer,
+		allEnclavesDirname,
+	)
+	return
+}
+
+func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId string) (onHostMachine string, onEngineContainer string) {
+	allEnclavesOnHostMachine, allEnclavesOnEngineContainer := manager.getAllEnclavesDirpaths()
+	onHostMachine = path.Join(
+		allEnclavesOnHostMachine,
+		enclaveId,
+	)
+	onEngineContainer = path.Join(
+		allEnclavesOnEngineContainer,
+		enclaveId,
+	)
+	return
 }
