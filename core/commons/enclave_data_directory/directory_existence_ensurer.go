@@ -15,7 +15,7 @@ func ensureDirpathExists(absoluteDirpath string) error {
 		if err := os.Mkdir(absoluteDirpath, 0777); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"Directory '%v' in the enclave data volume didn't exist, and an error occurred trying to create it",
+				"Directory '%v' in the enclave data dir didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
 	}

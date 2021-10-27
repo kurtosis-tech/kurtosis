@@ -88,16 +88,16 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataVol := enclave_data_directory.NewEnclaveDataDirectory(api_container_docker_consts.EnclaveDataDirMountpoint)
+	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(api_container_docker_consts.EnclaveDataDirMountpoint)
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataVol, freeIpAddrTracker, args)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
-		enclaveDataVol,
+		enclaveDataDir,
 		externalContainerStore,
 		serviceNetwork,
 		moduleStore,
@@ -138,16 +138,16 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 
 func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
-		enclaveDataVol *enclave_data_directory.EnclaveDataDirectory,
+		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
-	// TODO We don't want to have the artifact cache inside the volume anymore - it should be a separate volume, or on the local filesystem
+	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	filesArtifactCache, err := enclaveDataVol.GetFilesArtifactCache()
+	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
 	}
@@ -187,7 +187,7 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker,
 		dockerManager,
 		dockerNetworkId,
-		enclaveDataVol,
+		enclaveDataDir,
 		userServiceLauncher,
 		networkingSidecarManager)
 

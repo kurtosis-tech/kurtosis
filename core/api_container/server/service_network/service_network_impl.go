@@ -42,7 +42,7 @@ type serviceRunInfo struct {
 	// Service's container ID
 	containerId string
 
-	// Where the enclave data volume is mounted on the service
+	// Where the enclave data dir is bind-mounted on the service
 	enclaveDataDirMntDirpath string
 }
 
@@ -67,7 +67,7 @@ type ServiceNetworkImpl struct {
 
 	dockerNetworkId string
 
-	enclaveDataVolume *enclave_data_directory.EnclaveDataDirectory
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
 
@@ -88,7 +88,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		dockerNetworkId string,
-		enclaveDataVolume *enclave_data_directory.EnclaveDataDirectory,
+		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 		userServiceLauncher *user_service_launcher.UserServiceLauncher,
 		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
@@ -98,7 +98,7 @@ func NewServiceNetworkImpl(
 		freeIpAddrTracker:     freeIpAddrTracker,
 		dockerManager:         dockerManager,
 		dockerNetworkId:       dockerNetworkId,
-		enclaveDataVolume:     enclaveDataVolume,
+		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
 		mutex:                 &sync.Mutex{},
 		topology: partition_topology.NewPartitionTopology(
@@ -189,7 +189,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	serviceGUID := newServiceGUID(serviceId)
 
-	serviceDirectory, err := network.enclaveDataVolume.GetServiceDirectory(serviceGUID)
+	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGUID)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
 	}
@@ -219,7 +219,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	shouldFreeIpAddr = false
 	shouldUndoRegistrationInfoAdd = false
-	return ip, serviceDirectory.GetDirpathRelativeToVolRoot(), nil
+	return ip, serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
 // TODO add tests for this
@@ -418,7 +418,7 @@ func (network *ServiceNetworkImpl) GetRelativeServiceDirpath(serviceId service_n
 		return "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.serviceDirectory.GetDirpathRelativeToVolRoot(), nil
+	return registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error) {

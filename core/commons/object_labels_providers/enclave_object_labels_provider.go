@@ -24,23 +24,12 @@ func NewEnclaveObjectLabelsProvider(enclaveId string) *EnclaveObjectLabelsProvid
 
 // !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
-//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
+//  1) the user creates an enclave using the old engine, and the network gets the old labels
 //  2) the user upgrades their CLI, and restarts with the new engine
-//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
+//  3) the new engine searches for enclave networks using the new labels, and doesn't find the old networks
 // !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveNetwork() map[string]string {
 	return labelsProvider.getLabelsForEnclaveObject()
-}
-
-// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// Be VERY careful modifying these! If you add a new label here, it's possible to leak Kurtosis resources:
-//  1) the user creates an enclave using the old engine, and the network & volume get the old labels
-//  2) the user upgrades their CLI, and restarts with the new engine
-//  3) the new engine searches for enclaves/volumes using the new labels, and doesn't find the old network/volume
-// !!!!!!!!!!!!!!!!!!! WARNING WARNING WARNING WARNING WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-func (labelsProvider *EnclaveObjectLabelsProvider) ForEnclaveDataVolume() map[string]string {
-	labels := labelsProvider.getLabelsForEnclaveObject()
-	return labels
 }
 
 func (labelsProvider *EnclaveObjectLabelsProvider) ForApiContainer(

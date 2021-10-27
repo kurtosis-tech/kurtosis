@@ -14,10 +14,10 @@ import (
 const (
 	allServicesDirname = "services"
 
-	// The name of the directory INSIDE THE ENCLAVE DATA VOLUME where files artifacts are being stored
+	// The name of the directory INSIDE THE ENCLAVE DATA DIR where files artifacts are being stored
 	artifactCacheDirname = "artifact-cache"
 
-	// The name of the directory INSIDE THE ENCLAVE DATA VOLUME where static files from the
+	// The name of the directory INSIDE THE ENCLAVE DATA DIR where static files from the
 	//  testsuite container are stored, and used when launching services
 	staticFileCacheDirname = "static-file-cache"
 )
@@ -33,9 +33,9 @@ func NewEnclaveDataDirectory(absMountDirpath string) *EnclaveDataDirectory {
 }
 
 
-func (volume EnclaveDataDirectory) GetFilesArtifactCache() (*FilesArtifactCache, error) {
+func (dir EnclaveDataDirectory) GetFilesArtifactCache() (*FilesArtifactCache, error) {
 	relativeDirpath := artifactCacheDirname
-	absoluteDirpath := path.Join(volume.absMountDirpath, artifactCacheDirname)
+	absoluteDirpath := path.Join(dir.absMountDirpath, artifactCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring artifact cache dirpath '%v' exists", absoluteDirpath)
 	}
@@ -43,9 +43,9 @@ func (volume EnclaveDataDirectory) GetFilesArtifactCache() (*FilesArtifactCache,
 	return newFilesArtifactCache(absoluteDirpath, relativeDirpath), nil
 }
 
-func (volume EnclaveDataDirectory) GetStaticFileCache() (*StaticFileCache, error) {
+func (dir EnclaveDataDirectory) GetStaticFileCache() (*StaticFileCache, error) {
 	relativeDirpath := staticFileCacheDirname
-	absoluteDirpath := path.Join(volume.absMountDirpath, staticFileCacheDirname)
+	absoluteDirpath := path.Join(dir.absMountDirpath, staticFileCacheDirname)
 	if err := ensureDirpathExists(absoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring static file cache dirpath '%v' exists", absoluteDirpath)
 	}
@@ -53,9 +53,9 @@ func (volume EnclaveDataDirectory) GetStaticFileCache() (*StaticFileCache, error
 }
 
 // Get the unique service directory for a service with the given service GUID
-func (volume EnclaveDataDirectory) GetServiceDirectory(serviceGUID service_network_types.ServiceGUID) (*ServiceDirectory, error) {
+func (dir EnclaveDataDirectory) GetServiceDirectory(serviceGUID service_network_types.ServiceGUID) (*ServiceDirectory, error) {
 	allServicesRelativeDirpath := allServicesDirname
-	allServicesAbsoluteDirpath := path.Join(volume.absMountDirpath, allServicesDirname)
+	allServicesAbsoluteDirpath := path.Join(dir.absMountDirpath, allServicesDirname)
 	if err := ensureDirpathExists(allServicesAbsoluteDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring all services dirpath '%v' exists inside the enclave data dir", allServicesAbsoluteDirpath)
 	}

@@ -11,19 +11,19 @@ import (
 )
 
 /*
-An interface for interacting with the static file cache directory that exists inside the enclave data volume
+An interface for interacting with the static file cache directory that exists inside the enclave data dir
 */
 type StaticFileCache struct {
 	underlying *FileCache
 }
 
-func newStaticFileCache(absoluteDirpath string, dirpathRelativeToVolRoot string) *StaticFileCache {
+func newStaticFileCache(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *StaticFileCache {
 	return &StaticFileCache{
-		underlying: newFileCache(absoluteDirpath, dirpathRelativeToVolRoot),
+		underlying: newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 	}
 }
 
-func (cache *StaticFileCache) RegisterStaticFile(key string) (*EnclaveDataVolFile, error) {
+func (cache *StaticFileCache) RegisterStaticFile(key string) (*EnclaveDataDirFile, error) {
 	// The static file cache needs to initialize an empty file, which the underlying filecache already does so need
 	//  to do anything
 	result, err := cache.underlying.AddFile(key, func(fp *os.File) error { return nil })
@@ -33,7 +33,7 @@ func (cache *StaticFileCache) RegisterStaticFile(key string) (*EnclaveDataVolFil
 	return result, nil
 }
 
-func (cache *StaticFileCache) GetStaticFile(key string) (*EnclaveDataVolFile, error) {
+func (cache *StaticFileCache) GetStaticFile(key string) (*EnclaveDataDirFile, error) {
 	result, err := cache.underlying.GetFile(key)
 
 	if err != nil {

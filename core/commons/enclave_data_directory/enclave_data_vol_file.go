@@ -5,24 +5,24 @@
 
 package enclave_data_directory
 
-// Represents a file inside the enclave data volume
-type EnclaveDataVolFile struct {
-	absoluteFilepath          string
-	filepathRelativeToVolRoot string
+// Represents a file inside the enclave data directory
+type EnclaveDataDirFile struct {
+	absoluteFilepath              string
+	filepathRelativeToDataDirRoot string
 }
 
-func newEnclaveDataVolFile(absoluteFilepath string, filepathRelativeToVolRoot string) *EnclaveDataVolFile {
-	return &EnclaveDataVolFile{absoluteFilepath: absoluteFilepath, filepathRelativeToVolRoot: filepathRelativeToVolRoot}
+func newEnclaveDataDirFile(absoluteFilepath string, filepathRelativeToDataDirRoot string) *EnclaveDataDirFile {
+	return &EnclaveDataDirFile{absoluteFilepath: absoluteFilepath, filepathRelativeToDataDirRoot: filepathRelativeToDataDirRoot}
 }
 
 // Gets the absolute path to the file
-func (file EnclaveDataVolFile) GetAbsoluteFilepath() string {
+func (file EnclaveDataDirFile) GetAbsoluteFilepath() string {
 	return file.absoluteFilepath
 }
 
-// Gets the path to the file relative to the root of the enclave data volume
-func (file EnclaveDataVolFile) GetFilepathRelativeToVolRoot() string {
-	return file.filepathRelativeToVolRoot
+// Gets the path to the file relative to the root of the enclave data dir
+func (file EnclaveDataDirFile) GetFilepathRelativeToDataDirRoot() string {
+	return file.filepathRelativeToDataDirRoot
 }
 
 

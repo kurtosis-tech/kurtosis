@@ -80,7 +80,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", destVolName)
 		}
 
-		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToVolRoot()
+		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToDataDirRoot()
 		artifactFilepathOnExpanderContainer := path.Join(
 			enclaveDataDirMountpointOnExpanderContainer,
 			artifactRelativeFilepath,

@@ -42,7 +42,7 @@ func TestNewServiceDirectory(t *testing.T) {
 	assert.Equal(t, allSvcsDirpath, path.Dir(absoluteSvcDirpath))
 	assert.True(t, strings.Contains(absoluteSvcDirpath, string(testServiceGUID)))
 
-	relativeSvcDirpath := svcDir.dirpathRelativeToVolRoot
+	relativeSvcDirpath := svcDir.dirpathRelativeToDataDirRoot
 	assert.Equal(t, path.Join(allServicesDirname), path.Dir(relativeSvcDirpath))
 	assert.True(t, strings.Contains(relativeSvcDirpath, string(testServiceGUID)))
 }
@@ -62,7 +62,7 @@ func TestGetArtifactCache(t *testing.T) {
 	assert.Equal(t, expectedAbsDirpath, artifactCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := artifactCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, artifactCache.underlying.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, artifactCache.underlying.dirpathRelativeToDataDirRoot)
 
 }
 
@@ -81,6 +81,6 @@ func TestGetStaticFileCache(t *testing.T) {
 	assert.Equal(t, expectedAbsDirpath, staticFileCache.underlying.absoluteDirpath)
 
 	expectedRelativeDirpath := staticFileCacheDirname
-	assert.Equal(t, expectedRelativeDirpath, staticFileCache.underlying.dirpathRelativeToVolRoot)
+	assert.Equal(t, expectedRelativeDirpath, staticFileCache.underlying.dirpathRelativeToDataDirRoot)
 
 }

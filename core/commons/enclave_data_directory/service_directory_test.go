@@ -26,7 +26,7 @@ func TestGetFile(t *testing.T) {
 	assert.Nil(t, err)
 
 	svcAbsDirpath := svcDir.absoluteDirpath
-	svcRelDirpath := svcDir.dirpathRelativeToVolRoot
+	svcRelDirpath := svcDir.dirpathRelativeToDataDirRoot
 
 	filename := "someFile"
 
@@ -40,7 +40,7 @@ func TestGetFile(t *testing.T) {
 	fileInfo := files[0]
 	assert.True(t, strings.Contains(fileInfo.Name(), filename))
 
-	// Check EnclaveDataVolFile data structure is correct
+	// Check EnclaveDataDirFile data structure is correct
 	assert.Equal(
 		t,
 		svcAbsDirpath,
@@ -49,6 +49,6 @@ func TestGetFile(t *testing.T) {
 	assert.Equal(
 		t,
 		svcRelDirpath,
-		path.Dir(file.GetFilepathRelativeToVolRoot()),
+		path.Dir(file.GetFilepathRelativeToDataDirRoot()),
 	)
 }

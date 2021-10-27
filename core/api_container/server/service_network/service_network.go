@@ -49,7 +49,7 @@ type ServiceNetwork interface {
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
-		enclaveDataVolMntDirpath string,
+		enclaveDataDirMountDirpath string,
 		filesArtifactMountDirpaths map[string]string,
 	) (map[nat.Port]*nat.PortBinding, error)
 

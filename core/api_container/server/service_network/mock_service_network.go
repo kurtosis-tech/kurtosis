@@ -32,7 +32,7 @@ func (m MockServiceNetwork) RegisterService(serviceId service_network_types.Serv
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service_network_types.ServiceID, imageName string, usedPorts map[nat.Port]bool, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataVolMntDirpath string, filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
+func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service_network_types.ServiceID, imageName string, usedPorts map[nat.Port]bool, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMntDirpath string, filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
 	panic("This is unimplemented for the mock network")
 }
 
