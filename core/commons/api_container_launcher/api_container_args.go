@@ -15,8 +15,6 @@ type APIContainerArgs struct {
 	// The name of the API container itself (will be used to get its own container ID)
 	ContainerName			 string	`json:"containerName"`
 
-	ContainerLabels          map[string] string `json:"containerLabels"`
-
 	LogLevel                 string `json:"logLevel"`
 
 	EnclaveId				 string `json:"enclaveId"'`
@@ -39,14 +37,30 @@ type APIContainerArgs struct {
 	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
 }
 
+
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
-func newAPIContainerArgs(containerName string, containerLabels map[string]string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) *V0LaunchAPIArgs {
-	return &APIContainerArgs{ContainerName: containerName, ContainerLabels: containerLabels, LogLevel: logLevel, EnclaveId: enclaveId, NetworkId: networkId, SubnetMask: subnetMask, ApiContainerIpAddr: apiContainerIpAddr, TakenIpAddrs: takenIpAddrs, IsPartitioningEnabled: isPartitioningEnabled, ShouldPublishPorts: shouldPublishPorts, EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewAPIContainerArgs(containerName string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) (*APIContainerArgs, error) {
+	result := &APIContainerArgs{
+		ContainerName: containerName,
+		LogLevel: logLevel,
+		EnclaveId: enclaveId,
+		NetworkId: networkId,
+		SubnetMask: subnetMask,
+		ApiContainerIpAddr: apiContainerIpAddr,
+		TakenIpAddrs: takenIpAddrs,
+		IsPartitioningEnabled: isPartitioningEnabled,
+		ShouldPublishPorts: shouldPublishPorts,
+		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
+	}
+
+	if err := result.validate(); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
+	}
+	return result, nil
 }
 
-
-func (args APIContainerArgs) Validate() error {
+func (args APIContainerArgs) validate() error {
 	// Generic validation based on field type
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()
