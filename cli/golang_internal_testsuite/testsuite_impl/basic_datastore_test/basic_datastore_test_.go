@@ -52,10 +52,11 @@ func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (netwo
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient, err := getDatastoreClient(serviceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := getDatastoreClient(serviceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting datastore client from datastore service with IP '%v'", serviceContext.GetIPAddress())
 	}
+	defer datastoreClientConnCloseFunc()
 
 	err = waitDatastoreServiceForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
@@ -77,10 +78,11 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting the datastore service info")
 	}
 
-	datastoreClient, err := getDatastoreClient(serviceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := getDatastoreClient(serviceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting datastore client from datastore service with IP '%v'", serviceContext.GetIPAddress())
 	}
+	defer datastoreClientConnCloseFunc()
 
 	logrus.Infof("Verifying that key '%v' doesn't already exist...", testKey)
 	existsArgs := &datastore_rpc_api_bindings.ExistsArgs{
@@ -135,7 +137,7 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	return containerConfigSupplier
 }
 
-func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, error) {
+func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
 	datastoreURL := fmt.Sprintf(
 		"%v:%v",
 		datastoreIp,
@@ -144,13 +146,12 @@ func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.Datastor
 
 	conn, err := grpc.Dial(datastoreURL, grpc.WithInsecure())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred dialling the datastore container via its URL")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling the datastore container via its URL")
 	}
-	defer conn.Close()
 
 	datastoreServiceClient := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
 
-	return datastoreServiceClient, nil
+	return datastoreServiceClient, conn.Close, nil
 }
 
 func waitDatastoreServiceForHealthy(ctx context.Context, client datastore_rpc_api_bindings.DatastoreServiceClient, retries uint32, retriesDelayMilliseconds uint32) error {
