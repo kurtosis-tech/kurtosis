@@ -1,9 +1,11 @@
-package api_container_launcher
+/*
+ * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
+package api_container_docker_consts
 
 const (
-	// All API containers accept exactly one environment variable, which contains the serialized params that
-	// dictate how the API container ought to behave
-	SerializedArgsEnvVar = "SERIALIZED_ARGS"
 
 	// The location where the directory on the Docker host machine for storing enclave data will be bind-mounted
 	//  on the API container

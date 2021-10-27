@@ -13,7 +13,7 @@ import (
 	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -23,6 +23,12 @@ import (
 const (
 	dockerSocket = "/var/run/docker.sock"
 
+	// All API containers accept exactly one environment variable, which contains the serialized params that
+	// dictate how the API container ought to behave
+	serializedArgsEnvVar = "SERIALIZED_ARGS"
+
+	// We ALWAYS publish service ports now
+	shouldPublishServicePorts = true
 )
 
 type ApiContainerLauncher struct {
@@ -150,7 +156,7 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 		apiContainerIpAddr.String(),
 		takenIpAddrStrSet,
 		isPartitioningEnabled,
-		shouldPublishPorts,
+		shouldPublishServicePorts,
 		enclaveDataDirpathOnHostMachine,
 	)
 	if err != nil {
@@ -166,6 +172,6 @@ func (launcher ApiContainerLauncher) genApiContainerEnvVars(
 
 	// TODO switch to the envVars requiring a visitor to hit, so we get them all
 	return map[string]string{
-		SerializedArgsEnvVar: argsStr,
+		serializedArgsEnvVar: argsStr,
 	}, nil
 }

@@ -2,6 +2,9 @@
 ### Changes
 * The API container now assumes the enclave data volume is a directory on the Docker host machine, and bind-mounts it to the containers it starts rather than via volume-mounts
 
+### Changes
+* Swapped the overly-complex `V0LaunchArgs` back to the old way, of a simple `APIContainerLauncher`
+
 # 1.26.4
 ### Changes
 * The API container will no longer stop anything inside its enclave when it shuts down as this role of cleaning up enclaves is being pushed to the enclave manager, though it still can stop containers when requested

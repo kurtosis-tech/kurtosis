@@ -20,8 +20,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher_lib/api_versions/v0"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_volume"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -60,7 +60,7 @@ func main() {
 }
 
 func runMain () error {
-	args, err := v0.RetrieveV0LaunchAPIArgs()
+	args, err := api_container_launcher.RetrieveAPIContainerArgs()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
 	}
@@ -140,7 +140,7 @@ func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataVol *enclave_data_volume.EnclaveDataVolume,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *v0.V0LaunchAPIArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
 	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
