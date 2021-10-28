@@ -27,11 +27,10 @@ const (
 )
 
 type WaitForEndpointAvailabilityTest struct {
-	datastoreImage string
 }
 
-func NewWaitForEndpointAvailabilityTest(datastoreImage string) *WaitForEndpointAvailabilityTest {
-	return &WaitForEndpointAvailabilityTest{datastoreImage: datastoreImage}
+func NewWaitForEndpointAvailabilityTest() *WaitForEndpointAvailabilityTest {
+	return &WaitForEndpointAvailabilityTest{}
 }
 
 func (test WaitForEndpointAvailabilityTest) Configure(builder *testsuite.TestConfigurationBuilder) {

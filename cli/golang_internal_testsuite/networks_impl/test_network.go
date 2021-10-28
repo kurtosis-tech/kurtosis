@@ -197,7 +197,7 @@ func (network *TestNetwork) getApiServiceContainerConfigSupplier() func(ipAddr s
 		}
 
 		startCmd := []string{
-			"./api.bin",
+			"./example-api-server.bin",
 			"--config",
 			datastoreConfigFileFilePath.GetAbsPathOnServiceContainer(),
 		}

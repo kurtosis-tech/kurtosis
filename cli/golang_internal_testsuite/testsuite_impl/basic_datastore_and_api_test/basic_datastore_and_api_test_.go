@@ -148,7 +148,7 @@ func (test BasicDatastoreAndApiTest) Run(network networks.Network) (returnErr er
 		PersonId: testPersonId,
 	}
 	if _, err := apiClient.AddPerson(ctx, addPersonArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding person with test ID '%v'", testPersonId)
+		return stacktrace.Propagate(err, "An error occurred adding test person with ID '%v'", testPersonId)
 	}
 	logrus.Info("Test person added")
 

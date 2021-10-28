@@ -47,9 +47,7 @@ func (suite InternalTestsuite) GetTests() map[string]testsuite.Test {
 		),
 		"filesArtifactMountingTest": files_artifact_mounting_test.FilesArtifactMountingTest{},
 		"execCommandTest": exec_command_test.ExecCommandTest{},
-		"waitForEndpointAvailabilityTest": wait_for_endpoint_availability_test.NewWaitForEndpointAvailabilityTest(
-			suite.datastoreServiceImage,
-		),
+		"waitForEndpointAvailabilityTest": wait_for_endpoint_availability_test.NewWaitForEndpointAvailabilityTest(),
 		"localStaticFileTest":              local_static_file_test.LocalStaticFileTest{},
 		"bulkCommandExecutionTest":         bulk_command_execution_test.NewBulkCommandExecutionTest(suite.datastoreServiceImage),
 		"moduleTest":                       module_test.ModuleTest{},

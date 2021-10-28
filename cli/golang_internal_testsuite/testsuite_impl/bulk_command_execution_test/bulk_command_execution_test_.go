@@ -69,18 +69,6 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 }
             },
             {
-                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
-                "args": {
-                    "service_id": "service1",
-                    "port": 1323,
-                    "path": "health",
-                    "initial_delay_milliseconds": 0,
-                    "retries": 5,
-                    "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
-                }
-            },
-            {
                 "type": "REGISTER_SERVICE",
                 "args": {
                     "service_id": "service2"
@@ -95,18 +83,6 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                         "1323/tcp": true
                     },
                     "enclave_data_vol_mnt_dirpath": "/test-volume"
-                }
-            },
-            {
-                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
-                "args": {
-                    "service_id": "service2",
-                    "port": 1323,
-                    "path": "health",
-                    "initial_delay_milliseconds": 0,
-                    "retries": 5,
-                    "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
                 }
             },
             {
@@ -145,18 +121,6 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                         "1323/tcp": true
                     },
                     "enclave_data_vol_mnt_dirpath": "/test-volume"
-                }
-            },
-            {
-                "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
-                "args": {
-                    "service_id": "service3",
-                    "port": 1323,
-                    "path": "health",
-                    "initial_delay_milliseconds": 0,
-                    "retries": 5,
-                    "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
                 }
             },
             {

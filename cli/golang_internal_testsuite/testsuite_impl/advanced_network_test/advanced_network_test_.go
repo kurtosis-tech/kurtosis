@@ -60,7 +60,7 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 		PersonId: testPersonId,
 	}
 	if _, err := personModifierClient.AddPerson(ctx, addPersonArgs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding person with test ID '%v'", testPersonId)
+		return stacktrace.Propagate(err, "An error occurred adding test person with ID '%v'", testPersonId)
 	}
 	logrus.Info("Test person added")
 
@@ -79,7 +79,7 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 	}
 	getPersonResponse, err := personRetrieverClient.GetPerson(ctx, getPersonArgs)
 	if err == nil {
-		return stacktrace.NewError("An error occurred getting the test person with ID '%'", testPersonId)
+		return stacktrace.NewError("An error occurred getting the test person with ID '%v'", testPersonId)
 	}
 	logrus.Info("Retrieved test person")
 
