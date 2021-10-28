@@ -1,4 +1,8 @@
 # TBD
+### Changes
+* Replaced `kurtosistech/example-microservices_datastore` Docker image with `kurtosistech/example-datastore-server` in `golang_internal_testsuite`
+* Replaced `kurtosistech/example-microservices_api` Docker image with `kurtosistech/example-api-server` in `golang_internal_testsuite`
+* Replaced `kurtosistech/example-microservices_datastore` Docker image with `docker/getting-started` in `bulk_command_execution_test` and `wait_for_endpoint_availability_test`
 
 # 0.5.5
 ### Fixes
