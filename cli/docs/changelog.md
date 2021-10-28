@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where a testsuite could be reported as passing, even when the tests were failing
 
 # 0.6.0
 ### Features
