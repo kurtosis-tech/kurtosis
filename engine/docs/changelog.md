@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.0
 ### Features
 * The loglevel of the engine server can now be controlled via a `logLevelStr` JSON args property
 
