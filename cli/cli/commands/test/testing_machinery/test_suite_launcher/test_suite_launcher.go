@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
@@ -18,6 +19,8 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"os"
+	"path"
 	"strconv"
 )
 
@@ -28,6 +31,10 @@ const (
 	// will be told to listen on
 	portForDebuggersRunningOnTestsuite     = 2778
 	protocolForDebuggersRunningOnTestsuite = "tcp"
+
+	// TODO This constant represents "forbidden knowledge" about the directory that the engine-server uses to store enclave
+	//  data in!!! It can be deleted as soon as the engine server is the only interface for interacting with an enclave
+	allEnclavesDirnameInsideEngineDataDir = "enclaves"
 )
 
 var testsuiteRpcPort = nat.Port(fmt.Sprintf("%v/%v", kurtosis_testsuite_rpc_api_consts.ListenPort, kurtosis_testsuite_rpc_api_consts.ListenProtocol))
@@ -95,7 +102,7 @@ func (launcher TestsuiteContainerLauncher) LaunchMetadataAcquiringContainer(
 		bridgeNetworkId,
 		nil,   // Nil because the bridge network will assign IPs on its own (and won't know what IPs are already used)
 		testsuiteEnvVars,
-		map[string]string{},
+		map[string]string{}, // No bind mounts necessary for metadata acquisition
 		labels,
 	)
 	if err != nil {
@@ -126,11 +133,11 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		ctx context.Context,
 		log *logrus.Logger,
 		dockerManager *docker_manager.DockerManager,
+		enclaveId string,
 		networkId string,
 		containerName string,
 		kurtosisApiContainerIp net.IP,
 		testsuiteContainerIp net.IP,
-		enclaveDataVolName string,
 		labels map[string]string) (string, *nat.PortBinding, error){
 	log.Debugf(
 		"Test suite container IP: %v; kurtosis API container IP: %v",
@@ -146,8 +153,12 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 
 	suiteContainerDesc := "test-running testsuite container"
 	log.Debugf("Launching %v....", suiteContainerDesc)
-	volumeMountpoints := map[string]string{
-		enclaveDataVolName: kurtosis_testsuite_docker_api.EnclaveDataVolumeMountpoint,
+	enclaveDataDirpath, err := getEnclaveDataDirpath(enclaveId)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting enclave data dirpath for enclave '%v'", enclaveId)
+	}
+	bindMounts := map[string]string{
+		enclaveDataDirpath: kurtosis_testsuite_docker_api.EnclaveDataDirMountpoint,
 	}
 	suiteContainerId, hostPortBindings, err := launcher.createAndStartTestsuiteContainerWithDebuggingPort(
 		ctx,
@@ -156,7 +167,7 @@ func (launcher TestsuiteContainerLauncher) LaunchTestRunningContainer(
 		networkId,
 		testsuiteContainerIp,
 		testSuiteEnvVars,
-		volumeMountpoints,
+		bindMounts,
 		labels,
 	)
 	if err != nil {
@@ -191,7 +202,7 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		networkId string,
 		containerIpAddr net.IP,
 		envVars map[string]string,
-		volumeMountpoints map[string]string,
+		bindMounts map[string]string,
 		labels map[string]string,
 	) (string, map[nat.Port]*nat.PortBinding, error) {
 
@@ -212,8 +223,8 @@ func (launcher TestsuiteContainerLauncher) createAndStartTestsuiteContainerWithD
 		usedPorts,
 	).WithEnvironmentVariables(
 		envVars,
-	).WithVolumeMounts(
-		volumeMountpoints,
+	).WithBindMounts(
+		bindMounts,
 	).WithLabels(
 		labels,
 	).Build()
@@ -293,4 +304,21 @@ func killContainerIfNotFunctionSuccess(
 	} else {
 		log.Debugf("Skipping killing container '%v' because function completed successfully", containerId)
 	}
+}
+
+// TODO Delete this function!!! It uses "forbidden knowledge" about how the engine server creates enclave data directories
+//  to get the enclave data directory. The whole testing framework needs to go away, so that all engine/enclave data
+//  directory management is done inside the engine-server
+func getEnclaveDataDirpath(enclaveId string) (string, error) {
+	engineDataDirpath, err := host_machine_directories.GetEngineDataDirpath()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
+	}
+	// TODO This is the forbidden knoweldge part! This code here shouldn't know anything about the internal
+	//  structure of the engine data dirpath - that should be for the engine alone
+	enclaveDataDirpath := path.Join(engineDataDirpath, allEnclavesDirnameInsideEngineDataDir, enclaveId)
+	if _, err := os.Stat(enclaveDataDirpath); os.IsNotExist(err) {
+		return "", stacktrace.NewError("Expected enclave data dirpath '%v' to exist, but doesn't", enclaveDataDirpath)
+	}
+	return enclaveDataDirpath, nil
 }
