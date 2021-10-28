@@ -26,9 +26,11 @@ var positionalArgs = []string{
 
 
 type TemplateData struct {
-	KurtosisClientVersion      string
-	PackageInstallationDirpath string
-	InstalledPackagesDirpath   string
+	KurtosisClientVersion         string
+	PackageInstallationDirpath    string
+	InstalledPackagesDirpath      string
+	KurtosisAPISocketEnvVar       string
+	EnclaveDataMountDirpathEnvVar string
 }
 
 // This is a tiny Go script that uses the Kurtosis client version exposed in Go code to generate
@@ -72,9 +74,11 @@ func runMain() error {
 	}
 
 	data := TemplateData{
-		KurtosisClientVersion:      kurtosis_api_version_const.KurtosisApiVersion,
-		PackageInstallationDirpath: packageInstallationDirpath,
-		InstalledPackagesDirpath:   installedPackagesDirpath,
+		KurtosisClientVersion:         kurtosis_api_version_const.KurtosisApiVersion,
+		PackageInstallationDirpath:    packageInstallationDirpath,
+		InstalledPackagesDirpath:      installedPackagesDirpath,
+		KurtosisAPISocketEnvVar:       repl_consts.KurtosisSocketEnvVar,
+		EnclaveDataMountDirpathEnvVar: repl_consts.EnclaveDataMountDirpathEnvVar,
 	}
 
 	fp, err := os.Create(outputFilepath)

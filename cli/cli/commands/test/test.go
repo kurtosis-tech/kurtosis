@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/test_suite_runner"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/dirpath_existence_ensurer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
@@ -255,7 +256,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -303,7 +304,7 @@ func getAccessController(
 			return nil, stacktrace.Propagate(err, "An error occurred getting the home directory")
 		}
 		kurtosisDirpath := path.Join(homeDirpath, kurtosisDirname)
-		if err := ensureKurtosisDirpathExists(kurtosisDirpath); err != nil {
+		if err := dirpath_existence_ensurer.EnsureDirpathExists(kurtosisDirpath); err != nil {
 			logrus.Warnf(
 				"An error occurred creating the Kurtosis directory at '%v', which will likely impede saving your session:\n%v",
 				kurtosisDirpath,
@@ -365,15 +366,3 @@ func splitTestsStrIntoTestsSet(testsStr string) map[string]bool {
 	return testNamesToRun
 }
 
-func ensureKurtosisDirpathExists(kurtosisDirpath string) error {
-	if _, err := os.Stat(kurtosisDirpath); os.IsNotExist(err) {
-		if err := os.Mkdir(kurtosisDirpath, 0777); err != nil {
-			return stacktrace.Propagate(
-				err,
-				"Kurtosis directory '%v' didn't exist, and an error occurred trying to create it",
-				kurtosisDirpath,
-			)
-		}
-	}
-	return nil
-}

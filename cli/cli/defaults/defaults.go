@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/kurtosis-core/commons/kurtosis_core_version"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_version"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -20,3 +21,4 @@ const (
 
 	DefaultEngineImage = kurtosisDockerOrg + "/kurtosis-engine-server:" + kurtosis_engine_server_version.KurtosisEngineServerVersion
 )
+var DefaultEngineLogLevel = logrus.InfoLevel

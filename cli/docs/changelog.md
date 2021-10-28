@@ -1,5 +1,16 @@
 # TBD
 
+# 0.6.0
+### Features
+* The engine loglevel can be configured with the new `--log-level` flag to `engine start`
+
+### Changes
+* Renamed the `repl new` image flag to make more sense
+* Update to using the engine server that stores engine/enclave data on the user's local machine
+
+### Breaking Changes
+* The `--js-repl-image` flag of `repl new` has been renamed to `--image`, with shorthand `-i`
+
 # 0.5.5
 ### Fixes
 * A failed `module exec` or `sandbox` stops, rather than destroys, the enclave it created

@@ -183,11 +183,11 @@ func RunTest(
 		testSetupExecutionCtx,
 		log,
 		dockerManager,
+		enclaveId,
 		networkId,
 		testsuiteContainerName,
 		kurtosisApiIp,
 		testsuiteIpAddr,
-		enclaveId,
 		enclaveObjLabelsProvider.ForTestRunningTestsuiteContainer(),
 	)
 	if err != nil {
