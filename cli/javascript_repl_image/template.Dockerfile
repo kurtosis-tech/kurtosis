@@ -15,6 +15,6 @@ CMD node -i --experimental-repl-await -e " \
     let kurtosisCore = require(\"kurtosis-core-api-lib\"); \
     let grpc = require(\"grpc\"); \
     let networkCtx; \
-    const client = new kurtosisCore.ApiContainerServiceClient(\"${KURTOSIS_API_SOCKET}\", grpc.credentials.createInsecure()); \
-    networkCtx = new kurtosisCore.NetworkContext(client, \"${ENCLAVE_DATA_VOLUME_MOUNTPOINT}\"); \
+    const client = new kurtosisCore.ApiContainerServiceClient(\"${{ "{" }}{{ .KurtosisAPISocketEnvVar }}{{ "}" }}\", grpc.credentials.createInsecure()); \
+    networkCtx = new kurtosisCore.NetworkContext(client, \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
 "

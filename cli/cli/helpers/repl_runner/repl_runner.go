@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
@@ -23,20 +24,13 @@ const (
 )
 
 const (
-	enclaveDataVolMountpointOnReplContainer = "/kurtosis-enclave-data"
+	enclaveDataDirMountpointOnReplContainer = "/kurtosis-enclave-data"
 
 	// The dirpath inside the REPL container where the user's current directory will be bind-mounted, so the user
 	//  can access files on their local system within the REPL
 	workingDirectoryBindMountDirpathInsideReplContainer = "/local"
 
 	replContainerSuccessExitCode = 0
-
-	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-	// vvvvvvvvvvvvvvv If you change these, update the REPL Dockerfile!!! vvvvvvvvvvvv
-	replContainerKurtosisSocketEnvVar = "KURTOSIS_API_SOCKET"
-	replContainerEnclaveDataVolMountpointEnvVar = "ENCLAVE_DATA_VOLUME_MOUNTPOINT"
-	// ^^^^^^^^^^^^^^^ If you change these, update the REPL Dockerfile!!! ^^^^^^^^^^^^
-	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
 
 // Launches a REPL container and attaches to it, blocking until the REPL container exits
@@ -124,12 +118,12 @@ func RunREPL(
 	).WithStaticIP(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
-		replContainerKurtosisSocketEnvVar:           kurtosisApiContainerSocket,
-		replContainerEnclaveDataVolMountpointEnvVar: enclaveDataVolMountpointOnReplContainer,
+		repl_consts.KurtosisSocketEnvVar:          kurtosisApiContainerSocket,
+		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(
 		bindMounts,
 	).WithVolumeMounts(map[string]string{
-		enclaveId: enclaveDataVolMountpointOnReplContainer,
+		enclaveId: enclaveDataDirMountpointOnReplContainer,
 	}).WithLabels(
 		labels,
 	).Build()

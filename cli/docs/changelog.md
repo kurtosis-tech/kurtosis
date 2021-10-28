@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Renamed the `repl new` image flag to make more sense
+* Update to using the engine server that stores engine/enclave data on the user's local machine
+
+### Breaking Changes
+* The `--js-repl-image` flag of `repl new` has been renamed to `--image`, with shorthand `-i`
 
 # 0.5.5
 ### Fixes

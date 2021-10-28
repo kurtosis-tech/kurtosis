@@ -2,6 +2,9 @@ package repl_consts
 
 type ReplType string
 const (
+	KurtosisSocketEnvVar          = "KURTOSIS_API_SOCKET"
+	EnclaveDataMountDirpathEnvVar = "ENCLAVE_DATA_DIR_MOUNTPOINT"
+
 	ReplType_Javascript ReplType = "javascript"
 
 	javascriptPackageInstallationDirpath = "/preinstalled-node-modules"
