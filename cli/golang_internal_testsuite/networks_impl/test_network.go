@@ -107,13 +107,13 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() (returnErr error) {
 
 	network.datastoreClient = datastoreClient
 
-	personModifyingApiClient, err := network.addApiService(ctx)
+	personModifyingApiClient, err := network.addApiService(ctx, datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the person-modifying API client")
 	}
 	network.personModifyingApiClient = personModifyingApiClient
 
-	personRetrievingApiClient, err := network.addApiService(ctx)
+	personRetrievingApiClient, err := network.addApiService(ctx, datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the person-retrieving API client")
 	}
@@ -140,7 +140,7 @@ func (network *TestNetwork) GetPersonRetrievingApiClient() (example_api_server_r
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func (network *TestNetwork) addApiService(ctx context.Context) (exampleAPIClient example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, returnErr error) {
+func (network *TestNetwork) addApiService(ctx context.Context, datastoreIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, error) {
 
 	if network.datastoreClient == nil {
 		return nil, stacktrace.NewError("Cannot add API service to network; no datastore client exists")
@@ -150,21 +150,17 @@ func (network *TestNetwork) addApiService(ctx context.Context) (exampleAPIClient
 	network.nextApiServiceId = network.nextApiServiceId + 1
 	serviceId := services.ServiceID(serviceIdStr)
 
-	apiServiceContainerConfigSupplier := network.getApiServiceContainerConfigSupplier()
+	apiServiceContainerConfigSupplier := network.getApiServiceContainerConfigSupplier(datastoreIp)
 
 	apiServiceContext, hostPortBindings, err := network.networkCtx.AddService(serviceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := newExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, _, err := newExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", serviceId, apiServiceContext.GetIPAddress())
 	}
-	defer func() {
-		err = apiClientConnCloseFunc()
-		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
-	}()
 
 	err = waitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
@@ -172,7 +168,7 @@ func (network *TestNetwork) addApiService(ctx context.Context) (exampleAPIClient
 	}
 
 	logrus.Infof("Added API service with host port bindings: %+v", hostPortBindings)
-	return apiClient, returnErr
+	return apiClient, nil
 }
 
 func (network *TestNetwork) getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
@@ -187,11 +183,11 @@ func (network *TestNetwork) getDatastoreContainerConfigSupplier() func(ipAddr st
 	return containerConfigSupplier
 }
 
-func (network *TestNetwork) getApiServiceContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func (network *TestNetwork) getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
-		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(ipAddr, sharedDirectory)
+		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(datastoreIP, sharedDirectory)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating data store config file in service container")
 		}

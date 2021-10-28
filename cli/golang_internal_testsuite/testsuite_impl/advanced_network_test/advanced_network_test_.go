@@ -78,7 +78,7 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 		PersonId: testPersonId,
 	}
 	getPersonResponse, err := personRetrieverClient.GetPerson(ctx, getPersonArgs)
-	if err == nil {
+	if err != nil {
 		return stacktrace.NewError("An error occurred getting the test person with ID '%v'", testPersonId)
 	}
 	logrus.Info("Retrieved test person")
