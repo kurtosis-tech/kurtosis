@@ -97,7 +97,6 @@ func (launcher ApiContainerLauncher) Launch(
 		envVars,
 	).WithBindMounts(map[string]string{
 		dockerSocket: dockerSocket,
-	}).WithVolumeMounts(map[string]string{
 		enclaveDataDirpathOnHostMachine: api_container_docker_consts.EnclaveDataDirMountpoint,
 	}).WithLabels(
 		containerLabels,
