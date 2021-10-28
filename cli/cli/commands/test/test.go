@@ -281,7 +281,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if !allTestsPassed {
-		return stacktrace.Propagate(err, "One or more tests didn't pass")
+		return stacktrace.NewError("One or more tests didn't pass")
 	}
 	return nil
 }
