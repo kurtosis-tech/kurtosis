@@ -41,7 +41,7 @@ func (test BasicDatastoreTest) Configure(builder *testsuite.TestConfigurationBui
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
 }
 
-func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (network networks.Network, returnErr error) {
 	ctx := context.Background()
 
 	datastoreContainerConfigSupplier := test.getDatastoreContainerConfigSupplier()
@@ -55,7 +55,10 @@ func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (netwo
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
 	}
-	defer datastoreClientConnCloseFunc()
+	defer func() {
+		err = datastoreClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+	}()
 
 	err = waitDatastoreServiceForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
@@ -63,10 +66,10 @@ func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (netwo
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", hostPortBindings)
-	return networkCtx, nil
+	return networkCtx, returnErr
 }
 
-func (test BasicDatastoreTest) Run(network networks.Network) error {
+func (test BasicDatastoreTest) Run(network networks.Network) (returnErr error)  {
 	ctx := context.Background()
 
 	// Necessary because Go doesn't have generics
@@ -81,7 +84,10 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
 	}
-	defer datastoreClientConnCloseFunc()
+	defer func() {
+		err = datastoreClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+	}()
 
 	logrus.Infof("Verifying that key '%v' doesn't already exist...", testKey)
 	existsArgs := &datastore_rpc_api_bindings.ExistsArgs{
@@ -118,7 +124,7 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 		return stacktrace.NewError("Returned value '%v' != test value '%v'", getResponse.GetValue(), testValue)
 	}
 	logrus.Info("Value verified")
-	return nil
+	return returnErr
 }
 
 // ====================================================================================================

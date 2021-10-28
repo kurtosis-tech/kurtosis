@@ -63,7 +63,7 @@ func (test BasicDatastoreAndApiTest) Configure(builder *testsuite.TestConfigurat
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
 }
 
-func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (network networks.Network, returnErr error) {
 	ctx := context.Background()
 
 	datastoreContainerConfigSupplier := test.getDatastoreContainerConfigSupplier()
@@ -77,7 +77,10 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
-	defer datastoreClientConnCloseFunc()
+	defer func() {
+		err = datastoreClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+	}()
 
 	err = waitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
@@ -97,7 +100,10 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
 	}
-	defer apiClientConnCloseFunc()
+	defer func() {
+		err = apiClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+	}()
 
 	err = waitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
@@ -105,13 +111,13 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 	}
 
 	logrus.Infof("Added API service with host port bindings: %+v", apiSvcHostPortBindings)
-	return networkCtx, nil
+	return networkCtx, returnErr
 }
 
-func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {
+func (test BasicDatastoreAndApiTest) Run(network networks.Network) (returnErr error) {
 	ctx := context.Background()
 
-	// Go doesn't have generics so we have to do this cast first
+	// Go doesn't have generics, so we have to do this cast first
 	castedNetwork := network.(*networks.NetworkContext)
 
 	serviceContext, err := castedNetwork.GetServiceContext(apiServiceId)
@@ -123,7 +129,10 @@ func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, serviceContext.GetIPAddress())
 	}
-	defer apiClientConnCloseFunc()
+	defer func() {
+		err = apiClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+	}()
 
 	logrus.Infof("Verifying that person with test ID '%v' doesn't already exist...", testPersonId)
 	getPersonArgs := &example_api_server_rpc_api_bindings.GetPersonArgs{
@@ -177,7 +186,7 @@ func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {
 		)
 	}
 
-	return nil
+	return returnErr
 }
 
 // ====================================================================================================

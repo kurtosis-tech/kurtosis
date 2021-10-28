@@ -94,7 +94,8 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() (returnErr error) {
 		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
 	defer func() {
-		returnErr = datastoreClientConnCloseFunc()
+		err = datastoreClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
 	}()
 
 	err = waitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
@@ -161,7 +162,8 @@ func (network *TestNetwork) addApiService(ctx context.Context) (exampleAPIClient
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", serviceId, apiServiceContext.GetIPAddress())
 	}
 	defer func() {
-		returnErr = apiClientConnCloseFunc()
+		err = apiClientConnCloseFunc()
+		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
 	}()
 
 	err = waitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
