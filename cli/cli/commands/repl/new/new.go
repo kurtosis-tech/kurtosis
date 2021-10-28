@@ -69,7 +69,7 @@ func run(cmd *cobra.Command, args []string) error {
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

@@ -1,4 +1,7 @@
 # TBD
+### Features
+* The engine loglevel can be configured with the new `--log-level` flag to `engine start`
+
 ### Changes
 * Renamed the `repl new` image flag to make more sense
 * Update to using the engine server that stores engine/enclave data on the user's local machine

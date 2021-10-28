@@ -24,9 +24,6 @@ const (
 	dockerSocketFilepath = "/var/run/docker.sock"
 )
 
-// TODO Parameterize this from the CLI
-var defaultLogLevel = logrus.InfoLevel
-
 // Visitor that does its best to guarantee that a Kurtosis engine is running
 // If the visit method doesn't return an error, then the engine started successfully
 type engineExistenceGuarantor struct {
@@ -40,6 +37,8 @@ type engineExistenceGuarantor struct {
 
 	engineImage string
 
+	logLevel logrus.Level
+
 	// Port bindings of the engine server that is guaranteed to be started if the visiting didn't throw an error
 	// Will be nil before visiting
 	postVisitingHostMachinePortBinding *nat.PortBinding
@@ -50,12 +49,14 @@ func newEngineExistenceGuarantor(
 	preVisitingMaybeHostMachinePortBinding *nat.PortBinding,
 	dockerManager *docker_manager.DockerManager,
 	engineImage string,
+	logLevel logrus.Level,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                    ctx,
 		preVisitingMaybeHostMachinePortBinding: preVisitingMaybeHostMachinePortBinding,
 		dockerManager:                          dockerManager,
 		engineImage:                            engineImage,
+		logLevel:                               logLevel,
 		postVisitingHostMachinePortBinding:     nil,
 	}
 }
@@ -66,7 +67,10 @@ func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachinePortBinding
 
 // If the engine is stopped, try to start it
 func (guarantor *engineExistenceGuarantor) VisitStopped() error {
-	logrus.Infof("No Kurtosis engine was found; attempting to start one using image '%v'...", guarantor.engineImage)
+	logrus.Infof(
+		"No Kurtosis engine was found; attempting to start one using image '%v'...",
+		guarantor.engineImage,
+	)
 	matchingNetworks, err := guarantor.dockerManager.GetNetworksByName(guarantor.ctx, networkToStartEngineContainerIn)
 	if err != nil {
 		return stacktrace.Propagate(
@@ -110,7 +114,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
 	}
 
-	envVars, err := getEngineEnvVars(engineDataDirpath)
+	envVars, err := getEngineEnvVars(guarantor.logLevel, engineDataDirpath)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the engine envvars")
 	}
@@ -180,10 +184,10 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
-func getEngineEnvVars(engineDataDirpathOnHostMachine string) (map[string]string, error) {
+func getEngineEnvVars(logLevel logrus.Level, engineDataDirpathOnHostMachine string) (map[string]string, error) {
 	// TODO replace with a constructor
 	args := kurtosis_engine_server_docker_api.EngineServerArgs{
-		LogLevelStr:                    defaultLogLevel.String(),
+		LogLevelStr:                    logLevel.String(),
 		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
 	}
 	serializedBytes, err := json.Marshal(args)
