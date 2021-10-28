@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.0
 ### Features
 * The engine loglevel can be configured with the new `--log-level` flag to `engine start`
 
