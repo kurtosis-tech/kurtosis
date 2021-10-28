@@ -20,7 +20,7 @@ import (
 
 const (
 	enclaveIDArg           = "enclave-id"
-	javascriptReplImageArg = "js-repl-image"
+	imageArg               = "image"
 )
 
 var positionalArgs = []string{
@@ -32,17 +32,17 @@ var jsReplImage string
 var NewCmd = &cobra.Command{
 	Use:                   command_str_consts.ReplNewCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short:                 "Create a new Javascript REPL inside the given Kurtosis enclave",
+	Short:                 "Create a new REPL inside the given Kurtosis enclave",
 	RunE:                  run,
 }
 
 func init() {
 	NewCmd.Flags().StringVarP(
 		&jsReplImage,
-		javascriptReplImageArg,
-		"r",
+		imageArg,
+		"i",
 		defaults.DefaultJavascriptReplImage,
-		"The image of the Javascript REPL to connect to the enclave with",
+		"The image of the REPL to connect to the enclave with",
 	)
 }
 
