@@ -6,15 +6,18 @@
 package advanced_network_test
 
 import (
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
+	"context"
+	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/networks_impl"
+	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
+	"strconv"
 )
 
 const (
-	testPersonId = 46
+	testPersonId = "46"
 )
 
 type AdvancedNetworkTest struct {
@@ -40,6 +43,8 @@ func (test *AdvancedNetworkTest) Setup(networkCtx *networks.NetworkContext) (net
 }
 
 func (test *AdvancedNetworkTest) Run(network networks.Network) error {
+	ctx := context.Background()
+
 	castedNetwork := network.(*networks_impl.TestNetwork)
 	personModifierClient, err := castedNetwork.GetPersonModifyingApiClient()
 	if err != nil {
@@ -51,28 +56,45 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 	}
 
 	logrus.Infof("Adding test person via person-modifying API client...")
-	if err := personModifierClient.AddPerson(testPersonId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding test person")
+	addPersonArgs := &example_api_server_rpc_api_bindings.AddPersonArgs{
+		PersonId: testPersonId,
+	}
+	if _, err := personModifierClient.AddPerson(ctx, addPersonArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding person with test ID '%v'", testPersonId)
 	}
 	logrus.Info("Test person added")
 
 	logrus.Infof("Incrementing test person's number of books read through person-modifying API client...")
-	if err := personModifierClient.IncrementBooksRead(testPersonId); err != nil {
+	incrementBooksReadArgs := &example_api_server_rpc_api_bindings.IncrementBooksReadArgs{
+		PersonId: testPersonId,
+	}
+	if _, err := personModifierClient.IncrementBooksRead(ctx, incrementBooksReadArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred incrementing the number of books read")
 	}
 	logrus.Info("Incremented number of books read")
 
 	logrus.Info("Retrieving test person to verify number of books read person-retrieving API client...")
-	person, err := personRetrieverClient.GetPerson(testPersonId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the test person")
+	getPersonArgs := &example_api_server_rpc_api_bindings.GetPersonArgs{
+		PersonId: testPersonId,
+	}
+	getPersonResponse, err := personRetrieverClient.GetPerson(ctx, getPersonArgs)
+	if err == nil {
+		return stacktrace.NewError("An error occurred getting the test person with ID '%'", testPersonId)
 	}
 	logrus.Info("Retrieved test person")
 
-	if person.BooksRead != 1 {
+	personBooksReadBase := 10
+	personBooksReadBitSize := 32
+
+	personBooksRead, err := strconv.ParseInt(getPersonResponse.GetBooksRead(), personBooksReadBase, personBooksReadBitSize)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing person books read string '%v' to int", personBooksRead)
+	}
+
+	if personBooksRead != 1 {
 		return stacktrace.NewError(
 			"Expected number of books read to be incremented, but was '%v'",
-			person.BooksRead,
+			personBooksRead,
 		)
 	}
 	return nil

@@ -6,41 +6,44 @@
 package basic_datastore_and_api_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
-	"github.com/kurtosis-tech/example-microservice/api/api_service_client"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"time"
-	"context"
 )
 
 const (
-	datastoreImage                        = "kurtosistech/example-datastore-server"
 	datastoreServiceId services.ServiceID = "datastore"
 	datastorePort                         = 1323
 
-	apiServiceImage                    = "kurtosistech/example-api-server"
 	apiServiceId    services.ServiceID = "api"
 	apiServicePort                     = 2434
 
 	waitForStartupDelayMilliseconds = 1000
 	waitForStartupMaxPolls          = 15
 
-	testPersonId     = 23
+	testPersonId     = "23"
 	testNumBooksRead = 3
 
 	configFilepathRelativeToSharedDirRoot = "config-file.txt"
 )
+
+type GRPCAvailabilityChecker interface {
+	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
 
 type datastoreConfig struct {
 	DatastoreIp   string `json:"datastoreIp"`
@@ -56,47 +59,47 @@ func NewBasicDatastoreAndApiTest(datastoreImage string, apiImage string) *BasicD
 	return &BasicDatastoreAndApiTest{datastoreImage: datastoreImage, apiImage: apiImage}
 }
 
-func (b BasicDatastoreAndApiTest) Configure(builder *testsuite.TestConfigurationBuilder) {
+func (test BasicDatastoreAndApiTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
 }
 
-func (b BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := getDatastoreContainerConfigSupplier()
+	datastoreContainerConfigSupplier := test.getDatastoreContainerConfigSupplier()
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient, datastoreClientConnCloseFunc, err := getDatastoreClient(datastoreServiceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := newDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting datastore client from datastore service with IP '%v'", datastoreServiceContext.GetIPAddress())
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
 	defer datastoreClientConnCloseFunc()
 
-	err = waitDatastoreServiceForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = waitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
 
-	apiServiceContainerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreServiceContext.GetIPAddress())
+	apiServiceContainerConfigSupplier := test.getApiServiceContainerConfigSupplier(datastoreServiceContext.GetIPAddress())
 
 	apiServiceContext, apiSvcHostPortBindings, err := networkCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := getExampleAPIServerClient(ctx, apiServiceContext.GetIPAddress())
+	apiClient, apiClientConnCloseFunc, err := newExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting example API server client from service with IP '%v'", apiServiceContext.GetIPAddress())
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
 	}
 	defer apiClientConnCloseFunc()
 
-	err = waitExampleAPIServerForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = waitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
 	}
@@ -105,7 +108,9 @@ func (b BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (ne
 	return networkCtx, nil
 }
 
-func (b BasicDatastoreAndApiTest) Run(network networks.Network) error {
+func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {
+	ctx := context.Background()
+
 	// Go doesn't have generics so we have to do this cast first
 	castedNetwork := network.(*networks.NetworkContext)
 
@@ -114,40 +119,61 @@ func (b BasicDatastoreAndApiTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting the API service context")
 	}
 
-	apiClient := api_service_client.NewAPIClient(serviceContext.GetIPAddress(), apiServicePort)
+	apiClient, apiClientConnCloseFunc, err := newExampleAPIServerClient(serviceContext.GetIPAddress())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, serviceContext.GetIPAddress())
+	}
+	defer apiClientConnCloseFunc()
 
 	logrus.Infof("Verifying that person with test ID '%v' doesn't already exist...", testPersonId)
-	if _, err = apiClient.GetPerson(testPersonId); err == nil {
+	getPersonArgs := &example_api_server_rpc_api_bindings.GetPersonArgs{
+		PersonId: testPersonId,
+	}
+	if _, err = apiClient.GetPerson(ctx, getPersonArgs); err == nil {
 		return stacktrace.NewError("Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
 	}
 	logrus.Infof("Verified that test person doesn't already exist")
 
 	logrus.Infof("Adding test person with ID '%v'...", testPersonId)
-	if err := apiClient.AddPerson(testPersonId); err != nil {
+	addPersonArgs := &example_api_server_rpc_api_bindings.AddPersonArgs{
+		PersonId: testPersonId,
+	}
+	if _, err := apiClient.AddPerson(ctx, addPersonArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding person with test ID '%v'", testPersonId)
 	}
 	logrus.Info("Test person added")
 
 	logrus.Infof("Incrementing test person's number of books read by %v...", testNumBooksRead)
 	for i := 0; i < testNumBooksRead; i++ {
-		if err := apiClient.IncrementBooksRead(testPersonId); err != nil {
+		incrementBooksReadArgs := &example_api_server_rpc_api_bindings.IncrementBooksReadArgs{
+			PersonId: testPersonId,
+		}
+		if _, err := apiClient.IncrementBooksRead(ctx, incrementBooksReadArgs); err != nil {
 			return stacktrace.Propagate(err, "An error occurred incrementing the number of books read")
 		}
 	}
 	logrus.Info("Incremented number of books read")
 
 	logrus.Info("Retrieving test person to verify number of books read...")
-	person, err := apiClient.GetPerson(testPersonId)
+	getPersonResponse, err := apiClient.GetPerson(ctx, getPersonArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the test person to verify the number of books read")
 	}
 	logrus.Info("Retrieved test person")
 
-	if person.BooksRead != testNumBooksRead {
+	personBooksReadBase := 10
+	personBooksReadBitSize := 32
+
+	personBooksRead, err := strconv.ParseInt(getPersonResponse.GetBooksRead(), personBooksReadBase, personBooksReadBitSize)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing person books read string '%v' to int", personBooksRead)
+	}
+
+	if personBooksRead != testNumBooksRead {
 		return stacktrace.NewError(
 			"Expected number of book read '%v' != actual number of books read '%v'",
 			testNumBooksRead,
-			person.BooksRead,
+			personBooksRead,
 		)
 	}
 
@@ -157,10 +183,10 @@ func (b BasicDatastoreAndApiTest) Run(network networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func (test BasicDatastoreAndApiTest) getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
+			test.datastoreImage,
 		).WithUsedPorts(
 			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
 		).Build()
@@ -169,7 +195,7 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	return containerConfigSupplier
 }
 
-func getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func (test BasicDatastoreAndApiTest) getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
@@ -185,7 +211,7 @@ func getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string
 		}
 
 		containerConfig := services.NewContainerConfigBuilder(
-			apiServiceImage,
+			test.apiImage,
 		).WithUsedPorts(
 			map[string]bool{fmt.Sprintf("%v/tcp", apiServicePort): true},
 		).WithCmdOverride(startCmd).Build()
@@ -221,7 +247,7 @@ func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirec
 	return configFileFilePath, nil
 }
 
-func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
+func newDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
 	datastoreURL := fmt.Sprintf(
 		"%v:%v",
 		datastoreIp,
@@ -238,31 +264,7 @@ func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.Datastor
 	return datastoreServiceClient, conn.Close, nil
 }
 
-func waitDatastoreServiceForHealthy(ctx context.Context, client datastore_rpc_api_bindings.DatastoreServiceClient, retries uint32, retriesDelayMilliseconds uint32) error {
-
-	var (
-		emptyArgs = &empty.Empty{}
-		err error
-	)
-
-	for i := uint32(0); i < retries; i++ {
-		_, err = client.IsAvailable(ctx, emptyArgs)
-		if err == nil  {
-			break
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(err,
-			"The datastore service didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			retries, retriesDelayMilliseconds)
-	}
-
-	return nil
-}
-
-func getExampleAPIServerClient(ctx context.Context, exampleAPIServerIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
+func newExampleAPIServerClient(exampleAPIServerIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
 	exampleAPIServerURL := fmt.Sprintf(
 		"%v:%v",
 		exampleAPIServerIp,
@@ -279,16 +281,16 @@ func getExampleAPIServerClient(ctx context.Context, exampleAPIServerIp string) (
 	return exampleAPIServerClient, conn.Close, nil
 }
 
-func waitExampleAPIServerForHealthy(ctx context.Context, client example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, retries uint32, retriesDelayMilliseconds uint32) error {
+func waitForHealthy(ctx context.Context, client GRPCAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
 
 	var (
 		emptyArgs = &empty.Empty{}
-		err error
+		err       error
 	)
 
 	for i := uint32(0); i < retries; i++ {
 		_, err = client.IsAvailable(ctx, emptyArgs)
-		if err == nil  {
+		if err == nil {
 			break
 		}
 		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
@@ -296,7 +298,7 @@ func waitExampleAPIServerForHealthy(ctx context.Context, client example_api_serv
 
 	if err != nil {
 		return stacktrace.Propagate(err,
-			"The example API server service didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			"The datastore service didn't return a success code, even after %v retries with %v milliseconds in between retries",
 			retries, retriesDelayMilliseconds)
 	}
 

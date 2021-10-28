@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	datastoreImage                        = "kurtosistech/example-datastore-server"
 	datastoreServiceId services.ServiceID = "datastore"
 	datastorePort                         = 1323
 	testKey                               = "test-key"
@@ -45,16 +44,16 @@ func (test BasicDatastoreTest) Configure(builder *testsuite.TestConfigurationBui
 func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := getDatastoreContainerConfigSupplier()
+	datastoreContainerConfigSupplier := test.getDatastoreContainerConfigSupplier()
 
 	serviceContext, hostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient, datastoreClientConnCloseFunc, err := getDatastoreClient(serviceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := newDatastoreClient(serviceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting datastore client from datastore service with IP '%v'", serviceContext.GetIPAddress())
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
 	}
 	defer datastoreClientConnCloseFunc()
 
@@ -78,9 +77,9 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting the datastore service info")
 	}
 
-	datastoreClient, datastoreClientConnCloseFunc, err := getDatastoreClient(serviceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := newDatastoreClient(serviceContext.GetIPAddress())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting datastore client from datastore service with IP '%v'", serviceContext.GetIPAddress())
+		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
 	}
 	defer datastoreClientConnCloseFunc()
 
@@ -125,10 +124,10 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func (test BasicDatastoreTest) getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
+			test.datastoreImage,
 		).WithUsedPorts(
 			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
 		).Build()
@@ -137,7 +136,7 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	return containerConfigSupplier
 }
 
-func getDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
+func newDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
 	datastoreURL := fmt.Sprintf(
 		"%v:%v",
 		datastoreIp,
