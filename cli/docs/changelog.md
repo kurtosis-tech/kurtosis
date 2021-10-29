@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits
 
 # 0.6.1
 ### Fixes

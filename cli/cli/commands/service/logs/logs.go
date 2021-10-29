@@ -26,6 +26,8 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg = "enclave-id"
 	guidArg = "guid"
+
+	shouldShowStoppedUserServiceContainers = true
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
@@ -81,14 +83,27 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getContainerLabelsWithEnclaveIdAndGUID(enclaveId, guid)
+	labels := getUserServiceContainerLabelsWithEnclaveIdAndGUID(enclaveId, guid)
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
 	}
 
-	if containers != nil && len(containers) > 0 {
+	if containers == nil || len(containers) == 0 {
+		labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
+
+		containersWithEnclaveId, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
+		}
+
+		if containersWithEnclaveId == nil || len(containersWithEnclaveId) == 0 {
+			logrus.Errorf("There is not any service container with enclave ID '%v' and GUID '%v'", enclaveId, guid)
+		} else {
+			logrus.Errorf("There is not any service container with GUID '%v'", guid)
+		}
+	} else {
 		if len(containers) > 1 {
 			return stacktrace.NewError("Should exist only one container with enclave-id '%v' and guid '%v' but there are '%v' containers with these properties", enclaveId, guid, len(containers))
 		}
@@ -113,10 +128,15 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func getContainerLabelsWithEnclaveIdAndGUID(enclaveId string, guid string) map[string]string {
+func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]string {
 	labels := map[string]string{}
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
+	return labels
+}
+
+func getUserServiceContainerLabelsWithEnclaveIdAndGUID(enclaveId string, guid string) map[string]string {
+	labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
 	labels[enclave_object_labels.GUIDLabel] = guid
 	return labels
 }
