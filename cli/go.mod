@@ -7,8 +7,11 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
+	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211027224509-06f0ee6c1413
+	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211027215405-a85d5d8e244d
 	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211028165905-656c34814dcc

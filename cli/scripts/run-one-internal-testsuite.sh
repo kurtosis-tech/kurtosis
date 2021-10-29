@@ -12,8 +12,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 source "${script_dirpath}/_constants.sh"
 
 SUPPORTED_LANGS_FILENAME="supported-languages.txt"
-EXAMPLE_API_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-microservices_api"
-EXAMPLE_DATASTORE_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-microservices_datastore"
+EXAMPLE_API_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-api-server"
+EXAMPLE_DATASTORE_MICROSERVICE_IMAGE="${DOCKER_ORG}/example-datastore-server"
 INTERNAL_TESTSUITE_PARAMS_JSON='{
     "apiServiceImage" :"'${EXAMPLE_API_MICROSERVICE_IMAGE}'",
     "datastoreServiceImage": "'${EXAMPLE_DATASTORE_MICROSERVICE_IMAGE}'"

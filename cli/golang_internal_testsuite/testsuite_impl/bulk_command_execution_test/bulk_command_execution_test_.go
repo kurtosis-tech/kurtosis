@@ -13,12 +13,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	dockerGettingStartedImage = "docker/getting-started"
+)
+
 type BulkCommandExecutionTest struct {
-	datastoreServiceImage string
 }
 
-func NewBulkCommandExecutionTest(datastoreServiceImage string) *BulkCommandExecutionTest {
-	return &BulkCommandExecutionTest{datastoreServiceImage: datastoreServiceImage}
+func NewBulkCommandExecutionTest() *BulkCommandExecutionTest {
+	return &BulkCommandExecutionTest{}
 }
 
 func (test BulkCommandExecutionTest) Configure(builder *testsuite.TestConfigurationBuilder) {
@@ -36,7 +39,7 @@ func (test BulkCommandExecutionTest) Run(network networks.Network) error {
 	}
 
 	logrus.Info("Executing JSON-serialized commands to create a network with various services and repartition it...")
-	bulkCommandJson := generateBulkCommandJson(test.datastoreServiceImage)
+	bulkCommandJson := generateBulkCommandJson(dockerGettingStartedImage)
 	if err := networkCtx.ExecuteBulkCommands(bulkCommandJson); err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing the bulk command JSON to set up the network")
 	}
@@ -46,7 +49,7 @@ func (test BulkCommandExecutionTest) Run(network networks.Network) error {
 
 func generateBulkCommandJson(datastoreServiceImage string) string {
 	result := fmt.Sprintf(
-`
+		`
 {
     "schemaVersion": 0,
     "body": {
@@ -63,7 +66,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "service_id": "service1",
                     "docker_image": "%v",
                     "used_ports": {
-                        "1323/tcp": true
+                        "80/tcp": true
                     },
                     "enclave_data_dir_mnt_dirpath": "/kurtosis-enclave-data"
                 }
@@ -72,12 +75,12 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service1",
-                    "port": 1323,
-                    "path": "health",
+                    "port": 80,
+                    "path": "",
                     "initial_delay_milliseconds": 0,
                     "retries": 5,
                     "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
+                    "body_text": ""
                 }
             },
             {
@@ -92,7 +95,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "service_id": "service2",
                     "docker_image": "%v",
                     "used_ports": {
-                        "1323/tcp": true
+                        "80/tcp": true
                     },
                     "enclave_data_dir_mnt_dirpath": "/kurtosis-enclave-data"
                 }
@@ -101,12 +104,12 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service2",
-                    "port": 1323,
-                    "path": "health",
+                    "port": 80,
+                    "path": "",
                     "initial_delay_milliseconds": 0,
                     "retries": 5,
                     "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
+                    "body_text": ""
                 }
             },
             {
@@ -142,7 +145,7 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                     "service_id": "service3",
                     "docker_image": "%v",
                     "used_ports": {
-                        "1323/tcp": true
+                        "80/tcp": true
                     },
                     "enclave_data_dir_mnt_dirpath": "/kurtosis-enclave-data"
                 }
@@ -151,12 +154,12 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
                 "type": "WAIT_FOR_HTTP_GET_ENDPOINT_AVAILABILITY",
                 "args": {
                     "service_id": "service3",
-                    "port": 1323,
-                    "path": "health",
+                    "port": 80,
+                    "path": "",
                     "initial_delay_milliseconds": 0,
                     "retries": 5,
                     "retries_delay_milliseconds": 2000,
-                    "body_text": "healthy"
+                    "body_text": ""
                 }
             },
             {
@@ -180,10 +183,9 @@ func generateBulkCommandJson(datastoreServiceImage string) string {
     }
 }
 `,
-		datastoreServiceImage,
-		datastoreServiceImage,
-		datastoreServiceImage,
+		dockerGettingStartedImage,
+		dockerGettingStartedImage,
+		dockerGettingStartedImage,
 	)
 	return result
 }
-

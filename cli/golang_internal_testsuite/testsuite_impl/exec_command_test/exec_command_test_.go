@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 const (
@@ -22,8 +21,6 @@ const (
 
 	successExitCode int32 = 0
 
-	waitForStartupTimeBetweenPolls = 1 * time.Second
-	waitForStartupMaxPolls         = 10
 )
 
 var execCommandThatShouldWork = []string{
