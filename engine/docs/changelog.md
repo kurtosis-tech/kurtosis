@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.1
 ### Features
 * The `EnclaveInfo` object has a new enclave-data-dirpath-on-host-machine property
 
