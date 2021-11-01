@@ -11,6 +11,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 UPDATE_PACKAGE_VERSIONS_SCRIPT_FILENAME="pre-release-script_update-package-versions.sh"    # From devtools; expected to be on the PATH
 
+API_DIRNAME="api"
+
 # ==================================================================================================
 #                                       Arg Parsing & Validation
 # ==================================================================================================
@@ -33,4 +35,6 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
+api_dirpath="${root_dirpath}/${API_DIRNAME}"
+cd "${api_dirpath}"
 bash "${UPDATE_PACKAGE_VERSIONS_SCRIPT_FILENAME}" "${root_dirpath}" "${new_version}"
