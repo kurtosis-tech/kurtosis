@@ -1,6 +1,6 @@
 import * as path from "path"
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class SharedPath {
 
     //Absolute path in the container where this code is running
@@ -12,15 +12,15 @@ export class SharedPath {
         this.absPathOnThisContainer = absPathOnThisContainer;
         this.absPathOnServiceContainer = absPathOnServiceContainer;
     }
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getAbsPathOnThisContainer(): string {
         return this.absPathOnThisContainer;
     }
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getAbsPathOnServiceContainer(): string {
         return this.absPathOnServiceContainer;
     }
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getChildPath(pathElement: string): SharedPath {
         const absPathOnThisContainer = path.join(this.absPathOnThisContainer, pathElement);
 

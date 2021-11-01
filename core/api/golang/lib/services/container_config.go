@@ -23,7 +23,7 @@ type FilesArtifactID string
 // ====================================================================================================
 //                                    Config Object
 // ====================================================================================================
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfig struct {
 	image                        string
 	usedPortsSet                 map[string]bool
@@ -61,7 +61,7 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 //                                      Builder
 // ====================================================================================================
 // TODO Defensive copies on all these With... functions???
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfigBuilder struct {
 	image                        string
 	usedPortsSet                 map[string]bool

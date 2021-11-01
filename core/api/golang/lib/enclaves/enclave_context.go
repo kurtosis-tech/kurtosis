@@ -42,7 +42,7 @@ const (
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
 )
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
@@ -67,12 +67,12 @@ func NewEnclaveContext(
 	}
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetEnclaveID() EnclaveID {
 	return enclaveCtx.enclaveId
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) LoadModule(
 		moduleId modules.ModuleID,
 		image string,
@@ -88,7 +88,7 @@ func (enclaveCtx *EnclaveContext) LoadModule(
 	return moduleCtx, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) UnloadModule(moduleId modules.ModuleID) error {
 	args := binding_constructors.NewUnloadModuleArgs(string(moduleId))
 
@@ -99,7 +99,7 @@ func (enclaveCtx *EnclaveContext) UnloadModule(moduleId modules.ModuleID) error 
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*modules.ModuleContext, error) {
 	args := binding_constructors.NewGetModuleInfoArgs(string(moduleId))
 
@@ -112,7 +112,7 @@ func (enclaveCtx *EnclaveContext) GetModuleContext(moduleId modules.ModuleID) (*
 	return moduleCtx, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[services.FilesArtifactID]string) error {
 	filesArtifactIdStrsToUrls := map[string]string{}
 	for artifactId, url := range filesArtifactUrls {
@@ -125,7 +125,7 @@ func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[s
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
 		serviceId services.ServiceID,
 		containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
@@ -143,7 +143,7 @@ func (enclaveCtx *EnclaveContext) AddService(
 	return serviceContext, hostPortBindings, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		serviceId services.ServiceID,
 		partitionID PartitionID,
@@ -213,7 +213,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	return serviceContext, resp.UsedPortsHostPortBindings, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
 	getServiceInfoArgs := binding_constructors.NewGetServiceInfoArgs(string(serviceId))
 	serviceResponse, err := enclaveCtx.client.GetServiceInfo(context.Background(), getServiceInfoArgs)
@@ -255,7 +255,7 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) RemoveService(serviceId services.ServiceID, containerStopTimeoutSeconds uint64) error {
 
 	logrus.Debugf("Removing service '%v'...", serviceId)
@@ -272,7 +272,7 @@ func (enclaveCtx *EnclaveContext) RemoveService(serviceId services.ServiceID, co
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) RepartitionNetwork(
 	partitionServices map[PartitionID]map[services.ServiceID]bool,
 	partitionConnections map[PartitionID]map[PartitionID]*kurtosis_core_rpc_api_bindings.PartitionConnectionInfo,
@@ -320,7 +320,7 @@ func (enclaveCtx *EnclaveContext) RepartitionNetwork(
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) WaitForHttpGetEndpointAvailability(serviceId services.ServiceID, port uint32, path string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32, bodyText string) error {
 
 	availabilityArgs := binding_constructors.NewWaitForHttpGetEndpointAvailabilityArgs(
@@ -347,7 +347,7 @@ func (enclaveCtx *EnclaveContext) WaitForHttpGetEndpointAvailability(serviceId s
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId services.ServiceID, port uint32, path string, requestBody string, initialDelayMilliseconds uint32, retries uint32, retriesDelayMilliseconds uint32, bodyText string) error {
 
 	availabilityArgs := binding_constructors.NewWaitForHttpPostEndpointAvailabilityArgs(
@@ -375,7 +375,7 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) ExecuteBulkCommands(bulkCommandsJson string) error {
 	args := binding_constructors.NewExecuteBulkCommandsArgs(bulkCommandsJson)
 	if _, err := enclaveCtx.client.ExecuteBulkCommands(context.Background(), args); err != nil {
@@ -384,7 +384,7 @@ func (enclaveCtx *EnclaveContext) ExecuteBulkCommands(bulkCommandsJson string) e
 	return nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error){
 	response, err := enclaveCtx.client.GetServices(context.Background(), &emptypb.Empty{})
 	if err != nil {
@@ -403,7 +403,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, er
 	return serviceIds, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error){
 	response, err := enclaveCtx.client.GetModules(context.Background(), &emptypb.Empty{})
 	if err != nil {

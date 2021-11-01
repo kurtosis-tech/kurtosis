@@ -66,7 +66,7 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 // The path on the user service container where the enclave data dir will be bind-mounted
 const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
     private readonly client: ApiContainerServiceClient;
 
@@ -84,12 +84,12 @@ export class EnclaveContext {
         this.enclaveDataDirpath = enclaveDataDirpath;
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getEnclaveId(): EnclaveID {
         return this.enclaveId;
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async loadModule(
             moduleId: ModuleID,
             image: string,
@@ -118,7 +118,7 @@ export class EnclaveContext {
         return ok(moduleCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async unloadModule(moduleId: ModuleID): Promise<Result<null,Error>> {
         const args: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
 
@@ -143,7 +143,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
         const args: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
         
@@ -168,7 +168,7 @@ export class EnclaveContext {
         return ok(moduleCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async registerFilesArtifacts(filesArtifactUrls: Map<FilesArtifactID, string>): Promise<Result<null,Error>> {
         const filesArtifactIdStrsToUrls: Map<string, string> = new Map();
         for (const [artifactId, url] of filesArtifactUrls.entries()) {
@@ -197,7 +197,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addService(
             serviceId: ServiceID,
             containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
@@ -216,7 +216,7 @@ export class EnclaveContext {
         return ok(resultAddServiceToPartition.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async addServiceToPartition(
             serviceId: ServiceID,
             partitionId: PartitionID,
@@ -313,7 +313,7 @@ export class EnclaveContext {
         return ok<[ServiceContext, Map<string, PortBinding>], Error>([serviceContext, resultMap]);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServiceContext(serviceId: ServiceID): Promise<Result<ServiceContext, Error>> {
         const getServiceInfoArgs: GetServiceInfoArgs = newGetServiceInfoArgs(serviceId);
         
@@ -371,7 +371,7 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async removeService(serviceId: ServiceID, containerStopTimeoutSeconds: number): Promise<Result<null, Error>> {
 
         log.debug("Removing service '" + serviceId + "'...");
@@ -399,7 +399,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async repartitionNetwork(
             partitionServices: Map<PartitionID, Set<ServiceID>>,
             partitionConnections: Map<PartitionID, Map<PartitionID, PartitionConnectionInfo>>,
@@ -457,7 +457,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpGetEndpointAvailability(
         serviceId: ServiceID,
         port: number, 
@@ -492,7 +492,7 @@ export class EnclaveContext {
     return ok(null);
 }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpPostEndpointAvailability(
             serviceId: ServiceID,
             port: number, 
@@ -529,7 +529,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async executeBulkCommands(bulkCommandsJson: string): Promise<Result<null, Error>> {
 
         const args: ExecuteBulkCommandsArgs = newExecuteBulkCommandsArgs(bulkCommandsJson);
@@ -551,7 +551,7 @@ export class EnclaveContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServices(): Promise<Result<Set<ServiceID>, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
         
@@ -585,7 +585,7 @@ export class EnclaveContext {
         return ok(serviceIDs)
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModules(): Promise<Result<Set<ModuleID>, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
         

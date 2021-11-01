@@ -24,7 +24,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ServiceContext struct {
 	client			kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	serviceId		ServiceID
@@ -45,22 +45,22 @@ func NewServiceContext(
 	}
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (self *ServiceContext) GetServiceID() ServiceID {
 	return self.serviceId
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (self *ServiceContext) GetIPAddress() string {
 	return self.ipAddress
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (self *ServiceContext) GetSharedDirectory() *SharedPath {
 	return self.sharedDirectory
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (self *ServiceContext) ExecCommand(command []string) (int32, string, error) {
 	serviceId := self.serviceId
 	args := binding_constructors.NewExecCommandArgs(string(serviceId), command)

@@ -26,7 +26,7 @@ import (
 
 type ModuleID string
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ModuleContext struct {
 	client   kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	moduleId ModuleID
@@ -36,7 +36,7 @@ func NewModuleContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceC
 	return &ModuleContext{client: client, moduleId: moduleId}
 }
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (moduleCtx *ModuleContext) Execute(serializedParams string) (serializedResult string, resultErr error) {
 	args := binding_constructors.NewExecuteModuleArgs(string(moduleCtx.moduleId), serializedParams)
 	resp, err := moduleCtx.client.ExecuteModule(context.Background(), args)
