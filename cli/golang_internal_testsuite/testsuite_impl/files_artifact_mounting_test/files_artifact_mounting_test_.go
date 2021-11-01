@@ -119,15 +119,16 @@ func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory 
 	return containerConfigSupplier
 }
 
-func getFileContents(ipAddress string, port uint32, filename string) (fileContents string, returnErr error) {
+func getFileContents(ipAddress string, port uint32, filename string) (string, error) {
 	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, port, filename))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the contents of file '%v'", filename)
 	}
 	body := resp.Body
 	defer func() {
-		err = body.Close()
-		returnErr = stacktrace.Propagate(err, "An error occurred closing response body")
+		if err := body.Close(); err != nil {
+			logrus.Warnf("We tried to close the response body, but doing so threw an error:\n%v", err)
+		}
 	}()
 
 	bodyBytes, err := ioutil.ReadAll(body)

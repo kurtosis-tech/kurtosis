@@ -39,7 +39,7 @@ func (test BulkCommandExecutionTest) Run(network networks.Network) error {
 	}
 
 	logrus.Info("Executing JSON-serialized commands to create a network with various services and repartition it...")
-	bulkCommandJson := generateBulkCommandJson(dockerGettingStartedImage)
+	bulkCommandJson := generateBulkCommandJson()
 	if err := networkCtx.ExecuteBulkCommands(bulkCommandJson); err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing the bulk command JSON to set up the network")
 	}
@@ -47,7 +47,7 @@ func (test BulkCommandExecutionTest) Run(network networks.Network) error {
 	return nil
 }
 
-func generateBulkCommandJson(datastoreServiceImage string) string {
+func generateBulkCommandJson() string {
 	result := fmt.Sprintf(
 		`
 {

@@ -133,4 +133,3 @@ func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.Ser
 	}
 	return result, nil
 }
-

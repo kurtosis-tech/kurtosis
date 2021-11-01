@@ -284,8 +284,8 @@ func streamTestsuiteLogsWhileRunningTest(
 	//  an EOF
 	defer func() {
 		if err := dockerManager.StopContainer(testTeardownCtx, testsuiteContainerId, containerTeardownTimeout); err != nil {
-				log.Errorf("An error occurred stopping the testsuite container; this will likely cause a log streamer error:")
-				fmt.Fprintln(log.Out, err)
+			log.Errorf("An error occurred stopping the testsuite container; this will likely cause a log streamer error:")
+			fmt.Fprintln(log.Out, err)
 		}
 	}()
 
