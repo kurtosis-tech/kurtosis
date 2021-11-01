@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
 )
 
 const (
@@ -46,14 +45,24 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 	ctx := context.Background()
 
 	castedNetwork := network.(*networks_impl.TestNetwork)
-	personModifierClient, err := castedNetwork.GetPersonModifyingApiClient()
+	personModifierClient, personModifyingApiClientCloseFunc, err := castedNetwork.GetPersonModifyingApiClient()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the person-modifying API client")
 	}
-	personRetrieverClient, err := castedNetwork.GetPersonRetrievingApiClient()
+	defer func() {
+		if err := personModifyingApiClientCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the person modifying API client, but doing so threw an error:\n%v", err)
+		}
+	}()
+	personRetrieverClient, personRetrievingApiClientCloseFunc, err := castedNetwork.GetPersonRetrievingApiClient()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the person-retrieving API client")
 	}
+	defer func() {
+		if err := personRetrievingApiClientCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the person retrieving API client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	logrus.Infof("Adding test person via person-modifying API client...")
 	addPersonArgs := &example_api_server_rpc_api_bindings.AddPersonArgs{
@@ -83,18 +92,10 @@ func (test *AdvancedNetworkTest) Run(network networks.Network) error {
 	}
 	logrus.Info("Retrieved test person")
 
-	personBooksReadBase := 10
-	personBooksReadBitSize := 32
-
-	personBooksRead, err := strconv.ParseInt(getPersonResponse.GetBooksRead(), personBooksReadBase, personBooksReadBitSize)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing person books read string '%v' to int", personBooksRead)
-	}
-
-	if personBooksRead != 1 {
+	if getPersonResponse.GetBooksRead() != 1 {
 		return stacktrace.NewError(
 			"Expected number of books read to be incremented, but was '%v'",
-			personBooksRead,
+			getPersonResponse.GetBooksRead(),
 		)
 	}
 	return nil

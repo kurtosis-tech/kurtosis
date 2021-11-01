@@ -7,21 +7,14 @@ package network_partition_test
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
-	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"io/ioutil"
-	"os"
 	"time"
 )
 
@@ -29,8 +22,7 @@ const (
 	defaultPartitionId   networks.PartitionID = ""
 	apiPartitionId       networks.PartitionID = "api"
 	datastorePartitionId networks.PartitionID = "datastore"
-	datastorePort                             = 1323
-	apiServicePort                            = 2434
+
 	datastoreServiceId   services.ServiceID   = "datastore"
 	api1ServiceId        services.ServiceID   = "api1"
 	api2ServiceId        services.ServiceID   = "api2"
@@ -39,17 +31,8 @@ const (
 	waitForStartupMaxNumPolls       = 15
 
 	testPersonId                          = "46"
-	configFilepathRelativeToSharedDirRoot = "config-file"
+	contextTimeOut = 2 * time.Second
 )
-
-type GRPCAvailabilityChecker interface {
-	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
-}
-
-type datastoreConfig struct {
-	DatastoreIp   string `json:"datastoreIp"`
-	DatastorePort int    `json:"datastorePort"`
-}
 
 type NetworkPartitionTest struct {
 	datastoreImage string
@@ -69,10 +52,10 @@ func (test NetworkPartitionTest) Configure(builder *testsuite.TestConfigurationB
 }
 
 // Instantiates the network with no partition and one person in the datatstore
-func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (network networks.Network, returnErr error) {
+func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := test.getDatastoreContainerConfigSupplier()
+	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
@@ -80,16 +63,17 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
-	datastoreClient, datastoreClientConnCloseFunc, err := newDatastoreClient(datastoreServiceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
 	defer func() {
-		err = datastoreClientConnCloseFunc()
-		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+		if err := datastoreClientConnCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+		}
 	}()
 
-	err = waitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
@@ -104,8 +88,9 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v'", api1ServiceId)
 	}
 	defer func() {
-		err = apiClientConnCloseFunc()
-		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+		if err := apiClientConnCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the API client, but doing so threw an error:\n%v", err)
+		}
 	}()
 
 	addPersonArgs := &example_api_server_rpc_api_bindings.AddPersonArgs{
@@ -122,7 +107,7 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 		return nil, stacktrace.Propagate(err, "An error occurred test person's books read in preparation for the test")
 	}
 
-	return networkCtx, returnErr
+	return networkCtx, nil
 }
 
 func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error) {
@@ -148,12 +133,12 @@ func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error)
 		return stacktrace.Propagate(err, "An error occurred getting the API 1 service context")
 	}
 
-	apiClient, _, err := newExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, _, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", api1ServiceId, apiServiceContext.GetIPAddress())
 	}
 
-	ctxWithTimeOut, cancelCtxWithTimeOut := context.WithTimeout(ctx, 50*time.Millisecond)
+	ctxWithTimeOut, cancelCtxWithTimeOut := context.WithTimeout(ctx, contextTimeOut)
 	defer cancelCtxWithTimeOut()
 
 	incrementBooksReadArgs := &example_api_server_rpc_api_bindings.IncrementBooksReadArgs{
@@ -180,13 +165,17 @@ func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error)
 		return stacktrace.Propagate(err, "An error occurred adding the second API service to the network")
 	}
 	defer func() {
-		err = apiClient2ConnCloseFunc()
-		returnErr = stacktrace.Propagate(err, "An error occurred closing GRPC client")
+		if err := apiClient2ConnCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the API client 2, but doing so threw an error:\n%v", err)
+		}
 	}()
 	logrus.Info("Second API container added successfully")
 
+	ctxWithTimeOut2, cancelCtxWithTimeOut2 := context.WithTimeout(ctx, contextTimeOut)
+	defer cancelCtxWithTimeOut2()
+
 	logrus.Info("Incrementing books read via API 2 while partition is in place, to verify no comms are possible...")
-	if _, err := apiClient2.IncrementBooksRead(ctx, incrementBooksReadArgs);err == nil {
+	if _, err := apiClient2.IncrementBooksRead(ctxWithTimeOut2, incrementBooksReadArgs);err == nil {
 		return stacktrace.NewError("Expected the book increment call via API 2 to fail due to the network " +
 			"partition between API and datastore services, but no error was thrown")
 	} else {
@@ -222,71 +211,32 @@ func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error)
 		)
 	}
 	logrus.Info("Successfully incremented books read via API 2, indicating that the partition has healed successfully!")
-	return returnErr
+	return nil
 }
 
 // ========================================================================================================
 //                                     Private helper functions
 // ========================================================================================================
-func (test NetworkPartitionTest) getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			test.datastoreImage,
-		).WithUsedPorts(
-			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
-}
-
-func (test NetworkPartitionTest) getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-
-	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-
-		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(datastoreIP, sharedDirectory)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating data store config file in service container")
-		}
-
-		startCmd := []string{
-			"./example-api-server.bin",
-			"--config",
-			datastoreConfigFileFilePath.GetAbsPathOnServiceContainer(),
-		}
-
-		containerConfig := services.NewContainerConfigBuilder(
-			test.apiImage,
-		).WithUsedPorts(
-			map[string]bool{fmt.Sprintf("%v/tcp", apiServicePort): true},
-		).WithCmdOverride(startCmd).Build()
-
-		return containerConfig, nil
-	}
-
-	return containerConfigSupplier
-}
-
 func (test NetworkPartitionTest) addApiService(
 	ctx context.Context,
 	networkCtx *networks.NetworkContext,
 	serviceId services.ServiceID,
 	partitionId networks.PartitionID,
-	datastoreIp string) (client example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, closeConnFunc func() error, returnErr error) {
+	datastoreIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
 
-	apiServiceContainerConfigSupplier := test.getApiServiceContainerConfigSupplier(datastoreIp)
+	apiServiceContainerConfigSupplier := client_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreIp)
 
 	apiServiceContext, hostPortBindings, err := networkCtx.AddServiceToPartition(serviceId, partitionId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := newExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, apiClientConnCloseFunc, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", serviceId, apiServiceContext.GetIPAddress())
 	}
 
-	err = waitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = client_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
 	}
@@ -295,30 +245,6 @@ func (test NetworkPartitionTest) addApiService(
 	return apiClient, apiClientConnCloseFunc, nil
 }
 
-func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
-	configFileFilePath := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
-
-	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
-
-	logrus.Debugf("Datastore IP: %v , port: %v", datastoreIP, datastorePort)
-
-	configObj := datastoreConfig{
-		DatastoreIp:   datastoreIP,
-		DatastorePort: datastorePort,
-	}
-	configBytes, err := json.Marshal(configObj)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
-	}
-
-	logrus.Debugf("API config JSON: %v", string(configBytes))
-
-	if err := ioutil.WriteFile(configFileFilePath.GetAbsPathOnThisContainer(), configBytes, os.ModePerm); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
-	}
-
-	return configFileFilePath, nil
-}
 /*
 Creates a repartitioner that will partition the network between the API & datastore services, with the connection between them configurable
 */
@@ -357,62 +283,3 @@ func repartitionNetwork(
 	}
 	return nil
 }
-
-func newDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
-	datastoreURL := fmt.Sprintf(
-		"%v:%v",
-		datastoreIp,
-		datastorePort,
-	)
-
-	conn, err := grpc.Dial(datastoreURL, grpc.WithInsecure())
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling the datastore container via its URL")
-	}
-
-	datastoreServiceClient := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-
-	return datastoreServiceClient, conn.Close, nil
-}
-
-func newExampleAPIServerClient(exampleAPIServerIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
-	exampleAPIServerURL := fmt.Sprintf(
-		"%v:%v",
-		exampleAPIServerIp,
-		apiServicePort,
-	)
-
-	conn, err := grpc.Dial(exampleAPIServerURL, grpc.WithInsecure())
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling the example API server container via its URL")
-	}
-
-	exampleAPIServerClient := example_api_server_rpc_api_bindings.NewExampleAPIServerServiceClient(conn)
-
-	return exampleAPIServerClient, conn.Close, nil
-}
-
-func waitForHealthy(ctx context.Context, client GRPCAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
-
-	var (
-		emptyArgs = &empty.Empty{}
-		err       error
-	)
-
-	for i := uint32(0); i < retries; i++ {
-		_, err = client.IsAvailable(ctx, emptyArgs)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(err,
-			"The datastore service didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			retries, retriesDelayMilliseconds)
-	}
-
-	return nil
-}
-

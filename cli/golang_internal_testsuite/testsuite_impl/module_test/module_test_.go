@@ -6,8 +6,10 @@
 package module_test
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/example-microservice/datastore/datastore_service_client"
+	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
@@ -17,7 +19,7 @@ import (
 )
 
 const (
-	testModuleImage = "kurtosistech/datastore-army-module:0.1.3"
+	testModuleImage = "kurtosistech/datastore-army-module:0.1.5"
 
 	datastoreArmyModuleId modules.ModuleID = "datastore-army"
 
@@ -25,6 +27,9 @@ const (
 
 	testDatastoreKey = "my-key"
 	testDatastoreValue = "test-value"
+
+	waitForStartupDelayMilliseconds = 1000
+	waitForStartupMaxPolls          = 15
 )
 
 type ModuleTest struct {}
@@ -48,6 +53,8 @@ func (test ModuleTest) Setup(networkCtx *networks.NetworkContext) (networks.Netw
 }
 
 func (test ModuleTest) Run(rawNetwork networks.Network) error {
+	ctx := context.Background()
+
 	// Because Go doesn't have generics
 	networkCtx, ok := rawNetwork.(*networks.NetworkContext)
 	if !ok {
@@ -58,39 +65,56 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the context for module '%v'", datastoreArmyModuleId)
 	}
-
-	allNewServiceIdsAndPorts := map[services.ServiceID]uint32{}
+	serviceIdList := []services.ServiceID{}
 	for i := 0; i < numModuleExecuteCalls; i++ {
 		logrus.Info("Adding two datastore services via the module...")
-		newServiceIdsAndPorts, err := addTwoDatastoreServices(moduleCtx)
+		serviceIdList, err = addTwoDatastoreServices(moduleCtx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred adding two datastore services via the module")
-		}
-		for serviceId, portNum := range newServiceIdsAndPorts {
-			if _, found := allNewServiceIdsAndPorts[serviceId]; found {
-				return stacktrace.NewError("The module created services with IDs that already exist!")
-			}
-			allNewServiceIdsAndPorts[serviceId] = portNum
 		}
 		logrus.Info("Successfully added two datastore services via the module")
 	}
 
 	// Sanity-check that the datastore services that the module created are functional
-	logrus.Infof("Sanity-checking that all %v datastore services added via the module work as expected...", len(allNewServiceIdsAndPorts))
-	for serviceId, portNum := range allNewServiceIdsAndPorts {
+	logrus.Infof("Sanity-checking that all %v datastore services added via the module work as expected...", len(serviceIdList))
+	for _, serviceId := range serviceIdList {
 		serviceCtx, err := networkCtx.GetServiceContext(serviceId)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the service context for service '%v'; this indicates that the module says it created a service that it actually didn't", serviceId)
 		}
 		ipAddr := serviceCtx.GetIPAddress()
-		datastoreClient := datastore_service_client.NewDatastoreClient(ipAddr, int(portNum))
-		if err := datastoreClient.Upsert(testDatastoreKey, testDatastoreValue); err != nil {
+
+		datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(ipAddr)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", serviceId, ipAddr)
+		}
+		defer func() {
+			if err := datastoreClientConnCloseFunc(); err != nil {
+				logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+			}
+		}()
+
+		err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+		}
+
+		upsertArgs := &datastore_rpc_api_bindings.UpsertArgs{
+			Key:   testDatastoreKey,
+			Value: testDatastoreValue,
+		}
+		if _, err := datastoreClient.Upsert(ctx, upsertArgs); err != nil {
 			return stacktrace.Propagate(err, "An error occurred adding the test key to datastore service '%v'", serviceId)
 		}
-		actualValue, err := datastoreClient.Get(testDatastoreKey)
+
+		getArgs := &datastore_rpc_api_bindings.GetArgs{
+			Key: testDatastoreKey,
+		}
+		getResponse, err := datastoreClient.Get(ctx, getArgs)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the test key from datastore service '%v'", serviceId)
 		}
+		actualValue := getResponse.GetValue()
 		if actualValue != testDatastoreValue {
 			return stacktrace.NewError(
 				"Datastore service '%v' is storing value '%v' for the test key, which doesn't match the expected value '%v'",
@@ -115,7 +139,7 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 	return nil
 }
 
-func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.ServiceID]uint32, error) {
+func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) ([]services.ServiceID, error) {
 	paramsJsonStr := `{"numDatastores": 2}`
 	respJsonStr, err := moduleCtx.Execute(paramsJsonStr)
 	if err != nil {
@@ -127,10 +151,9 @@ func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.Ser
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the module response")
 	}
 
-	result := map[services.ServiceID]uint32{}
-	for createdServiceIdStr, createdServicePortNum := range parsedResult.CreatedServiceIdPorts {
-		result[services.ServiceID(createdServiceIdStr)] = createdServicePortNum
+	result := []services.ServiceID{}
+	for createdServiceIdStr, _ := range parsedResult.CreatedServiceIdPorts {
+		result = append(result, services.ServiceID(createdServiceIdStr))
 	}
 	return result, nil
 }
-
