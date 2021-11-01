@@ -8,7 +8,7 @@ package bulk_command_execution_engine
 import (
 	"context"
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/bulk_command_execution"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/palantir/stacktrace"
 )

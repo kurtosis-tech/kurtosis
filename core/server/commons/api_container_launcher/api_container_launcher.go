@@ -12,7 +12,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
 	"github.com/palantir/stacktrace"

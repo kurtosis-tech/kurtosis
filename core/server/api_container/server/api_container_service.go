@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"

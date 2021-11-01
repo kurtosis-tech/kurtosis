@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd831
+	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
@@ -23,4 +23,8 @@ require (
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gotest.tools v2.2.0+incompatible
+)
+
+replace (
+    github.com/kurtosis-tech/kurtosis-module-api-lib/golang => ../api/golang
 )

@@ -7,7 +7,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/sirupsen/logrus"
 	"net"
