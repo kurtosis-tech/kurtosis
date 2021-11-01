@@ -12,7 +12,6 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-a56fef9e73dd
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211101145825-570cf60ea641
-	github.com/kurtosis-tech/example-microservice v0.0.0-20210708190343-51d08a1c685b
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211028165905-656c34814dcc
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211022215258-2285c4a920b6
