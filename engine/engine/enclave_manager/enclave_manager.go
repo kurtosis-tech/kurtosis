@@ -211,7 +211,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		NetworkCidr:        networkIpAndMask.String(),
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
-		ApiContainerInfo:   &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 			ContainerId:       apiContainerId,
 			IpInsideEnclave:   apiContainerIpAddr.String(),
 			PortInsideEnclave: kurtosis_core_rpc_api_consts.ListenPort,
@@ -220,6 +220,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			IpOnHostMachine:   apiContainerHostPortBinding.HostIP,
 			PortOnHostMachine: hostMachinePortUint32,
 		},
+		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller

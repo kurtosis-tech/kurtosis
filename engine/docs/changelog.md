@@ -1,5 +1,12 @@
 # TBD
 
+# 0.5.1
+### Features
+* The `EnclaveInfo` object has a new enclave-data-dirpath-on-host-machine property
+
+### Changes
+* Implement the Engine API Lib 0.10.0
+
 # 0.5.0
 ### Features
 * The loglevel of the engine server can now be controlled via a `logLevelStr` JSON args property
