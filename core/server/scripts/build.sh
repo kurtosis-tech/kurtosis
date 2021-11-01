@@ -3,70 +3,70 @@
 
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dirpath="$(dirname "${script_dirpath}")"
-
-
+server_root_dirpath="$(dirname "${script_dirpath}")"
 
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-source "${script_dirpath}/_constants.sh"
-GET_AUTOUPDATING_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-autoupdating-docker-images-tag.sh"
-DEFAULT_SHOULD_PUBLISH_ARG="false"
+source "${script_dirpath}/_constants.env"
 
+BUILD_DIRNAME="build"
 
-# ==================================================================================================
-#                                       Arg Parsing & Validation
-# ==================================================================================================
-show_helptext_and_exit() {
-    echo "Usage: $(basename "${0}") [should_publish_arg]"
-    echo ""
-    echo "  should_publish_arg  Whether the build artifacts should be published (default: ${DEFAULT_SHOULD_PUBLISH_ARG})"
-    echo ""
-    exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
-}
+MAIN_DIRNAME="api_container"
+MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"
+MAIN_BINARY_OUTPUT_FILENAME="api-container"
+MAIN_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILENAME}"
 
-should_publish_arg="${1:-"${DEFAULT_SHOULD_PUBLISH_ARG}"}"
-if [ "${should_publish_arg}" != "true" ] && [ "${should_publish_arg}" != "false" ]; then
-    echo "Error: Invalid should-publish arg '${should_publish_arg}'" >&2
-    show_helptext_and_exit
+AVAILABILITY_WAITER_DIRNAME="api_container_availability_waiter"
+AVAILABILITY_WAITER_GO_FILEPATH="${server_root_dirpath}/${AVAILABILITY_WAITER_DIRNAME}/main.go"
+AVAILABILITY_WAITER_BINARY_OUTPUT_FILENAME="api-container-availability-waiter"
+AVAILABILITY_WAITER_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${AVAILABILITY_WAITER_BINARY_OUTPUT_FILENAME}"
+
+# =============================================================================
+#                                 Main Code
+# =============================================================================
+# Checks if dockerignore file is in the root path
+if ! [ -f "${server_root_dirpath}"/.dockerignore ]; then
+  echo "Error: No .dockerignore file found in root '${server_root_dirpath}'; this is required so Docker caching is enabled and the Docker builds remain quick" >&2
+  exit 1
 fi
 
-# ==================================================================================================
-#                                             Main Logic
-# ==================================================================================================
-build_dirpath="${root_dirpath}/${BUILD_DIRNAME}"
-if ! mkdir -p "${build_dirpath}"; then
-    echo "Error: Couldn't create build output dir '${build_dirpath}'" >&2
+# Test code
+echo "Running unit tests..."
+cd "${server_root_dirpath}"
+if ! go test "./..."; then
+  echo "Tests failed!" >&2
+  exit 1
+fi
+echo "Tests succeeded"
+
+# Build binaries for packaging inside an Alpine Linux image
+echo "Building server main.go '${MAIN_GO_FILEPATH}'..."
+if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
+  echo "Error: An error occurred building the server code" >&2
+  exit 1
+fi
+echo "Successfully built server code"
+echo "Building availability waiter main.go '${AVAILABILITY_WAITER_GO_FILEPATH}'..."
+if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${AVAILABILITY_WAITER_BINARY_OUTPUT_FILEPATH}" "${AVAILABILITY_WAITER_GO_FILEPATH}"; then
+  echo "Error: An error occurred building the server code" >&2
+  exit 1
+fi
+echo "Successfully built availability waiter code"
+
+# Generate Docker image tag
+get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"
+if ! docker_tag="$(bash "${get_docker_image_tag_script_filepath}")"; then
+    echo "Error: Couldn't get the Docker image tag" >&2
     exit 1
 fi
 
-if ! fixed_docker_image_tag="$(bash "${script_dirpath}/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
-    echo "Error: Couldn't get fixed Docker image tag" >&2
-    exit 1
+# Build Docker image
+dockerfile_filepath="${server_root_dirpath}/Dockerfile"
+image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
+echo "Building example datastore server into a Docker image named '${image_name}'..."
+if ! docker build -t "${image_name}" -f "${dockerfile_filepath}" "${server_root_dirpath}"; then
+  echo "Error: Docker build of the server failed" >&2
+  exit 1
 fi
-if ! autoupdating_docker_image_tag="$(bash "${script_dirpath}/${GET_AUTOUPDATING_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
-    echo "Error: Couldn't get autoupdating Docker image tag" >&2
-    exit 1
-fi
-
-# These variables are used by Goreleaser
-export API_IMAGE
-export FIXED_DOCKER_IMAGE_TAG="${fixed_docker_image_tag}"
-export AUTOUPDATING_DOCKER_IMAGE_TAG="${autoupdating_docker_image_tag}"
-
-# We want to run goreleaser from the root
-cd "${root_dirpath}"
-
-go test ./...
-
-# Build all the Docker images
-if "${should_publish_arg}"; then
-    goreleaser_release_extra_args=""
-else
-    goreleaser_release_extra_args="--snapshot"
-fi
-if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_args}; then
-    echo "Error: Goreleaser release of all binaries & Docker images failed" >&2
-    exit 1
-fi
+echo "Successfully built Docker image '${image_name}' containing the server"

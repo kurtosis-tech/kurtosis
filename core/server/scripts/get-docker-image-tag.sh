@@ -7,7 +7,6 @@
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
@@ -15,6 +14,8 @@ script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #  a Docker image tag
 GIT_REF_SANITIZING_SED_REGEX="s,[/:],_,g"
 
+# Versions matching this regex will get shortened
+RELEASE_VERSION_REGEX="^[0-9]+\.[0-9]+\.[0-9]+$"
 
 # ==================================================================================================
 #                                             Main Logic
