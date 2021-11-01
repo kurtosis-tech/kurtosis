@@ -1,4 +1,7 @@
 # TBD
+### Features
+* The `EnclaveInfo` object has a new enclave-data-dirpath-on-host-machine property
+
 ### Changes
 * Implement the Engine API Lib 0.10.0
 
