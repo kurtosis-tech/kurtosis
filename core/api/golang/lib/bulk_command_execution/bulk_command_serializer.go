@@ -19,7 +19,7 @@ package bulk_command_execution
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/bulk_command_execution/v0_bulk_command_api"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/bulk_command_execution/v0_bulk_command_api"
 	"github.com/kurtosis-tech/stacktrace"
 )
 

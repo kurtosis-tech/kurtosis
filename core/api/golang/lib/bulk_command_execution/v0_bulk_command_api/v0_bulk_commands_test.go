@@ -20,7 +20,7 @@ package v0_bulk_command_api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

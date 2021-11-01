@@ -1,6 +1,6 @@
 package binding_constructors
 
-import "github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
+import "github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 
 // The generated bindings don't come with constructors (leaving it up to the user to initialize all the fields), so we
 // add them so that our code is safer

@@ -19,10 +19,10 @@ package enclaves
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/modules"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/modules"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
