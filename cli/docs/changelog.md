@@ -3,6 +3,7 @@
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `kurtosistech/example-datastore-server` in `golang_internal_testsuite`
 * Replaced `kurtosistech/example-microservices_api` Docker image with `kurtosistech/example-api-server` in `golang_internal_testsuite`
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `docker/getting-started` in `bulk_command_execution_test` and `wait_for_endpoint_availability_test`
+* Upgraded `datastore army module` Docker image to the latest version `kurtosistech/datastore-army-module:0.1.5` in `module_test` 
 
 # 0.5.5
 ### Fixes
