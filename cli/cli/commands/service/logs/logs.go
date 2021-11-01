@@ -11,9 +11,10 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,11 +25,12 @@ import (
 
 const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
-	enclaveIdArg = "enclave-id"
-	guidArg = "guid"
+	enclaveIdArg        = "enclave-id"
+	guidArg             = "guid"
 
 	shouldShowStoppedUserServiceContainers = true
 )
+
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIdArg,
@@ -36,10 +38,10 @@ var positionalArgs = []string{
 }
 
 var LogsCmd = &cobra.Command{
-	Use:   command_str_consts.ServiceLogsCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
+	Use:                   command_str_consts.ServiceLogsCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Show logs for a service inside of an enclave",
-	RunE:  run,
+	Short:                 "Show logs for a service inside of an enclave",
+	RunE:                  run,
 }
 
 var kurtosisLogLevelStr string
@@ -83,7 +85,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getUserServiceContainerLabelsWithEnclaveIdAndGUID(enclaveId, guid)
+	labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
@@ -91,37 +93,41 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if containers == nil || len(containers) == 0 {
-		labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
-
-		containersWithEnclaveId, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
-		}
-
-		if containersWithEnclaveId == nil || len(containersWithEnclaveId) == 0 {
-			logrus.Errorf("There is not any service container with enclave ID '%v' and GUID '%v'", enclaveId, guid)
-		} else {
-			logrus.Errorf("There is not any service container with GUID '%v'", guid)
-		}
-	} else {
-		if len(containers) > 1 {
-			return stacktrace.NewError("Should exist only one container with enclave-id '%v' and guid '%v' but there are '%v' containers with these properties", enclaveId, guid, len(containers))
-		}
-
-		serviceContainer := containers[0]
-
-		readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainer.GetId(), false)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", serviceContainer.GetId())
-		}
-		defer readCloserLogs.Close()
-
-		_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, readCloserLogs)
-		if err == nil {
-			return stacktrace.Propagate(err, "An error occurred executing StdCopy")
-		}
-
+		logrus.Errorf("There is not any service container with enclave ID '%v'", enclaveId)
+		return nil
 	}
+
+	var containersWithSearchedGUID = []*docker_manager_types.Container{}
+	for _, container := range containers {
+		labelsMap := container.GetLabels()
+		containerGUID, found := labelsMap[enclave_object_labels.GUIDLabel]
+		if found && containerGUID == guid {
+			containersWithSearchedGUID = append(containersWithSearchedGUID, container)
+		}
+	}
+
+	if len(containersWithSearchedGUID) == 0  {
+		logrus.Errorf("There is not any service container with GUID '%v'", guid)
+		return nil
+	}
+
+	if len(containersWithSearchedGUID) > 1 {
+		return stacktrace.NewError("Should exist only one container with enclave-id '%v' and guid '%v' but there are '%v' containers with these properties", enclaveId, guid, len(containers))
+	}
+
+	serviceContainer := containersWithSearchedGUID[0]
+
+	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainer.GetId(), false)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", serviceContainer.GetId())
+	}
+	defer readCloserLogs.Close()
+
+	_, err = stdcopy.StdCopy(os.Stdout, os.Stderr, readCloserLogs)
+	if err == nil {
+		return stacktrace.Propagate(err, "An error occurred executing StdCopy")
+	}
+
 	return nil
 }
 
@@ -132,11 +138,5 @@ func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]str
 	labels := map[string]string{}
 	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
-	return labels
-}
-
-func getUserServiceContainerLabelsWithEnclaveIdAndGUID(enclaveId string, guid string) map[string]string {
-	labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
-	labels[enclave_object_labels.GUIDLabel] = guid
 	return labels
 }
