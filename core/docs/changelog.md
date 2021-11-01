@@ -1,5 +1,9 @@
 # TBD
 
+# 1.27.2
+### Changes
+* Upgraded to Kurt Client 0.21.1
+
 # 1.27.1
 ### Fixes
 * Fixed a bug with the API container launcher
