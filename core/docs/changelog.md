@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to Kurt Client 0.21.1
 
 # 1.27.1
 ### Fixes

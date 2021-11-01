@@ -439,6 +439,8 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027211015-1eb58d224f
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027211015-1eb58d224f6c/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918 h1:GhWsBXWFBYzaFeMtfgDVWtStrs2LjMBT9XSlSig1Ikg=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd831 h1:BCD0PU12wGzSes4Xb3LYoGS03yV7vGJUazwFIZM9CxU=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd831/go.mod h1:0ftq4Ewqb60r0IegmVBpSUaI2uvyvMwuauaoeDfSzAY=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211014234818-e876c11fa02e h1:9gPq33N23essf/sYt6detY85SlHWRr6/zQuXafGlbrA=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211014234818-e876c11fa02e/go.mod h1:vrsMp+drMF/bVCiDD91OxUmPIkwg41KS6NOQ78dLkBs=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027204438-f44ae4e98582 h1:rs0jVPbcXHd1GYgFImjc8izYZcQjOD3+EbWxR6EJWRc=
@@ -447,6 +449,7 @@ github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
+github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
