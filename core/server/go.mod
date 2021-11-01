@@ -2,9 +2,7 @@ module github.com/kurtosis-tech/kurtosis-core/server
 
 go 1.13
 
-replace (
-    github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
-)
+replace github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
 
 require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
@@ -28,4 +26,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	gotest.tools v2.2.0+incompatible
 )
-
