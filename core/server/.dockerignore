@@ -9,9 +9,6 @@
 
 docs
 scripts
-wrapper_generator
 
-api_container/Dockerfile
-initializer/Dockerfile
-internal_testsuite/Dockerfile
-javascript_repl_image/Dockerfile
+.dockerignore
+Dockerfile

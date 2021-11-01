@@ -1,5 +1,9 @@
 # TBD
-###
+### Removals
+* Remove Goreleaser, as its complexity is no longer needed
+
+### Changes
+* 
 
 # 1.27.2
 ### Changes

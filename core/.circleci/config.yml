@@ -23,6 +23,7 @@ parameters:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
+  # -- PR check jobs ------------------------------------------
   check_api_golang:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version>>"
@@ -36,6 +37,8 @@ jobs:
             circleci-agent step halt
           fi
 
+
+      # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
       - run: api/golang/scripts/build.sh
 
   check_api_typescript:
@@ -55,7 +58,7 @@ jobs:
 
   check_server_code:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -75,8 +78,16 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           server/scripts/build.sh
+  # -- End PR check jobs ---------------------------------------
 
-  publish_typescript:
+  # -- Publish jobs --------------------------------------------
+  public_api_source:
+    docker:
+      - image: cimg/base:2021.10
+      - checkout
+      # TODOOOOOOOO
+
+  publish_api_typescript:
     docker:
       - image: "cimg/node:<< pipeline.parameters.node-version>>"
     steps:
@@ -85,54 +96,47 @@ jobs:
       - npm-publisher/publish-from-package-version:
           package-path: typescript
           publish-token-variable: NPMJS_AUTH_TOKEN
-
-  check_code:
-    executor: ubuntu_vm
+  publish_server_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          server/scripts/build.sh
 
       - run: |
-          docker run \
-            --privileged \
-            -v "${PWD}:/build" \
-            -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
-            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
-            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            -e "CMD=bash ./scripts/build.sh" \
-            kurtosistech/kurtosis-goreleaser-ci-image:0.1.1
-
-  push_artifacts:
-    executor: ubuntu_vm
+          set -euo pipefail
+          source server/scripts/_constants.env
+          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+  publish_testsuite_script:
+    docker:
+      - image: cimg/base:2021.10
     steps:
       - checkout
-
-      - run: |
-          docker run \
-            --privileged \
-            -v "${PWD}:/build" \
-            -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
-            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
-            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            -e "CMD=bash ./scripts/build.sh true" \
-            kurtosistech/kurtosis-goreleaser-ci-image
 
       # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
       #  we have to do this
       - run: |
-          source scripts/_constants.sh
-          fixed_version_tag="$(bash "scripts/${GET_FIXED_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"
-          echo "Fixed version: ${fixed_version_tag}"
+          source scripts/_constants.env
+          version="$(bash server/scripts/get-docker-image-tag.sh)"
+          echo "Version being published: ${version}"
 
-          echo "export FIXED_VERSION=\"${fixed_version_tag}\"" >> $BASH_ENV
+          echo "export CORE_VERSION=\"${version}\"" >> $BASH_ENV
 
       # All the variables here from the s3-upload-user context that we attach
       - aws-s3/copy:
@@ -140,9 +144,8 @@ jobs:
           aws-region: S3_REGION
           aws-secret-access-key: S3_SECRET_KEY
           from: testsuite_scripts/build-and-run-core.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${FIXED_VERSION}/build-and-run-core.sh"
-
-      # TODO add a step here for uploading the .proto files to the S3 public-access bucket!!! This will be necessary for making Kurtosis upgrades simple
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
+  # -- End publishing jobs -------------------------------------
 
 workflows:
   build:
@@ -155,11 +158,25 @@ workflows:
               ignore:
                 - develop
                 - master
-      - check_code:
+      - check_api_golang:
+          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
+          context: []
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_api_typescript:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_server_code:
           context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
             - github-user
             - docker-user
-            - kurtosis-user
           filters:
             branches:
               ignore:
@@ -168,6 +185,25 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
+      - publish_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - push_artifacts:
+          context:
+            - github-user
+            - docker-user
+            - kurtosis-user
+            - s3-upload-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags: 
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       - push_artifacts:
           context:
             - github-user
