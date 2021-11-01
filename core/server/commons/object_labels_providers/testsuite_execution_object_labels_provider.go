@@ -5,7 +5,7 @@
 
 package object_labels_providers
 
-import "github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+import "github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_object_labels"
 
 // TODO Move this to the CLI, which contains the testing machinery
 // This struct is responsible for providing labels to the objects used in the testing framework

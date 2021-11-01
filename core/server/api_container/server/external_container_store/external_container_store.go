@@ -7,7 +7,7 @@ package external_container_store
 
 import (
 	"github.com/google/uuid"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/palantir/stacktrace"
 	"net"
 	"sync"

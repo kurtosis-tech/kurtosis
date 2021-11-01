@@ -10,13 +10,13 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/user_service_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -319,7 +319,7 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
-		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/issues/123 )
+		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/server/issues/123 )
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables "+

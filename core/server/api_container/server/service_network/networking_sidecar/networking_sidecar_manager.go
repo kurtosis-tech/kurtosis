@@ -8,10 +8,10 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
 	"github.com/palantir/stacktrace"
 	"strings"
 )

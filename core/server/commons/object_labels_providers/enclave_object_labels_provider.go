@@ -8,9 +8,9 @@ package object_labels_providers
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/module_store/module_store_types"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_object_labels"
 	"net"
 )
 

@@ -7,8 +7,8 @@ package service_network
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis-core/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"strconv"

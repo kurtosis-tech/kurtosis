@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-core
+module github.com/kurtosis-tech/kurtosis-core/server
 
 go 1.13
 
