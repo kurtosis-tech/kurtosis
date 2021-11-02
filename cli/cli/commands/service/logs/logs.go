@@ -19,7 +19,6 @@ import (
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 	"strings"
 )
 
@@ -29,7 +28,7 @@ const (
 	guidArg             = "guid"
 
 	shouldShowStoppedUserServiceContainers = true
-	shouldFollowContainerLogs = false
+	shouldFollowContainerLogs              = false
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -107,13 +106,13 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(containersWithSearchedGUID) == 0  {
+	if len(containersWithSearchedGUID) == 0 {
 		logrus.Errorf("There is not any service container with GUID '%v'", guid)
 		return nil
 	}
 
 	if len(containersWithSearchedGUID) > 1 {
-		return stacktrace.NewError("Should exist only one container with enclave-id '%v' and guid '%v' but there are '%v' containers with these properties", enclaveId, guid, len(containers))
+		return stacktrace.NewError("Only one container with enclave-id '%v' and GUID '%v' should exist but there are '%v' containers with these properties", enclaveId, guid, len(containers))
 	}
 
 	serviceContainer := containersWithSearchedGUID[0]
@@ -124,7 +123,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer readCloserLogs.Close()
 
-	_, err = stdcopy.StdCopy(logrus.StandardLogger().Out, os.Stderr, readCloserLogs)
+	_, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs)
 	if err == nil {
 		return stacktrace.Propagate(err, "An error occurred copying the container logs to STDOUT")
 	}
