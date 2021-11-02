@@ -87,6 +87,7 @@ jobs:
   publish_api_source:
     docker:
       - image: cimg/base:2021.10
+    steps:
       - checkout
       - run: |
           cd /tmp/
