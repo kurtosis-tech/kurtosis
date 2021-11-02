@@ -2,7 +2,7 @@ Kurtosis Client Documentation
 =============================
 This documentation describes how to interact with the Kurtosis API from within a testnet. It includes information about starting services, stopping services, repartitioning the network, etc. These objects are heavily used inside the [Kurtosis testing framework](../kurtosis-testsuite-api-lib/lib-documentation). Note that any comments specific to a language implementation will be found in the code comments.
 
-_Found a bug? File it on [the repo](https://github.com/kurtosis-tech/kurtosis-client/issues)!_
+_Found a bug? File it on [the repo][issues]!_
 
 
 
@@ -264,7 +264,9 @@ The new [SharedPath][sharedpath] object.
 
 ---
 
-_Found a bug? File it on [the repo](https://github.com/kurtosis-tech/kurtosis-client/issues)!_
+_Found a bug? File it on [the repo][issues]!_
+
+[issues]: https://github.com/kurtosis-tech/kurtosis-core-api-lib/issues
 
 
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
