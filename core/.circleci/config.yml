@@ -16,6 +16,9 @@ parameters:
   node-version:
     type: string
     default: 14.17.1
+  source-repo-name:
+    type: string
+    default: kurtosis-core-api-lib
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
@@ -81,70 +84,86 @@ jobs:
   # -- End PR check jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
-  public_api_source:
+  publish_api_source:
     docker:
       - image: cimg/base:2021.10
       - checkout
-      # TODOOOOOOOO
-
-  publish_api_typescript:
-    docker:
-      - image: "cimg/node:<< pipeline.parameters.node-version>>"
-    steps:
-      - checkout
-      - run: api/typescript/scripts/build.sh
-      - npm-publisher/publish-from-package-version:
-          package-path: typescript
-          publish-token-variable: NPMJS_AUTH_TOKEN
-  publish_server_image:
-    docker:
-      - image: "cimg/go:<< pipeline.parameters.go-version >>"
-    steps:
-      - checkout
-
-      - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
-      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-
-      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          server/scripts/build.sh
-
+          cd /tmp/
+          git clone https://github.com/kurtosis-tech/kurtosis-core-api-lib.git
+      - run: "rsync -a api/ /tmp/<< pipeline.parameters.source-repo-name >>/api/"
+      # Now, swap Go module names
       - run: |
-          set -euo pipefail
+          cd /tmp/<< pipeline.parameters.source-repo-name >>/api/golang
+          sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f)
+      - run: |
           source server/scripts/_constants.env
-          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
-          echo "Version that will be published: ${version_to_publish}"
-          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_no_version}"
-          docker push "${image_name_with_version}"
-          docker push "${image_name_no_version}"
-  publish_testsuite_script:
-    docker:
-      - image: cimg/base:2021.10
-    steps:
-      - checkout
+          version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          cd /tmp/<< pipeline.parameters.source-repo-name >>
+          git add .
+          git commit -m "Committing ${version} files"
+          git push origin master
+          git tag "${version}"
+          git push --tags
 
-      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
-      #  we have to do this
-      - run: |
-          source scripts/_constants.env
-          version="$(bash server/scripts/get-docker-image-tag.sh)"
-          echo "Version being published: ${version}"
-
-          echo "export CORE_VERSION=\"${version}\"" >> $BASH_ENV
-
-      # All the variables here from the s3-upload-user context that we attach
-      - aws-s3/copy:
-          aws-access-key-id: S3_ACCESS_KEY
-          aws-region: S3_REGION
-          aws-secret-access-key: S3_SECRET_KEY
-          from: testsuite_scripts/build-and-run-core.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
+#  publish_api_typescript:
+#    docker:
+#      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+#    steps:
+#      - checkout
+#      - run: api/typescript/scripts/build.sh
+#      - npm-publisher/publish-from-package-version:
+#          package-path: typescript
+#          publish-token-variable: NPMJS_AUTH_TOKEN
+#  publish_server_image:
+#    docker:
+#      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+#    steps:
+#      - checkout
+#
+#      - setup_remote_docker:
+#          version: "<< pipeline.parameters.docker-engine-version>>"
+#      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+#
+#      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+#      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+#      - run: |
+#          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+#          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+#          server/scripts/build.sh
+#
+#      - run: |
+#          set -euo pipefail
+#          source server/scripts/_constants.env
+#          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+#          echo "Version that will be published: ${version_to_publish}"
+#          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+#          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+#          docker tag "${image_name_with_version}" "${image_name_no_version}"
+#          docker push "${image_name_with_version}"
+#          docker push "${image_name_no_version}"
+#  publish_testsuite_script:
+#    docker:
+#      - image: cimg/base:2021.10
+#    steps:
+#      - checkout
+#
+#      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
+#      #  we have to do this
+#      - run: |
+#          source scripts/_constants.env
+#          version="$(bash server/scripts/get-docker-image-tag.sh)"
+#          echo "Version being published: ${version}"
+#
+#          echo "export CORE_VERSION=\"${version}\"" >> $BASH_ENV
+#
+#      # All the variables here from the s3-upload-user context that we attach
+#      - aws-s3/copy:
+#          aws-access-key-id: S3_ACCESS_KEY
+#          aws-region: S3_REGION
+#          aws-secret-access-key: S3_SECRET_KEY
+#          from: testsuite_scripts/build-and-run-core.sh
+#          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
   # -- End publishing jobs -------------------------------------
 
 workflows:
@@ -185,34 +204,42 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      - publish_typescript:
+      - publish_api_source:
           context:
-            - npmjs-user
+            - github-user
           filters:
             branches:
               ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - push_artifacts:
-          context:
-            - github-user
-            - docker-user
-            - kurtosis-user
-            - s3-upload-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags: 
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - push_artifacts:
-          context:
-            - github-user
-            - docker-user
-            - kurtosis-user
-            - s3-upload-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags: 
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+#      - publish_typescript:
+#          context:
+#            - npmjs-user
+#          filters:
+#            branches:
+#              ignore: /.*/
+#            tags:
+#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+#      - push_artifacts:
+#          context:
+#            - github-user
+#            - docker-user
+#            - kurtosis-user
+#            - s3-upload-user
+#          filters:
+#            branches:
+#              ignore: /.*/
+#            tags: 
+#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+#      - push_artifacts:
+#          context:
+#            - github-user
+#            - docker-user
+#            - kurtosis-user
+#            - s3-upload-user
+#          filters:
+#            branches:
+#              ignore: /.*/
+#            tags: 
+#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
