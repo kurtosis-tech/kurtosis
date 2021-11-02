@@ -2,7 +2,7 @@ package api_container_launcher
 
 import (
 	"encoding/json"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"os"
 )
 

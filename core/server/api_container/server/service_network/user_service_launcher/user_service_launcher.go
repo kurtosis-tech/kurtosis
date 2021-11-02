@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
 

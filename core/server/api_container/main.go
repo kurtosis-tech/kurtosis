@@ -26,7 +26,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"net"

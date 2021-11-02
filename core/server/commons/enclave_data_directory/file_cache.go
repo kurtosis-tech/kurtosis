@@ -7,7 +7,7 @@ package enclave_data_directory
 
 import (
 	"fmt"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"

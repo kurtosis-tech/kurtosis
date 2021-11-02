@@ -7,7 +7,7 @@ package partition_topology
 
 import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
 

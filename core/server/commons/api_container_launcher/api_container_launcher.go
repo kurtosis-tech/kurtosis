@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 )

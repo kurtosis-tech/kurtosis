@@ -7,7 +7,7 @@ package commons
 
 import (
 	"encoding/binary"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 	"sync"

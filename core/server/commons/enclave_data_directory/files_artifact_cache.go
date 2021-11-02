@@ -7,7 +7,7 @@ package enclave_data_directory
 
 import (
 	"bufio"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net/http"
 	"os"

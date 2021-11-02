@@ -6,7 +6,7 @@
 package enclave_data_directory
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

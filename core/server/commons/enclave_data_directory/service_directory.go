@@ -8,7 +8,7 @@ package enclave_data_directory
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
 )

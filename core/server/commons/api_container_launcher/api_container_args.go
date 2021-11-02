@@ -1,7 +1,7 @@
 package api_container_launcher
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 	"strings"
 )

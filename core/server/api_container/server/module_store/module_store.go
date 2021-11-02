@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"sync"
 )

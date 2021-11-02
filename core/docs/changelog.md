@@ -2,6 +2,9 @@
 ### Features
 * The API is now published to https://github.com/kurtosis-tech/kurtosis-core-api-lib
 
+### Fixes
+* `stacktrace.Propagate` now panics on a `nil` error, rather than silently returning `nil`
+
 ### Removals
 * Remove Goreleaser, as its complexity is no longer needed
 
