@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/repl_runner"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -51,8 +50,6 @@ func run(cmd *cobra.Command, args []string) error {
 	// TODO Set CLI loglevel from a global flag
 
 	ctx := context.Background()
-
-	version_checker.CheckLatestVersion()
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

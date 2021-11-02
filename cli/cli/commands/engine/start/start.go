@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,8 +61,6 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	version_checker.CheckLatestVersion()
 
 	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
 

@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -48,8 +47,6 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	version_checker.CheckLatestVersion()
 
 	logrus.Info("Destroying enclaves...")
 
