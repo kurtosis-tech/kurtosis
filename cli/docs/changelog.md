@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits
+
 ### Changes
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `kurtosistech/example-datastore-server` in `golang_internal_testsuite`
 * Replaced `kurtosistech/example-microservices_api` Docker image with `kurtosistech/example-api-server` in `golang_internal_testsuite`
