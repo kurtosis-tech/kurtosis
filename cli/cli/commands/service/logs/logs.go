@@ -28,7 +28,7 @@ const (
 	guidArg             = "guid"
 
 	shouldShowStoppedUserServiceContainers = true
-	shouldFollowContainerLogs = false
+	shouldFollowContainerLogs              = false
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
@@ -106,7 +106,7 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if len(containersWithSearchedGUID) == 0  {
+	if len(containersWithSearchedGUID) == 0 {
 		logrus.Errorf("There is not any service container with GUID '%v'", guid)
 		return nil
 	}

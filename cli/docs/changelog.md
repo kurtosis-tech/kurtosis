@@ -1,4 +1,7 @@
 # TBD
+### Features
+* `enclave inspect` also prints the `Kurtosis modules`
+
 ### Fixes
 * Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits
 
