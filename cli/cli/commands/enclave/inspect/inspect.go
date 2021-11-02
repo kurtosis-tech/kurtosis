@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -34,7 +34,7 @@ const (
 	enclaveStatusTitleName = "Status"
 
 	headerWidthChars = 100
-	headerPadChar = "="
+	headerPadChar    = "="
 
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
@@ -44,16 +44,17 @@ var positionalArgs = []string{
 	enclaveIdArg,
 }
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error{
 	"Interactive REPLs": printInteractiveRepls,
-	"User Services": printUserServices,
+	"User Services":     printUserServices,
+	"Kurtosis Modules":  printModules,
 }
 
 var InspectCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
+	Use:                   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Lists detailed information about an enclave",
-	RunE:  run,
+	Short:                 "Lists detailed information about an enclave",
+	RunE:                  run,
 }
 
 var kurtosisLogLevelStr string
@@ -109,7 +110,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	headersWithPrintErrs := []string{}
 	for header, printingFunc := range enclaveObjectPrintingFuncs {
-		numRunesInHeader := utf8.RuneCountInString(header) + 2	// 2 because there will be a space before and after the header
+		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))

@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	interactiveReplGUIDColHeader = "GUID"
+	interactiveReplGUIDColHeader                                    = "GUID"
+	shouldShowStoppedContainersWhenGettingInteractiveREPLContainers = true
 )
 
 func printInteractiveRepls(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
 	interactiveReplLabels := getLabelsForListInteractiveRepls(enclaveId)
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, interactiveReplLabels, true)
+	containers, err := dockerManager.GetContainersByLabels(ctx, interactiveReplLabels, shouldShowStoppedContainersWhenGettingInteractiveREPLContainers)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting interactive REPL containers by labels: '%+v'", interactiveReplLabels)
 	}

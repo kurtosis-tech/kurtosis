@@ -11,14 +11,15 @@ import (
 )
 
 const (
-	userServiceGUIDColHeader                    = "GUID"
-	userServiceHostMachinePortBindingsColHeader = "LocalPortBindings"
+	userServiceGUIDColHeader                                    = "GUID"
+	userServiceHostMachinePortBindingsColHeader                 = "LocalPortBindings"
+	shouldShowStoppedContainersWhenGettingUserServiceContainers = true
 )
 
 func printUserServices(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
 	userServiceLabels := getLabelsForListEnclaveUserServices(enclaveId)
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, userServiceLabels, true)
+	containers, err := dockerManager.GetContainersByLabels(ctx, userServiceLabels, shouldShowStoppedContainersWhenGettingUserServiceContainers)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service containers by labels: '%+v'", userServiceLabels)
 	}
@@ -26,8 +27,8 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 	tablePrinter := output_printers.NewTablePrinter(userServiceGUIDColHeader, userServiceHostMachinePortBindingsColHeader)
 	sortedContainers, err := sortContainersByGUID(containers)
 	if err != nil {
-			  return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
-			  }
+		return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
+	}
 	for _, container := range sortedContainers {
 		containerGuid, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
 		if !found {
@@ -36,7 +37,7 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
 		firstHostPortBindingStr := ""
-		if hostPortBindingsStrings != nil  {
+		if hostPortBindingsStrings != nil {
 			firstHostPortBindingStr = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]
 		}
@@ -78,4 +79,3 @@ func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }
-
