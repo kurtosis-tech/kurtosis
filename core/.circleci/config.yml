@@ -92,10 +92,15 @@ jobs:
           cd /tmp/
           git clone https://github.com/kurtosis-tech/kurtosis-core-api-lib.git
       - run: "rsync -a api/ /tmp/<< pipeline.parameters.source-repo-name >>/api/"
-      # Now, swap Go module names
+      # Now, swap Go module names and verify the code still compiles
       - run: |
           cd /tmp/<< pipeline.parameters.source-repo-name >>/api/golang
-          sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f)
+          for pattern in "*.go" "go.mod"; do
+            sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
+          done
+      # Verify all the code still builds
+      - run: ./scripts/build.sh
+      # Push the code up to the remote
       - run: |
           source server/scripts/_constants.env
           version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
