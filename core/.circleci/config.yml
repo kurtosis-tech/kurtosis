@@ -95,8 +95,9 @@ jobs:
       - run: "rsync -a api/ /tmp/<< pipeline.parameters.source-repo-name >>/api/"
       # Now, swap Go module names and verify the code still compiles
       - run: |
-          cd /tmp/<< pipeline.parameters.source-repo-name >>/api/golang
-          for pattern in "*.go" "go.mod"; do
+          cd /tmp/<< pipeline.parameters.source-repo-name >>/api
+          # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
+          for pattern in "*.go" "go.mod" "*.proto"; do
             sed -i 's,github.com/kurtosis-tech/kurtosis-core,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
           done
       # Verify all the code still builds
