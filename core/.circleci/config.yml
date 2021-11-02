@@ -74,6 +74,7 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
@@ -227,7 +228,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-#      - publish_typescript:
+#      - publish_api_typescript:
 #          context:
 #            - npmjs-user
 #          filters:
@@ -235,23 +236,10 @@ workflows:
 #              ignore: /.*/
 #            tags:
 #              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-#      - push_artifacts:
+#      - publish_server_image:
 #          context:
 #            - github-user
 #            - docker-user
-#            - kurtosis-user
-#            - s3-upload-user
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags: 
-#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-#      - push_artifacts:
-#          context:
-#            - github-user
-#            - docker-user
-#            - kurtosis-user
-#            - s3-upload-user
 #          filters:
 #            branches:
 #              ignore: /.*/
