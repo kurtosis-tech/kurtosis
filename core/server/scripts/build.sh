@@ -27,7 +27,7 @@ AVAILABILITY_WAITER_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNA
 # =============================================================================
 # Checks if dockerignore file is in the root path
 if ! [ -f "${server_root_dirpath}"/.dockerignore ]; then
-  echo "Error: No .dockerignore file found in root '${server_root_dirpath}'; this is required so Docker caching is enabled and the Docker builds remain quick" >&2
+  echo "Error: No .dockerignore file found in server root '${server_root_dirpath}'; this is required so Docker caching is enabled and the image builds remain quick" >&2
   exit 1
 fi
 
