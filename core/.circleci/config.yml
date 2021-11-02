@@ -57,7 +57,7 @@ jobs:
             circleci-agent step halt
           fi
 
-      - run: typescript/scripts/build.sh
+      - run: api/typescript/scripts/build.sh
 
   check_server_code:
     docker:
@@ -177,7 +177,15 @@ workflows:
     jobs:
       # -- PR check jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          markdown-link-check-config-json: "{}"
+          markdown-link-check-config-json: |
+            {
+                "replacementPatterns": [
+                    {
+                        "pattern": "^../kurtosis-testsuite-api-lib",
+                        "replacement": "https://docs.kurtosistech.com/kurtosis-testsuite-api-lib"
+                    }
+                ]
+            }
           filters:
             branches:
               ignore:
