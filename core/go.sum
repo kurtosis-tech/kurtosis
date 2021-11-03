@@ -433,6 +433,10 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021163327-42b53cc771b0
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021163327-42b53cc771b0/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d h1:KELcsbFhjuPPVvUKwWZnthuoP6n0YekGtKwPE+QBAdM=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232122-d72dd750b7d1 h1:XKjtL2h0sR4ZhpZWLzlhF1cbUvGqzJmrM9aFf8mQjw8=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232122-d72dd750b7d1/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e h1:ZzlhslHbJRq9ZD4UEEjddnFi0X0cvslNyoJnOdHhmLE=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc h1:AG9plVB1p1bYEKH2EmGwA4BPCcUKsherJozGvnD5ips=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211014213213-c8760b5e75fc/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027211015-1eb58d224f6c h1:rUVeF0DKcaEGk/w9yt8BhS/SJwZl6uEyw0hBWGuMH1A=
