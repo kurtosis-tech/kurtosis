@@ -1,4 +1,6 @@
 # TBD
+
+# 1.27.3
 ### Changes
 * Revert to Kurt Client 0.20.0 (because upgrading to 0.21.1 would be an API break)
 
