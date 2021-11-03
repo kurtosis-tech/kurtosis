@@ -26,7 +26,7 @@ const (
 	userAgentHttpHeaderKey     = "User-Agent"
 	userAgentHttpHeaderValue   = "kurtosis-tech"
 
-	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/upgrading-cli.html"
+	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 )
 
 type GitHubReleaseReponse struct {
