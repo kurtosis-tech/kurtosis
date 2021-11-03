@@ -27,8 +27,8 @@ func (status EngineStatus) Accept(visitor EngineStatusVisitor) error {
 
 // Visitor interface to force us to exhaustively handle engine statuses
 type EngineStatusVisitor interface {
-	VisitStopped() error;
-	VisitContainerRunningButServerNotResponding() error;
-	VisitRunning() error;
+	VisitStopped() error
+	VisitContainerRunningButServerNotResponding() error
+	VisitRunning() error
 }
 
