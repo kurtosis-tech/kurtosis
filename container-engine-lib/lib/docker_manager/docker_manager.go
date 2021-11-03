@@ -51,6 +51,11 @@ const (
 
 	expectedHostIp = "0.0.0.0"
 
+	// When Docker binds a contianer port to the host machine, it binds it to host interface 0.0.0.0
+	// Linux machines will use 127.0.0.1 for 0.0.0.0, but Windows machines don't
+	// We therefore return 127.0.0.1 to the users rather than 0.0.0.0 so everybody can use them
+	hostPortBindingInterfaceForUserConsumption = "127.0.0.1"
+
 	// Character Docker uses to separate the repo from
 	dockerTagSeparatorChar = ":"
 
@@ -1020,7 +1025,7 @@ func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPor
 			if interfaceBinding.HostIP == expectedHostIp {
 				manager.log.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
 				result[port] = &nat.PortBinding{
-					HostIP:   interfaceBinding.HostIP,
+					HostIP:   hostPortBindingInterfaceForUserConsumption,
 					HostPort: interfaceBinding.HostPort,
 				}
 				foundHostPortBinding = true

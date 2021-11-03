@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Host port bindings will be returned as `127.0.0.1` rather than `0.0.0.0`, because Windows machines don't automatically correct `0.0.0.0` to `127.0.0.1`
 
 # 0.8.1
 ### Features
