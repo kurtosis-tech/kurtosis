@@ -1,4 +1,6 @@
 # TBD
+
+# 0.5.2
 ### Fixes
 * Use Kurt Core 1.27.3, which returns host machine port bindings in `127.0.0.1` (rather than `0.0.0.0`) for Windows users
 
