@@ -125,10 +125,11 @@ func NewGetServiceInfoArgs(serviceId string) *kurtosis_core_rpc_api_bindings.Get
 	}
 }
 
-func NewGetServiceInfoResponse(ipAddr string, enclaveDataDirMountDirpath string) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
+func NewGetServiceInfoResponse(ipAddr string, enclaveDataDirMountDirpath string, relativeServiceDirpath string) *kurtosis_core_rpc_api_bindings.GetServiceInfoResponse {
 	return &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr:                        ipAddr,
+		IpAddr:                     ipAddr,
 		EnclaveDataDirMountDirpath: enclaveDataDirMountDirpath,
+		RelativeServiceDirpath:     relativeServiceDirpath,
 	}
 }
 
