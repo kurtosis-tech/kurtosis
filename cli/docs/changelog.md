@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * `enclave inspect` also prints the `Kurtosis modules`
+* Added `version_checker.CheckLatestVersion` method to check if it is running the latest CLI version before running any CLI command
 
 ### Fixes
 * Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits
