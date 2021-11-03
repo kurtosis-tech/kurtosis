@@ -220,7 +220,6 @@ func (manager *EnclaveManager) CreateEnclave(
 			IpOnHostMachine:   apiContainerHostPortBinding.HostIP,
 			PortOnHostMachine: hostMachinePortUint32,
 		},
-		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller

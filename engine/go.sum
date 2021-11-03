@@ -421,6 +421,9 @@ github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd8
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd831/go.mod h1:0ftq4Ewqb60r0IegmVBpSUaI2uvyvMwuauaoeDfSzAY=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211103233136-3dbd50327378 h1:m0Vag3mr1Flb/ajwimsNgXv6JFFf6n5F5e5pYB3k5A4=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211103233136-3dbd50327378/go.mod h1:NufE1fKrrRoMjRCJhDy4CyYm80Kk280GwGs1fuXyspE=
+github.com/kurtosis-tech/kurtosis-engine-api-lib v0.0.0-20211101165721-7075d4829152 h1:Pe57tI8f8SPcDURJB2LlMdIOEtOLavLzhCGIZw/G7sQ=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-7075d4829152 h1:B+IUFh3T78AiM59q9L419dPLt0Tc3Sd9lAKq8AZYKzs=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-7075d4829152/go.mod h1:HdZCGNTfTCkR4ZlTT7i2M2szPBPoUpHkc/0Z+dMLLsA=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101194753-0e8497dd5b2e h1:rif9zgt3ahDjjNrl4Bt29+Zo0hbcIKZU10e69ZtdAiA=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101194753-0e8497dd5b2e/go.mod h1:eXm1UqYgnu3Lcdytf+ogJ4/qyEm9bSANDI6oh449IEc=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
