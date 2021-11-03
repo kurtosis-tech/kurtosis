@@ -36,7 +36,7 @@ type GitHubReleaseReponse struct {
 func CheckIfEngineIsUpToDate(ctx context.Context) {
 	runningEngineVersion, err := getRunningEngineVersion(ctx)
 	if err != nil {
-		logrus.Warning("An error occurred trying to check if the running engine version is up to date.")
+		logrus.Warning("An error occurred trying to check if the running engine version is up-to-date.")
 		logrus.Debugf("Checking engine version error: %v", err)
 		return
 	}
@@ -51,7 +51,7 @@ func CheckIfEngineIsUpToDate(ctx context.Context) {
 		logrus.Warningf("The engine version '%v' that is currently running is out of date. Should be running the '%v' version", runningEngineVersion, kurtosis_engine_api_version.KurtosisEngineApiVersion)
 		logrus.Warningf("You need to run `%v` command in order to run the right engine version", kurtosisRestartCmd)
 	}else {
-		logrus.Debugf("Currently running engine version '%v' which is up to date", runningEngineVersion)
+		logrus.Debugf("Currently running engine version '%v' which is up-to-date", runningEngineVersion)
 	}
 	return
 }
