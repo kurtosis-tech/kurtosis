@@ -8,10 +8,11 @@ require (
 	github.com/google/martian v2.1.0+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211021172205-bf12424cc95d
-	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211101183833-57c3eb4cd831
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e
+	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918
 	github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
+	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 // indirect
 	github.com/moby/term v0.0.0-20200507201656-73f35e472e8f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177
