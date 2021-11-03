@@ -1,5 +1,12 @@
 # TBD
 
+# 0.5.2
+### Fixes
+* Use Kurt Core 1.27.3, which returns host machine port bindings in `127.0.0.1` (rather than `0.0.0.0`) for Windows users
+
+### Changes
+* Go back down to Engine API Lib 0.9.0, because going up to 0.10.0 should have been an API break
+
 # 0.5.1
 ### Features
 * The `EnclaveInfo` object has a new enclave-data-dirpath-on-host-machine property
