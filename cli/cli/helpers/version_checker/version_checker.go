@@ -18,6 +18,8 @@ const (
 	contentTypeHttpHeaderValue = "application/json"
 	userAgentHttpHeaderKey     = "User-Agent"
 	userAgentHttpHeaderValue   = "kurtosis-tech"
+
+	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/upgrading-cli.html"
 )
 
 type GitHubReleaseReponse struct {
@@ -28,26 +30,14 @@ func CheckLatestVersion() {
 	isLatestVersion, latestVersion, err := isLatestVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the lates Kurtosis CLI version.")
-		logrus.Debugf("Checking latest version error: '%v", err)
+		logrus.Debugf("Checking latest version error: %v", err)
 		logrus.Warningf("Your current version is '%v'", kurtosis_cli_version.KurtosisCLIVersion)
-		logrus.Warningf("And you can manually check if your current version is the latest through this page: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases")
+		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 		return
 	}
 	if !isLatestVersion {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
-		logrus.Warning("You can update it to the latest version doing the following steps")
-		logrus.Warning("If you installed Kurtosis CLI with Brew, execute:")
-		logrus.Warning("sudo brew uninstall kurtosis-tech/tap/kurtosis")
-		logrus.Warning("sudo brew install kurtosis-tech/tap/kurtosis")
-		logrus.Warning("================================================")
-		logrus.Warning("If you installed Kurtosis CLI with APT, execute:")
-		logrus.Warning("sudo apt install --only-upgrade kurtosis-cli")
-		logrus.Warning("================================================")
-		logrus.Warning("If you installed Kurtosis CLI with Yum, execute:")
-		logrus.Warning("sudo yum upgrade kurtosis-cli")
-		logrus.Warning("================================================")
-		logrus.Warning("If you manually installed Kurtosis CLI with a DEB, RPM or an APL package:")
-		logrus.Warning("Download the latest released package from the artifact page https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases")
+		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 	}
 	return
 }
