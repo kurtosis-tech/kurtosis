@@ -68,7 +68,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	logrus.SetOutput(cmd.OutOrStdout())
 	logrus.SetLevel(logLevel)
 
-	version_checker.CheckLatestVersion()
+	version_checker.CheckCLIVersion()
 
 	return nil
 }

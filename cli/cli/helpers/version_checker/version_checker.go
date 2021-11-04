@@ -2,6 +2,7 @@ package version_checker
 
 import (
 	"encoding/json"
+	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ type GitHubReleaseReponse struct {
 	TagName string `json:"tag_name"`
 }
 
-func CheckLatestVersion() {
+func CheckCLIVersion() {
 	isLatestVersion, latestVersion, err := isLatestVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the lates Kurtosis CLI version.")
@@ -42,18 +43,38 @@ func CheckLatestVersion() {
 	return
 }
 
+// ====================================================================================================
+//                                       Private helper functions
+// ====================================================================================================
 func isLatestVersion() (bool, string, error) {
-	ownVersion := kurtosis_cli_version.KurtosisCLIVersion
-	latestVersion, err := getLatestReleaseVersionFromGitHub()
+	ownVersionStr := kurtosis_cli_version.KurtosisCLIVersion
+	latestVersionStr, err := getLatestReleaseVersionFromGitHub()
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
 	}
 
-	if ownVersion == latestVersion {
-		return true, latestVersion, nil
+	if ownVersionStr == latestVersionStr {
+		return true, latestVersionStr, nil
 	}
 
-	return false, latestVersion, nil
+	ownSemver, err := semver.StrictNewVersion(ownVersionStr)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred parsing own version string '%v' to sem version", ownVersionStr)
+	}
+
+	latestSemver, err := semver.StrictNewVersion(latestVersionStr)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred parsing latest version string '%v' to sem version", latestVersionStr)
+	}
+
+	compareResult := ownSemver.Compare(latestSemver)
+
+	//compareResult = 1  means that the own version is newer than the latest version, (e.g.: during a new release)
+	if compareResult == 1 {
+		return true, latestVersionStr, nil
+	}
+
+	return false, latestVersionStr, nil
 }
 
 func getLatestReleaseVersionFromGitHub() (string, error) {
