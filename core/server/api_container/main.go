@@ -23,9 +23,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -142,8 +141,9 @@ func createServiceNetworkAndModuleStore(
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
 		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
-	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
-	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
+
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveId)
 
 	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
@@ -158,8 +158,7 @@ func createServiceNetworkAndModuleStore(
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
 		dockerManager,
-		enclaveObjNameProvider,
-		enclaveObjLabelsProvider,
+		enclaveObjAttrsProvider,
 		dockerNetworkId,
 		freeIpAddrTracker,
 		filesArtifactCache,
@@ -167,8 +166,7 @@ func createServiceNetworkAndModuleStore(
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		dockerManager,
-		enclaveObjNameProvider,
-		enclaveObjLabelsProvider,
+		enclaveObjAttrsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		filesArtifactExpander,
@@ -177,8 +175,7 @@ func createServiceNetworkAndModuleStore(
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
 		dockerManager,
-		enclaveObjNameProvider,
-		enclaveObjLabelsProvider,
+		enclaveObjAttrsProvider,
 		freeIpAddrTracker,
 		dockerNetworkId)
 
@@ -194,8 +191,7 @@ func createServiceNetworkAndModuleStore(
 	moduleLauncher := module_launcher.NewModuleLauncher(
 		dockerManager,
 		args.ApiContainerIpAddr,
-		enclaveObjNameProvider,
-		enclaveObjLabelsProvider,
+		enclaveObjAttrsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
 		dockerNetworkId,
