@@ -70,7 +70,7 @@ func isLatestVersion() (bool, string, error) {
 	compareResult := ownSemver.Compare(latestSemver)
 
 	//compareResult = 1  means that the own version is newer than the latest version, (e.g.: during a new release)
-	if compareResult == 1 {
+	if compareResult >= 0 {
 		return true, latestVersionStr, nil
 	}
 

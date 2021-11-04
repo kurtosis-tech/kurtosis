@@ -3,7 +3,7 @@ module github.com/kurtosis-tech/kurtosis-cli
 go 1.15
 
 require (
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/adrg/xdg v0.4.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
