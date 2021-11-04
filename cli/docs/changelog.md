@@ -1,5 +1,9 @@
 # TBD
 
+# 0.6.3
+### Fixes
+* Temporarily disable the unit test for the `RootCmd` until issue #69 is fixed
+
 # 0.6.2
 ### Features
 * `enclave inspect` also prints the `Kurtosis modules`
