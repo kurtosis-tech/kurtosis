@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix bug in source-publishing job
 
 # 1.28.0
 ### Features
