@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_docker_api"
 	"github.com/palantir/stacktrace"
@@ -37,6 +39,8 @@ type engineExistenceGuarantor struct {
 
 	engineImage string
 
+	engineAPIVersion string
+
 	logLevel logrus.Level
 
 	// Port bindings of the engine server that is guaranteed to be started if the visiting didn't throw an error
@@ -49,6 +53,7 @@ func newEngineExistenceGuarantor(
 	preVisitingMaybeHostMachinePortBinding *nat.PortBinding,
 	dockerManager *docker_manager.DockerManager,
 	engineImage string,
+	engineAPIVersion string,
 	logLevel logrus.Level,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
@@ -56,6 +61,7 @@ func newEngineExistenceGuarantor(
 		preVisitingMaybeHostMachinePortBinding: preVisitingMaybeHostMachinePortBinding,
 		dockerManager:                          dockerManager,
 		engineImage:                            engineImage,
+		engineAPIVersion: engineAPIVersion,
 		logLevel:                               logLevel,
 		postVisitingHostMachinePortBinding:     nil,
 	}
@@ -175,9 +181,9 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 	)
 }
 
-// Nothing to do; engine is already running
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	guarantor.postVisitingHostMachinePortBinding = guarantor.preVisitingMaybeHostMachinePortBinding
+	guarantor.checkIfEngineIsUpToDate()
 	return nil
 }
 
@@ -198,4 +204,36 @@ func getEngineEnvVars(logLevel logrus.Level, engineDataDirpathOnHostMachine stri
 		kurtosis_engine_server_docker_api.SerializedArgsEnvVar: string(serializedBytes),
 	}
 	return result, nil
+}
+
+func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
+
+	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
+	if err != nil {
+		logrus.Warn("An error occurred verifying that the running engine is on the latest version; you may be running an out-of-date engine version")
+		logrus.Debugf("Getting running and CLI engine versions error: %v", err)
+	}
+
+	if runningEngineSemver.LessThan(cliEngineSemver) {
+		kurtosisRestartCmd := fmt.Sprintf("%v %v %v ", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
+		logrus.Warningf("The currently-running Kurtosis engine version is '%v', but the latest version is '%v'", guarantor.engineAPIVersion, kurtosis_engine_api_version.KurtosisEngineApiVersion)
+		logrus.Warningf("To use the latest version, run '%v'", kurtosisRestartCmd)
+	} else {
+		logrus.Debugf("Currently running engine version '%v' which is up-to-date", guarantor.engineAPIVersion)
+	}
+	return
+}
+
+func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*semver.Version, *semver.Version, error) {
+	runningEngineSemver, err := semver.StrictNewVersion(guarantor.engineAPIVersion)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", guarantor.engineAPIVersion)
+	}
+
+	kurtosisEngineAPISemver, err := semver.StrictNewVersion(kurtosis_engine_api_version.KurtosisEngineApiVersion)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing own engine version string '%v' to semantic version", kurtosis_engine_api_version.KurtosisEngineApiVersion)
+	}
+
+	return runningEngineSemver, kurtosisEngineAPISemver, nil
 }

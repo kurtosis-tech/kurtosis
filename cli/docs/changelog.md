@@ -1,4 +1,10 @@
 # TBD
+### Fixes
+* Fixed issue #69 - now the CLI version checker passes when the current version is newer than the latest public version (e.g. during a release)
+* Enable the unit test for the `RootCmd` because issue #69 is fixed
+
+### Changes
+* Removed `version_checker` class, now the `checkCLILatestVersion` functionality is part of the `RootCmd` and the `checkIfEngineIsUpToDate` functionality is controlled by the `engine_existence_guarantor` 
 
 # 0.6.3
 ### Fixes
@@ -8,6 +14,7 @@
 ### Features
 * `enclave inspect` also prints the `Kurtosis modules`
 * Added `version_checker.CheckLatestVersion` method to check if it is running the latest CLI version before running any CLI command
+* Added `version_checker.CheckIfEngineIsUpToDate` method to check if it is running engine is up-to-date.
 
 ### Fixes
 * Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits

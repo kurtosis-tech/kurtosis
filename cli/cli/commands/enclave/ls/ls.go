@@ -28,8 +28,6 @@ const (
 
 	enclaveIdColumnHeader = "EnclaveID"
 	enclaveStatusColumnHeader = "Status"
-
-	shouldExamineStoppedContainersForListingEnclaves = true
 )
 
 var kurtosisLogLevelStr string
