@@ -1,6 +1,6 @@
 # TBD
 ### Fixes
-* Temporarily disable the unit test for the `RootCmd` until https://github.com/kurtosis-tech/kurtosis-cli/issues/69 is fixed
+* Temporarily disable the unit test for the `RootCmd` until issue #69 is fixed
 
 # 0.6.2
 ### Features
