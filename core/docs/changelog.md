@@ -1,4 +1,6 @@
 # TBD
+
+# 1.28.0
 ### Features
 * The API is now published to https://github.com/kurtosis-tech/kurtosis-core-api-lib
 
