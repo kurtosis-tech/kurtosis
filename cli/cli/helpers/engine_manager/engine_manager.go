@@ -43,17 +43,60 @@ Returns:
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
 ) (EngineStatus, *nat.PortBinding, string, error) {
-	return getEngineStatus(ctx, manager.dockerManager)
+	runningEngineContainers, err := manager.dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+	if err != nil {
+		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
+	}
+
+	numRunningEngineContainers := len(runningEngineContainers)
+	if numRunningEngineContainers > 1 {
+		return "", nil, "", stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
+	}
+	if numRunningEngineContainers == 0 {
+		return EngineStatus_Stopped, nil, "", nil
+	}
+	engineContainer := runningEngineContainers[0]
+
+	enginePortObj, err := nat.NewPort(
+		kurtosis_engine_rpc_api_consts.ListenProtocol,
+		fmt.Sprintf("%v", kurtosis_engine_rpc_api_consts.ListenPort),
+	)
+	if err != nil {
+		return "", nil, "", stacktrace.Propagate(
+			err,
+			"An error occurred creating an engine port object from port num '%v' and protocol '%v'",
+			kurtosis_engine_rpc_api_consts.ListenPort,
+			kurtosis_engine_rpc_api_consts.ListenProtocol,
+		)
+	}
+
+	hostMachineEnginePortBinding, found := engineContainer.GetHostPortBindings()[enginePortObj]
+	if !found {
+		return "", nil, "", stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
+	}
+
+	engineClient, clientCloseFunc, err := getEngineClientFromHostPortBinding(hostMachineEnginePortBinding)
+	if err != nil {
+		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
+	}
+	defer clientCloseFunc()
+
+	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
+	if err != nil {
+		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
+	}
+
+	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo.EngineApiVersion, nil
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotently(ctx context.Context, engineImage string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	status, maybeHostMachinePortBinding, _, err := manager.GetEngineStatus(ctx)
+	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 
-	engineGuarantor := newEngineExistenceGuarantor(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImage, logLevel)
+	engineGuarantor := newEngineExistenceGuarantor(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImage, engineAPIVersion, logLevel)
 	if err := status.Accept(engineGuarantor); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
 	}
@@ -146,55 +189,4 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 		)
 	}
 	return engineInfo, nil
-}
-
-func getEngineStatus(ctx context.Context, dockerManager *docker_manager.DockerManager) (EngineStatus, *nat.PortBinding, string, error) {
-	runningEngineContainers, err := dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
-	if err != nil {
-		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
-	}
-
-	numRunningEngineContainers := len(runningEngineContainers)
-	if numRunningEngineContainers > 1 {
-		return "", nil, "", stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
-	}
-	if numRunningEngineContainers == 0 {
-		return EngineStatus_Stopped, nil, "", nil
-	}
-	engineContainer := runningEngineContainers[0]
-
-	enginePortObj, err := nat.NewPort(
-		kurtosis_engine_rpc_api_consts.ListenProtocol,
-		fmt.Sprintf("%v", kurtosis_engine_rpc_api_consts.ListenPort),
-	)
-	if err != nil {
-		return "", nil, "", stacktrace.Propagate(
-			err,
-			"An error occurred creating an engine port object from port num '%v' and protocol '%v'",
-			kurtosis_engine_rpc_api_consts.ListenPort,
-			kurtosis_engine_rpc_api_consts.ListenProtocol,
-		)
-	}
-
-	hostMachineEnginePortBinding, found := engineContainer.GetHostPortBindings()[enginePortObj]
-	if !found {
-		return "", nil, "", stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
-	}
-
-	engineClient, clientCloseFunc, err := getEngineClientFromHostPortBinding(hostMachineEnginePortBinding)
-	if err != nil {
-		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
-	}
-	defer func() {
-		if err := clientCloseFunc(); err != nil {
-			logrus.Warnf("We tried to close the engine client, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
-	if err != nil {
-		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
-	}
-
-	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo.EngineApiVersion, nil
 }

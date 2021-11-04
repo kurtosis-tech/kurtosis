@@ -118,10 +118,6 @@ func isLatestCLIVersion() (bool, string, error) {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
 	}
 
-	if ownVersionStr == latestVersionStr {
-		return true, latestVersionStr, nil
-	}
-
 	ownSemver, err := semver.StrictNewVersion(ownVersionStr)
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred parsing own version string '%v' to sem version", ownVersionStr)
