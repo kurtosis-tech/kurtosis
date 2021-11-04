@@ -1,4 +1,19 @@
 # TBD
+### Features
+* The API is now published to https://github.com/kurtosis-tech/kurtosis-core-api-lib
+
+### Fixes
+* `stacktrace.Propagate` now panics on a `nil` error, rather than silently returning `nil`
+
+### Removals
+* Remove Goreleaser, as its complexity is no longer needed
+
+### Changes
+* Absorbed Kurtosis Client libraries into this library, so that we no longer need to version the API & server separately
+
+### Breaking Changes
+* All the Go API classes now have a `github.com/kurtosis-tech/kurtosis-core` prefix instead FOR INTERNAL USE
+    * NOTE: External uses should use the Kurt Core API Lib
 
 # 1.27.3
 ### Changes
