@@ -39,7 +39,7 @@ type DatastoreArmyModuleResult struct {
 }
 
 func (test ModuleTest) Configure(builder *testsuite.TestConfigurationBuilder) {
-	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
+	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(90)
 }
 
 func (test ModuleTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
