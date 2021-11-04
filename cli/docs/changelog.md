@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.3
 ### Fixes
 * Temporarily disable the unit test for the `RootCmd` until issue #69 is fixed
 
