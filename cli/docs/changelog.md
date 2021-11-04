@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.2
 ### Features
 * `enclave inspect` also prints the `Kurtosis modules`
 * Added `version_checker.CheckLatestVersion` method to check if it is running the latest CLI version before running any CLI command
