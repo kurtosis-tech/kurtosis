@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.4
 ### Fixes
 * Fixed issue #69 - now the CLI version checker passes when the current version is newer than the latest public version (e.g. during a release)
 * Enable the unit test for the `RootCmd` because issue #69 is fixed
