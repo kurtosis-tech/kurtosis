@@ -1,5 +1,9 @@
 # TBD
 
+# 1.28.2
+### Fixes
+* Fix another bug in source-publishing job
+
 # 1.28.1
 ### Fixes
 * Fix bug in source-publishing job
