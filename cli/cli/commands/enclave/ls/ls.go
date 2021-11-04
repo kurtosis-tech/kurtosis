@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,8 +61,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
 	}
 	logrus.SetLevel(kurtosisLogLevel)
-
-	version_checker.CheckIfEngineIsUpToDate(ctx)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

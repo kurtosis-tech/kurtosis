@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/binding_constructors"
@@ -102,8 +101,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
 	}
 	logrus.SetLevel(kurtosisLogLevel)
-
-	version_checker.CheckIfEngineIsUpToDate(ctx)
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {

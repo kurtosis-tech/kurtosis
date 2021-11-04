@@ -1,7 +1,10 @@
 # TBD
 ### Fixes
-* Fix issue #69 now CLI version checker pass it when current version is newer than the latest public version (e.g.: during a release)
+* Fixed issue #69 - now the CLI version checker passes when the current version is newer than the latest public version (e.g. during a release)
 * Enable the unit test for the `RootCmd` because issue #69 is fixed
+
+### Changes
+* Removed `version_checker` class, now the `checkCLILatestVersion` functionality is part of the `RootCmd` and the `checkIfEngineIsUpToDate` functionality is controlled by the `engine_existence_guarantor` 
 
 # 0.6.3
 ### Fixes

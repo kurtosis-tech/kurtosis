@@ -13,19 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
-	"time"
 )
 
 const (
 	engineImageArg = "image"
-	logLevelArg = "log-level"
-
-	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
-
-	engineWaitForReadyTimeout = 10 * time.Second
-
-	engineImageInfoLabel = "Image"
-	engineApiVersionInfoLabel = "API Version"
+	logLevelArg    = "log-level"
 )
 
 var engineImage string
@@ -34,7 +26,7 @@ var logLevelStr string
 var StartCmd = &cobra.Command{
 	Use:   command_str_consts.EngineStartCmdStr,
 	Short: "Starts the Kurtosis engine",
-	Long: "Starts the Kurtosis engine, doing nothing if an engine is already running",
+	Long:  "Starts the Kurtosis engine, doing nothing if an engine is already running",
 	RunE:  run,
 }
 

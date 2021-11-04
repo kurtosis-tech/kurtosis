@@ -2,15 +2,26 @@ package restart
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"strings"
 )
+
+const (
+	engineImageArg = "image"
+	logLevelArg    = "log-level"
+)
+
+var engineImage string
+var logLevelStr string
 
 var RestartCmd = &cobra.Command{
 	Use:   command_str_consts.EngineRestartCmdStr,
@@ -20,13 +31,35 @@ var RestartCmd = &cobra.Command{
 }
 
 func init() {
-
+	RestartCmd.Flags().StringVar(
+		&engineImage,
+		engineImageArg,
+		defaults.DefaultEngineImage,
+		"The image of the Kurtosis engine that should be started",
+	)
+	RestartCmd.Flags().StringVar(
+		&logLevelStr,
+		logLevelArg,
+		defaults.DefaultEngineLogLevel.String(),
+		fmt.Sprintf(
+			"The level that the started engine should log at (%v)",
+			strings.Join(
+				logrus_log_levels.GetAcceptableLogLevelStrs(),
+				"|",
+			),
+		),
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	logrus.Infof("Restarting Kurtosis engine...")
+
+	logLevel, err := logrus.ParseLevel(logLevelStr)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", logLevelStr)
+	}
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -39,29 +72,21 @@ func run(cmd *cobra.Command, args []string) error {
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 
-	engineStatus, hostPortBindings, currentEngineVersion, err :=  engineManager.GetEngineStatus(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting engine status")
-	}
-	logrus.Debugf("Currently running Kurtosis engine version '%v' with host port bindings '%+v'", currentEngineVersion, hostPortBindings)
-
-	if engineStatus != engine_manager.EngineStatus_Stopped {
-		if err := engineManager.StopEngineIdempotently(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred restarting the Kurtosis engine")
-		}
+	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
 	}
 
-	currentLogrusLevel := logrus.GetLevel()
-
-	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, currentLogrusLevel)
+	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineImage, logLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
 	}
 	defer func() {
 		if err := clientCloseFunc(); err != nil {
-			logrus.Warnf("We tried to close the engine client, but doing so threw an error:\n%v", err)
+			logrus.Infof("We tried to close the engine client, but doing so threw an error:\n%v", err)
 		}
 	}()
+
+	logrus.Infof("Restarted successfully")
 
 	return nil
 }
