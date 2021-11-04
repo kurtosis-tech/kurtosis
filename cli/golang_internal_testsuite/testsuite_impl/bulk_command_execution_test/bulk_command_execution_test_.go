@@ -25,7 +25,7 @@ func NewBulkCommandExecutionTest() *BulkCommandExecutionTest {
 }
 
 func (test BulkCommandExecutionTest) Configure(builder *testsuite.TestConfigurationBuilder) {
-	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60).WithPartitioningEnabled(true)
+	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(90).WithPartitioningEnabled(true)
 }
 
 func (test BulkCommandExecutionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {

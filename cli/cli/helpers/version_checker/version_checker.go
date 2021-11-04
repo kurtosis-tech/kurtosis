@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -50,13 +51,13 @@ func CheckIfEngineIsUpToDate(ctx context.Context) {
 		kurtosisRestartCmd := fmt.Sprintf("%v %v %v ", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
 		logrus.Warningf("The engine version '%v' that is currently running is out of date. Should be running the '%v' version", runningEngineVersion, kurtosis_engine_api_version.KurtosisEngineApiVersion)
 		logrus.Warningf("You need to run `%v` command in order to run the right engine version", kurtosisRestartCmd)
-	}else {
+	} else {
 		logrus.Debugf("Currently running engine version '%v' which is up-to-date", runningEngineVersion)
 	}
 	return
 }
 
-func CheckIfRunningLatestCLIVersion() {
+func CheckCLIVersion() {
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the lates Kurtosis CLI version.")
@@ -88,7 +89,7 @@ func getRunningEngineVersion(ctx context.Context) (string, error) {
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 
-	_, _, currentEngineVersion, err :=  engineManager.GetEngineStatus(ctx)
+	_, _, currentEngineVersion, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting engine status")
 	}
@@ -97,17 +98,34 @@ func getRunningEngineVersion(ctx context.Context) (string, error) {
 }
 
 func isLatestCLIVersion() (bool, string, error) {
-	ownVersion := kurtosis_cli_version.KurtosisCLIVersion
-	latestVersion, err := getLatestCLIReleaseVersionFromGitHub()
+	ownVersionStr := kurtosis_cli_version.KurtosisCLIVersion
+	latestVersionStr, err := getLatestCLIReleaseVersionFromGitHub()
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
 	}
 
-	if ownVersion == latestVersion {
-		return true, latestVersion, nil
+	if ownVersionStr == latestVersionStr {
+		return true, latestVersionStr, nil
 	}
 
-	return false, latestVersion, nil
+	ownSemver, err := semver.StrictNewVersion(ownVersionStr)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred parsing own version string '%v' to sem version", ownVersionStr)
+	}
+
+	latestSemver, err := semver.StrictNewVersion(latestVersionStr)
+	if err != nil {
+		return false, "", stacktrace.Propagate(err, "An error occurred parsing latest version string '%v' to sem version", latestVersionStr)
+	}
+
+	compareResult := ownSemver.Compare(latestSemver)
+
+	//compareResult = 1  means that the own version is newer than the latest version, (e.g.: during a new release)
+	if compareResult >= 0 {
+		return true, latestVersionStr, nil
+	}
+
+	return false, latestVersionStr, nil
 }
 
 func getLatestCLIReleaseVersionFromGitHub() (string, error) {

@@ -1,4 +1,13 @@
 # TBD
+### Fixes
+* Fix issue #69 now CLI version checker pass it when current version is newer than the latest public version (e.g.: during a release)
+* Enable the unit test for the `RootCmd` because issue #69 is fixed
+
+# 0.6.3
+### Fixes
+* Temporarily disable the unit test for the `RootCmd` until issue #69 is fixed
+
+# 0.6.2
 ### Features
 * `enclave inspect` also prints the `Kurtosis modules`
 * Added `version_checker.CheckLatestVersion` method to check if it is running the latest CLI version before running any CLI command
@@ -6,6 +15,8 @@
 
 ### Fixes
 * Fixed error where `service logs` command is executed with a nonexistent enclave ID or nonexistent GUID just silently exits
+* Upgraded to engine server 0.5.2, which returns host port bindings in the format `127.0.0.1` rather than `0.0.0.0` for Windows users
+* Upped the run timeouts of the advanced network test, module test, and bulk command execution test to 90s
 
 ### Changes
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `kurtosistech/example-datastore-server` in `golang_internal_testsuite`
