@@ -212,14 +212,14 @@ func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
 
 	runningEngineSemver, err := semver.StrictNewVersion(runningEngineVersionStr)
 	if err != nil {
-		logrus.Warning("An error occurred parsing running engine version string '%v' to sem version", runningEngineVersionStr)
+		logrus.Warningf("An error occurred parsing running engine version string '%v' to sem version", runningEngineVersionStr)
 		logrus.Debugf("Parsing running engine version error: %v", err)
 		return
 	}
 
 	kurtosisEngineAPISemver, err := semver.StrictNewVersion(kurtosis_engine_api_version.KurtosisEngineApiVersion)
 	if err != nil {
-		logrus.Warning("An error occurred parsing own engine version string '%v' to sem version", kurtosis_engine_api_version.KurtosisEngineApiVersion)
+		logrus.Warningf("An error occurred parsing own engine version string '%v' to sem version", kurtosis_engine_api_version.KurtosisEngineApiVersion)
 		logrus.Debugf("Parsing own engine version error: %v", err)
 		return
 	}
