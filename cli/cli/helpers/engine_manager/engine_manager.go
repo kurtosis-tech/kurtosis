@@ -91,12 +91,12 @@ func (manager *EngineManager) GetEngineStatus(
 
 // Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotently(ctx context.Context, engineImage string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	status, maybeHostMachinePortBinding, _, err := manager.GetEngineStatus(ctx)
+	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 
-	engineGuarantor := newEngineExistenceGuarantor(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImage, logLevel)
+	engineGuarantor := newEngineExistenceGuarantor(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImage, engineAPIVersion, logLevel)
 	if err := status.Accept(engineGuarantor); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
 	}
@@ -190,4 +190,3 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 	}
 	return engineInfo, nil
 }
-

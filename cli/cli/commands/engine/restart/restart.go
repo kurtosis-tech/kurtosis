@@ -1,4 +1,4 @@
-package start
+package restart
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/palantir/stacktrace"
@@ -23,21 +24,21 @@ const (
 var engineImage string
 var logLevelStr string
 
-var StartCmd = &cobra.Command{
-	Use:   command_str_consts.EngineStartCmdStr,
-	Short: "Starts the Kurtosis engine",
-	Long:  "Starts the Kurtosis engine, doing nothing if an engine is already running",
+var RestartCmd = &cobra.Command{
+	Use:   command_str_consts.EngineRestartCmdStr,
+	Short: "Restart the Kurtosis engine",
+	Long:  "Restart the Kurtosis engine, doing nothing if no engine is running",
 	RunE:  run,
 }
 
 func init() {
-	StartCmd.Flags().StringVar(
+	RestartCmd.Flags().StringVar(
 		&engineImage,
 		engineImageArg,
 		defaults.DefaultEngineImage,
 		"The image of the Kurtosis engine that should be started",
 	)
-	StartCmd.Flags().StringVar(
+	RestartCmd.Flags().StringVar(
 		&logLevelStr,
 		logLevelArg,
 		defaults.DefaultEngineLogLevel.String(),
@@ -54,7 +55,7 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
+	logrus.Infof("Restarting Kurtosis engine...")
 
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
@@ -70,14 +71,25 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, engineImage)
+
 	engineManager := engine_manager.NewEngineManager(dockerManager)
+
+	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
+	}
+
 	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineImage, logLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
 	}
-	defer clientCloseFunc()
+	defer func() {
+		if err := clientCloseFunc(); err != nil {
+			logrus.Infof("We tried to close the engine client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
-	logrus.Info("Kurtosis engine started")
+	logrus.Infof("Restarted successfully")
 
 	return nil
 }
