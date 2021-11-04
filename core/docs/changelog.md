@@ -1,5 +1,9 @@
 # TBD
 
+# 1.28.4
+### Fixes
+* Reenable all the other publishing jobs
+
 # 1.28.3
 ### Fixes
 * Add Kurtosisbot's Git information when publishing API source code

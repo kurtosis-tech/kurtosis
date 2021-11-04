@@ -117,64 +117,66 @@ jobs:
           git tag "${version}"
           git push --tags
 
-#  publish_api_typescript:
-#    docker:
-#      - image: "cimg/node:<< pipeline.parameters.node-version>>"
-#    steps:
-#      - checkout
-#      - run: api/typescript/scripts/build.sh
-#      - npm-publisher/publish-from-package-version:
-#          package-path: typescript
-#          publish-token-variable: NPMJS_AUTH_TOKEN
-#  publish_server_image:
-#    docker:
-#      - image: "cimg/go:<< pipeline.parameters.go-version >>"
-#    steps:
-#      - checkout
-#
-#      - setup_remote_docker:
-#          version: "<< pipeline.parameters.docker-engine-version>>"
-#      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-#
-#      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
-#      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
-#      - run: |
-#          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-#          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-#          server/scripts/build.sh
-#
-#      - run: |
-#          set -euo pipefail
-#          source server/scripts/_constants.env
-#          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
-#          echo "Version that will be published: ${version_to_publish}"
-#          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
-#          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
-#          docker tag "${image_name_with_version}" "${image_name_no_version}"
-#          docker push "${image_name_with_version}"
-#          docker push "${image_name_no_version}"
-#  publish_testsuite_script:
-#    docker:
-#      - image: cimg/base:2021.10
-#    steps:
-#      - checkout
-#
-#      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
-#      #  we have to do this
-#      - run: |
-#          source scripts/_constants.env
-#          version="$(bash server/scripts/get-docker-image-tag.sh)"
-#          echo "Version being published: ${version}"
-#
-#          echo "export CORE_VERSION=\"${version}\"" >> $BASH_ENV
-#
-#      # All the variables here from the s3-upload-user context that we attach
-#      - aws-s3/copy:
-#          aws-access-key-id: S3_ACCESS_KEY
-#          aws-region: S3_REGION
-#          aws-secret-access-key: S3_SECRET_KEY
-#          from: testsuite_scripts/build-and-run-core.sh
-#          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
+  publish_api_typescript:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+    steps:
+      - checkout
+      - run: api/typescript/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: api/typescript
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
+  publish_server_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+    steps:
+      - checkout
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          server/scripts/build.sh
+
+      - run: |
+          set -euo pipefail
+          source server/scripts/_constants.env
+          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          echo "Version that will be published: ${version_to_publish}"
+          image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
+          image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
+          docker tag "${image_name_with_version}" "${image_name_no_version}"
+          docker push "${image_name_with_version}"
+          docker push "${image_name_no_version}"
+
+  publish_testsuite_script:
+    docker:
+      - image: cimg/base:2021.10
+    steps:
+      - checkout
+
+      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
+      #  we have to do this
+      - run: |
+          source server/scripts/_constants.env
+          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          echo "Version being published: ${version_to_publish}"
+
+          echo "export CORE_VERSION=\"${version_to_publish}\"" >> $BASH_ENV
+
+      # All the variables here from the s3-upload-user context that we attach
+      - aws-s3/copy:
+          aws-access-key-id: S3_ACCESS_KEY
+          aws-region: S3_REGION
+          aws-secret-access-key: S3_SECRET_KEY
+          from: testsuite_scripts/build-and-run-core.sh
+          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
   # -- End publishing jobs -------------------------------------
 
 workflows:
