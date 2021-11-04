@@ -92,7 +92,7 @@ jobs:
       - checkout
       - run: |
           cd /tmp/
-          git clone https://github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
+          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
       - run: |
           dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
           rm -rf "${dest_api_dirpath}"
@@ -109,6 +109,8 @@ jobs:
           source server/scripts/_constants.env
           version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
           cd /tmp/<< pipeline.parameters.source-repo-name >>
+          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
+          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
           git add .
           git commit -m "Committing ${version} files"
           git push origin master
