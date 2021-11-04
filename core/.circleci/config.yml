@@ -93,7 +93,10 @@ jobs:
       - run: |
           cd /tmp/
           git clone https://github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
-      - run: "rsync -a api/ /tmp/<< pipeline.parameters.source-repo-name >>/api/"
+      - run: |
+          dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
+          rm -rf "${dest_api_dirpath}"
+          cp -r api "${dest_api_dirpath}"
       # Now, swap Go module names and verify the code still compiles
       - run: |
           cd /tmp/<< pipeline.parameters.source-repo-name >>/api
