@@ -1,4 +1,6 @@
 # TBD
+
+# 1.28.3
 ### Fixes
 * Add Kurtosisbot's Git information when publishing API source code
 * Use the Kurtosisbot access token when cloning to publish source code
