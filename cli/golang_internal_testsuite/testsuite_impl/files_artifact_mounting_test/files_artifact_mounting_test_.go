@@ -125,7 +125,11 @@ func getFileContents(ipAddress string, port uint32, filename string) (string, er
 		return "", stacktrace.Propagate(err, "An error occurred getting the contents of file '%v'", filename)
 	}
 	body := resp.Body
-	defer body.Close()
+	defer func() {
+		if err := body.Close(); err != nil {
+			logrus.Warnf("We tried to close the response body, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {

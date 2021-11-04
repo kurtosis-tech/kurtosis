@@ -24,9 +24,9 @@ func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	logrus.Infof("Stopping Kurtosis engine...")
-
 	ctx := context.Background()
+
+	logrus.Infof("Stopping Kurtosis engine...")
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

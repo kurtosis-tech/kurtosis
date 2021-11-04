@@ -61,6 +61,7 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+
 	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
 
 	logLevel, err := logrus.ParseLevel(logLevelStr)

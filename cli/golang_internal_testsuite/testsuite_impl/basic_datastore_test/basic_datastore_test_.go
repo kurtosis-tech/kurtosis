@@ -6,8 +6,9 @@
 package basic_datastore_test
 
 import (
-	"fmt"
-	"github.com/kurtosis-tech/example-microservice/datastore/datastore_service_client"
+	"context"
+	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -16,9 +17,7 @@ import (
 )
 
 const (
-	datastoreImage                        = "kurtosistech/example-microservices_datastore"
 	datastoreServiceId services.ServiceID = "datastore"
-	datastorePort                         = 1323
 	testKey                               = "test-key"
 	testValue                             = "test-value"
 
@@ -39,17 +38,26 @@ func (test BasicDatastoreTest) Configure(builder *testsuite.TestConfigurationBui
 }
 
 func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := getDatastoreContainerConfigSupplier()
+	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
 
 	serviceContext, hostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient := datastore_service_client.NewDatastoreClient(serviceContext.GetIPAddress(), datastorePort)
+	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(serviceContext.GetIPAddress())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
+	}
+	defer func() {
+		if err := datastoreClientConnCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
-	err = datastoreClient.WaitForHealthy(waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
@@ -59,6 +67,8 @@ func (test BasicDatastoreTest) Setup(networkCtx *networks.NetworkContext) (netwo
 }
 
 func (test BasicDatastoreTest) Run(network networks.Network) error {
+	ctx := context.Background()
+
 	// Necessary because Go doesn't have generics
 	castedNetwork := network.(*networks.NetworkContext)
 
@@ -67,47 +77,50 @@ func (test BasicDatastoreTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting the datastore service info")
 	}
 
-	datastoreClient := datastore_service_client.NewDatastoreClient(serviceContext.GetIPAddress(), datastorePort)
+	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(serviceContext.GetIPAddress())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
+	}
+	defer func() {
+		if err := datastoreClientConnCloseFunc(); err != nil {
+			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	logrus.Infof("Verifying that key '%v' doesn't already exist...", testKey)
-	exists, err := datastoreClient.Exists(testKey)
+	existsArgs := &datastore_rpc_api_bindings.ExistsArgs{
+		Key: testKey,
+	}
+	existsResponse, err := datastoreClient.Exists(ctx, existsArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking if the test key exists")
 	}
-	if exists {
+	if existsResponse.GetExists() {
 		return stacktrace.NewError("Test key should not exist yet")
 	}
 	logrus.Infof("Confirmed that key '%v' doesn't already exist", testKey)
 
 	logrus.Infof("Inserting value '%v' at key '%v'...", testKey, testValue)
-	if err := datastoreClient.Upsert(testKey, testValue); err != nil {
+	upsertArgs := &datastore_rpc_api_bindings.UpsertArgs{
+		Key:   testKey,
+		Value: testValue,
+	}
+	if _, err = datastoreClient.Upsert(ctx, upsertArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred upserting the test key")
 	}
 	logrus.Infof("Inserted value successfully")
 
 	logrus.Infof("Getting the key we just inserted to verify the value...")
-	value, err := datastoreClient.Get(testKey)
+	getArgs := &datastore_rpc_api_bindings.GetArgs{
+		Key: testKey,
+	}
+	getResponse, err := datastoreClient.Get(ctx, getArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the test key after upload")
 	}
-	if value != testValue {
-		return stacktrace.NewError("Returned value '%v' != test value '%v'", value, testValue)
+	if getResponse.GetValue() != testValue {
+		return stacktrace.NewError("Returned value '%v' != test value '%v'", getResponse.GetValue(), testValue)
 	}
 	logrus.Info("Value verified")
 	return nil
-}
-
-// ====================================================================================================
-//                                       Private helper functions
-// ====================================================================================================
-func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
-		).WithUsedPorts(
-			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
-		).Build()
-		return containerConfig, nil
-	}
-	return containerConfigSupplier
 }

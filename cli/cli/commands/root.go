@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/version_checker"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -66,5 +67,8 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	}
 	logrus.SetOutput(cmd.OutOrStdout())
 	logrus.SetLevel(logLevel)
+
+	version_checker.CheckLatestVersion()
+
 	return nil
 }

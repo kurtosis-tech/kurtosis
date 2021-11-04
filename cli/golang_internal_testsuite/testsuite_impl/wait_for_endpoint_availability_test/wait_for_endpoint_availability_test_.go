@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	datastoreImage                        = "kurtosistech/example-microservices_datastore"
-	datastoreServiceId services.ServiceID = "datastore"
-	datastorePort                         = 1323
-	healthCheckUrlSlug                    = "health"
-	healthyValue                          = "healthy"
+	dockerGettingStartedImage                    = "docker/getting-started"
+	datastoreServiceId        services.ServiceID = "docker-getting-started"
+	dockerGettingStartedPort                                = 80
+	healthCheckUrlSlug                           = ""
+	healthyValue                                 = ""
 
 	waitForStartupTimeBetweenPolls = 1
 	waitForStartupMaxPolls         = 15
@@ -27,11 +27,10 @@ const (
 )
 
 type WaitForEndpointAvailabilityTest struct {
-	datastoreImage string
 }
 
-func NewWaitForEndpointAvailabilityTest(datastoreImage string) *WaitForEndpointAvailabilityTest {
-	return &WaitForEndpointAvailabilityTest{datastoreImage: datastoreImage}
+func NewWaitForEndpointAvailabilityTest() *WaitForEndpointAvailabilityTest {
+	return &WaitForEndpointAvailabilityTest{}
 }
 
 func (test WaitForEndpointAvailabilityTest) Configure(builder *testsuite.TestConfigurationBuilder) {
@@ -53,7 +52,7 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 		return stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	port := uint32(datastorePort)
+	port := uint32(dockerGettingStartedPort)
 
 	if err := castedNetworkContext.WaitForHttpGetEndpointAvailability(datastoreServiceId, port, healthCheckUrlSlug, waitInitialDelayMilliseconds, waitForStartupMaxPolls, waitForStartupTimeBetweenPolls, healthyValue); err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
@@ -67,11 +66,11 @@ func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error 
 //                                       Private helper functions
 // ====================================================================================================
 func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-	containerConfigSupplier  := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			datastoreImage,
+			dockerGettingStartedImage,
 		).WithUsedPorts(
-			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
+			map[string]bool{fmt.Sprintf("%v/tcp", dockerGettingStartedPort): true},
 		).Build()
 		return containerConfig, nil
 	}
