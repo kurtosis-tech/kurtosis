@@ -15,6 +15,13 @@
 * All the Go API classes now have a `github.com/kurtosis-tech/kurtosis-core` prefix instead FOR INTERNAL USE
     * NOTE: External uses should use the Kurt Core API Lib
 
+# 1.27.3
+### Changes
+* Revert to Kurt Client 0.20.0 (because upgrading to 0.21.1 would be an API break)
+
+### Fixes
+* Use container engine lib v0.8.2, which returns `127.0.0.1` rather than `0.0.0.0` for host machine port bindings
+
 # 1.27.2
 ### Changes
 * Upgraded to Kurt Client 0.21.1
