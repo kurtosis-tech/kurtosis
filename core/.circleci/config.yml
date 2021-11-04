@@ -233,21 +233,29 @@ workflows:
               ignore: /.*/
             tags:
               only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-#      - publish_api_typescript:
-#          context:
-#            - npmjs-user
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags:
-#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-#      - publish_server_image:
-#          context:
-#            - github-user
-#            - docker-user
-#          filters:
-#            branches:
-#              ignore: /.*/
-#            tags: 
-#              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_api_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_server_image:
+          context:
+            - github-user
+            - docker-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags: 
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_testsuite_script:
+          context:
+            - s3-upload-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags: 
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
       # -- End artifact-publishing jobs ----------------------------
