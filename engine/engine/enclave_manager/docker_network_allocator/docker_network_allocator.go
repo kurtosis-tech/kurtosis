@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/binary"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"

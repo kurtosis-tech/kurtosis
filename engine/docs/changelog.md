@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Upgraded to Engine API Lib 0.11.0, which uses Kurt Core API Lib rather than Kurt Client
+* Switch to using the new server package of Kurt Core
+
+### Breaking Changes
+* Upgraded to Engine API Lib 0.11.0
 
 # 0.5.2
 ### Fixes

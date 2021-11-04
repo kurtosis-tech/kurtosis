@@ -8,11 +8,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/api_container_availability_waiter/api_container_availability_waiter_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container_availability_waiter/api_container_availability_waiter_consts"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_object_labels"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
+	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/docker_network_allocator"
 	"github.com/palantir/stacktrace"
@@ -220,6 +220,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			IpOnHostMachine:   apiContainerHostPortBinding.HostIP,
 			PortOnHostMachine: hostMachinePortUint32,
 		},
+		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
@@ -254,14 +255,16 @@ func (manager *EnclaveManager) GetEnclaves(
 			return nil, stacktrace.Propagate(err, "An error occurred getting information about the containers in enclave '%v'", enclaveId)
 		}
 
+		enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
 		enclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-			EnclaveId:                   enclaveId,
-			NetworkId:                   network.GetId(),
-			NetworkCidr:                 network.GetIpAndMask().String(),
-			ContainersStatus:            containersStatus,
-			ApiContainerStatus:          apiContainerStatus,
-			ApiContainerInfo:            apiContainerInfo,
-			ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
+			EnclaveId:                       enclaveId,
+			NetworkId:                       network.GetId(),
+			NetworkCidr:                     network.GetIpAndMask().String(),
+			ContainersStatus:                containersStatus,
+			ApiContainerStatus:              apiContainerStatus,
+			ApiContainerInfo:                apiContainerInfo,
+			ApiContainerHostMachineInfo:     apiContainerHostMachineInfo,
+			EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 		}
 		result[enclaveId] = enclaveInfo
 	}
