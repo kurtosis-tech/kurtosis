@@ -75,8 +75,11 @@ func NewRegisterServiceArgs(serviceId string, partitionId string) *kurtosis_core
 	}
 }
 
-func NewRegisterServiceResponse(ipAddr string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
-	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{IpAddr: ipAddr}
+func NewRegisterServiceResponse(ipAddr string, relativeServiceDirpath string) *kurtosis_core_rpc_api_bindings.RegisterServiceResponse {
+	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
+		IpAddr:                 ipAddr,
+		RelativeServiceDirpath: relativeServiceDirpath,
+	}
 }
 
 // ==============================================================================================
