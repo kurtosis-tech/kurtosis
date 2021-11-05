@@ -7,7 +7,6 @@ package docker_manager
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -451,15 +450,11 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
-	if err == nil {
-		err = errors.New("Error custom de leo")
-		containerLogs := manager.getContainerLogsString(ctx, containerId)
-		return "", nil, stacktrace.Propagate(err, "1- Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
-	} else {
+	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
 		containerLogs := manager.getContainerLogsString(ctx, containerId)
 		return "", nil, stacktrace.Propagate(err, "2-Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
 	}
+
 	functionFinishedSuccessfully := false
 	defer func() {
 		if !functionFinishedSuccessfully {
