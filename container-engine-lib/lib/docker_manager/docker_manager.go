@@ -89,6 +89,8 @@ const (
 	shouldRemoveAnonymousVolumesWhenRemovingContainers = true
 	shouldRemoveLinksWhenRemovingContainers            = false  // We don't use container links
 	shouldKillContainersWhenRemovingContainers         = true
+
+	shouldFollowLogsWhenGettingContainerLogs = false
 )
 
 /*
@@ -448,8 +450,9 @@ func (manager DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	if err := manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
-		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.", dockerImage)
+	if err := manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err == nil {
+		containerLogs := manager.getContainerLogsString(ctx, containerId)
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
 	}
 	functionFinishedSuccessfully := false
 	defer func() {
@@ -1187,4 +1190,37 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
 
 	return network, nil
+}
+
+func (manager DockerManager) getContainerLogsString(ctx context.Context, containerId string) string {
+
+	var containerLogs string
+
+	containerLogsReadCloser, err := manager.GetContainerLogs(ctx, containerId, shouldFollowLogsWhenGettingContainerLogs)
+	if err != nil {
+		return fmt.Sprintf("An error occurred getting logs for container with ID '%v' error:\n%v", containerId, err)
+	}
+	defer func() {
+		if err := containerLogsReadCloser.Close(); err != nil {
+			logrus.Warningf("We tried to close the container read closer logs, but doing so threw an error:\n%v", err)
+		}
+	}()
+
+	containerLogsBufferSize := 10
+	containerLogsBuffer := make([]byte, containerLogsBufferSize)
+
+	for {
+		numberOfBytesRead, err := containerLogsReadCloser.Read(containerLogsBuffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Sprintf("An error occurred reading logs for container with ID '%v' error:\n%v", containerId, err)
+		}
+		if numberOfBytesRead > 0 {
+			newString := string(containerLogsBuffer[:numberOfBytesRead])
+			containerLogs = containerLogs + newString
+		}
+	}
+	return containerLogs
 }
