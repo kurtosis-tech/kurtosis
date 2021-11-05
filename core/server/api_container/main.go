@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
@@ -20,8 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -59,7 +58,7 @@ func main() {
 }
 
 func runMain () error {
-	args, err := api_container_launcher.RetrieveAPIContainerArgs()
+	args, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
 	}
@@ -87,7 +86,7 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(api_container_docker_consts.EnclaveDataDirMountpoint)
+	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(args.EnclaveDataDirpathOnAPIContainer)
 
 	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, args)
 	if err != nil {
@@ -139,7 +138,7 @@ func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 		freeIpAddrTracker *commons.FreeIpAddrTracker,
-		args *api_container_launcher.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+		args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()

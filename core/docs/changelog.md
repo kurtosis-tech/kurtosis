@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Extracted the API container launcher out into its own module so API containers can be launched without needing to know about the internals of the server
+
 ### Changes
 * The server now uses `object-attributes-schema-lib`, rather than containing its own name & labels schema
 
