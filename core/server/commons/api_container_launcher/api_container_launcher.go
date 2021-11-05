@@ -14,7 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -33,16 +33,17 @@ const (
 
 type ApiContainerLauncher struct {
 	dockerManager *docker_manager.DockerManager
+
+	objAttrsProvider schema.ObjectAttributesProvider
 }
 
-func NewApiContainerLauncher(dockerManager *docker_manager.DockerManager) *ApiContainerLauncher {
-	return &ApiContainerLauncher{dockerManager: dockerManager}
+func NewApiContainerLauncher(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *ApiContainerLauncher {
+	return &ApiContainerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
 func (launcher ApiContainerLauncher) Launch(
 	ctx context.Context,
 	containerImage string,
-	containerName string,
 	logLevel logrus.Level,
 	enclaveId string,
 	networkId string,
@@ -53,6 +54,19 @@ func (launcher ApiContainerLauncher) Launch(
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
 ) (string, *nat.PortBinding, error){
+	// TODO Take these in as args
+	listenPort := kurtosis_core_rpc_api_consts.ListenPort
+	listenProtocol := kurtosis_core_rpc_api_consts.ListenProtocol
+
+	enclaveObjAttrsProvider := launcher.objAttrsProvider.ForEnclave(enclaveId)
+	apiContainerAttrs := enclaveObjAttrsProvider.ForApiContainer(
+		apiContainerIpAddr,
+		uint16(listenPort),
+		listenProtocol,
+	)
+	containerName := apiContainerAttrs.GetName()
+	containerLabels := apiContainerAttrs.GetLabels()
+
 	envVars, err := launcher.genApiContainerEnvVars(
 		containerName,
 		logLevel,
@@ -72,8 +86,8 @@ func (launcher ApiContainerLauncher) Launch(
 	log.Debugf("Launching Kurtosis API container...")
 	kurtosisApiPort := nat.Port(fmt.Sprintf(
 		"%v/%v",
-		kurtosis_core_rpc_api_consts.ListenPort,
-		kurtosis_core_rpc_api_consts.ListenProtocol,
+		listenPort,
+		listenProtocol,
 	))
 
 	// We always publish the API container's ports so that we can call its external container registration functions from the CLI
@@ -81,9 +95,6 @@ func (launcher ApiContainerLauncher) Launch(
 		kurtosisApiPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
-	// Mayyyybe better to take this in as an arg?
-	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
-	containerLabels := enclaveObjLabelsProvider.ForApiContainer(apiContainerIpAddr)
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,

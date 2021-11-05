@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* The server now uses `object-attributes-schema-lib`, rather than containing its own name & labels schema
 
 # 1.28.5
 ### Fixes

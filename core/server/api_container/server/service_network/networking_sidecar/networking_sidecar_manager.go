@@ -10,8 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
@@ -55,18 +54,16 @@ type NetworkingSidecarManager interface {
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type StandardNetworkingSidecarManager struct {
 	dockerManager *docker_manager.DockerManager
-	
-	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
 
-	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+	enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider
 
 	freeIpAddrTracker *commons.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjAttrProvider: enclaveObjAttrProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 // Adds a sidecar container attached to the given service ID
@@ -82,8 +79,9 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			serviceGUID)
 	}
 
-	containerName := manager.enclaveObjNameProvider.ForNetworkingSidecarContainer(serviceGUID)
-	containerLabels := manager.enclaveObjLabelsProvider.ForNetworkingSidecarContainer(serviceGUID)
+	containerAttrs := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
+	containerName := containerAttrs.GetName()
+	containerLabels := containerAttrs.GetLabels()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		networkingSidecarImageName,
 		containerName,
