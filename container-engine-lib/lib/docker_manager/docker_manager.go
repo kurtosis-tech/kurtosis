@@ -452,7 +452,7 @@ func (manager DockerManager) CreateAndStartContainer(
 
 	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
 		containerLogs := manager.getContainerLogsString(ctx, containerId)
-		return "", nil, stacktrace.Propagate(err, "2-Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
 	}
 
 	functionFinishedSuccessfully := false
