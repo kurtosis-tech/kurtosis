@@ -7,13 +7,11 @@ package api_container_launcher
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/api_container_docker_consts"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -23,12 +21,14 @@ import (
 const (
 	dockerSocket = "/var/run/docker.sock"
 
-	// All API containers accept exactly one environment variable, which contains the serialized params that
-	// dictate how the API container ought to behave
-	serializedArgsEnvVar = "SERIALIZED_ARGS"
-
 	// We ALWAYS publish service ports now
 	shouldPublishServicePorts = true
+
+	listenProtocol = "tcp"
+
+	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
+	//  on the API container
+	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
 )
 
 type ApiContainerLauncher struct {
@@ -48,37 +48,47 @@ func (launcher ApiContainerLauncher) Launch(
 	enclaveId string,
 	networkId string,
 	subnetMask string,
+	listenPort uint16,
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	otherTakenIpAddrsInEnclave []net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
 ) (string, *nat.PortBinding, error){
-	// TODO Take these in as args
-	listenPort := kurtosis_core_rpc_api_consts.ListenPort
-	listenProtocol := kurtosis_core_rpc_api_consts.ListenProtocol
-
 	enclaveObjAttrsProvider := launcher.objAttrsProvider.ForEnclave(enclaveId)
 	apiContainerAttrs := enclaveObjAttrsProvider.ForApiContainer(
 		apiContainerIpAddr,
-		uint16(listenPort),
+		listenPort,
 		listenProtocol,
 	)
 	containerName := apiContainerAttrs.GetName()
 	containerLabels := apiContainerAttrs.GetLabels()
 
-	envVars, err := launcher.genApiContainerEnvVars(
+	takenIpAddrStrSet := map[string]bool{
+		gatewayIpAddr.String(): true,
+		apiContainerIpAddr.String(): true,
+	}
+	for _, takenIp := range otherTakenIpAddrsInEnclave {
+		takenIpAddrStrSet[takenIp.String()] = true
+	}
+	argsObj, err := args.NewAPIContainerArgs(
 		containerName,
-		logLevel,
+		logLevel.String(),
 		enclaveId,
 		networkId,
 		subnetMask,
-		gatewayIpAddr,
-		apiContainerIpAddr,
-		otherTakenIpAddrsInEnclave,
+		apiContainerIpAddr.String(),
+		takenIpAddrStrSet,
 		isPartitioningEnabled,
+		shouldPublishServicePorts,
+		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
 	)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
+	}
+
+	envVars, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
@@ -108,7 +118,7 @@ func (launcher ApiContainerLauncher) Launch(
 		envVars,
 	).WithBindMounts(map[string]string{
 		dockerSocket: dockerSocket,
-		enclaveDataDirpathOnHostMachine: api_container_docker_consts.EnclaveDataDirMountpoint,
+		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
 	}).WithLabels(
 		containerLabels,
 	).Build()
@@ -134,54 +144,4 @@ func (launcher ApiContainerLauncher) Launch(
 
 	shouldDeleteContainer = false
 	return containerId, hostPortBinding, nil
-}
-
-
-
-func (launcher ApiContainerLauncher) genApiContainerEnvVars(
-	containerName string,
-	logLevel logrus.Level,
-	enclaveId string,
-	networkId string,
-	subnetMask string,
-	gatewayIpAddr net.IP,
-	apiContainerIpAddr net.IP,
-	otherTakenIpAddrsInEnclave []net.IP,
-	isPartitioningEnabled bool,
-	enclaveDataDirpathOnHostMachine string,
-) (map[string]string, error) {
-	takenIpAddrStrSet := map[string]bool{
-		gatewayIpAddr.String(): true,
-		apiContainerIpAddr.String(): true,
-	}
-	for _, takenIp := range otherTakenIpAddrsInEnclave {
-		takenIpAddrStrSet[takenIp.String()] = true
-	}
-	args, err := NewAPIContainerArgs(
-		containerName,
-		logLevel.String(),
-		enclaveId,
-		networkId,
-		subnetMask,
-		apiContainerIpAddr.String(),
-		takenIpAddrStrSet,
-		isPartitioningEnabled,
-		shouldPublishServicePorts,
-		enclaveDataDirpathOnHostMachine,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the test execution args")
-	}
-
-	argsBytes, err := json.Marshal(args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing API container test execution args to JSON")
-	}
-
-	argsStr := string(argsBytes)
-
-	// TODO switch to the envVars requiring a visitor to hit, so we get them all
-	return map[string]string{
-		serializedArgsEnvVar: argsStr,
-	}, nil
 }

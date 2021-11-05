@@ -2,7 +2,10 @@ module github.com/kurtosis-tech/kurtosis-core/server
 
 go 1.13
 
-replace github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
+replace (
+	github.com/kurtosis-tech/kurtosis-core/api/golang => ../api/golang
+	github.com/kurtosis-tech/kurtosis-core/launcher => ../launcher
+)
 
 require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
@@ -10,8 +13,9 @@ require (
 	github.com/google/martian v2.1.0+incompatible
 	github.com/google/uuid v1.2.0
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-cf749222e034
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
 	github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211104234832-e10434db185a
