@@ -143,7 +143,7 @@ Args:
 
 Returns:
 	id: The Docker-managed ID of the network
- */q
+ */
 func (manager DockerManager) CreateNetwork(context context.Context, name string, subnetMask string, gatewayIP net.IP, labels map[string]string) (id string, err error)  {
 	networkIds, err := manager.GetNetworksByName(context, name)
 	if err != nil {
