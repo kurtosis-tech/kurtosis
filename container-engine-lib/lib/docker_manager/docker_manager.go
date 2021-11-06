@@ -530,7 +530,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			manager.log.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
-			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerInspectResult(publishedPortsSet, allInterfaceHostPortBindings)
+			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerPortMap(publishedPortsSet, allInterfaceHostPortBindings)
 			if len(candidatePortBindingsOnExpectedInterface) == numPublishedPorts {
 				resultHostPortBindings = candidatePortBindingsOnExpectedInterface
 				break
@@ -804,12 +804,18 @@ func (manager DockerManager) DisconnectContainerFromNetwork(ctx context.Context,
 	return nil
 }
 
+// TODO Refactor this to be GetContainersByName - no need to be so specific now that we have the Container type we can return
 func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr string) ([]string, error) {
 	filterArg := filters.Arg(containerNameSearchFilterKey, nameStr)
 	nameFilterList := filters.NewArgs(filterArg)
-	result, err := manager.getContainerIdsByFilterArgs(ctx, nameFilterList, false)
+	// TODO Make the "should show stopped containers" flag configurable????
+	matchingContainers, err := manager.getContainersByFilterArgs(ctx, nameFilterList, false)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with name '%v'", nameStr)
+	}
+	result := []string{}
+	for _, containerObj := range matchingContainers {
+		result = append(result, containerObj.GetId())
 	}
 	return result, nil
 }
@@ -1004,7 +1010,10 @@ func (manager *DockerManager) getContainerCfg(
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
 // If the given PortMap doesn't have host port bindings for all the usedPortsSet, then len(resultMap) < len(usedPortsSet)
-func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
+// NOTE: You might be wondering why we can't use getHostPortBindingsFromContainerPortsList instead. The reason is that, VERY
+//  frustratingly, Docker's ContainerInspect (which we use when creating a container) returns ports in a completely different
+//  format than ContainerList so we need to have two separate methods to process the two of them.
+func (manager *DockerManager) getHostPortBindingsFromDockerPortMap(usedPortsSet map[nat.Port]bool, allInterfaceHostPortBindings nat.PortMap) map[nat.Port]*nat.PortBinding {
 	result := map[nat.Port]*nat.PortBinding{}
 	for port, allInterfaceBindings := range allInterfaceHostPortBindings {
 		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
@@ -1040,23 +1049,6 @@ func (manager *DockerManager) getHostPortBindingsFromDockerInspectResult(usedPor
 		}
 	}
 	return result
-}
-
-// Returns a list of Container Ids by filter arguments previously set, these containers can be running or stopped
-func (manager DockerManager) getContainerIdsByFilterArgs(ctx context.Context, filterArgs filters.Args, all bool) ([]string, error) {
-	opts := types.ContainerListOptions{
-		Filters: filterArgs,
-		All: all,
-	}
-	containers, err := manager.dockerClient.ContainerList(ctx, opts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the containers with filter args '%+v'", filterArgs)
-	}
-	result := []string{}
-	for _, containerObj := range containers {
-		result = append(result, containerObj.ID)
-	}
-	return result, nil
 }
 
 func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
@@ -1097,7 +1089,7 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
 	}
-	containerHostPortBindings := getContainerHostPortBindingsByContainerPorts(dockerContainer.Ports)
+	containerHostPortBindings := getHostPortBindingsFromContainerPortsList(dockerContainer.Ports)
 
 	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
@@ -1127,7 +1119,10 @@ func getContainerNameByDockerContainerNames(dockerContainerNames []string) (stri
 	return "", stacktrace.NewError("There is not any Docker container name to get")
 }
 
-func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
+// NOTE: You might be wondering why we can't use getHostPortBindingsFromDockerPortMap instead. The reason is that, VERY
+//  frustratingly, Docker's ContainerInspect (which we use when creating a container) returns ports in a completely different
+//  format than ContainerList so we need to have two separate methods to process the two of them.
+func getHostPortBindingsFromContainerPortsList(dockerContainerPorts []types.Port) map[nat.Port]*nat.PortBinding {
 	hostPortBindings := make(map[nat.Port]*nat.PortBinding, len(dockerContainerPorts))
 
 	for _, port := range dockerContainerPorts {
@@ -1135,8 +1130,10 @@ func getContainerHostPortBindingsByContainerPorts(dockerContainerPorts []types.P
 		containerPortNumberAndProtocolString := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
 		natPort := nat.Port(containerPortNumberAndProtocolString)
 
+		// NOTE: We override the IP address because Docker will report 0.0.0.0, but Windows machines can't handle this
+		//  IP address
 		natPortBinding := &nat.PortBinding{
-			HostIP: port.IP,
+			HostIP: hostPortBindingInterfaceForUserConsumption,
 			HostPort: publicPortString,
 		}
 		hostPortBindings[natPort] = natPortBinding
