@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Replaced the availability waiter binary, packaged inside the server Docker image, with an exec command ran in the API container launcher
+
 ### Removals
 * Removed constants from the API for the listen port & listen protocol
 

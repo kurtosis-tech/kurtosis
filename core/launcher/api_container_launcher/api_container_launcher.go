@@ -21,9 +21,6 @@ import (
 )
 
 const (
-	// This is the filepath where the availability waiter binary
-	AvailabilityWaiterBinaryFilepathOnAPIContainer = ""
-
 	dockerSocket = "/var/run/docker.sock"
 
 	// We ALWAYS publish service ports now
@@ -148,6 +145,10 @@ func (launcher ApiContainerLauncher) Launch(
 			}
 		}
 	}()
+
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, listenPort); err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
+	}
 
 	hostPortBinding, found := hostPortBindings[kurtosisApiPort]
 	if !found {
