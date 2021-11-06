@@ -6,6 +6,7 @@
 package api_container_launcher
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
@@ -16,15 +17,24 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"time"
 )
 
 const (
+	// This is the filepath where the availability waiter binary
+	AvailabilityWaiterBinaryFilepathOnAPIContainer = ""
+
 	dockerSocket = "/var/run/docker.sock"
 
 	// We ALWAYS publish service ports now
 	shouldPublishServicePorts = true
 
 	listenProtocol = "tcp"
+
+	maxWaitForAvailabilityRetries         = 10
+	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
+
+	availabilityWaitingExecCmdSuccessExitCode = 0
 
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
@@ -54,7 +64,7 @@ func (launcher ApiContainerLauncher) Launch(
 	otherTakenIpAddrsInEnclave []net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
-) (string, *nat.PortBinding, error){
+) (string, *nat.PortBinding, error) {
 	enclaveObjAttrsProvider := launcher.objAttrsProvider.ForEnclave(enclaveId)
 	apiContainerAttrs := enclaveObjAttrsProvider.ForApiContainer(
 		apiContainerIpAddr,
@@ -74,6 +84,8 @@ func (launcher ApiContainerLauncher) Launch(
 	argsObj, err := args.NewAPIContainerArgs(
 		containerName,
 		logLevel.String(),
+		listenPort,
+		listenProtocol,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -144,4 +156,51 @@ func (launcher ApiContainerLauncher) Launch(
 
 	shouldDeleteContainer = false
 	return containerId, hostPortBinding, nil
+}
+
+func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		listenProtocol,
+		listenPortNum,
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := 0; i < maxWaitForAvailabilityRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if (exitCode == availabilityWaitingExecCmdSuccessExitCode) {
+				return nil
+			}
+			logrus.Debugf(
+				"API container availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				availabilityWaitingExecCmdSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"API container availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxWaitForAvailabilityRetries {
+			time.Sleep(timeBetweenWaitForAvailabilityRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The API container didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxWaitForAvailabilityRetries,
+		timeBetweenWaitForAvailabilityRetries,
+	)
 }

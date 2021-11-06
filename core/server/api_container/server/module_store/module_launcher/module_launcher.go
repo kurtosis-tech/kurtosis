@@ -11,7 +11,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_docker_api"
@@ -34,8 +33,8 @@ const (
 type ModuleLauncher struct {
 	dockerManager *docker_manager.DockerManager
 
-	// Modules have a connection to the API container, so the launcher must know about the API container's IP addr
-	apiContainerIpAddr string
+	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
+	apiContainerSocketInsideNetwork string
 
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
@@ -51,8 +50,8 @@ type ModuleLauncher struct {
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
-	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerSocket string, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
+	return &ModuleLauncher{dockerManager: dockerManager, apiContainerSocketInsideNetwork: apiContainerSocket, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -84,9 +83,8 @@ func (launcher ModuleLauncher) Launch(
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
 	}
 
-	apiContainerSocket := fmt.Sprintf("%v:%v", launcher.apiContainerIpAddr, kurtosis_core_rpc_api_consts.ListenPort)
 	envVars := map[string]string{
-		kurtosis_module_docker_api.ApiContainerSocketEnvVar: apiContainerSocket,
+		kurtosis_module_docker_api.ApiContainerSocketEnvVar: launcher.apiContainerSocketInsideNetwork,
 		kurtosis_module_docker_api.SerializedCustomParamsEnvVar: serializedParams,
 	}
 
