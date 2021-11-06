@@ -1,5 +1,10 @@
 # TBD
 
+# 0.8.3
+### Fixes
+* Fixed issue where `GetContainersByLabel` would return `0.0.0.0` addresses rather than `127.0.0.1`
+* Replaced redundant `getContainerIdsByName` with `getContainersByFilterArgs`
+
 # 0.8.2
 ### Fixes
 * Host port bindings will be returned as `127.0.0.1` rather than `0.0.0.0`, because Windows machines don't automatically correct `0.0.0.0` to `127.0.0.1`
