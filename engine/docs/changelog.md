@@ -3,6 +3,7 @@
 * Upgraded to Engine API Lib 0.11.0, which uses Kurt Core API Lib rather than Kurt Client
 * Switch to using the new server package of Kurt Core
 * Switch to using `object-attributes-schema-lib`, rather than the custom-defined attributes schema from Kurt Core
+* Switch to using `free-ip-addr-tracker-lib` rather than a version from Kurt Core
 
 ### Breaking Changes
 * Upgraded to Engine API Lib 0.11.0

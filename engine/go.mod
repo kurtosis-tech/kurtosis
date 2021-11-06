@@ -7,6 +7,7 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-cf749222e034
+	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211105200145-fdc5d44bb3fc // indirect  // TODO REPLACE WITH RELEASE VERSION
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211104020810-9dc3d8a0234b
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b
