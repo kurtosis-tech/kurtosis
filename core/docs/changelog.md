@@ -1,5 +1,16 @@
 # TBD
 
+# 1.28.6
+### Features
+* Extracted the API container launcher out into its own module so API containers can be launched without needing to know about the internals of the server
+
+### Changes
+* The server now uses `object-attributes-schema-lib`, rather than containing its own name & labels schema
+* Switched to using the `FreeIPAddressTracker` from `free-ip-addr-tracker-lib`, so that `engine-server` doesn't need to depend on this repo anymore
+
+### Fixes
+* Use `container-engine-lib` 0.8.3, which reports `127.0.0.1` for all host port bindings
+
 # 1.28.5
 ### Fixes
 * Actually reenable all other publishing jobs

@@ -10,15 +10,14 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_docker_api"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_consts"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -38,11 +37,9 @@ type ModuleLauncher struct {
 	// Modules have a connection to the API container, so the launcher must know about the API container's IP addr
 	apiContainerIpAddr string
 
-	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
+	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
-	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
-
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	// TODO Publish module ports always, to simplify
 	shouldPublishPorts bool
@@ -54,8 +51,8 @@ type ModuleLauncher struct {
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
-	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerIpAddr string, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
+	return &ModuleLauncher{dockerManager: dockerManager, apiContainerIpAddr: apiContainerIpAddr, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -100,8 +97,9 @@ func (launcher ModuleLauncher) Launch(
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
 
-	containerName := launcher.enclaveObjNameProvider.ForModuleContainer(moduleGUID)
-	containerLabels := launcher.enclaveObjLabelsProvider.ForModuleContainer(moduleGUID)
+	containerAttrs := launcher.enclaveObjAttrsProvider.ForModuleContainer(string(moduleGUID))
+	containerName := containerAttrs.GetName()
+	containerLabels := containerAttrs.GetLabels()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,

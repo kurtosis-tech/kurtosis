@@ -1,4 +1,4 @@
-package api_container_launcher
+package args
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
@@ -32,6 +32,9 @@ type APIContainerArgs struct {
 	// Whether the ports of the containers that the API service starts should be published to the Docker host machine
 	ShouldPublishPorts bool		`json:"shouldPublishPorts"`
 
+	// The location on the API container where the enclave data directory will have been bind-mounted
+	EnclaveDataDirpathOnAPIContainer string `json:"enclaveDataDirpathOnAPIContainer"`
+
 	// The dirpath on the Docker host machine where enclave data is stored, which the API container
 	//  will use to bind-mount the directory into the services that it starts
 	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
@@ -40,18 +43,19 @@ type APIContainerArgs struct {
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
-func NewAPIContainerArgs(containerName string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnHostMachine string) (*APIContainerArgs, error) {
+func NewAPIContainerArgs(containerName string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnAPIContainer string, enclaveDataDirpathOnHostMachine string) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
-		ContainerName: containerName,
-		LogLevel: logLevel,
-		EnclaveId: enclaveId,
-		NetworkId: networkId,
-		SubnetMask: subnetMask,
-		ApiContainerIpAddr: apiContainerIpAddr,
-		TakenIpAddrs: takenIpAddrs,
-		IsPartitioningEnabled: isPartitioningEnabled,
-		ShouldPublishPorts: shouldPublishPorts,
-		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
+		ContainerName:                    containerName,
+		LogLevel:                         logLevel,
+		EnclaveId:                        enclaveId,
+		NetworkId:                        networkId,
+		SubnetMask:                       subnetMask,
+		ApiContainerIpAddr:               apiContainerIpAddr,
+		TakenIpAddrs:                     takenIpAddrs,
+		IsPartitioningEnabled:            isPartitioningEnabled,
+		ShouldPublishPorts:               shouldPublishPorts,
+		EnclaveDataDirpathOnAPIContainer: enclaveDataDirpathOnAPIContainer,
+		EnclaveDataDirpathOnHostMachine:  enclaveDataDirpathOnHostMachine,
 	}
 
 	if err := result.validate(); err != nil {

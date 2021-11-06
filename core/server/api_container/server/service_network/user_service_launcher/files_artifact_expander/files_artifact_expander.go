@@ -8,11 +8,10 @@ package files_artifact_expander
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
@@ -42,19 +41,17 @@ type FilesArtifactExpander struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
-
-	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
+	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
 	testNetworkId string
 
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	filesArtifactCache *enclave_data_directory.FilesArtifactCache
 }
 
-func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, testNetworkId string, freeIpAddrTracker *commons.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
-	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
+func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, testNetworkId string, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactCache *enclave_data_directory.FilesArtifactCache) *FilesArtifactExpander {
+	return &FilesArtifactExpander{enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine, dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, testNetworkId: testNetworkId, freeIpAddrTracker: freeIpAddrTracker, filesArtifactCache: filesArtifactCache}
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
@@ -62,22 +59,24 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
 		artifactIdsToExpand map[string]bool,
 ) (map[string]string, error) {
-	artifactIdsToVolNames := map[string]string{}
+	artifactIdsToVolAttrs := map[string]schema.ObjectAttributes{}
 	for artifactId := range artifactIdsToExpand {
-		destVolName := expander.enclaveObjNameProvider.ForFilesArtifactExpansionVolume(serviceGUID, artifactId)
-		artifactIdsToVolNames[artifactId] = destVolName
+		destVolAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
+		artifactIdsToVolAttrs[artifactId] = destVolAttrs
 	}
 
 	// TODO PERF: parallelize this to increase speed
-	for artifactId, destVolName := range artifactIdsToVolNames {
+	artifactIdsToVolNames := map[string]string{}
+	for artifactId, destVolAttrs := range artifactIdsToVolAttrs {
 		artifactFile, err := expander.filesArtifactCache.GetFilesArtifact(artifactId)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the file for files artifact '%v'", artifactId)
 		}
 
-		volumeLabels := expander.enclaveObjLabelsProvider.ForFilesArtifactExpansionVolume()
-		if err := expander.dockerManager.CreateVolume(ctx, destVolName, volumeLabels); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v'", destVolName)
+		volumeName := destVolAttrs.GetName()
+		volumeLabels := destVolAttrs.GetLabels()
+		if err := expander.dockerManager.CreateVolume(ctx, volumeName, volumeLabels); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the destination volume '%v' with labels '%+v'", volumeName, volumeLabels)
 		}
 
 		artifactRelativeFilepath := artifactFile.GetFilepathRelativeToDataDirRoot()
@@ -89,14 +88,16 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		containerCmd := getExtractionCommand(artifactFilepathOnExpanderContainer)
 
 		volumeMounts := map[string]string{
-			destVolName:                              destVolMntDirpathOnExpander,
+			volumeName: destVolMntDirpathOnExpander,
 		}
-
-		containerName := expander.enclaveObjNameProvider.ForFilesArtifactExpanderContainer(serviceGUID, artifactId)
-		containerLabels := expander.enclaveObjLabelsProvider.ForFilesArtifactExpanderContainer()
+		containerAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
+		containerName := containerAttrs.GetName()
+		containerLabels := containerAttrs.GetLabels()
 		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts, containerLabels); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running the expander container")
 		}
+
+		artifactIdsToVolNames[artifactId] = volumeName
 	}
 
 	return artifactIdsToVolNames, nil

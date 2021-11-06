@@ -7,7 +7,7 @@ package external_container_store
 
 import (
 	"github.com/google/uuid"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"sync"
@@ -25,7 +25,7 @@ type registeredContainerInfo struct {
 // Sometimes, containers not started by the API container will need to run inside the enclave; this is how the API container tracks those containers
 // NOTE: As of 2021-10-18, we actually don't use the stored information in any way
 type ExternalContainerStore struct {
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 	
 	mutex *sync.Mutex
 
@@ -36,7 +36,7 @@ type ExternalContainerStore struct {
 	registeredContainers map[string]registeredContainerInfo
 }
 
-func NewExternalContainerStore(freeIpAddrTracker *commons.FreeIpAddrTracker) *ExternalContainerStore {
+func NewExternalContainerStore(freeIpAddrTracker *lib.FreeIpAddrTracker) *ExternalContainerStore {
 	return &ExternalContainerStore{
 		freeIpAddrTracker: freeIpAddrTracker,
 		mutex: &sync.Mutex{},

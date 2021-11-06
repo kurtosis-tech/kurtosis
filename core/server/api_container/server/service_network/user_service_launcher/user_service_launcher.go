@@ -9,11 +9,10 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons/object_name_providers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
@@ -24,11 +23,9 @@ Convenience struct whose only purpose is launching user services
 type UserServiceLauncher struct {
 	dockerManager *docker_manager.DockerManager
 
-	enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider
+	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
-	enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider
-
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	// TODO Always publish user service ports, to simplify
 	shouldPublishPorts bool
@@ -40,8 +37,8 @@ type UserServiceLauncher struct {
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjNameProvider *object_name_providers.EnclaveObjectNameProvider, enclaveObjLabelsProvider *object_labels_providers.EnclaveObjectLabelsProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
-	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjNameProvider: enclaveObjNameProvider, enclaveObjLabelsProvider: enclaveObjLabelsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
+	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
 /**
@@ -105,8 +102,9 @@ func (launcher UserServiceLauncher) Launch(
 		launcher.enclaveDataDirpathOnHostMachine: enclaveDataDirMountDirpath,
 	}
 
-	containerName := launcher.enclaveObjNameProvider.ForUserServiceContainer(serviceGUID)
-	containerLabels := launcher.enclaveObjLabelsProvider.ForUserServiceContainer(serviceGUID)
+	containerAttrs := launcher.enclaveObjAttrsProvider.ForUserServiceContainer(string(serviceGUID))
+	containerName := containerAttrs.GetName()
+	containerLabels := containerAttrs.GetLabels()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		imageName,
 		containerName,
