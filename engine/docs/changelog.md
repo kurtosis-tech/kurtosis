@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Use `container-engine-lib` 0.8.3, which returns host port bindings with 127.0.0.1 IP address rather than `0.0.0.0`
 
 # 0.5.2
 ### Fixes
