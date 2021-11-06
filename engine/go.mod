@@ -6,7 +6,7 @@ require (
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d
 	github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918
 	github.com/kurtosis-tech/kurtosis-core v0.0.0-20211103233136-3dbd50327378
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-7075d4829152
