@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
@@ -20,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -73,7 +73,7 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
 	}
-	freeIpAddrTracker := commons.NewFreeIpAddrTracker(
+	freeIpAddrTracker := lib.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		parsedSubnetMask,
 		args.TakenIpAddrs,
@@ -137,7 +137,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 func createServiceNetworkAndModuleStore(
 		dockerManager *docker_manager.DockerManager,
 		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		freeIpAddrTracker *lib.FreeIpAddrTracker,
 		args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 

@@ -10,11 +10,11 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
@@ -61,7 +61,7 @@ type ServiceNetworkImpl struct {
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
 
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	dockerManager *docker_manager.DockerManager
 
@@ -85,7 +85,7 @@ type ServiceNetworkImpl struct {
 
 func NewServiceNetworkImpl(
 		isPartitioningEnabled bool,
-		freeIpAddrTracker *commons.FreeIpAddrTracker,
+		freeIpAddrTracker *lib.FreeIpAddrTracker,
 		dockerManager *docker_manager.DockerManager,
 		dockerNetworkId string,
 		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,

@@ -9,9 +9,9 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -25,7 +25,7 @@ type UserServiceLauncher struct {
 
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
 
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	// TODO Always publish user service ports, to simplify
 	shouldPublishPorts bool
@@ -37,7 +37,7 @@ type UserServiceLauncher struct {
 	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
 	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
