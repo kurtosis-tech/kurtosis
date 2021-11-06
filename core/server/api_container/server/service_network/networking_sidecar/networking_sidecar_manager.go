@@ -8,8 +8,8 @@ package networking_sidecar
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/commons"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
@@ -57,12 +57,12 @@ type StandardNetworkingSidecarManager struct {
 
 	enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider
 
-	freeIpAddrTracker *commons.FreeIpAddrTracker
+	freeIpAddrTracker *lib.FreeIpAddrTracker
 
 	dockerNetworkId string
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *commons.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
+func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
 	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjAttrProvider: enclaveObjAttrProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
