@@ -1,4 +1,6 @@
 # TBD
+
+# 1.29.0
 ### Changes
 * Replaced the availability waiter binary, packaged inside the server Docker image, with an exec command ran in the API container launcher
 
