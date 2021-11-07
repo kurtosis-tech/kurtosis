@@ -19,8 +19,7 @@ dist/
 *.out
 
 # files for JetBrains IDE
-.idea/*.xml
-.idea/*.iml
+.idea
 
 # Built binary
 ./kurtosis
