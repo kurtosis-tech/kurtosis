@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_docker_api"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -73,7 +74,14 @@ func runMain () error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-	enclaveManager := enclave_manager.NewEnclaveManager(dockerManager, args.EngineDataDirpathOnHostMachine, kurtosis_engine_server_docker_api.EngineDataDirpathOnEngineContainer)
+
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	enclaveManager := enclave_manager.NewEnclaveManager(
+		dockerManager,
+		objAttrsProvider,
+		args.EngineDataDirpathOnHostMachine,
+		kurtosis_engine_server_docker_api.EngineDataDirpathOnEngineContainer,
+	)
 
 	engineServerService := server.NewEngineServerService(enclaveManager)
 

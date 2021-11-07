@@ -1,5 +1,15 @@
 # TBD
 
+# 0.6.0
+### Changes
+* Upgraded to Engine API Lib 0.11.0, which uses Kurt Core API Lib rather than Kurt Client
+* Stop depending on Kurt Core server directly, and switch to depending on the launcher submodule
+* Switch to using `object-attributes-schema-lib`, rather than the custom-defined attributes schema from Kurt Core
+* Switch to using `free-ip-addr-tracker-lib` rather than a version from Kurt Core
+
+### Breaking Changes
+* Upgraded to Engine API Lib 0.11.0
+
 # 0.5.3
 ### Fixes
 * Use `container-engine-lib` 0.8.3, which returns host port bindings with 127.0.0.1 IP address rather than `0.0.0.0`
