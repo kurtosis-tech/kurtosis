@@ -1,5 +1,4 @@
 import { EngineServiceClient } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
-import { LISTEN_PORT} from "../../kurtosis_engine_rpc_api_consts/kurtosis_engine_rpc_api_consts";
 import * as grpc from "grpc";
 import { Result, err, ok, Err } from "neverthrow";
 import {newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
@@ -23,6 +22,8 @@ const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
 const API_CONTAINER_LOG_LEVEL: string = "info";
 
+export const DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM: number = 9710;
+
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
 export class KurtosisContext {
     private readonly client: EngineServiceClient;
@@ -33,7 +34,7 @@ export class KurtosisContext {
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static newKurtosisContextFromLocalEngine(): Result<KurtosisContext, Error>{
-        const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${LISTEN_PORT}`;
+        const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM}`;
 
         let engineServiceClient: EngineServiceClient;
         // TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers

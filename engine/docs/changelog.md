@@ -1,6 +1,9 @@
 # TBD
+### Changes
+* Refactored the entire structure of this repo to now contain the API
+
 ### Breaking Changes
-* TODOOOOO something about eating the API
+* The API now lives inside this repo in the `github.com/kurtosis-tech/kurtosis-engine-server/api/golang` package
 
 # 0.6.0
 ### Changes

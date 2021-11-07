@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/kurtosis_api_version_const"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -15,12 +14,15 @@ import (
 )
 
 const (
-	localHostIPAddressStr = "0.0.0.0"
+	// NOTE: This needs to be 127.0.0.1 rather than 0.0.0.0, because Windows machines don't translate 0.0.0.0 -> 127.0.0.1
+	localHostIPAddressStr = "127.0.0.1"
 
 	// TODO even the org-and-repo should come from Kurt Core
 	apiContainerImage = "kurtosistech/kurtosis-core_api:" + kurtosis_api_version_const.KurtosisApiVersion
 
 	shouldPublishAllPorts = true
+
+	DefaultKurtosisEngineServerPortNum = uint16(9710)
 )
 var apiContainerLogLevel = logrus.InfoLevel
 
@@ -32,7 +34,7 @@ type KurtosisContext struct {
 // NewKurtosisContextFromLocalEngine
 // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
 func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
-	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, kurtosis_engine_rpc_api_consts.ListenPort)
+	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultKurtosisEngineServerPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
 	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithInsecure())
