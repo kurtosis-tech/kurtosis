@@ -425,8 +425,10 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
+github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918 h1:GhWsBXWFBYzaFeMtfgDVWtStrs2LjMBT9XSlSig1Ikg=
 github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
 github.com/kurtosis-tech/kurtosis-core v0.0.0-20211105212627-02e6cd4c1a5f h1:0BY/Ucu6ZZgOJTcx/3d8P0dGU1xJ0Mwykv72UyN1idE=
+github.com/kurtosis-tech/kurtosis-core v0.0.0-20211106223857-cfef67cc77b5 h1:yiIX00QwiHFgQAdiaitDttrWMc0odJv9ubLwtpc2MZ8=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e h1:EBVvfPP0k8l8okFuTIJEIkp+eslR1POyQGhrQeSuGSY=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=
