@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# 2021-07-08 WATERMARK, DO NOT REMOVE - This script was generated from the Kurtosis Bash script template
 
 set -euo pipefail   # Bash "strict mode"
 script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,10 +9,23 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
+API_DIRNAME="api"
+SUPPORTED_LANGS_FILENAME="supported-languages.txt"
 UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME="update-version-in-file.sh" # From devtools; expected to be on PATH
 
-CONSTANT_FILE_RELATIVE_FILEPATH="engine/kurtosis_engine_server_version/kurtosis_engine_server_version.go"
-CONSTANT_PATTERN="KurtosisEngineServerVersion = \"%s\""
+# Per-language filepath that needs updating to update the constant, RELATIVE TO THE LANGUAGE ROOT
+declare -A CONSTANT_FILE_RELATIVE_FILEPATHS
+
+# Per-language patterns matching the constant line, which will be used for updating the version
+declare -A CONSTANT_PATTERNS
+
+# Golang
+CONSTANT_FILE_RELATIVE_FILEPATHS["golang"]="kurtosis_engine_api_version/kurtosis_engine_api_version.go"
+CONSTANT_PATTERNS["golang"]="KurtosisEngineApiVersion = \"%s\""
+
+# Typescript
+CONSTANT_FILE_RELATIVE_FILEPATHS["typescript"]="src/kurtosis_engine_api_version/kurtosis_engine_api_version.ts"
+CONSTANT_PATTERNS["typescript"]="KURTOSIS_ENGINE_API_VERSION: string = \"%s\""
 
 
 # ==================================================================================================
@@ -39,8 +51,27 @@ fi
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-constant_file_abs_filepath="${root_dirpath}/${CONSTANT_FILE_RELATIVE_FILEPATH}"
-if ! bash "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${CONSTANT_PATTERN}" "${new_version}"; then
-    echo "Error: Couldn't update file '${constant_file_abs_filepath}' with new version '${new_version}' using pattern '${CONSTANT_PATTERN}'" >&2
-    exit 1
-fi
+echo "Updating the constants containing this library's version for all supported languages..."
+api_dirpath="${root_dirpath}/${API_DIRNAME}"
+supported_langs_filepath="${api_dirpath}/${SUPPORTED_LANGS_FILENAME}"
+for lang in $(cat "${supported_langs_filepath}"); do
+    constant_file_rel_filepath="${CONSTANT_FILE_RELATIVE_FILEPATHS["${lang}"]}"
+    if [ -z "${constant_file_rel_filepath}" ]; then
+        echo "Error: No relative filepath to a constant file that needs replacing was found for language '${lang}'; this script needs to be updated with this information" >&2
+        exit 1
+    fi
+
+    constant_file_abs_filepath="${api_dirpath}/${lang}/${constant_file_rel_filepath}"
+
+    pattern="${CONSTANT_PATTERNS["${lang}"]}"
+    if [ -z "${pattern}" ]; then
+        echo "Error: No replacement pattern was found for language '${lang}'; this script needs to be updated with this information" >&2
+        exit 1
+    fi
+
+    if ! "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${pattern}" "${new_version}"; then
+        echo "Error: An error occurred setting new version '${new_version}' in '${lang}' constants file '${to_update_abs_filepath}' using pattern '${replacement_pattern}'" >&2
+        exit 1
+    fi
+done
+echo "Successfully updated the constants containing this library's version have been updated for all supported languages"
