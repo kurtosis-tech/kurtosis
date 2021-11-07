@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.5
 ### Fixes
 * `enclave inspect` host port bindings now properly return `127.0.0.1`, to match what's returned by the `AddService`
 
