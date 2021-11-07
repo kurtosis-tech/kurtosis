@@ -57,25 +57,25 @@ func main() {
 }
 
 func runMain () error {
-	args, err := args.GetArgsFromEnv()
+	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
-		return stacktrace.Propagate(err, "Couldn't retrieve launch API args from the environment")
+		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
 	}
 
-	logLevel, err := logrus.ParseLevel(args.LogLevel)
+	logLevel, err := logrus.ParseLevel(serverArgs.LogLevel)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.LogLevel)
+		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", serverArgs.LogLevel)
 	}
 	logrus.SetLevel(logLevel)
 
-	_, parsedSubnetMask, err := net.ParseCIDR(args.SubnetMask)
+	_, parsedSubnetMask, err := net.ParseCIDR(serverArgs.SubnetMask)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", args.SubnetMask)
+		return stacktrace.Propagate(err, "An error occurred parsing subnet CIDR string '%v'", serverArgs.SubnetMask)
 	}
 	freeIpAddrTracker := lib.NewFreeIpAddrTracker(
 		logrus.StandardLogger(),
 		parsedSubnetMask,
-		args.TakenIpAddrs,
+		serverArgs.TakenIpAddrs,
 	)
 
 	externalContainerStore := external_container_store.NewExternalContainerStore(freeIpAddrTracker)
@@ -85,9 +85,9 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
 	}
 
-	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(args.EnclaveDataDirpathOnAPIContainer)
+	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataDirpathOnAPIContainer)
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, args)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -107,8 +107,8 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		uint32(args.ListenPortNum),
-		args.ListenPortProtocol,
+		uint32(serverArgs.ListenPortNum),
+		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
