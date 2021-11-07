@@ -1,4 +1,4 @@
-module github.com/kurtosis-tech/kurtosis-engine-server
+module github.com/kurtosis-tech/kurtosis-engine-server/server
 
 go 1.15
 
