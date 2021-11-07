@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_api_version"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_api_version"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"

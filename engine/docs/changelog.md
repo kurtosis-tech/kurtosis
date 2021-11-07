@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Refactored the entire structure of this repo to now contain the API
+
+### Breaking Changes
+* The API now lives inside this repo in the `github.com/kurtosis-tech/kurtosis-engine-server/api/golang` package
 
 # 0.6.0
 ### Changes
@@ -88,7 +93,7 @@
 
 # 0.2.0
 ### Features
-* Upgraded to [engine API lib 0.6.0](https://github.com/kurtosis-tech/kurtosis-engine-api-lib/blob/develop/docs/changelog.md#060)
+* Upgraded to engine API lib 0.6.0
 
 ### Breaking Changes
 * `GetEnclave` endpoint is replaced with `GetEnclaves`
@@ -110,7 +115,7 @@
 
 # 0.1.5
 ### Changes
-* Upgrade to [engine API lib 0.4.0](https://github.com/kurtosis-tech/kurtosis-engine-api-lib/blob/develop/docs/changelog.md#040)
+* Upgrade to engine API lib 0.4.0
 
 # 0.1.4
 ### Features

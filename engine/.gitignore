@@ -13,7 +13,7 @@
 # Pyenv
 .python-version
 
-# Stupid Mac...
+# Mac spotlight index files
 .DS_Store
 
 *.un~
@@ -29,12 +29,21 @@ tmp/**
 tmp/**/*
 *.tmp
 *.bak
-*.swp
 *~.nib
 local.properties
 .classpath
 .settings/
 .loadpath
+
+# Vim swapfiles
+*.swp
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
 # External tool builders
 .externalToolBuilders/
@@ -51,5 +60,20 @@ local.properties
 # Ignore Vim helptags
 doc/tags
 
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Test binary, built with `go test -c`
+*.test
+
+
+# Output directories
+build/
+dist/
+
+# Java
 .gradle
-build
+
+# Node
+node_modules
+yarn-error.log

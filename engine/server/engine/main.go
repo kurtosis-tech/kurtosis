@@ -6,15 +6,14 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_docker_api"
-	"github.com/kurtosis-tech/kurtosis-engine-server/engine/server"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/palantir/stacktrace"
@@ -48,21 +47,14 @@ func main() {
 }
 
 func runMain () error {
-	serializedArgsStr, found := os.LookupEnv(kurtosis_engine_server_docker_api.SerializedArgsEnvVar)
-	if !found {
-		return stacktrace.NewError(
-			"Expected environment variable '%v' containing serialized args to the engine container, but none was found",
-			kurtosis_engine_server_docker_api.SerializedArgsEnvVar,
-		)
-	}
-	var args kurtosis_engine_server_docker_api.EngineServerArgs
-	if err := json.Unmarshal([]byte(serializedArgsStr), &args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred deserializing serialized args string '%v'", serializedArgsStr)
+	serverArgs, err := args.GetArgsFromEnv()
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")
 	}
 
-	logLevel, err := logrus.ParseLevel(args.LogLevelStr)
+	logLevel, err := logrus.ParseLevel(serverArgs.LogLevelStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing log level string '%v'", args.LogLevelStr)
+		return stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", serverArgs.LogLevelStr)
 	}
 	logrus.SetLevel(logLevel)
 
@@ -79,8 +71,8 @@ func runMain () error {
 	enclaveManager := enclave_manager.NewEnclaveManager(
 		dockerManager,
 		objAttrsProvider,
-		args.EngineDataDirpathOnHostMachine,
-		kurtosis_engine_server_docker_api.EngineDataDirpathOnEngineContainer,
+		serverArgs.EngineDataDirpathOnHostMachine,
+		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
 	engineServerService := server.NewEngineServerService(enclaveManager)
@@ -89,8 +81,8 @@ func runMain () error {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		uint32(kurtosis_engine_rpc_api_consts.ListenPort),
-		kurtosis_engine_rpc_api_consts.ListenProtocol,
+		uint32(serverArgs.ListenPortNum),
+		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,
