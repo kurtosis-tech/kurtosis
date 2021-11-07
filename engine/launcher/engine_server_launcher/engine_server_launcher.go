@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-package api_container_launcher
+package engine_server_launcher
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ const (
 
 	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
 	//  on the engine server
-	engineDataDirpathOnContainer = "/engine-data"
+	EngineDataDirpathOnEngineServerContainer = "/engine-data"
 
 	maxWaitForAvailabilityRetries         = 10
 	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
@@ -126,8 +126,8 @@ func (launcher *EngineServerLauncher) Launch(
 
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
-		dockerSocketFilepath: dockerSocketFilepath,
-		engineDataDirpathOnHostMachine: engineDataDirpathOnContainer,
+		dockerSocketFilepath:           dockerSocketFilepath,
+		engineDataDirpathOnHostMachine: EngineDataDirpathOnEngineServerContainer,
 	}
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,

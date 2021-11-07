@@ -1,8 +1,9 @@
 module github.com/kurtosis-tech/kurtosis-engine-server/server
 
 go 1.15
+
 replace (
-        github.com/kurtosis-tech/kurtosis-engine-server/api/golang => ../api/golang
+	github.com/kurtosis-tech/kurtosis-engine-server/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher => ../launcher
 )
 
@@ -10,7 +11,7 @@ require (
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211107183029-48817fe5bbc4
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
