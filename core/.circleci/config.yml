@@ -59,6 +59,26 @@ jobs:
 
       - run: api/typescript/scripts/build.sh
 
+  check_launcher:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          launcher/scripts/build.sh
+
   check_server_code:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version >>"
@@ -207,6 +227,15 @@ workflows:
                 - develop
                 - master
       - check_api_typescript:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_launcher:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
           filters:
             branches:
               ignore:

@@ -132,9 +132,9 @@ func (launcher ApiContainerLauncher) Launch(
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}
-	shouldDeleteContainer := true
+	shouldKillContainer := true
 	defer func() {
-		if shouldDeleteContainer {
+		if shouldKillContainer {
 			if killErr := launcher.dockerManager.KillContainer(context.Background(), containerId); killErr != nil {
 				logrus.Errorf("The function to create the API container didn't finish successful so we tried to kill the container we created, but the killing threw an error:")
 				logrus.Error(killErr)
@@ -151,7 +151,7 @@ func (launcher ApiContainerLauncher) Launch(
 		return "", nil, stacktrace.NewError("No host port binding was found for API container port '%v' - this is very strange!", kurtosisApiPort)
 	}
 
-	shouldDeleteContainer = false
+	shouldKillContainer = false
 	return containerId, hostPortBinding, nil
 }
 

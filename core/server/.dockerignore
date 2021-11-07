@@ -5,6 +5,7 @@
 .idea
 .vscode
 
+LICENSE
 *.md
 
 docs
