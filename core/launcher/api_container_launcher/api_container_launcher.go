@@ -58,7 +58,6 @@ func (launcher ApiContainerLauncher) Launch(
 	listenPort uint16,
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
-	otherTakenIpAddrsInEnclave []net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
 ) (string, *nat.PortBinding, error) {
@@ -74,9 +73,6 @@ func (launcher ApiContainerLauncher) Launch(
 	takenIpAddrStrSet := map[string]bool{
 		gatewayIpAddr.String(): true,
 		apiContainerIpAddr.String(): true,
-	}
-	for _, takenIp := range otherTakenIpAddrsInEnclave {
-		takenIpAddrStrSet[takenIp.String()] = true
 	}
 	argsObj, err := args.NewAPIContainerArgs(
 		containerName,
