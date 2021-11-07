@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.0
 ### Changes
 * Upgraded to Engine API Lib 0.11.0, which uses Kurt Core API Lib rather than Kurt Client
 * Stop depending on Kurt Core server directly, and switch to depending on the launcher submodule
