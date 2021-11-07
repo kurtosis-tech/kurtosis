@@ -28,14 +28,17 @@ fi
 
 # Test code
 echo "Running unit tests..."
-cd "${server_root_dirpath}"
+if ! cd "${server_root_dirpath}"; then
+  echo "Couldn't cd to the server root dirpath '${server_root_dirpath}'" >&2
+  exit 1
+fi
 if ! go test "./..."; then
   echo "Tests failed!" >&2
   exit 1
 fi
 echo "Tests succeeded"
 
-# Build binaries for packaging inside an Alpine Linux image
+# Build binary for packaging inside an Alpine Linux image
 echo "Building server main.go '${MAIN_GO_FILEPATH}'..."
 if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
   echo "Error: An error occurred building the server code" >&2
@@ -53,7 +56,7 @@ fi
 # Build Docker image
 dockerfile_filepath="${server_root_dirpath}/Dockerfile"
 image_name="${IMAGE_ORG_AND_REPO}:${docker_tag}"
-echo "Building example datastore server into a Docker image named '${image_name}'..."
+echo "Building server into a Docker image named '${image_name}'..."
 if ! docker build -t "${image_name}" -f "${dockerfile_filepath}" "${server_root_dirpath}"; then
   echo "Error: Docker build of the server failed" >&2
   exit 1

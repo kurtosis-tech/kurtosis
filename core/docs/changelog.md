@@ -1,5 +1,12 @@
 # TBD
 
+# 1.29.1
+### Features
+* Add a buildscript for the launcher, and check it in CI
+
+### Changes
+* Fixed up several directory structure things with lessons learned from `engine-server`
+
 # 1.29.0
 ### Changes
 * Replaced the availability waiter binary, packaged inside the server Docker image, with an exec command ran in the API container launcher
