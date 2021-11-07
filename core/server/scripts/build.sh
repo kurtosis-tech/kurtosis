@@ -17,11 +17,6 @@ MAIN_GO_FILEPATH="${server_root_dirpath}/${MAIN_DIRNAME}/main.go"
 MAIN_BINARY_OUTPUT_FILENAME="api-container"
 MAIN_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${MAIN_BINARY_OUTPUT_FILENAME}"
 
-AVAILABILITY_WAITER_DIRNAME="api_container_availability_waiter"
-AVAILABILITY_WAITER_GO_FILEPATH="${server_root_dirpath}/${AVAILABILITY_WAITER_DIRNAME}/main.go"
-AVAILABILITY_WAITER_BINARY_OUTPUT_FILENAME="api-container-availability-waiter"
-AVAILABILITY_WAITER_BINARY_OUTPUT_FILEPATH="${server_root_dirpath}/${BUILD_DIRNAME}/${AVAILABILITY_WAITER_BINARY_OUTPUT_FILENAME}"
-
 # =============================================================================
 #                                 Main Code
 # =============================================================================
@@ -47,12 +42,6 @@ if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FIL
   exit 1
 fi
 echo "Successfully built server code"
-echo "Building availability waiter main.go '${AVAILABILITY_WAITER_GO_FILEPATH}'..."
-if ! CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${AVAILABILITY_WAITER_BINARY_OUTPUT_FILEPATH}" "${AVAILABILITY_WAITER_GO_FILEPATH}"; then
-  echo "Error: An error occurred building the server code" >&2
-  exit 1
-fi
-echo "Successfully built availability waiter code"
 
 # Generate Docker image tag
 get_docker_image_tag_script_filepath="${script_dirpath}/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}"

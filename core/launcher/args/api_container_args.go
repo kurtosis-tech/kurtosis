@@ -17,6 +17,9 @@ type APIContainerArgs struct {
 
 	LogLevel                 string `json:"logLevel"`
 
+	ListenPortNum      uint16 `json:"listenPortNum"`
+	ListenPortProtocol string `json:"listenPortProtocol"`
+
 	EnclaveId				 string `json:"enclaveId"'`
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
@@ -43,10 +46,26 @@ type APIContainerArgs struct {
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
-func NewAPIContainerArgs(containerName string, logLevel string, enclaveId string, networkId string, subnetMask string, apiContainerIpAddr string, takenIpAddrs map[string]bool, isPartitioningEnabled bool, shouldPublishPorts bool, enclaveDataDirpathOnAPIContainer string, enclaveDataDirpathOnHostMachine string) (*APIContainerArgs, error) {
+func NewAPIContainerArgs(
+	containerName string,
+	logLevel string,
+	listenPortNum uint16,
+	listenPortProtocol string,
+	enclaveId string,
+	networkId string,
+	subnetMask string,
+	apiContainerIpAddr string,
+	takenIpAddrs map[string]bool,
+	isPartitioningEnabled bool,
+	shouldPublishPorts bool,
+	enclaveDataDirpathOnAPIContainer string,
+	enclaveDataDirpathOnHostMachine string,
+) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		ContainerName:                    containerName,
 		LogLevel:                         logLevel,
+		ListenPortNum:                    listenPortNum,
+		ListenPortProtocol:               listenPortProtocol,
 		EnclaveId:                        enclaveId,
 		NetworkId:                        networkId,
 		SubnetMask:                       subnetMask,

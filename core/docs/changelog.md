@@ -1,5 +1,15 @@
 # TBD
 
+# 1.29.0
+### Changes
+* Replaced the availability waiter binary, packaged inside the server Docker image, with an exec command ran in the API container launcher
+
+### Removals
+* Removed constants from the API for the listen port & listen protocol
+
+### Breaking Changes
+* Removed the API container listen port & listen protocol constants (these are now dynamically set, rather than being a global variable)
+
 # 1.28.6
 ### Features
 * Extracted the API container launcher out into its own module so API containers can be launched without needing to know about the internals of the server

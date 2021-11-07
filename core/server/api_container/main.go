@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
@@ -108,8 +107,8 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		kurtosis_core_rpc_api_consts.ListenPort,
-		kurtosis_core_rpc_api_consts.ListenProtocol,
+		uint32(args.ListenPortNum),
+		args.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -154,6 +153,12 @@ func createServiceNetworkAndModuleStore(
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
+	apiContainerSocketInsideNetwork := fmt.Sprintf(
+		"%v:%v",
+		args.ApiContainerIpAddr,
+		args.ListenPortNum,
+	)
+
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
 		dockerManager,
@@ -189,7 +194,7 @@ func createServiceNetworkAndModuleStore(
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
 		dockerManager,
-		args.ApiContainerIpAddr,
+		apiContainerSocketInsideNetwork,
 		enclaveObjAttrsProvider,
 		freeIpAddrTracker,
 		args.ShouldPublishPorts,
