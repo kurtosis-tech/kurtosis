@@ -1,2 +1,2 @@
 // DO NOT UPDATE THIS VALUE! It will get updated automatically during the release process
-export const KURTOSIS_API_VERSION: string = "1.28.6"
+export const KURTOSIS_API_VERSION: string = "1.29.0"
