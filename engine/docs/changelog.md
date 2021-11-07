@@ -8,6 +8,10 @@
 ### Breaking Changes
 * Upgraded to Engine API Lib 0.11.0
 
+# 0.5.3
+### Fixes
+* Use `container-engine-lib` 0.8.3, which returns host port bindings with 127.0.0.1 IP address rather than `0.0.0.0`
+
 # 0.5.2
 ### Fixes
 * Use Kurt Core 1.27.3, which returns host machine port bindings in `127.0.0.1` (rather than `0.0.0.0`) for Windows users
