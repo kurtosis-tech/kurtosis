@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs:
+  npm-publisher: uraway/npm-publisher@0.2.0
   kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
 
 parameters:
@@ -8,6 +9,15 @@ parameters:
   docker-engine-version:
     type: string
     default: 20.10.7
+  go-version:
+    type: string
+    default: 1.15.13
+  node-version:
+    type: string
+    default: 14.17.1
+  source-repo-name:
+    type: string
+    default: kurtosis-engine-api-lib
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
@@ -15,9 +25,42 @@ parameters:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
-  check_code:
+  # -- PR check jobs ------------------------------------------
+  check_api_golang:
     docker:
-      - image: cimg/go:1.15.13
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+
+      # !!!!!!!!!! NOTE: We should NOT use our private Go repos here, because this API code will get published publicly !!!!!!!!
+      - run: api/golang/scripts/build.sh
+
+  check_api_typescript:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+    steps:
+      - checkout
+
+      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+      - run: |
+          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+            circleci-agent step halt
+          fi
+
+      - run: api/typescript/scripts/build.sh
+
+  check_server_code:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -30,17 +73,62 @@ jobs:
 
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
       # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          scripts/build.sh
+          server/scripts/build.sh
+  # -- End PR check jobs ---------------------------------------
 
-  push_artifacts:
+  # -- Publish jobs --------------------------------------------
+  publish_api_source:
     docker:
-      - image: cimg/go:1.15.13
+      - image: cimg/base:2021.10
+    steps:
+      - checkout
+      - run: |
+          cd /tmp/
+          git clone https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>.git
+      - run: |
+          dest_api_dirpath="/tmp/<< pipeline.parameters.source-repo-name >>/api"
+          rm -rf "${dest_api_dirpath}"
+          cp -r api "${dest_api_dirpath}"
+      # Now, swap Go module names to match the new repo we're pushing the code to
+      - run: |
+          cd /tmp/<< pipeline.parameters.source-repo-name >>/api
+          # We need to consider the .proto files as well, b/c they (frustratingly) contain the Go module name
+          for pattern in "*.go" "go.mod" "*.proto"; do
+            sed -i 's,github.com/kurtosis-tech/kurtosis-engine-server,github.com/kurtosis-tech/<< pipeline.parameters.source-repo-name >>,g' $(find . -type f -name "${pattern}")
+          done
+      # Push the code up to the remote
+      - run: |
+          source server/scripts/_constants.env
+          version="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          cd /tmp/<< pipeline.parameters.source-repo-name >>
+          git config --global user.name "${KURTOSISBOT_GITHUB_USERNAME}"
+          git config --global user.email "${KURTOSISBOT_GITHUB_EMAIL}"
+          git add .
+          git commit -m "Committing ${version} files"
+          git push origin master
+          git tag "${version}"
+          git push --tags
+
+  publish_api_typescript:
+    docker:
+      - image: "cimg/node:<< pipeline.parameters.node-version>>"
+    steps:
+      - checkout
+      - run: api/typescript/scripts/build.sh
+      - npm-publisher/publish-from-package-version:
+          package-path: api/typescript
+          publish-token-variable: NPMJS_AUTH_TOKEN
+
+  publish_server_image:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -53,12 +141,12 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          scripts/build.sh
+          server/scripts/build.sh
 
       - run: |
           set -euo pipefail
-          source scripts/_constants.env
-          version_to_publish="$(bash "scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
+          source server/scripts/_constants.env
+          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
           echo "Version that will be published: ${version_to_publish}"
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_no_version="${IMAGE_ORG_AND_REPO}:latest"
@@ -77,10 +165,25 @@ workflows:
               ignore:
                 - develop
                 - master
-      - check_code:
+      - check_api_golang:
+          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
+          context: []
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_api_typescript:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_server_code:
           context:
             # This pulls in KurtosisBot's Github token, so that we can read from our private repos
             - github-user
+            - docker-user
           filters:
             branches:
               ignore:
@@ -89,9 +192,24 @@ workflows:
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------
-      - push_artifacts:
+      - publish_api_source:
           context:
-            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_api_typescript:
+          context:
+            - npmjs-user
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
+      - publish_server_image:
+          context:
             - github-user
             - docker-user
           filters:
