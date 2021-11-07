@@ -8,5 +8,8 @@
 LICENSE
 *.md
 
+docs
 scripts
-engine/Dockerfile
+
+.dockerignore
+Dockerfile
