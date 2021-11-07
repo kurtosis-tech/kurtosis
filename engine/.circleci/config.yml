@@ -159,7 +159,15 @@ workflows:
     jobs:
       # -- PR check jobs ------------------------------------------
       - kurtosis-docs-checker/check-docs:
-          markdown-link-check-config-json: "{}"
+          markdown-link-check-config-json: |
+            {
+                "replacementPatterns": [
+                    {
+                        "pattern": "^../kurtosis-core",
+                        "replacement": "https://docs.kurtosistech.com/kurtosis-core"
+                    }
+                ]
+            }
           filters:
             branches:
               ignore:

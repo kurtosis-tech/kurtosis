@@ -1,6 +1,6 @@
 Kurtosis Engine Documentation
 =============================
-This documentation describes how to interact with the Kurtosis API from within a testnet. It includes information about starting services, stopping services, repartitioning the network, etc. These objects are heavily used inside the [Kurtosis testing framework](../kurtosis-testsuite-api-lib/lib-documentation). Note that any comments specific to a language implementation will be found in the code comments.
+This documentation describes how to interact with the Kurtosis API from within a testnet. It includes information about starting services, stopping services, repartitioning the network, etc. These objects are particularly useful for writing tests, where pre-test setup involves creating an enclave. Note that any comments specific to a language implementation will be found in the code comments.
 
 _Found a bug? File it on [the repo][issues]!_
 
@@ -58,5 +58,5 @@ _Found a bug? File it on [the repo][issues]!_
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
-[enclavecontext]: ../kurtosis-client/lib-documentation#enclavecontext
-[enclavecontext_repartitionnetwork]: ../kurtosis-client/lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectioninfo-partitionconnections-partitionconnectioninfo-defaultconnection
+[enclavecontext]: ../kurtosis-core/lib-documentation#enclavecontext
+[enclavecontext_repartitionnetwork]: ../kurtosis-core/lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectioninfo-partitionconnections-partitionconnectioninfo-defaultconnection
