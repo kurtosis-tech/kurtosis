@@ -1,5 +1,9 @@
 # TBD
 
+# 0.6.5
+### Fixes
+* `enclave inspect` host port bindings now properly return `127.0.0.1`, to match what's returned by the `AddService`
+
 # 0.6.4
 ### Fixes
 * Fixed issue #69 - now the CLI version checker passes when the current version is newer than the latest public version (e.g. during a release)
