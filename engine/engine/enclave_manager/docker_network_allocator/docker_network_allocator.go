@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/binary"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons"
+	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"math"
@@ -137,7 +137,7 @@ func NewDockerNetworkAllocator(dockerManager *docker_manager.DockerManager) *Doc
 func (provider *DockerNetworkAllocator) CreateNewNetwork(
 		ctx context.Context,
 		networkName string,
-		labels map[string]string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *commons.FreeIpAddrTracker, resultErr error) {
+		labels map[string]string) (newNetworkId string, newNetwork *net.IPNet, newNetworkGatewayIp net.IP, newNetworkIpAddrTracker *lib.FreeIpAddrTracker, resultErr error) {
 	if !provider.isConstructedViaConstructor {
 		return "", nil, nil, nil, stacktrace.NewError("This instance of Docker network allocator was constructed without the constructor, which means that the rand.Seed won't have been initialized!")
 	}
@@ -171,7 +171,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred finding a free network")
 		}
 
-		freeIpAddrTracker := commons.NewFreeIpAddrTracker(logrus.StandardLogger(), freeNetworkIpAndMask, map[string]bool{})
+		freeIpAddrTracker := lib.NewFreeIpAddrTracker(logrus.StandardLogger(), freeNetworkIpAndMask, map[string]bool{})
 		gatewayIp, err := freeIpAddrTracker.GetFreeIpAddr()
 		if err != nil {
 			return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP for the network gateway")
