@@ -1,22 +1,18 @@
 package enclave_manager
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container_availability_waiter/api_container_availability_waiter_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/enclave_manager/docker_network_allocator"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
 	"os"
 	"path"
 	"strconv"
@@ -39,6 +35,8 @@ const (
 	portNumStrParsingBits = 32
 
 	allEnclavesDirname = "enclaves"
+
+	apiContainerListenPortNumInsideNetwork = uint16(7443)
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -178,9 +176,9 @@ func (manager *EnclaveManager) CreateEnclave(
 		enclaveId,
 		networkId,
 		networkIpAndMask.String(),
+		apiContainerListenPortNumInsideNetwork,
 		gatewayIp,
 		apiContainerIpAddr,
-		[]net.IP{}, // TODO remove this, as we don't need it anymore now that we have the RegisterExternalContainer endpoint
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
 	)
@@ -198,10 +196,6 @@ func (manager *EnclaveManager) CreateEnclave(
 		}
 	}()
 
-	if err := waitForApiContainerAvailability(setupCtx, manager.dockerManager, apiContainerId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
-	}
-
 	hostMachinePortNumStr := apiContainerHostPortBinding.HostPort
 	hostMachinePortUint32, err := parsePortNumStrToUint32(hostMachinePortNumStr)
 	if err != nil {
@@ -217,7 +211,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 			ContainerId:       apiContainerId,
 			IpInsideEnclave:   apiContainerIpAddr.String(),
-			PortInsideEnclave: kurtosis_core_rpc_api_consts.ListenPort,
+			PortInsideEnclave: uint32(apiContainerListenPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 			IpOnHostMachine:   apiContainerHostPortBinding.HostIP,
@@ -385,37 +379,6 @@ func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId 
 	}
 	network := matchingNetworks[0]
 	return network, true, nil
-}
-
-func waitForApiContainerAvailability(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-	apiContainerId string) error {
-	cmdOutputBuffer := &bytes.Buffer{}
-	waitForAvailabilityExitCode, err := dockerManager.RunExecCommand(
-		ctx,
-		apiContainerId,
-		[]string{availabilityWaiterBinaryFilepath},
-		cmdOutputBuffer,
-	)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred executing binary '%v' to wait for the API container to become available",
-			availabilityWaiterBinaryFilepath,
-		)
-	}
-	if waitForAvailabilityExitCode != api_container_availability_waiter_consts.SuccessExitCode {
-		return stacktrace.NewError(
-			"Expected API container availability waiter binary '%v' to return " +
-				"success code %v, but got '%v' instead with the following log output:\n%v",
-			availabilityWaiterBinaryFilepath,
-			api_container_availability_waiter_consts.SuccessExitCode,
-			waitForAvailabilityExitCode,
-			cmdOutputBuffer.String(),
-		)
-	}
-	return nil
 }
 
 func getEnclaveContainerInformation(
