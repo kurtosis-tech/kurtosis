@@ -1,4 +1,6 @@
 # TBD
+
+# 1.0.0
 ### Changes
 * Refactored the entire structure of this repo to now contain the API
 
