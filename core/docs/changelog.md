@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Add a buildscript for the launcher, and check it in CI
+
+### Changes
+* Fixed up several directory structure things with lessons learned from `engine-server`
 
 # 1.29.0
 ### Changes

@@ -78,7 +78,7 @@ func NewAPIContainerArgs(
 	}
 
 	if err := result.validate(); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating test execution args")
+		return nil, stacktrace.Propagate(err, "An error occurred validating API container args")
 	}
 	return result, nil
 }

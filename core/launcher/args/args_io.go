@@ -16,7 +16,7 @@ const (
 func GetEnvFromArgs(args *APIContainerArgs) (map[string]string, error) {
 	argsBytes, err := json.Marshal(args)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing API container test execution args to JSON")
+		return nil, stacktrace.Propagate(err, "An error occurred serializing API container args to JSON")
 	}
 
 	argsStr := string(argsBytes)
