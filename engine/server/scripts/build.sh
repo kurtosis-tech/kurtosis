@@ -28,7 +28,11 @@ fi
 
 # Test code
 echo "Running unit tests..."
-if ! go test "${server_root_dirpath}/..."; then
+if ! cd "${server_root_dirpath}"; then
+  echo "Couldn't cd to the server root dirpath '${server_root_dirpath}'" >&2
+  exit 1
+fi
+if ! go test "./..."; then
   echo "Tests failed!" >&2
   exit 1
 fi
