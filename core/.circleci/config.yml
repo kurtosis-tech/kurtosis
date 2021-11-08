@@ -15,7 +15,7 @@ parameters:
     default: 1.15.13
   node-version:
     type: string
-    default: 14.17.1
+    default: 16.13.0
   source-repo-name:
     type: string
     default: kurtosis-core-api-lib

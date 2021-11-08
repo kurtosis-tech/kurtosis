@@ -107,7 +107,7 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		uint32(serverArgs.ListenPortNum),
+		serverArgs.ListenPortNum,
 		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
@@ -116,7 +116,7 @@ func runMain () error {
 	)
 
 	logrus.Info("Running server...")
-	if err := apiContainerServer.Run(); err != nil {
+	if err := apiContainerServer.RunUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the API container server")
 	}
 
