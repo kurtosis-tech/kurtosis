@@ -60,7 +60,7 @@ if ! [ -f "${api_supported_langs_abs_filepath}" ]; then
     echo "Error: No API supported-languages file found at '${api_supported_langs_abs_filepath}', which is necessary for verifying we've updated every language's constant" >&2
     exit 1
 fi
-if ! langs_with_unupdated_consts="$(diff <(sort "${api_langs_updated_filepath}") <(sort "${root_dirpath}/${API_SUPPORTED_LANGS_REL_FILEPATH}"))"; then
+if ! langs_with_unupdated_consts="$(comm -3 <(sort "${root_dirpath}/${API_SUPPORTED_LANGS_REL_FILEPATH}") <(sort "${api_langs_updated_filepath}"))"; then
     echo "Error: Couldn't generate a list of langs with unupdated own-version constants" >&2
     exit 1
 fi
