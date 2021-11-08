@@ -1,6 +1,6 @@
 # TBD
 ### Changes
-* Upgrade to Kurt Core 1.31.0
+* Upgrade to Kurt Core 1.31.1
 * `CreateEnclave` now takes in the version tag of the API container to use, and an emptystring indicates that the engine server should use its own default version
 
 ### Breaking Changes
