@@ -1,5 +1,9 @@
 # TBD
 
+# 1.31.1
+### Features
+* The launcher makes a best-effort attempt to pull the API container image specified
+
 # 1.31.0
 ### Changes
 * The API container launcher now has two methods, `LaunchWithCustomVersion` and `LaunchWithDefaultVersion`

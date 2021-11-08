@@ -24,7 +24,7 @@ const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
 	//  it here too
-	defaultImageVersionTag = "1.31.0"
+	defaultImageVersionTag = "1.31.1"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	dockerSocket = "/var/run/docker.sock"
@@ -156,6 +156,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		containerImage,
 		imageVersionTag,
 	)
+
+	// Best-effort pull attempt
+	if err = launcher.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", containerImageAndTag)
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		containerName,
