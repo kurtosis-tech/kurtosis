@@ -481,6 +481,7 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211103232750-85edc2a39f9e/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d h1:i1km+iChewXPa2tA6YBgJcJtVGew3ar+ZSDE6S8wwUw=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-a56fef9e73dd h1:obUJtOlEVZqlq6uWGC1Lf4b1FnpIlJgnD+sprQZDfr8=
 github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-a56fef9e73dd/go.mod h1:HI+M5KdzhZ165JPV7vQvldNNE8m86ZIeg86PzwS6cqs=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211101145825-570cf60ea641 h1:JzePoF03EhHuEl8ct2r1AwegiG1VAKloWeEjvdlNK98=
@@ -503,6 +504,9 @@ github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-70
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211106215439-58154ccf9626 h1:RllD3jS42B+nxXtlxiY1bvasZlpkJTEr5Xp1n4VMHaA=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211106215439-58154ccf9626/go.mod h1:CZxKA3Ima3VgBgwPgi5RN29k9qlP8bO3aTbTmPizu8c=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211107211323-64ed51f3329b h1:JtZGzwAWHPHwkzwZjBT76eBCpx17LRb/+H29p0LufEc=
+github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211108022040-164c64005188 h1:2ZzZMxXTsf2FFhXGfrTKhvToMoXFHYis/2bq537ofEw=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211108022040-164c64005188 h1:ujl62ZzKOs2oGL6SgzCbCd5JWjCr7gmhC4jP+Yegbx0=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211108022040-164c64005188/go.mod h1:XGUMhG1355YHnfOOAPeHJRi8dfdDHhhYVjeLFftT1MY=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib v0.0.0-20211027222833-7233d903873e h1:wqzi6Y/89jbdDypikQP8QSevmbMsY1nzKcctO1TqUfA=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20211027222833-7233d903873e h1:DiO2vXZIEAVQnK3+pzaseO9FKucZz5QJaxDTDVJCOFo=
@@ -511,6 +515,7 @@ github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210821054858-4cac5a245c85/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211104234832-3923ec366e08/go.mod h1:OHdC4tD6pu9EOeZZilzpU1Ncwkj2/roSvxXqgL9kMI8=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
@@ -519,6 +524,7 @@ github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN
 github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.7.0/go.mod h1:KAzv3t3aY1NaHWoQz1+4F1ccyAH66Jk7yos7ldAVICs=
 github.com/marstr/guid v1.1.0/go.mod h1:74gB1z2wpxxInTG6yaqA7KrtM0NZ+RbrcqDvYHefzho=
+github.com/masterminds/semver v1.5.0/go.mod h1:s7KNT9fnd7edGzwwP7RBX4H0v/CYd5qdOLfkL1V75yg=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-isatty v0.0.3/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=

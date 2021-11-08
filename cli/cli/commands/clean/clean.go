@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+	"github.com/kurtosis-tech/kurtosis-core/commons/schema"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -145,8 +145,8 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 
 func cleanMetadataAcquisitionTestsuites(ctx context.Context, dockerManager *docker_manager.DockerManager, shouldKillRunningContainers bool) ([]string, []error, error) {
 	metadataAcquisitionTestsuiteLabels := map[string]string{
-		enclave_object_labels.ContainerTypeLabel: enclave_object_labels.ContainerTypeTestsuiteContainer,
-		enclave_object_labels.TestsuiteTypeLabelKey: enclave_object_labels.TestsuiteTypeLabelValue_MetadataAcquisition,
+		schema.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
+		schema.TestsuiteTypeLabelKey: schema.TestsuiteTypeLabelValue_MetadataAcquisition,
 	}
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, metadataAcquisitionTestsuiteLabels, shouldKillRunningContainers)
 	if err != nil {

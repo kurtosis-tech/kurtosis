@@ -10,11 +10,12 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-retryablehttp v0.6.7
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215242-31501d8d7f8d
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-a56fef9e73dd
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211101145825-570cf60ea641
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211104015055-c5e7cefde0aa
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211107211522-ef09c391d535
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211108022040-164c64005188 // indirect
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1

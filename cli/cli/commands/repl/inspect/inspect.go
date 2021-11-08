@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
+	"github.com/kurtosis-tech/kurtosis-core/commons/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -64,9 +64,9 @@ func run(cmd *cobra.Command, args []string) error {
 
 	// TODO Replace with a better API for getting REPL containers, so that users don't have to construct the labels map manually
 	replContainerLabels := map[string]string{
-		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
-		enclave_object_labels.ContainerTypeLabel: enclave_object_labels.ContainerTypeInteractiveREPL,
-		enclave_object_labels.GUIDLabel: replGuid,
+		schema.EnclaveIDContainerLabel: enclaveId,
+		schema.ContainerTypeLabel: schema.ContainerTypeInteractiveREPL,
+		schema.GUIDLabel: replGuid,
 	}
 	matchingContainers, err := dockerManager.GetContainersByLabels(ctx, replContainerLabels, shouldFetchStoppedContainers)
 	if err != nil {
