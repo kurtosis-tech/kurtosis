@@ -9,7 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/networks_impl"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/networks"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"

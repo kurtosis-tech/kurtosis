@@ -7,7 +7,7 @@ package wait_for_endpoint_availability_test
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/networks"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/stacktrace"

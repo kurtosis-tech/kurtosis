@@ -7,7 +7,7 @@ package local_static_file_test
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/static_files_consts"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/networks"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/stacktrace"
