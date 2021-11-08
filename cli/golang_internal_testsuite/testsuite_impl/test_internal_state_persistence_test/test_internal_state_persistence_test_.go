@@ -31,9 +31,9 @@ func (t *TestInternalStatePersistenceTest) Configure(builder *testsuite.TestConf
 	builder.WithSetupTimeoutSeconds(10).WithRunTimeoutSeconds(10)
 }
 
-func (t *TestInternalStatePersistenceTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (t *TestInternalStatePersistenceTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 	t.internalState = newInternalState
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (t *TestInternalStatePersistenceTest) Run(network networks.Network) error {

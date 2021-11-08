@@ -2,6 +2,9 @@
 ### Fixes
 * `stacktrace.Propagate` now panics when it gets a `nil` value
 
+### Changes
+* The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
+
 # 0.6.5
 ### Fixes
 * `enclave inspect` host port bindings now properly return `127.0.0.1`, to match what's returned by the `AddService`

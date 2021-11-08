@@ -40,12 +40,12 @@ func (test BasicDatastoreAndApiTest) Configure(builder *testsuite.TestConfigurat
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
 }
 
-func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test BasicDatastoreAndApiTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
 	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
 
-	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
+	datastoreServiceContext, datastoreSvcHostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -69,7 +69,7 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 
 	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreServiceContext.GetIPAddress())
 
-	apiServiceContext, apiSvcHostPortBindings, err := networkCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
+	apiServiceContext, apiSvcHostPortBindings, err := enclaveCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -90,7 +90,7 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 	}
 
 	logrus.Infof("Added API service with host port bindings: %+v", apiSvcHostPortBindings)
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {

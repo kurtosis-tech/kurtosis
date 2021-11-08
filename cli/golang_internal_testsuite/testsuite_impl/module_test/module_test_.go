@@ -42,26 +42,26 @@ func (test ModuleTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(90)
 }
 
-func (test ModuleTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test ModuleTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 	logrus.Info("Loading module...")
-	_, err := networkCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
+	_, err := enclaveCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore army module")
 	}
 	logrus.Info("Module loaded successfully")
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (test ModuleTest) Run(rawNetwork networks.Network) error {
 	ctx := context.Background()
 
 	// Because Go doesn't have generics
-	networkCtx, ok := rawNetwork.(*networks.NetworkContext)
+	enclaveCtx, ok := rawNetwork.(*networks.NetworkContext)
 	if !ok {
 		return stacktrace.NewError("An error occurred casting the generic network to a NetworkContext type")
 	}
 
-	moduleCtx, err := networkCtx.GetModuleContext(datastoreArmyModuleId)
+	moduleCtx, err := enclaveCtx.GetModuleContext(datastoreArmyModuleId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the context for module '%v'", datastoreArmyModuleId)
 	}
@@ -78,7 +78,7 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 	// Sanity-check that the datastore services that the module created are functional
 	logrus.Infof("Sanity-checking that all %v datastore services added via the module work as expected...", len(serviceIdList))
 	for _, serviceId := range serviceIdList {
-		serviceCtx, err := networkCtx.GetServiceContext(serviceId)
+		serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the service context for service '%v'; this indicates that the module says it created a service that it actually didn't", serviceId)
 		}
@@ -127,11 +127,11 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 	logrus.Info("All services added via the module work as expected")
 
 	logrus.Infof("Unloading module '%v'...", datastoreArmyModuleId)
-	if err := networkCtx.UnloadModule(datastoreArmyModuleId); err != nil {
+	if err := enclaveCtx.UnloadModule(datastoreArmyModuleId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred unloading module '%v'", datastoreArmyModuleId)
 	}
 
-	if _, err := networkCtx.GetModuleContext(datastoreArmyModuleId); err == nil {
+	if _, err := enclaveCtx.GetModuleContext(datastoreArmyModuleId); err == nil {
 		return stacktrace.Propagate(err, "Getting module context for module '%v' should throw an error because it should had been unloaded", datastoreArmyModuleId)
 	}
 	logrus.Infof("Module '%v' successfully unloaded", datastoreArmyModuleId)

@@ -32,8 +32,8 @@ func (test *AdvancedNetworkTest) Configure(builder *testsuite.TestConfigurationB
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(90)
 }
 
-func (test *AdvancedNetworkTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	network := networks_impl.NewTestNetwork(networkCtx, test.datastoreServiceImage, test.apiServiceImage)
+func (test *AdvancedNetworkTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
+	network := networks_impl.NewTestNetwork(enclaveCtx, test.datastoreServiceImage, test.apiServiceImage)
 	// Note how setup logic has been pushed into a custom Network implementation, to make test-writing easy
 	if err := network.SetupDatastoreAndTwoApis(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred setting up the network")

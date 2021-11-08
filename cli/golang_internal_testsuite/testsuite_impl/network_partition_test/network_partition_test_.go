@@ -52,12 +52,12 @@ func (test NetworkPartitionTest) Configure(builder *testsuite.TestConfigurationB
 }
 
 // Instantiates the network with no partition and one person in the datatstore
-func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test NetworkPartitionTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
 	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
 
-	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
+	datastoreServiceContext, datastoreSvcHostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -80,7 +80,7 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 
 	apiClient, apiClientConnCloseFunc, err := test.addApiService(
 		ctx,
-		networkCtx,
+		enclaveCtx,
 		api1ServiceId,
 		defaultPartitionId,
 		datastoreServiceContext.GetIPAddress())
@@ -107,7 +107,7 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 		return nil, stacktrace.Propagate(err, "An error occurred test person's books read in preparation for the test")
 	}
 
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error) {
@@ -219,14 +219,14 @@ func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error)
 // ========================================================================================================
 func (test NetworkPartitionTest) addApiService(
 	ctx context.Context,
-	networkCtx *networks.NetworkContext,
+	enclaveCtx *networks.NetworkContext,
 	serviceId services.ServiceID,
 	partitionId networks.PartitionID,
 	datastoreIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
 
 	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreIp)
 
-	apiServiceContext, hostPortBindings, err := networkCtx.AddServiceToPartition(serviceId, partitionId, apiServiceContainerConfigSupplier)
+	apiServiceContext, hostPortBindings, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
@@ -249,7 +249,7 @@ func (test NetworkPartitionTest) addApiService(
 Creates a repartitioner that will partition the network between the API & datastore services, with the connection between them configurable
 */
 func repartitionNetwork(
-	networkCtx *networks.NetworkContext,
+	enclaveCtx *networks.NetworkContext,
 	isConnectionBlocked bool,
 	isApi2ServiceAddedYet bool) error {
 	apiPartitionServiceIds := map[services.ServiceID]bool{
@@ -275,7 +275,7 @@ func repartitionNetwork(
 	defaultPartitionConnection := &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
 		IsBlocked: false,
 	}
-	if err := networkCtx.RepartitionNetwork(partitionServices, partitionConnections, defaultPartitionConnection); err != nil {
+	if err := enclaveCtx.RepartitionNetwork(partitionServices, partitionConnections, defaultPartitionConnection); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred repartitioning the network with isConnectionBlocked = %v",

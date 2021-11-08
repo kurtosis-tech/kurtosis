@@ -1,5 +1,5 @@
 # IMPORTANT: must match the Kurt Client Javascript SDK version
-FROM node:16.7.0-alpine
+FROM node:16.13.0-alpine
 
 WORKDIR {{ .PackageInstallationDirpath }}
 

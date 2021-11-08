@@ -37,8 +37,8 @@ func (test WaitForEndpointAvailabilityTest) Configure(builder *testsuite.TestCon
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(60)
 }
 
-func (test WaitForEndpointAvailabilityTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	return networkCtx, nil
+func (test WaitForEndpointAvailabilityTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
+	return enclaveCtx, nil
 }
 
 func (test WaitForEndpointAvailabilityTest) Run(network networks.Network) error {

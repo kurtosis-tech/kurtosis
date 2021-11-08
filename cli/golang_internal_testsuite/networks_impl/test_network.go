@@ -40,7 +40,7 @@ type datastoreConfig struct {
 //  A custom Network implementation is intended to make test-writing easier by wrapping low-level
 //    NetworkContext calls with custom higher-level business logic
 type TestNetwork struct {
-	networkCtx                         *networks.NetworkContext
+	enclaveCtx                         *networks.NetworkContext
 	datastoreServiceImage              string
 	apiServiceImage                    string
 	datastoreClient                    datastore_rpc_api_bindings.DatastoreServiceClient
@@ -51,9 +51,9 @@ type TestNetwork struct {
 	nextApiServiceId                   int
 }
 
-func NewTestNetwork(networkCtx *networks.NetworkContext, datastoreServiceImage string, apiServiceImage string) *TestNetwork {
+func NewTestNetwork(enclaveCtx *networks.NetworkContext, datastoreServiceImage string, apiServiceImage string) *TestNetwork {
 	return &TestNetwork{
-		networkCtx:                         networkCtx,
+		enclaveCtx:                         enclaveCtx,
 		datastoreServiceImage:              datastoreServiceImage,
 		apiServiceImage:                    apiServiceImage,
 		datastoreClient:                    nil,
@@ -80,7 +80,7 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() error {
 
 	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier(network.datastoreServiceImage)
 
-	datastoreServiceContext, hostPortBindings, err := network.networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
+	datastoreServiceContext, hostPortBindings, err := network.enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
@@ -154,7 +154,7 @@ func (network *TestNetwork) addApiService(ctx context.Context, datastoreIp strin
 
 	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(network.apiServiceImage, datastoreIp)
 
-	apiServiceContext, hostPortBindings, err := network.networkCtx.AddService(serviceId, apiServiceContainerConfigSupplier)
+	apiServiceContext, hostPortBindings, err := network.enclaveCtx.AddService(serviceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}

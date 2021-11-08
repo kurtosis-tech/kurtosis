@@ -42,17 +42,17 @@ func (e ExecCommandTest) Configure(builder *testsuite.TestConfigurationBuilder) 
 	builder.WithSetupTimeoutSeconds(30).WithRunTimeoutSeconds(30)
 }
 
-func (e ExecCommandTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (e ExecCommandTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 	containerConfigSupplier := getContainerConfigSupplier()
 
-	_, _, err := networkCtx.AddService(testServiceId, containerConfigSupplier)
+	_, _, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred starting service '%v'",
 			testServiceId)
 	}
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (e ExecCommandTest) Run(uncastedNetwork networks.Network) error {

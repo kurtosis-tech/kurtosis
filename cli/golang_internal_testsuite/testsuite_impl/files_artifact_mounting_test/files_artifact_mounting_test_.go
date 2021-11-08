@@ -50,21 +50,21 @@ func (f FilesArtifactMountingTest) Configure(builder *testsuite.TestConfiguratio
 	)
 }
 
-func (f FilesArtifactMountingTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (f FilesArtifactMountingTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
 
-	_, hostPortBindings, err := networkCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	_, hostPortBindings, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
 
-	if err := networkCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, listenPort, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
+	if err := enclaveCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, listenPort, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available")
 	}
 
 	logrus.Infof("Added file server service with host port bindings: %+v", hostPortBindings)
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (f FilesArtifactMountingTest) Run(uncastedNetwork networks.Network) error {

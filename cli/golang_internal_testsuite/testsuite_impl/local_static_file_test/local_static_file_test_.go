@@ -36,15 +36,15 @@ func (l LocalStaticFileTest) Configure(builder *testsuite.TestConfigurationBuild
 	)
 }
 
-func (l LocalStaticFileTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (l LocalStaticFileTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
 
 	containerConfigSupplier := getContainerConfigSupplier()
 
-	_, _, err := networkCtx.AddService(testService, containerConfigSupplier)
+	_, _, err := enclaveCtx.AddService(testService, containerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
 	}
-	return networkCtx, nil
+	return enclaveCtx, nil
 }
 
 func (l LocalStaticFileTest) Run(network networks.Network) error {

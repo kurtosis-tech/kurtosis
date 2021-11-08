@@ -28,19 +28,19 @@ func (test BulkCommandExecutionTest) Configure(builder *testsuite.TestConfigurat
 	builder.WithSetupTimeoutSeconds(60).WithRunTimeoutSeconds(90).WithPartitioningEnabled(true)
 }
 
-func (test BulkCommandExecutionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	return networkCtx, nil
+func (test BulkCommandExecutionTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Network, error) {
+	return enclaveCtx, nil
 }
 
 func (test BulkCommandExecutionTest) Run(network networks.Network) error {
-	networkCtx, ok := network.(*networks.NetworkContext)
+	enclaveCtx, ok := network.(*networks.NetworkContext)
 	if !ok {
 		return stacktrace.NewError("An error occurred downcasting the generic network object")
 	}
 
 	logrus.Info("Executing JSON-serialized commands to create a network with various services and repartition it...")
 	bulkCommandJson := generateBulkCommandJson()
-	if err := networkCtx.ExecuteBulkCommands(bulkCommandJson); err != nil {
+	if err := enclaveCtx.ExecuteBulkCommands(bulkCommandJson); err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing the bulk command JSON to set up the network")
 	}
 	logrus.Info("Successfully executed JSON-serialized commands")
