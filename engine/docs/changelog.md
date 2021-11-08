@@ -1,4 +1,11 @@
 # TBD
+### Changes
+* Upgrade to Kurt Core 1.31.1
+* `CreateEnclave` now takes in the version tag of the API container to use, and an emptystring indicates that the engine server should use its own default version
+
+### Breaking Changes
+* `CreateEnclaveArgs`'s `api_container_image` property has been replaced with `api_container_image_version_tag`
+    * Users should leave this blank if they want the default API container, and set it to use a custom version of the API container
 
 # 1.1.0
 ### Changes

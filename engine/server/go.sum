@@ -423,6 +423,10 @@ github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211107183029-48817fe5bb
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211107183029-48817fe5bbc4/go.mod h1:pmOUC8T5ChtQes+9l/2moOxa9DZHisSfJvrmpceGGN0=
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211107210524-998a92866db2 h1:bYc8ciMy3wGRDpQ5S+Q5HbKNWf2IRTJ7PKjv+YzBSIc=
 github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211107210524-998a92866db2/go.mod h1:pmOUC8T5ChtQes+9l/2moOxa9DZHisSfJvrmpceGGN0=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211108212825-167c86d29522 h1:0coXYca/qK8Rjkk8lxlWnbRHLcnChHIJPfdPOcIql0g=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211108212825-167c86d29522/go.mod h1:pmOUC8T5ChtQes+9l/2moOxa9DZHisSfJvrmpceGGN0=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211108222614-313dabd8e865 h1:jBqZqpX/VRJZ9MB2oBj2ZfA0JIlciuAgciYrOXfFSqc=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211108222614-313dabd8e865/go.mod h1:pmOUC8T5ChtQes+9l/2moOxa9DZHisSfJvrmpceGGN0=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211104020810-9dc3d8a0234b h1:OHxdMq9+NzpA4dy53TLzwepEE8B7kFMz3N9xOcpaZUM=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211104020810-9dc3d8a0234b/go.mod h1:dCEEcTwP+/czUTnROZEyLSfD324IEpx16eallEPpvfQ=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=

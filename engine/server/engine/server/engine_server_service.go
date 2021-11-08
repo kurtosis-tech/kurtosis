@@ -40,7 +40,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
-		args.ApiContainerImage,
+		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveId,
 		args.IsPartitioningEnabled,

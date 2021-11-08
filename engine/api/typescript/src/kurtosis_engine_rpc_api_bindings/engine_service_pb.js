@@ -380,7 +380,7 @@ proto.engine_api.CreateEnclaveArgs.prototype.toObject = function(opt_includeInst
 proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveId: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    apiContainerImage: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
     apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
     isPartitioningEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
     shouldPublishAllPorts: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
@@ -426,7 +426,7 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
-      msg.setApiContainerImage(value);
+      msg.setApiContainerVersionTag(value);
       break;
     case 3:
       var value = /** @type {string} */ (reader.readString());
@@ -476,7 +476,7 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
       f
     );
   }
-  f = message.getApiContainerImage();
+  f = message.getApiContainerVersionTag();
   if (f.length > 0) {
     writer.writeString(
       2,
@@ -526,10 +526,10 @@ proto.engine_api.CreateEnclaveArgs.prototype.setEnclaveId = function(value) {
 
 
 /**
- * optional string api_container_image = 2;
+ * optional string api_container_version_tag = 2;
  * @return {string}
  */
-proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerImage = function() {
+proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerVersionTag = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
 };
 
@@ -538,7 +538,7 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerImage = function() {
  * @param {string} value
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
-proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerImage = function(value) {
+proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerVersionTag = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 
