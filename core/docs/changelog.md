@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* Now uses Node 16.13.0
+
+### Breaking Changes
+* The API library now requires Node 16.13.0
+    * Users should upgrade their Node version if they haven't already
 
 # 1.29.1
 ### Features
