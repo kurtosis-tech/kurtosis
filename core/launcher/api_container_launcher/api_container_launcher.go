@@ -24,7 +24,7 @@ const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
 	//  it here too
-	defaultImageVersionTag = "1.30.0"
+	defaultImageVersionTag = "1.31.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	dockerSocket = "/var/run/docker.sock"
