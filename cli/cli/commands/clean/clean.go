@@ -10,10 +10,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/schema"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -136,7 +137,7 @@ func run(cmd *cobra.Command, args []string) error {
 //                                       Private Helper Functions
 // ====================================================================================================
 func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engine_labels_schema.EngineContainerLabels, shouldCleanRunningEngineContainers)
+	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engine_server_launcher.EngineContainerLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}

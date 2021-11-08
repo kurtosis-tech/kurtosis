@@ -8,7 +8,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
@@ -145,7 +145,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
-		engine_labels_schema.EngineContainerLabels,
+		engine_server_launcher.EngineContainerLabels,
 	).Build()
 
 	_, hostMachinePortBindings, err := guarantor.dockerManager.CreateAndStartContainer(guarantor.ctx, createAndStartArgs)

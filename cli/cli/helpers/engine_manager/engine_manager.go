@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -43,7 +43,7 @@ Returns:
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
 ) (EngineStatus, *nat.PortBinding, string, error) {
-	runningEngineContainers, err := manager.dockerManager.GetContainersByLabels(ctx, engine_labels_schema.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+	runningEngineContainers, err := manager.dockerManager.GetContainersByLabels(ctx, engine_server_launcher.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
 		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
@@ -119,7 +119,7 @@ func (manager *EngineManager) StartEngineIdempotently(ctx context.Context, engin
 func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error {
 	matchingEngineContainers, err := manager.dockerManager.GetContainersByLabels(
 		ctx,
-		engine_labels_schema.EngineContainerLabels,
+		engine_server_launcher.EngineContainerLabels,
 		shouldGetStoppedContainersWhenCheckingForExistingEngines,
 	)
 	if err != nil {

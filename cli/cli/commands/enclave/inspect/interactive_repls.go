@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/schema"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 )
