@@ -1,20 +1,18 @@
-package testsuite
+package basic_datastore_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 const (
+	testName = "basic-datastore-test"
+
 	datastoreServiceId services.ServiceID = "datastore"
 	testKey                               = "test-key"
 	testValue                             = "test-value"
@@ -24,29 +22,19 @@ const (
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
-	// ------------------------------------- TEST SETUP ----------------------------------------------
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	assert.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running the test")
-	enclaveId := enclaves.EnclaveID(fmt.Sprintf(
-		"%v_engine-server-test_basic-datastore-test",
-		time.Now().Second(),
-	))
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(context.Background(), enclaveId, false)
-	assert.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)
-	defer func() {
-		if err := kurtosisCtx.DestroyEnclave(context.Background(), enclaveId); err != nil {
-			logrus.Errorf("An error occurred destroying enclave '%v' that we created for this test:\n%v", enclaveId, err)
-			logrus.Errorf("ACTION REQUIRED: You'll need to delete enclave '%v' manually!!!!", enclaveId)
-		}
-	}()
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName)
+	assert.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
 
+	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
-	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(datastoreImage)
+	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
 
 	serviceContext, hostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	assert.NoError(t, err, "An error occurred adding the datastore service")
 
-	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(serviceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(serviceContext.GetIPAddress())
 	assert.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
 	defer func() {
 		if err := datastoreClientConnCloseFunc(); err != nil {
@@ -54,7 +42,7 @@ func TestBasicDatastoreTest(t *testing.T) {
 		}
 	}()
 
-	err = client_helpers.WaitForHealthy(context.Background(), datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = test_helpers.WaitForHealthy(context.Background(), datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	assert.NoError(t, err, "An error occurred waiting for the datastore service to become available")
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", hostPortBindings)

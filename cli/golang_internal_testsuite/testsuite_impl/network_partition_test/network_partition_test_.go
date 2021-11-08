@@ -8,7 +8,7 @@ package network_partition_test
 import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
@@ -55,7 +55,7 @@ func (test NetworkPartitionTest) Configure(builder *testsuite.TestConfigurationB
 func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
+	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
@@ -63,7 +63,7 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
-	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
@@ -73,7 +73,7 @@ func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (net
 		}
 	}()
 
-	err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
@@ -133,7 +133,7 @@ func (test NetworkPartitionTest) Run(network networks.Network) (returnErr error)
 		return stacktrace.Propagate(err, "An error occurred getting the API 1 service context")
 	}
 
-	apiClient, _, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, _, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", api1ServiceId, apiServiceContext.GetIPAddress())
 	}
@@ -224,19 +224,19 @@ func (test NetworkPartitionTest) addApiService(
 	partitionId networks.PartitionID,
 	datastoreIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
 
-	apiServiceContainerConfigSupplier := client_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreIp)
+	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreIp)
 
 	apiServiceContext, hostPortBindings, err := networkCtx.AddServiceToPartition(serviceId, partitionId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, apiClientConnCloseFunc, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", serviceId, apiServiceContext.GetIPAddress())
 	}
 
-	err = client_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = test_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
 	}

@@ -1,4 +1,4 @@
-package client_helpers
+package test_helpers
 
 import (
 	"context"

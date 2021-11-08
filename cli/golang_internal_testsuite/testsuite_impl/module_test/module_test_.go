@@ -9,7 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
@@ -84,7 +84,7 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 		}
 		ipAddr := serviceCtx.GetIPAddress()
 
-		datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(ipAddr)
+		datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(ipAddr)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", serviceId, ipAddr)
 		}
@@ -94,7 +94,7 @@ func (test ModuleTest) Run(rawNetwork networks.Network) error {
 			}
 		}()
 
-		err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+		err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 		}

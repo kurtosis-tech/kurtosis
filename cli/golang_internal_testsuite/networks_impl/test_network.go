@@ -9,7 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
@@ -78,14 +78,14 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() error {
 		return stacktrace.NewError("Cannot add API services to network; one or more API services already exists")
 	}
 
-	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(network.datastoreServiceImage)
+	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier(network.datastoreServiceImage)
 
 	datastoreServiceContext, hostPortBindings, err := network.networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
@@ -98,7 +98,7 @@ func (network *TestNetwork) SetupDatastoreAndTwoApis() error {
 		}
 	}()
 
-	err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
@@ -152,19 +152,19 @@ func (network *TestNetwork) addApiService(ctx context.Context, datastoreIp strin
 	network.nextApiServiceId = network.nextApiServiceId + 1
 	serviceId := services.ServiceID(serviceIdStr)
 
-	apiServiceContainerConfigSupplier := client_helpers.GetApiServiceContainerConfigSupplier(network.apiServiceImage, datastoreIp)
+	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(network.apiServiceImage, datastoreIp)
 
 	apiServiceContext, hostPortBindings, err := network.networkCtx.AddService(serviceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientCloseFunc, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, apiClientCloseFunc, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", serviceId, apiServiceContext.GetIPAddress())
 	}
 
-	err = client_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
+	err = test_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
 	}

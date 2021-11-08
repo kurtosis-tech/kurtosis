@@ -1,19 +1,8 @@
-/*
- * Copyright (c) 2021 - present Kurtosis Technologies Inc.
- * All Rights Reserved.
- */
-
 package basic_datastore_and_api_test
 
 import (
-	"context"
-	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -43,14 +32,14 @@ func (test BasicDatastoreAndApiTest) Configure(builder *testsuite.TestConfigurat
 func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
+	datastoreContainerConfigSupplier := client_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
+	datastoreClient, datastoreClientConnCloseFunc, err := client_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
@@ -60,21 +49,21 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 		}
 	}()
 
-	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = client_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
 
-	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreServiceContext.GetIPAddress())
+	apiServiceContainerConfigSupplier := client_helpers.GetApiServiceContainerConfigSupplier(test.apiImage, datastoreServiceContext.GetIPAddress())
 
 	apiServiceContext, apiSvcHostPortBindings, err := networkCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
+	apiClient, apiClientConnCloseFunc, err := client_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
 	}
@@ -84,7 +73,7 @@ func (test BasicDatastoreAndApiTest) Setup(networkCtx *networks.NetworkContext) 
 		}
 	}()
 
-	err = test_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
+	err = client_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
 	}
@@ -104,7 +93,7 @@ func (test BasicDatastoreAndApiTest) Run(network networks.Network) error {
 		return stacktrace.Propagate(err, "An error occurred getting the API service context")
 	}
 
-	apiClient, apiClientConnCloseFunc, err := test_helpers.NewExampleAPIServerClient(serviceContext.GetIPAddress())
+	apiClient, apiClientConnCloseFunc, err := client_helpers.NewExampleAPIServerClient(serviceContext.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, serviceContext.GetIPAddress())
 	}
