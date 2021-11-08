@@ -1,5 +1,6 @@
 # TBD
 ### Changes
+* Upgraded to `minimal-grpc-server` 0.4.0
 * Now uses Node 16.13.0
 
 ### Breaking Changes
