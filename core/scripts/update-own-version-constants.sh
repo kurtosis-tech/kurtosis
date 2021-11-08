@@ -68,48 +68,14 @@ if [ -n "${langs_with_unupdated_consts}" ]; then
     exit 1
 fi
 
-echo "Updating the constants containing this library's version..."
+echo "Updating own-version constants..."
 for rel_filepath in "${!REL_FILEPATH_UPDATE_PATTERNS[@]}"; do
     replace_pattern="${!REL_FILEPATH_UPDATE_PATTERNS["${rel_filepath}"]}"
     constant_file_abs_filepath="${root_dirpath}/${rel_filepath}"
-    if ! [ -f "${constant_file_abs_filepath}" ]; then
-        echo "Error: Was directed to update own-version constant in 
-
-    pattern="${CONSTANT_PATTERNS["${lang}"]}"
-    if [ -z "${pattern}" ]; then
-        echo "Error: No replacement pattern was found for language '${lang}'; this script needs to be updated with this information" >&2
+    if ! "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${replace_pattern}" "${new_version}"; then
+        echo "Error: An error occurred setting new version '${new_version}' in constants file '${constant_file_abs_filepath}' using pattern '${replace_pattern}'" >&2
         exit 1
     fi
-
-    if ! "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${pattern}" "${new_version}"; then
-        echo "Error: An error occurred setting new version '${new_version}' in '${lang}' constants file '${to_update_abs_filepath}' using pattern '${replacement_pattern}'" >&2
-        exit 1
-    fi
+    echo "Successfully updated '${constant_file_abs_filepath}'"
 done
-
-
-
-
-api_dirpath="${root_dirpath}/${API_DIRNAME}"
-supported_langs_filepath="${api_dirpath}/${SUPPORTED_LANGS_FILENAME}"
-for lang in $(cat "${supported_langs_filepath}"); do
-    constant_file_rel_filepath="${CONSTANT_FILE_RELATIVE_FILEPATHS["${lang}"]}"
-    if [ -z "${constant_file_rel_filepath}" ]; then
-        echo "Error: No relative filepath to a constant file that needs replacing was found for language '${lang}'; this script needs to be updated with this information" >&2
-        exit 1
-    fi
-
-    constant_file_abs_filepath="${api_dirpath}/${lang}/${constant_file_rel_filepath}"
-
-    pattern="${CONSTANT_PATTERNS["${lang}"]}"
-    if [ -z "${pattern}" ]; then
-        echo "Error: No replacement pattern was found for language '${lang}'; this script needs to be updated with this information" >&2
-        exit 1
-    fi
-
-    if ! "${UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME}" "${constant_file_abs_filepath}" "${pattern}" "${new_version}"; then
-        echo "Error: An error occurred setting new version '${new_version}' in '${lang}' constants file '${to_update_abs_filepath}' using pattern '${replacement_pattern}'" >&2
-        exit 1
-    fi
-done
-echo "Successfully updated the constants containing this library's version have been updated for all supported languages"
+echo "Successfully updated all own-version constants"
