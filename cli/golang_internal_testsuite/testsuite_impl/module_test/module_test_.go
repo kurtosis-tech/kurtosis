@@ -46,7 +46,7 @@ func (test ModuleTest) Setup(enclaveCtx *networks.NetworkContext) (networks.Netw
 	logrus.Info("Loading module...")
 	_, err := enclaveCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore army module")
+		assert.NoError(t, err, "An error occurred adding the datastore army module")
 	}
 	logrus.Info("Module loaded successfully")
 	return enclaveCtx, nil
@@ -143,12 +143,12 @@ func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) ([]services.Servi
 	paramsJsonStr := `{"numDatastores": 2}`
 	respJsonStr, err := moduleCtx.Execute(paramsJsonStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred executing the datastore army module")
+		assert.NoError(t, err, "An error occurred executing the datastore army module")
 	}
 
 	parsedResult := new(DatastoreArmyModuleResult)
 	if err := json.Unmarshal([]byte(respJsonStr), parsedResult); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred deserializing the module response")
+		assert.NoError(t, err, "An error occurred deserializing the module response")
 	}
 
 	result := []services.ServiceID{}

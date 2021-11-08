@@ -59,13 +59,13 @@ func (test NetworkPartitionTest) Setup(enclaveCtx *networks.NetworkContext) (net
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
+		assert.NoError(t, err, "An error occurred adding the datastore service")
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
 	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
+		assert.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
 	defer func() {
 		if err := datastoreClientConnCloseFunc(); err != nil {
@@ -75,7 +75,7 @@ func (test NetworkPartitionTest) Setup(enclaveCtx *networks.NetworkContext) (net
 
 	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxNumPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+		assert.NoError(t, err, "An error occurred waiting for the datastore service to become available")
 	}
 
 	apiClient, apiClientConnCloseFunc, err := test.addApiService(
@@ -85,7 +85,7 @@ func (test NetworkPartitionTest) Setup(enclaveCtx *networks.NetworkContext) (net
 		defaultPartitionId,
 		datastoreServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v'", api1ServiceId)
+		assert.NoError(t, err, "An error occurred adding service '%v'", api1ServiceId)
 	}
 	defer func() {
 		if err := apiClientConnCloseFunc(); err != nil {
@@ -97,14 +97,14 @@ func (test NetworkPartitionTest) Setup(enclaveCtx *networks.NetworkContext) (net
 		PersonId: testPersonId,
 	}
 	if _, err := apiClient.AddPerson(ctx, addPersonArgs); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding test person with ID '%v'", testPersonId)
+		assert.NoError(t, err, "An error occurred adding test person with ID '%v'", testPersonId)
 	}
 
 	incrementBooksReadArgs := &example_api_server_rpc_api_bindings.IncrementBooksReadArgs{
 		PersonId: testPersonId,
 	}
 	if _, err := apiClient.IncrementBooksRead(ctx, incrementBooksReadArgs); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred test person's books read in preparation for the test")
+		assert.NoError(t, err, "An error occurred test person's books read in preparation for the test")
 	}
 
 	return enclaveCtx, nil

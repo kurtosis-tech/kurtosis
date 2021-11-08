@@ -56,11 +56,11 @@ func (f FilesArtifactMountingTest) Setup(enclaveCtx *networks.NetworkContext) (n
 
 	_, hostPortBindings, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
+		assert.NoError(t, err, "An error occurred adding the file server service")
 	}
 
 	if err := enclaveCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, listenPort, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the file server service to become available")
+		assert.NoError(t, err, "An error occurred waiting for the file server service to become available")
 	}
 
 	logrus.Infof("Added file server service with host port bindings: %+v", hostPortBindings)

@@ -36,7 +36,7 @@ func (test *AdvancedNetworkTest) Setup(enclaveCtx *networks.NetworkContext) (net
 	network := networks_impl.NewTestNetwork(enclaveCtx, test.datastoreServiceImage, test.apiServiceImage)
 	// Note how setup logic has been pushed into a custom Network implementation, to make test-writing easy
 	if err := network.SetupDatastoreAndTwoApis(); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred setting up the network")
+		assert.NoError(t, err, "An error occurred setting up the network")
 	}
 	return network, nil
 }

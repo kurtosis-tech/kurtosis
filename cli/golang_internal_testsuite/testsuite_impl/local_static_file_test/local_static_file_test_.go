@@ -42,7 +42,7 @@ func (l LocalStaticFileTest) Setup(enclaveCtx *networks.NetworkContext) (network
 
 	_, _, err := enclaveCtx.AddService(testService, containerConfigSupplier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the file server service")
+		assert.NoError(t, err, "An error occurred adding the file server service")
 	}
 	return enclaveCtx, nil
 }
@@ -92,7 +92,7 @@ func getContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.
 
 		//Copy static files from the static_files folder in testsuite container to the service's folder in the service container
 		if err := copyStaticFilesInServiceContainer(static_files_consts.StaticFilesNames, static_files_consts.StaticFilesDirpathOnTestsuiteContainer, sharedDirectory); err != nil{
-			return nil, stacktrace.Propagate(err, "An error occurred copying static files into the service's folder in the service container")
+			assert.NoError(t, err, "An error occurred copying static files into the service's folder in the service container")
 		}
 
 		// We sleep because the only function of this container is to test Docker executing a command while it's running

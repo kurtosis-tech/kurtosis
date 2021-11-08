@@ -47,12 +47,12 @@ func (test BasicDatastoreAndApiTest) Setup(enclaveCtx *networks.NetworkContext) 
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
+		assert.NoError(t, err, "An error occurred adding the datastore service")
 	}
 
 	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
+		assert.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
 	}
 	defer func() {
 		if err := datastoreClientConnCloseFunc(); err != nil {
@@ -62,7 +62,7 @@ func (test BasicDatastoreAndApiTest) Setup(enclaveCtx *networks.NetworkContext) 
 
 	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+		assert.NoError(t, err, "An error occurred waiting for the datastore service to become available")
 	}
 
 	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
@@ -71,12 +71,12 @@ func (test BasicDatastoreAndApiTest) Setup(enclaveCtx *networks.NetworkContext) 
 
 	apiServiceContext, apiSvcHostPortBindings, err := enclaveCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred adding the API service")
+		assert.NoError(t, err, "An error occurred adding the API service")
 	}
 
 	apiClient, apiClientConnCloseFunc, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
+		assert.NoError(t, err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
 	}
 	defer func() {
 		if err := apiClientConnCloseFunc(); err != nil {
@@ -86,7 +86,7 @@ func (test BasicDatastoreAndApiTest) Setup(enclaveCtx *networks.NetworkContext) 
 
 	err = test_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the example API server service to become available")
+		assert.NoError(t, err, "An error occurred waiting for the example API server service to become available")
 	}
 
 	logrus.Infof("Added API service with host port bindings: %+v", apiSvcHostPortBindings)
