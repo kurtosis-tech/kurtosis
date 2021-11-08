@@ -5,7 +5,7 @@
 
 package test_mocks
 
-import "github.com/palantir/stacktrace"
+import "github.com/kurtosis-tech/stacktrace"
 
 type MockClientCredentialsAuthorizer struct{
 	throwErrorOnAuthorize bool

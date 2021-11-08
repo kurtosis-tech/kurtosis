@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"

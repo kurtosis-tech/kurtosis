@@ -13,7 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-server/engine/kurtosis_engine_server_docker_api"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
 )

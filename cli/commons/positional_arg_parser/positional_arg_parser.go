@@ -6,7 +6,7 @@
 package positional_arg_parser
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 )
 

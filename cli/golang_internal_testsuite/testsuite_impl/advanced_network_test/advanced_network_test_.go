@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/networks_impl"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 

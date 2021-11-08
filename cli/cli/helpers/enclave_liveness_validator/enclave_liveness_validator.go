@@ -2,7 +2,7 @@ package enclave_liveness_validator
 
 import (
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 // TODO Get rid of this when we merge the API container & engine server, so that we don't have these weird states of "enclave exists

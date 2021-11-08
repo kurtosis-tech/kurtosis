@@ -7,7 +7,7 @@ package test_mocks
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/auth/session_cache"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type MockSessionCache struct {

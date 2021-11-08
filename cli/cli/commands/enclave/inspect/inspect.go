@@ -18,7 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"sort"

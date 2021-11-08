@@ -18,7 +18,7 @@ actually instructive to the user.
 import (
 	"flag"
 	"fmt"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"sort"
 )
 

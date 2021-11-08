@@ -6,7 +6,7 @@
 package output
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"gotest.tools/assert"
 	"testing"
 )

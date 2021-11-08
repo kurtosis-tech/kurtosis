@@ -19,7 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"io"

@@ -6,7 +6,7 @@
 package test_mocks
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type MockDeviceAuthorizer struct {

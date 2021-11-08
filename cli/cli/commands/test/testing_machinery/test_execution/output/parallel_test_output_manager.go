@@ -8,7 +8,7 @@ package output
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test/testing_machinery/banner_printer"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"

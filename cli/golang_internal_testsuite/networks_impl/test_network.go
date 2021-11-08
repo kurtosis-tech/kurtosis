@@ -12,7 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/client_helpers"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"

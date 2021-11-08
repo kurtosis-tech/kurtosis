@@ -5,7 +5,7 @@ import (
 	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/kurtosis_api_version_const"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
 	"text/template"

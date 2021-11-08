@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
 	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"

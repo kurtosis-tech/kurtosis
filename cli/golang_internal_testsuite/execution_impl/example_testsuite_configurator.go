@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/testsuite_impl"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
 )

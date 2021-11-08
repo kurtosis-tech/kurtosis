@@ -2,7 +2,7 @@ package container_status_calculator
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 func IsContainerRunning(status types.ContainerStatus) (bool, error) {

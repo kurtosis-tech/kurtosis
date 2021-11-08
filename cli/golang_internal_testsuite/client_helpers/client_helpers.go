@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"

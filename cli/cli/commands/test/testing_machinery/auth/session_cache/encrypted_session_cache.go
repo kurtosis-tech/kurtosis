@@ -11,7 +11,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/gob"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
