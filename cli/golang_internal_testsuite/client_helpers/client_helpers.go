@@ -23,6 +23,9 @@ const (
 	datastorePort                         = datastore_rpc_api_consts.ListenPort
 	apiServicePort                        = example_api_server_rpc_api_consts.ListenPort
 	configFilepathRelativeToSharedDirRoot = "config-file.txt"
+
+	datastoreImage = "kurtosistech/example-datastore-server"
+	apiServiceImage = "kurtosistech/example-api-server"
 )
 
 type GRPCAvailabilityChecker interface {
@@ -34,10 +37,10 @@ type datastoreConfig struct {
 	DatastorePort uint16    `json:"datastorePort"`
 }
 
-func GetDatastoreContainerConfigSupplier(containerImage string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func GetDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
-			containerImage,
+			datastoreImage,
 		).WithUsedPorts(
 			map[string]bool{fmt.Sprintf("%v/tcp", datastorePort): true},
 		).Build()
@@ -87,8 +90,7 @@ func WaitForHealthy(ctx context.Context, client GRPCAvailabilityChecker, retries
 	return nil
 }
 
-func GetApiServiceContainerConfigSupplier(containerImage, datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
-
+func GetApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
 		datastoreConfigFileFilePath, err := CreateDatastoreConfigFileInServiceDirectory(datastoreIP, sharedDirectory)
@@ -103,7 +105,7 @@ func GetApiServiceContainerConfigSupplier(containerImage, datastoreIP string) fu
 		}
 
 		containerConfig := services.NewContainerConfigBuilder(
-			containerImage,
+			apiServiceImage,
 		).WithUsedPorts(
 			map[string]bool{fmt.Sprintf("%v/tcp", apiServicePort): true},
 		).WithCmdOverride(startCmd).Build()

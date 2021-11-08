@@ -21,8 +21,6 @@ const (
 
 	waitForStartupDelayMilliseconds = 1000
 	waitForStartupMaxPolls          = 15
-
-	datastoreImage = "kurtosistech/example-datastore-server"
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
