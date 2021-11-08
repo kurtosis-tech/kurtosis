@@ -6,7 +6,7 @@
 package test_internal_state_persistence_test
 
 import (
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/stacktrace"
 )

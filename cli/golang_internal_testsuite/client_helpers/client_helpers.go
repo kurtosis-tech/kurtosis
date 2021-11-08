@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_consts"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_consts"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

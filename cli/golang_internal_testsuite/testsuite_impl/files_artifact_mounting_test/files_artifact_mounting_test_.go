@@ -7,8 +7,8 @@ package files_artifact_mounting_test
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
-	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/networks"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
