@@ -28,7 +28,7 @@
     },
     "homepage": "https://github.com/kurtosis-tech/kurtosis-core-api-lib",
     "engines": {
-        "node": ">=14.17.0"
+        "node": ">=16.13.0"
     },
     "dependencies": {
         "google-protobuf": "^3.17.3",
