@@ -3,7 +3,7 @@
 * The launcher makes a best-effort attempt to pull the latest version of the image being started
 
 ### Changes
-* Upgrade to Kurt Core 1.31.0
+* Upgrade to Kurt Core 1.31.1
 * `CreateEnclave` now takes in the version tag of the API container to use, and an emptystring indicates that the engine server should use its own default version
 * The launcher's `Launch` function has been replaced with `LaunchWithCustomVersion` and `LaunchWithDefaultVersion`
 
