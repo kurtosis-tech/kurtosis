@@ -15,14 +15,14 @@ import { ApiContainerServiceClient, EnclaveContext, EnclaveID, KURTOSIS_API_VERS
 
 const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
-// TODO even the org-and-repo should come from Kurt Core
-const API_CONTAINER_IMAGE: string = "kurtosistech/kurtosis-core_api:" + KURTOSIS_API_VERSION;
-
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
 const API_CONTAINER_LOG_LEVEL: string = "info";
 
 export const DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM: number = 9710;
+
+// Blank tells the engine server to use the default
+const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
 export class KurtosisContext {
@@ -62,7 +62,7 @@ export class KurtosisContext {
 
         const args: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveId,
-            API_CONTAINER_IMAGE,
+            DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
             isPartitioningEnabled,
             SHOULD_PUBLISH_ALL_PORTS,

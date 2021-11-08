@@ -35,15 +35,16 @@ message GetEngineInfoResponse {
 //                                        Create Enclave
 // ==============================================================================================
 message CreateEnclaveArgs {
-  //The ID of the new Kurtosis Enclave
+  // The ID of the new Kurtosis Enclave
   string enclave_id = 1;
-  //The API container Docker image name which will be used to start the API container inside the Kurtosis Enclave
-  string api_container_image = 2;
-  //The API container log level
+  // The image tag of the API container that should be used inside the enclave
+  // If blank, will use the default version that the engine server uses
+  string api_container_version_tag = 2;
+  // The API container log level
   string api_container_log_level = 3;
-  //Whether network partitioning will be enabled or not on the new Kurtosis Enclave
+  // Whether network partitioning will be enabled or not on the new Kurtosis Enclave
   bool is_partitioning_enabled = 4;
-  //If true, when a container is started in the enclave then all its used ports will also be made available on the host machine
+  // If true, when a container is started in the enclave then all its used ports will also be made available on the host machine
   bool should_publish_all_ports = 5;
 }
 

@@ -76,8 +76,8 @@ func NewEnclaveManager(
 //  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// TODO This shouldn't be passed as an argument, but should be auto-detected from the core API version!!!
-	apiContainerImage string,
+	// If blank, will use the default
+	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
 	// TODO put in coreApiVersion as a param here!
 	enclaveId string,
@@ -157,30 +157,43 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
 	}
 
-	//Pulling latest image version
-	if err = manager.dockerManager.PullImage(setupCtx, apiContainerImage); err != nil {
-		logrus.Warnf("Failed to pull the latest version of image '%v'; you may be running an out-of-date version", apiContainerImage)
-	}
-
 	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
 		manager.dockerManager,
 		manager.objAttrsProvider,
 	)
-	apiContainerId, apiContainerHostPortBinding, err := apiContainerLauncher.Launch(
-		setupCtx,
-		apiContainerImage,
-		apiContainerLogLevel,
-		enclaveId,
-		networkId,
-		networkIpAndMask.String(),
-		apiContainerListenPortNumInsideNetwork,
-		gatewayIp,
-		apiContainerIpAddr,
-		isPartitioningEnabled,
-		enclaveDataDirpathOnHostMachine,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
+	var apiContainerId string
+	var apiContainerHostPortBinding *nat.PortBinding
+	var launchApiContainerErr error
+	if apiContainerImageVersionTag == "" {
+		apiContainerId, apiContainerHostPortBinding, launchApiContainerErr = apiContainerLauncher.LaunchWithDefaultVersion(
+			setupCtx,
+			apiContainerLogLevel,
+			enclaveId,
+			networkId,
+			networkIpAndMask.String(),
+			apiContainerListenPortNumInsideNetwork,
+			gatewayIp,
+			apiContainerIpAddr,
+			isPartitioningEnabled,
+			enclaveDataDirpathOnHostMachine,
+		)
+	} else {
+		apiContainerId, apiContainerHostPortBinding, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
+			setupCtx,
+			apiContainerImageVersionTag,
+			apiContainerLogLevel,
+			enclaveId,
+			networkId,
+			networkIpAndMask.String(),
+			apiContainerListenPortNumInsideNetwork,
+			gatewayIp,
+			apiContainerIpAddr,
+			isPartitioningEnabled,
+			enclaveDataDirpathOnHostMachine,
+		)
+	}
+	if launchApiContainerErr != nil {
+		return nil, stacktrace.Propagate(launchApiContainerErr, "An error occurred launching the API container")
 	}
 	shouldStopApiContainer := true
 	defer func() {

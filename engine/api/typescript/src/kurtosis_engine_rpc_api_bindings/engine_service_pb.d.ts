@@ -28,8 +28,8 @@ export class CreateEnclaveArgs extends jspb.Message {
   getEnclaveId(): string;
   setEnclaveId(value: string): void;
 
-  getApiContainerImage(): string;
-  setApiContainerImage(value: string): void;
+  getApiContainerVersionTag(): string;
+  setApiContainerVersionTag(value: string): void;
 
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): void;
@@ -53,7 +53,7 @@ export class CreateEnclaveArgs extends jspb.Message {
 export namespace CreateEnclaveArgs {
   export type AsObject = {
     enclaveId: string,
-    apiContainerImage: string,
+    apiContainerVersionTag: string,
     apiContainerLogLevel: string,
     isPartitioningEnabled: boolean,
     shouldPublishAllPorts: boolean,
