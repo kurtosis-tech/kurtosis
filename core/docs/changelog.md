@@ -1,5 +1,13 @@
 # TBD
 
+# 1.31.0
+### Changes
+* The API container launcher now has two methods, `LaunchWithCustomVersion` and `LaunchWithDefaultVersion`
+
+### Breaking Changes
+* The API container launcher's `Launch` method has been renamed
+    * Users should use either `LaunchWithCustomVersion` or `LaunchWithDefaultVersion` depending on their needs
+
 # 1.30.0
 ### Changes
 * Upgraded to `minimal-grpc-server` 0.4.0
