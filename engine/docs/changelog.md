@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Use Node 16.13.0
+
+### Breaking Changes
+* The Typescript library now depends on Node 16.13.0
 
 # 1.0.0
 ### Changes
