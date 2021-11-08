@@ -1,4 +1,6 @@
 # TBD
+### Features
+* The launcher makes a best-effort attempt to pull the API container image specified
 
 # 1.31.0
 ### Changes

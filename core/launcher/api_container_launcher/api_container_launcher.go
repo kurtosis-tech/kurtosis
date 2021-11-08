@@ -156,6 +156,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		containerImage,
 		imageVersionTag,
 	)
+
+	// Best-effort pull attempt
+	if err = launcher.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", containerImageAndTag)
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		containerName,
