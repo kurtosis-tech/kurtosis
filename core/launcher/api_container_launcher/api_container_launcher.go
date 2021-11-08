@@ -21,6 +21,12 @@ import (
 )
 
 const (
+	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
+	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
+	//  it here too
+	defaultImageVersionTag = "1.30.0"
+	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
+
 	dockerSocket = "/var/run/docker.sock"
 
 	// We ALWAYS publish service ports now
@@ -36,6 +42,9 @@ const (
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
 	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
+
+	// TODO This should come from the same logic that builds the server image!!!!!
+	containerImage = "kurtosistech/kurtosis-core_api"
 )
 
 type ApiContainerLauncher struct {
@@ -48,9 +57,40 @@ func NewApiContainerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &ApiContainerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
-func (launcher ApiContainerLauncher) Launch(
+func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
-	containerImage string,
+	logLevel logrus.Level,
+	enclaveId string,
+	networkId string,
+	subnetMask string,
+	listenPort uint16,
+	gatewayIpAddr net.IP,
+	apiContainerIpAddr net.IP,
+	isPartitioningEnabled bool,
+	enclaveDataDirpathOnHostMachine string,
+) (string, *nat.PortBinding, error) {
+	containerId, hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
+		ctx,
+		defaultImageVersionTag,
+		logLevel,
+		enclaveId,
+		networkId,
+		subnetMask,
+		listenPort,
+		gatewayIpAddr,
+		apiContainerIpAddr,
+		isPartitioningEnabled,
+		enclaveDataDirpathOnHostMachine,
+	)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", defaultImageVersionTag)
+	}
+	return containerId, hostMachinePortBinding, nil
+}
+
+func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
+	ctx context.Context,
+	imageVersionTag string,
 	logLevel logrus.Level,
 	enclaveId string,
 	networkId string,
@@ -111,8 +151,13 @@ func (launcher ApiContainerLauncher) Launch(
 	}
 
 
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	containerImageAndTag := fmt.Sprintf(
+		"%v:%v",
 		containerImage,
+		imageVersionTag,
+	)
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		containerImageAndTag,
 		containerName,
 		networkId,
 	).WithStaticIP(
