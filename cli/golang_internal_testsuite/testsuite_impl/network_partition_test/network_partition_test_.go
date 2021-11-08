@@ -55,7 +55,7 @@ func (test NetworkPartitionTest) Configure(builder *testsuite.TestConfigurationB
 func (test NetworkPartitionTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 	ctx := context.Background()
 
-	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier(test.datastoreImage)
+	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
 
 	datastoreServiceContext, datastoreSvcHostPortBindings, err := networkCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
 	if err != nil {
