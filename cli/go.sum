@@ -499,6 +499,8 @@ github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211108001321-
 github.com/kurtosis-tech/kurtosis-engine-api-lib v0.0.0-20211107211522-ef09c391d535 h1:X35es9aI/qVv77v4xYAVFobOzRu1ME/NKAvRjzYnRv8=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211107211522-ef09c391d535 h1:1FIUPE4CsDGEenK6F33lxzT4BGtysKSMMmPdhx3LL/0=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211107211522-ef09c391d535/go.mod h1:+1iuC8Tv0WR3IFMKbiyyLIZDCkmwM0y8oc0Fuhvs0GY=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211109014559-ec9ccf958af6 h1:2l5fMBgvFcFUToazNnKQG6yTyUwFy6FzLKkrlZa4pgU=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211109014559-ec9ccf958af6/go.mod h1:tbSBJmeiw27Td55b0UrZBu+GQ3dfsM8KXhfFVGVbjl8=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-7075d4829152 h1:B+IUFh3T78AiM59q9L419dPLt0Tc3Sd9lAKq8AZYKzs=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/golang v0.0.0-20211101165721-7075d4829152/go.mod h1:HdZCGNTfTCkR4ZlTT7i2M2szPBPoUpHkc/0Z+dMLLsA=
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211106215439-58154ccf9626 h1:RllD3jS42B+nxXtlxiY1bvasZlpkJTEr5Xp1n4VMHaA=
@@ -507,6 +509,8 @@ github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211107211323-64ed51f332
 github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211108022040-164c64005188 h1:2ZzZMxXTsf2FFhXGfrTKhvToMoXFHYis/2bq537ofEw=
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211108022040-164c64005188 h1:ujl62ZzKOs2oGL6SgzCbCd5JWjCr7gmhC4jP+Yegbx0=
 github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211108022040-164c64005188/go.mod h1:XGUMhG1355YHnfOOAPeHJRi8dfdDHhhYVjeLFftT1MY=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211109014535-d2f28a49ccfe h1:GEFqgNud+TyO4k89AB38fQWv6xkz8bN7wHx8VzoArGY=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211109014535-d2f28a49ccfe/go.mod h1:XGUMhG1355YHnfOOAPeHJRi8dfdDHhhYVjeLFftT1MY=
 github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib v0.0.0-20211027222833-7233d903873e h1:wqzi6Y/89jbdDypikQP8QSevmbMsY1nzKcctO1TqUfA=
 github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang v0.0.0-20211027222833-7233d903873e h1:DiO2vXZIEAVQnK3+pzaseO9FKucZz5QJaxDTDVJCOFo=
