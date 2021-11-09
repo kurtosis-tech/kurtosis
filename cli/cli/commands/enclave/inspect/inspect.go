@@ -104,9 +104,9 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
 	}
 
-	apiContainerPort, err := getAPIContainerPort(ctx, dockerManager, enclaveId)
+	apiContainerPort, err := getAPIContainerHostMachinePort(ctx, dockerManager, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred determining the port of the API container")
+		return stacktrace.Propagate(err, "An error occurred determining the host machine port of the API container")
 	}
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
@@ -188,7 +188,7 @@ func sortContainersByGUID(containers []*types.Container) ([]*types.Container, er
 	return containersResult, nil
 }
 
-func getAPIContainerPort(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (string, error) {
+func getAPIContainerHostMachinePort(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (string, error) {
 	searchLabels := map[string]string{
 		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
 		enclave_object_labels.ContainerTypeLabel:      enclave_object_labels.ContainerTypeAPIContainer,
@@ -201,9 +201,12 @@ func getAPIContainerPort(ctx context.Context, dockerManager *docker_manager.Dock
 	if len(enclaveContainers) != 1 {
 		return "", stacktrace.NewError("An error occurred, there was not only 1 container when retrieving the API container host port by labels '%+v'", searchLabels)
 	}
+	if len(enclaveContainers[0].GetHostPortBindings()) != 1 {
+		return "", stacktrace.NewError("An error occurred, there was not only 1 host port binding when retrieving the API container host port by labels '%+v'", searchLabels)
+	}
 
 	var result string
-	for _, v := range enclaveContainers[0].GetHostPortBindings() { // not sure if we could have several port bindings here and if so, should we show all?
+	for _, v := range enclaveContainers[0].GetHostPortBindings() {
 		result = v.HostPort
 	}
 
