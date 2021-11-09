@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `GetEngineInfoResponse.engine_version` field in `engine_service.proto` file to get the engine server version from the API
 
 # 1.2.0
 ### Features
