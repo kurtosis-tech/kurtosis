@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.6
 ### Features
 * The API Container host port was added when showing the data with the command `enclave inspect`
 
