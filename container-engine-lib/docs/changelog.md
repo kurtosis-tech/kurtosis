@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.4
 ### Features
 * Container logs are propagated throughout the returning error when container start fails
 
