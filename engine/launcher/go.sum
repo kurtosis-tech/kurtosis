@@ -396,6 +396,8 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211104234832-3923ec366e08 h1:ebvylLnvwkQc1LDJw0rF1yFo/yiemxjKdADFylTxaXc=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211104234832-3923ec366e08/go.mod h1:OHdC4tD6pu9EOeZZilzpU1Ncwkj2/roSvxXqgL9kMI8=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109181456-cfde994bb380 h1:jZ3Mhru4JHYuIvUIwGH0o/2ruSISFn5n6YAG3a396Jc=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109181456-cfde994bb380/go.mod h1:OHdC4tD6pu9EOeZZilzpU1Ncwkj2/roSvxXqgL9kMI8=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
