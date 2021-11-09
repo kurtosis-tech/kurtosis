@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.4
+### Features
+* Container logs are propagated throughout the returning error when container start fails
+
 # 0.8.3
 ### Fixes
 * Fixed issue where `GetContainersByLabel` would return `0.0.0.0` addresses rather than `127.0.0.1`
