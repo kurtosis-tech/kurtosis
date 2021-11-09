@@ -8,6 +8,9 @@ export class GetEngineInfoResponse extends jspb.Message {
   getEngineApiVersion(): string;
   setEngineApiVersion(value: string): void;
 
+  getEngineVersion(): string;
+  setEngineVersion(value: string): void;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetEngineInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetEngineInfoResponse): GetEngineInfoResponse.AsObject;
@@ -21,6 +24,7 @@ export class GetEngineInfoResponse extends jspb.Message {
 export namespace GetEngineInfoResponse {
   export type AsObject = {
     engineApiVersion: string,
+    engineVersion: string,
   }
 }
 
