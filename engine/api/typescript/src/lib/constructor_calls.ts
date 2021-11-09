@@ -8,13 +8,13 @@ import * as jspb from "google-protobuf";
 
 export function newCreateEnclaveArgs(
         enclaveId: string,
-        apiContainerImage: string,
+        apiContainerImageVersionTag: string,
         apiContainerLogLevel: string,
         isPartitioningEnabled: boolean,
         shouldPublishPorts: boolean): CreateEnclaveArgs {
     const result: CreateEnclaveArgs = new CreateEnclaveArgs();
     result.setEnclaveId(enclaveId);
-    result.setApiContainerImage(apiContainerImage);
+    result.setApiContainerVersionTag(apiContainerImageVersionTag);
     result.setApiContainerLogLevel(apiContainerLogLevel);
     result.setIsPartitioningEnabled(isPartitioningEnabled);
     result.setShouldPublishAllPorts(shouldPublishPorts);

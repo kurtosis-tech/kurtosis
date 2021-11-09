@@ -20,6 +20,15 @@ import (
 )
 
 const (
+	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
+	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
+	//  it here too
+	defaultImageVersionTag = "1.2.0"
+	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
+
+	// TODO This should come from the same logic that builds the server image!!!!!
+	containerImage = "kurtosistech/kurtosis-engine-server"
+
 	dockerSocketFilepath = "/var/run/docker.sock"
 
 	// TODO Move this into the ObjAttrProvider schema
@@ -60,9 +69,28 @@ func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
-func (launcher *EngineServerLauncher) Launch(
+func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
-	containerImage string,
+	logLevel logrus.Level,
+	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	engineDataDirpathOnHostMachine string,
+) (*nat.PortBinding, error) {
+	hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
+		ctx,
+		defaultImageVersionTag,
+		logLevel,
+		listenPortNum,
+		engineDataDirpathOnHostMachine,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", defaultImageVersionTag)
+	}
+	return hostMachinePortBinding, nil
+}
+
+func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
+	ctx context.Context,
+	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	engineDataDirpathOnHostMachine string,
@@ -129,6 +157,18 @@ func (launcher *EngineServerLauncher) Launch(
 		dockerSocketFilepath:           dockerSocketFilepath,
 		engineDataDirpathOnHostMachine: EngineDataDirpathOnEngineServerContainer,
 	}
+
+	containerImageAndTag := fmt.Sprintf(
+		"%v:%v",
+		containerImage,
+		imageVersionTag,
+	)
+
+	// Best-effort pull attempt
+	if err = launcher.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
