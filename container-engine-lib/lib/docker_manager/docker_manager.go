@@ -90,7 +90,7 @@ const (
 	shouldRemoveLinksWhenRemovingContainers            = false  // We don't use container links
 	shouldKillContainersWhenRemovingContainers         = true
 
-	shouldFollowLogsWhenGettingContainerLogs = false
+	shouldFollowContainerLogsWhenGettingFailedContainerLogs = false
 )
 
 /*
@@ -451,8 +451,10 @@ func (manager DockerManager) CreateAndStartContainer(
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
 	if err = manager.dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
-		containerLogs := manager.getContainerLogsString(ctx, containerId)
-		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image %v.\n Container logs: %v", dockerImage, containerLogs)
+		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
+		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'; logs are below:%v%v%v", dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
 	}
 
 	functionFinishedSuccessfully := false
@@ -1193,17 +1195,17 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 	return network, nil
 }
 
-func (manager DockerManager) getContainerLogsString(ctx context.Context, containerId string) string {
+func (manager DockerManager) getFailedContainerLogsOrErrorString(ctx context.Context, containerId string) string {
 
 	var containerLogs string
 
-	containerLogsReadCloser, err := manager.GetContainerLogs(ctx, containerId, shouldFollowLogsWhenGettingContainerLogs)
+	containerLogsReadCloser, err := manager.GetContainerLogs(ctx, containerId, shouldFollowContainerLogsWhenGettingFailedContainerLogs)
 	if err != nil {
 		return fmt.Sprintf("An error occurred getting logs for container with ID '%v' error:\n%v", containerId, err)
 	}
 	defer func() {
 		if err := containerLogsReadCloser.Close(); err != nil {
-			logrus.Warningf("We tried to close the container read closer logs, but doing so threw an error:\n%v", err)
+			logrus.Warningf("We tried to close the container logs read-closer, but doing so threw an error:\n%v", err)
 		}
 	}()
 
