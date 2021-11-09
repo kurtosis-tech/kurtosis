@@ -1,4 +1,6 @@
 # TBD
+
+# 1.2.0
 ### Features
 * The launcher makes a best-effort attempt to pull the latest version of the image being started
 
