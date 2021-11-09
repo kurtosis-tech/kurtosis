@@ -199,7 +199,7 @@ func getAPIContainerPort(ctx context.Context, dockerManager *docker_manager.Dock
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave container by labels '%+v'", searchLabels)
 	}
 	if len(enclaveContainers) != 1 {
-		return "", stacktrace.NewError("An error occurred, there was not only 1 container when retrieving the API container host port", searchLabels)
+		return "", stacktrace.NewError("An error occurred, there was not only 1 container when retrieving the API container host port by labels '%+v'", searchLabels)
 	}
 
 	var result string
