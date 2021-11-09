@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgraded to object-attributes-schema-lib 0.2.0
 
 # 1.31.1
 ### Features
