@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added `EngineVersion` field that represents the engine server version in the `GetEngineInfo` response
 
 # 1.2.0
 ### Features

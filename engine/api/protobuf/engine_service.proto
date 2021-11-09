@@ -29,6 +29,8 @@ service EngineService {
 message GetEngineInfoResponse {
   // Version of the engine API that this server implements
   string engine_api_version = 1;
+  // Version of the engine server
+  string engine_version = 2;
 }
 
 // ==============================================================================================
