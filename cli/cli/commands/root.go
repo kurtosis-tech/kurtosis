@@ -7,6 +7,7 @@ package commands
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -17,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/palantir/stacktrace"
@@ -25,7 +27,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -40,6 +45,9 @@ const (
 	userAgentHttpHeaderValue   = "kurtosis-tech"
 
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
+
+	latestReleaseVersionCacheFilename = "kurtosis-cli-latest-release-version"
+	cacheFileContentSeparator = ";"
 )
 
 type GitHubReleaseReponse struct {
@@ -113,7 +121,7 @@ func checkCLIVersion() {
 
 func isLatestCLIVersion() (bool, string, error) {
 	ownVersionStr := kurtosis_cli_version.KurtosisCLIVersion
-	latestVersionStr, err := getLatestCLIReleaseVersionFromGitHub()
+	latestVersionStr, err := getLatestCLIReleaseVersion()
 	if err != nil {
 		return false, "", stacktrace.Propagate(err, "An error occurred getting the latest release version number from the GitHub public API")
 	}
@@ -136,6 +144,23 @@ func isLatestCLIVersion() (bool, string, error) {
 	}
 
 	return false, latestVersionStr, nil
+}
+
+func getLatestCLIReleaseVersion() (string, error) {
+	version, err := getLatestCLIReleaseVersionFromCacheFile()
+	if err != nil {
+		logrus.Debugf("An error occurred getting latest release version from cache file. Error: \n%v", err)
+	}
+	if version != "" {
+		return version, nil
+	}
+
+	version, err = getLatestCLIReleaseVersionFromGitHub()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting latest release version from GitHub")
+	}
+
+	return version, nil
 }
 
 func getLatestCLIReleaseVersionFromGitHub() (string, error) {
@@ -179,5 +204,118 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 		return "", stacktrace.Propagate(err, "The latest release version got from GitHub releases is empty")
 	}
 
+	if err := saveLatestCLIReleaseVersionInCacheFile(latestVersion); err != nil {
+		logrus.Debugf("We tried to save the latest release version '%v' in the cache file, but doing so threw an error:\n%v", latestVersion, err)
+	}
+
 	return latestVersion, nil
+}
+
+func saveLatestCLIReleaseVersionInCacheFile(latestReleaseVersion string) error {
+
+	filepath, err := host_machine_directories.GetLatestCLIReleaseVersionCacheFilepath()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the cache file path")
+	}
+	logrus.Debugf("Cache filepath: '%v'", filepath)
+
+	cacheFile, err := os.Create(filepath)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the '%v' file", filepath)
+	}
+	defer cacheFile.Close()
+
+	now := time.Now()
+	dateString := now.Format(time.RFC3339)
+	content := strings.Join([]string{dateString, latestReleaseVersion}, cacheFileContentSeparator)
+
+	logrus.Debugf("Saving content '%v' in cache file...", content)
+	if _, err := fmt.Fprintf(cacheFile, "%s", content); err != nil {
+		return stacktrace.Propagate(err, "An error occurred saving content '%v' in latest release version cache file", content)
+	}
+	logrus.Debugf("Content successfully saved in cache file")
+	return nil
+}
+
+func getLatestCLIReleaseVersionFromCacheFile() (string, error){
+
+	filepath, err := getFileCacheFilepath()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the cache file filepath")
+	}
+	logrus.Debugf("Cache filepath: '%v'", filepath)
+
+	logrus.Debugf("Getting cache file content...")
+	cacheFile, err := os.Create(filepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating the '%v' file", latestReleaseVersionCacheFilename)
+	}
+	defer cacheFile.Close()
+
+	bufferSize := 10
+	buffer := make([]byte, bufferSize)
+	fileContent := ""
+
+	for {
+		numberOfBytesRead, err := cacheFile.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred reading cache file")
+		}
+		if numberOfBytesRead > 0 {
+			newString := string(buffer[:numberOfBytesRead])
+			fileContent = fileContent + newString
+		}
+	}
+
+	content := strings.Split(fileContent, cacheFileContentSeparator)
+	if len(content) != 2 {
+		return "", stacktrace.NewError("The cache file content '%+v' is not valid", content)
+	}
+	dateString := content[0]
+	latestReleaseVersion := content[1]
+
+	cacheDate, err := time.Parse(time.RFC3339 , dateString)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred parsing date string '%v' from cache file", dateString)
+	}
+
+	cacheDateEnd := cacheDate.Add(24 * time.Hour)
+
+	now := time.Now()
+
+	if now.Before(cacheDateEnd) {
+		return "", nil
+	}
+	logrus.Debugf("Cache file content '%+v' successfully got", content)
+
+	return latestReleaseVersion, nil
+}
+
+func getFileCacheFilepath() (string, error) {
+	cliFilepath, err := os.Executable()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the executable filepath")
+	}
+
+	fileInfo, err := os.Lstat(cliFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the file info for the filepath '%v'", cliFilepath)
+	}
+
+	//True if the file is a sym link
+	if fileInfo.Mode()&os.ModeSymlink != 0 {
+		cliFilepath, err = filepath.EvalSymlinks(cliFilepath)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred evaluating symlink '%v'", cliFilepath)
+		}
+	}
+
+	cliDirpath := filepath.Dir(cliFilepath)
+
+	cacheFileFilepath := strings.Join([]string{cliDirpath, latestReleaseVersionCacheFilename}, "/")
+
+	return cacheFileFilepath, nil
 }

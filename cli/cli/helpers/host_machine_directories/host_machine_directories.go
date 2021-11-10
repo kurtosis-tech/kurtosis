@@ -11,6 +11,8 @@ const (
 
 	sessionCacheFilename = "session-cache"
 
+	latestCLIReleaseVersionCacheFilename = "latest-release-version-cache"
+
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
 )
@@ -33,6 +35,15 @@ func GetSessionCacheFilepath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting the session cache filepath from relative path '%v'", xdgRelFilepath)
 	}
 	return sessionCacheFilepath, nil
+}
+
+func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(latestCLIReleaseVersionCacheFilename)
+	latestCLIReleaseVersionCacheFilepath, err := xdg.CacheFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the latest release version cache filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return latestCLIReleaseVersionCacheFilepath, nil
 }
 
 
