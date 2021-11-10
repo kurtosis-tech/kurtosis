@@ -433,8 +433,8 @@ github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d76
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211108000544-89f5ac8d0f88 h1:0PkLzThDpfajwkY8gnf2gOy6TwJ0hKzbqVtVxzRBw3k=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211108000544-89f5ac8d0f88/go.mod h1:Y0O+lt256iWpkdjDOB8r6csF96Pt3JVIFMbUuWIvr8o=
-github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109200015-fa88b22da2d8 h1:O9j/pK337aQlPy0AZMHKiyzzdhr4wpagnsBjjuBiykM=
-github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109200015-fa88b22da2d8/go.mod h1:OHdC4tD6pu9EOeZZilzpU1Ncwkj2/roSvxXqgL9kMI8=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211110233514-10266a88552c h1:vKvRnFcqrZDayyGSI69p9/4U0pISXGPqD3dhjg91xkU=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211110233514-10266a88552c/go.mod h1:OHdC4tD6pu9EOeZZilzpU1Ncwkj2/roSvxXqgL9kMI8=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=

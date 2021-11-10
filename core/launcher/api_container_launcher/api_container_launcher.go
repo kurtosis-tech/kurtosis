@@ -22,7 +22,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	defaultImageVersionTag = "1.32.0"
+	DefaultVersion = "1.33.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	dockerSocket = "/var/run/docker.sock"
@@ -55,10 +55,6 @@ func NewApiContainerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &ApiContainerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
-func (launcher *ApiContainerLauncher) GetDefaultVersion() string {
-	return defaultImageVersionTag
-}
-
 func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
@@ -73,7 +69,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 ) (string, *nat.PortBinding, error) {
 	containerId, hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		defaultImageVersionTag,
+		DefaultVersion,
 		logLevel,
 		enclaveId,
 		networkId,
@@ -85,7 +81,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		enclaveDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", defaultImageVersionTag)
+		return "", nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
 	}
 	return containerId, hostMachinePortBinding, nil
 }
