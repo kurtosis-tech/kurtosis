@@ -1,4 +1,6 @@
 # TBD
+
+# 1.33.0
 ### Changes
 * Got rid of the launcher's `GetDefaultVersion` method in favor of a public constant, `DefaultVersion`,  because the old method required instantiating a launcher to get the default version
 * Upgraded to obj-attrs-schema-lib 0.3.0
