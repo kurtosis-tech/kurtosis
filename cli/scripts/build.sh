@@ -74,7 +74,8 @@ fi
 # We want to run goreleaser from the root
 cd "${root_dirpath}"
 
-go test ./...
+# We set parallelism to 4 so that we don't run too many Kurtosis tests at once
+go test ./... -p 4
 
 # Use a first pass of Goreleaser to build ONLY the REPL Dockerfile-generating binary, and then generate the REPL Dockerfiles so that the second
 #  pass of Goreleaser (which generates the Dockerfiles) can pick them up
