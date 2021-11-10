@@ -1,5 +1,13 @@
 # TBD
 
+# 1.2.2
+### Features
+* The engine server launcher now exposes its `ListenProtocol`
+
+### Changes
+* Upgrade to `object-attributes-schema-lib` 0.2.0
+* Upgrade to Kurt Core 1.31.2
+
 # 1.2.1
 ### Features
 * Added `EngineVersion` field that represents the engine server version in the `GetEngineInfo` response

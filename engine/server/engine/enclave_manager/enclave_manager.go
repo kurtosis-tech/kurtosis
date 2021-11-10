@@ -447,11 +447,11 @@ func getEnclaveContainerInformation(
 				)
 			}
 
-			apiContainerPortNumStr, found := containerLabels[schema.APIContainerPortNumLabel]
+			apiContainerPortNumStr, found := containerLabels[schema.PortNumLabel]
 			if !found {
 				return 0, 0, nil, nil, stacktrace.NewError(
 					"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
-					schema.APIContainerPortNumLabel,
+					schema.PortNumLabel,
 				)
 			}
 
@@ -468,11 +468,11 @@ func getEnclaveContainerInformation(
 
 			// We only get host machine info if the container is running
 			if isContainerRunning {
-				apiContainerPortProtocol, found := containerLabels[schema.APIContainerPortProtocolLabel]
+				apiContainerPortProtocol, found := containerLabels[schema.PortProtocolLabel]
 				if !found {
 					return 0, 0, nil, nil, stacktrace.NewError(
 						"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
-						schema.APIContainerPortProtocolLabel,
+						schema.PortProtocolLabel,
 					)
 				}
 

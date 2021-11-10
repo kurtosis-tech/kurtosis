@@ -12,7 +12,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -23,7 +22,7 @@ const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
 	//  it here too
-	defaultImageVersionTag = "1.2.1"
+	defaultImageVersionTag = "1.2.2"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -31,33 +30,19 @@ const (
 
 	dockerSocketFilepath = "/var/run/docker.sock"
 
-	// TODO Move this into the ObjAttrProvider schema
-	containerNamePrefix = "kurtosis-engine"
-
 	networkToStartEngineContainerIn = "bridge"
-
-	listenProtocol = "tcp"
-
-	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
-	//  on the engine server
-	EngineDataDirpathOnEngineServerContainer = "/engine-data"
 
 	maxWaitForAvailabilityRetries         = 10
 	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
 
 	availabilityWaitingExecCmdSuccessExitCode = 0
 
-	// TODO This needs to be merged into the obj attrs schema lib!!!!!!
-	ContainerTypeKurtosisEngine = "kurtosis-engine"
-)
+	ListenProtocol = "tcp"
 
-// TODO This should be pushed into the obj attributes schema lib!!!!!
-var EngineContainerLabels = map[string]string{
-	// TODO These need refactoring!!! "ContainerTypeLabel" and "AppIDLabel" aren't just for enclave objects!!!
-	//  See https://github.com/kurtosis-tech/kurtosis-cli/issues/24
-	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
-	schema.ContainerTypeLabel: ContainerTypeKurtosisEngine,
-}
+	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
+	//  on the engine server
+	EngineDataDirpathOnEngineServerContainer = "/engine-data"
+)
 
 type EngineServerLauncher struct {
 	dockerManager *docker_manager.DockerManager
@@ -114,14 +99,10 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	containerStartTimeUnixSecs := time.Now().Unix()
-	containerName := fmt.Sprintf(
-		"%v_%v",
-		containerNamePrefix,
-		containerStartTimeUnixSecs,
-	)
+	engineAttrs := launcher.objAttrsProvider.ForEngineServer(listenPortNum, ListenProtocol)
+
 	enginePortObj, err := nat.NewPort(
-		listenProtocol,
+		ListenProtocol,
 		fmt.Sprintf("%v", listenPortNum),
 	)
 	if err != nil {
@@ -129,13 +110,13 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 			err,
 			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
 			listenPortNum,
-			listenProtocol,
+			ListenProtocol,
 		)
 	}
 
 	argsObj, err := args.NewEngineServerArgs(
 		listenPortNum,
-		listenProtocol,
+		ListenProtocol,
 		logLevel.String(),
 		engineDataDirpathOnHostMachine,
 	)
@@ -171,7 +152,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
-		containerName,
+		engineAttrs.GetName(),
 		targetNetworkId,
 	).WithEnvironmentVariables(
 		envVars,
@@ -180,7 +161,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
-		EngineContainerLabels,
+		engineAttrs.GetLabels(),
 	).Build()
 
 	containerId, hostMachinePortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
@@ -216,7 +197,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		listenProtocol,
+		ListenProtocol,
 		listenPortNum,
 	)
 	execCmd := []string{
