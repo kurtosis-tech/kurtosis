@@ -1,4 +1,8 @@
 # TBD
+### Fixes
+* The `kurtosis engine restart` suggestion when the engine is out-of-date now:
+    * No longer has a trailing space
+    * Is on the same line as the "engine is out-of-date" message
 
 # 0.6.6
 ### Features
