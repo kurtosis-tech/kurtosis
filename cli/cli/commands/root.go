@@ -69,7 +69,6 @@ func init() {
 	)
 
 	RootCmd.AddCommand(sandbox.SandboxCmd)
-	RootCmd.AddCommand(test.TestCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)

@@ -5,6 +5,13 @@
 ### Changes
 * The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
 
+### Removals
+* Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
+
+### Breaking Changes
+* Removed the `test` command
+    * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
+
 # 0.6.5
 ### Fixes
 * `enclave inspect` host port bindings now properly return `127.0.0.1`, to match what's returned by the `AddService`
