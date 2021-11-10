@@ -417,12 +417,12 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211108001321-f9f2417e511a/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211109204911-1371c050a5d8 h1:j3ft3lKpxCcyF76Dt3ORNBDrzXkHOsKXt9GAKr4JTjo=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211109204911-1371c050a5d8/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
-github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211109204724-e5d181ea0fb3 h1:N420feyAnb3utbaE66w6yKHmI3m7X6Q2rNviGOTzS60=
-github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211109204724-e5d181ea0fb3/go.mod h1:aQSLWUnsdFPquDpNt4b44SBxwGMGqAkmSmxAkkBSqPo=
-github.com/kurtosis-tech/kurtosis-engine-server v0.0.0-20211110182230-6305acbef33a h1:uBdpRsyKDGg3xoGVENm4yt3dhZdBUvYMA308AACmrio=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211110200404-b7b8528e4d8a h1:BtX7x6DKq4IdAoPRF4wq87NTEt6g9bhQuVK/u0yopuo=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211110200404-b7b8528e4d8a/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211110200351-ab1ad113eddf h1:dWQTYW2rZkzoPYYyvfsmFY6IYkEu8ZJsQ6c+JB5BoPU=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211110200351-ab1ad113eddf/go.mod h1:aQSLWUnsdFPquDpNt4b44SBxwGMGqAkmSmxAkkBSqPo=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109200015-fa88b22da2d8 h1:O9j/pK337aQlPy0AZMHKiyzzdhr4wpagnsBjjuBiykM=

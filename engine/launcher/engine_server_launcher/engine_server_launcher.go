@@ -52,7 +52,7 @@ func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
-func (launcher *EngineServerLauncher) GetDefaultImageVersionTag() string {
+func (launcher *EngineServerLauncher) GetDefaultVersion() string {
 	return defaultImageVersionTag
 }
 
