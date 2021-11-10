@@ -90,7 +90,21 @@ func (manager *EngineManager) GetEngineStatus(
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotently(ctx context.Context, engineImage string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
+	}
+
+	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(ctx, maybeHostMachinePortBinding, manager.dockerManager, logLevel)
+	if err := status.Accept(engineGuarantor); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
+	}
+	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachinePortBinding()
+}
+
+// Starts an engine if one doesn't exist already, and returns a client to it
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -114,6 +128,7 @@ func (manager *EngineManager) StartEngineIdempotently(ctx context.Context, engin
 
 	return engineClient, clientCloseFunc, nil
 }
+
 
 // Stops the engine if it's running, doing nothing if not
 func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error {
