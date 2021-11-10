@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -16,11 +17,13 @@ import (
 )
 
 const (
-	engineImageArg = "image"
-	logLevelArg    = "log-level"
+	engineVersionArg = "version"
+	logLevelArg      = "log-level"
+
+	defaultEngineVersion = ""
 )
 
-var engineImage string
+var engineVersion string
 var logLevelStr string
 
 var StartCmd = &cobra.Command{
@@ -32,10 +35,10 @@ var StartCmd = &cobra.Command{
 
 func init() {
 	StartCmd.Flags().StringVar(
-		&engineImage,
-		engineImageArg,
-		defaults.DefaultEngineImage,
-		"The image of the Kurtosis engine that should be started",
+		&engineVersion,
+		engineVersionArg,
+		defaultEngineVersion,
+		"The version (Docker tag) of the Kurtosis engine that should be started",
 	)
 	StartCmd.Flags().StringVar(
 		&logLevelStr,
@@ -54,7 +57,7 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineImage)
+	logrus.Infof("Starting Kurtosis engine from image '%v'...", engineVersion)
 
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
@@ -71,7 +74,12 @@ func run(cmd *cobra.Command, args []string) error {
 	)
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineImage, logLevel)
+	var engineClientCloseFunc kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	var startEngineErr error
+	if engineVersion == defaultEngineVersion {
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+	}
+	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineVersion, logLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
 	}

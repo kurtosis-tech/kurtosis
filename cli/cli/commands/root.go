@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/test"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"

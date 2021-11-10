@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -27,12 +28,13 @@ const (
 type EngineManager struct {
 	dockerManager *docker_manager.DockerManager
 	// Make engine IP, port, and protocol configurable in the future
+
+	objAttrsProvider schema.ObjectAttributesProvider
 }
 
-func NewEngineManager(dockerManager *docker_manager.DockerManager) *EngineManager {
-	return &EngineManager{dockerManager: dockerManager}
+func NewEngineManager(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *EngineManager {
+	return &EngineManager{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
-
 
 /*
 Returns:
@@ -56,6 +58,8 @@ func (manager *EngineManager) GetEngineStatus(
 		return EngineStatus_Stopped, nil, "", nil
 	}
 	engineContainer := runningEngineContainers[0]
+
+	engineContainerLabels, found := engineContainer.GetLabels()[ListenPort]
 
 	enginePortObj, err := nat.NewPort(
 		kurtosis_engine_rpc_api_consts.ListenProtocol,
@@ -96,7 +100,13 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 
-	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(ctx, maybeHostMachinePortBinding, manager.dockerManager, logLevel)
+	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
+		ctx,
+		maybeHostMachinePortBinding,
+		manager.dockerManager,
+		manager.objAttrsProvider,
+		logLevel,
+	)
 	if err := status.Accept(engineGuarantor); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
 	}
@@ -110,7 +120,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 
-	engineGuarantor := newEngineExistenceGuarantor(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImage, engineAPIVersion, logLevel)
+	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImageVersionTag, logLevel)
 	if err := status.Accept(engineGuarantor); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
 	}
