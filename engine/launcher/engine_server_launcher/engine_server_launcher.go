@@ -22,7 +22,7 @@ const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
 	//  it here too
-	defaultImageVersionTag = "1.2.2"
+	DefaultImageVersionTag = "1.2.2"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -62,13 +62,13 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (*nat.PortBinding, error) {
 	hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		defaultImageVersionTag,
+		DefaultImageVersionTag,
 		logLevel,
 		listenPortNum,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", defaultImageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultImageVersionTag)
 	}
 	return hostMachinePortBinding, nil
 }

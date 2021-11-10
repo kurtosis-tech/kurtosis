@@ -1,4 +1,6 @@
 # TBD
+### Features
+* The engine server launcher now exposes `DefaultImageVersionTag`, for viewing what version of the engine the launcher would start
 
 # 1.2.2
 ### Features
