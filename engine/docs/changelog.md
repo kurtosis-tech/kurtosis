@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgrade to Kurt Core 1.32.0
 
 # 1.3.0
 ### Features
