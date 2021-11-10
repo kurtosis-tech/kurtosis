@@ -1,4 +1,9 @@
 # TBD
+### Features
+* The engine server launcher now exposes its `ListenProtocol`
+
+### Changes
+* Upgrade to `object-attributes-schema-lib` 0.2.0
 
 # 1.2.1
 ### Features
