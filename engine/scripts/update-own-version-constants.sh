@@ -16,7 +16,7 @@ API_SUPPORTED_LANGS_REL_FILEPATH="${API_DIRNAME}/supported-languages.txt"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["launcher/engine_server_launcher/engine_server_launcher.go"]="defaultImageVersionTag = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["launcher/engine_server_launcher/engine_server_launcher.go"]="DefaultImageVersionTag = \"%s\""
 REL_FILEPATH_UPDATE_PATTERNS["${API_DIRNAME}/golang/kurtosis_engine_api_version/kurtosis_engine_api_version.go"]="KurtosisEngineApiVersion = \"%s\""
 REL_FILEPATH_UPDATE_PATTERNS["${API_DIRNAME}/typescript/src/kurtosis_engine_api_version/kurtosis_engine_api_version.ts"]="KURTOSIS_ENGINE_API_VERSION: string = \"%s\""
 
