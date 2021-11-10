@@ -1,4 +1,13 @@
 # TBD
+### Features
+* The launcher now has a `GetDefaultVersion` method
+
+### Removals
+* Removed the own-version constants in the API, now that the launcher handles the deployment of API container versions
+
+### Breaking Changes
+* The API no longer has own-version constants
+    * If users are using this, they should evaluate why (and whether they should be using the `launcher` submodule instead, which has an own-version constant) because the API shouldn't know about it own version
 
 # 1.31.2
 ### Changes

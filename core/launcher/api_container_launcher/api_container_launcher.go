@@ -22,8 +22,6 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
-	//  it here too
 	defaultImageVersionTag = "1.31.2"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
@@ -55,6 +53,10 @@ type ApiContainerLauncher struct {
 
 func NewApiContainerLauncher(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *ApiContainerLauncher {
 	return &ApiContainerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
+}
+
+func (launcher *ApiContainerLauncher) GetDefaultVersion() string {
+	return defaultImageVersionTag
 }
 
 func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
