@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,6 +24,11 @@ const (
 
 	engineStopTimeout = 30 * time.Second
 )
+
+var engineContainerLabels = map[string]string{
+	forever_constants.AppIDLabel: forever_constants.AppIDValue,
+	schema.ContainerTypeLabel: schema.ContainerTypeEngineServer,
+}
 
 type EngineManager struct {
 	dockerManager *docker_manager.DockerManager
@@ -45,7 +50,7 @@ Returns:
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
 ) (EngineStatus, *nat.PortBinding, string, error) {
-	runningEngineContainers, err := manager.dockerManager.GetContainersByLabels(ctx, engine_server_launcher.EngineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+	runningEngineContainers, err := manager.dockerManager.GetContainersByLabels(ctx, engineContainerLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
 		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
@@ -59,18 +64,26 @@ func (manager *EngineManager) GetEngineStatus(
 	}
 	engineContainer := runningEngineContainers[0]
 
-	engineContainerLabels, found := engineContainer.GetLabels()[ListenPort]
+	engineContainerLabels := engineContainer.GetLabels()
+	enginePortNumStr, found := engineContainerLabels[schema.PortNumLabel]
+	if !found {
+		return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortNumLabel)
+	}
+	enginePortProtocol, found := engineContainerLabels[schema.PortProtocolLabel]
+	if !found {
+		return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortProtocolLabel)
+	}
 
 	enginePortObj, err := nat.NewPort(
-		kurtosis_engine_rpc_api_consts.ListenProtocol,
-		fmt.Sprintf("%v", kurtosis_engine_rpc_api_consts.ListenPort),
+		enginePortProtocol,
+		enginePortNumStr,
 	)
 	if err != nil {
 		return "", nil, "", stacktrace.Propagate(
 			err,
 			"An error occurred creating an engine port object from port num '%v' and protocol '%v'",
-			kurtosis_engine_rpc_api_consts.ListenPort,
-			kurtosis_engine_rpc_api_consts.ListenProtocol,
+			enginePortNumStr,
+			enginePortProtocol,
 		)
 	}
 
@@ -90,7 +103,7 @@ func (manager *EngineManager) GetEngineStatus(
 		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
 	}
 
-	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo.EngineApiVersion, nil
+	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo., nil
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
@@ -144,7 +157,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error {
 	matchingEngineContainers, err := manager.dockerManager.GetContainersByLabels(
 		ctx,
-		engine_server_launcher.EngineContainerLabels,
+		engineContainerLabels,
 		shouldGetStoppedContainersWhenCheckingForExistingEngines,
 	)
 	if err != nil {
