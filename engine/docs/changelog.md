@@ -1,4 +1,6 @@
 # TBD
+
+# 1.4.0
 ### Changes
 * Upgrade to Kurt Core 1.32.0
 * Renamed `EngineServerLauncher.GetDefaultImageVersionTag` -> `GetDefaultVersion`
