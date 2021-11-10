@@ -11,7 +11,7 @@ import {
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as jspb from "google-protobuf";
-import { ApiContainerServiceClient, EnclaveContext, EnclaveID, KURTOSIS_API_VERSION } from "kurtosis-core-api-lib";
+import { ApiContainerServiceClient, EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
 
 const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
