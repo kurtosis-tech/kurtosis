@@ -20,9 +20,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	// NOTE: This is duplicated from the 'api' submodule, but this 'launcher' submodule doesn't pull in the API so we need
-	//  it here too
-	defaultImageVersionTag = "1.2.2"
+	defaultImageVersionTag = "1.3.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -52,6 +50,10 @@ type EngineServerLauncher struct {
 
 func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *EngineServerLauncher {
 	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
+}
+
+func (launcher *EngineServerLauncher) GetDefaultImageVersionTag() string {
+	return defaultImageVersionTag
 }
 
 func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
@@ -118,6 +120,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		listenPortNum,
 		ListenProtocol,
 		logLevel.String(),
+		imageVersionTag,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {

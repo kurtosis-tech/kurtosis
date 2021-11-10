@@ -1,5 +1,17 @@
 # TBD
 
+# 1.3.0
+### Features
+* The engine server launcher now exposes `DefaultImageVersionTag`, for viewing what version of the engine the launcher would start
+
+### Removals
+* Removed the own-version constants in the Golang & Typescript API submodules
+
+### Breaking Changes
+* The API no longer has own-version constants
+    * If users are using this, they should evaluate why (and whether they should be using the `launcher` submodule instead, which has an own-version constant) because the API shouldn't know about it own version
+* The `GetEngineInfoResponse` object no longer has an `engine_api_version` field, as there is no more distinction between engine version and API version
+
 # 1.2.2
 ### Features
 * The engine server launcher now exposes its `ListenProtocol`

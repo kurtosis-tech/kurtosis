@@ -5,9 +5,6 @@ import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 export class GetEngineInfoResponse extends jspb.Message {
-  getEngineApiVersion(): string;
-  setEngineApiVersion(value: string): void;
-
   getEngineVersion(): string;
   setEngineVersion(value: string): void;
 
@@ -23,7 +20,6 @@ export class GetEngineInfoResponse extends jspb.Message {
 
 export namespace GetEngineInfoResponse {
   export type AsObject = {
-    engineApiVersion: string,
     engineVersion: string,
   }
 }
