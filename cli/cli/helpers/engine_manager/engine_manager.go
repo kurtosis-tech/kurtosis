@@ -6,7 +6,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -45,7 +44,7 @@ func NewEngineManager(dockerManager *docker_manager.DockerManager, objAttrsProvi
 Returns:
 	- The engine status
 	- The host machine port bindings (not present if the engine is stopped)
-	- The engine API version (only present if the engine is running)
+	- The engine version (only present if the engine is running)
  */
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
@@ -103,53 +102,50 @@ func (manager *EngineManager) GetEngineStatus(
 		return EngineStatus_ContainerRunningButServerNotResponding, hostMachineEnginePortBinding, "", nil
 	}
 
-	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo., nil
+	return EngineStatus_Running, hostMachineEnginePortBinding, engineInfo.GetEngineVersion(), nil
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
+	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
-
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.dockerManager,
 		manager.objAttrsProvider,
 		logLevel,
+		engineVersion,
 	)
-	if err := status.Accept(engineGuarantor); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
+	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
 	}
-	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachinePortBinding()
+	return engineClient, engineClientCloseFunc, nil
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	status, maybeHostMachinePortBinding, engineAPIVersion, err := manager.GetEngineStatus(ctx)
+	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
-
-	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(ctx, maybeHostMachinePortBinding, manager.dockerManager, engineImageVersionTag, logLevel)
-	if err := status.Accept(engineGuarantor); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
-	}
-	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachinePortBinding()
-
-	engineClient, clientCloseFunc, err := getEngineClientFromHostPortBinding(hostMachinePortBinding)
+	engineGuarantor := newEngineExistenceGuarantorWithCustomVersion(
+		ctx,
+		maybeHostMachinePortBinding,
+		manager.dockerManager,
+		manager.objAttrsProvider,
+		engineImageVersionTag,
+		logLevel,
+		engineVersion,
+	)
+	engineClient, engineClientCloseFunc, err := startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the engine with the engine existence guarantor")
 	}
-
-	// Final verification to ensure that the engine server is responding
-	if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server; this is very strange and likely indicates a bug in the engine itself")
-	}
-
-	return engineClient, clientCloseFunc, nil
+	return engineClient, engineClientCloseFunc, nil
 }
 
 
@@ -205,6 +201,24 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // ====================================================================================================
 //                                       Private Helper Functions
 // ====================================================================================================
+func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, engineGuarantor *engineExistenceGuarantor) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	if err := currentStatus.Accept(engineGuarantor); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred guaranteeing that a Kurtosis engine is running")
+	}
+	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachinePortBinding()
+
+	engineClient, clientCloseFunc, err := getEngineClientFromHostPortBinding(hostMachinePortBinding)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
+	}
+
+	// Final verification to ensure that the engine server is responding
+	if _, err := getEngineInfoWithTimeout(ctx, engineClient); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the engine server; this is very strange and likely indicates a bug in the engine itself")
+	}
+	return engineClient, clientCloseFunc, nil
+}
+
 func getEngineClientFromHostPortBinding(hostMachinePortBinding *nat.PortBinding) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	url := fmt.Sprintf("%v:%v", hostMachinePortBinding.HostIP, hostMachinePortBinding.HostPort)
 	conn, err := grpc.Dial(url, grpc.WithInsecure())

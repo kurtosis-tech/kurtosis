@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -72,8 +73,9 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineManager := engine_manager.NewEngineManager(dockerManager, objAttrsProvider)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -136,7 +138,11 @@ func run(cmd *cobra.Command, args []string) error {
 //                                       Private Helper Functions
 // ====================================================================================================
 func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engine_server_launcher.EngineContainerLabels, shouldCleanRunningEngineContainers)
+	engineContainerLabels := map[string]string{
+		forever_constants.AppIDLabel: forever_constants.AppIDValue,
+		schema.ContainerTypeLabel: schema.ContainerTypeEngineServer,
+	}
+	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engineContainerLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
