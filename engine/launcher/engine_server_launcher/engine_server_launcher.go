@@ -20,7 +20,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultImageVersionTag = "1.2.2"
+	defaultImageVersionTag = "1.2.2"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -52,6 +52,10 @@ func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
+func (launcher *EngineServerLauncher) GetDefaultImageVersionTag() string {
+	return defaultImageVersionTag
+}
+
 func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
@@ -60,13 +64,13 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (*nat.PortBinding, error) {
 	hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		DefaultImageVersionTag,
+		defaultImageVersionTag,
 		logLevel,
 		listenPortNum,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultImageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", defaultImageVersionTag)
 	}
 	return hostMachinePortBinding, nil
 }
