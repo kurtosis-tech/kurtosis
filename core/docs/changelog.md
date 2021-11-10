@@ -1,4 +1,6 @@
 # TBD
+
+# 1.32.0
 ### Features
 * The launcher now has a `GetDefaultVersion` method
 
