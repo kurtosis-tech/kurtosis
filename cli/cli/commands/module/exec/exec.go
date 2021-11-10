@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -32,8 +33,7 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	loadParamsStrArg = "load-params"
 	executeParamsStrArg = "execute-params"
-	apiContainerImageArg = "api-container-image"
-
+	apiContainerVersionArg = "api-container-version"
 	moduleImageArg = "module-image"
 
 	defaultLoadParams              = "{}"
@@ -43,6 +43,7 @@ const (
 	shouldPublishAllPorts = true
 
 	moduleId = "my-module"
+
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -53,7 +54,7 @@ var positionalArgs = []string{
 var kurtosisLogLevelStr string
 var loadParamsStr string
 var executeParamsStr string
-var apiContainerImage string
+var apiContainerVersion string
 
 var ExecCmd = &cobra.Command{
 	Use:   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
@@ -86,10 +87,10 @@ func init() {
 		"The serialized params that should be passed to the module when executing it",
 	)
 	ExecCmd.Flags().StringVar(
-		&apiContainerImage,
-		apiContainerImageArg,
-		defaults.DefaultApiContainerImage,
-		"The image of the API container that should be started inside the enclave where the module will execute",
+		&apiContainerVersion,
+		apiContainerVersionArg,
+		defaults.DefaultAPIContainerVersion,
+		"The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
 	)
 }
 
@@ -120,18 +121,19 @@ func run(cmd *cobra.Command, args []string) error {
 	executionId := execution_ids.GetExecutionID()
 
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	defer closeClientFunc()
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId: executionId,
-		ApiContainerImage: apiContainerImage,
-		ApiContainerLogLevel: kurtosisLogLevelStr,
-		IsPartitioningEnabled: shouldEnablePartitioning,
-		ShouldPublishAllPorts: shouldPublishAllPorts,
+		EnclaveId:              executionId,
+		ApiContainerVersionTag: apiContainerVersion,
+		ApiContainerLogLevel:   kurtosisLogLevelStr,
+		IsPartitioningEnabled:  shouldEnablePartitioning,
+		ShouldPublishAllPorts:  shouldPublishAllPorts,
 	}
 
 	response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)

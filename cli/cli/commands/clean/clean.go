@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -73,9 +72,9 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.StandardLogger(),
 		dockerClient,
 	)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
 	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineManager := engine_manager.NewEngineManager(dockerManager, objAttrsProvider)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

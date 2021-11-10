@@ -72,9 +72,9 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
+	engineManager := engine_manager.NewEngineManager(dockerManager)
 	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineManager := engine_manager.NewEngineManager(dockerManager, objAttrsProvider)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

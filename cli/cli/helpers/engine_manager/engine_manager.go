@@ -32,12 +32,10 @@ var engineContainerLabels = map[string]string{
 type EngineManager struct {
 	dockerManager *docker_manager.DockerManager
 	// Make engine IP, port, and protocol configurable in the future
-
-	objAttrsProvider schema.ObjectAttributesProvider
 }
 
-func NewEngineManager(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *EngineManager {
-	return &EngineManager{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
+func NewEngineManager(dockerManager *docker_manager.DockerManager) *EngineManager {
+	return &EngineManager{dockerManager: dockerManager}
 }
 
 /*
@@ -106,7 +104,7 @@ func (manager *EngineManager) GetEngineStatus(
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, objAttrsProvider schema.ObjectAttributesProvider, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -115,7 +113,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.dockerManager,
-		manager.objAttrsProvider,
+		objAttrsProvider,
 		logLevel,
 		engineVersion,
 	)
@@ -127,7 +125,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 }
 
 // Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, objAttrsProvider schema.ObjectAttributesProvider, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -136,7 +134,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		ctx,
 		maybeHostMachinePortBinding,
 		manager.dockerManager,
-		manager.objAttrsProvider,
+		objAttrsProvider,
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
