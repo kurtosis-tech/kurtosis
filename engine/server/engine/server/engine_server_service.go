@@ -2,10 +2,8 @@ package server
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
-	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/kurtosis_engine_server_version"
 	"github.com/palantir/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -15,20 +13,23 @@ type EngineServerService struct {
 	// This embedding is required by gRPC
 	kurtosis_engine_rpc_api_bindings.UnimplementedEngineServiceServer
 
+	// The version tag of the engine server image, so it can report its own version
+	imageVersionTag string
+
 	enclaveManager *enclave_manager.EnclaveManager
 }
 
-func NewEngineServerService(enclaveManager *enclave_manager.EnclaveManager) *EngineServerService {
+func NewEngineServerService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager) *EngineServerService {
 	service := &EngineServerService{
-		enclaveManager: enclaveManager,
+		imageVersionTag:                  imageVersionTag,
+		enclaveManager:                   enclaveManager,
 	}
 	return service
 }
 
 func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
-		EngineApiVersion: kurtosis_engine_api_version.KurtosisEngineApiVersion,
-		EngineVersion: kurtosis_engine_server_version.KurtosisEngineServerVersion,
+		EngineVersion: service.imageVersionTag,
 	}
 	return result, nil
 }
