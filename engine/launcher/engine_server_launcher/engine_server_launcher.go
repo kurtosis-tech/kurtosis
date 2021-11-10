@@ -20,7 +20,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	defaultImageVersionTag = "1.3.0"
+	defaultImageVersionTag = "1.4.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -52,7 +52,7 @@ func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
 }
 
-func (launcher *EngineServerLauncher) GetDefaultImageVersionTag() string {
+func (launcher *EngineServerLauncher) GetDefaultVersion() string {
 	return defaultImageVersionTag
 }
 

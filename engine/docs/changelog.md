@@ -1,5 +1,14 @@
 # TBD
 
+# 1.4.0
+### Changes
+* Upgrade to Kurt Core 1.32.0
+* Renamed `EngineServerLauncher.GetDefaultImageVersionTag` -> `GetDefaultVersion`
+
+### Breaking Changes
+* Renamed `EngineServerLauncher.GetDefaultImageVersionTag` -> `GetDefaultVersion`
+    * Users should change their code appropriately
+
 # 1.3.0
 ### Features
 * The engine server launcher now exposes `DefaultImageVersionTag`, for viewing what version of the engine the launcher would start
