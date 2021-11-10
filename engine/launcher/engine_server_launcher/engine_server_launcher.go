@@ -62,13 +62,13 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (*nat.PortBinding, error) {
 	hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		defaultImageVersionTag,
+		DefaultImageVersionTag,
 		logLevel,
 		listenPortNum,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", defaultImageVersionTag)
+		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultImageVersionTag)
 	}
 	return hostMachinePortBinding, nil
 }
