@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_api_version"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -186,7 +186,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
 
-	kurtosisEngineAPISemver, err := semver.StrictNewVersion(kurtosis_engine_api_version.KurtosisEngineApiVersion)
+	kurtosisEngineAPISemver, err := semver.StrictNewVersion(Kurtosis
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing own engine version string '%v' to semantic version", kurtosis_engine_api_version.KurtosisEngineApiVersion)
 	}
