@@ -4,6 +4,7 @@
 
 ### Changes
 * Upgrade to `object-attributes-schema-lib` 0.2.0
+* Upgrade to Kurt Core 1.31.2
 
 # 1.2.1
 ### Features
