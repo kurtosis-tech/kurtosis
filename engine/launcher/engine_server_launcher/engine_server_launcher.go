@@ -118,6 +118,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		listenPortNum,
 		ListenProtocol,
 		logLevel.String(),
+		imageVersionTag,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {

@@ -17,6 +17,9 @@ type EngineServerArgs struct {
 
 	LogLevelStr string	`json:"logLevelStr"`
 
+	// So that the engine server knows its own version
+	ImageVersionTag string `json:"imageVersionTag"`
+
 	// The engine needs to know about this so it knows what filepath on the host machine to use when bind-mounting
 	//  enclave data directories to the API container & services that the APIC starts
 	EngineDataDirpathOnHostMachine string	`json:"engineDataDirpathOnHostMachine"`
@@ -29,12 +32,14 @@ func NewEngineServerArgs(
 	listenPortNum uint16,
 	listenPortProtocol string,
 	logLevelStr string,
+	imageVersionTag string,
 	engineDataDirpathOnHostMachine string,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		ListenPortNum:                  listenPortNum,
 		ListenPortProtocol:             listenPortProtocol,
 		LogLevelStr:                    logLevelStr,
+		ImageVersionTag:                imageVersionTag,
 		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
 	}
 

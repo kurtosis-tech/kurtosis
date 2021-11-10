@@ -75,7 +75,7 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	engineServerService := server.NewEngineServerService(enclaveManager)
+	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)

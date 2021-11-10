@@ -249,8 +249,7 @@ proto.engine_api.GetEngineInfoResponse.prototype.toObject = function(opt_include
  */
 proto.engine_api.GetEngineInfoResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    engineApiVersion: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    engineVersion: jspb.Message.getFieldWithDefault(msg, 2, "")
+    engineVersion: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -289,10 +288,6 @@ proto.engine_api.GetEngineInfoResponse.deserializeBinaryFromReader = function(ms
     switch (field) {
     case 1:
       var value = /** @type {string} */ (reader.readString());
-      msg.setEngineApiVersion(value);
-      break;
-    case 2:
-      var value = /** @type {string} */ (reader.readString());
       msg.setEngineVersion(value);
       break;
     default:
@@ -324,17 +319,10 @@ proto.engine_api.GetEngineInfoResponse.prototype.serializeBinary = function() {
  */
 proto.engine_api.GetEngineInfoResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEngineApiVersion();
-  if (f.length > 0) {
-    writer.writeString(
-      1,
-      f
-    );
-  }
   f = message.getEngineVersion();
   if (f.length > 0) {
     writer.writeString(
-      2,
+      1,
       f
     );
   }
@@ -342,10 +330,10 @@ proto.engine_api.GetEngineInfoResponse.serializeBinaryToWriter = function(messag
 
 
 /**
- * optional string engine_api_version = 1;
+ * optional string engine_version = 1;
  * @return {string}
  */
-proto.engine_api.GetEngineInfoResponse.prototype.getEngineApiVersion = function() {
+proto.engine_api.GetEngineInfoResponse.prototype.getEngineVersion = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
@@ -354,26 +342,8 @@ proto.engine_api.GetEngineInfoResponse.prototype.getEngineApiVersion = function(
  * @param {string} value
  * @return {!proto.engine_api.GetEngineInfoResponse} returns this
  */
-proto.engine_api.GetEngineInfoResponse.prototype.setEngineApiVersion = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
-};
-
-
-/**
- * optional string engine_version = 2;
- * @return {string}
- */
-proto.engine_api.GetEngineInfoResponse.prototype.getEngineVersion = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.engine_api.GetEngineInfoResponse} returns this
- */
 proto.engine_api.GetEngineInfoResponse.prototype.setEngineVersion = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setProto3StringField(this, 1, value);
 };
 
 
