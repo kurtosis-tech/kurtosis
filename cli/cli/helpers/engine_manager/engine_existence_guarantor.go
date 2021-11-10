@@ -8,8 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_api_version"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -33,6 +32,8 @@ type engineExistenceGuarantor struct {
 	dockerManager *docker_manager.DockerManager
 
 	objAttrsProvider schema.ObjectAttributesProvider
+
+	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
 
@@ -80,10 +81,11 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		preVisitingMaybeHostMachinePortBinding: preVisitingMaybeHostMachinePortBinding,
 		dockerManager:                          dockerManager,
 		objAttrsProvider:                       objAttrsProvider,
+		engineServerLauncher:                   engine_server_launcher.NewEngineServerLauncher(dockerManager, objAttrsProvider),
 		imageVersionTag:                        imageVersionTag,
 		logLevel:                               logLevel,
 		maybeCurrentlyRunningEngineVersionTag:  maybeCurrentlyRunningEngineVersionTag,
-		postVisitingHostMachinePortBinding:     nil,
+		postVisitingHostMachinePortBinding:     nil,  // Will be filled in upon visiting
 	}
 }
 
@@ -99,18 +101,17 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
 	}
 
-	engineServerLauncher := engine_server_launcher.NewEngineServerLauncher(guarantor.dockerManager, guarantor.objAttrsProvider)
 	var hostMachinePortBinding *nat.PortBinding
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachinePortBinding, engineLaunchErr = engineServerLauncher.LaunchWithDefaultVersion(
+		hostMachinePortBinding, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
 		)
 	} else {
-		hostMachinePortBinding, engineLaunchErr = engineServerLauncher.LaunchWithCustomVersion(
+		hostMachinePortBinding, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -161,14 +162,15 @@ func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
 	if err != nil {
 		logrus.Warn("An error occurred getting the running engine's version; you may be running an out-of-date engine version")
 		logrus.Debugf("Getting running and CLI engine versions error: %v", err)
+		return
 	}
 
 	if runningEngineSemver.LessThan(cliEngineSemver) {
 		kurtosisRestartCmd := fmt.Sprintf("%v %v %v ", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
 		logrus.Warningf(
 			"The currently-running Kurtosis engine version is '%v', but the latest version is '%v'",
-			guarantor.maybeCurrentlyRunningEngineVersionTag,
-			kurtosis_engine_api_version.KurtosisEngineApiVersion,
+			runningEngineSemver.String(),
+			cliEngineSemver.String(),
 		)
 		logrus.Warningf("To use the latest version, run '%v'", kurtosisRestartCmd)
 	} else {
@@ -186,10 +188,11 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
 
-	kurtosisEngineAPISemver, err := semver.StrictNewVersion(Kurtosis
+	launcherEngineSemverStr := guarantor.engineServerLauncher.GetDefaultVersion()
+	launcherEngineSemver, err := semver.StrictNewVersion(launcherEngineSemverStr)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing own engine version string '%v' to semantic version", kurtosis_engine_api_version.KurtosisEngineApiVersion)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing CLI's engine version string '%v' to semantic version", launcherEngineSemverStr)
 	}
 
-	return runningEngineSemver, kurtosisEngineAPISemver, nil
+	return runningEngineSemver, launcherEngineSemver, nil
 }

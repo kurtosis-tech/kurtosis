@@ -13,9 +13,9 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-a56fef9e73dd
 	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211101145825-570cf60ea641
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211109204911-1371c050a5d8
-	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20211110021141-ea59dcdfb0ea // indirect
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211110021141-ea59dcdfb0ea // indirect
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211110200404-b7b8528e4d8a
+	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20211110201626-d58edc87eab2 // indirect
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211110201626-d58edc87eab2 // indirect
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
