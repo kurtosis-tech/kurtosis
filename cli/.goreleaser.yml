@@ -4,18 +4,6 @@ before:
   hooks: []
 
 builds:
-  - id: repl-dockerfile-generator
-    main: ./repl_dockerfile_generator
-    binary: "{{ .Env.REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME }}"
-    # NOTE: The goos and goarch don't really matter here, because we build this binary
-    #  with --single-target as part of the build.sh script anyways, which overrides the
-    #  below 'goos' and 'goarch' settings
-    goos:
-      - "darwin"
-    goarch:
-      - "amd64"
-    # We don't want a unique dist dir so that it's easy to get the filepath to the outputted binary
-    no_unique_dist_dir: true
   - id: cli
     env:
       # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
@@ -29,33 +17,6 @@ builds:
       - 386
       - amd64
       - arm64
-  - id: golang-internal-testsuite
-    main: ./golang_internal_testsuite
-    binary: golang-internal-testsuite
-    goos:
-      - linux # For Alpine Docker image
-    goarch:
-      - amd64
-dockers:
-  - id: javascript-repl-image
-    ids: []
-      # NOTE: This is created here by the REPL Dockerfile generator
-    dockerfile: "./build/javascript_repl_image.Dockerfile"
-    image_templates:
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:{{ .Env.DOCKER_IMAGES_TAG }}"
-      - "{{ .Env.JAVASCRIPT_REPL_IMAGE }}:latest"
-  - id: golang-internal-testsuite-image
-    ids:
-      - golang-internal-testsuite
-    dockerfile: golang_internal_testsuite/Dockerfile
-    image_templates:
-      - "{{ .Env.DOCKER_ORG }}/golang-{{ .Env.INTERNAL_TESTSUITE_IMAGE_SUFFIX }}:{{ .Env.DOCKER_IMAGES_TAG }}"
-    goos: linux
-    goarch: amd64
-    extra_files:
-      - golang_internal_testsuite/static_files
-    # We don't ever want or need to push our internal testsuites to Docker
-    skip_push: true
 
 # In order for releasing-to-Github to work, we have to create these archives
 archives:

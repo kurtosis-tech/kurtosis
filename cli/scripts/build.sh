@@ -12,6 +12,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
 
+REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME="repl_dockerfile_generator"
 REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
 
 # Mapping of ReplType (as declared in the generator Go code) -> name of directory where the REPL Dockerfile template lives
@@ -58,33 +59,14 @@ if ! docker_images_tag="$(bash "${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT
     exit 1
 fi
 
-# These variables are used by Goreleaser
-export DOCKER_ORG \
-    INTERNAL_TESTSUITE_IMAGE_SUFFIX \
-    JAVASCRIPT_REPL_IMAGE \
-    CLI_BINARY_FILENAME \
-    REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME
-export DOCKER_IMAGES_TAG="${docker_images_tag}"
-if "${should_publish_arg}"; then
-    # This environment variable will be set ONLY when publishing, in the CI environment
-    # See the CI config for details on how this gets set
-    export FURY_TOKEN
-fi
-
-# We want to run goreleaser from the root
-cd "${root_dirpath}"
-
-# We set parallelism to 4 so that we don't run too many Kurtosis tests at once
-# TODO TODO FIX THIS!!!
-# go test ./... -p 4
-
-# Use a first pass of Goreleaser to build ONLY the REPL Dockerfile-generating binary, and then generate the REPL Dockerfiles so that the second
-#  pass of Goreleaser (which generates the Dockerfiles) can pick them up
-if ! goreleaser build --rm-dist --snapshot --id "${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}" --single-target; then
-    echo "Error: Couldn't build the REPL Dockerfile-generating binary" >&2
+# Build REPL Dockefile-generating binary
+repl_dockerfile_generator_binary_filepath="${root_dirpath}/${BUILD_DIRNAME}/repl-dockerfile-generator"
+if ! go build -o "${repl_dockerfile_generator_binary_filepath}" "${root_dirpath}/${REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME}"; then
+    echo "Error: Build of the REPL Dockerfile-generating binary failed" >&2
     exit 1
 fi
-repl_dockerfile_generator_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}"
+
+# Now, use the built binary to generate REPL Dockerfiles
 for repl_type in "${!REPL_DIRNAMES_TO_BUILD[@]}"; do
     repl_dirname="${REPL_DIRNAMES_TO_BUILD["${repl_type}"]}"
     repl_dockerfile_template_filepath="${root_dirpath}/${repl_dirname}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"
@@ -98,6 +80,36 @@ for repl_type in "${!REPL_DIRNAMES_TO_BUILD[@]}"; do
         exit 1
     fi
 done
+
+# Now that we have the REPL Dockerfiles, build the CLI
+# vvvvvvvv Goreleaser variables vvvvvvvvvvvvvvvvvvv
+export CLI_BINARY_FILENAME \
+export DOCKER_IMAGES_TAG="${docker_images_tag}"
+if "${should_publish_arg}"; then
+    # This environment variable will be set ONLY when publishing, in the CI environment
+    # See the CI config for details on how this gets set
+    export FURY_TOKEN
+fi
+# ^^^^^^^^ Goreleaser variables ^^^^^^^^^^^^^^^^^^^
+
+# We need to run goreleaser from the root
+cd "${root_dirpath}"
+
+# We set parallelism to 4 so that we don't run too many Kurtosis tests at once
+# TODO TODO FIX THIS!!!
+# go test ./... -p 4
+
+
+
+
+
+
+# Use a first pass of Goreleaser to build ONLY the REPL Dockerfile-generating binary, and then generate the REPL Dockerfiles so that the second
+#  pass of Goreleaser (which generates the Dockerfiles) can pick them up
+if ! goreleaser build --rm-dist --snapshot --id "${REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME}" --single-target; then
+    echo "Error: Couldn't build the REPL Dockerfile-generating binary" >&2
+    exit 1
+fi
 
 # Build all the Docker images
 if "${should_publish_arg}"; then

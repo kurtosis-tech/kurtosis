@@ -10,6 +10,7 @@ GORELEASER_OUTPUT_DIRNAME="dist"
 GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
 
 
+
 # ------------------------ Testing  -------------------------------------------------------
 INTERNAL_TESTSUITE_IMAGE_SUFFIX="internal-testsuite"
 
