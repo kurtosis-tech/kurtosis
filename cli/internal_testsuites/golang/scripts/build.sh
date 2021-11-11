@@ -17,4 +17,5 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 cd "${lang_root_dirpath}"
 go build ./...
-go test ./...
+# The count=1 disables caching for the testsuite (which we want, because the engine server might have changed even though the test code didn't)
+go test ./... -count=1
