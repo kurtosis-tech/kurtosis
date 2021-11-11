@@ -1,5 +1,15 @@
 # TBD
 
+# 1.5.0
+### Changes
+* Got rid of the launcher's `GetDefaultVersion` method in favor of a public constant, `DefaultVersion`,  because the old method required instantiating a launcher to get the default version
+* Upgraded to kurtosis-core 1.33.0
+* Upgraded to obj-attr-schema-lib 0.3.0
+
+### Breaking Changes
+* Got rid of the launcher's `GetDefaultVersion` method in favor of a public constant
+    * Users should use the `DefaultVersion` constant instead
+
 # 1.4.0
 ### Changes
 * Upgrade to Kurt Core 1.32.0
