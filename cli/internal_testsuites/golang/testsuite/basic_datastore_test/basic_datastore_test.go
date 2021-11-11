@@ -22,6 +22,8 @@ const (
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
+	ctx := context.Background()
+
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
@@ -30,7 +32,7 @@ func TestBasicDatastoreTest(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
 	logrus.Infof("Adding datastore service...")
-	_, datastoreClient, clientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
+	_, datastoreClient, clientCloseFunc, err := test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
 	defer clientCloseFunc()
 	logrus.Infof("Added datastore service")

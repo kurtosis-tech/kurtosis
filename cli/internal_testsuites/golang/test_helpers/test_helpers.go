@@ -31,6 +31,8 @@ const (
 
 	apiWaitForStartupMaxPolls = 10
 	apiWaitForStartupDelayMilliseconds = 1000
+
+	defaultPartitionId = ""
 )
 var datastorePortStr = fmt.Sprintf("%v/%v", datastore_rpc_api_consts.ListenPort, datastore_rpc_api_consts.ListenProtocol)
 var apiPortStr = fmt.Sprintf("%v/%v", example_api_server_rpc_api_consts.ListenPort, example_api_server_rpc_api_consts.ListenProtocol)
@@ -44,7 +46,7 @@ type datastoreConfig struct {
 	DatastorePort uint16    `json:"datastorePort"`
 }
 
-func AddDatastoreService(serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext) (*services.ServiceContext, datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext) (*services.ServiceContext, datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
 	containerConfigSupplier := getDatastoreContainerConfigSupplier()
 
 	serviceCtx, hostPortBindings, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
@@ -69,16 +71,25 @@ func AddDatastoreService(serviceId services.ServiceID, enclaveCtx *enclaves.Encl
 	}
 	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
 
-	if err := waitForHealthy(context.Background(), client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
+	if err := waitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
 	}
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func AddAPIService(serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceId, enclaveCtx, datastoreIPInsideNetwork, defaultPartitionId)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding API service to default partition")
+	}
+	return serviceCtx, client, clientCloseFunc, nil
+}
+
+
+func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
 
-	serviceCtx, hostPortBindings, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
+	serviceCtx, hostPortBindings, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}

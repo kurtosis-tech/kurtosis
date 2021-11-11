@@ -32,13 +32,13 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
 	logrus.Infof("Adding datastore service...")
-	datastoreServiceCtx, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
+	datastoreServiceCtx, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
 	defer datastoreClientCloseFunc()
 	logrus.Infof("Added datastore service")
 
 	logrus.Infof("Adding API service...")
-	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(apiServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
+	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(ctx, apiServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
 	require.NoError(t, err, "An error occurred adding the API service to the enclave")
 	defer apiClientCloseFunc()
 	logrus.Infof("Added API service")
