@@ -1,5 +1,9 @@
 # TBD
 
+# 1.33.1
+### Fixes
+* Use object-attributes-schema-lib 0.3.1, which fixes a bug with forever-labels not getting applied
+
 # 1.33.0
 ### Changes
 * Got rid of the launcher's `GetDefaultVersion` method in favor of a public constant, `DefaultVersion`,  because the old method required instantiating a launcher to get the default version
