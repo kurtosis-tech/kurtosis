@@ -427,7 +427,7 @@ func getEnclaveContainerInformation(
 
 		// Parse API container info, if it exists
 		containerLabels := container.GetLabels()
-		containerTypeLabelValue, found := containerLabels[schema.ContainerTypeLabel]
+		containerTypeLabelValue, found := containerLabels[forever_constants.ContainerTypeLabel]
 		if found && containerTypeLabelValue == schema.ContainerTypeAPIContainer {
 			if resultApiContainerInfo != nil {
 				return 0, 0, nil, nil, stacktrace.NewError("Found a second API container inside the network; this should never happen!")
