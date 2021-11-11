@@ -37,8 +37,6 @@ type datastoreConfig struct {
 	DatastorePort uint16    `json:"datastorePort"`
 }
 
-func AddDatastoreService
-
 func GetDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
