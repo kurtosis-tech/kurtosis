@@ -104,7 +104,7 @@ source:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ .Env.DOCKER_IMAGES_TAG }}"
+  name_template: "{{ .Env.VERSION }}"
 changelog:
   # We manage our own changelog
   skip: true
