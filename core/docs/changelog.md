@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Use object-attributes-schema-lib 0.3.1, which fixes a bug with forever-labels not getting applied
 
 # 1.33.0
 ### Changes
