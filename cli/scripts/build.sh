@@ -12,6 +12,8 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
 
+DEFAULT_SHOULD_PUBLISH_ARG="false"
+
 REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME="repl_dockerfile_generator"
 REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
 
@@ -23,10 +25,9 @@ REPL_OUTPUT_DOCKERFILE_SUFFIX=".Dockerfile"
 REPL_DOCKERFILE_GENERATOR_GORELEASER_BUILD_ID="repl-dockerfile-generator"
 REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME="repl-dockerfile-generator"
 
-DEFAULT_SHOULD_PUBLISH_ARG="false"
-
-JAVASCRIPT_REPL_TYPE="javascript"
-
+INTERNAL_TESTSUITE_DIRNAMES=(
+    "golang_internal_testsuite"
+)
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -60,13 +61,23 @@ if ! docker_images_tag="$(bash "${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT
 fi
 
 # Build REPL Dockefile-generating binary
+echo "Building REPL Dockerfile-generating binary..."
 repl_dockerfile_generator_binary_filepath="${root_dirpath}/${BUILD_DIRNAME}/repl-dockerfile-generator"
-if ! go build -o "${repl_dockerfile_generator_binary_filepath}" "${root_dirpath}/${REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME}"; then
-    echo "Error: Build of the REPL Dockerfile-generating binary failed" >&2
-    exit 1
-fi
+repl_dockerfile_generator_module_dirpath="${root_dirpath}/${REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME}"
+(
+    if ! cd "${repl_dockerfile_generator_module_dirpath}"; then
+        echo "Error: Couldn't cd to the REPL Dockerfile-generating module dirpath '${repl_dockerfile_generator_module_dirpath}'" >&2
+        exit 1
+    fi
+    if ! go build -o "${repl_dockerfile_generator_binary_filepath}"; then
+        echo "Error: Build of the REPL Dockerfile-generating binary failed" >&2
+        exit 1
+    fi
+)
+echo "REPL Dockerfile-generating binary built successfully"
 
 # Now, use the built binary to generate REPL Dockerfiles
+echo "Generating REPL Dockerfiles..."
 for repl_type in "${!REPL_DIRNAMES_TO_BUILD[@]}"; do
     repl_dirname="${REPL_DIRNAMES_TO_BUILD["${repl_type}"]}"
     repl_dockerfile_template_filepath="${root_dirpath}/${repl_dirname}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"
@@ -92,8 +103,33 @@ if "${should_publish_arg}"; then
 fi
 # ^^^^^^^^ Goreleaser variables ^^^^^^^^^^^^^^^^^^^
 
-# We need to run goreleaser from the root
-cd "${root_dirpath}"
+# Build a CLI binary (compatible with the current OS & arch) so that we can run interactive & testing locally via the launch-cli.sh script
+cli_module_dirpath="${root_dirpath}/${CLI_MODULE_DIRNAME}"
+(
+    if ! cd "${cli_module_dirpath}"; then
+        echo "Error: Couldn't cd to CLI module dirpath '${cli_module_dirpath}'" >&2
+        exit 1
+    fi
+    if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
+        echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
+        exit 1
+    fi
+)
+
+# Now that we have a CLI built from source, start the version of the engine that the CLI uses
+goarch="$(go env GOARCH)"
+goos="$(go env GOOS)"
+cli_binary_filepath="${root_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
+if ! [ -f "${cli_binary_filepath}" ]; then
+    echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2
+    exit 1
+fi
+if ! "${cli_binary_filepath}" engine restart; then
+    echo "Error: An error occurred starting the Kurtosis engine that the CLI uses" >&2
+    exit 1
+fi
+
+# Now that we have the appropriate engine version, run our internal testsuites
 
 # We set parallelism to 4 so that we don't run too many Kurtosis tests at once
 # TODO TODO FIX THIS!!!
@@ -101,6 +137,7 @@ cd "${root_dirpath}"
 
 
 
+exit 99
 
 
 
@@ -122,8 +159,3 @@ if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_arg
     exit 1
 fi
 
-# As a last step, build a CLI binary (compatible with the current OS & arch) so that we can run interactive & testing locally via the launch-cli.sh script
-if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
-    echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
-    exit 1
-fi

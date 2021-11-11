@@ -74,11 +74,8 @@ func runMain() error {
 	}
 
 
-	// TODO THIS IS SUUUUPER JANKY - instantiating an API container with null stuff without using it!!!
-	//  The right way to do this is make the KurtCoreVersion a public constant on the launcher
-	kurtCoreVersion := api_container_launcher.NewApiContainerLauncher(nil, nil).GetDefaultVersion()
 	data := TemplateData{
-		KurtosisCoreVersion:           kurtCoreVersion,
+		KurtosisCoreVersion:           api_container_launcher.DefaultVersion,
 		PackageInstallationDirpath:    packageInstallationDirpath,
 		InstalledPackagesDirpath:      installedPackagesDirpath,
 		KurtosisAPISocketEnvVar:       repl_consts.KurtosisSocketEnvVar,

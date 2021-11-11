@@ -16,5 +16,6 @@ INTERNAL_TESTSUITE_IMAGE_SUFFIX="internal-testsuite"
 
 # ---------------------- Interactive  -----------------------------------------------------
 GORELEASER_CLI_BUILD_ID="cli"
+CLI_MODULE_DIRNAME="cli"
 CLI_BINARY_FILENAME="kurtosis"  # Name of the CLI binary
 JAVASCRIPT_REPL_IMAGE="${DOCKER_ORG}/javascript-interactive-repl"

@@ -12,39 +12,26 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 source "${script_dirpath}/_constants.sh"
 
-SUPPORTED_LANGS_FILENAME="supported-languages.txt"
-RUN_ONE_TESTSUITE_SCRIPT_FILENAME="run-one-internal-testsuite.sh"
+INTERNAL_TESTSUITE_DIRNAMES=(
+    "golang_internal_testsuite"
+)
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! docker_tag="$("${script_dirpath}/${GET_DOCKER_IMAGES_TAG_SCRIPT_FILENAME}")"; then
-    echo "Error: An error occurred getting the Docker tag for the images produced by this repo" >&2
-    exit 1
-fi
+goarch="$(go env GOARCH)"
+goos="$(go env GOOS)"
+cli_binary_filepath="${root_dirpath}/${CLI_MODULE_DIRNAME}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
 
-supported_langs_filepath="${root_dirpath}/${SUPPORTED_LANGS_FILENAME}"
-if ! [ -f "${supported_langs_filepath}" ]; then
-    echo "Error: Expected supported languages file at '${supported_langs_filepath}', but none was found" >&2
-    exit 1
-fi
-
-run_one_testsuite_script_filepath="${script_dirpath}/${RUN_ONE_TESTSUITE_SCRIPT_FILENAME}"
-had_failures="false"
-for lang in $(cat "${supported_langs_filepath}"); do
-    echo "Running internal testsuite for lang '${lang}'..."
-    # The funky ${1+"${@}"} incantation is how you you feed arguments exactly as-is to a child script in Bash
-    # ${*} loses quoting and ${@} trips set -e if no arguments are passed, so this incantation says, "if and only if 
-    #  ${1} exists, evaluate ${@}"
-    if ! bash "${run_one_testsuite_script_filepath}" "${lang}" ${1+"${@}"}; then
-        echo "Error: Internal testsuite for lang '${lang}' failed!" >&2
-        had_failures="true"
+for internal_testsuite_dirname in "${INTERNAL_TESTSUITE_DIRNAMES[@]}"; do
+    internal_testsuite_buildscript_filepath="${root_dirpath}/${internal_testsuite_dirname}/scripts/build.sh"
+    if ! [ -f "${internal_testsuite_dirpath}" ]; then
+        echo "Error: Expected a build script for internal testsuite '${internal_testsuite_dirname}' at '${internal_testsuite_buildscript_filepath}' but none was found" >&2
+        exit 1
     fi
-    echo "Internal testsuite for lang '${lang}' succeeded"
+    if ! "${internal_testsuite_buildscript_filepath}"; then
+        echo "Error: Internal testsuite '${internal_testsuite_dirname}' failed" >&2
+        exit 1
+    fi
 done
-
-if "${had_failures}"; then
-    echo "Error: One or more testsuites failed" >&2
-    exit 1
-fi
-echo "All testsuites completed successfully!"
+echo "All internal testsuites completed successfully"
