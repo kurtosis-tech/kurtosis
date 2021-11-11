@@ -12,6 +12,7 @@ root_dirpath="$(dirname "${repls_dirpath}")"
 # ==================================================================================================
 DOCKER_IMAGE_PREFIX="kurtosistech/"
 DOCKER_IMAGE_SUFFIX="-interactive-repl"
+DOCKERIGNORE_FILENAME=".dockerignore"
 
 GET_DOCKER_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
 
@@ -54,8 +55,8 @@ echo "REPL Dockerfile-generating binary built successfully"
 
 # Now, use the built binary to generate REPL Dockerfiles and build Docker images
 echo "Generating REPL Dockerfiles..."
-repl_images_dirpath="${repls_dirname}/${REPL_IMAGES_DIRNAME}"
-build_dirpath="${repls_dirname}/${BUILD_DIRNAME}"
+repl_images_dirpath="${repls_dirpath}/${REPL_IMAGES_DIRNAME}"
+build_dirpath="${repls_dirpath}/${BUILD_DIRNAME}"
 for repl_image_dirpath in $(find "${repl_images_dirpath}" -type d -mindepth 1 -maxdepth 1); do
     repl_type="$(basename "${repl_image_dirpath}")"
     echo "Building Docker image for '${repl_type}' REPL..."
@@ -64,9 +65,15 @@ for repl_image_dirpath in $(find "${repl_images_dirpath}" -type d -mindepth 1 -m
         echo "Error: Tried to generate Dockerfile for REPL '${repl_type}' but no template file was found at path '${repl_dockerfile_template_filepath}'" >&2
         exit 1
     fi
-    output_filepath="${build_dirpath}/${repl_dirname}${REPL_OUTPUT_DOCKERFILE_SUFFIX}"
+    output_filepath="${build_dirpath}/${repl_type}${REPL_OUTPUT_DOCKERFILE_SUFFIX}"
     if ! "${repl_dockerfile_generator_binary_filepath}" "${repl_dockerfile_template_filepath}" "${output_filepath}" "${repl_type}"; then
         echo "Error: An error occurred rendering template for REPL '${repl_type}' at path '${repl_dockerfile_template_filepath}' to output filepath '${output_filepath}'" >&2
+        exit 1
+    fi
+
+    dockerignore_filepath="${repl_image_dirpath}/${DOCKERIGNORE_FILENAME}"
+    if ! [ -f "${dockerignore_filepath}" ]; then
+        echo "Error: No ${DOCKERIGNORE_FILENAME} found at '${dockerignore_filepath}'; this is required so that build caching is effective" >&2
         exit 1
     fi
 
