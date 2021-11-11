@@ -26,7 +26,7 @@ const (
 
 var engineContainerLabels = map[string]string{
 	forever_constants.AppIDLabel: forever_constants.AppIDValue,
-	schema.ContainerTypeLabel: schema.ContainerTypeEngineServer,
+	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
 type EngineManager struct {

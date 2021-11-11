@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -63,7 +64,7 @@ func printModules(ctx context.Context, dockerManager *docker_manager.DockerManag
 
 func getLabelsForListEnclaveModules(enclaveId string) map[string]string {
 	labels := map[string]string{}
-	labels[schema.ContainerTypeLabel] = schema.ContainerTypeModuleContainer
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeModuleContainer
 	labels[schema.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }

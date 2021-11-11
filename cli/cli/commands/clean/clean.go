@@ -139,7 +139,7 @@ func run(cmd *cobra.Command, args []string) error {
 func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
 	engineContainerLabels := map[string]string{
 		forever_constants.AppIDLabel: forever_constants.AppIDValue,
-		schema.ContainerTypeLabel: schema.ContainerTypeEngineServer,
+		forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 	}
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engineContainerLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
@@ -150,7 +150,7 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 
 func cleanMetadataAcquisitionTestsuites(ctx context.Context, dockerManager *docker_manager.DockerManager, shouldKillRunningContainers bool) ([]string, []error, error) {
 	metadataAcquisitionTestsuiteLabels := map[string]string{
-		schema.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
+		forever_constants.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
 		schema.TestsuiteTypeLabelKey: schema.TestsuiteTypeLabelValue_MetadataAcquisition,
 	}
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, metadataAcquisitionTestsuiteLabels, shouldKillRunningContainers)

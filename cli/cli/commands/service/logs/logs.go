@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -136,7 +137,7 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]string {
 	labels := map[string]string{}
-	labels[schema.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
 	labels[schema.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }
