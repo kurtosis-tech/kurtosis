@@ -16,16 +16,18 @@ const (
 
 	tabWriterElemJoinChar = "\t"
 
-	Yellow = "\033[33m"
-	White  = "\033[37m"
-	Reset  = "\033[0m"
+	// these color constants should be exactly the same length, otherwise it will mess with the tabwriter padding
+	yellowColorStr = "\033[33m"
+	resetColorStr  = "\033[00m"
 )
 
 type kurtosisTabWriter struct {
-	underlying *tabwriter.Writer
+	underlying                *tabwriter.Writer
+	shouldAlternateLineColors bool
+	shouldColorLine           bool
 }
 
-func newKurtosisTabWriter() *kurtosisTabWriter {
+func newKurtosisTabWriter(shouldAlternateLineColors bool) *kurtosisTabWriter {
 	tabWriter := tabwriter.NewWriter(
 		logrus.StandardLogger().Out,
 		tabWriterMinwidth,
@@ -35,54 +37,33 @@ func newKurtosisTabWriter() *kurtosisTabWriter {
 		tabWriterFlags,
 	)
 	return &kurtosisTabWriter{
-		underlying: tabWriter,
+		underlying:                tabWriter,
+		shouldAlternateLineColors: shouldAlternateLineColors,
 	}
 }
 
 func (writer *kurtosisTabWriter) writeElems(elems ...string) {
-	fmt.Fprintln(
-		writer.underlying,
-		strings.Join(elems, tabWriterElemJoinChar),
-	)
+	if writer.shouldAlternateLineColors {
+		var leaderChar string
+		if writer.shouldColorLine {
+			leaderChar = yellowColorStr
+		} else {
+			leaderChar = resetColorStr
+		}
+		writer.shouldColorLine = !writer.shouldColorLine
+
+		fmt.Fprintln(
+			writer.underlying,
+			fmt.Sprint(leaderChar, strings.Join(elems, tabWriterElemJoinChar), resetColorStr),
+		)
+	} else {
+		fmt.Fprintln(
+			writer.underlying,
+			strings.Join(elems, tabWriterElemJoinChar),
+		)
+	}
 }
 
 func (writer *kurtosisTabWriter) flush() {
-	writer.underlying.Flush()
-}
-
-type kurtosisTabWriterWithColor struct {
-	underlying *tabwriter.Writer
-	useColor   bool
-}
-
-func newKurtosisTabWriterWithColor() *kurtosisTabWriterWithColor {
-	tabWriter := tabwriter.NewWriter(
-		logrus.StandardLogger().Out,
-		tabWriterMinwidth,
-		tabWriterTabwidth,
-		tabWriterPadding,
-		tabWriterPadchar,
-		tabWriterFlags,
-	)
-	return &kurtosisTabWriterWithColor{
-		underlying: tabWriter,
-	}
-}
-
-func (writer *kurtosisTabWriterWithColor) writeElems(elems ...string) {
-	var line string
-	if writer.useColor {
-		line = fmt.Sprint(Yellow, strings.Join(elems, tabWriterElemJoinChar), Reset)
-	} else {
-		line = fmt.Sprint(White, strings.Join(elems, tabWriterElemJoinChar), Reset)
-	}
-	fmt.Fprintln(
-		writer.underlying,
-		line,
-	)
-	writer.useColor = !writer.useColor
-}
-
-func (writer *kurtosisTabWriterWithColor) flush() {
 	writer.underlying.Flush()
 }
