@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added a cache file for getting the latest released CLI version from GitHUB API
+
 ### Fixes
 * The `kurtosis engine restart` suggestion when the engine is out-of-date now:
     * No longer has a trailing space

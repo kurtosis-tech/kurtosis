@@ -28,7 +28,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -46,8 +45,15 @@ const (
 
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
-	latestReleaseVersionCacheFilename = "kurtosis-cli-latest-release-version"
-	cacheFileContentSeparator = ";"
+	latestCLIReleaseCacheFileContentSeparator               = ";"
+	latestCLIReleaseCacheFilePermissionsForSaveData         = 0644
+	latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile = 0755
+	latestCLIReleaseCacheFileExpirationHours                = 24
+	latestCLIReleaseCacheFileContentColumnsAmount           = 2
+	latestCLIReleaseCacheFileContentDateKey                 = 0
+	latestCLIReleaseCacheFileContentVersionKey              = 1
+
+	zeroBytes = 0
 )
 
 type GitHubReleaseReponse struct {
@@ -59,12 +65,12 @@ var defaultLogLevelStr = logrus.InfoLevel.String()
 
 var RootCmd = &cobra.Command{
 	// Leaving out the "use" will auto-use os.Args[0]
-	Use:                        "",
+	Use:   "",
 	Short: "A CLI for interacting with the Kurtosis engine",
 
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
 	// This doesn't make sense in 99% of the cases, so just turn them off entirely
-	SilenceUsage: true,
+	SilenceUsage:      true,
 	PersistentPreRunE: globalSetup,
 }
 
@@ -73,7 +79,7 @@ func init() {
 		&logLevelStr,
 		logLevelStrArg,
 		defaultLogLevelStr,
-		"Sets the level that the CLI will log at (" + strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|") + ")",
+		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
 
 	RootCmd.AddCommand(sandbox.SandboxCmd)
@@ -147,20 +153,22 @@ func isLatestCLIVersion() (bool, string, error) {
 }
 
 func getLatestCLIReleaseVersion() (string, error) {
-	version, err := getLatestCLIReleaseVersionFromCacheFile()
+	latestCLIVersion, err := getLatestCLIReleaseVersionFromCacheFile()
 	if err != nil {
-		logrus.Debugf("An error occurred getting latest release version from cache file. Error: \n%v", err)
+		logrus.Debugf("An error occurred getting latest released CLI version from cache file. Error: \n%v", err)
 	}
-	if version != "" {
-		return version, nil
+	if latestCLIVersion != "" {
+		logrus.Debugf("Getting the latest released CLI version '%v' from the cache file", latestCLIVersion)
+		return latestCLIVersion, nil
 	}
 
-	version, err = getLatestCLIReleaseVersionFromGitHub()
+	latestCLIVersion, err = getLatestCLIReleaseVersionFromGitHub()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting latest release version from GitHub")
+		return "", stacktrace.Propagate(err, "An error occurred getting latest released CLI version from GitHub")
 	}
 
-	return version, nil
+	logrus.Debugf("Getting the latest released CLI version '%v' from GitHub API", latestCLIVersion)
+	return latestCLIVersion, nil
 }
 
 func getLatestCLIReleaseVersionFromGitHub() (string, error) {
@@ -215,19 +223,23 @@ func saveLatestCLIReleaseVersionInCacheFile(latestReleaseVersion string) error {
 
 	filepath, err := host_machine_directories.GetLatestCLIReleaseVersionCacheFilepath()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the cache file path")
+		return stacktrace.Propagate(err, "An error occurred getting the latest release version cache filepath")
 	}
 	logrus.Debugf("Cache filepath: '%v'", filepath)
 
-	cacheFile, err := os.Create(filepath)
+	cacheFile, err := os.OpenFile(filepath, os.O_WRONLY, latestCLIReleaseCacheFilePermissionsForSaveData)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the '%v' file", filepath)
+		return stacktrace.Propagate(err, "An error occurred opening the '%v' file", filepath)
 	}
-	defer cacheFile.Close()
+	defer func() {
+		if err := cacheFile.Close(); err != nil {
+			logrus.Warnf("We tried to close the latest release CLI version cache file, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	now := time.Now()
-	dateString := now.Format(time.RFC3339)
-	content := strings.Join([]string{dateString, latestReleaseVersion}, cacheFileContentSeparator)
+	cacheCreationDateString := now.Format(time.RFC3339)
+	content := strings.Join([]string{cacheCreationDateString, latestReleaseVersion}, latestCLIReleaseCacheFileContentSeparator)
 
 	logrus.Debugf("Saving content '%v' in cache file...", content)
 	if _, err := fmt.Fprintf(cacheFile, "%s", content); err != nil {
@@ -237,20 +249,24 @@ func saveLatestCLIReleaseVersionInCacheFile(latestReleaseVersion string) error {
 	return nil
 }
 
-func getLatestCLIReleaseVersionFromCacheFile() (string, error){
+func getLatestCLIReleaseVersionFromCacheFile() (string, error) {
 
-	filepath, err := getFileCacheFilepath()
+	filepath, err := host_machine_directories.GetLatestCLIReleaseVersionCacheFilepath()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the cache file filepath")
+		return "", stacktrace.Propagate(err, "An error occurred getting the latest release version cache filepath")
 	}
 	logrus.Debugf("Cache filepath: '%v'", filepath)
 
 	logrus.Debugf("Getting cache file content...")
-	cacheFile, err := os.Create(filepath)
+	cacheFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating the '%v' file", latestReleaseVersionCacheFilename)
+		return "", stacktrace.Propagate(err, "An error occurred opening the '%v' file", filepath)
 	}
-	defer cacheFile.Close()
+	defer func() {
+		if err := cacheFile.Close(); err != nil {
+			logrus.Warnf("We tried to close the latest release CLI version cache file, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	bufferSize := 10
 	buffer := make([]byte, bufferSize)
@@ -264,58 +280,40 @@ func getLatestCLIReleaseVersionFromCacheFile() (string, error){
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred reading cache file")
 		}
-		if numberOfBytesRead > 0 {
+		if numberOfBytesRead > zeroBytes {
 			newString := string(buffer[:numberOfBytesRead])
 			fileContent = fileContent + newString
 		}
 	}
 
-	content := strings.Split(fileContent, cacheFileContentSeparator)
-	if len(content) != 2 {
+	if fileContent == "" {
+		logrus.Debug("The cache file is empty, skipping getting the latest released version from it")
+		return "", nil
+	}
+
+	content := strings.Split(fileContent, latestCLIReleaseCacheFileContentSeparator)
+	if len(content) != latestCLIReleaseCacheFileContentColumnsAmount {
 		return "", stacktrace.NewError("The cache file content '%+v' is not valid", content)
 	}
-	dateString := content[0]
-	latestReleaseVersion := content[1]
+	dateString := content[latestCLIReleaseCacheFileContentDateKey]
+	latestReleaseVersion := content[latestCLIReleaseCacheFileContentVersionKey]
 
-	cacheDate, err := time.Parse(time.RFC3339 , dateString)
+	cacheCreationDate, err := time.Parse(time.RFC3339, dateString)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing date string '%v' from cache file", dateString)
 	}
 
-	cacheDateEnd := cacheDate.Add(24 * time.Hour)
+	cacheExpirationDate := cacheCreationDate.Add(latestCLIReleaseCacheFileExpirationHours * time.Hour)
+	logrus.Debugf("Cache Date expiration date '%v'", cacheExpirationDate)
 
 	now := time.Now()
+	logrus.Debugf("Now '%v'", now)
 
-	if now.Before(cacheDateEnd) {
+	if now.After(cacheExpirationDate) {
+		logrus.Debugf("The latest release version cache file content is out-of-date, it was generated in '%v' and it expired in '%v'", cacheCreationDate, cacheExpirationDate)
 		return "", nil
 	}
 	logrus.Debugf("Cache file content '%+v' successfully got", content)
 
 	return latestReleaseVersion, nil
-}
-
-func getFileCacheFilepath() (string, error) {
-	cliFilepath, err := os.Executable()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the executable filepath")
-	}
-
-	fileInfo, err := os.Lstat(cliFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the file info for the filepath '%v'", cliFilepath)
-	}
-
-	//True if the file is a sym link
-	if fileInfo.Mode()&os.ModeSymlink != 0 {
-		cliFilepath, err = filepath.EvalSymlinks(cliFilepath)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred evaluating symlink '%v'", cliFilepath)
-		}
-	}
-
-	cliDirpath := filepath.Dir(cliFilepath)
-
-	cacheFileFilepath := strings.Join([]string{cliDirpath, latestReleaseVersionCacheFilename}, "/")
-
-	return cacheFileFilepath, nil
 }

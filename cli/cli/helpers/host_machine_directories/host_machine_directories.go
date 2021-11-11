@@ -11,7 +11,7 @@ const (
 
 	sessionCacheFilename = "session-cache"
 
-	latestCLIReleaseVersionCacheFilename = "latest-release-version-cache"
+	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
