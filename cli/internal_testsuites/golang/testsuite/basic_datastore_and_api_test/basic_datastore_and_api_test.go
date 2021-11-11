@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -18,7 +17,7 @@ const (
 	apiServiceId       services.ServiceID = "api"
 
 	testPersonId     = "23"
-	testNumBooksRead = 3
+	testNumBooksRead = uint32(3)
 )
 
 func TestBasicDatastoreAndAPITest(t *testing.T) {
@@ -26,20 +25,20 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
-	assert.NoError(t, err, "An error occurred creating an enclave")
+	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
 	logrus.Infof("Adding datastore service...")
-	datastoreHostPortBinding, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
+	datastoreServiceCtx, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
 	defer datastoreClientCloseFunc()
 	logrus.Infof("Added datastore service")
 
 	logrus.Infof("Adding API service...")
-	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(apiServiceId, enclaveCtx, datastoreHostPortBinding.InterfaceIp)
+	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(apiServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
 	require.NoError(t, err, "An error occurred adding the API service to the enclave")
 	defer apiClientCloseFunc()
 	logrus.Infof("Added API service")
@@ -50,7 +49,7 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 		PersonId: testPersonId,
 	}
 	 _, err = apiClient.GetPerson(ctx, getPersonArgs)
-	assert.Error(t, err, "Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
+	require.Error(t, err, "Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
 	logrus.Infof("Verified that test person doesn't already exist")
 
 	logrus.Infof("Adding test person with ID '%v'...", testPersonId)
@@ -58,25 +57,25 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 		PersonId: testPersonId,
 	}
 	 _, err = apiClient.AddPerson(ctx, addPersonArgs)
-	assert.NoError(t, err, "An error occurred adding test person with ID '%v'", testPersonId)
+	require.NoError(t, err, "An error occurred adding test person with ID '%v'", testPersonId)
 	logrus.Info("Test person added")
 
 	logrus.Infof("Incrementing test person's number of books read by %v...", testNumBooksRead)
-	for i := 0; i < testNumBooksRead; i++ {
+	for i := uint32(0); i < testNumBooksRead; i++ {
 		incrementBooksReadArgs := &example_api_server_rpc_api_bindings.IncrementBooksReadArgs{
 			PersonId: testPersonId,
 		}
 		_, err = apiClient.IncrementBooksRead(ctx, incrementBooksReadArgs)
-		assert.NoError(t, err, "An error occurred incrementing the number of books read")
+		require.NoError(t, err, "An error occurred incrementing the number of books read")
 	}
 	logrus.Info("Incremented number of books read")
 
 	logrus.Info("Retrieving test person to verify number of books read...")
 	getPersonResponse, err := apiClient.GetPerson(ctx, getPersonArgs)
-	assert.NoError(t, err, "An error occurred getting the test person to verify the number of books read")
+	require.NoError(t, err, "An error occurred getting the test person to verify the number of books read")
 	logrus.Info("Retrieved test person")
 
-	assert.Equal(
+	require.Equal(
 		t,
 		testNumBooksRead,
 		getPersonResponse.GetBooksRead(),
