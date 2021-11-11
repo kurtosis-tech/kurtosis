@@ -5,7 +5,7 @@ import (
 )
 
 type TablePrinter struct {
-	tabWriter *kurtosisTabWriter
+	tabWriter *kurtosisTabWriterWithColor
 
 	columnHeaders []string
 
@@ -15,7 +15,7 @@ type TablePrinter struct {
 // Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
 	return &TablePrinter{
-		tabWriter:     newKurtosisTabWriter(),
+		tabWriter:     newKurtosisTabWriterWithColor(),
 		columnHeaders: columnHeaders,
 		dataRows:      [][]string{},
 	}

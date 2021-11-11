@@ -1,4 +1,6 @@
 # TBD
+* Added Yellow and White alternating colors in TablePrinter
+
 ### Fixes
 * The `kurtosis engine restart` suggestion when the engine is out-of-date now:
     * No longer has a trailing space
