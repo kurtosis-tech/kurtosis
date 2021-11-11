@@ -2,14 +2,11 @@ package basic_datastore_test
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
-	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"testing"
 )
 
@@ -32,37 +29,11 @@ func TestBasicDatastoreTest(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	// TODO replace with datastore launcher inside the lib
-	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
-
-	_, hostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
-	require.NoError(t, err, "An error occurred adding the datastore service")
-
-	datastorePortStr := fmt.Sprintf(
-		"%v/%v",
-		datastore_rpc_api_consts.ListenPort,
-		datastore_rpc_api_consts.ListenProtocol,
-	)
-	datastoreHostPortBinding, found := hostPortBindings[datastorePortStr]
-	require.True(t, found, "No datastore host port binding found for port string '%v'", datastorePortStr)
-
-	// TODO CORRECT THE HELPER FUNCTION
-	// datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(serviceContext.GetIPAddress())
-	// require.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, serviceContext.GetIPAddress())
-	// defer func() {
-	// 	if err := datastoreClientConnCloseFunc(); err != nil {
-	// 		logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
-	// 	}
-	// }()
-	datastoreUrl := fmt.Sprintf("%v:%v", datastoreHostPortBinding.InterfaceIp, datastoreHostPortBinding.InterfacePort)
-	conn, err := grpc.Dial(datastoreUrl, grpc.WithInsecure())
-	require.NoError(t, err, "An error occurred connecting to datastore service on URL '%v'", datastoreUrl)
-	defer conn.Close()
-	datastoreClient := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-
-	err = test_helpers.WaitForHealthy(context.Background(), datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
-	require.NoError(t, err, "An error occurred waiting for the datastore service to become available")
-
-	logrus.Infof("Added datastore service with host port bindings: %+v", hostPortBindings)
+	logrus.Infof("Adding datastore service...")
+	_, datastoreClient, clientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
+	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
+	defer clientCloseFunc()
+	logrus.Infof("Added datastore service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Verifying that key '%v' doesn't already exist...", testKey)

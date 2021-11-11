@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -15,9 +16,6 @@ const (
 
 	datastoreServiceId services.ServiceID = "datastore"
 	apiServiceId       services.ServiceID = "api"
-
-	waitForStartupDelayMilliseconds = 1000
-	waitForStartupMaxPolls          = 15
 
 	testPersonId     = "23"
 	testNumBooksRead = 3
@@ -33,43 +31,20 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
+	// TODO replace with datastore launcher inside the lib
+	logrus.Infof("Adding datastore service...")
+	datastoreHostPortBinding, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(datastoreServiceId, enclaveCtx)
+	require.NoError(t, err, "An error occurred adding the datastore service to the enclave")
+	defer datastoreClientCloseFunc()
+	logrus.Infof("Added datastore service")
 
-	datastoreContainerConfigSupplier := test_helpers.GetDatastoreContainerConfigSupplier()
+	logrus.Infof("Adding API service...")
+	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(apiServiceId, enclaveCtx, datastoreHostPortBinding.InterfaceIp)
+	require.NoError(t, err, "An error occurred adding the API service to the enclave")
+	defer apiClientCloseFunc()
+	logrus.Infof("Added API service")
 
-	datastoreServiceContext, datastoreSvcHostPortBindings, err := enclaveCtx.AddService(datastoreServiceId, datastoreContainerConfigSupplier)
-	assert.NoError(t, err, "An error occurred adding the datastore service")
-
-	datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.NewDatastoreClient(datastoreServiceContext.GetIPAddress())
-	assert.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", datastoreServiceId, datastoreServiceContext.GetIPAddress())
-	defer func() {
-		if err := datastoreClientConnCloseFunc(); err != nil {
-			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	err = test_helpers.WaitForHealthy(ctx, datastoreClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
-	assert.NoError(t, err, "An error occurred waiting for the datastore service to become available")
-
-	logrus.Infof("Added datastore service with host port bindings: %+v", datastoreSvcHostPortBindings)
-
-	apiServiceContainerConfigSupplier := test_helpers.GetApiServiceContainerConfigSupplier(datastoreServiceContext.GetIPAddress())
-
-	apiServiceContext, apiSvcHostPortBindings, err := enclaveCtx.AddService(apiServiceId, apiServiceContainerConfigSupplier)
-	assert.NoError(t, err, "An error occurred adding the API service")
-
-	apiClient, apiClientConnCloseFunc, err := test_helpers.NewExampleAPIServerClient(apiServiceContext.GetIPAddress())
-	assert.NoError(t, err, "An error occurred creating a new example API server client for service with ID '%v' and IP address '%v'", apiServiceId, apiServiceContext.GetIPAddress())
-	defer func() {
-		if err := apiClientConnCloseFunc(); err != nil {
-			logrus.Warnf("We tried to close the API client, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	err = test_helpers.WaitForHealthy(ctx, apiClient, waitForStartupMaxPolls, waitForStartupDelayMilliseconds)
-	assert.NoError(t, err, "An error occurred waiting for the example API server service to become available")
-
-	logrus.Infof("Added API service with host port bindings: %+v", apiSvcHostPortBindings)
-
+	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Verifying that person with test ID '%v' doesn't already exist...", testPersonId)
 	getPersonArgs := &example_api_server_rpc_api_bindings.GetPersonArgs{
 		PersonId: testPersonId,

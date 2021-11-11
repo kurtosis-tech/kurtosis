@@ -9,6 +9,8 @@ import (
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_consts"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_consts"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -26,9 +28,15 @@ const (
 
 	datastoreImage = "kurtosistech/example-datastore-server"
 	apiServiceImage = "kurtosistech/example-api-server"
+
+	datastoreWaitForStartupMaxPolls = 10
+	datastoreWaitForStartupDelayMilliseconds = 1000
+
+	apiWaitForStartupMaxPolls = 10
+	apiWaitForStartupDelayMilliseconds = 1000
 )
 
-type GRPCAvailabilityChecker interface {
+type grpcAvailabilityChecker interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -37,7 +45,82 @@ type datastoreConfig struct {
 	DatastorePort uint16    `json:"datastorePort"`
 }
 
-func GetDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func AddDatastoreService(serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext) (*kurtosis_core_rpc_api_bindings.PortBinding, datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+	containerConfigSupplier := getDatastoreContainerConfigSupplier()
+
+	_, hostPortBindings, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
+	}
+
+	portStr := fmt.Sprintf(
+		"%v/%v",
+		datastore_rpc_api_consts.ListenPort,
+		datastore_rpc_api_consts.ListenProtocol,
+	)
+	hostPortBinding, found := hostPortBindings[portStr]
+	if !found {
+		return nil, nil, nil, stacktrace.NewError("No datastore host port binding found for port string '%v'", portStr)
+	}
+
+	url := fmt.Sprintf("%v:%v", hostPortBinding.InterfaceIp, hostPortBinding.InterfacePort)
+	conn, err := grpc.Dial(url, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
+	}
+	clientCloseFunc := func() {
+		if err := conn.Close(); err != nil {
+			logrus.Warnf("We tried to close the datastore client, but doing so threw an error:\n%v", err)
+		}
+	}
+	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
+
+	if err := waitForHealthy(context.Background(), client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+	}
+	return hostPortBinding, client, clientCloseFunc, nil
+}
+
+func AddAPIService(serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIP string) (*kurtosis_core_rpc_api_bindings.PortBinding, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreIP)
+
+	_, hostPortBindings, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
+	}
+
+	portStr := fmt.Sprintf(
+		"%v/%v",
+		example_api_server_rpc_api_consts.ListenPort,
+		example_api_server_rpc_api_consts.ListenProtocol,
+	)
+	hostPortBinding, found := hostPortBindings[portStr]
+	if !found {
+		return nil, nil, nil, stacktrace.NewError("No API service host port binding found for port string '%v'", portStr)
+	}
+
+	url := fmt.Sprintf("%v:%v", hostPortBinding.InterfaceIp, hostPortBinding.InterfacePort)
+	conn, err := grpc.Dial(url, grpc.WithInsecure())
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred connecting to API service on URL '%v'", url)
+	}
+	clientCloseFunc := func() {
+		if err := conn.Close(); err != nil {
+			logrus.Warnf("We tried to close the API service client, but doing so threw an error:\n%v", err)
+		}
+	}
+	client := example_api_server_rpc_api_bindings.NewExampleAPIServerServiceClient(conn)
+
+	if err := waitForHealthy(context.Background(), client, apiWaitForStartupMaxPolls, apiWaitForStartupDelayMilliseconds); err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API service to become available")
+	}
+	return hostPortBinding, client, clientCloseFunc, nil
+}
+
+// ====================================================================================================
+//                                      Private Helper Methods
+// ====================================================================================================
+func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			datastoreImage,
@@ -49,51 +132,10 @@ func GetDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	return containerConfigSupplier
 }
 
-func NewDatastoreClient(datastoreIp string) (datastore_rpc_api_bindings.DatastoreServiceClient, func() error, error) {
-	datastoreURL := fmt.Sprintf(
-		"%v:%v",
-		datastoreIp,
-		datastorePort,
-	)
-
-	conn, err := grpc.Dial(datastoreURL, grpc.WithInsecure())
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling the datastore container via its URL")
-	}
-
-	datastoreServiceClient := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-
-	return datastoreServiceClient, conn.Close, nil
-}
-
-func WaitForHealthy(ctx context.Context, client GRPCAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
-
-	var (
-		emptyArgs = &empty.Empty{}
-		err       error
-	)
-
-	for i := uint32(0); i < retries; i++ {
-		_, err = client.IsAvailable(ctx, emptyArgs)
-		if err == nil {
-			return nil
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(err,
-			"The datastore service didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			retries, retriesDelayMilliseconds)
-	}
-
-	return nil
-}
-
-func GetApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
+func getApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 
-		datastoreConfigFileFilePath, err := CreateDatastoreConfigFileInServiceDirectory(datastoreIP, sharedDirectory)
+		datastoreConfigFileFilePath, err := createDatastoreConfigFileInServiceDirectory(datastoreIP, sharedDirectory)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating data store config file in service container")
 		}
@@ -116,7 +158,34 @@ func GetApiServiceContainerConfigSupplier(datastoreIP string) func(ipAddr string
 	return containerConfigSupplier
 }
 
-func CreateDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
+func waitForHealthy(ctx context.Context, client grpcAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
+	var (
+		emptyArgs = &empty.Empty{}
+		err       error
+	)
+
+	for i := uint32(0); i < retries; i++ {
+		_, err = client.IsAvailable(ctx, emptyArgs)
+		if err == nil {
+			return nil
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"The service didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+
+	return nil
+}
+
+
+func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
 	configFileFilePath := sharedDirectory.GetChildPath(configFilepathRelativeToSharedDirRoot)
 
 	logrus.Infof("Config file absolute path on this container: %v , on service container: %v", configFileFilePath.GetAbsPathOnThisContainer(), configFileFilePath.GetAbsPathOnServiceContainer())
@@ -139,21 +208,4 @@ func CreateDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirec
 	}
 
 	return configFileFilePath, nil
-}
-
-func NewExampleAPIServerClient(exampleAPIServerIp string) (example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func() error, error) {
-	exampleAPIServerURL := fmt.Sprintf(
-		"%v:%v",
-		exampleAPIServerIp,
-		apiServicePort,
-	)
-
-	conn, err := grpc.Dial(exampleAPIServerURL, grpc.WithInsecure())
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling the example API server container via its URL")
-	}
-
-	exampleAPIServerClient := example_api_server_rpc_api_bindings.NewExampleAPIServerServiceClient(conn)
-
-	return exampleAPIServerClient, conn.Close, nil
 }
