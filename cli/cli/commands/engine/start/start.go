@@ -83,7 +83,7 @@ func run(cmd *cobra.Command, args []string) error {
 		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, objAttrsProvider, engineVersion, logLevel)
 	}
 	if startEngineErr != nil {
-		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
+		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")
 	}
 	defer engineClientCloseFunc()
 

@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
-	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -120,7 +120,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		)
 	}
 	if engineLaunchErr != nil {
-		return stacktrace.Propagate(err, "An error occurred launching the engine server container")
+		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
 	guarantor.postVisitingHostMachinePortBinding = hostMachinePortBinding

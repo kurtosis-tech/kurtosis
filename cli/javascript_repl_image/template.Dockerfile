@@ -3,7 +3,7 @@ FROM node:16.13.0-alpine
 
 WORKDIR {{ .PackageInstallationDirpath }}
 
-RUN npm install kurtosis-core-api-lib@{{ .KurtosisClientVersion }}
+RUN npm install kurtosis-core-api-lib@{{ .KurtosisCoreVersion }}
 
 WORKDIR /repl
 
@@ -14,7 +14,7 @@ ENV NODE_PATH="{{ .InstalledPackagesDirpath }}"
 CMD node -i --experimental-repl-await -e " \
     let kurtosisCore = require(\"kurtosis-core-api-lib\"); \
     let grpc = require(\"grpc\"); \
-    let networkCtx; \
+    let enclaveCtx; \
     const client = new kurtosisCore.ApiContainerServiceClient(\"${{ "{" }}{{ .KurtosisAPISocketEnvVar }}{{ "}" }}\", grpc.credentials.createInsecure()); \
-    networkCtx = new kurtosisCore.NetworkContext(client, \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
+    enclaveCtx = new kurtosisCore.EnclaveContext(client, \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
 "

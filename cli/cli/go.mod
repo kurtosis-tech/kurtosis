@@ -11,8 +11,8 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0-20211110200351-dbe5ac50106a
-	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0-20211110201626-d58edc87eab2
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211110200404-b7b8528e4d8a
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211110201643-3c255513d341
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211110201626-d58edc87eab2
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211109200015-fa88b22da2d8
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

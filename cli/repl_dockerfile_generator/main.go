@@ -4,7 +4,7 @@ import (
 	"fmt"
 	positional_arg_parser "github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/kurtosis_api_version_const"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 	"path"
@@ -26,7 +26,7 @@ var positionalArgs = []string{
 
 
 type TemplateData struct {
-	KurtosisClientVersion         string
+	KurtosisCoreVersion           string
 	PackageInstallationDirpath    string
 	InstalledPackagesDirpath      string
 	KurtosisAPISocketEnvVar       string
@@ -73,8 +73,12 @@ func runMain() error {
 		return stacktrace.NewError("No installed packages dirpath defined for REPL type '%v'", replType)
 	}
 
+
+	// TODO THIS IS SUUUUPER JANKY - instantiating an API container with null stuff without using it!!!
+	//  The right way to do this is make the KurtCoreVersion a public constant on the launcher
+	kurtCoreVersion := api_container_launcher.NewApiContainerLauncher(nil, nil).GetDefaultVersion()
 	data := TemplateData{
-		KurtosisClientVersion:         kurtosis_api_version_const.KurtosisApiVersion,
+		KurtosisCoreVersion:           kurtCoreVersion,
 		PackageInstallationDirpath:    packageInstallationDirpath,
 		InstalledPackagesDirpath:      installedPackagesDirpath,
 		KurtosisAPISocketEnvVar:       repl_consts.KurtosisSocketEnvVar,
