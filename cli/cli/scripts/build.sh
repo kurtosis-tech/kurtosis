@@ -87,9 +87,3 @@ if ! [ -f "${cli_binary_filepath}" ]; then
     echo "Error: Expected a CLI binary to have been built by Goreleaser at '${cli_binary_filepath}' but none exists" >&2
     exit 1
 fi
-if ! "${cli_binary_filepath}" engine restart; then
-    echo "Error: An error occurred starting the Kurtosis engine that the CLI uses" >&2
-    exit 1
-fi
-
-

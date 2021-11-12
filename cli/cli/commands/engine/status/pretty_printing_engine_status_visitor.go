@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	engineApiVersionInfoLabel = "API Version"
+	engineVersionInfoLabel = "Version"
 )
 
 // Pretty printer of engine status that will compile-break any time a new engine status is added
@@ -32,7 +32,7 @@ func (p *prettyPrintingEngineStatusVisitor) VisitContainerRunningButServerNotRes
 
 func (p *prettyPrintingEngineStatusVisitor) VisitRunning() error {
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
-	keyValuePrinter.AddPair(engineApiVersionInfoLabel, p.maybeApiVersion)
+	keyValuePrinter.AddPair(engineVersionInfoLabel, p.maybeApiVersion)
 
 	fmt.Fprintln(logrus.StandardLogger().Out, "A Kurtosis engine is running with the following info:")
 	keyValuePrinter.Print()

@@ -22,7 +22,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEn
 		"%v_%v_%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
-		time.Now().Second(),
+		time.Now().Unix(),
 	))
 	enclaveCtx, err := kurtosisCtx.CreateEnclave(context.Background(), enclaveId, false)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)

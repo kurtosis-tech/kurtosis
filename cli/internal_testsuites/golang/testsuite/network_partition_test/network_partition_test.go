@@ -17,7 +17,6 @@ import (
 const (
 	testName = "network-partition-test"
 
-	defaultPartitionId   enclaves.PartitionID = ""
 	apiPartitionId       enclaves.PartitionID = "api"
 	datastorePartitionId enclaves.PartitionID = "datastore"
 
