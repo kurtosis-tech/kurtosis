@@ -150,7 +150,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		containerImage,
+		containerImageAndTag,
 		engineAttrs.GetName(),
 		targetNetworkId,
 	).WithEnvironmentVariables(
