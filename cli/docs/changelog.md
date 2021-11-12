@@ -1,5 +1,13 @@
 # TBD
 
+# 0.6.7
+* Added Yellow and White alternating colors in TablePrinter
+
+### Fixes
+* The `kurtosis engine restart` suggestion when the engine is out-of-date now:
+    * No longer has a trailing space
+    * Is on the same line as the "engine is out-of-date" message
+
 # 0.6.6
 ### Features
 * The API Container host port was added when showing the data with the command `enclave inspect`
