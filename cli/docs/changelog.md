@@ -1,6 +1,9 @@
 # TBD
+### Features
+* Added a cache file for getting the latest released CLI version from GitHUB API
 
 # 0.6.7
+### Features
 * Added Yellow and White alternating colors in TablePrinter
 
 ### Fixes
