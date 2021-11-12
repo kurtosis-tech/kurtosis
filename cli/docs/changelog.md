@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.8
 ### Features
 * Added a cache file for getting the latest released CLI version from GitHUB API
 
