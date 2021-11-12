@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed bug where the launcher would always launch the `latest` version
 
 # 1.5.1
 ### Fixes
