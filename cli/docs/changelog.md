@@ -1,4 +1,6 @@
 # TBD
+
+# 0.6.7
 * Added Yellow and White alternating colors in TablePrinter
 
 ### Fixes
