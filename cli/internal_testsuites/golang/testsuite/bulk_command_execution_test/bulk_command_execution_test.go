@@ -24,7 +24,7 @@ func TestBulkCommandExecution(t *testing.T) {
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
-	// ------------------------------------- TEST SETUP ----------------------------------------------
+	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Info("Executing JSON-serialized commands to create a network with various services and repartition it...")
 	bulkCommandJson := generateBulkCommandJson()
 	require.NoError(t, enclaveCtx.ExecuteBulkCommands(bulkCommandJson), "An error occurred executing the bulk command JSON to set up the network")

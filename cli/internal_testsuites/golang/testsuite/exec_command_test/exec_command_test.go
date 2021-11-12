@@ -50,6 +50,7 @@ func TestExecCommand(t *testing.T) {
 	testServiceContext, _, err := enclaveCtx.AddService(testServiceId, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred starting service '%v'", testServiceId)
 
+	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Running exec command '%v' that should return a successful exit code...", execCommandThatShouldWork)
 	shouldWorkExitCode, _, err := runExecCmd(testServiceContext, execCommandThatShouldWork)
 	require.NoError(t, err, "An error occurred running exec command '%v'", execCommandThatShouldWork)
