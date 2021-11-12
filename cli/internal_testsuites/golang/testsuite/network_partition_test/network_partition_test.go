@@ -30,13 +30,14 @@ const (
 )
 
 func TestNetworkPartition(t *testing.T) {
+	ctx := context.Background()
+
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName, isPartitioningEnabled)
+	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	ctx := context.Background()
 
 	datastoreServiceCtx, _, datastoreClientCloseFunc, err := test_helpers.AddDatastoreService(ctx, datastoreServiceId, enclaveCtx)
 	require.NoError(t, err, "An error occurred adding the datastore service")

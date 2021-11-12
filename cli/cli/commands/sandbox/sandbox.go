@@ -65,7 +65,7 @@ func init() {
 		&apiContainerVersion,
 		apiContainerVersionArg,
 		defaults.DefaultAPIContainerVersion,
-		"The image of the Kurtosis API container to use inside the enclave (blank will use the engine server default version)",
+		"The version of the Kurtosis API container to use inside the enclave (blank will use the engine server default version)",
 	)
 
 	SandboxCmd.Flags().StringVarP(

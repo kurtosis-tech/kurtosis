@@ -17,16 +17,13 @@ const (
 	datastoreServiceId services.ServiceID = "datastore"
 	testKey                               = "test-key"
 	testValue                             = "test-value"
-
-	waitForStartupDelayMilliseconds = 1000
-	waitForStartupMaxPolls          = 15
 )
 
 func TestBasicDatastoreTest(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName, isPartitioningEnabled)
+	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
