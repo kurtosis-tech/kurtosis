@@ -11,6 +11,19 @@ import (
 )
 
 func TestVersion(t *testing.T) {
+	filepath, err := host_machine_directories.GetLatestCLIReleaseVersionCacheFilepath()
+	require.NoError(t, err, "An error occurred getting the latest CLI release version cache file filepath")
+
+	fileInfo, err := os.Stat(filepath)
+	if !os.IsNotExist(err) {
+		require.NoError(t, err, "An error occurred getting the latest CLI release version cache file info")
+	}
+
+	if fileInfo != nil {
+		err = os.Remove(filepath)
+		require.NoError(t, err, "An error occurred removing latest CLI release version cache file")
+	}
+
 	buf := new(bytes.Buffer)
 	root := RootCmd
 	root.SetOut(buf)

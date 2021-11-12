@@ -252,7 +252,7 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	cacheFile, err := os.Open(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			logrus.Debugf("There isn't the latest release cache file yet.")
+			logrus.Debugf("The latest release cache file has not be created yet.")
 			return "", nil
 		}
 		return "", stacktrace.Propagate(err, "An error occurred opening the '%v' file", filepath)
