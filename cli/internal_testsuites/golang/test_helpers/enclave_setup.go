@@ -15,7 +15,7 @@ const (
 	testsuiteNameEnclaveIDFragment = "golang-engine-server-test"
 )
 
-func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultErr error) {
+func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultErr error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
 	enclaveId := enclaves.EnclaveID(fmt.Sprintf(
@@ -24,7 +24,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEn
 		testName,
 		time.Now().Unix(),
 	))
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(context.Background(), enclaveId, false)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(context.Background(), enclaveId, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)
 	stopEnclaveFunc := func() {
 		if err := kurtosisCtx.StopEnclave(context.Background(), enclaveId); err != nil {

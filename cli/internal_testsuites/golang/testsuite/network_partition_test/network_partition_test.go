@@ -16,6 +16,7 @@ import (
 
 const (
 	testName = "network-partition-test"
+	isPartitioningEnabled = true
 
 	apiPartitionId       enclaves.PartitionID = "api"
 	datastorePartitionId enclaves.PartitionID = "datastore"
@@ -30,7 +31,7 @@ const (
 
 func TestNetworkPartition(t *testing.T) {
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName)
+	enclaveCtx, stopEnclaveFunc, err := test_helpers.CreateEnclave(t, context.Background(), testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer stopEnclaveFunc()
 
