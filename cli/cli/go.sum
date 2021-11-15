@@ -468,12 +468,12 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211106215243-ccb878a45a90/go.mod h1:4KswPxib54va8st9dDFaQM2Mfny/5Lj6ENHOUnmOv10=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211111005520-9a913acecf20 h1:wXrfjaNhuURLspfErDcbMRc/9WiAD6xONVeT1HPKYe0=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211111005520-9a913acecf20/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211111010047-b65c90e1906b h1:qU4zUcN65Stjux71bsPfPa5VoKZzo6HLzgaCmrcixas=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211111010047-b65c90e1906b/go.mod h1:7tzo25lD+K1R/rE8NJat7C1rla+BFlLfHv9EzVc+xEM=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211112002316-699b67097659 h1:dkQrjcShhOpGlgikiFerJ91YV9bqFqFYoHv3ErwJE0E=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211112002316-699b67097659/go.mod h1:7tzo25lD+K1R/rE8NJat7C1rla+BFlLfHv9EzVc+xEM=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211112002300-73276c7a6aa4 h1:9eRB+ztU3RUCaK6S41pzguXY8Lu2A91nabZIP6COses=
-github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211112002300-73276c7a6aa4/go.mod h1:ddNpR1SzAmthIVMBsBc68Xe4If4qnov8zQakzdZib9U=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211115194635-91cb61aa6591 h1:JbsVk6nxwKwrDkYILdcpygMh37bRlQrv3Z+d1sprGso=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211115194635-91cb61aa6591/go.mod h1:7tzo25lD+K1R/rE8NJat7C1rla+BFlLfHv9EzVc+xEM=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211115194621-79de57b87b1b h1:Y6MlppU8O+m/4IVidBGj9R6AzyvJlZMfn8jbZAa5Qzw=
+github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211115194621-79de57b87b1b/go.mod h1:ddNpR1SzAmthIVMBsBc68Xe4If4qnov8zQakzdZib9U=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211111005229-ffdab131bcda h1:NMpGERnjQF3MtbmLWVZe3j+Z24pTwp2D5h3Lk5lTsZI=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211111005229-ffdab131bcda/go.mod h1:9lbCEXVUllulsFuMsev+SDWXa1kTPtGfNPbdMbJf8hw=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
