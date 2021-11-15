@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Don't break on old API containers
 
 # 1.5.2
 ### Fixes
