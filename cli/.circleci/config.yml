@@ -52,7 +52,7 @@ jobs:
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh
       - persist_to_workspace:
-          root: dist
+          root: cli/dist
           path: .
 
   build_golang_testsuite:
