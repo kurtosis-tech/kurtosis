@@ -34,6 +34,11 @@ const (
 	allEnclavesDirname = "enclaves"
 
 	apiContainerListenPortNumInsideNetwork = uint16(7443)
+
+	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
+	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
+	oldApiContainerPortNumLabel = "com.kurtosistech.api-container-port-number"
+	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -449,10 +454,16 @@ func getEnclaveContainerInformation(
 
 			apiContainerPortNumStr, found := containerLabels[schema.PortNumLabel]
 			if !found {
-				return 0, 0, nil, nil, stacktrace.NewError(
-					"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
-					schema.PortNumLabel,
-				)
+				// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
+				maybeApiContainerPortNumStr, foundOldLabel := containerLabels[oldApiContainerPortNumLabel]
+				if !foundOldLabel {
+					return 0, 0, nil, nil, stacktrace.NewError(
+						"Neither the current label '%v' nor old label '%v' were found on the API container, which is necessary for getting its host machine port bindings",
+						schema.PortNumLabel,
+						oldApiContainerPortNumLabel,
+					)
+				}
+				apiContainerPortNumStr = maybeApiContainerPortNumStr
 			}
 
 			apiContainerInternalPortNumUint32, err := parsePortNumStrToUint32(apiContainerPortNumStr)
@@ -470,10 +481,16 @@ func getEnclaveContainerInformation(
 			if isContainerRunning {
 				apiContainerPortProtocol, found := containerLabels[schema.PortProtocolLabel]
 				if !found {
-					return 0, 0, nil, nil, stacktrace.NewError(
-						"No label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
-						schema.PortProtocolLabel,
-					)
+					// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
+					maybeApiContainerPortProtocol, foundOldLabel := containerLabels[oldApiContainerPortNumLabel]
+					if !foundOldLabel {
+						return 0, 0, nil, nil, stacktrace.NewError(
+							"Neither the current label '%v' nor the old label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
+							schema.PortProtocolLabel,
+							oldApiContainerPortProtocolLabel,
+						)
+					}
+					apiContainerPortProtocol = maybeApiContainerPortProtocol
 				}
 
 				apiContainerPortObj, err := nat.NewPort(apiContainerPortProtocol, apiContainerPortNumStr)

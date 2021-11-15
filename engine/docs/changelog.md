@@ -1,5 +1,9 @@
 # TBD
 
+# 1.5.3
+### Fixes
+* Don't break on old API containers
+
 # 1.5.2
 ### Fixes
 * Fixed bug where the launcher would always launch the `latest` version
