@@ -36,6 +36,7 @@ show_helptext_and_exit() {
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
+# NOTE: As of 2021-11-15, this is actually unused!!!!
 client_id="${1:-}"
 client_secret_DO_NOT_EVER_LOG="${2:-}"
 

@@ -61,7 +61,7 @@ fi
         exit 1
     fi
     # TODO TODO IF PUBLISHING, THEN PASS IN DIFFERENT ARGS
-    if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}" --single-target; then
+    if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}"; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1
     fi

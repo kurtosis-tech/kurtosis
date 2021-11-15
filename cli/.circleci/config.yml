@@ -9,6 +9,15 @@ executors:
       image: ubuntu-1604:202007-01
       # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
       # docker_layer_caching: true
+      #
+parameters:
+  # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
+  docker-engine-version:
+    type: string
+    default: 20.10.7
+  go-version:
+    type: string
+    default: 1.15.13
 
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
@@ -16,41 +25,70 @@ executors:
 #  images), so we run everything inside a single job.
 # See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
 jobs:
-  check_code:
-    executor: ubuntu_vm
+  build_repls:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
     steps:
       - checkout
-
-      # If the only changes are to the docs, don't run the slow (and expensive) code checks
-      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
-      - run: |
-          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
-            circleci-agent step halt
-          fi
-
-      # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
-
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
       - run: |
-          docker run \
-            --privileged \
-            -v "${PWD}:/build" \
-            -v "/var/run/docker.sock:/var/run/docker.sock" \
-            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
-            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
-            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
-            -e "CMD=bash ./scripts/build.sh" \
-            kurtosistech/kurtosis-goreleaser-ci-image:0.1.1
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          server/scripts/build.sh
+      - run: ./repls/scripts/build.sh
 
-      # Make sure to start a Kurtosis engine server before we try to do anything with Kurtosis, and verify that status-checking works
-      - run: ./scripts/launch-cli.sh engine start
-      - run: ./scripts/launch-cli.sh engine status
+  build_cli:
+    docker:
+      - image: "goreleaser/goreleaser:v0.183.0"
+    steps:
+      - checkout
+      # The 'git config' and 'go env' steps are to allow Go to read modules from our private Github repos
+      # The KURTOSISBOT_GITHUB_TOKEN is a secret provided at CI build time
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          server/scripts/build.sh
+      - run: ./cli/scripts/build.sh
 
-      # Now that the engine is started, run our verification testsuites
-      - run: bash .circleci/validate-all-testsuites.sh "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
-
-      # Finally, stop the engine to verify that stopping works
-      - run: ./scripts/launch-cli.sh engine stop
+#  check_code:
+#    executor: ubuntu_vm
+#    steps:
+#      - checkout
+#
+#      # If the only changes are to the docs, don't run the slow (and expensive) code checks
+#      # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
+#      - run: |
+#          if git --no-pager diff --exit-code origin/develop...HEAD -- . ':!docs'; then
+#            circleci-agent step halt
+#          fi
+#
+#      # Log in to Docker, so that we don't get hit by the anonymous image pull limit when we're validating the testsuites
+#      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+#
+#      - run: |
+#          docker run \
+#            --privileged \
+#            -v "${PWD}:/build" \
+#            -v "/var/run/docker.sock:/var/run/docker.sock" \
+#            -e "GITHUB_TOKEN=${KURTOSISBOT_GITHUB_TOKEN}" \
+#            -e "DOCKER_USERNAME=${DOCKER_USERNAME}" \
+#            -e "DOCKER_PASSWORD=${DOCKER_PASSWORD}" \
+#            -e "CMD=bash ./scripts/build.sh" \
+#            kurtosistech/kurtosis-goreleaser-ci-image:0.1.1
+#
+#      # Make sure to start a Kurtosis engine server before we try to do anything with Kurtosis, and verify that status-checking works
+#      - run: ./scripts/launch-cli.sh engine start
+#      - run: ./scripts/launch-cli.sh engine status
+#
+#      # Now that the engine is started, run our verification testsuites
+#      - run: bash .circleci/validate-all-testsuites.sh "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
+#
+#      # Finally, stop the engine to verify that stopping works
+#      - run: ./scripts/launch-cli.sh engine stop
 
   push_artifacts:
     executor: ubuntu_vm
@@ -82,16 +120,33 @@ workflows:
               ignore:
                 - develop
                 - master
-      - check_code:
+      - build_repls:
           context:
             - github-user
             - docker-user
-            - kurtosis-user
           filters:
             branches:
               ignore:
                 - develop
                 - master
+      - build_cli:
+          context:
+            - github-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+#      - check_code:
+#          context:
+#            - github-user
+#            - docker-user
+#            - kurtosis-user
+#          filters:
+#            branches:
+#              ignore:
+#                - develop
+#                - master
       # -- End PR check jobs ---------------------------------------
 
       # -- Artifact-publishing jobs --------------------------------

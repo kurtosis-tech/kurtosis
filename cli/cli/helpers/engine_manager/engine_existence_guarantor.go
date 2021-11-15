@@ -167,7 +167,12 @@ func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
 
 	if runningEngineSemver.LessThan(cliEngineSemver) {
 		kurtosisRestartCmd := fmt.Sprintf("%v %v %v", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
-		logrus.Warningf("The currently-running Kurtosis engine version is '%v', but the latest version is '%v'; to restart the engine with the latest version use '%v'", guarantor.engineAPIVersion, kurtosis_engine_api_version.KurtosisEngineApiVersion, kurtosisRestartCmd)
+		logrus.Warningf(
+			"The currently-running Kurtosis engine version is '%v', but the latest version is '%v'; to restart the engine with the latest version use '%v'",
+			runningEngineSemver.String(),
+			cliEngineSemver.String(),
+			kurtosisRestartCmd,
+		)
 	} else {
 		logrus.Debugf("Currently running engine version '%v' which is up-to-date", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}

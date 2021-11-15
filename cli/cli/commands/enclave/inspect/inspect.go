@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -190,8 +191,8 @@ func sortContainersByGUID(containers []*types.Container) ([]*types.Container, er
 
 func getAPIContainerHostMachinePort(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (string, error) {
 	searchLabels := map[string]string{
-		enclave_object_labels.EnclaveIDContainerLabel: enclaveId,
-		enclave_object_labels.ContainerTypeLabel:      enclave_object_labels.ContainerTypeAPIContainer,
+		schema.EnclaveIDContainerLabel: enclaveId,
+		forever_constants.ContainerTypeLabel:      schema.ContainerTypeAPIContainer,
 	}
 	// TODO Replace with a call to the engine server!
 	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
