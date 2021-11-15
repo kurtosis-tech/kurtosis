@@ -51,13 +51,9 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh
-      # TODO DEBUGGING
-      - run: |
-          pwd
-          find .
       - persist_to_workspace:
-          root: cli/dist
-          path: .
+          root: .
+          path: cli/dist
 
   build_golang_testsuite:
     docker:
@@ -66,7 +62,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /tmp/workspace
-      - run: /tmp/workspace/cli_linux_amd64/kurtosis version
+      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis version
 
 #  check_code:
 #    executor: ubuntu_vm
