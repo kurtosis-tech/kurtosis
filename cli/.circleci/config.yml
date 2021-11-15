@@ -53,7 +53,8 @@ jobs:
           cli/scripts/build.sh
       - persist_to_workspace:
           root: .
-          path: cli/dist
+          paths: 
+            - ./cli/dist
 
   build_golang_testsuite:
     docker:
