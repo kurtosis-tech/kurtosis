@@ -10,6 +10,7 @@
 * Grouped all the internal testsuites into a single directory
 * Gave `build.sh` scripts to the CLI & internal testsuite subdirectories now
 * There is no longer a root `go.mod`, but now one in CLI and one in `golang_internal_testsuite` (rationale being that the dependencies for the CLI and for the internal testsuite are very different, plus we'll have a `typescript_internal_testsuite` soon)
+* Removed the "local static" element to `localStaticFilesTest`, because there's no longer a distinction between "local" and "static" now that the testsuite runs with Go test
 
 ### Removals
 * Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
