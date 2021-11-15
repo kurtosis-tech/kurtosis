@@ -63,7 +63,11 @@ jobs:
       - checkout
       - attach_workspace:
           at: /tmp/workspace
-      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis version
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis engine start
+      - run: ./internal_testsuites/golang/scripts/build.sh
 
 #  check_code:
 #    executor: ubuntu_vm
