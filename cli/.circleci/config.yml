@@ -51,6 +51,10 @@ jobs:
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
           cli/scripts/build.sh
+      # TODO DEBUGGING
+      - run: |
+          pwd
+          find .
       - persist_to_workspace:
           root: cli/dist
           path: .
