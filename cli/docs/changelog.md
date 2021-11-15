@@ -20,6 +20,23 @@
 * Removed the `test` command
     * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
 
+# 0.6.8
+### Features
+* Added a cache file for getting the latest released CLI version from GitHUB API
+
+# 0.6.7
+### Features
+* Added Yellow and White alternating colors in TablePrinter
+
+### Fixes
+* The `kurtosis engine restart` suggestion when the engine is out-of-date now:
+    * No longer has a trailing space
+    * Is on the same line as the "engine is out-of-date" message
+
+# 0.6.6
+### Features
+* The API Container host port was added when showing the data with the command `enclave inspect`
+
 # 0.6.5
 ### Fixes
 * `enclave inspect` host port bindings now properly return `127.0.0.1`, to match what's returned by the `AddService`
