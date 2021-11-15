@@ -38,8 +38,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          server/scripts/build.sh
-      - run: ./repls/scripts/build.sh
+          repls/scripts/build.sh
 
   build_cli:
     docker:
@@ -51,8 +50,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          server/scripts/build.sh
-      - run: ./cli/scripts/build.sh
+          cli/scripts/build.sh
 
 #  check_code:
 #    executor: ubuntu_vm
