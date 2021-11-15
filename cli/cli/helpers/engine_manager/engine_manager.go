@@ -22,6 +22,11 @@ const (
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 
 	engineStopTimeout = 30 * time.Second
+
+	// These are constants from before the engine server's port & port protocol were set in labels
+	// We can remove this after 2022-05-15, when we're confident nobody will be running an engine using non-labelled ports
+	oldPortNumStr = "9710"
+	oldPortPortProtocol = "tcp"
 )
 
 var engineContainerLabels = map[string]string{
@@ -64,11 +69,15 @@ func (manager *EngineManager) GetEngineStatus(
 	engineContainerLabels := engineContainer.GetLabels()
 	enginePortNumStr, found := engineContainerLabels[schema.PortNumLabel]
 	if !found {
-		return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortNumLabel)
+		// We can remove this and switch back to an error on 2022-05-15, when we're confident nobody will be running an engine without port labels
+		enginePortNumStr = oldPortNumStr
+		// return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortNumLabel)
 	}
 	enginePortProtocol, found := engineContainerLabels[schema.PortProtocolLabel]
 	if !found {
-		return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortProtocolLabel)
+		// We can remove this and switch back to an error on 2022-05-15, when we're confident nobody will be running an engine without port labels
+		enginePortProtocol = oldPortPortProtocol
+		// return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortProtocolLabel)
 	}
 
 	enginePortObj, err := nat.NewPort(
