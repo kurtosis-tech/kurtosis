@@ -59,10 +59,24 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 		return nil, nil, nil, stacktrace.NewError("No datastore host port binding found for port string '%v'", datastorePortStr)
 	}
 
-	url := fmt.Sprintf("%v:%v", hostPortBinding.InterfaceIp, hostPortBinding.InterfacePort)
+	datastoreIp := hostPortBinding.InterfaceIp
+	datastorePortNumStr := hostPortBinding.InterfacePort
+	client, clientCloseFunc, err := CreateDatastoreClient(datastoreIp, datastorePortNumStr)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore client for IP '%v' and port '%v'", )
+	}
+
+	if err := waitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+	}
+	return serviceCtx, client, clientCloseFunc, nil
+}
+
+func CreateDatastoreClient(ipAddr string, portNumStr string) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+	url := fmt.Sprintf("%v:%v", ipAddr, portNumStr)
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
 	}
 	clientCloseFunc := func() {
 		if err := conn.Close(); err != nil {
@@ -70,11 +84,7 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 		}
 	}
 	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-
-	if err := waitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
-	}
-	return serviceCtx, client, clientCloseFunc, nil
+	return client, clientCloseFunc, nil
 }
 
 func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
