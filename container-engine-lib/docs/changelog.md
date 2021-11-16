@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.5
+### Fixes
+* `stacktrace.Propagate` now panics when it receives a `nil` input
+
 # 0.8.4
 ### Features
 * Container logs are propagated throughout the returning error when container start fails
