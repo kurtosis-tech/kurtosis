@@ -1,5 +1,12 @@
 # TBD
 
+# 1.33.2
+### Changes
+* Add an explanatory comment laying out why it's important that enclave data directory subdirectories have `0777` permissions
+
+### Fixes
+* Make sure that the directories the API container creates really are `0777`
+
 # 1.33.1
 ### Fixes
 * Use object-attributes-schema-lib 0.3.1, which fixes a bug with forever-labels not getting applied
