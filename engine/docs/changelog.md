@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed an issue where getting enclaves that included an API container without the new `port-protocol` label would break
 
 # 1.5.5
 ### Fixes
