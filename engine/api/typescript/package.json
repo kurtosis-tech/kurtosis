@@ -31,7 +31,7 @@
     "dependencies": {
         "google-protobuf": "^3.17.3",
         "grpc": "^1.24.11",
-        "kurtosis-core-api-lib": "1.33.1",
+        "kurtosis-core-api-lib": "1.33.2",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2"
     },
