@@ -39,6 +39,22 @@ const (
 	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
 	oldApiContainerPortNumLabel = "com.kurtosistech.api-container-port-number"
 	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
+
+	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
+	//  permissions, because:
+	//  a) the engine data directory is bind-mounted on the Docker host machine
+	//  b) the engine container, and pretty much every Docker container, runs as 'root'
+	//  c) the Docker host machine will not be running as root
+	//  d) For the host machine to be able to read & write files inside the engine data directory, it needs to be able
+	//      to access the directories inside the engine data directory
+	// The longterm fix to this is probably to:
+	//  1) make the engine server data a Docker volume
+	//  2) have the engine server expose the engine data directory to the Docker host machine via some filesystem-sharing
+	//      server, like NFS or CIFS
+	// This way, we preserve the host machine's ability to write to services as if they were local on the filesystem, while
+	//  actually having the data live inside a Docker volume. This also sets the stage for Kurtosis-as-a-Service (where bind-mount
+	//  the engine data dirpath would be impossible).
+	engineDataSubdirectoryPerms = 0777
 )
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -640,13 +656,25 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 
 // TODO This is copied from Kurt Core; merge these (likely into an EngineDataVolume object)!!!
 func ensureDirpathExists(absoluteDirpath string) error {
-	if _, err := os.Stat(absoluteDirpath); os.IsNotExist(err) {
-		if err := os.Mkdir(absoluteDirpath, 0777); err != nil {
+	if _, statErr := os.Stat(absoluteDirpath); os.IsNotExist(statErr) {
+		if mkdirErr := os.Mkdir(absoluteDirpath, engineDataSubdirectoryPerms); mkdirErr != nil {
 			return stacktrace.Propagate(
-				err,
+				mkdirErr,
 				"Directory '%v' in the engine data volume didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
+	}
+	// This is necessary because the os.Mkdir might not create the directory with the perms that we want due to the umask
+	// Chmod is not affected by the umask, so this will guarantee we get a directory with the perms that we want
+	// NOTE: This has the added benefit of, if this directory already exists (due to the user running an old engine from
+	//  before 2021-11-16), we'll correct the perms
+	if err := os.Chmod(absoluteDirpath, engineDataSubdirectoryPerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred setting the permissions on directory '%v' to '%v'",
+			absoluteDirpath,
+			engineDataSubdirectoryPerms,
+		)
 	}
 	return nil
 }
