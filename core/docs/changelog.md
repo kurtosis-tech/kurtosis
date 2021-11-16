@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Use container-engine-lib 0.8.6 which now panics on `nil` input to `stacktrace.Propagate`
 
 # 1.33.3
 ### Fixes
