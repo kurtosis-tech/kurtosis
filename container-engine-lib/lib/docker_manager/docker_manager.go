@@ -18,7 +18,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_constants"
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"

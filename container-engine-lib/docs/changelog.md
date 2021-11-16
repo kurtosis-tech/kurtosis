@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* `stacktrace.Propagate` now panics when it receives a `nil` input
 
 # 0.8.4
 ### Features
