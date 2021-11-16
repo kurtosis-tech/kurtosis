@@ -1,4 +1,6 @@
 # TBD
+
+# 1.33.2
 ### Changes
 * Add an explanatory comment laying out why it's important that enclave data directory subdirectories have `0777` permissions
 
