@@ -1,5 +1,9 @@
 # TBD
 
+# 1.5.5
+### Fixes
+* All `stacktrace.Propagate` calls now panic on a `nil` error
+
 # 1.5.4
 ### Changes
 * Added an explanatory comment as to why all the directories that the engine server creates inside the engine data directory must be created with `0777` permissions
