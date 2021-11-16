@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* All `stacktrace.Propagate` calls now panic on a `nil` error
 
 # 1.5.4
 ### Changes
