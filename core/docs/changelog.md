@@ -1,5 +1,9 @@
 # TBD
 
+# 1.33.4
+### Fixes
+* Use container-engine-lib 0.8.6 which now panics on `nil` input to `stacktrace.Propagate`
+
 # 1.33.3
 ### Fixes
 * Actually ensure that the directories the API container creates really are `0777`
