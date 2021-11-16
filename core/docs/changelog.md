@@ -1,5 +1,9 @@
 # TBD
 
+# 1.33.3
+### Fixes
+* Actually ensure that the directories the API container creates really are `0777`
+
 # 1.33.2
 ### Changes
 * Add an explanatory comment laying out why it's important that enclave data directory subdirectories have `0777` permissions

@@ -8,7 +8,6 @@ package enclave_data_directory
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
-	"syscall"
 )
 
 const (
@@ -35,14 +34,22 @@ const (
 
 func ensureDirpathExists(absoluteDirpath string) error {
 	if _, statErr := os.Stat(absoluteDirpath); os.IsNotExist(statErr) {
-		oldMask := syscall.Umask(umaskForCreatingDirectory)
-		defer syscall.Umask(oldMask)
 		if mkdirErr := os.Mkdir(absoluteDirpath, enclaveDataSubdirectoryPerms); mkdirErr != nil {
 			return stacktrace.Propagate(
 				mkdirErr,
 				"Directory '%v' in the enclave data dir didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
+	}
+	// This is necessary because the os.Mkdir might not create the directory with the perms that we want due to the umask
+	// Chmod is not affected by the umask, so this will guarantee we get a directory with the perms that we want
+	if err := os.Chmod(absoluteDirpath, enclaveDataSubdirectoryPerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred setting the permissions on directory '%v' to '%v'",
+			absoluteDirpath,
+			enclaveDataSubdirectoryPerms,
+		)
 	}
 	return nil
 }
