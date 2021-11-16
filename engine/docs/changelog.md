@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Added an explanatory comment as to why all the directories that the engine server creates inside the engine data directory must be created with `0777` permissions
 
 # 1.5.3
 ### Fixes
