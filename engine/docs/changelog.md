@@ -3,7 +3,7 @@
 * Added an explanatory comment as to why all the directories that the engine server creates inside the engine data directory must be created with `0777` permissions
 
 ### Fixes
-* Use Kurt Core 1.33.2, which creates its directories inside the enclave data dir with `0777` permissions rather than `0755`
+* Use Kurt Core 1.33.3, which creates its directories inside the enclave data dir with `0777` permissions rather than `0755`
 * Make sure directories created inside the engine data directory are created with `0777` permissions rather than `0755`
 
 # 1.5.3

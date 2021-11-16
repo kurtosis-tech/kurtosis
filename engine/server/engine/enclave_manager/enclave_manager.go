@@ -18,7 +18,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 )
 const (
 	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
@@ -662,14 +661,24 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 // TODO This is copied from Kurt Core; merge these (likely into an EngineDataVolume object)!!!
 func ensureDirpathExists(absoluteDirpath string) error {
 	if _, statErr := os.Stat(absoluteDirpath); os.IsNotExist(statErr) {
-		oldMask := syscall.Umask(umaskForCreatingDirectory)
-		defer syscall.Umask(oldMask)
 		if mkdirErr := os.Mkdir(absoluteDirpath, engineDataSubdirectoryPerms); mkdirErr != nil {
 			return stacktrace.Propagate(
 				mkdirErr,
 				"Directory '%v' in the engine data volume didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
+	}
+	// This is necessary because the os.Mkdir might not create the directory with the perms that we want due to the umask
+	// Chmod is not affected by the umask, so this will guarantee we get a directory with the perms that we want
+	// NOTE: This has the added benefit of, if this directory already exists (due to the user running an old engine from
+	//  before 2021-11-16), we'll correct the perms
+	if err := os.Chmod(absoluteDirpath, engineDataSubdirectoryPerms); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred setting the permissions on directory '%v' to '%v'",
+			absoluteDirpath,
+			engineDataSubdirectoryPerms,
+		)
 	}
 	return nil
 }
