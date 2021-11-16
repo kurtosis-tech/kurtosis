@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Actually ensure that the directories the API container creates really are `0777`
 
 # 1.33.2
 ### Changes
