@@ -16,7 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"os"
@@ -81,7 +81,7 @@ func runMain () error {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		uint32(serverArgs.ListenPortNum),
+		serverArgs.ListenPortNum,
 		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
@@ -90,7 +90,7 @@ func runMain () error {
 	)
 
 	logrus.Info("Running server...")
-	if err := engineServer.Run(); err != nil {
+	if err := engineServer.RunUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil
