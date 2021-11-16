@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Run `go mod tidy`, to get rid of unnecessary `palantir/stacktrace` dependency
 
 # 0.8.5
 ### Fixes
