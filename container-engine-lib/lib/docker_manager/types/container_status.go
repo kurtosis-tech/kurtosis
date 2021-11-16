@@ -1,6 +1,6 @@
 package types
 
-import "github.com/palantir/stacktrace"
+import "github.com/kurtosis-tech/stacktrace"
 
 type ContainerStatus string
 
