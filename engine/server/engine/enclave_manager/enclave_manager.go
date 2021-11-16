@@ -40,10 +40,6 @@ const (
 	oldApiContainerPortNumLabel = "com.kurtosistech.api-container-port-number"
 	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
 
-	// The system umask is a set of bits that are _subtracted_ from the perms when we create a file
-	// We really do want a 0777 directory (see comment below), so we have to set this to 0
-	umaskForCreatingDirectory = 0
-
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
 	//  a) the engine data directory is bind-mounted on the Docker host machine
