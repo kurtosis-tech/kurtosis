@@ -153,6 +153,8 @@ workflows:
                 - develop
                 - master
       - build_golang_testsuite:
+          context:
+            - docker-user
           requires:
             - build_cli
           filters:
