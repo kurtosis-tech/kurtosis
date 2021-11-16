@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 )
 const (
 	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
@@ -39,6 +40,10 @@ const (
 	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
 	oldApiContainerPortNumLabel = "com.kurtosistech.api-container-port-number"
 	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
+
+	// The system umask is a set of bits that are _subtracted_ from the perms when we create a file
+	// We really do want a 0777 directory (see comment below), so we have to set this to 0
+	umaskForCreatingDirectory = 0
 
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
@@ -656,11 +661,12 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 
 // TODO This is copied from Kurt Core; merge these (likely into an EngineDataVolume object)!!!
 func ensureDirpathExists(absoluteDirpath string) error {
-	if _, err := os.Stat(absoluteDirpath); os.IsNotExist(err) {
-		// NOTE:
-		if err := os.Mkdir(absoluteDirpath, engineDataSubdirectoryPerms); err != nil {
+	if _, statErr := os.Stat(absoluteDirpath); os.IsNotExist(statErr) {
+		oldMask := syscall.Umask(umaskForCreatingDirectory)
+		defer syscall.Umask(oldMask)
+		if mkdirErr := os.Mkdir(absoluteDirpath, engineDataSubdirectoryPerms); mkdirErr != nil {
 			return stacktrace.Propagate(
-				err,
+				mkdirErr,
 				"Directory '%v' in the engine data volume didn't exist, and an error occurred trying to create it",
 				absoluteDirpath)
 		}
