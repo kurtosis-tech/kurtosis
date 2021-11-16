@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.6
+### Fixes
+* Run `go mod tidy`, to get rid of unnecessary `palantir/stacktrace` dependency
+
 # 0.8.5
 ### Fixes
 * `stacktrace.Propagate` now panics when it receives a `nil` input
