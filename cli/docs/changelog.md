@@ -1,4 +1,24 @@
 # TBD
+### Features
+* The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
+
+### Fixes
+* `stacktrace.Propagate` now panics when it gets a `nil` value
+
+### Changes
+* The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
+* Grouped all the internal testsuites into a single directory
+* Gave `build.sh` scripts to the CLI & internal testsuite subdirectories now
+* There is no longer a root `go.mod`, but now one in CLI and one in `golang_internal_testsuite` (rationale being that the dependencies for the CLI and for the internal testsuite are very different, plus we'll have a `typescript_internal_testsuite` soon)
+* Removed the "local static" element to `localStaticFilesTest`, because there's no longer a distinction between "local" and "static" now that the testsuite runs with Go test
+
+### Removals
+* Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
+* Removed the `AdvancedNetworkTest`, because we no longer have `Network` types
+
+### Breaking Changes
+* Removed the `test` command
+    * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
 
 # 0.6.8
 ### Features

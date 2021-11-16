@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
-	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_labels_providers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/object_name_providers"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
@@ -18,9 +16,13 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
+	"time"
 )
 
 const (
+	// TODO Change this to base 16 to be more compact??
+	guidBase = 10
 )
 
 const (
@@ -43,15 +45,13 @@ func RunREPL(
 	apiContainerPortOnHostMachine uint32,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
+	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider,
 ) error {
 	apiContainerUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
 		apiContainerIpOnHostMachine,
 		apiContainerPortOnHostMachine,
 	)
-
-	enclaveObjNameProvider := object_name_providers.NewEnclaveObjectNameProvider(enclaveId)
-	enclaveObjLabelsProvider := object_labels_providers.NewEnclaveObjectLabelsProvider(enclaveId)
 
 	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
@@ -102,12 +102,13 @@ func RunREPL(
 		)
 	}
 
-	interactiveReplGuid := current_time_str_provider.GetCurrentTimeStr()
+	interactiveReplGuid := getReplGUID()
 
+	replAttrs := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
-	containerName := enclaveObjNameProvider.ForInteractiveREPLContainer(interactiveReplGuid)
-	labels := enclaveObjLabelsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	containerName := replAttrs.GetName()
+	labels := replAttrs.GetLabels()
 	// TODO Replace all this with a call to the engine server!!!
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		javascriptReplImage,
@@ -182,4 +183,13 @@ func RunREPL(
 	terminal.Restore(stdinFd, oldState)
 
 	return nil
+}
+
+
+
+func getReplGUID() string {
+	now := time.Now()
+	// TODO make this UnixNano to reduce risk of collisions???
+	nowUnixSecs := now.Unix()
+	return strconv.FormatInt(nowUnixSecs, guidBase)
 }

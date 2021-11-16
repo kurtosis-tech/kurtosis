@@ -10,15 +10,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
 )
 
 const (
-	apiContainerImageArg     = "api-container-image"
+	apiContainerVersionArg   = "api-container-version"
 	isPartitioningEnabledArg = "partition-enabled"
 	kurtosisLogLevelArg      = "kurtosis-log-level"
 
@@ -28,13 +29,13 @@ const (
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
-var apiContainerImage string
+var apiContainerVersion string
 var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
 
 var NewCmd = &cobra.Command{
 	Use:                   command_str_consts.EnclaveNewCmdStr,
-	Short:                 "Creates a new empty Kurtosis enclave",
+	Short:                 "Creates a new, empty Kurtosis enclave",
 	RunE:                  run,
 }
 
@@ -50,11 +51,11 @@ func init() {
 		),
 	)
 	NewCmd.Flags().StringVarP(
-		&apiContainerImage,
-		apiContainerImageArg,
+		&apiContainerVersion,
+		apiContainerVersionArg,
 		"a",
-		defaults.DefaultApiContainerImage,
-		"The Kurtosis API Container Docker image that will be used to start the enclave's API container server",
+		defaults.DefaultAPIContainerVersion,
+		"The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 	)
 	NewCmd.Flags().BoolVarP(
 		&isPartitioningEnabled,
@@ -84,7 +85,8 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -93,11 +95,11 @@ func run(cmd *cobra.Command, args []string) error {
 	logrus.Info("Creating new enclave...")
 	enclaveId := execution_ids.GetExecutionID()
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId: enclaveId,
-		ApiContainerImage: apiContainerImage,
-		ApiContainerLogLevel: kurtosisLogLevelStr,
-		IsPartitioningEnabled: isPartitioningEnabled,
-		ShouldPublishAllPorts: shouldPublishPorts,
+		EnclaveId:              enclaveId,
+		ApiContainerVersionTag: apiContainerVersion,
+		ApiContainerLogLevel:   kurtosisLogLevelStr,
+		IsPartitioningEnabled:  isPartitioningEnabled,
+		ShouldPublishAllPorts:  shouldPublishPorts,
 	}
 	_, err = engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

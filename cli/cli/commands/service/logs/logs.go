@@ -15,8 +15,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
@@ -100,7 +101,7 @@ func run(cmd *cobra.Command, args []string) error {
 	var containersWithSearchedGUID = []*docker_manager_types.Container{}
 	for _, container := range containers {
 		labelsMap := container.GetLabels()
-		containerGUID, found := labelsMap[enclave_object_labels.GUIDLabel]
+		containerGUID, found := labelsMap[schema.GUIDLabel]
 		if found && containerGUID == guid {
 			containersWithSearchedGUID = append(containersWithSearchedGUID, container)
 		}
@@ -136,7 +137,7 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]string {
 	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
-	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
+	labels[schema.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }

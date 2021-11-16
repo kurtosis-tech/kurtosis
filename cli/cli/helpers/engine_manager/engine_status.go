@@ -1,6 +1,6 @@
 package engine_manager
 
-import "github.com/palantir/stacktrace"
+import "github.com/kurtosis-tech/stacktrace"
 
 type EngineStatus string
 const (

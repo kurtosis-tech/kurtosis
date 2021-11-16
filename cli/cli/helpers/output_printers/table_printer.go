@@ -1,7 +1,7 @@
 package output_printers
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type TablePrinter struct {
