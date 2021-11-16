@@ -13,11 +13,14 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
+
+	engineDataDirPermBits = 0755
 )
 
 // Visitor that does its best to guarantee that a Kurtosis engine is running
@@ -99,6 +102,11 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	engineDataDirpath, err := host_machine_directories.GetEngineDataDirpath()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
+	}
+
+	// NOTE: We create this in advance because if we leave
+	if err := os.MkdirAll(engineDataDirpath, engineDataDirPermBits); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
 	}
 
 	var hostMachinePortBinding *nat.PortBinding
