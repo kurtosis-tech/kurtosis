@@ -2,6 +2,7 @@
 ### Features
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
 * Add an extra API container status result to `enclave inspect`
+* Reimplement endpoint availability-waiting test in new Go test framework
 
 ### Fixes
 * `stacktrace.Propagate` now panics when it gets a `nil` value
