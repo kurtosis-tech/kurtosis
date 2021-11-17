@@ -1,4 +1,6 @@
 # TBD
+
+# 0.7.1
 ### Fixes
 * Attempt to fix CLI artifact publishing
 
