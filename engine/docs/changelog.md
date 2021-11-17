@@ -1,5 +1,9 @@
 # TBD
 
+# 1.5.6
+### Fixes
+* Fixed an issue where getting enclaves that included an API container without the new `port-protocol` label would break
+
 # 1.5.5
 ### Fixes
 * All `stacktrace.Propagate` calls now panic on a `nil` error
