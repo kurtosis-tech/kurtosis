@@ -59,6 +59,8 @@ release:
     owner: kurtosis-tech
     name: kurtosis-cli-release-artifacts
 
+  name: "{{ .Env.VERSION }}"
+
   # NOTE: these are the archive IDs, not the build/binary IDs
   ids:
     - cli
