@@ -10,11 +10,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_labels_schema"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -73,7 +73,8 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 	engineManager := engine_manager.NewEngineManager(dockerManager)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotently(ctx, defaults.DefaultEngineImage, defaults.DefaultEngineLogLevel)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -136,7 +137,11 @@ func run(cmd *cobra.Command, args []string) error {
 //                                       Private Helper Functions
 // ====================================================================================================
 func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engine_labels_schema.EngineContainerLabels, shouldCleanRunningEngineContainers)
+	engineContainerLabels := map[string]string{
+		forever_constants.AppIDLabel: forever_constants.AppIDValue,
+		forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
+	}
+	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engineContainerLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
@@ -145,8 +150,8 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 
 func cleanMetadataAcquisitionTestsuites(ctx context.Context, dockerManager *docker_manager.DockerManager, shouldKillRunningContainers bool) ([]string, []error, error) {
 	metadataAcquisitionTestsuiteLabels := map[string]string{
-		enclave_object_labels.ContainerTypeLabel: enclave_object_labels.ContainerTypeTestsuiteContainer,
-		enclave_object_labels.TestsuiteTypeLabelKey: enclave_object_labels.TestsuiteTypeLabelValue_MetadataAcquisition,
+		forever_constants.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
+		schema.TestsuiteTypeLabelKey: schema.TestsuiteTypeLabelValue_MetadataAcquisition,
 	}
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, metadataAcquisitionTestsuiteLabels, shouldKillRunningContainers)
 	if err != nil {

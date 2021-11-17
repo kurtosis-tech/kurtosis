@@ -7,36 +7,38 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"strings"
 )
 
 const (
-	engineImageArg = "image"
+	engineVersionArg = "version"
 	logLevelArg    = "log-level"
+
+	defaultEngineVersion = ""
 )
 
-var engineImage string
+var engineVersion string
 var logLevelStr string
 
 var RestartCmd = &cobra.Command{
 	Use:   command_str_consts.EngineRestartCmdStr,
 	Short: "Restart the Kurtosis engine",
-	Long:  "Restart the Kurtosis engine, doing nothing if no engine is running",
+	Long:  "Stops any existing Kurtosis engine, then starts a new one",
 	RunE:  run,
 }
 
 func init() {
 	RestartCmd.Flags().StringVar(
-		&engineImage,
-		engineImageArg,
-		defaults.DefaultEngineImage,
-		"The image of the Kurtosis engine that should be started",
+		&engineVersion,
+		engineVersionArg,
+		defaultEngineVersion,
+		"The version (Docker tag) of the Kurtosis engine that should be started (blank will start the default version)",
 	)
 	RestartCmd.Flags().StringVar(
 		&logLevelStr,
@@ -71,25 +73,26 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, engineImage)
-
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 
 	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
 	}
 
-	_, clientCloseFunc, err := engineManager.StartEngineIdempotently(ctx, engineImage, logLevel)
-	if err != nil {
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	var engineClientCloseFunc func() error
+	var startEngineErr error
+	if engineVersion == defaultEngineVersion {
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, logLevel)
+	} else {
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, objAttrsProvider, engineVersion, logLevel)
+	}
+	if startEngineErr != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine")
 	}
-	defer func() {
-		if err := clientCloseFunc(); err != nil {
-			logrus.Infof("We tried to close the engine client, but doing so threw an error:\n%v", err)
-		}
-	}()
+	defer engineClientCloseFunc()
 
-	logrus.Infof("Restarted successfully")
+	logrus.Infof("Engine restarted successfully")
 
 	return nil
 }

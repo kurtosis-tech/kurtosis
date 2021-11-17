@@ -4,7 +4,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 // Helper function, used in the enclave commands, for getting an enclave state from the states of the containers

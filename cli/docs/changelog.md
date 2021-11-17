@@ -1,5 +1,48 @@
 # TBD
 
+# 0.7.0
+### Features
+* The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
+* Add an extra API container status result to `enclave inspect`
+* Reimplement endpoint availability-waiting test in new Go test framework
+
+### Fixes
+* `stacktrace.Propagate` now panics when it gets a `nil` value
+* Fixed bug in files artifact mounting test where it would fail on Mac (but not Linux)
+* Fixed `enclave inspect` breaking if the enclave was stopped
+* Fixed publishing, which was temporarily broken
+
+### Changes
+* The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
+* Grouped all the internal testsuites into a single directory
+* Gave `build.sh` scripts to the CLI & internal testsuite subdirectories now
+* There is no longer a root `go.mod`, but now one in CLI and one in `golang_internal_testsuite` (rationale being that the dependencies for the CLI and for the internal testsuite are very different, plus we'll have a `typescript_internal_testsuite` soon)
+* Removed the "local static" element to `localStaticFilesTest`, because there's no longer a distinction between "local" and "static" now that the testsuite runs with Go test
+* The `--image` arg to `engine start` and `engine restart` has been replaced with a `--version` flag, so that the full org & image is no longer required
+* The `--kurtosis-api-image` flag to `sandbox` has been replaced with a `--api-container-version` flag, so that the full org & image is no longer required
+* The `--api-container-image` flag to `enclave new` has been replaced with a `--api-container-version` flag, so that the full org & image is no longer required
+* The `--api-container-image` flag to `module exec` has been replaced with a `--api-container-version` flag, so that the full org & image is no longer required
+* The `engine status` now returns the engine version, rather than the API version
+* Use engine-server 1.5.6
+* Remove all references to Palantir stacktrace
+
+### Removals
+* Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
+* Removed the `AdvancedNetworkTest`, because we no longer have `Network` types
+* Removed alternating colors for the tables, because it's a pain to maintain
+
+### Breaking Changes
+* Removed the `test` command
+    * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
+* The `--image` arg to `engine start` and `engine restart` has been replaced with a `--version` flag
+    * Users should use the new flag with the Docker tag of the engine to start
+* The `--kurtosis-api-image` flag to `sandbox` has been replaced with a `--api-container-version` flag
+    * Users should use the new flag with the Docker tag of the API container to start
+* The `--api-container-image` flag to `enclave new` has been replaced with a `--api-container-version` flag
+    * Users should use the new flag with the Docker tag of the API container to start
+* The `--api-container-image` flag to `module exec` has been replaced with a `--api-container-version` flag
+    * Users should use the new flag with the Docker tag of the API container to start
+
 # 0.6.8
 ### Features
 * Added a cache file for getting the latest released CLI version from GitHUB API

@@ -2,7 +2,7 @@ package host_machine_directories
 
 import (
 	"github.com/adrg/xdg"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"path"
 )
 

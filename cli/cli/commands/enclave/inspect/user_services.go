@@ -6,8 +6,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-core/commons/enclave_object_labels"
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
@@ -30,9 +31,9 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
 	}
 	for _, container := range sortedContainers {
-		containerGuid, found := container.GetLabels()[enclave_object_labels.GUIDLabel]
+		containerGuid, found := container.GetLabels()[schema.GUIDLabel]
 		if !found {
-			return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", enclave_object_labels.GUIDLabel, container.GetId(), container.GetLabels())
+			return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", schema.GUIDLabel, container.GetId(), container.GetLabels())
 		}
 		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
@@ -75,7 +76,7 @@ func getContainerHostPortBindingStrings(container *types.Container) []string {
 
 func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
 	labels := map[string]string{}
-	labels[enclave_object_labels.ContainerTypeLabel] = enclave_object_labels.ContainerTypeUserServiceContainer
-	labels[enclave_object_labels.EnclaveIDContainerLabel] = enclaveId
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
+	labels[schema.EnclaveIDContainerLabel] = enclaveId
 	return labels
 }

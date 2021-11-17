@@ -1,7 +1,7 @@
 package dirpath_existence_ensurer
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 	"os"
 )
 

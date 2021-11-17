@@ -1,7 +1,7 @@
 package output_printers
 
 import (
-	"github.com/palantir/stacktrace"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 type TablePrinter struct {
@@ -15,7 +15,7 @@ type TablePrinter struct {
 // Prints columns of output, each with a header
 func NewTablePrinter(columnHeaders ...string) *TablePrinter {
 	return &TablePrinter{
-		tabWriter:     newKurtosisTabWriter(true),
+		tabWriter:     newKurtosisTabWriter(),
 		columnHeaders: columnHeaders,
 		dataRows:      [][]string{},
 	}
