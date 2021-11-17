@@ -4,7 +4,7 @@
 
 ### Fixes
 * `stacktrace.Propagate` now panics when it gets a `nil` value
-* Fixed bug in files artifact mounting test where it should never have worked
+* Fixed bug in files artifact mounting test where it would fail on Mac (but not Linux)
 
 ### Changes
 * The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
