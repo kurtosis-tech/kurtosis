@@ -94,7 +94,7 @@ publishers:
     dir: "{{ dir .ArtifactPath }}"
     env:
       # This will get set by CI; see the CI config for how
-      - 'FURY_TOKEN={{ .Env.GEMFURY_PUBLISH_TOKEN }}'
+      - 'FURY_TOKEN={{ .Env.FURY_TOKEN }}'
     cmd: "curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/kurtosis-tech/"
 
 source:
