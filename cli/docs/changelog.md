@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Attempt to fix CLI artifact publishing
 
 # 0.7.0
 ### Features
@@ -30,6 +32,7 @@
 * Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
 * Removed the `AdvancedNetworkTest`, because we no longer have `Network` types
 * Removed alternating colors for the tables, because it's a pain to maintain
+* Stop publishing a `latest` version of the REPL images, because the CLI should use pinned X.Y.Z version to avoid problems
 
 ### Breaking Changes
 * Removed the `test` command
