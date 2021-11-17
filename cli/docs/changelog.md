@@ -1,10 +1,12 @@
 # TBD
 ### Features
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
+* Add an extra API container status result to `enclave inspect`
 
 ### Fixes
 * `stacktrace.Propagate` now panics when it gets a `nil` value
 * Fixed bug in files artifact mounting test where it would fail on Mac (but not Linux)
+* Fixed `enclave inspect` breaking if the enclave was stopped
 
 ### Changes
 * The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
