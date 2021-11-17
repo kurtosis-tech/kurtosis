@@ -60,7 +60,7 @@ fi
         exit 1
     fi
     if "${should_publish_arg}"; then
-        goreleaser_verb_and_flags="release --rm-dist --snapshot --rm-dist --skip-announce --skip-publish"
+        goreleaser_verb_and_flags="release --rm-dist"
     else
         goreleaser_verb_and_flags="build --rm-dist --snapshot --id ${GORELEASER_CLI_BUILD_ID}"
     fi
