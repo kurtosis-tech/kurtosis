@@ -10,11 +10,12 @@ root_dirpath="$(dirname "${repls_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-DOCKER_IMAGE_PREFIX="kurtosistech/"
-DOCKER_IMAGE_SUFFIX="-interactive-repl"
+source "${script_dirpath}/_constants.env"
+
 DOCKERIGNORE_FILENAME=".dockerignore"
 
 GET_DOCKER_TAG_SCRIPT_FILENAME="get-docker-images-tag.sh"
+LIST_REPL_IMAGE_DIRPATHS_SCRIPT_FILENAME="_list-repl-image-dirpaths.sh"
 
 BUILD_DIRNAME="build"
 
@@ -22,7 +23,6 @@ REPL_DOCKERFILE_GENERATOR_MODULE_DIRNAME="dockerfile_generator"
 REPL_DOCKERFILE_TEMPLATE_FILENAME="template.Dockerfile"
 REPL_DOCKERFILE_GENERATOR_BINARY_OUTPUT_FILENAME="repl-dockerfile-generator"
 
-REPL_IMAGES_DIRNAME="repl_images"
 
 REPL_OUTPUT_DOCKERFILE_SUFFIX=".Dockerfile"
 
@@ -55,9 +55,13 @@ echo "REPL Dockerfile-generating binary built successfully"
 
 # Now, use the built binary to generate REPL Dockerfiles and build Docker images
 echo "Generating REPL Dockerfiles..."
-repl_images_dirpath="${repls_dirpath}/${REPL_IMAGES_DIRNAME}"
+list_repl_image_dirpaths_script_filepath="${script_dirpath}/${LIST_REPL_IMAGE_DIRPATHS_SCRIPT_FILENAME}"
+if ! repl_image_dirpaths="$("${list_repl_image_dirpaths_script_filepath}")"; then
+    echo "Error: Couldn't list REPL image dirpaths" >&2
+    exit 1
+fi
 build_dirpath="${repls_dirpath}/${BUILD_DIRNAME}"
-for repl_image_dirpath in $(find "${repl_images_dirpath}" -mindepth 1 -maxdepth 1 -type d ); do
+for repl_image_dirpath in ${repl_image_dirpaths}; do
     repl_type="$(basename "${repl_image_dirpath}")"
     echo "Building Docker image for '${repl_type}' REPL..."
     repl_dockerfile_template_filepath="${repl_image_dirpath}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"

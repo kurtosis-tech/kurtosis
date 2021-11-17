@@ -43,14 +43,13 @@ if ! version="$("${get_version_script_filepath}")"; then
     exit 1
 fi
 
-# Now that we have the REPL Dockerfiles, build the CLI
 # vvvvvvvv Goreleaser variables vvvvvvvvvvvvvvvvvvv
 export CLI_BINARY_FILENAME \
 export VERSION="${version}"
 if "${should_publish_arg}"; then
     # This environment variable will be set ONLY when publishing, in the CI environment
     # See the CI config for details on how this gets set
-    export FURY_TOKEN
+    export GEMFURY_PUBLISH_TOKEN
 fi
 # ^^^^^^^^ Goreleaser variables ^^^^^^^^^^^^^^^^^^^
 
@@ -60,26 +59,18 @@ fi
         echo "Error: Couldn't cd to CLI module dirpath '${cli_module_dirpath}'" >&2
         exit 1
     fi
-    # TODO TODO IF PUBLISHING, THEN PASS IN DIFFERENT ARGS
-    if ! goreleaser build --rm-dist --snapshot --id "${GORELEASER_CLI_BUILD_ID}"; then
+    if "${should_publish_arg}"; then
+        goreleaser_verb_and_flags="release --rm-dist"
+    else
+        goreleaser_verb_and_flags="build --rm-dist --snapshot --id ${GORELEASER_CLI_BUILD_ID}"
+    fi
+    if ! goreleaser ${goreleaser_verb_and_flags}; then
         echo "Error: Couldn't build the CLI binary for the current OS/arch" >&2
         exit 1
     fi
-
-    # TODO TODO TODO HOOK PUBLISHING BACK UP
-    # # Build all the Docker images
-    # if "${should_publish_arg}"; then
-    #     goreleaser_release_extra_args=""
-    # else
-    #     goreleaser_release_extra_args="--snapshot"
-    # fi
-    # if ! goreleaser release --rm-dist --skip-announce ${goreleaser_release_extra_args}; then
-    #     echo "Error: Goreleaser release of all binaries & Docker images failed" >&2
-    #     exit 1
-    # fi
 )
 
-# Now that we have a CLI built from source, start the version of the engine that the CLI uses
+# Final verification
 goarch="$(go env GOARCH)"
 goos="$(go env GOOS)"
 cli_binary_filepath="${cli_module_dirpath}/${GORELEASER_OUTPUT_DIRNAME}/${GORELEASER_CLI_BUILD_ID}_${goos}_${goarch}/${CLI_BINARY_FILENAME}"
