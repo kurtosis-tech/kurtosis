@@ -37,7 +37,7 @@ const (
 var datastorePortStr = fmt.Sprintf("%v/%v", datastore_rpc_api_consts.ListenPort, datastore_rpc_api_consts.ListenProtocol)
 var apiPortStr = fmt.Sprintf("%v/%v", example_api_server_rpc_api_consts.ListenPort, example_api_server_rpc_api_consts.ListenProtocol)
 
-type grpcAvailabilityChecker interface {
+type GrpcAvailabilityChecker interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -59,10 +59,29 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 		return nil, nil, nil, stacktrace.NewError("No datastore host port binding found for port string '%v'", datastorePortStr)
 	}
 
-	url := fmt.Sprintf("%v:%v", hostPortBinding.InterfaceIp, hostPortBinding.InterfacePort)
+	datastoreIp := hostPortBinding.InterfaceIp
+	datastorePortNumStr := hostPortBinding.InterfacePort
+	client, clientCloseFunc, err := CreateDatastoreClient(datastoreIp, datastorePortNumStr)
+	if err != nil {
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the datastore client for IP '%v' and port '%v'",
+			datastoreIp,
+			datastorePortNumStr,
+		)
+	}
+
+	if err := WaitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
+	}
+	return serviceCtx, client, clientCloseFunc, nil
+}
+
+func CreateDatastoreClient(ipAddr string, portNum string) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+	url := fmt.Sprintf("%v:%v", ipAddr, portNum)
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to datastore service on URL '%v'", url)
 	}
 	clientCloseFunc := func() {
 		if err := conn.Close(); err != nil {
@@ -70,11 +89,7 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 		}
 	}
 	client := datastore_rpc_api_bindings.NewDatastoreServiceClient(conn)
-
-	if err := waitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the datastore service to become available")
-	}
-	return serviceCtx, client, clientCloseFunc, nil
+	return client, clientCloseFunc, nil
 }
 
 func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
@@ -111,10 +126,36 @@ func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID,
 	}
 	client := example_api_server_rpc_api_bindings.NewExampleAPIServerServiceClient(conn)
 
-	if err := waitForHealthy(context.Background(), client, apiWaitForStartupMaxPolls, apiWaitForStartupDelayMilliseconds); err != nil {
+	if err := WaitForHealthy(context.Background(), client, apiWaitForStartupMaxPolls, apiWaitForStartupDelayMilliseconds); err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API service to become available")
 	}
 	return serviceCtx, client, clientCloseFunc, nil
+}
+
+func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
+	var (
+		emptyArgs = &empty.Empty{}
+		err       error
+	)
+
+	for i := uint32(0); i < retries; i++ {
+		_, err = client.IsAvailable(ctx, emptyArgs)
+		if err == nil {
+			return nil
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"The service didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+
+	return nil
 }
 
 // ====================================================================================================
@@ -158,31 +199,6 @@ func getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork string) func(
 	return containerConfigSupplier
 }
 
-func waitForHealthy(ctx context.Context, client grpcAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
-	var (
-		emptyArgs = &empty.Empty{}
-		err       error
-	)
-
-	for i := uint32(0); i < retries; i++ {
-		_, err = client.IsAvailable(ctx, emptyArgs)
-		if err == nil {
-			return nil
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"The service didn't return a success code, even after %v retries with %v milliseconds in between retries",
-			retries,
-			retriesDelayMilliseconds,
-		)
-	}
-
-	return nil
-}
 
 
 func createDatastoreConfigFileInServiceDirectory(datastoreIP string, sharedDirectory *services.SharedPath) (*services.SharedPath, error) {
