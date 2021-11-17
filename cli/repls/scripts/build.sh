@@ -57,7 +57,7 @@ echo "REPL Dockerfile-generating binary built successfully"
 echo "Generating REPL Dockerfiles..."
 repl_images_dirpath="${repls_dirpath}/${REPL_IMAGES_DIRNAME}"
 build_dirpath="${repls_dirpath}/${BUILD_DIRNAME}"
-for repl_image_dirpath in $(find "${repl_images_dirpath}" -type d -mindepth 1 -maxdepth 1); do
+for repl_image_dirpath in $(find "${repl_images_dirpath}" -mindepth 1 -maxdepth 1 -type d ); do
     repl_type="$(basename "${repl_image_dirpath}")"
     echo "Building Docker image for '${repl_type}' REPL..."
     repl_dockerfile_template_filepath="${repl_image_dirpath}/${REPL_DOCKERFILE_TEMPLATE_FILENAME}"

@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -32,6 +33,8 @@ const (
 
 	enclaveIdTitleName     = "Enclave ID"
 	enclaveStatusTitleName = "Status"
+
+	apiContainerHostTitle = "API Container Host Port"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -102,9 +105,15 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
 	}
 
+	apiContainerPort, err := getAPIContainerHostMachinePort(ctx, dockerManager, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred determining the host machine port of the API container")
+	}
+
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
 	keyValuePrinter.AddPair(enclaveStatusTitleName, string(enclaveStatus))
+	keyValuePrinter.AddPair(apiContainerHostTitle, apiContainerPort)
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
@@ -178,4 +187,29 @@ func sortContainersByGUID(containers []*types.Container) ([]*types.Container, er
 	})
 
 	return containersResult, nil
+}
+
+func getAPIContainerHostMachinePort(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) (string, error) {
+	searchLabels := map[string]string{
+		schema.EnclaveIDContainerLabel: enclaveId,
+		forever_constants.ContainerTypeLabel:      schema.ContainerTypeAPIContainer,
+	}
+	// TODO Replace with a call to the engine server!
+	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the enclave container by labels '%+v'", searchLabels)
+	}
+	if len(enclaveContainers) != 1 {
+		return "", stacktrace.NewError("An error occurred, there was not only 1 container when retrieving the API container host port by labels '%+v'", searchLabels)
+	}
+	if len(enclaveContainers[0].GetHostPortBindings()) != 1 {
+		return "", stacktrace.NewError("An error occurred, there was not only 1 host port binding when retrieving the API container host port by labels '%+v'", searchLabels)
+	}
+
+	var result string
+	for _, v := range enclaveContainers[0].GetHostPortBindings() {
+		result = v.HostPort
+	}
+
+	return result, nil
 }

@@ -13,11 +13,14 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
+
+	engineDataDirPermBits = 0755
 )
 
 // Visitor that does its best to guarantee that a Kurtosis engine is running
@@ -101,6 +104,11 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting the engine data dirpath")
 	}
 
+	// NOTE: We create this in advance because if we leave
+	if err := os.MkdirAll(engineDataDirpath, engineDataDirPermBits); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
+	}
+
 	var hostMachinePortBinding *nat.PortBinding
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
@@ -168,11 +176,11 @@ func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
 	if runningEngineSemver.LessThan(cliEngineSemver) {
 		kurtosisRestartCmd := fmt.Sprintf("%v %v %v", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
 		logrus.Warningf(
-			"The currently-running Kurtosis engine version is '%v', but the latest version is '%v'",
+			"The currently-running Kurtosis engine version is '%v', but the latest version is '%v'; to restart the engine with the latest version use '%v'",
 			runningEngineSemver.String(),
 			cliEngineSemver.String(),
+			kurtosisRestartCmd,
 		)
-		logrus.Warningf("To use the latest version, run '%v'", kurtosisRestartCmd)
 	} else {
 		logrus.Debugf("Currently running engine version '%v' which is up-to-date", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
