@@ -12,16 +12,20 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_status_from_container_status_retriever"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_statuses"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -32,9 +36,9 @@ const (
 	enclaveIdArg        = "enclave-id"
 
 	enclaveIdTitleName     = "Enclave ID"
-	enclaveStatusTitleName = "Status"
-
-	apiContainerHostTitle = "API Container Host Port"
+	enclaveStatusTitleName = "Enclave Status"
+	apiContainerStatusTitleName = "API Container Status"
+	apiContainerHostPortTitle = "API Container Host Port"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -100,20 +104,41 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	enclaveStatus, err := getEnclaveStatus(ctx, dockerManager, enclaveId)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred determining the status of the enclave from its containers' statuses")
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
+	}
+	defer closeClientFunc()
+
+	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveId)
 	}
 
-	apiContainerPort, err := getAPIContainerHostMachinePort(ctx, dockerManager, enclaveId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred determining the host machine port of the API container")
+	enclaveInfo, found := getEnclavesResp.EnclaveInfo[enclaveId]
+	if !found {
+		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
 	}
+
+	enclaveContainersStatus := enclaveInfo.ContainersStatus
+	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
-	keyValuePrinter.AddPair(enclaveStatusTitleName, string(enclaveStatus))
-	keyValuePrinter.AddPair(apiContainerHostTitle, apiContainerPort)
+	// TODO Refactor these to use a user-friendly string and not the enum name
+	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
+	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
+	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
+		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
+		apiContainerHostPortInfoStr := fmt.Sprintf(
+			"%v:%v",
+			apiContainerHostInfo.GetIpOnHostMachine(),
+			apiContainerHostInfo.GetPortOnHostMachine(),
+		)
+		keyValuePrinter.AddPair(apiContainerHostPortTitle, apiContainerHostPortInfoStr)
+	}
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
@@ -195,19 +220,26 @@ func getAPIContainerHostMachinePort(ctx context.Context, dockerManager *docker_m
 		forever_constants.ContainerTypeLabel:      schema.ContainerTypeAPIContainer,
 	}
 	// TODO Replace with a call to the engine server!
-	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
+	apiContainers, err := dockerManager.GetContainersByLabels(ctx, searchLabels, shouldExamineStoppedContainersWhenPrintingEnclaveStatus)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the enclave container by labels '%+v'", searchLabels)
 	}
-	if len(enclaveContainers) != 1 {
-		return "", stacktrace.NewError("An error occurred, there was not only 1 container when retrieving the API container host port by labels '%+v'", searchLabels)
+	numApiContainers := len(apiContainers)
+	if numApiContainers != 1 {
+		return "", stacktrace.NewError(
+			"Expected exactly one API container when retrieving API containers by labels '%+v', but got %v", searchLabels, numApiContainers)
 	}
-	if len(enclaveContainers[0].GetHostPortBindings()) != 1 {
-		return "", stacktrace.NewError("An error occurred, there was not only 1 host port binding when retrieving the API container host port by labels '%+v'", searchLabels)
+	apiContainer := apiContainers[0]
+	numHostPortBindings := len(apiContainer.GetHostPortBindings())
+	if numHostPortBindings != 1 {
+		return "", stacktrace.NewError(
+			"Expected exactly one API container host port binding, but got %v",
+			numHostPortBindings,
+		)
 	}
 
 	var result string
-	for _, v := range enclaveContainers[0].GetHostPortBindings() {
+	for _, v := range apiContainers[0].GetHostPortBindings() {
 		result = v.HostPort
 	}
 

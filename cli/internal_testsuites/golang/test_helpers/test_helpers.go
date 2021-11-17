@@ -63,7 +63,12 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 	datastorePortNumStr := hostPortBinding.InterfacePort
 	client, clientCloseFunc, err := CreateDatastoreClient(datastoreIp, datastorePortNumStr)
 	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore client for IP '%v' and port '%v'", )
+		return nil, nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the datastore client for IP '%v' and port '%v'",
+			datastoreIp,
+			datastorePortNumStr,
+		)
 	}
 
 	if err := WaitForHealthy(ctx, client, datastoreWaitForStartupMaxPolls, datastoreWaitForStartupDelayMilliseconds); err != nil {
