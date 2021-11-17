@@ -1,4 +1,6 @@
 # TBD
+
+# 0.7.0
 ### Features
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
 * Add an extra API container status result to `enclave inspect`
