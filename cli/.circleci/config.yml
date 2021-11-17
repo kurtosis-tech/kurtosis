@@ -57,8 +57,11 @@ jobs:
       - run: |
           repls_dirpath="${PWD}/repls"
           output_dirpath="${repls_dirpath}/<< pipeline.parameters.saved-repl-image-dirname >>"
-          source "${repls_dirpath}/scripts/_constants.env"
+
+          mkdir "${output_dirpath}"
           docker_image_tag="$(bash "./scripts/get-docker-images-tag.sh")"
+
+          source "${repls_dirpath}/scripts/_constants.env"
           for repl_image_dirpath in $(bash "${repls_dirpath}/scripts/_list-repl-image-dirpaths.sh"); do
             repl_type="$(basename "${repl_image_dirpath}")"
             docker_image_and_tag="${DOCKER_IMAGE_PREFIX}${repl_type}${DOCKER_IMAGE_SUFFIX}:${docker_image_tag}"
