@@ -7,7 +7,7 @@ type KeyValuePrinter struct {
 
 func NewKeyValuePrinter() *KeyValuePrinter {
 	return &KeyValuePrinter{
-		tabWriter:   newKurtosisTabWriter(false),
+		tabWriter:   newKurtosisTabWriter(),
 		forPrinting: [][]string{},
 	}
 }
