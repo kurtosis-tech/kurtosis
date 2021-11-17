@@ -498,7 +498,7 @@ func getEnclaveContainerInformation(
 				apiContainerPortProtocol, found := containerLabels[schema.PortProtocolLabel]
 				if !found {
 					// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-					maybeApiContainerPortProtocol, foundOldLabel := containerLabels[oldApiContainerPortNumLabel]
+					maybeApiContainerPortProtocol, foundOldLabel := containerLabels[oldApiContainerPortProtocolLabel]
 					if !foundOldLabel {
 						return 0, 0, nil, nil, stacktrace.NewError(
 							"Neither the current label '%v' nor the old label '%v' was found on the API container, which is necessary for getting its host machine port bindings",
