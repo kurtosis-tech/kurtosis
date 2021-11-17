@@ -4,6 +4,7 @@
 
 ### Fixes
 * `stacktrace.Propagate` now panics when it gets a `nil` value
+* Fixed bug in files artifact mounting test where it would fail on Mac (but not Linux)
 
 ### Changes
 * The Javascript REPL now uses Node 16.13.0 (up from 16.7.0)
@@ -16,6 +17,7 @@
 * The `--api-container-image` flag to `enclave new` has been replaced with a `--api-container-version` flag, so that the full org & image is no longer required
 * The `--api-container-image` flag to `module exec` has been replaced with a `--api-container-version` flag, so that the full org & image is no longer required
 * The `engine status` now returns the engine version, rather than the API version
+* Use engine-server 1.5.6
 
 ### Removals
 * Removed the `test` command, as tests can be written directly in your testing framework of choice by connecting to the running engine using `kurtosis-engine-api-lib`
