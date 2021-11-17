@@ -100,7 +100,7 @@ jobs:
   # -- Artifact-publishing jobs --------------------------------
   push_repl_images:
     docker:
-      - image: "cimg/base:<< cimg-base-version >>"
+      - image: "cimg/base:<< pipeline.parameters.cimg-base-version >>"
     steps:
       - checkout
       - attach_workspace:
