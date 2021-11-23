@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed a bug where `service logs` that was successful would really fail
 
 # 0.7.1
 ### Fixes
