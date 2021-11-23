@@ -156,10 +156,6 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	// TODO DEBUGGING
-	fmt.Println(enclaveId)
-	return nil
-
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
