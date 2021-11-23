@@ -105,7 +105,7 @@ func init() {
 		enclaveIdArg,
 		defaultEnclaveId,
 		fmt.Sprintf(
-			"The ID to give the enclave that will be created to execute the module inside, which must match regex %v (default: use the module image and the current Unix time)",
+			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
 			allowedEnclaveIdCharsRegexStr,
 		),
 	)
@@ -150,7 +150,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	if !validEnclaveId {
 		return stacktrace.NewError(
-			"Enclave ID '%v' doesn't match matches allowed enclave ID regex '%v'",
+			"Enclave ID '%v' doesn't match allowed enclave ID regex '%v'",
 			enclaveId,
 			allowedEnclaveIdCharsRegexStr,
 		)
