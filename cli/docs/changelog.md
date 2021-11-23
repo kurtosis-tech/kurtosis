@@ -2,6 +2,9 @@
 ### Features
 * The enclave for `module exec` will now be named after the module image and the time it was ran
 
+### Fixes
+* Fixed a bug where `service logs` that was successful would really fail
+
 # 0.7.1
 ### Fixes
 * Attempt to fix CLI artifact publishing
