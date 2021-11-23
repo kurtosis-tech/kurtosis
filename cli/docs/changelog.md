@@ -1,4 +1,6 @@
 # TBD
+### Features
+* The enclave for `module exec` will now be named after the module image and the time it was ran
 
 # 0.7.1
 ### Fixes

@@ -8,6 +8,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
@@ -27,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"strings"
+	"time"
 )
 
 const (
@@ -43,7 +45,6 @@ const (
 	shouldPublishAllPorts = true
 
 	moduleId = "my-module"
-
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -118,8 +119,7 @@ func run(cmd *cobra.Command, args []string) error {
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
 	logrus.Info("Creating enclave for the module to execute inside...")
-	executionId := execution_ids.GetExecutionID()
-
+	enclaveId := getEnclaveId(moduleImage)
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
@@ -129,7 +129,7 @@ func run(cmd *cobra.Command, args []string) error {
 	defer closeClientFunc()
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId:              executionId,
+		EnclaveId:              enclaveId,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
 		IsPartitioningEnabled:  shouldEnablePartitioning,
@@ -138,7 +138,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", executionId)
+		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
 	}
 	enclaveInfo := response.GetEnclaveInfo()
 
@@ -146,18 +146,18 @@ func run(cmd *cobra.Command, args []string) error {
 	defer func() {
 		if shouldStopEnclave {
 			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
-				EnclaveId: executionId,
+				EnclaveId: enclaveId,
 			}
 			if  _, err := engineClient.StopEnclave(ctx, destroyEnclaveArgs); err != nil {
 				logrus.Errorf(
 					"The module didn't execute correctly so we tried to stop the created enclave, but doing so threw an error:\n%v",
 					err,
 				)
-				logrus.Errorf("ACTION NEEDED: You'll need to stop enclave '%v' manually!!", executionId)
+				logrus.Errorf("ACTION NEEDED: You'll need to stop enclave '%v' manually!!", enclaveId)
 			}
 		}
 	}()
-	logrus.Infof("Enclave '%v' created successfully", executionId)
+	logrus.Infof("Enclave '%v' created successfully", enclaveId)
 
 	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
@@ -175,7 +175,7 @@ func run(cmd *cobra.Command, args []string) error {
 			err,
 			"An error occurred connecting to the API container at '%v' in enclave '%v'",
 			apiContainerHostUrl,
-			executionId,
+			enclaveId,
 		)
 	}
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
@@ -204,4 +204,30 @@ func run(cmd *cobra.Command, args []string) error {
 
 	shouldStopEnclave = false
 	return nil
+}
+
+
+// ====================================================================================================
+//                                      Private Helper Methods
+// ====================================================================================================
+func getEnclaveId(moduleImage string) string {
+	defaultEnclaveId := execution_ids.GetExecutionID()
+	parsedModuleImage, err := reference.Parse(moduleImage)
+	if err != nil {
+		logrus.Warn("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, defaultEnclaveId)
+		return defaultEnclaveId
+	}
+
+	namedModuleImage, ok := parsedModuleImage.(reference.Named)
+	if !ok {
+		logrus.Warn("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, defaultEnclaveId)
+		return defaultEnclaveId
+	}
+	pathElement := reference.Path(namedModuleImage)
+
+	return fmt.Sprintf(
+		"%v_%v",
+		pathElement,
+		time.Now().Unix(),
+	)
 }
