@@ -124,8 +124,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer readCloserLogs.Close()
 
-	_, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs)
-	if err == nil {
+	if _, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred copying the container logs to STDOUT")
 	}
 
