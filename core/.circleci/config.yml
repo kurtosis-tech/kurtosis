@@ -1,7 +1,6 @@
 version: 2.1
 
 orbs:
-  aws-s3: circleci/aws-s3@2.0.0
   npm-publisher: uraway/npm-publisher@0.2.0
   kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.0
 
@@ -174,29 +173,6 @@ jobs:
           docker tag "${image_name_with_version}" "${image_name_no_version}"
           docker push "${image_name_with_version}"
           docker push "${image_name_no_version}"
-
-  publish_testsuite_script:
-    docker:
-      - image: cimg/base:2021.10
-    steps:
-      - checkout
-
-      # AFAICT, CircleCI doesn't have a nice way to define a derived variable that then gets passed to all later steps, so
-      #  we have to do this
-      - run: |
-          source server/scripts/_constants.env
-          version_to_publish="$(bash "server/scripts/${GET_DOCKER_IMAGE_TAG_SCRIPT_FILENAME}")"
-          echo "Version being published: ${version_to_publish}"
-
-          echo "export CORE_VERSION=\"${version_to_publish}\"" >> $BASH_ENV
-
-      # All the variables here from the s3-upload-user context that we attach
-      - aws-s3/copy:
-          aws-access-key-id: S3_ACCESS_KEY
-          aws-region: S3_REGION
-          aws-secret-access-key: S3_SECRET_KEY
-          from: testsuite_scripts/build-and-run-core.sh
-          to: "s3://${PUBLIC_ACCESS_BUCKET}/dist/${CORE_VERSION}/build-and-run-core.sh"
   # -- End publishing jobs -------------------------------------
 
 workflows:
@@ -274,14 +250,6 @@ workflows:
           context:
             - github-user
             - docker-user
-          filters:
-            branches:
-              ignore: /.*/
-            tags: 
-              only: /^[0-9]+\.[0-9]+\.[0-9]+$/
-      - publish_testsuite_script:
-          context:
-            - s3-upload-user
           filters:
             branches:
               ignore: /.*/

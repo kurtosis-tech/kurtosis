@@ -14,12 +14,11 @@ RELEASE_SCRIPT_FILENAME="release-repo.sh"     # NOTE: Must be on the path; comes
 
 UPDATE_OWN_VERSION_CONSTS_SCRIPT_FILENAME="update-own-version-constants.sh"
 UPDATE_PACKAGE_VERSION_SCRIPT_FILENAME="update-package-versions.sh"
-UPDATE_BUILD_AND_RUN_VERSION_FILENAME="update-build-and-run-core-version.sh"
 
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-if ! bash "${RELEASE_SCRIPT_FILENAME}" "${root_dirpath}" "${script_dirpath}/${UPDATE_OWN_VERSION_CONSTS_SCRIPT_FILENAME}" "${script_dirpath}/${UPDATE_PACKAGE_VERSION_SCRIPT_FILENAME}" "${script_dirpath}/${UPDATE_BUILD_AND_RUN_VERSION_FILENAME}"; then
+if ! bash "${RELEASE_SCRIPT_FILENAME}" "${root_dirpath}" "${script_dirpath}/${UPDATE_OWN_VERSION_CONSTS_SCRIPT_FILENAME}" "${script_dirpath}/${UPDATE_PACKAGE_VERSION_SCRIPT_FILENAME}"; then
     echo "Error: Couldn't cut the release" >&2
     exit 1
 fi
