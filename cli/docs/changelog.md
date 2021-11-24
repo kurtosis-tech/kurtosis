@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * The enclave for `module exec` will now be named after the module image and the time it was ran
+* Allow users running `module exec` to manually specify the ID of the enclave that will be created
 
 ### Fixes
 * Fixed a bug where `service logs` that was successful would really fail

@@ -27,6 +27,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -37,14 +38,19 @@ const (
 	executeParamsStrArg = "execute-params"
 	apiContainerVersionArg = "api-container-version"
 	moduleImageArg = "module-image"
+	enclaveIdArg = "enclave-id"
 
 	defaultLoadParams              = "{}"
 	defaultExecuteParams           = "{}"
+	defaultEnclaveId               = ""
 
 	shouldEnablePartitioning = true
 	shouldPublishAllPorts = true
 
 	moduleId = "my-module"
+
+	// TODO Extract this validation into a centralized location for all commands that use an enclave ID
+	allowedEnclaveIdCharsRegexStr = `^[A-Za-z0-9._-]+$`
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -56,6 +62,7 @@ var kurtosisLogLevelStr string
 var loadParamsStr string
 var executeParamsStr string
 var apiContainerVersion string
+var userRequestedEnclaveId string
 
 var ExecCmd = &cobra.Command{
 	Use:   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
@@ -93,6 +100,15 @@ func init() {
 		defaults.DefaultAPIContainerVersion,
 		"The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
 	)
+	ExecCmd.Flags().StringVar(
+		&userRequestedEnclaveId,
+		enclaveIdArg,
+		defaultEnclaveId,
+		fmt.Sprintf(
+			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
+			allowedEnclaveIdCharsRegexStr,
+		),
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -119,7 +135,27 @@ func run(cmd *cobra.Command, args []string) error {
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
 	logrus.Info("Creating enclave for the module to execute inside...")
-	enclaveId := getEnclaveId(moduleImage)
+	enclaveId := userRequestedEnclaveId
+	if enclaveId == defaultEnclaveId {
+		enclaveId = getEnclaveId(moduleImage)
+	}
+	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred validating that enclave ID '%v' matches allowed enclave ID regex '%v'",
+			enclaveId,
+			allowedEnclaveIdCharsRegexStr,
+		)
+	}
+	if !validEnclaveId {
+		return stacktrace.NewError(
+			"Enclave ID '%v' doesn't match allowed enclave ID regex '%v'",
+			enclaveId,
+			allowedEnclaveIdCharsRegexStr,
+		)
+	}
+
 	engineManager := engine_manager.NewEngineManager(dockerManager)
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
