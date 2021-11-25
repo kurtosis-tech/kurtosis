@@ -14,8 +14,8 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	labelsHelper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_containers_labels_by_enclaveID"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -86,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
+	labels := labelsHelper.GetUserServiceContainerLabelsWithEnclaveId(enclaveId)
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
@@ -129,14 +129,4 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-// ====================================================================================================
-// 									   Private helper methods
-// ====================================================================================================
-func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]string {
-	labels := map[string]string{}
-	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
-	labels[schema.EnclaveIDContainerLabel] = enclaveId
-	return labels
 }
