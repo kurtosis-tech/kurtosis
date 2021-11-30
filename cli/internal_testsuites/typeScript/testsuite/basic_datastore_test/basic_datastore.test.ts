@@ -11,8 +11,8 @@ import { addDatastoreService } from "../../test_helpers/test_helpers";
 const TEST_NAME = "basic-datastore-test";
 const IS_PARTITIONING_ENABLED = false;
 const DATASTORE_SERVICE_ID: ServiceID = "datastore";
-const TEST_KEY = "test-key-246"
-const TEST_VALUE = "test-value-2";
+const TEST_KEY = "test-key"
+const TEST_VALUE = "test-value";
 
 describe("Test basic data store", () => {
 	jest.setTimeout(30000)
