@@ -133,10 +133,7 @@ describe("Test basic data store", () => {
 		const result = await existsResponse;
 		expect(result).toBeTruthy();
 		expect(result.isOk()).toBe(true);
-		if(result.isOk()) {
-			console.log(result.value.getExists())
-			expect(result.value.getExists()).toBe(false)
-		}
+		if(result.isOk()) expect(result.value.getExists()).toBe(false)
 		log.info(`Confirmed that key ${TEST_KEY} doesn't already exist!`)
 	})
 	
@@ -155,10 +152,7 @@ describe("Test basic data store", () => {
 		const result = await getResponse;
 		expect(result).toBeTruthy();
 		expect(result.isOk()).toBe(true);
-		if(result.isOk()) {
-			console.log(result.value.getValue())
-			expect(result.value.getValue()).toBe(TEST_VALUE)
-		}
+		if(result.isOk()) expect(result.value.getValue()).toBe(TEST_VALUE)
 		log.info(`Value verified`)
 	})
 
