@@ -1,8 +1,4 @@
 {
-  "name": "kurtosis_typescript_testsuites",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
   "scripts": {
     "test": "jest --watch",
     "cover": "jest --coverage"

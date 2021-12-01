@@ -36,15 +36,15 @@ export async function addDatastoreService(
 ): Promise<Result<{ serviceCtx: ServiceContext, client: datastoreApi.DatastoreServiceClient, clientCloseFunc: () => void }, Error>> {
     const containerConfigSupplier = getDatastoreContainerConfigSupplier()
     
-    const service = await enclaveCtx.addService(serviceId, containerConfigSupplier)
-    if (service.isErr()) {
-        console.error("An error occurred adding the datastore service", service.error)
+    const addServiceResult = await enclaveCtx.addService(serviceId, containerConfigSupplier)
+    if (addServiceResult.isErr()) {
+        console.error("An error occurred adding the datastore service", addServiceResult.error)
         return err(new Error("An error occurred adding the datastore service"))
     }
 
-    const [serviceCtx, hostPortBindings] = service.value
+    const [serviceCtx, hostPortBindings] = addServiceResult.value
 
-    const hostPortBinding: PortBinding = hostPortBindings.get(datastorePortStr)
+    const hostPortBinding: PortBinding | undefined = hostPortBindings.get(datastorePortStr)
 
     if (!hostPortBinding) {
         console.error(`No datastore host port binding found for port string ${datastorePortStr}`)
@@ -54,21 +54,28 @@ export async function addDatastoreService(
     const datastoreIp = hostPortBinding.getInterfaceIp();
     const datastorePortNumStr = hostPortBinding.getInterfacePort();
 
-    const datastoreClient = createDatastoreClient(datastoreIp, datastorePortNumStr)
-    if (datastoreClient.isErr()) {
+    const createDatastoreClientResult = createDatastoreClient(datastoreIp, datastorePortNumStr)
+    if (createDatastoreClientResult.isErr()) {
         console.error(`An error occurred creating the datastore client for IP ${datastoreIp} and port ${datastorePortNumStr}`)
         return err(new Error(`An error occurred creating the datastore client for IP ${datastoreIp} and port ${datastorePortNumStr}`))
     }
-    const { client, clientCloseFunc } = datastoreClient.value;
+    const { client, clientCloseFunc } = createDatastoreClientResult.value;
 
-    const healthy = await waitForHealthy(client, DATASTORE_WAIT_FOR_STARTUP_MAX_POLLS, DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS);
-    if (healthy.isErr()) {
+    const waitForHealthyResult = await waitForHealthy(client, DATASTORE_WAIT_FOR_STARTUP_MAX_POLLS, DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS);
+    if (waitForHealthyResult.isErr()) {
         console.error("An error occurred waiting for the datastore service to become available")
         return err(new Error("An error occurred waiting for the datastore service to become available"))
     }
 
     return ok({ serviceCtx, client, clientCloseFunc })
 }
+
+export async function addAPIService(serviceId: ServiceID, enclaveCtx: EnclaveContext, datastoreIPInsideNetwork:string) {
+
+    return
+}
+
+
 
 type CreateDatastoreClientReturn = Result<{ client: datastoreApi.DatastoreServiceClient, clientCloseFunc: () => void }, Error>
 
@@ -96,12 +103,12 @@ function createDatastoreClient(ipAddr: string, portNum: string): CreateDatastore
 }
 
 
-async function waitForHealthy(client: datastoreApi.DatastoreServiceClient, retries: number, retriesDelayMilliseconds: number) {
+async function waitForHealthy(client: datastoreApi.DatastoreServiceClient, retries: number, retriesDelayMilliseconds: number):Promise<Result<null, Error>> {
     const emptyArgs: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
 
     const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-    const checkClientAvailability: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise(async (resolve, _unusedReject) => {
+    const checkClientAvailabilityPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise(async (resolve, _unusedReject) => {
         client.isAvailable(emptyArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
             if (error === null) {
                 if (!response) {
@@ -119,8 +126,8 @@ async function waitForHealthy(client: datastoreApi.DatastoreServiceClient, retri
 
 
     for (let i = 0; i < retries; i++) {
-        const result = await checkClientAvailability
-        if(result.isOk()) return ok(result);
+        const result = await checkClientAvailabilityPromise
+        if(result.isOk()) return ok(null);
 
         await sleep(retriesDelayMilliseconds)
     }
@@ -141,8 +148,11 @@ function getDatastoreContainerConfigSupplier(): (
     const containerConfigSupplier = (
         ipAddr: string,
         sharedDirectory: SharedPath
-    ): Result<ContainerConfig, Error> =>
-        ok(new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(new Set().add(datastorePortStr) as Set<string>).build());
+    ): Result<ContainerConfig, Error> => {
+        const datastorePortsSet = new Set().add(datastorePortStr) as Set<string>
+        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(datastorePortsSet).build()
+        return  ok(containerConfig);
+    }
 
     return containerConfigSupplier;
 }

@@ -1,7 +1,0 @@
-{
-    "include": [
-        "untyped.d.ts",
-        "src/**/*.ts",
-        "src/**/*.tsx"
-    ]
-}

@@ -3,7 +3,7 @@ import { KurtosisContext,  } from "kurtosis-engine-api-lib"
 import {Result, err, ok} from "neverthrow"
 import log from "loglevel";
 
-const TEAST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "golang-engine-server-test"
+const TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "typescript-engine-server-test"
 
 export type CreateEnclaveReturn = {
 	enclaveContext: EnclaveContext
@@ -18,7 +18,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 		return err(new Error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`))
 	}
 	
-	const enclaveId:EnclaveID = `${TEAST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}_${testName}_${Date.now()}`
+	const enclaveId:EnclaveID = `${TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}_${testName}_${Math.round(Date.now()/1000)}`
 	const enclaveContext = await kurtosisContext.value.createEnclave(enclaveId, isPartitioningEnabled)
 	if(enclaveContext.isErr()) {
 		console.error(`An error occurred creating enclave ${enclaveId}`)
