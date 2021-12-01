@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added new command named service shell (kurtosis service shell enclave_id service_id) which performs the same as docker exec -it container_id sh
 
 # 0.7.2
 ### Features

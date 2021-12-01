@@ -30,6 +30,7 @@ const (
 	SandboxCmdStr = "sandbox"
 	ServiceCmdStr = "service"
 		ServiceLogsCmdStr = "logs"
+		ShellCmdStr = "shell"
 	TestCmdStr = "test"
 	VersionCmdStr = "version"
 )
