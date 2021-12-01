@@ -7,15 +7,13 @@ package shell
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	labelsHelper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_containers_labels_by_enclaveID"
+	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -28,21 +26,22 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg = "kurtosis-log-level"
-	enclaveIDArg        = "enclave-id"
-	serviceIDArg        = "service-id"
+	kurtosisLogLevelArg                    = "kurtosis-log-level"
+	enclaveIDArg                           = "enclave-id"
+	guidArg                                = "guid"
+	shouldShowStoppedUserServiceContainers = true
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIDArg,
-	serviceIDArg,
+	guidArg,
 }
 
 var ShellCmd = &cobra.Command{
 	Use:                   command_str_consts.ShellCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short:                 "Get access to the service shell",
+	Short:                 "Start a shell on the specified service",
 	RunE:                  run,
 }
 
@@ -65,18 +64,12 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
-
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
 	enclaveID := parsedPositionalArgs[enclaveIDArg]
-	serviceID := parsedPositionalArgs[serviceIDArg]
+	guid := parsedPositionalArgs[guidArg]
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -87,40 +80,27 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := labelsHelper.GetUserServiceContainerLabelsWithEnclaveId(enclaveID)
+	labels := labels_helper.GetUserServiceContainerLabelsWithEnclaveID(enclaveID)
+	labels[schema.GUIDLabel] = guid
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, true)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
 	}
 
 	if containers == nil || len(containers) == 0 {
-		logrus.Errorf("There is not any service container with enclave ID '%v'", enclaveID)
-		return nil
+		logrus.Errorf("No service containers found for enclave with ID '%v'", enclaveID)
+		return stacktrace.NewError("No service containers found for enclave with ID '%v'", enclaveID)
 	}
 
-	var containersWithSearchedServiceID = []*docker_manager_types.Container{}
-	for _, container := range containers {
-		labelsMap := container.GetLabels()
-		containerID, found := labelsMap[schema.GUIDLabel]
-		if found && containerID == serviceID {
-			containersWithSearchedServiceID = append(containersWithSearchedServiceID, container)
-		}
+	if len(containers) > 1 {
+		return stacktrace.NewError("Only one container with enclave-id '%v' and GUID '%v' should exist but there are '%v' containers with these properties", enclaveID, guid, len(containers))
 	}
 
-	if len(containersWithSearchedServiceID) == 0 {
-		logrus.Errorf("There is not any service container with GUID '%v'", serviceID)
-		return nil
-	}
-
-	if len(containersWithSearchedServiceID) > 1 {
-		return stacktrace.NewError("Only one container with enclave-id '%v' and GUID '%v' should exist but there are '%v' containers with these properties", enclaveID, serviceID, len(containers))
-	}
-
-	serviceContainer := containersWithSearchedServiceID[0]
+	serviceContainer := containers[0]
 
 	config := types.ExecConfig{
-		AttachStdin: true,
+		AttachStdin:  true,
 		Tty:          true,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -136,17 +116,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	execID := response.ID
 	if execID == "" {
-		return errors.New("the Exec ID was empty")
+		return stacktrace.NewError("the Exec ID was empty")
 	}
 
-	es := types.ExecStartCheck{
+	execStartCheck := types.ExecStartCheck{
 		Detach: false,
 		Tty:    true,
 	}
 
-	hijackedResponse, err := dockerClient.ContainerExecAttach(ctx, execID, es)
+	hijackedResponse, err := dockerClient.ContainerExecAttach(ctx, execID, execStartCheck)
 	if err != nil {
-		return stacktrace.Propagate(err, "there was an error while attaching to the ContainerExec")
+		return stacktrace.Propagate(err, "There was an error while attaching to the ContainerExec")
 	}
 	defer hijackedResponse.Close()
 
@@ -172,11 +152,9 @@ func run(cmd *cobra.Command, args []string) error {
 		defer terminal.Restore(stdinFd, oldState)
 	}
 
-	_ =  <- finishChan
+	_ = <-finishChan
 
 	terminal.Restore(stdinFd, oldState)
 
 	return nil
 }
-
-

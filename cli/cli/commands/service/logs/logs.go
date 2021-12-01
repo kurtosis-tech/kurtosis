@@ -14,7 +14,7 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	labelsHelper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_containers_labels_by_enclaveID"
+	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -86,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := labelsHelper.GetUserServiceContainerLabelsWithEnclaveId(enclaveId)
+	labels := labels_helper.GetUserServiceContainerLabelsWithEnclaveID(enclaveId)
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
