@@ -39,12 +39,13 @@ const (
 	apiContainerVersionArg = "api-container-version"
 	moduleImageArg = "module-image"
 	enclaveIdArg = "enclave-id"
+	isPartitioningEnabledArg = "with-partitioning"
 
 	defaultLoadParams              = "{}"
 	defaultExecuteParams           = "{}"
 	defaultEnclaveId               = ""
+	defaultIsPartitioningEnabled   = false
 
-	shouldEnablePartitioning = true
 	shouldPublishAllPorts = true
 
 	moduleId = "my-module"
@@ -63,6 +64,7 @@ var loadParamsStr string
 var executeParamsStr string
 var apiContainerVersion string
 var userRequestedEnclaveId string
+var isPartitioningEnabled bool
 
 var ExecCmd = &cobra.Command{
 	Use:   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
@@ -108,6 +110,12 @@ func init() {
 			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
 			allowedEnclaveIdCharsRegexStr,
 		),
+	)
+	ExecCmd.Flags().BoolVar(
+		&isPartitioningEnabled,
+		isPartitioningEnabledArg,
+		defaultIsPartitioningEnabled,
+		"If set to true, the enclave that the module executes in will have partitioning enabled so network partitioning simulations can be run",
 	)
 }
 
@@ -168,7 +176,7 @@ func run(cmd *cobra.Command, args []string) error {
 		EnclaveId:              enclaveId,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
-		IsPartitioningEnabled:  shouldEnablePartitioning,
+		IsPartitioningEnabled:  isPartitioningEnabled,
 		ShouldPublishAllPorts:  shouldPublishAllPorts,
 	}
 
