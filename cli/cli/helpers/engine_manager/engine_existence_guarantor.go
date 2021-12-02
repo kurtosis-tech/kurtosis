@@ -22,6 +22,12 @@ const (
 
 	engineDataDirPermBits = 0755
 )
+var engineRestartCmd = fmt.Sprintf(
+	"%v %v %v",
+	command_str_consts.KurtosisCmdStr,
+	command_str_consts.EngineCmdStr,
+	command_str_consts.EngineRestartCmdStr,
+)
 
 // Visitor that does its best to guarantee that a Kurtosis engine is running
 // If the visit method doesn't return an error, then the engine started successfully
@@ -158,35 +164,50 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	guarantor.postVisitingHostMachinePortBinding = guarantor.preVisitingMaybeHostMachinePortBinding
-	guarantor.checkIfEngineIsUpToDate()
+	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
+	if err != nil {
+		logrus.Warn("An error occurred getting the running engine's version; you may be running an out-of-date engine version")
+		logrus.Debugf("Getting running and CLI engine versions error: %v", err)
+		return nil
+	}
+
+	cliEngineMajorVersion := cliEngineSemver.Major()
+	cliEngineMinorVersion := cliEngineSemver.Minor()
+	runningEngineMajorVersion := runningEngineSemver.Major()
+	runningEngineMinorVersion := runningEngineSemver.Minor()
+	doApiVersionsMatch := cliEngineMajorVersion == runningEngineMajorVersion && cliEngineMinorVersion == runningEngineMinorVersion
+	// If the major.minor versions don't match, there's an API break that could cause the CLI to fail so we force the user to
+	//  restart their engine server
+	if !doApiVersionsMatch {
+		logrus.Errorf(
+			"The engine server API version that the CLI expects, '%v', doesn't match the running engine server API version, '%v'; this would cause broken functionality so " +
+				"you'll need to restart the engine to get the correct version by running '%v'",
+			fmt.Sprintf("%v.%v", cliEngineMajorVersion, cliEngineMinorVersion),
+			fmt.Sprintf("%v.%v", runningEngineMajorVersion, runningEngineMinorVersion),
+			engineRestartCmd,
+		)
+		return stacktrace.NewError(
+			"An API version mismatch was detected between the running engine version '%v' and the engine version the CLI expects, '%v'",
+			runningEngineSemver.String(),
+			cliEngineSemver.String(),
+		)
+	}
+	if runningEngineSemver.LessThan(cliEngineSemver) {
+		logrus.Warningf(
+			"The currently-running Kurtosis engine version is '%v' but the latest version is '%v'; you can pull the latest fixes by running '%v'",
+			runningEngineSemver.String(),
+			cliEngineSemver.String(),
+			engineRestartCmd,
+		)
+	} else {
+		logrus.Debugf("Currently running engine version '%v' is >= the version the CLI expects", guarantor.maybeCurrentlyRunningEngineVersionTag)
+	}
 	return nil
 }
 
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
-func (guarantor *engineExistenceGuarantor) checkIfEngineIsUpToDate() {
-	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
-	if err != nil {
-		logrus.Warn("An error occurred getting the running engine's version; you may be running an out-of-date engine version")
-		logrus.Debugf("Getting running and CLI engine versions error: %v", err)
-		return
-	}
-
-	if runningEngineSemver.LessThan(cliEngineSemver) {
-		kurtosisRestartCmd := fmt.Sprintf("%v %v %v", command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr)
-		logrus.Warningf(
-			"The currently-running Kurtosis engine version is '%v', but the latest version is '%v'; to restart the engine with the latest version use '%v'",
-			runningEngineSemver.String(),
-			cliEngineSemver.String(),
-			kurtosisRestartCmd,
-		)
-	} else {
-		logrus.Debugf("Currently running engine version '%v' which is up-to-date", guarantor.maybeCurrentlyRunningEngineVersionTag)
-	}
-	return
-}
-
 func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*semver.Version, *semver.Version, error) {
 	if guarantor.maybeCurrentlyRunningEngineVersionTag == "" {
 		return nil, nil, stacktrace.NewError("Needed to report the currently-running engine's version, but it's emptystring")
