@@ -1,5 +1,15 @@
 # TBD
 
+# 1.5.7
+### Features
+* Upgraded to Kurt Core v1.35.0, which allows users to add user-friendly port IDs to the ports that they declare for their containers
+
+### Changes
+* Upgraded to minimal-grpc-server 0.5.0
+
+### Removals
+* Removed the `ListenProtocol` engine server arg, because it listens on gRPC and only TCP is supported
+
 # 1.5.6
 ### Fixes
 * Fixed an issue where getting enclaves that included an API container without the new `port-protocol` label would break

@@ -15,12 +15,14 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
+	"strconv"
 	"time"
 )
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.5.6"
+	DefaultVersion = "1.5.7"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -30,12 +32,20 @@ const (
 
 	networkToStartEngineContainerIn = "bridge"
 
+	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
+	// This is the Docker constant indicating a TCP port
+	engineContainerDockerPortProtocol = "tcp"
+
+	// The protocol string we use in the netstat command used to ensure the engine container is available
+	netstatWaitForAvailabilityPortProtocol = "tcp"
+
 	maxWaitForAvailabilityRetries         = 10
 	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
 
 	availabilityWaitingExecCmdSuccessExitCode = 0
 
-	ListenProtocol = "tcp"
+	publicPortNumParsingBase     = 10
+	publicPortNumParsingUintBits = 16
 
 	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
 	//  on the engine server
@@ -57,8 +67,12 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	logLevel logrus.Level,
 	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	engineDataDirpathOnHostMachine string,
-) (*nat.PortBinding, error) {
-	hostMachinePortBinding, err := launcher.LaunchWithCustomVersion(
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortNum uint16,
+	resultErr error,
+) {
+	publicIpAddr, publicPortNum, err := launcher.LaunchWithCustomVersion(
 		ctx,
 		DefaultVersion,
 		logLevel,
@@ -66,9 +80,9 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultVersion)
+		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultVersion)
 	}
-	return hostMachinePortBinding, nil
+	return publicIpAddr, publicPortNum, nil
 }
 
 func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
@@ -77,10 +91,14 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	logLevel logrus.Level,
 	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	engineDataDirpathOnHostMachine string,
-) (*nat.PortBinding, error) {
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortNum uint16,
+	resultErr error,
+) {
 	matchingNetworks, err := launcher.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
 			networkToStartEngineContainerIn,
@@ -88,7 +106,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError(
+		return nil, 0, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
 			networkToStartEngineContainerIn,
 			numMatchingNetworks,
@@ -97,35 +115,37 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	engineAttrs := launcher.objAttrsProvider.ForEngineServer(listenPortNum, ListenProtocol)
+	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(listenPortNum)
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
+	}
 
 	enginePortObj, err := nat.NewPort(
-		ListenProtocol,
+		engineContainerDockerPortProtocol,
 		fmt.Sprintf("%v", listenPortNum),
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
 			listenPortNum,
-			ListenProtocol,
+			engineContainerDockerPortProtocol,
 		)
 	}
 
 	argsObj, err := args.NewEngineServerArgs(
 		listenPortNum,
-		ListenProtocol,
 		logLevel.String(),
 		imageVersionTag,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")
 	}
 
 	envVars, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
@@ -165,7 +185,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 
 	containerId, hostMachinePortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
 	}
 	shouldKillEngineContainer := true
 	defer func() {
@@ -178,16 +198,35 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}()
 
 	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, listenPortNum); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
 	}
 
 	hostMachineEnginePortBinding, found := hostMachinePortBindings[enginePortObj]
 	if !found {
-		return nil, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
+		return nil, 0, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
 	}
 
+	publicIpAddrStr := hostMachineEnginePortBinding.HostIP
+	publicIpAddr := net.ParseIP(publicIpAddrStr)
+	if publicIpAddr == nil {
+		return nil, 0, stacktrace.NewError("The engine server's port was reported to be bound on host machine interface IP '%v', but this is not a valid IP string", publicIpAddrStr)
+	}
+
+	publicPortNumStr := hostMachineEnginePortBinding.HostPort
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(
+			err,
+			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
+			publicPortNumStr,
+			publicPortNumParsingBase,
+			publicPortNumParsingUintBits,
+		)
+	}
+	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+
 	shouldKillEngineContainer = false
-	return hostMachineEnginePortBinding, nil
+	return publicIpAddr, publicPortNumUint16, nil
 }
 
 // ====================================================================================================
@@ -196,7 +235,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		ListenProtocol,
+		netstatWaitForAvailabilityPortProtocol,
 		listenPortNum,
 	)
 	execCmd := []string{

@@ -13,11 +13,12 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211116225603-d9c52228a740
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211202230151-3be06355b15d // indirect
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202230137-91cf1e98661f
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211108000544-89f5ac8d0f88
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211111005229-ffdab131bcda
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211201003728-db67d51ade0c
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/sirupsen/logrus v1.8.1
