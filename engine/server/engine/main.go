@@ -82,7 +82,6 @@ func runMain () error {
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
 		serverArgs.ListenPortNum,
-		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,

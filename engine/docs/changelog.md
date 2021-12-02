@@ -2,6 +2,9 @@
 ### Features
 * Upgraded to Kurt Core v1.34.0, which allows users to add user-friendly port IDs to the ports that they declare for their containers
 
+### Changes
+* Upgraded to minimal-grpc-server 0.5.0
+
 ### Removals
 * Removed the `ListenProtocol` engine server arg, because it listens on gRPC and only TCP is supported
 
