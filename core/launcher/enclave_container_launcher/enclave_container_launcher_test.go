@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/require"
+	"net"
 	"testing"
 )
 
@@ -84,7 +85,9 @@ func TestDuplicatedDockerPorts(t *testing.T) {
 //                                    Condense Network Info Tests
 // ====================================================================================================
 func TestNormalPublicNetworkInfoCondensing(t *testing.T) {
-	expectedPublicIpAddr := "127.0.0.1"
+	expectedPublicIpAddrStr := "127.0.0.1"
+	expectedPublicIpAddr := net.ParseIP(expectedPublicIpAddrStr)
+	require.NotNil(t, expectedPublicIpAddr, "Parsing expected IP address string '%v' failed", expectedPublicIpAddrStr)
 
 	port1Id := "rpc"
 	port1DockerObj := nat.Port("1234/tcp")
@@ -98,16 +101,16 @@ func TestNormalPublicNetworkInfoCondensing(t *testing.T) {
 
 	hostMachinePortBindings := map[nat.Port]*nat.PortBinding{
 		port1DockerObj: {
-			HostIP:   expectedPublicIpAddr,
+			HostIP:   expectedPublicIpAddrStr,
 			HostPort: "62723",
 		},
 		port2DockerObj: {
-			HostIP:   expectedPublicIpAddr,
+			HostIP:   expectedPublicIpAddrStr,
 			HostPort: "62724",
 		},
 		// Should get ignored, because this wasn't declared in the private ports
 		nat.Port("9923/udp"): {
-			HostIP:   expectedPublicIpAddr,
+			HostIP:   expectedPublicIpAddrStr,
 			HostPort: "62725",
 		},
 	}

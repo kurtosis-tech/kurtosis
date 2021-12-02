@@ -1,4 +1,9 @@
 # TBD
+### Fixes
+* Return an empty public IP address string and empty public ports map if a user service doesn't declare any private ports
+
+### Breaking Changes
+* Renamed `ServiceContext.GetPublicIPAddress` -> `ServcieContext.GetMaybePublicIPAddress` to reflect that it may not exist if the service didn't declare any private ports
 
 # 1.34.0
 ### Features

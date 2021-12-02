@@ -81,8 +81,8 @@ type ServiceNetwork interface {
 
 	GetServiceRunInfo(serviceId service_network_types.ServiceID) (
 		privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
-		publicIpAddr net.IP,
-		publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		maybePublicIpAddr net.IP,	// Will be nil if the service didn't declare any private ports
+		publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,	// Will be empty if the service didn't declare any private ports
 		enclaveDataDirMntDirpath string,  // The filepath on the service container where the enclave data dir is mounted
 		resultErr error,
 	)

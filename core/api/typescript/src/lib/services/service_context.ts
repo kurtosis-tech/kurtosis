@@ -31,16 +31,6 @@ export class ServiceContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getPublicIPAddress(): string {
-        return this.publicIpAddr;
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getPublicPorts(): Map<string, PortSpec> {
-        return this.publicPorts;
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getPrivateIPAddress(): string {
         return this.privateIpAddr;
     }
@@ -48,6 +38,16 @@ export class ServiceContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getPrivatePorts(): Map<string, PortSpec> {
         return this.privatePorts;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getMaybePublicIPAddress(): string {
+        return this.publicIpAddr;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getPublicPorts(): Map<string, PortSpec> {
+        return this.publicPorts;
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

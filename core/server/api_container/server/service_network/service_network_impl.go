@@ -47,9 +47,9 @@ type serviceRunInfo struct {
 
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
-	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort
-	publicIpAddr net.IP
-	publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort
+	privatePorts      map[string]*enclave_container_launcher.EnclaveContainerPort
+	maybePublicIpAddr net.IP // Can be nil if the service doesn't declare any private ports
+	publicPorts       map[string]*enclave_container_launcher.EnclaveContainerPort // Will be empty if the service doesn't declare any private ports
 }
 
 /*
@@ -247,7 +247,7 @@ func (network *ServiceNetworkImpl) StartService(
 	enclaveDataDirMntDirpath string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
-	resultPublicIpAddr net.IP,
+	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
 	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
 	resultErr error,
 ) {
@@ -294,7 +294,7 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 	}
 
-	serviceContainerId, servicePublicIpAddr, servicePublicPorts, err := network.userServiceLauncher.Launch(
+	serviceContainerId, maybeServicePublicIpAddr, servicePublicPorts, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceGuid,
 		string(serviceId),
@@ -316,7 +316,7 @@ func (network *ServiceNetworkImpl) StartService(
 		containerId:              serviceContainerId,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
-		publicIpAddr:             servicePublicIpAddr,
+		maybePublicIpAddr:        maybeServicePublicIpAddr,
 		publicPorts:              servicePublicPorts,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
@@ -349,7 +349,7 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 	}
 
-	return servicePublicIpAddr, servicePublicPorts, nil
+	return maybeServicePublicIpAddr, servicePublicPorts, nil
 }
 
 func (network *ServiceNetworkImpl) RemoveService(
@@ -441,7 +441,7 @@ func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service_network_t
 	if !found {
 		return nil, nil, nil, "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-	return runInfo.privatePorts, runInfo.publicIpAddr, runInfo.publicPorts, runInfo.enclaveDataDirMntDirpath, nil
+	return runInfo.privatePorts, runInfo.maybePublicIpAddr, runInfo.publicPorts, runInfo.enclaveDataDirMntDirpath, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {
