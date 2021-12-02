@@ -90,7 +90,7 @@ function createDatastoreClient(ipAddr: string, portNum: string): CreateDatastore
     conn = ok(new EngineServiceClient(url, grpc.credentials.createInsecure()));
   } catch (error) {
     log.error(`An error occurred connecting to datastore service on URL ${url}`);
-    return err(new Error());
+    return err(new Error(`An error occurred connecting to datastore service on URL ${url}`));
   }
 
   const clientCloseFunc = () => {
