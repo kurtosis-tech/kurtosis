@@ -13,7 +13,6 @@ const (
 // Fields are public for JSON de/serialization
 type EngineServerArgs struct {
 	ListenPortNum      uint16 `json:"listenPortNum"`
-	ListenPortProtocol string `json:"listenPortProtocol"`
 
 	LogLevelStr string	`json:"logLevelStr"`
 
@@ -30,14 +29,12 @@ type EngineServerArgs struct {
 //  we get compile errors if there are missing fields
 func NewEngineServerArgs(
 	listenPortNum uint16,
-	listenPortProtocol string,
 	logLevelStr string,
 	imageVersionTag string,
 	engineDataDirpathOnHostMachine string,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		ListenPortNum:                  listenPortNum,
-		ListenPortProtocol:             listenPortProtocol,
 		LogLevelStr:                    logLevelStr,
 		ImageVersionTag:                imageVersionTag,
 		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
