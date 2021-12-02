@@ -64,7 +64,6 @@ const (
 	// These are the old labels that the API container used to use before 2021-12-02 for declaring its port num protocol
 	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with the old label
 	pre2021_12_02_apiContainerPortNumLabel      = "com.kurtosistech.port-number"
-	pre2021_12_02_apiContainerPortProtocolLabel = "com.kurtosistech.port-protocol"
 	pre2021_12_02_apiContainerPortNumBase = 10
 	pre2021_12_02_apiContainerPortNumUintBits = 16
 	pre2021_12_02_apiContainerPortProtocol = schema.PortProtocol_TCP
@@ -566,16 +565,16 @@ func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[strin
 		return port, nil
 	}
 
-	pre2021_12_02PortNum, err := getApiContainerPrivatePortUsingPre2021_12_02Label(apiContainerLabels)
+	pre2021_12_02Port, err := getApiContainerPrivatePortUsingPre2021_12_02Label(apiContainerLabels)
 	if err == nil {
-		return pre2021_12_02PortNum, nil
+		return pre2021_12_02Port, nil
 	} else {
 		logrus.Debugf("An error occurred getting the API container private port num using the pre-2021-12-02 label: %v", err)
 	}
 
-	pre2021_11_15PortNum, err := getApiContainerPrivatePortUsingPre2021_11_15Label(apiContainerLabels)
+	pre2021_11_15Port, err := getApiContainerPrivatePortUsingPre2021_11_15Label(apiContainerLabels)
 	if err == nil {
-		return pre2021_11_15PortNum, nil
+		return pre2021_11_15Port, nil
 	} else {
 		logrus.Debugf("An error occurred getting the API container private port num using the pre-2021-11-15 label: %v", err)
 	}
