@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Upgraded to Kurt Core v1.34.0, which allows users to add user-friendly port IDs to the ports that they declare for their containers
+* Upgraded to Kurt Core v1.35.0, which allows users to add user-friendly port IDs to the ports that they declare for their containers
 
 ### Changes
 * Upgraded to minimal-grpc-server 0.5.0

@@ -417,10 +417,10 @@ github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211202185422-99bf8e198b28 h1:FpflBG6lzptUePa6GRqMd31AduxROlGT1uIIDzNt+lw=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211202185422-99bf8e198b28/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
-github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202185408-db1472fcd629 h1:TrFXUo3u1pK9I/B1iDPcp2UJSXD7x/uV5w8eYRuINWs=
-github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202185408-db1472fcd629/go.mod h1:9fyaqhsn183bWl/P9WsTg29xy0AUKeEwcURcpjMwyAU=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211108000544-89f5ac8d0f88 h1:0PkLzThDpfajwkY8gnf2gOy6TwJ0hKzbqVtVxzRBw3k=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211108000544-89f5ac8d0f88/go.mod h1:Y0O+lt256iWpkdjDOB8r6csF96Pt3JVIFMbUuWIvr8o=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211202230151-3be06355b15d h1:m7GGkw6rm2h1HrV0I8p/Dqg27jT6r+kgcTr/uJVH4qU=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211202230151-3be06355b15d/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202230137-91cf1e98661f h1:P0YmGIGfg9M6A6v0YOHxfrMUPJseNfV4R1kxLM73cNw=
+github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202230137-91cf1e98661f/go.mod h1:9fyaqhsn183bWl/P9WsTg29xy0AUKeEwcURcpjMwyAU=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3/go.mod h1:Y0O+lt256iWpkdjDOB8r6csF96Pt3JVIFMbUuWIvr8o=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211201003728-db67d51ade0c h1:GtGkMqTZsB/j71o8sILuU8LubbycLX3kYxdn06lbaaQ=
