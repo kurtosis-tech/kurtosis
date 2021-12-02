@@ -1,7 +1,9 @@
 {
   "scripts": {
-    "test": "jest --watch",
-    "cover": "jest --coverage"
+    "build": "tsc",
+    "test": "jest  ./build",
+    "test-watch": "jest --watch ./build",
+    "cover": "jest --coverage ./build"
   },
   "dependencies": {
     "axios": "^0.24.0",

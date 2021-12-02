@@ -1,9 +1,9 @@
 import { DatastoreServiceClient, UpsertArgs, ExistsArgs, GetArgs, ExistsResponse, GetResponse } from "example-datastore-server-api-lib";
 import { ServiceContext, ServiceID } from "kurtosis-core-api-lib"
-import grpc from "grpc"
+import * as grpc from "grpc"
 import { Result, ok, err } from "neverthrow"
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import log from "loglevel"
+import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 import { createEnclave, CreateEnclaveReturn } from "../../test_helpers/enclave_setup";
 import { addDatastoreService } from "../../test_helpers/test_helpers";
@@ -15,49 +15,16 @@ const TEST_KEY = "test-key"
 const TEST_VALUE = "test-value";
 
 describe("Test basic data store", () => {
-	jest.setTimeout(30000)
+	jest.setTimeout(10000)
 	
-	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	let enclave:Result<CreateEnclaveReturn, Error>;
-	
-	beforeAll(async() => {
-		enclave = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
-	})
+	let createEnclaveResult: Result<CreateEnclaveReturn, Error>;
 
-	test("If enclave was created successfully", async () => {
-		expect(enclave).toBeTruthy()
-		expect(enclave.isOk()).toBe(true)
-	})
-
-	afterAll(() => {
-		if(enclave.isOk()) enclave.value.stopEnclaveFunction()
-	});
-
-	
-	// ------------------------------------- TEST SETUP ----------------------------------------------
-	log.info("Adding datastore service...")
-
-	let datastoreService: undefined | Result<{
+	let datastoreService: Result<{
 		serviceCtx: ServiceContext;
 		client: DatastoreServiceClient;
 		clientCloseFunc: () => void;
 	}, Error>;
 
-	beforeAll(async () => {
-		if(enclave.isOk()) datastoreService = await addDatastoreService(DATASTORE_SERVICE_ID, enclave.value.enclaveContext)
-	})
-
-	test("If datastore service added successfully", async () => {
-		expect(datastoreService).toBeTruthy()
-		expect(datastoreService.isOk()).toBe(true)
-		log.info("Added datastore service")
-	})
-
-	afterAll(() => {
-		if(datastoreService.isOk()) datastoreService.value.clientCloseFunc()
-	});
-	
-	// ------------------------------------- TEST RUN ----------------------------------------------
 	const existsArgs = new ExistsArgs();
 	existsArgs.setKey(TEST_KEY)
 	let existsResponse:Promise<Result<ExistsResponse, Error>>;
@@ -71,89 +38,115 @@ describe("Test basic data store", () => {
 	getArgs.setKey(TEST_KEY)
 	let getResponse:Promise<Result<GetResponse, Error>>;
 
-	beforeAll(async () => {
-		if(enclave.isOk()){
-				existsResponse = new Promise((resolve, _unusedReject) => {
-					if(datastoreService.isOk()){
-						datastoreService.value.client.exists(existsArgs, (error: grpc.ServiceError | null, response?: ExistsResponse) => {
-							if (error === null) {
-								if (!response) {
-									console.error("Unexpected error from testing if key exists")
-									resolve(err(new Error()));
-								} else {
-									resolve(ok(response));
-								}
-							} else {
-								console.error(error)
-								resolve(err(error));
-							}
-						})
-					}
-				})
-				upsertResponse = new Promise((resolve, _unusedReject) => {
-					if(datastoreService.isOk()) {
-						datastoreService.value.client.upsert(upsertArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-							if (error === null) {
-								if (!response) {
-									console.error("Unexpected error from upserting the test key")
-									resolve(err(new Error()));
-								} else {
-									resolve(ok(response));
-								}
-							} else {
-								console.error(error)
-								resolve(err(error));
-							}
-						})
-					}
-				})
-				getResponse = new Promise((resolve, _unusedReject) => {
-					if(datastoreService.isOk()) {
-						datastoreService.value.client.get(getArgs, (error: grpc.ServiceError | null, response?: GetResponse) => {
-							if (error === null) {
-								if (!response) {
-									console.error("Unexpected error from getting the test key after upload")
-									resolve(err(new Error()));
-								} else {
-									resolve(ok(response));
-								}
-							} else {
-								console.error(error)
-								resolve(err(error));
-							}
-						})
-					}
-				})
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	
+	beforeAll(async() => {
+		createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+	})
+
+	
+	test("", async () => {
+		if(createEnclaveResult.isErr()) {
+			throw createEnclaveResult.error
 		}
-	})
-
-	log.info(`Verifying that key ${TEST_KEY} doesn't already exist..."`)
+		
+		// ------------------------------------- TEST SETUP ----------------------------------------------
+		log.info("Adding datastore service...")
+		datastoreService = await addDatastoreService(DATASTORE_SERVICE_ID, createEnclaveResult.value.enclaveContext)
+		if(datastoreService.isErr()) {
+			throw datastoreService.error
+		}
+		log.info("Added datastore service")
 	
-	test(`If key ${TEST_KEY} doesn't already exist`, async () => {
-		const result = await existsResponse;
-		expect(result).toBeTruthy();
-		expect(result.isOk()).toBe(true);
-		if(result.isOk()) expect(result.value.getExists()).toBe(false)
+
+		// ------------------------------------- TEST RUN ----------------------------------------------
+
+		log.info(`Verifying that key ${TEST_KEY} doesn't already exist..."`)
+		existsResponse = new Promise((resolve, _unusedReject) => {
+			if(datastoreService?.isOk()){
+				datastoreService.value.client.exists(existsArgs, (error: grpc.ServiceError | null, response?: ExistsResponse) => {
+					if (error === null) {
+						if (!response) {
+							resolve(err(new Error("Unexpected error from testing if key exists")));
+						} else {
+							resolve(ok(response));
+						}
+					} else {
+						console.error(error)
+						resolve(err(error));
+					}
+				})
+			}
+		})
+		const existsResponseResult = await existsResponse;
+		if(existsResponseResult.isErr()) {
+			throw existsResponseResult.error
+		}
+		if(existsResponseResult.value.getExists()) {
+			throw new Error("Test key should not exist")
+		}
 		log.info(`Confirmed that key ${TEST_KEY} doesn't already exist!`)
-	})
-	
-	log.info(`Inserting value ${TEST_KEY} at key ${TEST_VALUE}...`)
 
-	test(`Upserting the test key`, async () => {
-		const result = await upsertResponse;
-		expect(result).toBeTruthy();
-		expect(result.isOk()).toBe(true);
+
+		log.info(`Inserting value ${TEST_KEY} at key ${TEST_VALUE}...`)
+		upsertResponse = new Promise((resolve, _unusedReject) => {
+			if(datastoreService?.isOk()) {
+				datastoreService.value.client.upsert(upsertArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+					if (error === null) {
+						if (!response) {
+							console.error("Unexpected error from upserting the test key")
+							resolve(err(new Error()));
+						} else {
+							resolve(ok(response));
+						}
+					} else {
+						console.error(error)
+						resolve(err(error));
+					}
+				})
+			}
+		})
+		const upsertResponseResult = await upsertResponse;
+		if(upsertResponseResult.isErr()){
+			throw upsertResponseResult.error
+		}
 		log.info(`Inserted value successfully`)
-	})
-	
-	log.info(`Getting the key we just inserted to verify the value...`)
 
-	test(`Getting the test key after upload`, async () => {
-		const result = await getResponse;
-		expect(result).toBeTruthy();
-		expect(result.isOk()).toBe(true);
-		if(result.isOk()) expect(result.value.getValue()).toBe(TEST_VALUE)
+
+		log.info(`Getting the key we just inserted to verify the value...`)
+		getResponse = new Promise((resolve, _unusedReject) => {
+			if(datastoreService?.isOk()) {
+				datastoreService.value.client.get(getArgs, (error: grpc.ServiceError | null, response?: GetResponse) => {
+					if (error === null) {
+						if (!response) {
+							console.error("Unexpected error from getting the test key after upload")
+							resolve(err(new Error()));
+						} else {
+							resolve(ok(response));
+						}
+					} else {
+						console.error(error)
+						resolve(err(error));
+					}
+				})
+			}
+		})
+		const getResponseResult = await getResponse;
+		if(getResponseResult.isErr()){
+			throw getResponseResult.error
+		}
+		if(getResponseResult.value.getValue() !== TEST_VALUE) {
+			throw new Error(`Returned value ${getResponseResult.value.getValue()} != test value ${TEST_VALUE}`)
+		}
 		log.info(`Value verified`)
 	})
 
+	afterAll(() => {
+		if(createEnclaveResult.isOk()) {
+			createEnclaveResult.value.stopEnclaveFunction()
+		}
+		if(datastoreService?.isOk()) {
+			datastoreService.value.clientCloseFunc()
+		}
+	});
 })
