@@ -1,5 +1,13 @@
 # TBD
 
+# 0.7.4
+### Features
+* Added a `--partitioning` flag to `module exec` for enabling partitioning
+
+### Changes
+* The Go internal testsuite's enclaves will now be named with Unix millis, rather than Unix seconds
+* Partitioning defaults to false for `module exec`
+
 # 0.7.3
 ### Features
 * Added new command named service shell (kurtosis service shell enclave_id service_id) which performs the same as docker exec -it container_id sh
