@@ -9,8 +9,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
@@ -24,7 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
-	"net"
+	"math"
 	"net/http"
 	"time"
 )
@@ -36,6 +37,13 @@ const (
 	// See: https://stackoverflow.com/questions/34128872/google-protobuf-maximum-size/34186672
 	maxLogOutputSizeBytes = 10 * 1024 * 1024
 )
+
+// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and enclave container port protos
+var apiContainerPortProtoToEnclaveContainerPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]enclave_container_launcher.EnclaveContainerPortProtocol{
+	kurtosis_core_rpc_api_bindings.Port_TCP: enclave_container_launcher.EnclaveContainerPortProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_SCTP: enclave_container_launcher.EnclaveContainerPortProtocol_SCTP,
+	kurtosis_core_rpc_api_bindings.Port_UDP: enclave_container_launcher.EnclaveContainerPortProtocol_UDP,
+}
 
 type ApiContainerService struct {
 	// This embedding is required by gRPC
@@ -99,14 +107,29 @@ func (service ApiContainerService) FinishExternalContainerRegistration(ctx conte
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*emptypb.Empty, error) {
+func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
 	moduleId := module_store_types.ModuleID(args.ModuleId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
-	if err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams); err != nil {
+	privateIpAddr, privateEnclaveContainerPort, publicIpAddr, publicEnclaveContainerPort, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
+	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
-	return &emptypb.Empty{}, nil
+	privateApiPort, err := transformEnclaveContainerPortToApiPort(privateEnclaveContainerPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private enclave container port to an API port")
+	}
+	publicApiPort, err := transformEnclaveContainerPortToApiPort(publicEnclaveContainerPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
+	}
+	result := binding_constructors.NewLoadModuleResponse(
+		privateIpAddr.String(),
+		privateApiPort,
+		publicIpAddr.String(),
+		publicApiPort,
+	)
+	return result, nil
 }
 
 func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
@@ -130,11 +153,24 @@ func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurt
 
 func (service ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
 	moduleIdStr := args.ModuleId
-	ipAddr, err := service.moduleStore.GetModuleIPAddrByID(module_store_types.ModuleID(moduleIdStr))
+	privateIpAddr, privateEnclaveContainerPort, publicIpAddr, publicEnclaveContainerPort, err := service.moduleStore.GetModuleInfo(module_store_types.ModuleID(moduleIdStr))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleIdStr)
 	}
-	response := &kurtosis_core_rpc_api_bindings.GetModuleInfoResponse{IpAddr: ipAddr.String()}
+	privateApiPort, err := transformEnclaveContainerPortToApiPort(privateEnclaveContainerPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private enclave container port to an API port")
+	}
+	publicApiPort, err := transformEnclaveContainerPortToApiPort(publicEnclaveContainerPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
+	}
+	response := binding_constructors.NewGetModuleInfoResponse(
+		privateIpAddr.String(),
+		privateApiPort,
+		publicIpAddr.String(),
+		publicApiPort,
+	)
 	return response, nil
 }
 
@@ -160,51 +196,35 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *ku
 	serviceId := service_network_types.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
-	ip, relativeServiceDirpath, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
+	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
 	if err != nil {
 		// TODO IP: Leaks internal information about API container
 		return nil, stacktrace.Propagate(err, "An error occurred registering service '%v' in the service network", serviceId)
 	}
 
 	return &kurtosis_core_rpc_api_bindings.RegisterServiceResponse{
-		IpAddr:					ip.String(),
-		RelativeServiceDirpath:	relativeServiceDirpath,
+		PrivateIpAddr:          privateIpAddr.String(),
+		RelativeServiceDirpath: relativeServiceDirpath,
 	}, nil
 }
 
 func (service ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
-
-	usedPorts := map[nat.Port]bool{}
-	portObjToPortSpecStr := map[nat.Port]string{}
-	for portSpecStr := range args.UsedPorts {
-		// NOTE: this function, frustratingly, doesn't return an error on failure - just emptystring
-		protocol, portNumberStr := nat.SplitProtoPort(portSpecStr)
-		if protocol == "" {
-			return nil, stacktrace.NewError(
-				"Could not split port specification string '%s' into protocol & number strings",
-				portSpecStr)
-		}
-		portObj, err := nat.NewPort(protocol, portNumberStr)
-		if err != nil {
-			// TODO IP: Leaks internal information about the API container
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred constructing a port object out of protocol '%v' and port number string '%v'",
-				protocol,
-				portNumberStr)
-		}
-		usedPorts[portObj] = true
-		portObjToPortSpecStr[portObj] = portSpecStr
-	}
-
 	serviceId := service_network_types.ServiceID(args.ServiceId)
-
-	hostPortBindings, err := service.serviceNetwork.StartService(
+	privateApiPorts := args.PrivatePorts
+	privateEnclaveContainerPorts := map[string]*enclave_container_launcher.EnclaveContainerPort{}
+	for portId, privateApiPort := range privateApiPorts {
+		privateEnclaveContainerPort, err := transformApiPortToEnclaveContainerPort(privateApiPort)
+		if err != nil {
+			return nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into an enclave container port", portId)
+		}
+		privateEnclaveContainerPorts[portId] = privateEnclaveContainerPort
+	}
+	publicIpAddr, publicEnclaveContainerPorts, err := service.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
-		usedPorts,
+		privateEnclaveContainerPorts,
 		args.EntrypointArgs,
 		args.CmdArgs,
 		args.DockerEnvVars,
@@ -214,78 +234,53 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
 	}
-
-	// We strip out ports with nil host port bindings to make it easier to iterate over this map on the client side
-	responseHostPortBindings := map[string]*kurtosis_core_rpc_api_bindings.PortBinding{}
-	for portObj, hostPortBinding := range hostPortBindings {
-		portSpecStr, found := portObjToPortSpecStr[portObj]
-		if !found {
-			return nil, stacktrace.NewError(
-				"Found a port object, %+v, that doesn't correspond to a spec string as passed in via the args; this is very strange!",
-				portObj,
-			)
-		}
-		if hostPortBinding == nil {
-			return nil, stacktrace.NewError(
-				"Port spec string '%v' had a host port binding object returned by the Docker engine, but it was nil",
-				portSpecStr,
-			)
-		}
-		responseBinding := &kurtosis_core_rpc_api_bindings.PortBinding{
-			InterfaceIp:   hostPortBinding.HostIP,
-			InterfacePort: hostPortBinding.HostPort,
-		}
-		responseHostPortBindings[portSpecStr] = responseBinding
+	publicApiPorts, err := transformEnclaveContainerPortsMapToApiPortsMap(publicEnclaveContainerPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public enclave container ports to API ports")
 	}
-	response := kurtosis_core_rpc_api_bindings.StartServiceResponse{
-		UsedPortsHostPortBindings: responseHostPortBindings,
-	}
+	response := binding_constructors.NewStartServiceResponse(publicIpAddr.String(), publicApiPorts)
 
 	serviceStartLoglineSuffix := ""
-	if len(responseHostPortBindings) > 0 {
+	if len(publicEnclaveContainerPorts) > 0 {
 		serviceStartLoglineSuffix = fmt.Sprintf(
-			" with the following service-port-to-host-port bindings: %+v",
-			responseHostPortBindings,
+			" with the following public ports: %+v",
+			publicEnclaveContainerPorts,
 		)
 	}
 	logrus.Infof("Started service '%v'%v", serviceId, serviceStartLoglineSuffix)
 
-	return &response, nil
+	return response, nil
 }
 
 func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
-	serviceIP, err := service.getServiceIPByServiceId(args.ServiceId)
+	serviceIdStr := args.GetServiceId()
+	serviceId := service_network_types.ServiceID(serviceIdStr)
+	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.GetServiceRegistrationInfo(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred when trying to get the service IP address by service ID '%v'",
-			args.ServiceId,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
 
-	serviceID := service_network_types.ServiceID(args.ServiceId)
-	enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceEnclaveDataDirMntDirpath(serviceID)
+	privateEnclaveContainerPorts, publicIpAddr, publicEnclaveContainerPorts, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred when trying to get the dirpath where the enclave data directory is mounted on service with ID '%v'",
-			serviceID,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for service '%v'", serviceIdStr)
 	}
-	relativeServiceDirpath, err := service.serviceNetwork.GetRelativeServiceDirpath(serviceID)
+	privateApiPorts, err := transformEnclaveContainerPortsMapToApiPortsMap(privateEnclaveContainerPorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred when trying to get the service dirpath relative to the enclave data root for service ID: '%v'",
-			serviceID,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private enclave container ports to API ports")
+	}
+	publicApiPorts, err := transformEnclaveContainerPortsMapToApiPortsMap(publicEnclaveContainerPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public enclave container ports to API ports")
 	}
 
-	serviceInfoResponse := &kurtosis_core_rpc_api_bindings.GetServiceInfoResponse{
-		IpAddr:                     serviceIP.String(),
-		EnclaveDataDirMountDirpath: enclaveDataDirMntDirpath,
-		RelativeServiceDirpath:     relativeServiceDirpath,
-	}
+	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
+		privateIpAddr.String(),
+		privateApiPorts,
+		publicIpAddr.String(),
+		publicApiPorts,
+		enclaveDataDirMntDirpath,
+		relativeServiceDirpath,
+	)
 	return serviceInfoResponse, nil
 }
 
@@ -469,6 +464,65 @@ func (service ApiContainerService) GetModules(ctx context.Context, empty *emptyp
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func transformApiPortToEnclaveContainerPort(port *kurtosis_core_rpc_api_bindings.Port) (*enclave_container_launcher.EnclaveContainerPort, error) {
+	portNumUint32 := port.GetNumber()
+	apiProto := port.GetProtocol()
+	if portNumUint32 > math.MaxUint16 {
+		return nil, stacktrace.NewError(
+			"API port num '%v' is bigger than max allowed enclave container port num '%v'",
+			portNumUint32,
+			math.MaxUint16,
+		)
+	}
+	portNumUint16 := uint16(portNumUint32)
+	enclaveContainerProto, found := apiContainerPortProtoToEnclaveContainerPortProto[apiProto]
+	if !found {
+		return nil, stacktrace.NewError("Couldn't find an enclave container port proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
+	}
+	result, err := enclave_container_launcher.NewEnclaveContainerPort(portNumUint16, enclaveContainerProto)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating enclave container port object with port num '%v' and protocol '%v'",
+			portNumUint16,
+			enclaveContainerProto,
+		)
+	}
+	return result, nil
+}
+
+func transformEnclaveContainerPortToApiPort(port *enclave_container_launcher.EnclaveContainerPort) (*kurtosis_core_rpc_api_bindings.Port, error) {
+	portNumUint16 := port.GetNumber()
+	enclaveContainerProto := port.GetProtocol()
+	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
+	var apiProto kurtosis_core_rpc_api_bindings.Port_Protocol
+	foundApiProto := false
+	for mappedApiProto, mappedEnclaveContainerProto := range apiContainerPortProtoToEnclaveContainerPortProto {
+		if enclaveContainerProto == mappedEnclaveContainerProto {
+			apiProto = mappedApiProto
+			foundApiProto = true
+			break
+		}
+	}
+	if !foundApiProto {
+		return nil, stacktrace.NewError("Couldn't find an API port proto for enclave container port proto '%v'; this should never happen, and is a bug in Kurtosis!", enclaveContainerProto)
+	}
+	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto)
+	return result, nil
+}
+
+func transformEnclaveContainerPortsMapToApiPortsMap(apiPorts map[string]*enclave_container_launcher.EnclaveContainerPort) (map[string]*kurtosis_core_rpc_api_bindings.Port, error) {
+	result := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	for portId, enclaveContainerPort := range apiPorts {
+		publicApiPort, err := transformEnclaveContainerPortToApiPort(enclaveContainerPort)
+		if err != nil {
+			return nil, stacktrace.NewError("An error occurred transforming the enclave container port for port '%v' into an API port", portId)
+		}
+		result[portId] = publicApiPort
+	}
+	return result, nil
+}
+
 func (service ApiContainerService) waitForEndpointAvailability(
 		serviceIdStr string,
 		httpMethod string,
@@ -485,16 +539,12 @@ func (service ApiContainerService) waitForEndpointAvailability(
 		err error
 	)
 
-	serviceIP, err := service.getServiceIPByServiceId(serviceIdStr)
+	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceIdStr))
 	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred when trying to get the IP address for service '%v'",
-			serviceIdStr,
-		)
+		return stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
 
-	url := fmt.Sprintf("http://%v:%v/%v", serviceIP, port, path)
+	url := fmt.Sprintf("http://%v:%v/%v", privateServiceIp, port, path)
 
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
@@ -559,15 +609,4 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
-}
-
-func (service ApiContainerService) getServiceIPByServiceId(serviceId string) (net.IP, error){
-	serviceID := service_network_types.ServiceID(serviceId)
-	serviceIP, err := service.serviceNetwork.GetServiceIP(serviceID)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"An error occurred when trying to get the service IP address by service ID: '%v'",
-			serviceId)
-	}
-	return serviceIP, nil
 }

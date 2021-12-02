@@ -15,7 +15,7 @@ service ApiContainerService {
   rpc FinishExternalContainerRegistration(FinishExternalContainerRegistrationArgs) returns (google.protobuf.Empty) {};
 
   // Starts a module container in the enclave
-  rpc LoadModule(LoadModuleArgs) returns (google.protobuf.Empty) {};
+  rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
 
   // Stop and remove a module from the enclave
   rpc UnloadModule(UnloadModuleArgs) returns (google.protobuf.Empty) {};
@@ -65,6 +65,22 @@ service ApiContainerService {
 }
 
 // ==============================================================================================
+//                           Shared Objects (Used By Multiple Endpoints)
+// ==============================================================================================
+message Port {
+  enum Protocol {
+    TCP = 0;
+    SCTP = 1;
+    UDP = 2;
+  }
+
+  uint32 number = 1;
+
+  // The protocol that the port is listening on
+  Protocol protocol = 2;
+}
+
+// ==============================================================================================
 //                           Start External Container Registration 
 // ==============================================================================================
 message StartExternalContainerRegistrationResponse {
@@ -100,6 +116,20 @@ message LoadModuleArgs {
   string serialized_params = 3;
 }
 
+message LoadModuleResponse {
+  // The IP address of the module inside the enclave
+  string private_ip_addr = 1;
+
+  // The port on which the module is reachable inside the enclave
+  Port private_port = 2;
+
+  // Public IP address *outside* the enclave where the module is reachable
+  string public_ip_addr = 3;
+
+  // The port the module can be reached at *outside* the enclave
+  Port public_port = 4;
+}
+
 // ==============================================================================================
 //                                     Unload Module
 // ==============================================================================================
@@ -132,7 +162,17 @@ message GetModuleInfoArgs {
 }
 
 message GetModuleInfoResponse {
-  string ip_addr = 1;
+  // The IP address of the module inside the enclave
+  string private_ip_addr = 1;
+
+  // The port on which the module is reachable inside the enclave
+  Port private_port = 2;
+
+  // Public IP address *outside* the enclave where the module is reachable
+  string public_ip_addr = 3;
+
+  // The port the module can be reached at *outside* the enclave
+  Port public_port = 4;
 }
 
 // ==============================================================================================
@@ -155,8 +195,8 @@ message RegisterServiceArgs {
 }
 
 message RegisterServiceResponse {
-  // The IP address that the service will receive when it starts
-  string ip_addr = 1;
+  // The IP address *inside* the enclave that the service will receive when it starts
+  string private_ip_addr = 1;
 
   // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data dir root
   string relative_service_dirpath =2;
@@ -171,9 +211,8 @@ message StartServiceArgs {
 
   string docker_image = 2;
 
-  // "Set" of ports that the running service will listen on
-  // This is a string because it's Docker port specification syntax, e.g. "80" (default TCP) or "80/udp"
-  map<string, bool> used_ports = 3;
+  // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
+  map<string, Port> private_ports = 3;
 
   // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
   repeated string entrypoint_args = 4;
@@ -192,16 +231,13 @@ message StartServiceArgs {
 }
 
 message StartServiceResponse {
-  // Mapping of used_ports_provided_in_input_args -> ip_and_port_on_host_where_port_is_bound (in ip:port form)
-  // Ports will only be in this map if they were successfully bound to a host port; if no ports were bound, then
-  // this map will be empty
-  map<string, PortBinding> used_ports_host_port_bindings = 1;
-}
+  // Public IP address *outside* the enclave where the service is reachable
+  string public_ip_addr = 1;
 
-message PortBinding {
-  string interface_ip = 1;
-
-  string interface_port = 2;
+  // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
+  //  corresponds to the ID that was passed in in StartServiceArgs
+  // NOTE: If the service is stopped, these will no longer be valid!
+  map<string, Port> public_ports = 2;
 }
 
 // ==============================================================================================
@@ -213,14 +249,26 @@ message GetServiceInfoArgs {
 }
 
 message GetServiceInfoResponse {
-  // The IP address of the service
-  string ip_addr = 1;
+  // The IP address of the service inside the enclave
+  string private_ip_addr = 1;
+
+  // The ports on which the service is reachable inside the enclave, specified in user_specified_port_id -> port_info
+  // Will be exactly what was passed in at the time of starting the service
+  map<string, Port> private_ports = 2;
+
+  // Public IP address *outside* the enclave where the service is reachable
+  string public_ip_addr = 3;
+
+  // The ports on which the service can be reached *outside* the enclave, specified in user_specified_port_id -> port_info where user_defined_port_id
+  // The user_specified_port_id will match the keys specified in StartServiceArgs
+  // NOTE: If the service is stopped, these will no longer be valid!
+  map<string, Port> public_ports = 4;
 
   // The full path where the enclave data dir is mounted on the service
-  string enclave_data_dir_mount_dirpath = 2;
+  string enclave_data_dir_mount_dirpath = 5;
 
   // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data directory root
-  string relative_service_dirpath = 3;
+  string relative_service_dirpath = 6;
 }
 
 // ==============================================================================================

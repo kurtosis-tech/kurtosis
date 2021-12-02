@@ -25,7 +25,7 @@ type ApiContainerServiceClient interface {
 	// NOTE: It's important not to forget to finish this registration, else the external container won't be recognized by the API container!
 	FinishExternalContainerRegistration(ctx context.Context, in *FinishExternalContainerRegistrationArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Starts a module container in the enclave
-	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error)
 	// Stop and remove a module from the enclave
 	UnloadModule(ctx context.Context, in *UnloadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes an executable module on the user's behalf
@@ -85,8 +85,8 @@ func (c *apiContainerServiceClient) FinishExternalContainerRegistration(ctx cont
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *apiContainerServiceClient) LoadModule(ctx context.Context, in *LoadModuleArgs, opts ...grpc.CallOption) (*LoadModuleResponse, error) {
+	out := new(LoadModuleResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/LoadModule", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ type ApiContainerServiceServer interface {
 	// NOTE: It's important not to forget to finish this registration, else the external container won't be recognized by the API container!
 	FinishExternalContainerRegistration(context.Context, *FinishExternalContainerRegistrationArgs) (*emptypb.Empty, error)
 	// Starts a module container in the enclave
-	LoadModule(context.Context, *LoadModuleArgs) (*emptypb.Empty, error)
+	LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error)
 	// Stop and remove a module from the enclave
 	UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error)
 	// Executes an executable module on the user's behalf
@@ -284,7 +284,7 @@ func (UnimplementedApiContainerServiceServer) StartExternalContainerRegistration
 func (UnimplementedApiContainerServiceServer) FinishExternalContainerRegistration(context.Context, *FinishExternalContainerRegistrationArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FinishExternalContainerRegistration not implemented")
 }
-func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*emptypb.Empty, error) {
+func (UnimplementedApiContainerServiceServer) LoadModule(context.Context, *LoadModuleArgs) (*LoadModuleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoadModule not implemented")
 }
 func (UnimplementedApiContainerServiceServer) UnloadModule(context.Context, *UnloadModuleArgs) (*emptypb.Empty, error) {

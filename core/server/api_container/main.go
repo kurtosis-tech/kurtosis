@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
@@ -39,7 +40,6 @@ const (
 )
 
 func main() {
-
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
 		ForceColors:   true,
@@ -108,7 +108,6 @@ func runMain () error {
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
 		serverArgs.ListenPortNum,
-		serverArgs.ListenPortProtocol,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -168,13 +167,17 @@ func createServiceNetworkAndModuleStore(
 		filesArtifactCache,
 	)
 
-	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
+	enclaveContainerLauncher := enclave_container_launcher.NewEnclaveContainerLauncher(
 		dockerManager,
 		enclaveObjAttrsProvider,
-		freeIpAddrTracker,
-		args.ShouldPublishPorts,
-		filesArtifactExpander,
 		args.EnclaveDataDirpathOnHostMachine,
+	)
+
+	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
+		dockerManager,
+		enclaveContainerLauncher,
+		freeIpAddrTracker,
+		filesArtifactExpander,
 	)
 
 	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
@@ -195,11 +198,9 @@ func createServiceNetworkAndModuleStore(
 	moduleLauncher := module_launcher.NewModuleLauncher(
 		dockerManager,
 		apiContainerSocketInsideNetwork,
-		enclaveObjAttrsProvider,
+		enclaveContainerLauncher,
 		freeIpAddrTracker,
-		args.ShouldPublishPorts,
 		dockerNetworkId,
-		args.EnclaveDataDirpathOnHostMachine,
 	)
 
 	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)

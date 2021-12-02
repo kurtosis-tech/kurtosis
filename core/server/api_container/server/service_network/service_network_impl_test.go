@@ -33,7 +33,7 @@ func TestUpdateIpTables(t *testing.T) {
 		serviceId := testServiceIdFromInt(i)
 		serviceGUID := newServiceGUID(serviceId)
 		ip := testIpFromInt(i)
-		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, ipAddr: ip}
+		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, privateIpAddr: ip}
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent

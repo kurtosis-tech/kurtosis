@@ -1,5 +1,34 @@
 # TBD
 
+# 1.34.0
+### Features
+* Service ports are now identified with a user-friendly string ID
+* Service ports are now specified in a more user-friendly syntax (number & protocol) via a `PortSpec` object
+* `ServiceContext` now has `GetPublicIPAddress`, `GetPrivateIPAddress`, `GetPublicPorts`, and `GetPrivatePorts` functions for accessing the service either inside or outside the enclave
+* `ModuleContext` now has `GetPublicIPAddress` and `GetPublicPort` functions for accessing a module outside the enclave
+* If `UserServiceLauncher.Launch` experiences an error after it's launched the container but before returning it to the user, it will attempt to kill the container it started
+* Running containers with SCTP ports is now supported
+* An `EnclaveContainerLauncher.Launch` function is now available for launching any container within an enclave
+
+### Changes
+* The host machine port bindings that `EnclaveContext.AddService` and `.AddServiceToPartition` used to return have been moved to `ServiceContext`
+* Upgrade to `object-attributes-schema-lib` v0.5.0 to support user-friendly ports
+
+#### Fixes
+* Fixed several PR comments from PR #466
+
+### Removals
+* Remove the now-unneeded testsuite script, and all the infra needed to support it
+* Remove the `ContainerName` API container arg, as it was no longer being used
+* Remove the `ListenProtocol` API container arg, as gRPC server can only run on TCP ports
+
+### Breaking Changes
+* The `WithUsedPorts` function on `ContainerConfigBuilder` now takes in `Map<String, PortSpec>` to define the ports the service will use
+    * Users should choose IDs for each of their ports, and switch to using the new `PortSpec` object
+* The `AddService` methods no longer return host machine port bindings
+    * Users should switch to calling `ServiceContext.GetPublicIPAddress` and `ServiceContext.GetPublicPorts`, which contains the same information
+* The `APIContainerLauncher.Launch` no longer takes in a `shouldPublishPorts` flag, because ports are always published
+ 
 # 1.33.4
 ### Fixes
 * Use container-engine-lib 0.8.6 which now panics on `nil` input to `stacktrace.Propagate`

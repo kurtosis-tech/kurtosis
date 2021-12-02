@@ -26,6 +26,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"math"
 	"path/filepath"
 )
 
@@ -129,18 +130,18 @@ func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[s
 func (enclaveCtx *EnclaveContext) AddService(
 		serviceId services.ServiceID,
 		containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
-	) (*services.ServiceContext, map[string]*kurtosis_core_rpc_api_bindings.PortBinding, error) {
+	) (*services.ServiceContext, error) {
 
-	serviceContext, hostPortBindings, err := enclaveCtx.AddServiceToPartition(
+	serviceContext, err := enclaveCtx.AddServiceToPartition(
 		serviceId,
 		defaultPartitionId,
 		containerConfigSupplier,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to the enclave in the default partition", serviceId)
+		return nil, stacktrace.Propagate(err, "An error occurred adding service '%v' to the enclave in the default partition", serviceId)
 	}
 
-	return serviceContext, hostPortBindings, nil
+	return serviceContext, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -148,7 +149,7 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 		serviceId services.ServiceID,
 		partitionID PartitionID,
 		containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
-		) (*services.ServiceContext, map[string]*kurtosis_core_rpc_api_bindings.PortBinding, error) {
+		) (*services.ServiceContext, error) {
 
 	ctx := context.Background()
 
@@ -157,22 +158,23 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 
 	registerServiceResp, err := enclaveCtx.client.RegisterService(ctx, registerServiceArgs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred registering service with ID '%v' with the Kurtosis API",
 			serviceId)
 	}
+	// TODO Defer a removeService call here if the function exits unsuccessfully
 	logrus.Trace("New service successfully registered with Kurtosis API")
 
-	serviceIpAddr := registerServiceResp.IpAddr
+	privateIpAddr := registerServiceResp.PrivateIpAddr
 	relativeServiceDirpath := registerServiceResp.RelativeServiceDirpath
 
 	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
 
 	logrus.Trace("Generating container config object using the container config supplier...")
-	containerConfig, err := containerConfigSupplier(serviceIpAddr, sharedDirectory)
+	containerConfig, err := containerConfigSupplier(privateIpAddr, sharedDirectory)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred executing the container config supplier for service with ID '%v'",
 			serviceId)
@@ -187,56 +189,77 @@ func (enclaveCtx *EnclaveContext) AddServiceToPartition(
 	logrus.Trace("Successfully created files artifact ID str -> mount dirpaths map")
 
 	logrus.Trace("Starting new service with Kurtosis API...")
-	startServiceArgs := &kurtosis_core_rpc_api_bindings.StartServiceArgs{
-		ServiceId:                  string(serviceId),
-		DockerImage:                containerConfig.GetImage(),
-		UsedPorts:                  containerConfig.GetUsedPortsSet(),
-		EntrypointArgs:             containerConfig.GetEntrypointOverrideArgs(),
-		CmdArgs:                    containerConfig.GetCmdOverrideArgs(),
-		DockerEnvVars:              containerConfig.GetEnvironmentVariableOverrides(),
-		EnclaveDataDirMntDirpath:   serviceEnclaveDataDirMountpoint,
-		FilesArtifactMountDirpaths: artifactIdStrToMountDirpath,
+	privatePorts := containerConfig.GetUsedPorts()
+	privatePortsForApi := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	for portId, portSpec := range privatePorts {
+		privatePortsForApi[portId] = &kurtosis_core_rpc_api_bindings.Port{
+			Number:   uint32(portSpec.GetNumber()),
+			Protocol: kurtosis_core_rpc_api_bindings.Port_Protocol(portSpec.GetProtocol()),
+		}
 	}
+	startServiceArgs := binding_constructors.NewStartServiceArgs(
+		string(serviceId),
+		containerConfig.GetImage(),
+		privatePortsForApi,
+		containerConfig.GetEntrypointOverrideArgs(),
+		containerConfig.GetCmdOverrideArgs(),
+		containerConfig.GetEnvironmentVariableOverrides(),
+		serviceEnclaveDataDirMountpoint,
+		artifactIdStrToMountDirpath,
+	)
 	resp, err := enclaveCtx.client.StartService(ctx, startServiceArgs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred starting the service with the Kurtosis API")
+		return nil, stacktrace.Propagate(err, "An error occurred starting the service with the Kurtosis API")
 	}
 	logrus.Trace("Successfully started service with Kurtosis API")
+
+	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(resp.GetPublicPorts())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+	}
 
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		serviceIpAddr,
 		sharedDirectory,
+		privateIpAddr,
+		privatePorts,
+		resp.GetPublicIpAddr(),
+		serviceCtxPublicPorts,
 	)
 
-	return serviceContext, resp.UsedPortsHostPortBindings, nil
+	return serviceContext, nil
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID) (*services.ServiceContext, error) {
 	getServiceInfoArgs := binding_constructors.NewGetServiceInfoArgs(string(serviceId))
-	serviceResponse, err := enclaveCtx.client.GetServiceInfo(context.Background(), getServiceInfoArgs)
+	resp, err := enclaveCtx.client.GetServiceInfo(context.Background(), getServiceInfoArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred when trying to get info for service '%v'",
 			serviceId)
 	}
-	if serviceResponse.GetIpAddr() == "" {
+	if resp.GetPrivateIpAddr() == "" {
 		return nil, stacktrace.NewError(
-			"Kurtosis API reported an empty IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
+			"Kurtosis API reported an empty private IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
+			serviceId)
+	}
+	if resp.GetPublicIpAddr() == "" {
+		return nil, stacktrace.NewError(
+			"Kurtosis API reported an empty public IP address for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
 
-	relativeServiceDirpath := serviceResponse.GetRelativeServiceDirpath()
+	relativeServiceDirpath := resp.GetRelativeServiceDirpath()
 	if relativeServiceDirpath == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty relative service directory path for service '%v' - this should never happen, and is a bug with Kurtosis!",
 			serviceId)
 	}
 
-	enclaveDataDirMountDirpathOnSvcContainer := serviceResponse.GetEnclaveDataDirMountDirpath()
+	enclaveDataDirMountDirpathOnSvcContainer := resp.GetEnclaveDataDirMountDirpath()
 	if enclaveDataDirMountDirpathOnSvcContainer == "" {
 		return nil, stacktrace.NewError(
 			"Kurtosis API reported an empty enclave data dir mount dirpath for service '%v' - this should never happen, and is a bug with Kurtosis!",
@@ -245,11 +268,23 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceId services.ServiceID
 
 	sharedDirectory := enclaveCtx.getSharedDirectory(relativeServiceDirpath)
 
+	serviceCtxPrivatePorts, err := convertApiPortsToServiceContextPorts(resp.GetPrivatePorts())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the private ports returned by the API to ports usable by the service context")
+	}
+	serviceCtxPublicPorts, err := convertApiPortsToServiceContextPorts(resp.GetPublicPorts())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the public ports returned by the API to ports usable by the service context")
+	}
+
 	serviceContext := services.NewServiceContext(
 		enclaveCtx.client,
 		serviceId,
-		serviceResponse.GetIpAddr(),
 		sharedDirectory,
+		resp.GetPrivateIpAddr(),
+		serviceCtxPrivatePorts,
+		resp.GetPublicIpAddr(),
+		serviceCtxPublicPorts,
 	)
 
 	return serviceContext, nil
@@ -433,4 +468,29 @@ func (enclaveCtx *EnclaveContext) getSharedDirectory(relativeServiceDirpath stri
 	sharedDirectory := services.NewSharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer)
 
 	return sharedDirectory
+}
+
+func convertApiPortsToServiceContextPorts(apiPorts map[string]*kurtosis_core_rpc_api_bindings.Port) (map[string]*services.PortSpec, error) {
+	result := map[string]*services.PortSpec{}
+	for portId, apiPortSpec := range apiPorts {
+		apiPortProtocol := apiPortSpec.GetProtocol()
+		serviceCtxPortProtocol := services.PortProtocol(apiPortProtocol)
+		if !serviceCtxPortProtocol.IsValid() {
+			return nil, stacktrace.NewError("Received unrecognized protocol '%v' from the API", apiPortProtocol)
+		}
+		portNumUint32 := apiPortSpec.GetNumber()
+		if portNumUint32 > math.MaxUint16 {
+			return nil, stacktrace.NewError(
+				"Received port num '%v' from the API which is higher than the max uint16 value '%v'; this is VERY weird because ports should be 16-bit numbers",
+				portNumUint32,
+				math.MaxUint16,
+			)
+		}
+		portNumUint16 := uint16(portNumUint32)
+		result[portId] = services.NewPortSpec(
+			portNumUint16,
+			serviceCtxPortProtocol,
+		)
+	}
+	return result, nil
 }

@@ -15,12 +15,24 @@ import {
     LoadModuleArgs,
     UnloadModuleArgs,
     ExecuteModuleArgs,
-    GetModuleInfoArgs
+    GetModuleInfoArgs,
+    Port
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
 import { ModuleID } from "./modules/module_context";
 import * as jspb from "google-protobuf";
+
+// ==============================================================================================
+//                           Shared Objects (Used By Multiple Endpoints)
+// ==============================================================================================
+export function newPort(number: number, protocol: Port.ProtocolMap[keyof Port.ProtocolMap]) {
+    const result: Port = new Port();
+    result.setNumber(number);
+    result.setProtocol(protocol);
+    return result;
+}
+
 
 // ==============================================================================================
 //                                     Load Module
@@ -99,7 +111,7 @@ export function newRegisterServiceArgs(serviceId: ServiceID, partitionId: Partit
 export function newStartServiceArgs(
         serviceId: ServiceID, 
         dockerImage: string,
-        usedPorts: Set<string>,
+        privatePorts: Map<string, Port>,
         entrypointArgs: string[],
         cmdArgs: string[],
         dockerEnvVars: Map<string, string>,
@@ -108,9 +120,9 @@ export function newStartServiceArgs(
     const result: StartServiceArgs = new StartServiceArgs();
     result.setServiceId(String(serviceId));
     result.setDockerImage(dockerImage);
-    const usedPortsMap: jspb.Map<string, boolean> = result.getUsedPortsMap();
-    for (const portId of usedPorts) {
-        usedPortsMap.set(portId, true);
+    const usedPortsMap: jspb.Map<string, Port> = result.getPrivatePortsMap();
+    for (const [portId, portSpec] of privatePorts) {
+        usedPortsMap.set(portId, portSpec);
     }
     const entrypointArgsArray: string[] = result.getEntrypointArgsList();
     for (const entryPoint of entrypointArgs) {

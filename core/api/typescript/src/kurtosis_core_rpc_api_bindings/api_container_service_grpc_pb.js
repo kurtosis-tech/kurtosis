@@ -148,6 +148,17 @@ function deserialize_api_container_api_LoadModuleArgs(buffer_arg) {
   return api_container_service_pb.LoadModuleArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_LoadModuleResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.LoadModuleResponse)) {
+    throw new Error('Expected argument of type api_container_api.LoadModuleResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_LoadModuleResponse(buffer_arg) {
+  return api_container_service_pb.LoadModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_RegisterFilesArtifactsArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RegisterFilesArtifactsArgs)) {
     throw new Error('Expected argument of type api_container_api.RegisterFilesArtifactsArgs');
@@ -313,11 +324,11 @@ loadModule: {
     requestStream: false,
     responseStream: false,
     requestType: api_container_service_pb.LoadModuleArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.LoadModuleResponse,
     requestSerialize: serialize_api_container_api_LoadModuleArgs,
     requestDeserialize: deserialize_api_container_api_LoadModuleArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_LoadModuleResponse,
+    responseDeserialize: deserialize_api_container_api_LoadModuleResponse,
   },
   // Stop and remove a module from the enclave
 unloadModule: {

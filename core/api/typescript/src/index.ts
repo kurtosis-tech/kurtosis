@@ -3,6 +3,7 @@ export { FilesArtifactID, ContainerConfig, ContainerConfigBuilder } from "./lib/
 export { ServiceID } from "./lib/services/service";
 export { ServiceContext } from "./lib/services/service_context";
 export { SharedPath } from "./lib/services/shared_path"
+export { PortSpec, PortProtocol } from "./lib/services/port_spec"
 
 // Enclaves
 export { EnclaveID, PartitionID, EnclaveContext } from "./lib/enclaves/enclave_context";
@@ -20,4 +21,4 @@ export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, n
 
 // Kurtosis Core RPC API Bindings
 export { ApiContainerServiceClient } from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-export { PartitionConnections, PortBinding } from ".//kurtosis_core_rpc_api_bindings/api_container_service_pb";
+export { PartitionConnections } from ".//kurtosis_core_rpc_api_bindings/api_container_service_pb";

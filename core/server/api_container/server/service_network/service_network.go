@@ -7,7 +7,7 @@ package service_network
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"net"
@@ -16,6 +16,7 @@ import (
 
 type ServiceNetwork interface {
 	/*
+	Repartition
 	Completely repartitions the network, throwing away the old topology
 	*/
 	Repartition(
@@ -25,6 +26,7 @@ type ServiceNetwork interface {
 		newDefaultConnection partition_topology.PartitionConnection,
 	) error
 
+	// RegisterService
 	// Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 	// If the partition ID is empty, registers the service with the default partition
 	RegisterService(
@@ -33,25 +35,31 @@ type ServiceNetwork interface {
 	) (net.IP, string, error)
 
 
-	// TODO add tests for this
 	/*
+	StartService
 	Starts a previously-registered but not-started service by creating it in a container
 
 	Returns:
-		Mapping of port-used-by-service -> port-on-the-Docker-host-machine where the user can make requests to the port
-			to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+		resultPublicIpAddr: The public (outside-of-enclave) IP address where the service is reachable
+		resultPublicPorts: Mapping of port_id -> public_port_where_private_port_is_reachable, where the port_id
+			corresponds to the port_id passed into the privatePorts arg
 	*/
+	// TODO add tests for this
 	StartService(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
 		imageName string,
-		usedPorts map[nat.Port]bool,
+		privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		enclaveDataDirMountDirpath string,
 		filesArtifactMountDirpaths map[string]string,
-	) (map[nat.Port]*nat.PortBinding, error)
+	) (
+		resultPublicIpAddr net.IP,
+		resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		resultErr error,
+	)
 
 	RemoveService(
 		ctx context.Context,
@@ -65,11 +73,19 @@ type ServiceNetwork interface {
 		command []string,
 	) (int32, string, error)
 
-	GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error)
+	GetServiceRegistrationInfo(serviceId service_network_types.ServiceID) (
+		privateIpAddr net.IP,
+		relativeServiceDirpath string, // The dirpath, relative to the enclave data dir, where the service directory lives
+		resultErr error,
+	)
 
-	GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error)
-
-	GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error)
+	GetServiceRunInfo(serviceId service_network_types.ServiceID) (
+		privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		publicIpAddr net.IP,
+		publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		enclaveDataDirMntDirpath string,  // The filepath on the service container where the enclave data dir is mounted
+		resultErr error,
+	)
 
 	GetServiceIDs() map[service_network_types.ServiceID]bool
 }

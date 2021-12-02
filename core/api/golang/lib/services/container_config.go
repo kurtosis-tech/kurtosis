@@ -26,7 +26,7 @@ type FilesArtifactID string
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfig struct {
 	image                        string
-	usedPortsSet                 map[string]bool
+	usedPorts                    map[string]*PortSpec
 	filesArtifactMountpoints     map[FilesArtifactID]string
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
@@ -37,8 +37,8 @@ func (config *ContainerConfig) GetImage() string {
 	return config.image
 }
 
-func (config *ContainerConfig) GetUsedPortsSet() map[string]bool {
-	return config.usedPortsSet
+func (config *ContainerConfig) GetUsedPorts() map[string]*PortSpec {
+	return config.usedPorts
 }
 
 func (config *ContainerConfig) GetFilesArtifactMountpoints() map[FilesArtifactID]string {
@@ -64,7 +64,7 @@ func (config *ContainerConfig) GetEnvironmentVariableOverrides() map[string]stri
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 type ContainerConfigBuilder struct {
 	image                        string
-	usedPortsSet                 map[string]bool
+	usedPorts                    map[string]*PortSpec
 	filesArtifactMountpoints     map[FilesArtifactID]string
 	entrypointOverrideArgs       []string
 	cmdOverrideArgs              []string
@@ -74,7 +74,7 @@ type ContainerConfigBuilder struct {
 func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	return &ContainerConfigBuilder{
 		image:                        image,
-		usedPortsSet:                 map[string]bool{},
+		usedPorts:                    map[string]*PortSpec{},
 		filesArtifactMountpoints:     map[FilesArtifactID]string{},
 		entrypointOverrideArgs:       nil,
 		cmdOverrideArgs:              nil,
@@ -82,8 +82,8 @@ func NewContainerConfigBuilder(image string) *ContainerConfigBuilder {
 	}
 }
 
-func (builder *ContainerConfigBuilder) WithUsedPorts(usedPortsSet map[string]bool) *ContainerConfigBuilder {
-	builder.usedPortsSet = usedPortsSet
+func (builder *ContainerConfigBuilder) WithUsedPorts(usedPorts map[string]*PortSpec) *ContainerConfigBuilder {
+	builder.usedPorts = usedPorts
 	return builder
 }
 
@@ -110,7 +110,7 @@ func (builder *ContainerConfigBuilder) WithEnvironmentVariableOverrides(envVars 
 func (builder *ContainerConfigBuilder) Build() *ContainerConfig {
 	return &ContainerConfig{
 		image:                        builder.image,
-		usedPortsSet:                 builder.usedPortsSet,
+		usedPorts:                    builder.usedPorts,
 		filesArtifactMountpoints:     builder.filesArtifactMountpoints,
 		entrypointOverrideArgs:       builder.entrypointOverrideArgs,
 		cmdOverrideArgs:              builder.cmdOverrideArgs,

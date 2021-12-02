@@ -5,25 +5,20 @@ import { SharedPath } from './shared_path';
 import { newExecCommandArgs} from "../constructor_calls";
 import { ok, err, Result } from 'neverthrow';
 import * as grpc from "grpc";
+import { PortSpec } from './port_spec';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
     
-    private readonly client: ApiContainerServiceClient;
-    private readonly serviceId: ServiceID;
-    private readonly ipAddress: string;
-    private readonly sharedDirectory: SharedPath;
-
     constructor(
-            client: ApiContainerServiceClient,
-            serviceId: ServiceID,
-            ipAddress: string,
-            sharedDirectory: SharedPath) {
-        this.client = client;
-        this.serviceId = serviceId;
-        this.ipAddress = ipAddress;
-        this.sharedDirectory = sharedDirectory;
-    }
+        private readonly client: ApiContainerServiceClient,
+        private readonly serviceId: ServiceID,
+        private readonly sharedDirectory: SharedPath,
+        private readonly privateIpAddr: string,
+        private readonly privatePorts: Map<string, PortSpec>,
+        private readonly publicIpAddr: string,
+        private readonly publicPorts: Map<string, PortSpec>,
+    ) {}
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getServiceID(): ServiceID { 
@@ -31,13 +26,28 @@ export class ServiceContext {
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getIPAddress(): string {
-        return this.ipAddress;
+    public getSharedDirectory(): SharedPath {
+        return  this.sharedDirectory
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getSharedDirectory(): SharedPath {
-        return  this.sharedDirectory
+    public getPublicIPAddress(): string {
+        return this.publicIpAddr;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getPublicPorts(): Map<string, PortSpec> {
+        return this.publicPorts;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getPrivateIPAddress(): string {
+        return this.privateIpAddr;
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+    public getPrivatePorts(): Map<string, PortSpec> {
+        return this.privatePorts;
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

@@ -62,16 +62,16 @@ func (replacer ServiceIPReplacer) ReplaceStr(str string) (string, error) {
 	for _, matchStr := range matches {
 		matchStrWithoutPrefix := strings.TrimPrefix(matchStr, replacer.serviceIdReplaceStrPrefix)
 		serviceId := strings.TrimSuffix(matchStrWithoutPrefix, replacer.serviceIdReplaceStrSuffix)
-		ip, err := replacer.serviceNetwork.GetServiceIP(service_network_types.ServiceID(serviceId))
+		privateIp, _, err := replacer.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceId))
 		if err != nil {
 			return "", stacktrace.Propagate(
 				err,
-				"An error occurred getting IP address for service '%v', requested by replacement string '%v'",
+				"An error occurred getting private IP address for service '%v', requested by replacement string '%v'",
 				serviceId,
 				matchStr,
 			)
 		}
-		ipReplacementRegexes[matchStr] = ip
+		ipReplacementRegexes[matchStr] = privateIp
 	}
 
 	result := str
