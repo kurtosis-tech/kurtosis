@@ -1,4 +1,6 @@
 # TBD
+
+# 0.7.4
 ### Features
 * Added a `--partitioning` flag to `module exec` for enabling partitioning
 
