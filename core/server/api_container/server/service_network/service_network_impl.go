@@ -8,9 +8,9 @@ package service_network
 import (
 	"bytes"
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -33,7 +33,7 @@ const (
 // Information that gets created with a service's registration
 type serviceRegistrationInfo struct {
 	serviceGUID      service_network_types.ServiceGUID
-	ipAddr           net.IP
+	privateIpAddr    net.IP
 	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
 
@@ -44,6 +44,12 @@ type serviceRunInfo struct {
 
 	// Where the enclave data dir is bind-mounted on the service
 	enclaveDataDirMntDirpath string
+
+	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
+	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
+	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort
+	publicIpAddr net.IP
+	publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort
 }
 
 /*
@@ -196,7 +202,7 @@ func (network ServiceNetworkImpl) RegisterService(
 
 	serviceRegistrationInfo := serviceRegistrationInfo{
 		serviceGUID:      serviceGUID,
-		ipAddr:           ip,
+		privateIpAddr:    ip,
 		serviceDirectory: serviceDirectory,
 	}
 
@@ -231,31 +237,36 @@ Returns:
 		to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 */
 func (network *ServiceNetworkImpl) StartService(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		imageName string,
-		usedPorts map[nat.Port]bool,
-		entrypointArgs []string,
-		cmdArgs []string,
-		dockerEnvVars map[string]string,
-		enclaveDataDirMntDirpath string,
-		filesArtifactMountDirpaths map[string]string) (map[nat.Port]*nat.PortBinding, error) {
+	ctx context.Context,
+	serviceId service_network_types.ServiceID,
+	imageName string,
+	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	entrypointArgs []string,
+	cmdArgs []string,
+	dockerEnvVars map[string]string,
+	enclaveDataDirMntDirpath string,
+	filesArtifactMountDirpaths map[string]string,
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	resultErr error,
+) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; the service network has been destroyed", serviceId)
 	}
 
 	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[serviceId]
 	if !registrationInfoFound {
-		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
 	}
 	if _, found := network.serviceRunInfo[serviceId]; found {
-		return nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
 	}
 	serviceGuid := registrationInfo.serviceGUID
-	serviceIpAddr := registrationInfo.ipAddr
+	serviceIpAddr := registrationInfo.privateIpAddr
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -267,7 +278,7 @@ func (network *ServiceNetworkImpl) StartService(
 	if network.isPartitioningEnabled {
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the "+
 				"node was added, which means we can't add the node because we can't partition it away properly")
 		}
 		blocklistsWithoutNewNode := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
@@ -278,51 +289,54 @@ func (network *ServiceNetworkImpl) StartService(
 			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
 		}
 		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
 
-	serviceContainerId, hostPortBindings, err := network.userServiceLauncher.Launch(
+	serviceContainerId, servicePublicIpAddr, servicePublicPorts, err := network.userServiceLauncher.Launch(
 		ctx,
 		serviceGuid,
 		string(serviceId),
 		serviceIpAddr,
 		imageName,
 		network.dockerNetworkId,
-		usedPorts,
+		privatePorts,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
 		enclaveDataDirMntDirpath,
 		filesArtifactMountDirpaths)
 	if err != nil {
-		return nil, stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the user service container")
 	}
 	runInfo := serviceRunInfo{
 		containerId:              serviceContainerId,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
+		privatePorts:             privatePorts,
+		publicIpAddr:             servicePublicIpAddr,
+		publicPorts:              servicePublicPorts,
 	}
 	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
 		sidecar, err := network.networkingSidecarManager.Add(ctx, registrationInfo.serviceGUID, serviceContainerId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
 		}
 		network.networkingSidecars[serviceId] = sidecar
 
 		if err := sidecar.InitializeIpTables(ctx); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
 		}
 
 		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
 		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/server/issues/123 )
 		blocklists, err := network.topology.GetBlocklists()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables "+
 				"updates to apply on the new node")
 		}
 		newNodeBlocklist := blocklists[serviceId]
@@ -330,12 +344,12 @@ func (network *ServiceNetworkImpl) StartService(
 			serviceId: newNodeBlocklist,
 		}
 		if err := updateIpTables(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
 
-	return hostPortBindings, nil
+	return servicePublicIpAddr, servicePublicPorts, nil
 }
 
 func (network *ServiceNetworkImpl) RemoveService(
@@ -391,49 +405,43 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	return exitCode, execOutputBuf.String(), nil
 }
 
-func (network *ServiceNetworkImpl) GetServiceIP(serviceId service_network_types.ServiceID) (net.IP, error) {
+func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service_network_types.ServiceID) (
+	privateIpAddr net.IP,
+	relativeServiceDirpath string,
+	resultErr error,
+) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return nil, stacktrace.NewError("Cannot get IP address; the service network has been destroyed")
+		return nil, "", stacktrace.NewError("Cannot get registration info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
 	if !found {
-		return nil, stacktrace.NewError("Service with ID: '%v' does not exist", serviceId)
+		return nil, "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
 	}
 
-	return registrationInfo.ipAddr, nil
+	return registrationInfo.privateIpAddr, registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
-func (network *ServiceNetworkImpl) GetRelativeServiceDirpath(serviceId service_network_types.ServiceID) (string, error) {
+func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service_network_types.ServiceID) (
+	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	publicIpAddr net.IP,
+	publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	enclaveDataDirMntDirpath string,
+	resultErr error,
+) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
-		return "", stacktrace.NewError("Cannot get relative service directory path; the service network has been destroyed")
-	}
-
-	registrationInfo, found := network.serviceRegistrationInfo[serviceId]
-	if !found {
-		return "", stacktrace.NewError("No registration information found for service with ID '%v'", serviceId)
-	}
-
-	return registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
-}
-
-func (network *ServiceNetworkImpl) GetServiceEnclaveDataDirMntDirpath(serviceId service_network_types.ServiceID) (string, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	if network.isDestroyed {
-		return "", stacktrace.NewError("Cannot get enclave data mount directory path; the service network has been destroyed")
+		return nil, nil, nil, "", stacktrace.NewError("Cannot get run info for service '%v'; the service network has been destroyed", serviceId)
 	}
 
 	runInfo, found := network.serviceRunInfo[serviceId]
 	if !found {
-		return "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
+		return nil, nil, nil, "", stacktrace.NewError("No run information found for service with ID '%v'", serviceId)
 	}
-
-	return runInfo.enclaveDataDirMntDirpath, nil
+	return runInfo.privatePorts, runInfo.publicIpAddr, runInfo.publicPorts, runInfo.enclaveDataDirMntDirpath, nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.ServiceID]bool {
@@ -481,7 +489,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		}
 		logrus.Debugf("Successfully disconnected container ID '%v'", serviceContainerId)
 	}
-	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.ipAddr)
+	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
 	sidecar, foundSidecar := network.networkingSidecars[serviceId]
 	if network.isPartitioningEnabled && foundSidecar {
@@ -522,7 +530,7 @@ func updateIpTables(
 					serviceId,
 					serviceIdToBlock)
 			}
-			allIpsToBlock = append(allIpsToBlock, infoForService.ipAddr)
+			allIpsToBlock = append(allIpsToBlock, infoForService.privateIpAddr)
 		}
 
 		sidecar, found := networkingSidecars[serviceId]

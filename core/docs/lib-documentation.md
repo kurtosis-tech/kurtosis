@@ -76,7 +76,7 @@ Starts a new service in the enclave with the given service ID, inside the partit
 * `serviceId`: The ID that the new service should have.
 * `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
 * `containerConfigSupplier`: An anonymous function, used to produce the [ContainerConfig][containerconfig] for starting the service, which receives two dynamic values as arguments: 
-    1. The IP address of the service being started
+    1. The private IP address of the service being started (the IP address of the service _inside_ the service's enclave)
     1. A [SharedPath][sharedpath] object which represents a shared directory that is mounted on both a) the container where this code is running and b) the service container being started, so that files can be made available to the service container by creating them with this container. E.g. calling `sharedDirectory.getChildPath("newfile.txt")` will get the path to an object that can be a) written by this container via [SharedPath.getAbsPathOnThisContainer][sharedpath_getabspathonthiscontainer] and b) used by the service container via [SharedPath.getAbsPathOnServiceContainer][sharedpath_getabspathonservicecontainer].
 
 
@@ -176,8 +176,8 @@ Object containing information Kurtosis needs to create and run the container. Th
 ### String image
 The name of the container image that Kurtosis should use when creating the service's container (e.g. `my-repo/my-image:some-tag-name`).
 
-### Set\<String\> usedPortsSet
-The set of ports that the container will be listening on, in the format `NUM/PROTOCOL` (e.g. `80/tcp`, `9090/udp`, etc.).
+### Set\<String\> usedPorts
+The ports that the container will be listening on, identified by a user-friendly ID that can be used to select the port again in the future (e.g. via [ServiceContext.getPublicPorts][servicecontext_getpublicports].
 
 ### Map\<String, String\> filesArtifactMountpoints
 Sometimes a service needs files to be available before it starts, but creating those files manually is slow, difficult, or would require committing a very large artifact to the testsuite's Git repo (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify URLs of gzipped TAR files that Kurtosis will download, uncompress, and mount inside your service containers. 
@@ -214,20 +214,40 @@ Gets the ID that Kurtosis uses to identify the service.
 
 The service's ID.
 
-### getIpAddress() -\> String
-Gets the IP address of the Docker container that the service is running inside.
-
-**Returns**
-
-The service's IP address.
-
 ### getSharedDirectory() -\> [SharedPath][sharedpath]
-Get the directory that is mounted on both the current container running this code and the service container, so that files can be passed back and forth. The directory is expressed as a [SharedPath][sharedpath] object, so file inside can be referenced by absolute filepath on either this container or the service contianer.
+Get the directory that is mounted on both the current container running this code and the service container, so that files can be passed back and forth. The directory is expressed as a [SharedPath][sharedpath] object, so file inside can be referenced by absolute filepath on either this container or the service container.
 
 **Returns**
 
 The [SharedPath][sharedpath] object.
 
+### getPrivateIpAddress() -\> String
+Gets the IP address where the service is reachable at from _inside_ the enclave that the container is running inside. This IP address is how other containers inside the enclave can connect to the service.
+
+**Returns**
+
+The service's private IP address.
+
+### getPrivatePorts() -\> Map\<PortID, PortSpec\>
+Gets the ports that the service is reachable at from _inside_ the enclave that the container is running inside. These ports are how other containers inside the enclave can connect to the service.
+
+**Returns**
+
+The ports that the service is reachable at from inside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
+
+### getPublicIpAddress() -\> String
+Gets the IP address where the service is reachable at from _outside_ the enclave that the container is running inside. This IP address is how clients on the host machine can connect to the service.
+
+**Returns**
+
+The service's public IP address.
+
+### getPublicPorts() -\> Map\<PortID, PortSpec\>
+Gets the ports that the service is reachable at from _outside_ the enclave that the container is running inside. These ports are how clients on the host machine can connect to the service.
+
+**Returns**
+
+The ports that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
 
 ### execCommand(List\<String\> command) -\> (int exitCode, String logs)
 Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
@@ -273,7 +293,7 @@ _Found a bug? File it on [the repo][issues]!_
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
 [containerconfig]: #containerconfig
-[containerconfig_usedports]: #setstring-usedportsset
+[containerconfig_usedports]: #setstring-usedports
 [containerconfig_filesartifactmountpoints]: #mapstring-string-filesartifactmountpoints
 
 [containerconfigbuilder]: #containerconfigbuilder
@@ -289,6 +309,7 @@ _Found a bug? File it on [the repo][issues]!_
 [partitionconnectioninfo]: #partitionconnectioninfo
 
 [servicecontext]: #servicecontext
+[servicecontext_getpublicports]: #getpublicports---mapportid-portspec
 
 [sharedpath]: #sharedpath
 [sharedpath_getabspathonthiscontainer]: #getabspathonthiscontainer---string

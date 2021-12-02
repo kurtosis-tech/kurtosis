@@ -8,9 +8,9 @@ package module_launcher
 import (
 	"context"
 	"fmt"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_docker_api"
@@ -22,13 +22,31 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
-	"strconv"
 	"time"
 )
 
 const (
 	waitForModuleAvailabilityTimeout = 10 * time.Second
+
+	modulePortProtocol = enclave_container_launcher.EnclaveContainerPortProtocol_TCP
+
+	// For now, we let users update their module images if they want to, though this should probably be configurable
+	shouldPullContainerImageBeforeStarting = false
+
+	// Modules don't need to access the Docker engine directly, instead doing that through the API container
+	shouldBindMountDockerSocket = false
+
+	// Indicates that no alias should be set for the module
+	moduleAlias = ""
 )
+// These values indicate "don't override the ENTRYPOINT/CMD args" (since modules are configured via envvars)
+var entrypointArgs []string = nil
+var cmdArgs []string = nil
+var volumeMounts map[string]string = nil
+
+// TODO This shouldn't be hardcoded, and should instead come from a "module_launcher" library that's
+//   provided by module_api_lib!!!!
+var modulePortNum = uint16(kurtosis_module_rpc_api_consts.ListenPort)
 
 type ModuleLauncher struct {
 	dockerManager *docker_manager.DockerManager
@@ -36,51 +54,64 @@ type ModuleLauncher struct {
 	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
 	apiContainerSocketInsideNetwork string
 
-	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
+	enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	// TODO Publish module ports always, to simplify
-	shouldPublishPorts bool
-
 	dockerNetworkId string
-
-	// The enclave data directory path on the host machine, so the module launcher can bind-mount it to module
-	//  containers
-	enclaveDataDirpathOnHostMachine string
 }
 
-func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerSocket string, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, dockerNetworkId string, enclaveDataDirpathOnHostMachine string) *ModuleLauncher {
-	return &ModuleLauncher{dockerManager: dockerManager, apiContainerSocketInsideNetwork: apiContainerSocket, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, dockerNetworkId: dockerNetworkId, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerSocketInsideNetwork string, enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher, freeIpAddrTracker *lib.FreeIpAddrTracker, dockerNetworkId string) *ModuleLauncher {
+	return &ModuleLauncher{dockerManager: dockerManager, apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork, enclaveContainerLauncher: enclaveContainerLauncher, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 func (launcher ModuleLauncher) Launch(
-		ctx context.Context,
-		moduleID module_store_types.ModuleID,
-		containerImage string,
-		serializedParams string) (newContainerId string, newContainerIpAddr net.IP, client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient, moduleHostPortBinding *nat.PortBinding, resultErr error) {
-
-	portNumStr := strconv.Itoa(kurtosis_module_rpc_api_consts.ListenPort)
-	portObj, err := nat.NewPort(kurtosis_module_rpc_api_consts.ListenProtocol, portNumStr)
+	ctx context.Context,
+	moduleID module_store_types.ModuleID,
+	containerImage string,
+	serializedParams string,
+) (
+	resultContainerId string,
+	resultPrivateIp net.IP,
+	resultPrivatePort *enclave_container_launcher.EnclaveContainerPort,
+	resultPublicIp net.IP,
+	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient,
+	resultErr error,
+) {
+	privatePort, err := enclave_container_launcher.NewEnclaveContainerPort(modulePortNum, modulePortProtocol)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating port object for module port %v/%v",
-			kurtosis_module_rpc_api_consts.ListenProtocol,
-			kurtosis_module_rpc_api_consts.ListenPort,
+			"Couldn't create module container port object using num '%v' and protocol '%v'",
+			modulePortNum,
+			modulePortProtocol,
 		)
 	}
-	portPublishSpec := docker_manager.NewNoPublishingSpec()
-	if launcher.shouldPublishPorts {
-		portPublishSpec = docker_manager.NewAutomaticPublishingSpec()
-	}
-	usedPorts := map[nat.Port]docker_manager.PortPublishSpec {
-		portObj: portPublishSpec,
+	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{
+		schema.KurtosisInternalContainerGRPCPortID: privatePort,
 	}
 
-	ipAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
+	suffix := current_time_str_provider.GetCurrentTimeStr()
+	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
+	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
+		moduleContainerAttrs, err := enclaveObjAttrsProvider.ForModuleContainer(
+			string(moduleGUID),
+			modulePortNum,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting the module container object attributes using port num '%v'",
+				modulePortNum,
+			)
+		}
+		return moduleContainerAttrs, nil
+	}
+
+	privateIpAddr, err := launcher.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
 	}
 
 	envVars := map[string]string{
@@ -88,40 +119,25 @@ func (launcher ModuleLauncher) Launch(
 		kurtosis_module_docker_api.SerializedCustomParamsEnvVar: serializedParams,
 	}
 
-	bindMounts := map[string]string{
-		launcher.enclaveDataDirpathOnHostMachine: kurtosis_module_docker_api.EnclaveDataDirMountpoint,
-	}
-
-	suffix := current_time_str_provider.GetCurrentTimeStr()
-	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
-
-	containerAttrs := launcher.enclaveObjAttrsProvider.ForModuleContainer(string(moduleGUID))
-	containerName := containerAttrs.GetName()
-	containerLabels := containerAttrs.GetLabels()
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	containerId, publicIpAddr, publicPorts, err := launcher.enclaveContainerLauncher.Launch(
+		ctx,
 		containerImage,
-		containerName,
+		shouldPullContainerImageBeforeStarting,
+		privateIpAddr,
 		launcher.dockerNetworkId,
-	).WithAlias(
-		containerName,
-	).WithStaticIP(
-		ipAddr,
-	).WithUsedPorts(
-		usedPorts,
-	).WithEnvironmentVariables(
+		kurtosis_module_docker_api.EnclaveDataDirMountpoint,
+		privatePorts,
+		objAttrsSupplier,
 		envVars,
-	).WithBindMounts(
-		bindMounts,
-	).WithLabels(
-		containerLabels,
-	).Build()
-	containerId, allHostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
-	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the module container")
-	}
-	shouldDestroyContainer := true
+		shouldBindMountDockerSocket,
+		moduleAlias,
+		entrypointArgs,
+		cmdArgs,
+		volumeMounts,
+	)
+	shouldKillContainer := true
 	defer func() {
-		if shouldDestroyContainer {
+		if shouldKillContainer {
 			if err := launcher.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Error("Launching the module container failed, but an error occurred killing container we started:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
@@ -130,30 +146,32 @@ func (launcher ModuleLauncher) Launch(
 		}
 	}()
 
-	var resultHostPortBinding *nat.PortBinding = nil
-	hostPortBindingFromMap, found := allHostPortBindings[portObj]
-	if found {
-		resultHostPortBinding = hostPortBindingFromMap
+	publicPort, found := publicPorts[schema.KurtosisInternalContainerGRPCPortID]
+	if !found {
+		return "", nil, nil, nil, nil, nil, stacktrace.NewError(
+			"Expected to find the module's public port information using port ID '%v', but none was found",
+			schema.KurtosisInternalContainerGRPCPortID,
+		)
 	}
 
-	moduleSocket := fmt.Sprintf("%v:%v", ipAddr, kurtosis_module_rpc_api_consts.ListenPort)
+	moduleSocket := fmt.Sprintf("%v:%v", privateIpAddr, modulePortNum)
 	conn, err := grpc.Dial(
 		moduleSocket,
 		grpc.WithInsecure(), // TODO SECURITY: Use HTTPS to verify we're connecting to the correct module
 	)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "Couldn't dial module container '%v' at %v", moduleID, moduleSocket)
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't dial module container '%v' at %v", moduleID, moduleSocket)
 	}
 	moduleClient := kurtosis_module_rpc_api_bindings.NewExecutableModuleServiceClient(conn)
 
 	logrus.Debugf("Waiting for module container to become available...")
 	if err := waitUntilModuleContainerIsAvailable(ctx, moduleClient); err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for module container '%v' to become available", moduleID)
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for module container '%v' to become available", moduleID)
 	}
 	logrus.Debugf("Module container '%v' became available", moduleID)
 
-	shouldDestroyContainer = false
-	return containerId, ipAddr, moduleClient, resultHostPortBinding, nil
+	shouldKillContainer = false
+	return containerId, privateIpAddr, privatePort, publicIpAddr, publicPort, moduleClient, nil
 }
 
 // ==========================================================================================

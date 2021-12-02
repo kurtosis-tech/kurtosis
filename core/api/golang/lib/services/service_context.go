@@ -28,21 +28,19 @@ import (
 type ServiceContext struct {
 	client			kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 	serviceId		ServiceID
-	ipAddress		string
 	sharedDirectory	*SharedPath
+
+	// Network location inside the enclave
+	privateIpAddr	string
+	privatePorts	map[string]*PortSpec
+
+	// Network location outside the enclave
+	publicIpAddr	string
+	publicPorts		map[string]*PortSpec
 }
 
-func NewServiceContext(
-		client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
-		serviceId ServiceID,
-		ipAddress string,
-	    sharedDirectory *SharedPath) *ServiceContext {
-	return &ServiceContext{
-		client:				client,
-		serviceId:			serviceId,
-		ipAddress:			ipAddress,
-		sharedDirectory:	sharedDirectory,
-	}
+func NewServiceContext(client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, serviceId ServiceID, sharedDirectory *SharedPath, privateIpAddr string, privatePorts map[string]*PortSpec, publicIpAddr string, publicPorts map[string]*PortSpec) *ServiceContext {
+	return &ServiceContext{client: client, serviceId: serviceId, sharedDirectory: sharedDirectory, privateIpAddr: privateIpAddr, privatePorts: privatePorts, publicIpAddr: publicIpAddr, publicPorts: publicPorts}
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -51,13 +49,28 @@ func (self *ServiceContext) GetServiceID() ServiceID {
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetIPAddress() string {
-	return self.ipAddress
+func (self *ServiceContext) GetSharedDirectory() *SharedPath {
+	return self.sharedDirectory
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetSharedDirectory() *SharedPath {
-	return self.sharedDirectory
+func (self *ServiceContext) GetPrivateIPAddress() string {
+	return self.privateIpAddr
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (self *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
+	return self.privatePorts
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (self *ServiceContext) GetPublicIPAddress() string {
+	return self.publicIpAddr
+}
+
+// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
+func (self *ServiceContext) GetPublicPorts() map[string]*PortSpec {
+	return self.publicPorts
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

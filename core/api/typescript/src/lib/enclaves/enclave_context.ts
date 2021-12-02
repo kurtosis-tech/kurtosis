@@ -6,7 +6,6 @@
 import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import {
     RegisterFilesArtifactsArgs,
-    PortBinding,
     RegisterServiceArgs,
     RegisterServiceResponse,
     StartServiceArgs,
@@ -27,6 +26,7 @@ import {
     GetModuleInfoArgs,
     GetModuleInfoResponse,
     GetModulesResponse,
+    Port,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ModuleID, ModuleContext } from "../modules/module_context";
 import { ServiceID} from "../services/service";
@@ -46,14 +46,17 @@ import {
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs,
     newExecuteBulkCommandsArgs,
-    newUnloadModuleArgs
+    newUnloadModuleArgs,
+    newPort
 } from "../constructor_calls";
 import { ok, err, Result } from "neverthrow";
 import * as log from "loglevel";
 import * as grpc from "grpc";
 import * as path from "path"
+import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import { ContainerConfig, FilesArtifactID } from "../services/container_config";
+import { PortProtocol, PortSpec } from "../services/port_spec";
 
 export type EnclaveID = string;
 
@@ -201,9 +204,9 @@ export class EnclaveContext {
     public async addService(
             serviceId: ServiceID,
             containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
-        ): Promise<Result<[ServiceContext, Map<string, PortBinding>], Error>> {
+        ): Promise<Result<ServiceContext, Error>> {
 
-        const resultAddServiceToPartition: Result<[ServiceContext, Map<string, PortBinding>], Error> = await this.addServiceToPartition(
+        const resultAddServiceToPartition: Result<ServiceContext, Error> = await this.addServiceToPartition(
             serviceId,
             DEFAULT_PARTITION_ID,
             containerConfigSupplier,
@@ -221,7 +224,7 @@ export class EnclaveContext {
             serviceId: ServiceID,
             partitionId: PartitionID,
             containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
-        ): Promise<Result<[ServiceContext, Map<string, PortBinding>], Error>> {
+        ): Promise<Result<ServiceContext, Error>> {
 
         log.trace("Registering new service ID with Kurtosis API...");
         const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
@@ -243,17 +246,18 @@ export class EnclaveContext {
         if (!resultRegisterService.isOk()) {
             return err(resultRegisterService.error);
         }
+        // TODO Add a 'finally' to remove the service if this function doesn't complete successfully
         const registerServiceResp: RegisterServiceResponse = resultRegisterService.value;
 
         log.trace("New service successfully registered with Kurtosis API");
 
-        const serviceIpAddr: string = registerServiceResp.getIpAddr();
+        const privateIpAddr: string = registerServiceResp.getPrivateIpAddr();
         const relativeServiceDirpath: string = registerServiceResp.getRelativeServiceDirpath();
 
         const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
 
         log.trace("Generating container config object using the container config supplier...")
-        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(serviceIpAddr, sharedDirectory);
+        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
         if (!containerConfigSupplierResult.isOk()){
             return err(containerConfigSupplierResult.error);
         }
@@ -262,20 +266,29 @@ export class EnclaveContext {
 
         log.trace("Creating files artifact ID str -> mount dirpaths map...");
         const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.getFilesArtifactMountpoints().entries()) {
+        for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
 
             artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
         }
         log.trace("Successfully created files artifact ID str -> mount dirpaths map");
 
         log.trace("Starting new service with Kurtosis API...");
+        const privatePorts = containerConfig.usedPorts;
+        const privatePortsForApi: Map<string, Port> = new Map();
+        for (const [portId, portSpec] of privatePorts.entries()) {
+            const portSpecForApi: Port = newPort(
+                portSpec.number,
+                portSpec.protocol,
+            )
+            privatePortsForApi.set(portId, portSpecForApi);
+        }
         const startServiceArgs: StartServiceArgs = newStartServiceArgs(
             serviceId, 
-            containerConfig.getImage(), 
-            containerConfig.getUsedPortsSet(),
-            containerConfig.getEntrypointOverrideArgs(),
-            containerConfig.getCmdOverrideArgs(),
-            containerConfig.getEnvironmentVariableOverrides(),
+            containerConfig.image, 
+            privatePortsForApi,
+            containerConfig.entrypointOverrideArgs,
+            containerConfig.cmdOverrideArgs,
+            containerConfig.environmentVariableOverrides,
             SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
             artifactIdStrToMountDirpath);
 
@@ -296,21 +309,23 @@ export class EnclaveContext {
         if (!resultStartService.isOk()) {
             return err(resultStartService.error);
         }
-
+        const resp: StartServiceResponse = resultStartService.value;
         log.trace("Successfully started service with Kurtosis API");
+
+        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+            resp.getPublicPortsMap(),
+        );
 
         const serviceContext: ServiceContext = new ServiceContext(
             this.client,
             serviceId,
-            serviceIpAddr,
-            sharedDirectory);
-
-        const resp: StartServiceResponse = resultStartService.value;
-        const resultMap: Map<string, PortBinding> = new Map();
-        for (const [key, value] of resp.getUsedPortsHostPortBindingsMap().entries()) {
-            resultMap.set(key, value);
-        }
-        return ok<[ServiceContext, Map<string, PortBinding>], Error>([serviceContext, resultMap]);
+            sharedDirectory,
+            privateIpAddr,
+            privatePorts,
+            resp.getPublicIpAddr(),
+            serviceCtxPublicPorts,
+        );
+        return ok(serviceContext)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -334,16 +349,22 @@ export class EnclaveContext {
         if (!resultGetServiceInfo.isOk()) {
             return err(resultGetServiceInfo.error);
         }
+        const resp: GetServiceInfoResponse = resultGetServiceInfo.value;
 
-        const serviceResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
-        if (serviceResponse.getIpAddr() === "") {
+        if (resp.getPrivateIpAddr() === "") {
             return err(new Error(
-                "Kurtosis API reported an empty IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
+                "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
+                ) 
+            );
+        }
+        if (resp.getPublicIpAddr() === "") {
+            return err(new Error(
+                "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 ) 
             );
         }
 
-        const relativeServiceDirpath: string = serviceResponse.getRelativeServiceDirpath();
+        const relativeServiceDirpath: string = resp.getRelativeServiceDirpath();
         if (relativeServiceDirpath === "") {
             return err(new Error(
                 "Kurtosis API reported an empty relative service directory path for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
@@ -351,7 +372,7 @@ export class EnclaveContext {
             );
         }
 
-        const enclaveDataDirMountDirpathOnSvcContainer: string = serviceResponse.getEnclaveDataDirMountDirpath();
+        const enclaveDataDirMountDirpathOnSvcContainer: string = resp.getEnclaveDataDirMountDirpath();
         if (enclaveDataDirMountDirpathOnSvcContainer === "") {
             return err(new Error(
                 "Kurtosis API reported an empty enclave data dir mount dirpath for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
@@ -361,11 +382,21 @@ export class EnclaveContext {
 
         const sharedDirectory: SharedPath = this.getSharedDirectory(relativeServiceDirpath)
 
+        const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+            resp.getPrivatePortsMap(),
+        );
+        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+            resp.getPublicPortsMap(),
+        );
+
         const serviceContext: ServiceContext = new ServiceContext(
             this.client,
             serviceId,
-            serviceResponse.getIpAddr(),
             sharedDirectory,
+            resp.getPrivateIpAddr(),
+            serviceCtxPrivatePorts,
+            resp.getPublicIpAddr(),
+            serviceCtxPublicPorts,
         );
 
         return ok(serviceContext);
@@ -630,5 +661,15 @@ export class EnclaveContext {
         const sharedDirectory = new SharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer);
 
         return sharedDirectory;
+    }
+
+    private static convertApiPortsToServiceContextPorts(apiPorts: jspb.Map<string, Port>): Map<string, PortSpec> {
+        const result: Map<string, PortSpec> = new Map();
+        for (const [portId, apiPortSpec] of apiPorts.entries()) {
+            const portProtocol: PortProtocol = apiPortSpec.getProtocol();
+            const portNum: number = apiPortSpec.getNumber();
+            result.set(portId, new PortSpec(portNum, portProtocol))
+        }
+        return result;
     }
 }

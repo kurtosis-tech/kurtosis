@@ -1,3 +1,5 @@
+import { PortProtocol, PortSpec } from "./port_spec";
+
 // The ID of an artifact containing files that should be mounted into a service container
 export type FilesArtifactID = string;
 
@@ -7,52 +9,16 @@ export type FilesArtifactID = string;
 // TODO defensive copy when we're giving back complex objects?????
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ContainerConfig {
-	
-    private readonly image: string;
-    private readonly usedPortsSet: Set<string>;
-    private readonly filesArtifactMountpoints: Map<FilesArtifactID, string>;
-    private readonly entrypointOverrideArgs: string[];
-	private readonly cmdOverrideArgs: string[];
-	private readonly environmentVariableOverrides: Map<string,string>;
-
     constructor(
-            image: string,
-            usedPortsSet: Set<string>,
-            filesArtifactMountpoints: Map<FilesArtifactID, string>,
-            entrypointOverrideArgs: string[],
-            cmdOverrideArgs: string[],
-            environmentVariableOverrides: Map<string,string>) {
-        this.image = image;
-        this.usedPortsSet = usedPortsSet;
-        this.filesArtifactMountpoints = filesArtifactMountpoints;
-        this.entrypointOverrideArgs = entrypointOverrideArgs;
-        this.cmdOverrideArgs = cmdOverrideArgs;
-        this.environmentVariableOverrides = environmentVariableOverrides;    
-    }
+        public readonly image: string,
+        public readonly usedPorts: Map<string, PortSpec>,
+        public readonly filesArtifactMountpoints: Map<FilesArtifactID, string>,
+        public readonly entrypointOverrideArgs: string[],
+        public readonly cmdOverrideArgs: string[],
+        public readonly environmentVariableOverrides: Map<string,string>,
+    ) {}
 
-    public getImage(): string {
-        return this.image;
-    }
-
-    public getUsedPortsSet(): Set<string> {
-        return this.usedPortsSet;
-    }
-
-    public getFilesArtifactMountpoints(): Map<FilesArtifactID, string> {
-        return this.filesArtifactMountpoints;
-    }
-
-    public getEntrypointOverrideArgs(): string[] {
-        return this.entrypointOverrideArgs;
-	}
-	
-	public getCmdOverrideArgs(): string[] {
-        return this.cmdOverrideArgs;
-	}
-	
-	public getEnvironmentVariableOverrides(): Map<string, string> {
-        return this.environmentVariableOverrides;
-	}
+    // No need for getters because all the fields are 'readonly'
 }
 
 // ====================================================================================================
@@ -62,7 +28,7 @@ export class ContainerConfig {
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ContainerConfigBuilder {
     private readonly image: string;
-    private usedPortsSet: Set<string>;
+    private usedPorts: Map<string, PortSpec>;
     private filesArtifactMountpoints: Map<FilesArtifactID, string>;
     private entrypointOverrideArgs: string[];
 	private cmdOverrideArgs: string[];
@@ -70,15 +36,15 @@ export class ContainerConfigBuilder {
 
     constructor (image: string) {
         this.image = image;
-        this.usedPortsSet = new Set();
+        this.usedPorts = new Map();
         this.filesArtifactMountpoints = new Map();
         this.entrypointOverrideArgs = [];
         this.cmdOverrideArgs = [];
         this.environmentVariableOverrides = new Map();
     }
 
-    public withUsedPorts(usedPortsSet: Set<string>): ContainerConfigBuilder {
-        this.usedPortsSet = usedPortsSet;
+    public withUsedPorts(usedPorts: Map<string, PortSpec>): ContainerConfigBuilder {
+        this.usedPorts = usedPorts;
         return this;
     }
 
@@ -105,7 +71,7 @@ export class ContainerConfigBuilder {
     public build(): ContainerConfig {
         return new ContainerConfig(
             this.image,
-            this.usedPortsSet,
+            this.usedPorts,
             this.filesArtifactMountpoints,
             this.entrypointOverrideArgs,
             this.cmdOverrideArgs,

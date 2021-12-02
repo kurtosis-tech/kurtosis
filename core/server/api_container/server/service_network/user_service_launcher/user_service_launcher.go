@@ -7,38 +7,49 @@ package user_service_launcher
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 )
+
+const (
+	// For now, we rely on the users to update their own images if the image already exists in the Docker engine; we should
+	//  probably make this a configurable flag though
+	shouldPullImageBeforeLaunch = false
+
+	// User services shouldn't have access to the Docker engine
+	shouldBindMountDockerSocket = false
+)
+
+// 1:1 mapping between enclave container port protos <-> obj attrs schema protos
+var enclaveContainerPortProtosToObjAttrsPortProtos = map[enclave_container_launcher.EnclaveContainerPortProtocol]schema.PortProtocol{
+	enclave_container_launcher.EnclaveContainerPortProtocol_TCP: schema.PortProtocol_TCP,
+	enclave_container_launcher.EnclaveContainerPortProtocol_SCTP: schema.PortProtocol_SCTP,
+	enclave_container_launcher.EnclaveContainerPortProtocol_UDP: schema.PortProtcol_UDP,
+}
 
 /*
 Convenience struct whose only purpose is launching user services
  */
 type UserServiceLauncher struct {
 	dockerManager *docker_manager.DockerManager
-
-	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider
+	
+	enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	// TODO Always publish user service ports, to simplify
-	shouldPublishPorts bool
-
 	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
-
-	// The enclave data directory path on the host machine, so the launcher can bind-mount it to module
-	//  containers
-	enclaveDataDirpathOnHostMachine string
 }
 
-func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, shouldPublishPorts bool, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, enclaveDataDirpathOnHostMachine string) *UserServiceLauncher {
-	return &UserServiceLauncher{dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, freeIpAddrTracker: freeIpAddrTracker, shouldPublishPorts: shouldPublishPorts, filesArtifactExpander: filesArtifactExpander, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
+func NewUserServiceLauncher(dockerManager *docker_manager.DockerManager, enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher, freeIpAddrTracker *lib.FreeIpAddrTracker, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander) *UserServiceLauncher {
+	return &UserServiceLauncher{dockerManager: dockerManager, enclaveContainerLauncher: enclaveContainerLauncher, freeIpAddrTracker: freeIpAddrTracker, filesArtifactExpander: filesArtifactExpander}
 }
 
 /**
@@ -49,32 +60,71 @@ Returns:
 	* The mapping of used_port -> host_port_binding (if no host port is bound, then the value will be nil)
  */
 func (launcher UserServiceLauncher) Launch(
-		ctx context.Context,
-		serviceGUID service_network_types.ServiceGUID,
-		dockerContainerAlias string,
-		ipAddr net.IP,
-		imageName string,
-		dockerNetworkId string,
-		usedPorts map[nat.Port]bool,
-		entrypointArgs []string,
-		cmdArgs []string,
-		dockerEnvVars map[string]string,
-		enclaveDataDirMountDirpath string,
-		// Mapping files artifact ID -> mountpoint on the container to launch
-		filesArtifactIdsToMountpoints map[string]string) (string, map[nat.Port]*nat.PortBinding, error) {
+	ctx context.Context,
+	serviceGUID service_network_types.ServiceGUID,
+	dockerContainerAlias string,
+	ipAddr net.IP,
+	imageName string,
+	dockerNetworkId string,
+	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	entrypointArgs []string,
+	cmdArgs []string,
+	dockerEnvVars map[string]string,
+	enclaveDataDirMountDirpath string,
+	// Mapping files artifact ID -> mountpoint on the container to launch
+	filesArtifactIdsToMountpoints map[string]string,
+) (
+	resultContainerId string,
+	resultPublicIpAddr net.IP,
+	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	resultErr error,
+) {
+	allObjAttrsPorts := map[string]*schema.PortSpec{}
+	for portId, enclaveContainerPort := range privatePorts {
+		portNum := enclaveContainerPort.GetNumber()
+		enclaveContainerPortProto := enclaveContainerPort.GetProtocol()
+		objAttrsPortProto, found := enclaveContainerPortProtosToObjAttrsPortProtos[enclaveContainerPortProto]
+		if !found {
+			return "", nil, nil, stacktrace.NewError(
+				"No object attributes schema port protocol found for enclave container port protocol '%v' used by port '%v'; this is a bug in Kurtosis",
+				enclaveContainerPortProto,
+				portId,
+			)
+		}
+		objAttrsPort, err := schema.NewPortSpec(
+			portNum,
+			objAttrsPortProto,
+		)
+		if err != nil {
+			return "", nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred constructing object attributes port spec using port num '%v' and protocol '%v'",
+				portNum,
+				objAttrsPortProto,
+			)
+		}
+		allObjAttrsPorts[portId] = objAttrsPort
+	}
+
+	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
+		userServiceContainerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
+			string(serviceGUID),
+			allObjAttrsPorts,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting the user service container object attributes using service ID '%v' and private ports '%+v'",
+				serviceGUID,
+				allObjAttrsPorts,
+			)
+		}
+		return userServiceContainerAttrs, nil
+	}
 
 	usedArtifactIdSet := map[string]bool{}
 	for artifactId := range filesArtifactIdsToMountpoints {
 		usedArtifactIdSet[artifactId] = true
-	}
-
-	usedPortsWithPublishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
-	for port := range usedPorts {
-		publishSpec := docker_manager.NewNoPublishingSpec()
-		if launcher.shouldPublishPorts {
-			publishSpec = docker_manager.NewAutomaticPublishingSpec()
-		}
-		usedPortsWithPublishSpecs[port] = publishSpec
 	}
 
 	// First expand the files artifacts into volumes, so that any errors get caught early
@@ -82,14 +132,14 @@ func (launcher UserServiceLauncher) Launch(
 	//  and delete them at the end of the test to keep things cleaner
 	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
 	artifactVolumeMounts := map[string]string{}
 	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
 		artifactVolume, found := artifactIdsToVolumes[artifactId]
 		if !found {
-			return "", nil, stacktrace.NewError(
+			return "", nil, nil, stacktrace.NewError(
 				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the " +
 					"expanded contents was found; this is a bug in Kurtosis",
 				artifactId,
@@ -98,39 +148,36 @@ func (launcher UserServiceLauncher) Launch(
 		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
-	bindMounts := map[string]string{
-		launcher.enclaveDataDirpathOnHostMachine: enclaveDataDirMountDirpath,
-	}
-
-	containerAttrs := launcher.enclaveObjAttrsProvider.ForUserServiceContainer(string(serviceGUID))
-	containerName := containerAttrs.GetName()
-	containerLabels := containerAttrs.GetLabels()
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+	containerId, publicIpAddr, publicPorts, err := launcher.enclaveContainerLauncher.Launch(
+		ctx,
 		imageName,
-		containerName,
-		dockerNetworkId,
-	).WithAlias(
-		dockerContainerAlias,
-	).WithStaticIP(
+		shouldPullImageBeforeLaunch,
 		ipAddr,
-	).WithUsedPorts(
-		usedPortsWithPublishSpecs,
-	).WithEntrypointArgs(
-		entrypointArgs,
-	).WithCmdArgs(
-		cmdArgs,
-	).WithEnvironmentVariables(
+		dockerNetworkId,
+		enclaveDataDirMountDirpath,
+		privatePorts,
+		objAttrsSupplier,
 		dockerEnvVars,
-	).WithBindMounts(
-		bindMounts,
-	).WithVolumeMounts(
+		shouldBindMountDockerSocket,
+		dockerContainerAlias,
+		entrypointArgs,
+		cmdArgs,
 		artifactVolumeMounts,
-	).WithLabels(
-		containerLabels,
-    ).Build()
-	containerId, hostPortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	)
 	if err != nil {
-		return "", nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for service with image '%v'", imageName)
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred starting the Docker container for user service with image '%v'", imageName)
 	}
-	return containerId, hostPortBindings, nil
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			if err := launcher.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+				logrus.Error("Launching the service container failed, but an error occurred killing container we started:")
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill container with ID '%v'", containerId)
+			}
+		}
+	}()
+
+	shouldKillContainer = false
+	return containerId, publicIpAddr, publicPorts, nil
 }

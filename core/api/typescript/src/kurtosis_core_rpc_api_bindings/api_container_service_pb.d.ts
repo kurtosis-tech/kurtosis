@@ -4,6 +4,38 @@
 import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
+export class Port extends jspb.Message {
+  getNumber(): number;
+  setNumber(value: number): void;
+
+  getProtocol(): Port.ProtocolMap[keyof Port.ProtocolMap];
+  setProtocol(value: Port.ProtocolMap[keyof Port.ProtocolMap]): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Port.AsObject;
+  static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Port, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Port;
+  static deserializeBinaryFromReader(message: Port, reader: jspb.BinaryReader): Port;
+}
+
+export namespace Port {
+  export type AsObject = {
+    number: number,
+    protocol: Port.ProtocolMap[keyof Port.ProtocolMap],
+  }
+
+  export interface ProtocolMap {
+    TCP: 0;
+    SCTP: 1;
+    UDP: 2;
+  }
+
+  export const Protocol: ProtocolMap;
+}
+
 export class StartExternalContainerRegistrationResponse extends jspb.Message {
   getRegistrationKey(): string;
   setRegistrationKey(value: string): void;
@@ -77,6 +109,42 @@ export namespace LoadModuleArgs {
     moduleId: string,
     containerImage: string,
     serializedParams: string,
+  }
+}
+
+export class LoadModuleResponse extends jspb.Message {
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): void;
+
+  hasPrivatePort(): boolean;
+  clearPrivatePort(): void;
+  getPrivatePort(): Port | undefined;
+  setPrivatePort(value?: Port): void;
+
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): void;
+
+  hasPublicPort(): boolean;
+  clearPublicPort(): void;
+  getPublicPort(): Port | undefined;
+  setPublicPort(value?: Port): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LoadModuleResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: LoadModuleResponse): LoadModuleResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: LoadModuleResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LoadModuleResponse;
+  static deserializeBinaryFromReader(message: LoadModuleResponse, reader: jspb.BinaryReader): LoadModuleResponse;
+}
+
+export namespace LoadModuleResponse {
+  export type AsObject = {
+    privateIpAddr: string,
+    privatePort?: Port.AsObject,
+    publicIpAddr: string,
+    publicPort?: Port.AsObject,
   }
 }
 
@@ -165,8 +233,21 @@ export namespace GetModuleInfoArgs {
 }
 
 export class GetModuleInfoResponse extends jspb.Message {
-  getIpAddr(): string;
-  setIpAddr(value: string): void;
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): void;
+
+  hasPrivatePort(): boolean;
+  clearPrivatePort(): void;
+  getPrivatePort(): Port | undefined;
+  setPrivatePort(value?: Port): void;
+
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): void;
+
+  hasPublicPort(): boolean;
+  clearPublicPort(): void;
+  getPublicPort(): Port | undefined;
+  setPublicPort(value?: Port): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetModuleInfoResponse.AsObject;
@@ -180,7 +261,10 @@ export class GetModuleInfoResponse extends jspb.Message {
 
 export namespace GetModuleInfoResponse {
   export type AsObject = {
-    ipAddr: string,
+    privateIpAddr: string,
+    privatePort?: Port.AsObject,
+    publicIpAddr: string,
+    publicPort?: Port.AsObject,
   }
 }
 
@@ -228,8 +312,8 @@ export namespace RegisterServiceArgs {
 }
 
 export class RegisterServiceResponse extends jspb.Message {
-  getIpAddr(): string;
-  setIpAddr(value: string): void;
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): void;
 
   getRelativeServiceDirpath(): string;
   setRelativeServiceDirpath(value: string): void;
@@ -246,7 +330,7 @@ export class RegisterServiceResponse extends jspb.Message {
 
 export namespace RegisterServiceResponse {
   export type AsObject = {
-    ipAddr: string,
+    privateIpAddr: string,
     relativeServiceDirpath: string,
   }
 }
@@ -258,8 +342,8 @@ export class StartServiceArgs extends jspb.Message {
   getDockerImage(): string;
   setDockerImage(value: string): void;
 
-  getUsedPortsMap(): jspb.Map<string, boolean>;
-  clearUsedPortsMap(): void;
+  getPrivatePortsMap(): jspb.Map<string, Port>;
+  clearPrivatePortsMap(): void;
   clearEntrypointArgsList(): void;
   getEntrypointArgsList(): Array<string>;
   setEntrypointArgsList(value: Array<string>): void;
@@ -291,7 +375,7 @@ export namespace StartServiceArgs {
   export type AsObject = {
     serviceId: string,
     dockerImage: string,
-    usedPortsMap: Array<[string, boolean]>,
+    privatePortsMap: Array<[string, Port.AsObject]>,
     entrypointArgsList: Array<string>,
     cmdArgsList: Array<string>,
     dockerEnvVarsMap: Array<[string, string]>,
@@ -301,8 +385,11 @@ export namespace StartServiceArgs {
 }
 
 export class StartServiceResponse extends jspb.Message {
-  getUsedPortsHostPortBindingsMap(): jspb.Map<string, PortBinding>;
-  clearUsedPortsHostPortBindingsMap(): void;
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): void;
+
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartServiceResponse): StartServiceResponse.AsObject;
@@ -315,31 +402,8 @@ export class StartServiceResponse extends jspb.Message {
 
 export namespace StartServiceResponse {
   export type AsObject = {
-    usedPortsHostPortBindingsMap: Array<[string, PortBinding.AsObject]>,
-  }
-}
-
-export class PortBinding extends jspb.Message {
-  getInterfaceIp(): string;
-  setInterfaceIp(value: string): void;
-
-  getInterfacePort(): string;
-  setInterfacePort(value: string): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PortBinding.AsObject;
-  static toObject(includeInstance: boolean, msg: PortBinding): PortBinding.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: PortBinding, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PortBinding;
-  static deserializeBinaryFromReader(message: PortBinding, reader: jspb.BinaryReader): PortBinding;
-}
-
-export namespace PortBinding {
-  export type AsObject = {
-    interfaceIp: string,
-    interfacePort: string,
+    publicIpAddr: string,
+    publicPortsMap: Array<[string, Port.AsObject]>,
   }
 }
 
@@ -364,9 +428,16 @@ export namespace GetServiceInfoArgs {
 }
 
 export class GetServiceInfoResponse extends jspb.Message {
-  getIpAddr(): string;
-  setIpAddr(value: string): void;
+  getPrivateIpAddr(): string;
+  setPrivateIpAddr(value: string): void;
 
+  getPrivatePortsMap(): jspb.Map<string, Port>;
+  clearPrivatePortsMap(): void;
+  getPublicIpAddr(): string;
+  setPublicIpAddr(value: string): void;
+
+  getPublicPortsMap(): jspb.Map<string, Port>;
+  clearPublicPortsMap(): void;
   getEnclaveDataDirMountDirpath(): string;
   setEnclaveDataDirMountDirpath(value: string): void;
 
@@ -385,7 +456,10 @@ export class GetServiceInfoResponse extends jspb.Message {
 
 export namespace GetServiceInfoResponse {
   export type AsObject = {
-    ipAddr: string,
+    privateIpAddr: string,
+    privatePortsMap: Array<[string, Port.AsObject]>,
+    publicIpAddr: string,
+    publicPortsMap: Array<[string, Port.AsObject]>,
     enclaveDataDirMountDirpath: string,
     relativeServiceDirpath: string,
   }

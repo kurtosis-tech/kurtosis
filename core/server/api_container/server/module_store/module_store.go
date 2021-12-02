@@ -7,8 +7,8 @@ package module_store
 
 import (
 	"context"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
@@ -18,10 +18,14 @@ import (
 )
 
 type moduleInfo struct {
-	containerId           string
-	ipAddr                net.IP
-	client                kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient
-	hostPortBinding *nat.PortBinding
+	containerId   string
+	privateIpAddr net.IP
+	privatePort   *enclave_container_launcher.EnclaveContainerPort
+	publicIpAddr  net.IP
+	publicPort    *enclave_container_launcher.EnclaveContainerPort
+	// NOTE: When we want restart-able enclaves, we'll need to not store this client and instead recreate one
+	//  from the port num/protocol stored as a label on the module container
+	client        kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient
 }
 
 type ModuleStore struct {
@@ -44,18 +48,28 @@ func NewModuleStore(dockerManager *docker_manager.DockerManager, moduleLauncher 
 	}
 }
 
-func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_types.ModuleID, containerImage string, serializedParams string) error {
+func (store *ModuleStore) LoadModule(
+	ctx context.Context,
+	moduleId module_store_types.ModuleID,
+	containerImage string,
+	serializedParams string,
+) (
+	resultPrivateIp net.IP,
+	resultPrivatePort *enclave_container_launcher.EnclaveContainerPort,
+	resultPublicIp net.IP,
+	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultErr error,
+) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
 	if _, found := store.modules[moduleId]; found {
-		return stacktrace.NewError("Module ID '%v' already exists in the module map", moduleId)
+		return nil, nil, nil, nil, stacktrace.NewError("Module ID '%v' already exists in the module map", moduleId)
 	}
 
-	// NOTE: We don't use module host port bindings for now; we could expose them in the future if it's useful
-	containerId, containerIpAddr, client, hostPortBinding, err := store.moduleLauncher.Launch(ctx, moduleId, containerImage, serializedParams)
+	containerId, privateIpAddr, privatePort, publicIpAddr, publicPort, client, err := store.moduleLauncher.Launch(ctx, moduleId, containerImage, serializedParams)
 	if err != nil {
-		return stacktrace.Propagate(
+		return nil, nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred launching module from container image '%v' and serialized params '%v'",
 			containerImage,
@@ -64,14 +78,16 @@ func (store *ModuleStore) LoadModule(ctx context.Context, moduleId module_store_
 	}
 
 	infoForModule :=  moduleInfo{
-		containerId: containerId,
-		ipAddr: containerIpAddr,
-		client: client,
-		hostPortBinding: hostPortBinding,
+		containerId:   containerId,
+		privateIpAddr: privateIpAddr,
+		privatePort:   privatePort,
+		publicIpAddr:  publicIpAddr,
+		publicPort:    publicPort,
+		client:        client,
 	}
 
 	store.modules[moduleId] = infoForModule
-	return nil
+	return privateIpAddr, privatePort, publicIpAddr, publicPort, nil
 }
 
 func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module_store_types.ModuleID) error {
@@ -112,15 +128,21 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module_sto
 	return resp.ResponseJson, nil
 }
 
-func (store *ModuleStore) GetModuleIPAddrByID(moduleId module_store_types.ModuleID) (net.IP, error) {
+func (store *ModuleStore) GetModuleInfo(moduleId module_store_types.ModuleID) (
+	resultPrivateIp net.IP,
+	resultPrivatePort *enclave_container_launcher.EnclaveContainerPort,
+	resultPublicIp net.IP,
+	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultErr error,
+) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
 	info, found := store.modules[moduleId]
 	if !found {
-		return nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
+		return nil, nil, nil, nil, stacktrace.NewError("No module with ID '%v' has been loaded", moduleId)
 	}
-	return info.ipAddr, nil
+	return info.privateIpAddr, info.privatePort, info.publicIpAddr, info.publicPort, nil
 }
 
 func (store *ModuleStore) GetModules() map[module_store_types.ModuleID]bool {
