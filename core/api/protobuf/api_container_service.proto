@@ -232,11 +232,12 @@ message StartServiceArgs {
 
 message StartServiceResponse {
   // Public IP address *outside* the enclave where the service is reachable
+  // NOTE: Will be empty if the service didn't define any private ports
   string public_ip_addr = 1;
 
   // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
   //  corresponds to the ID that was passed in in StartServiceArgs
-  // NOTE: If the service is stopped, these will no longer be valid!
+  // NOTE: Will be empty if the service didn't define any private ports
   map<string, Port> public_ports = 2;
 }
 
@@ -257,11 +258,12 @@ message GetServiceInfoResponse {
   map<string, Port> private_ports = 2;
 
   // Public IP address *outside* the enclave where the service is reachable
+  // NOTE: Will be empty if the service isn't running or didn't define any private ports
   string public_ip_addr = 3;
 
   // The ports on which the service can be reached *outside* the enclave, specified in user_specified_port_id -> port_info where user_defined_port_id
   // The user_specified_port_id will match the keys specified in StartServiceArgs
-  // NOTE: If the service is stopped, these will no longer be valid!
+  // NOTE: Will be empty if the service isn't running or didn't define any private ports
   map<string, Port> public_ports = 4;
 
   // The full path where the enclave data dir is mounted on the service

@@ -36,6 +36,9 @@ const (
 	// we pick a reasonable limit of 10MB on log responses for docker exec.
 	// See: https://stackoverflow.com/questions/34128872/google-protobuf-maximum-size/34186672
 	maxLogOutputSizeBytes = 10 * 1024 * 1024
+
+	// The string returned by the API if a service's public IP address doesn't exist
+	missingPublicIpAddrStr = ""
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and enclave container port protos
@@ -220,7 +223,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		}
 		privateEnclaveContainerPorts[portId] = privateEnclaveContainerPort
 	}
-	publicIpAddr, publicEnclaveContainerPorts, err := service.serviceNetwork.StartService(
+	maybePublicIpAddr, publicEnclaveContainerPorts, err := service.serviceNetwork.StartService(
 		ctx,
 		serviceId,
 		args.DockerImage,
@@ -238,7 +241,11 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public enclave container ports to API ports")
 	}
-	response := binding_constructors.NewStartServiceResponse(publicIpAddr.String(), publicApiPorts)
+	publicIpAddrStr := missingPublicIpAddrStr
+	if maybePublicIpAddr != nil {
+		publicIpAddrStr = maybePublicIpAddr.String()
+	}
+	response := binding_constructors.NewStartServiceResponse(publicIpAddrStr, publicApiPorts)
 
 	serviceStartLoglineSuffix := ""
 	if len(publicEnclaveContainerPorts) > 0 {
@@ -260,9 +267,13 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
 
-	privateEnclaveContainerPorts, publicIpAddr, publicEnclaveContainerPorts, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
+	privateEnclaveContainerPorts, maybePublicIpAddr, publicEnclaveContainerPorts, enclaveDataDirMntDirpath, err := service.serviceNetwork.GetServiceRunInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the run info for service '%v'", serviceIdStr)
+	}
+	publicIpAddrStr := missingPublicIpAddrStr
+	if maybePublicIpAddr != nil {
+		publicIpAddrStr = maybePublicIpAddr.String()
 	}
 	privateApiPorts, err := transformEnclaveContainerPortsMapToApiPortsMap(privateEnclaveContainerPorts)
 	if err != nil {
@@ -276,7 +287,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
 		privateIpAddr.String(),
 		privateApiPorts,
-		publicIpAddr.String(),
+		publicIpAddrStr,
 		publicApiPorts,
 		enclaveDataDirMntDirpath,
 		relativeServiceDirpath,

@@ -64,7 +64,7 @@ func (self *ServiceContext) GetPrivatePorts() map[string]*PortSpec {
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (self *ServiceContext) GetPublicIPAddress() string {
+func (self *ServiceContext) GetMaybePublicIPAddress() string {
 	return self.publicIpAddr
 }
 

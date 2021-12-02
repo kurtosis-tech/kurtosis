@@ -75,8 +75,8 @@ func (launcher UserServiceLauncher) Launch(
 	filesArtifactIdsToMountpoints map[string]string,
 ) (
 	resultContainerId string,
-	resultPublicIpAddr net.IP,
-	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	resultPublicIpAddr net.IP,	// Will be nil if len(privatePorts) == 0
+	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort, // Will be empty if len(privatePorts) == 0
 	resultErr error,
 ) {
 	allObjAttrsPorts := map[string]*schema.PortSpec{}

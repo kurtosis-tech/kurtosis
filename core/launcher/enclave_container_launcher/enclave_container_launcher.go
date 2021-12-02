@@ -23,7 +23,7 @@ const (
 	enclaveContainerPortNumUintBase = 10
 	encalveContainerPortNumUintBits = 16
 
-	uninitializedPublicIpAddrValue = ""
+	uninitializedPublicIpAddrStrValue = ""
 )
 
 // EnclaveContainerLauncher
@@ -43,6 +43,7 @@ func NewEnclaveContainerLauncher(dockerManager *docker_manager.DockerManager, en
 	return &EnclaveContainerLauncher{dockerManager: dockerManager, enclaveObjAttrsProvider: enclaveObjAttrsProvider, enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine}
 }
 
+// NOTE: Will return a nil IP & empty public ports map if no private ports are supplied
 func (launcher *EnclaveContainerLauncher) Launch(
 	ctx context.Context,
 	image string, // The image to start the container with
@@ -60,8 +61,8 @@ func (launcher *EnclaveContainerLauncher) Launch(
 	maybeVolumeMounts map[string]string, // Leave nil to not set any volume mounts
 ) (
 	resultContainerId string,
-	resultPublicIpAddr net.IP,
-	resultPublicPorts map[string]*EnclaveContainerPort,
+	resultMaybePublicIpAddr net.IP,	// Will be nil if len(privatePorts) == 0
+	resultPublicPorts map[string]*EnclaveContainerPort, // Will be empty if len(privatePorts) == 0
 	resultErr error,
 ){
 	// Best-effort pull attempt
@@ -136,21 +137,21 @@ func (launcher *EnclaveContainerLauncher) Launch(
 		}
 	}()
 
-	publicIpAddrStr, publicPorts, err := condensePublicNetworkInfoFromHostMachineBindings(
-		hostPortBindingsByPortObj,
-		privatePorts,
-		portIdsForDockerPortObjs,
-	)
-	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
-	}
-	publicIpAddr := net.ParseIP(publicIpAddrStr)
-	if publicIpAddr == nil {
-		return "", nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
+	var maybePublicIpAddr net.IP = nil
+	publicPorts := map[string]*EnclaveContainerPort{}
+	if len(privatePorts) > 0 {
+		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
+			hostPortBindingsByPortObj,
+			privatePorts,
+			portIdsForDockerPortObjs,
+		)
+		if err != nil {
+			return "", nil, nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+		}
 	}
 
 	shouldKillContainer = false
-	return containerId, publicIpAddr, publicPorts, nil
+	return containerId, maybePublicIpAddr, publicPorts, nil
 }
 
 // ====================================================================================================
@@ -211,15 +212,15 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 	privatePorts map[string]*EnclaveContainerPort,
 	portIdsForDockerPortObjs map[nat.Port]string,
 ) (
-	resultPublicIpAddr string,
+	resultPublicIpAddr net.IP,
 	resultPublicPorts map[string]*EnclaveContainerPort,
 	resultErr error,
 ) {
 	if len(hostMachinePortBindings) == 0 {
-		return "", nil, stacktrace.NewError("Cannot condense public network info if no host machine port bindings are provided")
+		return nil, nil, stacktrace.NewError("Cannot condense public network info if no host machine port bindings are provided")
 	}
 
-	publicIpAddr := uninitializedPublicIpAddrValue // "Set" of public IP addrs that the container's private ports are bound to
+	publicIpAddrStr := uninitializedPublicIpAddrStrValue
 	publicPorts := map[string]*EnclaveContainerPort{}
 	for dockerPortObj, hostPortBinding := range hostMachinePortBindings {
 		portId, found := portIdsForDockerPortObjs[dockerPortObj]
@@ -231,19 +232,19 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 
 		privatePort, found := privatePorts[portId]
 		if !found {
-			return "",  nil, stacktrace.NewError(
+			return nil,  nil, stacktrace.NewError(
 				"The container engine returned a host machine port binding for Docker port spec '%v', but this port spec didn't correspond to any port ID; this is very likely a bug in Kurtosis",
 				dockerPortObj,
 			)
 		}
 
 		hostIpAddr := hostPortBinding.HostIP
-		if publicIpAddr == uninitializedPublicIpAddrValue {
-			publicIpAddr = hostIpAddr
-		} else if publicIpAddr != hostIpAddr {
-			return "", nil, stacktrace.NewError(
+		if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+			publicIpAddrStr = hostIpAddr
+		} else if publicIpAddrStr != hostIpAddr {
+			return nil, nil, stacktrace.NewError(
 				"A public IP address '%v' was already declared for the service, but Docker port object '%v' declares a different public IP address '%v'",
-				publicIpAddr,
+				publicIpAddrStr,
 				dockerPortObj,
 				hostIpAddr,
 			)
@@ -252,7 +253,7 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 		hostPortStr := hostPortBinding.HostPort
 		hostPortUint64, err := strconv.ParseUint(hostPortStr, enclaveContainerPortNumUintBase, encalveContainerPortNumUintBits)
 		if err != nil {
-			return "", nil, stacktrace.Propagate(
+			return nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred parsing host machine port string '%v' into a uint with %v bits and base %v",
 				hostPortStr,
@@ -264,7 +265,7 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 		portProto := privatePort.GetProtocol()
 		publicPort, err := NewEnclaveContainerPort(hostPortUint16, portProto)
 		if err != nil {
-			return "", nil, stacktrace.Propagate(
+			return nil, nil, stacktrace.Propagate(
 				err,
 				"An error occurred creating public port object with num '%v' and protocol '%v'; this should never happen and likely means a bug in Kurtosis",
 				hostPortUint16,
@@ -273,8 +274,12 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 		}
 		publicPorts[portId] = publicPort
 	}
-	if publicIpAddr == uninitializedPublicIpAddrValue {
-		return "", nil, stacktrace.NewError("No public IP address was retrieved from host port bindings: %+v", hostMachinePortBindings)
+	if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+		return nil, nil, stacktrace.NewError("No public IP address string was retrieved from host port bindings: %+v", hostMachinePortBindings)
+	}
+	publicIpAddr := net.ParseIP(publicIpAddrStr)
+	if publicIpAddr == nil {
+		return nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
 	}
 	return publicIpAddr, publicPorts, nil
 }

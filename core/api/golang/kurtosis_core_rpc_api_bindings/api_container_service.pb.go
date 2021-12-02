@@ -963,10 +963,11 @@ type StartServiceResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Public IP address *outside* the enclave where the service is reachable
+	// NOTE: Will be empty if the service didn't define any private ports
 	PublicIpAddr string `protobuf:"bytes,1,opt,name=public_ip_addr,json=publicIpAddr,proto3" json:"public_ip_addr,omitempty"`
 	// Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
 	//  corresponds to the ID that was passed in in StartServiceArgs
-	// NOTE: If the service is stopped, these will no longer be valid!
+	// NOTE: Will be empty if the service didn't define any private ports
 	PublicPorts map[string]*Port `protobuf:"bytes,2,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1078,10 +1079,11 @@ type GetServiceInfoResponse struct {
 	// Will be exactly what was passed in at the time of starting the service
 	PrivatePorts map[string]*Port `protobuf:"bytes,2,rep,name=private_ports,json=privatePorts,proto3" json:"private_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Public IP address *outside* the enclave where the service is reachable
+	// NOTE: Will be empty if the service isn't running or didn't define any private ports
 	PublicIpAddr string `protobuf:"bytes,3,opt,name=public_ip_addr,json=publicIpAddr,proto3" json:"public_ip_addr,omitempty"`
 	// The ports on which the service can be reached *outside* the enclave, specified in user_specified_port_id -> port_info where user_defined_port_id
 	// The user_specified_port_id will match the keys specified in StartServiceArgs
-	// NOTE: If the service is stopped, these will no longer be valid!
+	// NOTE: Will be empty if the service isn't running or didn't define any private ports
 	PublicPorts map[string]*Port `protobuf:"bytes,4,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// The full path where the enclave data dir is mounted on the service
 	EnclaveDataDirMountDirpath string `protobuf:"bytes,5,opt,name=enclave_data_dir_mount_dirpath,json=enclaveDataDirMountDirpath,proto3" json:"enclave_data_dir_mount_dirpath,omitempty"`
