@@ -13,6 +13,8 @@ import (
 
 const (
 	testsuiteNameEnclaveIDFragment = "golang-engine-server-test"
+
+	millisInNanos = 1000
 )
 
 func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultErr error) {
@@ -22,7 +24,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 		"%v_%v_%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
-		time.Now().Unix(),
+		time.Now().UnixNano() / millisInNanos,
 	))
 	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveId)

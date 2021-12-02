@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Added a `--partitioning` flag to `module exec` for enabling partitioning
+
+### Changes
+* The Go internal testsuite's enclaves will now be named with Unix millis, rather than Unix seconds
+* Partitioning defaults to false for `module exec`
 
 # 0.7.2
 ### Features
