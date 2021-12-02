@@ -1,4 +1,6 @@
 # TBD
+
+# 1.34.0
 ### Features
 * Service ports are now identified with a user-friendly string ID
 * Service ports are now specified in a more user-friendly syntax (number & protocol) via a `PortSpec` object
