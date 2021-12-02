@@ -39,7 +39,7 @@ const (
 	apiContainerVersionArg = "api-container-version"
 	moduleImageArg = "module-image"
 	enclaveIdArg = "enclave-id"
-	isPartitioningEnabledArg = "partitioning"
+	isPartitioningEnabledArg = "with-partitioning"
 
 	defaultLoadParams              = "{}"
 	defaultExecuteParams           = "{}"
