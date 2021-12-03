@@ -7,6 +7,7 @@ export { PortSpec, PortProtocol } from "./lib/services/port_spec"
 
 // Enclaves
 export { EnclaveID, PartitionID, EnclaveContext } from "./lib/enclaves/enclave_context";
+export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./lib/enclaves/partition_connection"
 
 // Modules
 export { ModuleContext, ModuleID } from "./lib/modules/module_context";
@@ -17,7 +18,7 @@ export { V0BulkCommands, V0SerializableCommand } from "./lib/bulk_command_execut
 export { V0CommandType, V0CommandTypeVisitor } from "./lib/bulk_command_execution/v0_bulk_command_api/v0_command_types";;
 
 // Constructor Calls
-export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServiceInfoArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteBulkCommandsArgs, newExecuteModuleArgs, newGetModuleInfoArgs } from "./lib/constructor_calls";
+export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServiceInfoArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteBulkCommandsArgs, newExecuteModuleArgs, newGetModuleInfoArgs } from "./lib/constructor_calls";
 
 // Kurtosis Core RPC API Bindings
 export { ApiContainerServiceClient } from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";

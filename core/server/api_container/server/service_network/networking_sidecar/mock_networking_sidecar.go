@@ -11,11 +11,11 @@ import (
 )
 
 type MockNetworkingSidecar struct {
-	updateFunctionCallsIps [][]net.IP
+	updateFunctionCallsPacketLossConfig []map[string]float32
 }
 
 func NewMockNetworkingSidecar() *MockNetworkingSidecar {
-	return &MockNetworkingSidecar{updateFunctionCallsIps: [][]net.IP{}}
+	return &MockNetworkingSidecar{updateFunctionCallsPacketLossConfig: []map[string]float32{}}
 }
 
 func (sidecar MockNetworkingSidecar) GetIPAddr() net.IP {
@@ -26,15 +26,15 @@ func (sidecar MockNetworkingSidecar) GetContainerID() string {
 	return ""
 }
 
-func (sidecar MockNetworkingSidecar) InitializeIpTables(ctx context.Context) error {
+func (sidecar MockNetworkingSidecar) InitializeTrafficControl(ctx context.Context) error {
 	return nil
 }
 
-func (sidecar *MockNetworkingSidecar) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
-	sidecar.updateFunctionCallsIps = append(sidecar.updateFunctionCallsIps, blockedIps)
+func (sidecar *MockNetworkingSidecar) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
+	sidecar.updateFunctionCallsPacketLossConfig = append(sidecar.updateFunctionCallsPacketLossConfig, allPacketLossPercentageForIpAddresses)
 	return nil
 }
 
-func (sidecar MockNetworkingSidecar) GetRecordedUpdateIps() [][]net.IP {
-	return sidecar.updateFunctionCallsIps
+func (sidecar MockNetworkingSidecar) GetRecordedUpdatePacketLossConfig() []map[string]float32 {
+	return sidecar.updateFunctionCallsPacketLossConfig
 }

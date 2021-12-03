@@ -210,6 +210,12 @@ export function newPartitionConnections(allConnectionInfo: Map<string, Partition
     return result;
 }
 
+export function newPartitionConnectionInfo(packetLossPercentage: number): PartitionConnectionInfo {
+    const partitionConnectionInfo: PartitionConnectionInfo = new PartitionConnectionInfo();
+    partitionConnectionInfo.setPacketLossPercentage(packetLossPercentage);
+    return partitionConnectionInfo;
+}
+
 // ==============================================================================================
 //                                          Exec Command
 // ==============================================================================================

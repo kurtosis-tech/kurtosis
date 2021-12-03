@@ -57,6 +57,7 @@ import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import { PortProtocol, PortSpec } from "../services/port_spec";
+import {PartitionConnection} from "./partition_connection";
 
 export type EnclaveID = string;
 
@@ -284,7 +285,7 @@ export class EnclaveContext {
         }
         const startServiceArgs: StartServiceArgs = newStartServiceArgs(
             serviceId, 
-            containerConfig.image, 
+            containerConfig.image,
             privatePortsForApi,
             containerConfig.entrypointOverrideArgs,
             containerConfig.cmdOverrideArgs,
@@ -354,7 +355,7 @@ export class EnclaveContext {
         if (resp.getPrivateIpAddr() === "") {
             return err(new Error(
                 "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
-                ) 
+                )
             );
         }
         if (resp.getPublicIpAddr() === "") {
@@ -433,8 +434,8 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async repartitionNetwork(
             partitionServices: Map<PartitionID, Set<ServiceID>>,
-            partitionConnections: Map<PartitionID, Map<PartitionID, PartitionConnectionInfo>>,
-            defaultConnection: PartitionConnectionInfo): Promise<Result<null, Error>> {
+            partitionConnections: Map<PartitionID, Map<PartitionID, PartitionConnection>>,
+            defaultConnection: PartitionConnection): Promise<Result<null, Error>> {
 
         if (partitionServices === null) {
             return err(new Error("Partition services map cannot be nil"));
@@ -459,17 +460,19 @@ export class EnclaveContext {
         for (const [partitionAId, partitionAConnsMap] of partitionConnections.entries()) {
             
             const partitionAConnsStrMap: Map<string, PartitionConnectionInfo> = new Map();
-            for (const [partitionBId, connInfo] of partitionAConnsMap.entries()) {
+            for (const [partitionBId, conn] of partitionAConnsMap.entries()) {
 
                 const partitionBIdStr: string = String(partitionBId);
-                partitionAConnsStrMap.set(partitionBIdStr, connInfo);
+                partitionAConnsStrMap.set(partitionBIdStr, conn.getPartitionConnectionInfo());
             }
             const partitionAConns: PartitionConnections = newPartitionConnections(partitionAConnsStrMap);
             const partitionAIdStr: string = String(partitionAId);
             reqPartitionConns.set(partitionAIdStr, partitionAConns);
         }
 
-        const repartitionArgs: RepartitionArgs = newRepartitionArgs(reqPartitionServices, reqPartitionConns, defaultConnection);
+        const reqDefaultConnection = defaultConnection.getPartitionConnectionInfo()
+
+        const repartitionArgs: RepartitionArgs = newRepartitionArgs(reqPartitionServices, reqPartitionConns, reqDefaultConnection);
 
         const promiseRepartition: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.repartition(repartitionArgs, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {

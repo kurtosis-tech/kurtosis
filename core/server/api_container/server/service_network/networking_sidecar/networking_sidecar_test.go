@@ -8,193 +8,313 @@ package networking_sidecar
 import (
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net"
-	"reflect"
-	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestGenerateUpdateCmd(t *testing.T) {
-	backgroundChain := kurtosisIpTablesChain1
-	service1Ip := net.IP{1, 2, 3, 4}
-	service2Ip := net.IP{5, 6, 7, 8}
-	newIpsToBlock := []net.IP{
-		service1Ip,
-		service2Ip,
+const (
+	packetLossPercentageValueForUnblockedPartitions float32 = 0
+	packetLossPercentageValueForBlockedPartitions   float32 = 100
+	packetLossPercentageValueForSoftPartition       float32 = 25
+
+	testServiceGUID                  = "test"
+	testNetworkingSidecarContainerID = "abc123"
+
+	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth1 root handle 1: htb && tc class add dev" +
+		" eth1 parent 1: classid 1:1 htb rate 100% && tc class add dev eth1 parent 1: classid 1:2 htb rate 100% &&" +
+		" tc filter add dev eth1 parent 1: handle 1:0 matchall flowid 1:1 && tc qdisc add dev eth1 parent 1:1 handle" +
+		" 2: htb && tc qdisc add dev eth1 parent 1:2 handle 3: htb"
+
+	expectedCommandsForExecutingBlockedPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc " +
+		"add dev eth1 parent 1:2 handle 3: htb && tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && tc " +
+		"filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
+		"eth1 parent 3:1 handle 5: netem loss 100% && tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add " +
+		"dev eth1 parent 3:2 handle 7: netem loss 100% && tc class add dev eth1 parent 3: classid 3:3 htb rate 100%" +
+		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add" +
+		" dev eth1 parent 3:3 handle 9: netem loss 100% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100%" +
+		" && tc filter add dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add" +
+		" dev eth1 parent 3:4 handle b: netem loss 100% && tc filter replace dev eth1 parent 1: handle 1:0 matchall" +
+		" flowid 1:2"
+
+	expectedCommandsForExecutingSoftPartitionInQdiscA = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc " +
+		"add dev eth1 parent 1:1 handle 2: htb && tc class add dev eth1 parent 2: classid 2:1 htb rate 100% && tc " +
+		"filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:1 match ip dst 1.1.1.1 && tc qdisc add dev " +
+		"eth1 parent 2:1 handle 4: netem loss 25% && tc class add dev eth1 parent 2: classid 2:2 htb rate 100% && " +
+		"tc filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:2 match ip dst 2.2.2.2 && tc qdisc add dev" +
+		" eth1 parent 2:2 handle 6: netem loss 25% && tc class add dev eth1 parent 2: classid 2:3 htb rate 100% && tc" +
+		" filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:3 match ip dst 3.3.3.3 && tc qdisc add dev " +
+		"eth1 parent 2:3 handle 8: netem loss 25% && tc class add dev eth1 parent 2: classid 2:4 htb rate 100% && tc " +
+		"filter add dev eth1 parent 2: protocol ip prio 1 u32 flowid 2:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1" +
+		" parent 2:4 handle a: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 matchall flowid 1:1"
+
+	expectedCommandsForExecutingSoftPartitionInQdiscB = "tc qdisc del dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev" +
+		" eth1 parent 1:2 handle 3: htb && tc class add dev eth1 parent 3: classid 3:1 htb rate 100% && tc filter add" +
+		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:1 match ip dst 1.1.1.1 && tc qdisc add dev eth1 parent" +
+		" 3:1 handle 5: netem loss 25% && tc class add dev eth1 parent 3: classid 3:2 htb rate 100% && tc filter add" +
+		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:2 match ip dst 2.2.2.2 && tc qdisc add dev eth1 parent" +
+		" 3:2 handle 7: netem loss 25% && tc class add dev eth1 parent 3: classid 3:3 htb rate 100% && tc filter add" +
+		" dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:3 match ip dst 3.3.3.3 && tc qdisc add dev eth1 parent " +
+		"3:3 handle 9: netem loss 25% && tc class add dev eth1 parent 3: classid 3:4 htb rate 100% && tc filter add " +
+		"dev eth1 parent 3: protocol ip prio 1 u32 flowid 3:4 match ip dst 4.4.4.4 && tc qdisc add dev eth1 parent 3:4" +
+		" handle b: netem loss 25% && tc filter replace dev eth1 parent 1: handle 1:0 matchall flowid 1:2"
+
+	expectedCommandsForExecutingUnblockedPartition = "tc qdisc del dev eth1 parent 1:1 handle 2: htb && tc qdisc del" +
+		" dev eth1 parent 1:2 handle 3: htb && tc qdisc add dev eth1 parent 1:1 handle 2: htb && tc qdisc add dev " +
+		"eth1 parent 1:2 handle 3: htb"
+
+	stringSeparatorInCommand = " "
+)
+
+var (
+	testNetworkinSidecarIP = []byte{1, 2, 3, 4}
+
+	userServiceTest1IPAddress     = net.ParseIP("1.1.1.1")
+	userServiceTest2IPAddress     = net.ParseIP("2.2.2.2")
+	userServiceTest3IPAddress     = net.ParseIP("3.3.3.3")
+	userServiceTest4IPAddress     = net.ParseIP("4.4.4.4")
+	allUserServiceTestIPAddresses = []net.IP{
+		userServiceTest1IPAddress, userServiceTest2IPAddress, userServiceTest3IPAddress, userServiceTest4IPAddress,
+	}
+	//the value on this map represents the key in allUserServiceTestIPAddresses
+	allUserServiceTestIPAddressesMap = map[string]int{
+		userServiceTest1IPAddress.String(): 0,
+		userServiceTest2IPAddress.String(): 1,
+		userServiceTest3IPAddress.String(): 2,
+		userServiceTest4IPAddress.String(): 3,
 	}
 
-	actual := generateIpTablesUpdateCmd(backgroundChain, newIpsToBlock)
+	qdiscAChildrenQdiscId                 = []qdiscID{qdiscID("4:"), qdiscID("6:"), qdiscID("8:"), qdiscID("a:"), qdiscID("c:"), qdiscID("e:"), qdiscID("10:")}
+	qdiscAChildrenQdiscDecimalMajorNumber = []int{4, 6, 8, 10, 12, 14, 16}
+	qdiscBChildrenQdiscId                 = []qdiscID{qdiscID("5:"), qdiscID("7:"), qdiscID("9:"), qdiscID("b:"), qdiscID("d:"), qdiscID("f:"), qdiscID("11:")}
+	qdiscBChildrenDecimalMajorNumber      = []int{5, 7, 9, 11, 13, 15, 17}
 
-	// The order in which the IPs get iterated and put into a joined string is nondeterministic, so
-	//  we have to prepare two versions of the expected string to account for both permutations
-	ipStrVersions := []string{
-		service1Ip.String() + "," + service2Ip.String(),
-		service2Ip.String() + "," + service1Ip.String(),
-	}
+	qdiscAChildrenClassId                 = []classID{classID("2:1"), classID("2:2"), classID("2:3"), classID("2:4")}
+	qdiscAChildrenClassDecimalMinorNumber = []int{1, 2, 3, 4}
+	qdiscBChildrenClassId                 = []classID{classID("3:1"), classID("3:2"), classID("3:3"), classID("3:4")}
+	qdiscBChildrenClassDecimalMinorNumber = []int{1, 2, 3, 4}
+)
 
-	expectedCmdsCartesianProduct := [][]string{}
-	for _, ipStrVersion := range ipStrVersions {
-		backgroundChainStr := string(backgroundChain)
-		firstRuleIdxStr := strconv.Itoa(ipTablesFirstRuleIndex)
-
-		expectedCmdPrefix := []string{
-			"iptables", "-F", backgroundChainStr, "&&",
-			"iptables", "-A", backgroundChainStr, "-s", ipStrVersion, "-j", "DROP", "&&",
-			"iptables", "-A", backgroundChainStr, "-d", ipStrVersion, "-j", "DROP", "&&",
-		}
-
-		// The order in which the chains show up is also nondeterministic
-		inputChainFirstCmd := make([]string, len(expectedCmdPrefix))
-		copy(inputChainFirstCmd, expectedCmdPrefix)
-		inputChainFirstCmd = append(
-			inputChainFirstCmd,
-			[]string{
-				"iptables", "-R", ipTablesInputChain, firstRuleIdxStr, "-j", backgroundChainStr, "&&",
-				"iptables", "-R", ipTablesOutputChain, firstRuleIdxStr, "-j", backgroundChainStr,
-			}...,
-		)
-		expectedCmdsCartesianProduct = append(expectedCmdsCartesianProduct, inputChainFirstCmd)
-
-		outputChainFirstCmd := make([]string, len(expectedCmdPrefix))
-		copy(outputChainFirstCmd, expectedCmdPrefix)
-		outputChainFirstCmd = append(
-			outputChainFirstCmd,
-			[]string{
-				"iptables", "-R", ipTablesOutputChain, firstRuleIdxStr, "-j", backgroundChainStr, "&&",
-				"iptables", "-R", ipTablesInputChain, firstRuleIdxStr, "-j", backgroundChainStr,
-			}...,
-		)
-		expectedCmdsCartesianProduct = append(expectedCmdsCartesianProduct, outputChainFirstCmd)
-	}
-
-	fmt.Println(actual)
-
-	matches := false
-	for _, expectedCmd := range expectedCmdsCartesianProduct {
-		fmt.Println(expectedCmd)
-		matches = matches || reflect.DeepEqual(expectedCmd, actual)
-	}
-	assert.True(t, matches, "Expected command doesn't match any IP/chain Cartesian combo combination")
-}
-
-func TestInitializationDoesAllNecessaryChains(t *testing.T) {
-	neededChains := map[string]bool{}
-	for chain := range intrinsicChainsToUpdate {
-		neededChains[chain] = true
-	}
-
-	cmd := generateIpTablesInitCmd()
-	for _, word := range cmd {
-		if _, found := neededChains[word]; found {
-			delete(neededChains, word)
-		}
-	}
-
-	for chain := range neededChains {
-		t.Fatalf("iptables initialization command doesn't initialize chain '%v'", chain)
-	}
-}
-
-func TestUpdateDoesAllNecessaryChains(t *testing.T) {
-	neededChains := map[string]bool{}
-	for chain := range intrinsicChainsToUpdate {
-		neededChains[chain] = true
-	}
-
-	ips := []net.IP{
-		{1, 2, 3, 4},
-	}
-	cmd := generateIpTablesUpdateCmd("TEST_CHAIN", ips)
-	for _, word := range cmd {
-		if _, found := neededChains[word]; found {
-			delete(neededChains, word)
-		}
-	}
-
-	for chain := range neededChains {
-		t.Fatalf("iptables update command doesn't update chain '%v'", chain)
-	}
-}
-
-func TestInitialization(t *testing.T) {
-	execCmdExecutor := newMockSidecarExecCmdExecutor()
-
-	sidecar := NewStandardNetworkingSidecar(
-		"test",
-		"abc123",
-		[]byte{1, 2, 3, 4},
-		execCmdExecutor)
-	assert.Equal(t, undefinedIpTablesChain, sidecar.chainInUse)
-
-	err := sidecar.InitializeIpTables(context.Background())
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(execCmdExecutor.commands))
-	assert.Equal(t, initialKurtosisIpTablesChain, sidecar.chainInUse)
-}
-
-func TestDoubleInitializationIsFine(t *testing.T) {
-	execCmdExecutor := newMockSidecarExecCmdExecutor()
-
-	sidecar := NewStandardNetworkingSidecar(
-		"test",
-		"abc123",
-		[]byte{1, 2, 3, 4},
-		execCmdExecutor)
-	err := sidecar.InitializeIpTables(context.Background())
-	assert.Nil(t, err)
-
-	err = sidecar.InitializeIpTables(context.Background())
-	assert.Nil(t, err)
-
-	assert.Equal(t, initialKurtosisIpTablesChain, sidecar.chainInUse)
-}
-
-func TestChainSwapping(t *testing.T) {
-	execCmdExecutor := newMockSidecarExecCmdExecutor()
+func TestInitializeTrafficControl(t *testing.T) {
+	//Initial state
 	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
 
-	sidecar := NewStandardNetworkingSidecar(
-		"test",
-		"abc123",
-		[]byte{1, 2, 3, 4},
-		execCmdExecutor)
-	assert.Nil(t, sidecar.InitializeIpTables(ctx))
-	assert.Equal(t, kurtosisIpTablesChain1, sidecar.chainInUse)
+	err := sidecar.InitializeTrafficControl(ctx)
+	require.NoError(t, err, "An error occurred initializing traffic control")
+	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
+	require.Equal(t, 1, len(execCmdExecutor.commands))
 
-	ips := []net.IP{
-		{1, 2, 3, 4},
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingInitTrafficControl, actualFirstExecutedMergedCmd)
+}
+
+func TestInitializeTrafficControl_AlreadyInitialized(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	err := sidecar.InitializeTrafficControl(ctx)
+	require.Nil(t, err, "Traffic control already initialized")
+}
+
+func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingBlockedPartitionInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
+
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
+	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingUnblockedPartition, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Soft partition
+	allUserServicePacketLossConfigurations := getAllUserServicePacketLossConfigurationsForSoftPartition()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
+
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
+	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingUnblockedPartition, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
+	//Blocking partition
+	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
+	require.Equal(t, 1, len(execCmdExecutor.commands))
+
+	actualFirstExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[0])
+	require.Equal(t, expectedCommandsForExecutingBlockedPartitionInQdiscB, actualFirstExecutedMergedCmd)
+
+	//Unblocking partition
+	allUserServicePacketLossConfigurationsForSoftPartition := getAllUserServicePacketLossConfigurationsForSoftPartition()
+
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketLossConfigurationsForSoftPartition)
+	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
+	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
+	require.Equal(t, 2, len(execCmdExecutor.commands))
+
+	actualSecondExecutedMergedCmd := mergeCommandsInOneLine(execCmdExecutor.commands[1])
+	require.Equal(t, expectedCommandsForExecutingSoftPartitionInQdiscA, actualSecondExecutedMergedCmd)
+}
+
+func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
+
+	//Execution
+	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	require.Error(t, err, "Expected undefined qdisc id in use error")
+}
+
+func TestUpdateTrafficControl_UnrecognizedPrimaryQdiscIdError(t *testing.T) {
+	//Initial state
+	ctx := context.Background()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
+	sidecar.qdiscInUse = "1:"
+
+	//Execution
+	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	require.Error(t, err, "Expected unrecognized primary qdisc id error")
+}
+
+func TestGetNextUnusedQdiscId_GenereratQdiscAChildren(t *testing.T) {
+
+	parentQdiscID := qdiscAID
+	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
+
+	for childKey, expectedChildQdiscId := range qdiscAChildrenQdiscId {
+		nextQdiscID, decimalMajorNumber, err := getNextUnusedQdiscId(parentQdiscID, previousQdiscIdDecimalMajorNumber)
+		previousQdiscIdDecimalMajorNumber = decimalMajorNumber
+		require.NoError(t, err, "An error occurred creating next unused qdisc id")
+		expectedDecimalMajorNumber := qdiscAChildrenQdiscDecimalMajorNumber[childKey]
+		require.Equal(t, expectedChildQdiscId, nextQdiscID)
+		require.Equal(t, expectedDecimalMajorNumber, decimalMajorNumber)
 	}
-	assert.Nil(t, sidecar.UpdateIpTables(ctx, ips))
-	assert.Equal(t, kurtosisIpTablesChain2, sidecar.chainInUse)
+}
 
-	assert.Nil(t, sidecar.UpdateIpTables(ctx, ips))
-	assert.Equal(t, kurtosisIpTablesChain1, sidecar.chainInUse)
+func TestGetNextUnusedQdiscId_GenereratQdiscBChildren(t *testing.T) {
+
+	parentQdiscID := qdiscBID
+	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
+
+	for childKey, expectedChildQdiscId := range qdiscBChildrenQdiscId {
+		nextQdiscID, decimalMajorNumber, err := getNextUnusedQdiscId(parentQdiscID, previousQdiscIdDecimalMajorNumber)
+		previousQdiscIdDecimalMajorNumber = decimalMajorNumber
+		require.NoError(t, err, "An error occurred creating next unused qdisc id")
+		expectedDecimalMajorNumber := qdiscBChildrenDecimalMajorNumber[childKey]
+		require.Equal(t, expectedChildQdiscId, nextQdiscID)
+		require.Equal(t, expectedDecimalMajorNumber, decimalMajorNumber)
+	}
+}
+
+func TestGetNextUnusedQdiscId_UnrecognizedParentQdiscIdError(t *testing.T) {
+	parentQdiscID := qdiscID("1:")
+	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
+
+	_, _, err := getNextUnusedQdiscId(parentQdiscID, previousQdiscIdDecimalMajorNumber)
+	require.Error(t, err, "Return an error because unrecognized parent qdisc id")
+}
+
+func TestNewClassId_QdiscAChildren(t *testing.T) {
+
+	parentQdiscId := qdiscAID
+
+	for childKey, expectedChildClassId  := range qdiscAChildrenClassId {
+		decimalMinorNumber := qdiscAChildrenClassDecimalMinorNumber[childKey]
+		actualClassId := newClassId(parentQdiscId, decimalMinorNumber)
+		require.Equal(t, expectedChildClassId, actualClassId)
+	}
+}
+
+func TestNewClassId_QdiscBChildren(t *testing.T) {
+
+	parentQdiscId := qdiscBID
+
+	for childKey, expectedChildClassId  := range qdiscBChildrenClassId {
+		decimalMinorNumber := qdiscBChildrenClassDecimalMinorNumber[childKey]
+		actualClassId := newClassId(parentQdiscId, decimalMinorNumber)
+		require.Equal(t, expectedChildClassId, actualClassId)
+	}
 }
 
 func TestConcurrencySafety(t *testing.T) {
-	numProcesses := 20
-
-	execCmdExecutor := newMockSidecarExecCmdExecutor()
+	//Initial state
 	ctx := context.Background()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	require.Empty(t, sidecar.qdiscInUse)
 
-	sidecar := NewStandardNetworkingSidecar(
-		"test",
-		"abc123",
-		[]byte{1, 2, 3, 4},
-		execCmdExecutor)
-	sidecar.InitializeIpTables(ctx)
+	numProcesses := 2
+
+	sidecar.InitializeTrafficControl(ctx)
 
 	execCmdExecutor.setBlocked(true)
 
 	for i := 0; i < numProcesses; i++ {
 		iByte := byte(i)
-		ips := []net.IP{
-			{iByte, iByte, iByte, iByte},
-		}
+		ip := net.IP{iByte, iByte, iByte, iByte}
+		allUserServicePacketLossConfigurations := map[string]float32{}
+		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
 		go func() {
-			sidecar.UpdateIpTables(ctx, ips)
+			sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
 		}()
 		time.Sleep(5 * time.Millisecond)  // Make sure they enter the sidecar in proper order
 	}
@@ -214,6 +334,64 @@ func TestConcurrencySafety(t *testing.T) {
 	for i := 1; i <= numProcesses; i++ {
 		expectedByte := byte(i - 1)
 		expectedIpStr := net.IP([]byte{expectedByte, expectedByte, expectedByte, expectedByte}).String()
-		assert.Contains(t, execCmdExecutor.commands[i], expectedIpStr)
+		expectedMatchIpDst := fmt.Sprintf("match ip dst %v", expectedIpStr )
+		actualCmd := strings.Join(execCmdExecutor.commands[i], stringSeparatorInCommand)
+		require.Contains(t, actualCmd, expectedMatchIpDst)
 	}
+}
+
+// ====================================================================================================
+// 									   Private helper methods
+// ====================================================================================================
+func getAllUserServicePacketLossConfigurationsForSoftPartition() map[string]float32 {
+	allUserServicePacketLossConfigurations := map[string]float32{}
+	for _, ip := range allUserServiceTestIPAddresses {
+		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForSoftPartition
+	}
+	return allUserServicePacketLossConfigurations
+}
+
+func getAllUserServicePacketLossConfigurationsForBlockedPartition() map[string]float32 {
+	allUserServicePacketLossConfigurations := map[string]float32{}
+	for _, ip := range allUserServiceTestIPAddresses {
+		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
+	}
+	return allUserServicePacketLossConfigurations
+}
+
+func getAllUserServicePacketLossConfigurationsForUnblockedPartition() map[string]float32 {
+	allUserServicePacketLossConfigurations := map[string]float32{}
+	for _, ip := range allUserServiceTestIPAddresses {
+		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForUnblockedPartitions
+	}
+	return allUserServicePacketLossConfigurations
+}
+
+func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor() (*StandardNetworkingSidecar, *mockSidecarExecCmdExecutor) {
+	execCmdExecutor := newMockSidecarExecCmdExecutor()
+
+	sidecar := NewStandardNetworkingSidecar(
+		testServiceGUID,
+		testNetworkingSidecarContainerID,
+		testNetworkinSidecarIP,
+		execCmdExecutor)
+
+	return sidecar, execCmdExecutor
+}
+
+func mergeCommandsInOneLine(commands []string) string {
+	//First order ip addresses in the sentence.
+	allUserServiceTestIPAddressesKey := 0
+	for cmdKey, cmd := range commands {
+		var ip net.IP
+		_, found := allUserServiceTestIPAddressesMap[cmd]
+		if found {
+			ip = allUserServiceTestIPAddresses[allUserServiceTestIPAddressesKey]
+			commands[cmdKey] = ip.String()
+			allUserServiceTestIPAddressesKey++
+		}
+	}
+	result := strings.Join(commands, stringSeparatorInCommand)
+
+	return result
 }

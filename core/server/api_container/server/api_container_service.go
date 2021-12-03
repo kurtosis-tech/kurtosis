@@ -334,7 +334,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 					partitionBId)
 			}
 			partitionConnection := partition_topology.PartitionConnection{
-				IsBlocked: connectionInfo.IsBlocked,
+				PacketLossPercentage: connectionInfo.PacketLossPercentage,
 			}
 			partitionConnections[partitionConnectionId] = partitionConnection
 		}
@@ -342,7 +342,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 
 	defaultConnectionInfo := args.DefaultConnection
 	defaultConnection := partition_topology.PartitionConnection{
-		IsBlocked: defaultConnectionInfo.IsBlocked,
+		PacketLossPercentage: defaultConnectionInfo.PacketLossPercentage,
 	}
 
 	if err := service.serviceNetwork.Repartition(

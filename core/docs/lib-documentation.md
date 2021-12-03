@@ -1,6 +1,6 @@
 Kurtosis Client Documentation
 =============================
-This documentation describes how to interact with the Kurtosis API from within a testnet. It includes information about starting services, stopping services, repartitioning the network, etc. These objects are heavily used inside the [Kurtosis testing framework](../kurtosis-testsuite-api-lib/lib-documentation). Note that any comments specific to a language implementation will be found in the code comments.
+This documentation describes how to interact with the Kurtosis API from within a testnet. It includes information about starting services, stopping services, repartitioning the network, etc. Note that any comments specific to a language implementation will be found in the code comments.
 
 _Found a bug? File it on [the repo][issues]!_
 
@@ -107,15 +107,15 @@ Stops the container with the given service ID and removes it from the enclave.
 * `serviceId`: The ID of the service to remove.
 * `containerStopTimeoutSeconds`: The number of seconds to wait for the container to gracefully stop before hard-killing it.
 
-### repartitionNetwork(Map\<PartitionID, Set\<ServiceID\>> partitionServices, Map\<PartitionID, Map\<PartitionID, [PartitionConnectionInfo][partitionconnectioninfo]\>> partitionConnections, [PartitionConnectionInfo][partitionconnectioninfo] defaultConnection)
+### repartitionNetwork(Map\<PartitionID, Set\<ServiceID\>\> partitionServices, Map\<PartitionID, Map\<PartitionID, [PartitionConnection][partitionconnection]\>\> partitionConnections, [PartitionConnection][partitionconnection] defaultConnection)
 Repartitions the enclave so that the connections between services match the specified new state. All services currently in the enclave must be allocated to a new partition. 
 
-**NOTE: For this to work, partitioning must be turned on in the [Test.configure][test_configure] method.**
+**NOTE: For this to work, partitioning must be turned on when the Enclave is created with [KurtosisContext.createEnclave()][kurtosiscontext_createenclave].**
 
 **Args**
 
 * `partitionServices`: A definition of the new partitions in the enclave, and the services allocated to each partition. A service can only be allocated to a single partition.
-* `partitionConnections`: Definitions of the connection state between the new partitions. If a connection between two partitions isn't defined in this map, the default connection will be used. Connections are not directional, so an error will be thrown if the same connection is defined twice (e.g. `Map[A][B] = someConnectionInfo`, and `Map[B][A] = otherConnectionInfo`).
+* `partitionConnections`: Definitions of the connection state between the new partitions. If a connection between two partitions isn't defined in this map, the default connection will be used. Connections are not directional, so an error will be thrown if the same connection is defined twice (e.g. `Map[A][B] = someConnection`, and `Map[B][A] = otherConnection`).
 * `defaultConnection`: The network state between two partitions that will be used if the connection isn't defined in the partition connections map.
 
 ### waitForHttpGetEndpointAvailability(ServiceID serviceId, uint32 port, String path, String requestBody, uint32 initialDelayMilliseconds, uint32 retries, uint32 retriesDelayMilliseconds, String bodyText)
@@ -161,13 +161,15 @@ Gets the IDs of the Kurtosis modules that have been loaded into the enclave.
 
 
 
-PartitionConnectionInfo
------------------------
-This class is a plain old object defining the state between two partitions (e.g. whether network traffic is blocked or not). It is auto-generated from a gRPC API, so exploring it in code is the best way to view its properties. 
+PartitionConnection
+-------------------
+This interface represents the network state between two partitions (e.g. whether network traffic is blocked, being partially dropped, etc.).
 
-**NOTE:** These objects will often have several gRPC-specific fields inside them, but which don't need to be considered; you can construct the object however you normally instantiate objects in your language of choice (e.g. `new` in Java, `PartitionConnectionInfo{....fields...}` in Go, etc.).
+The three types of partition connections are: unblocked (all traffic is allowed), blocked (no traffic is allowed), and soft (packets are partially dropped). Each type of partition connection has a constructor that can be used to create them.
 
+The soft partition constructor receives one parameter, `packetLossPercentage`, which sets the percentage of packet loss in the connection between the services that are part of the partition.
 
+Unblocked partitions and blocked partitions have parameter-less constructors.
 
 ContainerConfig
 ---------------
@@ -304,9 +306,9 @@ _Found a bug? File it on [the repo][issues]!_
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
 [enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
 [enclavecontext_addservicetopartition]: #addservicetopartitionserviceid-serviceid-partitionid-partitionid-funcstring-ipaddr-sharedpath-shareddirectory---containerconfig-containerconfigsupplier---servicecontext-servicecontext-mapstring-portbinding-hostportbindings
-[enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectioninfo-partitionconnections-partitionconnectioninfo-defaultconnection
+[enclavecontext_repartitionnetwork]: #repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection
 
-[partitionconnectioninfo]: #partitionconnectioninfo
+[partitionconnection]: #partitionconnection
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
@@ -315,14 +317,4 @@ _Found a bug? File it on [the repo][issues]!_
 [sharedpath_getabspathonthiscontainer]: #getabspathonthiscontainer---string
 [sharedpath_getabspathonservicecontainer]: #getabspathonservicecontainer---string
 
-[test]: ../kurtosis-testsuite-api-lib/lib-documentation#testn-extends-network
-[test_configure]: ../kurtosis-testsuite-api-lib/lib-documentation#configuretestconfigurationbuilder-builder
-[test_setup]: ../kurtosis-testsuite-api-lib/lib-documentation#setupenclavecontext-enclavecontext---n
-[test_run]: ../kurtosis-testsuite-api-lib/lib-documentation#runn-network
-[test_gettestconfiguration]: ../kurtosis-testsuite-api-lib/lib-documentation#gettestconfiguration---testconfiguration
-
-[testconfiguration]: ../kurtosis-testsuite-api-lib/lib-documentation#testconfiguration
-
-[testconfigurationbuilder]: ../kurtosis-testsuite-api-lib/lib-documentation#testconfigurationbuilder
-
-[testsuite]: ../kurtosis-testsuite-api-lib/lib-documentation#testsuite
+[kurtosiscontext_createenclave]: ../kurtosis-engine-server/lib-documentation#lib-documentation.md#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontext-enclavecontext
