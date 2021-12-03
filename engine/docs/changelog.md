@@ -1,4 +1,6 @@
 # TBD
+
+# 1.7.0
 ### Features
 * Added a unit test that will remind Kurtosis developers to add a breaking change to the changelog whenever they bump to a Kurt Core version that has an API break (since the engine server's API breaks when the Core API breaks due to the engine server's `KurtosisContext` returning a Core `EnclaveContext`)
 
