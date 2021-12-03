@@ -1,4 +1,6 @@
 # TBD
+
+# 1.6.0
 _There aren't any changes in this release; it is being released to represent the breaking API change that should have happened in 1.5.7 due to Kurt Core's API version getting bumped_
 
 # 1.5.7
