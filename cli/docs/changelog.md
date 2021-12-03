@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* When the engine server API version that the CLI expects doesn't match the running engine server's API version, the user gets an error and is forced to restart their engine
 
 # 0.7.4
 ### Features

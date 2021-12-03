@@ -66,14 +66,14 @@ func (manager *EngineManager) GetEngineStatus(
 	}
 	engineContainer := runningEngineContainers[0]
 
-	engineContainerLabels := engineContainer.GetLabels()
-	enginePortNumStr, found := engineContainerLabels[schema.PortNumLabel]
+	currentlyRunningEngineContainerLabels := engineContainer.GetLabels()
+	enginePortNumStr, found := currentlyRunningEngineContainerLabels[schema.PortNumLabel]
 	if !found {
 		// We can remove this and switch back to an error on 2022-05-15, when we're confident nobody will be running an engine without port labels
 		enginePortNumStr = oldPortNumStr
 		// return "", nil, "", stacktrace.NewError("Found running engine container, but it didn't have label '%v'", schema.PortNumLabel)
 	}
-	enginePortProtocol, found := engineContainerLabels[schema.PortProtocolLabel]
+	enginePortProtocol, found := currentlyRunningEngineContainerLabels[schema.PortProtocolLabel]
 	if !found {
 		// We can remove this and switch back to an error on 2022-05-15, when we're confident nobody will be running an engine without port labels
 		enginePortProtocol = oldPortPortProtocol
