@@ -6,35 +6,37 @@ import log from "loglevel";
 const TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT = "typescript-engine-server-test";
 const MILLISECONDS_IN_SECOND = 1000;
 
-export interface CreateEnclaveReturn {
-	enclaveContext: EnclaveContext
-	stopEnclaveFunction: () => void
-}
+export async function createEnclave(testName:string, isPartitioningEnabled: boolean):
+	Promise<Result<{ 
+        enclaveContext: EnclaveContext, 
+        stopEnclaveFunction: () => void
+    }, Error>> {
 
-export async function createEnclave(testName:string, isPartitioningEnabled: boolean):Promise<Result<CreateEnclaveReturn, Error>> {
-
-	const kurtosisContext = KurtosisContext.newKurtosisContextFromLocalEngine();
-	if(kurtosisContext.isErr()) {
+	const newKurtosisContextResult = KurtosisContext.newKurtosisContextFromLocalEngine();
+	if(newKurtosisContextResult.isErr()) {
 		return err(new Error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`))
 	}
+	const kurtosisContext = newKurtosisContextResult.value;
 	
 	const enclaveId:EnclaveID = `${TEST_SUITE_NAME_ENCLAVE_ID_FRAGMENT}_${testName}_${Math.round(Date.now()/MILLISECONDS_IN_SECOND)}`
-	const enclaveContext = await kurtosisContext.value.createEnclave(enclaveId, isPartitioningEnabled);
+	const createEnclaveResult = await kurtosisContext.createEnclave(enclaveId, isPartitioningEnabled);
 	
-	if(enclaveContext.isErr()) {
+	if(createEnclaveResult.isErr()) {
 		return err(new Error(`An error occurred creating enclave ${enclaveId}`))
 	}
 
+	const enclaveContext = createEnclaveResult.value;
+
 	const stopEnclaveFunction = async ():Promise<void> => {
-		const stopEnclave = await kurtosisContext.value.stopEnclave(enclaveId)
-		if(stopEnclave.isErr()) {
-			log.error(`An error occurred stopping enclave ${enclaveId} that we created for this test: ${stopEnclave.error.message}`)
+		const stopEnclaveResult = await kurtosisContext.stopEnclave(enclaveId)
+		if(stopEnclaveResult.isErr()) {
+			log.error(`An error occurred stopping enclave ${enclaveId} that we created for this test: ${stopEnclaveResult.error.message}`)
 			log.error(`ACTION REQUIRED: You'll need to stop enclave ${enclaveId} manually!!!!`)
 		}
 	}
 
 	return ok({
-		enclaveContext: enclaveContext.value,
+		enclaveContext,
 		stopEnclaveFunction
 	})
 }
