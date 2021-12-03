@@ -1,5 +1,13 @@
 # TBD
 
+# 1.7.0
+### Features
+* Added a unit test that will remind Kurtosis developers to add a breaking change to the changelog whenever they bump to a Kurt Core version that has an API break (since the engine server's API breaks when the Core API breaks due to the engine server's `KurtosisContext` returning a Core `EnclaveContext`)
+
+### Breaking Changes
+* Upgraded to kurtosis-core 1.36.0, which changes the way partition connection information is defined during repartitioning
+  * Users should see [the Kurtosis Core changelog on the topic](https://docs.kurtosistech.com/kurtosis-core/changelog#breaking-changes) and implement the remediation there
+
 # 1.6.0
 _There aren't any changes in this release; it is being released to represent the breaking API change that should have happened in 1.5.7 due to Kurt Core's API version getting bumped_
 
