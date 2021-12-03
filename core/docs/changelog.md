@@ -1,4 +1,6 @@
 # TBD
+
+# 1.36.0
 ### Features
 * Added a new high level interface `PartitionConnection` to simplify the configuration of the network state when a repartition is created
 * Added three partition connection types `UnblockedPartitionConnection`, `BlockedPartitionConnection` and `SoftPartitionConnection` to provide an easy way to configure a `PartitionConnection`
