@@ -4510,7 +4510,7 @@ proto.api_container_api.PartitionConnectionInfo.prototype.toObject = function(op
  */
 proto.api_container_api.PartitionConnectionInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    isBlocked: jspb.Message.getBooleanFieldWithDefault(msg, 1, false)
+    packetLossPercentage: jspb.Message.getFloatingPointFieldWithDefault(msg, 1, 0.0)
   };
 
   if (includeInstance) {
@@ -4548,8 +4548,8 @@ proto.api_container_api.PartitionConnectionInfo.deserializeBinaryFromReader = fu
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setIsBlocked(value);
+      var value = /** @type {number} */ (reader.readFloat());
+      msg.setPacketLossPercentage(value);
       break;
     default:
       reader.skipField();
@@ -4580,9 +4580,9 @@ proto.api_container_api.PartitionConnectionInfo.prototype.serializeBinary = func
  */
 proto.api_container_api.PartitionConnectionInfo.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getIsBlocked();
-  if (f) {
-    writer.writeBool(
+  f = message.getPacketLossPercentage();
+  if (f !== 0.0) {
+    writer.writeFloat(
       1,
       f
     );
@@ -4591,20 +4591,20 @@ proto.api_container_api.PartitionConnectionInfo.serializeBinaryToWriter = functi
 
 
 /**
- * optional bool is_blocked = 1;
- * @return {boolean}
+ * optional float packet_loss_percentage = 1;
+ * @return {number}
  */
-proto.api_container_api.PartitionConnectionInfo.prototype.getIsBlocked = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
+proto.api_container_api.PartitionConnectionInfo.prototype.getPacketLossPercentage = function() {
+  return /** @type {number} */ (jspb.Message.getFloatingPointFieldWithDefault(this, 1, 0.0));
 };
 
 
 /**
- * @param {boolean} value
+ * @param {number} value
  * @return {!proto.api_container_api.PartitionConnectionInfo} returns this
  */
-proto.api_container_api.PartitionConnectionInfo.prototype.setIsBlocked = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 1, value);
+proto.api_container_api.PartitionConnectionInfo.prototype.setPacketLossPercentage = function(value) {
+  return jspb.Message.setProto3FloatField(this, 1, value);
 };
 
 

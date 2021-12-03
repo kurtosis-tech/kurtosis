@@ -12,7 +12,7 @@ import (
 )
 
 type PartitionConnection struct {
-	IsBlocked bool
+	PacketLossPercentage float32
 }
 
 
@@ -172,14 +172,11 @@ func (topology PartitionTopology) GetPartitionServices() map[service_network_typ
 	return topology.partitionServices
 }
 
-// Returns a map indicating, for each service, which services it should be blocking based on the current network topology
-func (topology PartitionTopology) GetBlocklists() (map[service_network_types.ServiceID]*service_network_types.ServiceIDSet, error) {
-	// TODO PERF: to speed this method up, we can remove this method in favor of spitting out updated blocklists on each change operation (addservice, repartition, etc.)
-	//  so that only the nodes that need updating will get updated incrementally
-	result := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
+func (topology PartitionTopology) GetServicePacketLossConfigurationsByServiceID() (map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32, error) {
+	result := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{}
 	for partitionId, servicesInPartition := range topology.partitionServices {
 		for _, serviceId := range servicesInPartition.Elems() {
-			blockedServices := service_network_types.NewServiceIDSet()
+			otherServicesPacketLossConfigMap := map[service_network_types.ServiceID]float32{}
 			for otherPartitionId, servicesInOtherPartition := range topology.partitionServices {
 				if partitionId == otherPartitionId {
 					// Two services in the same partition will never block each other
@@ -190,12 +187,10 @@ func (topology PartitionTopology) GetBlocklists() (map[service_network_types.Ser
 					return nil, stacktrace.NewError("Couldn't get connection between partitions '%v' and '%v'", partitionId, otherPartitionId)
 				}
 				for _, otherServiceId := range servicesInOtherPartition.Elems() {
-					if connection.IsBlocked {
-						blockedServices.AddElem(otherServiceId)
-					}
+					otherServicesPacketLossConfigMap[otherServiceId] = connection.PacketLossPercentage
 				}
 			}
-			result[serviceId] = blockedServices
+			result[serviceId] = otherServicesPacketLossConfigMap
 		}
 	}
 	return result, nil

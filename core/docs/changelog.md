@@ -1,4 +1,16 @@
 # TBD
+### Features
+* Added a new high level interface `PartitionConnection` to simplify the configuration of the network state when a repartition is created
+* Added three partition connection types `UnblockedPartitionConnection`, `BlockedPartitionConnection` and `SoftPartitionConnection` to provide an easy way to configure a `PartitionConnection`
+* Upgraded the networking partition feature adding soft partitions with packet loss
+* Updated the public documentation which now contains information about the new `PartitionConnection` objects and the changes in the `repartitionNetwork` method
+
+### Changes
+* Replaced `iptables` utility with `traffic control` inside the `NetworkingSidecar` to create the different types of network partition connections.
+
+### Breaking Changes
+* Change the `EnclaveContext.RepartitionNetwork()` method API, now it is using the high level `PartitionConnection` interface instead of the low level `kurtosis_core_rpc_api_bindings.PartitionConnectionInfo` object
+  * Users should use the new partition connection types `UnblockedPartitionConnection`, `BlockedPartitionConnection` and `SoftPartitionConnection`, through its constructors, to get an object that implements the `PartitionConnection` interface this method now accepts
 
 # 1.35.0
 ### Fixes

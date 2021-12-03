@@ -184,8 +184,8 @@ workflows:
             {
                 "replacementPatterns": [
                     {
-                        "pattern": "^../kurtosis-testsuite-api-lib",
-                        "replacement": "https://docs.kurtosistech.com/kurtosis-testsuite-api-lib"
+                        "pattern": "^../kurtosis-engine-server",
+                        "replacement": "https://docs.kurtosistech.com/kurtosis-engine-server"
                     }
                 ]
             }

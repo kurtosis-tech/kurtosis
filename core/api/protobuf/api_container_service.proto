@@ -199,7 +199,7 @@ message RegisterServiceResponse {
   string private_ip_addr = 1;
 
   // The dirpath where the service's directory exists inside the enclave data directory, relative to the enclave data dir root
-  string relative_service_dirpath =2;
+  string relative_service_dirpath = 2;
 }
 
 // ==============================================================================================
@@ -308,8 +308,8 @@ message PartitionConnections {
 }
 
 message PartitionConnectionInfo {
-  // Whether network traffic is allowed between the two partitions
-  bool is_blocked = 1;
+  // Percentage value of packet loss in a partition connection
+  float packet_loss_percentage = 1;
 }
 
 // ==============================================================================================

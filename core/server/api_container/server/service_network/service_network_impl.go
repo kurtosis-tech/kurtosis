@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	defaultPartitionId                   service_network_types.PartitionID = "default"
-	startingDefaultConnectionBlockStatus                                   = false
+	defaultPartitionId                                    service_network_types.PartitionID = "default"
+	startingDefaultConnectionPacketLossValue                                                = 0
+	unblockedPartitionConnectionPacketLossPercentageValue float32                           = 0
 )
 
 // Information that gets created with a service's registration
@@ -90,14 +91,14 @@ type ServiceNetworkImpl struct {
 }
 
 func NewServiceNetworkImpl(
-		isPartitioningEnabled bool,
-		freeIpAddrTracker *lib.FreeIpAddrTracker,
-		dockerManager *docker_manager.DockerManager,
-		dockerNetworkId string,
-		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-		userServiceLauncher *user_service_launcher.UserServiceLauncher,
-		networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
-	defaultPartitionConnection := partition_topology.PartitionConnection{IsBlocked: startingDefaultConnectionBlockStatus}
+	isPartitioningEnabled bool,
+	freeIpAddrTracker *lib.FreeIpAddrTracker,
+	dockerManager *docker_manager.DockerManager,
+	dockerNetworkId string,
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
+	userServiceLauncher *user_service_launcher.UserServiceLauncher,
+	networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
+	defaultPartitionConnection := partition_topology.PartitionConnection{PacketLossPercentage: startingDefaultConnectionPacketLossValue}
 	return &ServiceNetworkImpl{
 		isDestroyed:           false,
 		isPartitioningEnabled: isPartitioningEnabled,
@@ -139,13 +140,15 @@ func (network *ServiceNetworkImpl) Repartition(
 	if err := network.topology.Repartition(newPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
-	blocklists, err := network.topology.GetBlocklists()
+
+	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the blocklists after repartition, meaning that "+
-			"no partitions are actually being enforced!")
+		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+			" after repartition, meaning that no partitions are actually being enforced!")
 	}
-	if err := updateIpTables(ctx, blocklists, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating the IP tables to match the target blocklist after repartitioning")
+
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating the qdisc configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
 }
@@ -270,26 +273,28 @@ func (network *ServiceNetworkImpl) StartService(
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
-	//   b) we can't modify the iptables until the sidecar container is launched.
+	//   b) we can't modify the qdisc configuration until the sidecar container is launched.
 	// This means that there's a period of time at startup where the container might not be partitioned. We solve
-	//  this by blocking the new service's IP in the already-existing services' iptables BEFORE we start the service.
-	// This means that when the new service is launched, even if its own iptables aren't yet updated, all the services
-	//  it would communicate are already dropping traffic from it.
+	//  this by setting the packet loss config of the new service in the already-existing services' qdisc.
+	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
+	//  it would communicate are already dropping traffic to it.
 	if network.isPartitioningEnabled {
-		blocklists, err := network.topology.GetBlocklists()
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the blocklists for updating iptables before the "+
-				"node was added, which means we can't add the node because we can't partition it away properly")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
 		}
-		blocklistsWithoutNewNode := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
-		for serviceInTopologyId, servicesToBlock := range blocklists {
+
+		servicesPacketLossConfigurationsWithoutNewNode := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{}
+		for serviceInTopologyId, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
 			if serviceId == serviceInTopologyId {
 				continue
 			}
-			blocklistsWithoutNewNode[serviceInTopologyId] = servicesToBlock
+			servicesPacketLossConfigurationsWithoutNewNode[serviceInTopologyId] = otherServicesPacketLossConfigs
 		}
-		if err := updateIpTables(ctx, blocklistsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the iptables of all the other services "+
+
+		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the qdisc configuration of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
@@ -328,23 +333,23 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 		network.networkingSidecars[serviceId] = sidecar
 
-		if err := sidecar.InitializeIpTables(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container iptables")
+		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container traffic control qdisc configuration")
 		}
 
-		// TODO Getting blocklists is an expensive call and, as of 2020-12-31, we do it twice - the solution is to make
-		//  getting the blocklists not an expensive call (see also https://github.com/kurtosis-tech/kurtosis-core/server/issues/123 )
-		blocklists, err := network.topology.GetBlocklists()
+		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
+		//  Getting packet loss configuration by service ID not an expensive call
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the blocklists to know what iptables "+
-				"updates to apply on the new node")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+				" to know what packet loss updates to apply on the new node")
 		}
-		newNodeBlocklist := blocklists[serviceId]
-		updatesToApply := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{
-			serviceId: newNodeBlocklist,
+		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
+		updatesToApply := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{
+			serviceId: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateIpTables(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the iptables on the new node to partition it "+
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the qdisc configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
@@ -509,40 +514,44 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 }
 
 /*
-Updates the iptables of the services with the given IDs to match the target blocklists
+Updates the traffic control configuration of the services with the given IDs to match the target services packet loss configuration
 
 NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
-func updateIpTables(
+func updateTrafficControlConfiguration(
 		ctx context.Context,
-		targetBlocklists map[service_network_types.ServiceID]*service_network_types.ServiceIDSet,
+		targetServicePacketLossConfigs map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32,
 		serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
 		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
-	for serviceId, newBlocklist := range targetBlocklists {
-		allIpsToBlock := []net.IP{}
-		for _, serviceIdToBlock := range newBlocklist.Elems() {
-			infoForService, found := serviceRegistrationInfo[serviceIdToBlock]
+
+	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
+		allPacketLossPercentageForIpAddresses := map[string]float32{}
+		for otherServiceId, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
+
+			infoForService, found := serviceRegistrationInfo[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
-					"Service with ID '%v' needs to block service with ID '%v', but the latter "+
+					"Service with ID '%v' needs to add packet loos configuration for service with ID '%v', but the latter "+
 						"doesn't have service registration info (i.e. an IP) associated with it",
 					serviceId,
-					serviceIdToBlock)
+					otherServiceId)
 			}
-			allIpsToBlock = append(allIpsToBlock, infoForService.privateIpAddr)
+
+			allPacketLossPercentageForIpAddresses[infoForService.privateIpAddr.String()] = otherServicePacketLossPercentage
 		}
 
 		sidecar, found := networkingSidecars[serviceId]
 		if !found {
 			return stacktrace.NewError(
-				"Need to update iptables of service with ID '%v', but the service doesn't have a sidecar",
+				"Need to update qdisc configuration of service with ID '%v', but the service doesn't have a sidecar",
 				serviceId)
 		}
-		if err := sidecar.UpdateIpTables(ctx, allIpsToBlock); err != nil {
+
+		if err := sidecar.UpdateTrafficControl(ctx, allPacketLossPercentageForIpAddresses); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred updating the iptables for service '%v'",
+				"An error occurred updating the qdisc configuration for service '%v'",
 				serviceId)
 		}
 	}

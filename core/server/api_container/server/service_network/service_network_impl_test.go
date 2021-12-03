@@ -9,13 +9,17 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net"
 	"strconv"
 	"testing"
 )
 
-func TestUpdateIpTables(t *testing.T) {
+const (
+	packetLossConfigForBlockedPartition = float32(100)
+)
+
+func TestUpdateTrafficControl(t *testing.T) {
 	numServices := 10
 	ctx := context.Background()
 
@@ -37,44 +41,40 @@ func TestUpdateIpTables(t *testing.T) {
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
-	targetBlocklists := map[service_network_types.ServiceID]*service_network_types.ServiceIDSet{}
+	targetServicePacketLossConfigs := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		blockedSet := service_network_types.NewServiceIDSet()
+		otherServicesPacketLossConfig := map[service_network_types.ServiceID]float32{}
 		for j := 0; j < numServices; j++ {
 			if j < i - 1 || j > i + 1 {
 				blockedServiceId := testServiceIdFromInt(j)
-				blockedSet.AddElem(blockedServiceId)
+				otherServicesPacketLossConfig[blockedServiceId] = packetLossConfigForBlockedPartition
 			}
 		}
-		targetBlocklists[serviceId] = blockedSet
+		targetServicePacketLossConfigs[serviceId] = otherServicesPacketLossConfig
 	}
 
-	assert.Nil(t, updateIpTables(ctx, targetBlocklists, registrationInfo, sidecars))
+	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrationInfo, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
 
-		expected := map[string]bool{}
+		expected := map[string]float32{}
 		for j := 0; j < numServices; j++ {
 			if j < i - 1 || j > i + 1 {
 				ip := testIpFromInt(j)
-				expected[ip.String()] = true
+				expected[ip.String()] = packetLossConfigForBlockedPartition
 			}
 		}
 
 		mockSidecar := mockSidecars[serviceId]
-		recordedUpdateIps := mockSidecar.GetRecordedUpdateIps()
-		assert.Equal(t, 1, len(recordedUpdateIps), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
+		recordedPacketLossConfig := mockSidecar.GetRecordedUpdatePacketLossConfig()
+		require.Equal(t, 1, len(recordedPacketLossConfig), "Expected sidecar for service ID '%v' to have recorded exactly one call to update")
 
-		firstRecordedIps := recordedUpdateIps[0]
-		actual := map[string]bool{}
-		for _, ip := range firstRecordedIps {
-			actual[ip.String()] = true
-		}
+		actualPacketLossConfigForService := recordedPacketLossConfig[0]
 
-		assert.Equal(t, expected, actual)
+		require.Equal(t, expected, actualPacketLossConfigForService)
 	}
 }
 

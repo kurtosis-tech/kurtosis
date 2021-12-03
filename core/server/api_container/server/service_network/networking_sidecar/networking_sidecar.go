@@ -7,42 +7,64 @@ package networking_sidecar
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
-	"strconv"
-	"strings"
 	"sync"
 )
 
 const (
+	tcCommand                   = "tc"
+	tcAddCommand                = "add"
+	tcReplaceCommand            = "replace"
+	tcDeleteCommand             = "del"
+	tcQdiscCommand              = "qdisc"
+	tcQdiscTypeHtb              = "htb"
+	tcQdiscTypeNetem            = "netem"
+	tcQdiscTypeNetemOptionLoss  = "loss"
+	tcClassCommand              = "class"
+	tcFilterCommand             = "filter"
+	tcFilterProtocolCommand     = "protocol"
+	tcFilterIPCommand           = "ip"
+	tcFilterPrioCommand         = "prio"
+	tcFilterFlowIDCommand       = "flowid"
+	tcFilterMatchCommand        = "match"
+	tcFilterMatchAllTypeCommand = "matchall"
+	tcFilterIPMatchTypeCommand  = "ip"
+	tcFilterIPDestCommand       = "dst"
+	tcU32FilterTypeCommand      = "u32"
+	tcDeviceCommand             = "dev"
+	tcHandleCommand             = "handle"
+	tcParentCommand             = "parent"
+	tcClassIDCommand            = "classid"
+	tcRateCommand               = "rate"
 
-	// We create two chains so that during modifications we can flush and rebuild one
-	//  while the other one is live
-	kurtosisIpTablesChain1 ipTablesChain = "KURTOSIS1"
-	kurtosisIpTablesChain2 ipTablesChain = "KURTOSIS2"
+	rootQdiscName                 = "root"
+	defaultDockerNetworkInterface = "eth1"
 
-	undefinedIpTablesChain       ipTablesChain = ""
-	initialKurtosisIpTablesChain               = kurtosisIpTablesChain1 // The Kurtosois chain that will be in use on service launch
+	rootQdiscID                       qdiscID = "1:"
+	qdiscAID                          qdiscID = "2:"
+	qdiscBID                          qdiscID = "3:"
+	lastUsedQdiscIdDecimalMajorNumber         = 3
+	undefinedQdiscId                          = ""
+	initialKurtosisQdiscId                    = qdiscAID
 
-	ipTablesCommand = "iptables"
-	ipTablesNewChainFlag = "-N"
-	ipTablesInsertRuleFlag = "-I"
-	ipTablesFlushChainFlag = "-F"
-	ipTablesAppendRuleFlag  = "-A"
-	ipTablesReplaceRuleFlag = "-R"
-	ipTablesDropAction = "DROP"
-	ipTablesFirstRuleIndex = 1	// iptables chains are 1-indexed
+	rootFilterID                   filterID = filterID(rootQdiscID) + "0"
+	rootClassAClassID              classID  = classID(rootQdiscID) + "1"
+	rootClassBClassID              classID  = classID(rootQdiscID) + "2"
+	fullRateValue                           = "100%"
+	maxFilterPriority                       = "1"
+	percentageSign                          = "%"
+	firstClassIdDecimalMinorNumber          = 1
 
-	ipTablesInputChain = "INPUT"
-	ipTablesOutputChain = "OUTPUT"
+	concatenateCommandsOperator = "&&"
+
+	firstCommandIndex                                     = 0
+
+	unblockedPartitionConnectionPacketLossPercentageValue float32 = 0
 )
-
-var intrinsicChainsToUpdate = map[string]bool{
-	ipTablesInputChain:  true,
-	ipTablesOutputChain: true,
-}
 
 // ==========================================================================================
 //                                        Interface
@@ -51,15 +73,16 @@ var intrinsicChainsToUpdate = map[string]bool{
 type NetworkingSidecar interface {
 	GetIPAddr() net.IP
 	GetContainerID() string
-	InitializeIpTables(ctx context.Context) error
-	UpdateIpTables(ctx context.Context, blockedIps []net.IP) error
+	InitializeTrafficControl(ctx context.Context) error
+	UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error
 }
-
 
 // ==========================================================================================
 //                                      Implementation
 // ==========================================================================================
-type ipTablesChain string
+type qdiscID string
+type classID string
+type filterID string
 
 // Provides a handle into manipulating the network state of a service container indirectly, via the sidecar
 type StandardNetworkingSidecar struct {
@@ -68,10 +91,10 @@ type StandardNetworkingSidecar struct {
 	// GUID of the service this sidecar container is attached to
 	serviceGUID service_network_types.ServiceGUID
 
-	// Tracks which Kurtosis chain is the primary chain, so we know
-	//  which chain is in the background that we can flush and rebuild
-	//  when we're changing iptables
-	chainInUse ipTablesChain
+	// Tracks which of the main qdiscs (qdiscA and qdiscB) is the primary qdisc, so we know
+	//  which qdisc is in the background that we can flush and rebuild
+	//  when we're changing them
+	qdiscInUse qdiscID
 
 	containerId string
 
@@ -84,10 +107,10 @@ func NewStandardNetworkingSidecar(serviceGUID service_network_types.ServiceGUID,
 	return &StandardNetworkingSidecar{
 		mutex:           &sync.Mutex{},
 		serviceGUID:     serviceGUID,
-		chainInUse:      undefinedIpTablesChain,
 		containerId:     containerId,
 		ipAddr:          ipAddr,
 		execCmdExecutor: execCmdExecutor,
+		qdiscInUse:      undefinedQdiscId,
 	}
 }
 
@@ -99,160 +122,378 @@ func (sidecar *StandardNetworkingSidecar) GetContainerID() string {
 	return sidecar.containerId
 }
 
-// Initializes the iptables of the attached service to a state where interactions with this NetworkingSidecar instance
-//  can modify things
-func (sidecar *StandardNetworkingSidecar) InitializeIpTables(ctx context.Context) error {
-	// Yes, initializers are bad, but I'm deeming having initialization logic in the constructor as even worse ~ ktoday, 2021-01-16
+func (sidecar *StandardNetworkingSidecar) InitializeTrafficControl(ctx context.Context) error {
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()
-	if sidecar.chainInUse != undefinedIpTablesChain {
+	if sidecar.qdiscInUse != undefinedQdiscId {
 		return nil
 	}
 
-	initCmd := generateIpTablesInitCmd()
+	initCmd := generateTcInitCmd()
 
-	logrus.Infof(
-		"Running iptables init command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
-		initCmd,
-		sidecar.containerId,
-		sidecar.serviceGUID)
-	if err := sidecar.execCmdExecutor.exec(ctx, initCmd); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred running sidecar iptables init command '%v'",
-			initCmd)
+	cmdDescription := "tc init"
+
+	if err := sidecar.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", initCmd)
 	}
-	sidecar.chainInUse = initialKurtosisIpTablesChain
-	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
+
+	sidecar.qdiscInUse = initialKurtosisQdiscId
+
 	return nil
 }
 
-func (sidecar *StandardNetworkingSidecar) UpdateIpTables(ctx context.Context, blockedIps []net.IP) error {
-	// TODO extract this boilerplate into a separate function
+func (sidecar *StandardNetworkingSidecar) UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error {
 	sidecar.mutex.Lock()
 	defer sidecar.mutex.Unlock()
-	if sidecar.chainInUse == undefinedIpTablesChain {
-		return stacktrace.NewError("Cannot update iptables because they haven't yet been initialized")
+
+	if sidecar.qdiscInUse == undefinedQdiscId {
+		return stacktrace.NewError("Cannot update tc qdiscs because they haven't yet been initialized")
 	}
 
-	primaryChain := sidecar.chainInUse
-	var backgroundChain ipTablesChain
-	if primaryChain == kurtosisIpTablesChain1 {
-		backgroundChain = kurtosisIpTablesChain2
-	} else if primaryChain == kurtosisIpTablesChain2 {
-		backgroundChain = kurtosisIpTablesChain1
-	} else {
-		return stacktrace.NewError("Unrecognized iptables chain '%v' in use; this is a code bug", primaryChain)
+	var isAnyPartitionBlocked bool
+	for _, packetLossPercentage := range allPacketLossPercentageForIpAddresses {
+		if packetLossPercentage > unblockedPartitionConnectionPacketLossPercentageValue {
+			isAnyPartitionBlocked = true
+		}
 	}
 
-	updateCmd := generateIpTablesUpdateCmd(backgroundChain, blockedIps)
+	if isAnyPartitionBlocked && len(allPacketLossPercentageForIpAddresses) > 0 {
+		primaryQdisc := sidecar.qdiscInUse
+		var backgroundQdisc qdiscID
+		var backgroundQdiscClass classID
+		if primaryQdisc == qdiscAID {
+			backgroundQdisc = qdiscBID
+			backgroundQdiscClass = rootClassBClassID
+		} else if primaryQdisc == qdiscBID {
+			backgroundQdisc = qdiscAID
+			backgroundQdiscClass = rootClassAClassID
+		} else {
+			return stacktrace.NewError("Unrecognized tc qdisc ID '%v' in use; this is a code bug", primaryQdisc)
+		}
 
-	logrus.Infof(
-		"Running iptables update command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
-		updateCmd,
-		sidecar.containerId,
-		sidecar.serviceGUID)
-	if err := sidecar.execCmdExecutor.exec(ctx, updateCmd); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running sidecar update command '%v'", updateCmd)
+		updateTcCmd, err := generateTcUpdateCmd(backgroundQdisc, backgroundQdiscClass, allPacketLossPercentageForIpAddresses)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred generating tc update command with background qdisc ID '%v', "+
+					"background qdisc class ID '%v' and all packet loss percentage for IPs %+v ", backgroundQdisc, backgroundQdiscClass, allPacketLossPercentageForIpAddresses)
+		}
+
+		cmdDescription := "tc update"
+
+		if err := sidecar.executeCmdInSidecar(ctx, updateTcCmd, cmdDescription); err != nil {
+			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", updateTcCmd)
+		}
+
+		sidecar.qdiscInUse = backgroundQdisc
+	} else if !isAnyPartitionBlocked {
+		//if isAnyPartitionBlocked == false means the tc qdisc config has to be re-initialized (e.g.: when an unblocked partition is configured).
+		//This is going to be done deleting and recreating qdiscA and qdiscB
+		reInitQdiscAAndQdiscBCmd := generateTcReInitQdiscAAndQdiscBCmd()
+
+		cmdDescription := "tc re init qdisc A and qdisc B cmd"
+
+		if err := sidecar.executeCmdInSidecar(ctx, reInitQdiscAAndQdiscBCmd, cmdDescription); err != nil {
+			return stacktrace.Propagate(err, "An error occurred executing cmd '%v' inside the sidecar container", reInitQdiscAAndQdiscBCmd)
+		}
+
+		sidecar.qdiscInUse = initialKurtosisQdiscId
 	}
-	sidecar.chainInUse = backgroundChain
-	logrus.Infof("Successfully executed iptables update command against service with GUID '%v'", sidecar.serviceGUID)
+
 	return nil
 }
 
 // ==========================================================================================
 //                                   Private helper functions
 // ==========================================================================================
-func generateIpTablesInitCmd() []string {
-	resultCmd := []string{
-		ipTablesCommand,
-		ipTablesNewChainFlag,
-		string(kurtosisIpTablesChain1),
-		"&&",
-		ipTablesCommand,
-		ipTablesNewChainFlag,
-		string(kurtosisIpTablesChain2),
+func getNextUnusedQdiscId(parentQdisc qdiscID, previousQdiscIdDecimalMajorNumber int) (qdiscID, int, error) {
+	//This func receives the most-recently-created qdisc ID major number (in decimal, i.e. base-10),
+	//and returns the ID (in hex, i.e. base-16) of the next qdisc that should be created.
+	//The function works by finding the next even or odd ID number after the most-recently-created
+	//qdisc ID - even if the qdisc-to-be-created's parent is qdisc A, and odd if the qdisc-to-be-created's
+	//parent is qdisc B.
+	decimalMajorNumber := previousQdiscIdDecimalMajorNumber + 1
+	if parentQdisc == qdiscAID { //Qdisc A children should have even qdiscIds
+		if !isEvenNumber(decimalMajorNumber) {
+			decimalMajorNumber++
+		}
+	} else if parentQdisc == qdiscBID { //Qdisc B children should have odd qdiscIds
+		if isEvenNumber(decimalMajorNumber) {
+			decimalMajorNumber++
+		}
+	} else {
+		return "", decimalMajorNumber, stacktrace.NewError("Unrecognized tc qdisc ID '%v' in use; this is a code bug", parentQdisc)
+	}
+	qdiscIdStr := fmt.Sprintf("%x:", decimalMajorNumber)
+	return qdiscID(qdiscIdStr), decimalMajorNumber, nil
+}
+
+func newClassId(parentQdisc qdiscID, decimalMinorNumber int) classID {
+	classIdStr := fmt.Sprintf("%v%x", parentQdisc, decimalMinorNumber)
+	return classID(classIdStr)
+}
+
+func isEvenNumber(number int) bool {
+	return number%2 == 0
+}
+
+func generateTcInitCmd() []string {
+	commandList := [][]string{
+		generateTcAddRootQdiscCmd(),
+		generateTcAddClassACmd(),
+		generateTcAddClassBCmd(),
+		generateTcAddRootFilterCmd(),
+		generateTcAddQdiscACmd(),
+		generateTcAddQdiscBCmd(),
 	}
 
-	// Very important that we set the Kurtosis chain for both INPUT *and* OUTPUT chain, to truly simulate
-	//  a network partition
-	for chain := range intrinsicChainsToUpdate {
-		addKurtosisChainInFirstPositionCommand := []string{
-			ipTablesCommand,
-			ipTablesInsertRuleFlag,
-			chain,
-			strconv.Itoa(ipTablesFirstRuleIndex),
-			"-j",
-			string(initialKurtosisIpTablesChain),
-		}
-		resultCmd = append(resultCmd, "&&")
-		resultCmd = append(
-			resultCmd,
-			addKurtosisChainInFirstPositionCommand...)
-	}
+	resultCmd := mergeCommandListInOneLineCommand(commandList)
+
 	return resultCmd
 }
 
-/*
-Given the new IPs that should be blocked, generate the exec command that needs to be
-	run in the sidecar container to make the service's iptables match the desired state.
-*/
-func generateIpTablesUpdateCmd(
-		backgroundChain ipTablesChain,
-		blockedIps []net.IP) []string {
-	// Deduplicate IPs for cleanliness
-	blockedIpStrs := map[string]bool{}
-	for _, ipAddr := range blockedIps {
-		blockedIpStrs[ipAddr.String()] = true
+func generateTcUpdateCmd(backgroundQdisc qdiscID, backgroundQdiscClass classID, allPacketLossPercentageForIpAddresses map[string]float32) ([]string, error) {
+	commandList := [][]string{
+		generateTcRemoveQdiscCmd(backgroundQdiscClass, backgroundQdisc),              //First remove all background Qdisc configuration in order to recreate it
+		generateTcAddQdiscCmd(backgroundQdiscClass, backgroundQdisc, tcQdiscTypeHtb), //Creating the background Qdisc again to fill it with new configuration
 	}
 
-	// NOTE: we could sort this (at a perf cost) if we need to for easier debugging
-	ipsToBlockStrSlice := []string{}
-	for ipAddr := range blockedIpStrs {
-		ipsToBlockStrSlice = append(ipsToBlockStrSlice, ipAddr)
+	parentQdisc := backgroundQdisc
+	classIdDecimalMinorNumber := firstClassIdDecimalMinorNumber
+	previousQdiscIdDecimalMajorNumber := lastUsedQdiscIdDecimalMajorNumber
+	for ipAddress, packetLossPercentage := range allPacketLossPercentageForIpAddresses {
+		classId := newClassId(parentQdisc, classIdDecimalMinorNumber)
+		classIdDecimalMinorNumber++
+		qdiscId, decimalMajorNumber, err := getNextUnusedQdiscId(parentQdisc, previousQdiscIdDecimalMajorNumber)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new qdisc ID for parent qdisc ID %v and previous qdisc ID decimal major number %v", parentQdisc, previousQdiscIdDecimalMajorNumber)
+		}
+		previousQdiscIdDecimalMajorNumber = decimalMajorNumber
+		//For each ip address that will be blocked, we create: a class that will be a child of QdiscA or QdiscB, a filter
+		//pointing to this class, and a netem qdisc (which is a child of the class) with the packet loss configuration
+		commandList = append(commandList, generateTcAddClassCmd(parentQdisc, classId))
+		commandList = append(commandList, generateTCAddFilterByIpCmd(parentQdisc, classId, ipAddress))
+		commandList = append(commandList, generateTCAddNetemQdiscWithPacketLossCmd(classId, qdiscId, packetLossPercentage))
 	}
 
+	commandList = append(commandList, generateTCReplaceRootFilterCmd(backgroundQdiscClass)) //swapping the root filter pointer
+
+	resultCmd := mergeCommandListInOneLineCommand(commandList)
+
+	return resultCmd, nil
+}
+
+func generateTcReInitQdiscAAndQdiscBCmd() []string {
+	commandList := [][]string{
+		generateTcRemoveQdiscACmd(),
+		generateTcRemoveQdiscBCmd(),
+		generateTcAddQdiscACmd(),
+		generateTcAddQdiscBCmd(),
+	}
+
+	resultCmd := mergeCommandListInOneLineCommand(commandList)
+
+	return resultCmd
+}
+
+func generateTcAddRootQdiscCmd() []string {
 	resultCmd := []string{
-		ipTablesCommand,
-		ipTablesFlushChainFlag,
-		string(backgroundChain),
-	}
-
-	if len(ipsToBlockStrSlice) > 0 {
-		ipsToBlockCommaList := strings.Join(ipsToBlockStrSlice, ",")
-
-		// As of 2020-12-31 the Kurtosis chains get used by both INPUT and OUTPUT intrinsic iptables chains,
-		//  so we add rules to the Kurtosis chains to drop traffic both inbound and outbound
-		for _, flag := range []string{"-s", "-d"} {
-			// PERF NOTE: If it takes iptables a long time to insert all the rules, we could do the
-			//  extra work leg work to calculate the diff and insert only what's needed
-			addBlockedSourceIpsCommand := []string{
-				ipTablesCommand,
-				ipTablesAppendRuleFlag,
-				string(backgroundChain),
-				flag,
-				ipsToBlockCommaList,
-				"-j",
-				ipTablesDropAction,
-			}
-			resultCmd = append(resultCmd, "&&")
-			resultCmd = append(resultCmd, addBlockedSourceIpsCommand...)
-		}
-	}
-
-	// Lastly, make sure to update which chain is being used for both INPUT and OUTPUT iptables
-	for intrinsicChain := range intrinsicChainsToUpdate {
-		setBackgroundChainInFirstPositionCommand := []string{
-			ipTablesCommand,
-			ipTablesReplaceRuleFlag,
-			intrinsicChain,
-			strconv.Itoa(ipTablesFirstRuleIndex),
-			"-j",
-			string(backgroundChain),
-		}
-		resultCmd = append(resultCmd, "&&")
-		resultCmd = append(resultCmd, setBackgroundChainInFirstPositionCommand...)
+		tcCommand,
+		tcQdiscCommand,
+		tcAddCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		rootQdiscName,
+		tcHandleCommand,
+		string(rootQdiscID),
+		tcQdiscTypeHtb,
 	}
 
 	return resultCmd
+}
+
+func generateTcAddClassACmd() []string {
+	return generateTcAddClassCmd(rootQdiscID, rootClassAClassID)
+}
+
+func generateTcAddClassBCmd() []string {
+	return generateTcAddClassCmd(rootQdiscID, rootClassBClassID)
+}
+
+func generateTcAddRootFilterCmd() []string {
+
+	resultCmd := []string{
+		tcCommand,
+		tcFilterCommand,
+		tcAddCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(rootQdiscID),
+		tcHandleCommand,
+		string(rootFilterID),
+		tcFilterMatchAllTypeCommand,
+		tcFilterFlowIDCommand,
+		string(rootClassAClassID),
+	}
+
+	return resultCmd
+}
+
+func generateTcAddQdiscACmd() []string {
+	return generateTcAddQdiscCmd(rootClassAClassID, qdiscAID, tcQdiscTypeHtb)
+}
+
+func generateTcRemoveQdiscACmd() []string {
+	return generateTcRemoveQdiscCmd(rootClassAClassID, qdiscAID)
+}
+
+func generateTcRemoveQdiscBCmd() []string {
+	return generateTcRemoveQdiscCmd(rootClassBClassID, qdiscBID)
+}
+
+func generateTcAddQdiscBCmd() []string {
+	return generateTcAddQdiscCmd(rootClassBClassID, qdiscBID, tcQdiscTypeHtb)
+}
+
+func generateTCAddNetemQdiscWithPacketLossCmd(parentClassId classID, qdiscId qdiscID, packetLossPercentage float32) []string {
+
+	packetLossPercentageStr := fmt.Sprintf("%v%v", packetLossPercentage, percentageSign)
+
+	resultCmd := generateTcAddQdiscCmd(parentClassId, qdiscId, tcQdiscTypeNetem)
+	resultCmd = append(resultCmd, tcQdiscTypeNetemOptionLoss)
+	resultCmd = append(resultCmd, packetLossPercentageStr)
+
+	return resultCmd
+}
+
+func generateTcAddQdiscCmd(parentClassId classID, qdiscId qdiscID, qdiscType string) []string {
+	resultCmd := []string{
+		tcCommand,
+		tcQdiscCommand,
+		tcAddCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(parentClassId),
+		tcHandleCommand,
+		string(qdiscId),
+		qdiscType,
+	}
+
+	return resultCmd
+}
+
+func generateTcAddClassCmd(parentQdiscId qdiscID, classId classID) []string {
+
+	resultCmd := []string{
+		tcCommand,
+		tcClassCommand,
+		tcAddCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(parentQdiscId),
+		tcClassIDCommand,
+		string(classId),
+		tcQdiscTypeHtb,
+		tcRateCommand,
+		fullRateValue,
+	}
+
+	return resultCmd
+}
+
+func generateTCAddFilterByIpCmd(parentQdiscId qdiscID, classId classID, ipAddress string) []string {
+
+	resultCmd := []string{
+		tcCommand,
+		tcFilterCommand,
+		tcAddCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(parentQdiscId),
+		tcFilterProtocolCommand,
+		tcFilterIPCommand,
+		tcFilterPrioCommand,
+		maxFilterPriority,
+		tcU32FilterTypeCommand,
+		tcFilterFlowIDCommand,
+		string(classId),
+		tcFilterMatchCommand,
+		tcFilterIPMatchTypeCommand,
+		tcFilterIPDestCommand,
+		ipAddress,
+	}
+
+	return resultCmd
+}
+
+func generateTcRemoveQdiscCmd(parentClassId classID, qdiscId qdiscID) []string {
+	resultCmd := []string{
+		tcCommand,
+		tcQdiscCommand,
+		tcDeleteCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(parentClassId),
+		tcHandleCommand,
+		string(qdiscId),
+		tcQdiscTypeHtb,
+	}
+
+	return resultCmd
+}
+
+func generateTCReplaceRootFilterCmd(classId classID) []string {
+
+	resultCmd := []string{
+		tcCommand,
+		tcFilterCommand,
+		tcReplaceCommand,
+		tcDeviceCommand,
+		defaultDockerNetworkInterface,
+		tcParentCommand,
+		string(rootQdiscID),
+		tcHandleCommand,
+		string(rootFilterID),
+		tcFilterMatchAllTypeCommand,
+		tcFilterFlowIDCommand,
+		string(classId),
+	}
+
+	return resultCmd
+}
+
+func mergeCommandListInOneLineCommand(commandList [][]string) []string {
+	resultCmd := []string{}
+	for commandIndex, command := range commandList {
+		if commandIndex > firstCommandIndex {
+			resultCmd = append(resultCmd, concatenateCommandsOperator)
+		}
+		resultCmd = append(resultCmd, command...)
+	}
+
+	return resultCmd
+}
+
+func (sidecar *StandardNetworkingSidecar) executeCmdInSidecar(ctx context.Context, cmd []string, cmdDescription string) error {
+	logrus.Infof(
+		"Running %v command '%v' in sidecar container '%v' attached to service with GUID '%v'...",
+		cmdDescription,
+		cmd,
+		sidecar.containerId,
+		sidecar.serviceGUID)
+	if err := sidecar.execCmdExecutor.exec(ctx, cmd); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred running %v command '%v'",
+			cmdDescription,
+			cmd)
+	}
+	logrus.Infof("Successfully executed %v command against service with GUID '%v'", cmdDescription, sidecar.serviceGUID)
+
+	return nil
 }
