@@ -85,3 +85,10 @@ func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *ku
 
 	return &emptypb.Empty{}, nil
 }
+
+func (service *EngineServerService) Clean (ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*emptypb.Empty, error){
+
+
+
+	return &emptypb.Empty{}, nil
+}

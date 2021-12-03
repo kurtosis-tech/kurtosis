@@ -151,6 +151,16 @@ func (kurtosisCtx *KurtosisContext) DestroyEnclave(ctx context.Context, enclaveI
 	return nil
 }
 
+func (kurtosisCtx *KurtosisContext) Clean (ctx context.Context, shouldCleanAll bool) error {
+	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{
+		ShouldCleanAll: shouldCleanAll,
+	}
+	if _, err := kurtosisCtx.client.Clean(ctx,cleanArgs); err != nil {
+		return stacktrace.Propagate(err, "An error occurred when trying to perform a clean with the all arg set to '%v'", shouldCleanAll)
+	}
+	return nil
+}
+
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================

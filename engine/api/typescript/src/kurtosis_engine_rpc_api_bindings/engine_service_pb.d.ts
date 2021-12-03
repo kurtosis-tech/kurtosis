@@ -245,6 +245,26 @@ export namespace DestroyEnclaveArgs {
   }
 }
 
+export class CleanArgs extends jspb.Message {
+  getShouldCleanAll(): boolean;
+  setShouldCleanAll(value: boolean): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CleanArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: CleanArgs): CleanArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CleanArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CleanArgs;
+  static deserializeBinaryFromReader(message: CleanArgs, reader: jspb.BinaryReader): CleanArgs;
+}
+
+export namespace CleanArgs {
+  export type AsObject = {
+    shouldCleanAll: boolean,
+  }
+}
+
 export interface EnclaveContainersStatusMap {
   ENCLAVECONTAINERSSTATUS_EMPTY: 0;
   ENCLAVECONTAINERSSTATUS_RUNNING: 1;

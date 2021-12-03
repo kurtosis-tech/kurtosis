@@ -17,10 +17,12 @@ import (
 	"net"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 )
+
 const (
 	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
 
@@ -36,6 +38,11 @@ const (
 	allEnclavesDirname = "enclaves"
 
 	apiContainerListenPortNumInsideNetwork = uint16(7443)
+
+	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
+	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
+	oldApiContainerPortNumLabel      = "com.kurtosistech.api-container-port-number"
+	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
 
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
@@ -68,6 +75,13 @@ const (
 	pre2021_12_02_apiContainerPortNumUintBits = 16
 	pre2021_12_02_apiContainerPortProtocol = schema.PortProtocol_TCP
 	// --------------------------- Old port parsing constants ------------------------------------
+
+	enclavesCleaningPhaseTitle             = "enclaves"
+	metadataAcquisitionTestsuitePhaseTitle = "metadata-acquiring testsuite containers"
+
+	// Obviously yes
+	shouldFetchStoppedContainersWhenDestroyingStoppedContainers = true
+
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
@@ -128,7 +142,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	teardownCtx := context.Background()  // Separate context for tearing stuff down in case the input context is cancelled
+	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	_, found, err := manager.getEnclaveNetwork(setupCtx, enclaveId)
 	if err != nil {
@@ -402,6 +416,58 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	// Finally, remove the network
 	if err := manager.dockerManager.RemoveNetwork(ctx, enclaveNetwork.GetId()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+	}
+
+	return nil
+}
+
+func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) error {
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
+
+	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
+	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
+		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
+			return manager.cleanEnclaves(ctx, shouldCleanAll)
+		},
+		metadataAcquisitionTestsuitePhaseTitle: func() ([]string, []error, error) {
+			return manager.cleanMetadataAcquisitionTestsuites(ctx, shouldCleanAll)
+		},
+	}
+
+	phasesWithErrors := []string{}
+	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
+		logrus.Infof("Cleaning %v...", phaseTitle)
+		successfullyRemovedArtifactIds, removalErrors, err := cleaningFunc()
+		if err != nil {
+			logrus.Errorf("Errors occurred cleaning %v:\n%v", phaseTitle, err)
+			phasesWithErrors = append(phasesWithErrors, phaseTitle)
+			continue
+		}
+
+		if len(successfullyRemovedArtifactIds) > 0 {
+			logrus.Infof("Successfully removed the following %v:", phaseTitle)
+			sort.Strings(successfullyRemovedArtifactIds)
+			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
+				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
+			}
+		}
+
+		if len(removalErrors) > 0 {
+			logrus.Errorf("Errors occurred removing the following %v:", phaseTitle)
+			for _, err := range removalErrors {
+				fmt.Fprintln(logrus.StandardLogger().Out, "")
+				fmt.Fprintln(logrus.StandardLogger().Out, err.Error())
+			}
+			phasesWithErrors = append(phasesWithErrors, phaseTitle)
+			continue
+		}
+		logrus.Infof("Successfully cleaned %v", phaseTitle)
+	}
+
+	if len(phasesWithErrors) > 0 {
+		errorStr := "Errors occurred cleaning " + strings.Join(phasesWithErrors, ", ")
+		return stacktrace.NewError(errorStr)
 	}
 
 	return nil
@@ -785,4 +851,99 @@ func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId string) (onHostMa
 		enclaveId,
 	)
 	return
+}
+
+func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
+	getEnclavesResp, err := manager.GetEnclaves(ctx)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
+	}
+
+	enclaveIdsToDestroy := []string{}
+	for enclaveId, enclaveInfo := range getEnclavesResp {
+		enclaveStatus := enclaveInfo.ContainersStatus
+		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
+			enclaveIdsToDestroy = append(enclaveIdsToDestroy, enclaveId)
+		}
+	}
+
+	successfullyDestroyedEnclaveIds := []string{}
+	enclaveDestructionErrors := []error{}
+	for _, enclaveId := range enclaveIdsToDestroy {
+		if err := manager.DestroyEnclave(ctx, enclaveId); err != nil {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v'", enclaveId)
+			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
+			continue
+		}
+		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
+	}
+	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
+}
+
+func (manager *EnclaveManager) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
+	matchingContainers, err := manager.dockerManager.GetContainersByLabels(
+		ctx,
+		searchLabels,
+		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
+	}
+
+	containersToDestroy := []*types.Container{}
+	for _, container := range matchingContainers {
+		containerName := container.GetName()
+		containerStatus := container.GetStatus()
+		if shouldKillRunningContainers {
+			containersToDestroy = append(containersToDestroy, container)
+			continue
+		}
+
+		isRunning, err := isContainerRunning(containerStatus)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
+		}
+		if !isRunning {
+			containersToDestroy = append(containersToDestroy, container)
+		}
+	}
+
+	successfullyDestroyedContainerNames := []string{}
+	removeContainerErrors := []error{}
+	for _, container := range containersToDestroy {
+		containerId := container.GetId()
+		containerName := container.GetName()
+		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
+			removeContainerErrors = append(removeContainerErrors, wrappedErr)
+			continue
+		}
+		successfullyDestroyedContainerNames = append(successfullyDestroyedContainerNames, containerName)
+	}
+
+	return successfullyDestroyedContainerNames, removeContainerErrors, nil
+}
+
+func isContainerRunning(status types.ContainerStatus) (bool, error) {
+	switch status {
+	case types.Running, types.Restarting:
+		return true, nil
+	case types.Paused, types.Removing, types.Dead, types.Created, types.Exited:
+		return false, nil
+	default:
+		return false, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status)
+
+	}
+}
+
+func (manager *EnclaveManager) cleanMetadataAcquisitionTestsuites(ctx context.Context, shouldKillRunningContainers bool) ([]string, []error, error) {
+	metadataAcquisitionTestsuiteLabels := map[string]string{
+		forever_constants.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
+		schema.TestsuiteTypeLabelKey:         schema.TestsuiteTypeLabelValue_MetadataAcquisition,
+	}
+	successfullyDestroyedContainerNames, containerDestructionErrors, err := manager.cleanContainers(ctx, metadataAcquisitionTestsuiteLabels, shouldKillRunningContainers)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning metadata-acquisition testsuite containers")
+	}
+	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }

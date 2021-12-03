@@ -5,6 +5,17 @@ var grpc = require('@grpc/grpc-js');
 var engine_service_pb = require('./engine_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
+function serialize_engine_api_CleanArgs(arg) {
+  if (!(arg instanceof engine_service_pb.CleanArgs)) {
+    throw new Error('Expected argument of type engine_api.CleanArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_CleanArgs(buffer_arg) {
+  return engine_service_pb.CleanArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_engine_api_CreateEnclaveArgs(arg) {
   if (!(arg instanceof engine_service_pb.CreateEnclaveArgs)) {
     throw new Error('Expected argument of type engine_api.CreateEnclaveArgs');
@@ -144,6 +155,18 @@ destroyEnclave: {
     responseType: google_protobuf_empty_pb.Empty,
     requestSerialize: serialize_engine_api_DestroyEnclaveArgs,
     requestDeserialize: deserialize_engine_api_DestroyEnclaveArgs,
+    responseSerialize: serialize_google_protobuf_Empty,
+    responseDeserialize: deserialize_google_protobuf_Empty,
+  },
+  // Gets rid of the enclaves
+clean: {
+    path: '/engine_api.EngineService/Clean',
+    requestStream: false,
+    responseStream: false,
+    requestType: engine_service_pb.CleanArgs,
+    responseType: google_protobuf_empty_pb.Empty,
+    requestSerialize: serialize_engine_api_CleanArgs,
+    requestDeserialize: deserialize_engine_api_CleanArgs,
     responseSerialize: serialize_google_protobuf_Empty,
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
