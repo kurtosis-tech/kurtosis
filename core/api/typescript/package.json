@@ -31,8 +31,8 @@
         "node": ">=16.13.0"
     },
     "dependencies": {
+        "@grpc/grpc-js": "^1.4.4",
         "google-protobuf": "^3.17.3",
-        "grpc": "^1.24.11",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2"
     },

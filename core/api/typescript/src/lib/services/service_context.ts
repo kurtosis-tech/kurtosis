@@ -4,7 +4,7 @@ import { ServiceID} from './service';
 import { SharedPath } from './shared_path';
 import { newExecCommandArgs} from "../constructor_calls";
 import { ok, err, Result } from 'neverthrow';
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import { PortSpec } from './port_spec';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
