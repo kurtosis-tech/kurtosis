@@ -196,6 +196,7 @@ func createServiceNetworkAndModuleStore(
 		networkingSidecarManager)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
+		enclaveId,
 		dockerManager,
 		apiContainerSocketInsideNetwork,
 		enclaveContainerLauncher,
