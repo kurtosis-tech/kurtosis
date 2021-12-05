@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
@@ -13,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 	"os"
 )
 
@@ -35,8 +35,8 @@ type engineExistenceGuarantor struct {
 	// Storing a context in a struct is normally bad, but this visitor is short-lived and behaves more like a function
 	ctx context.Context
 
-	// Port bindings of the maybe-started, maybe-not engine (will only be present if the engine status isn't "stopped")
-	preVisitingMaybeHostMachinePortBinding *nat.PortBinding
+	// Host machine IP:port of the maybe-started, maybe-not engine (will only be present if the engine status isn't "stopped")
+	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort
 
 	dockerManager *docker_manager.DockerManager
 
@@ -52,14 +52,14 @@ type engineExistenceGuarantor struct {
 	// If no engine is running, this will be emptystring
 	maybeCurrentlyRunningEngineVersionTag string
 
-	// Port bindings of the engine server that is guaranteed to be started if the visiting didn't throw an error
-	// Will be nil before visiting
-	postVisitingHostMachinePortBinding *nat.PortBinding
+	// IP:port information of the engine server on the host machine that is guaranteed to be started if the visiting didn't throw an error
+	// Will be empty before visiting
+	postVisitingHostMachineIpAndPort *hostMachineIpAndPort
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
 	ctx context.Context,
-	preVisitingMaybeHostMachinePortBinding *nat.PortBinding,
+	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider schema.ObjectAttributesProvider,
 	logLevel logrus.Level,
@@ -67,7 +67,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
-		preVisitingMaybeHostMachinePortBinding,
+		preVisitingMaybeHostMachineIpAndPort,
 		dockerManager,
 		objAttrsProvider,
 		defaultEngineImageVersionTag,
@@ -78,7 +78,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 
 func newEngineExistenceGuarantorWithCustomVersion(
 	ctx context.Context,
-	preVisitingMaybeHostMachinePortBinding *nat.PortBinding,
+	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider schema.ObjectAttributesProvider,
 	imageVersionTag string,
@@ -86,20 +86,20 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
-		ctx:                                    ctx,
-		preVisitingMaybeHostMachinePortBinding: preVisitingMaybeHostMachinePortBinding,
-		dockerManager:                          dockerManager,
-		objAttrsProvider:                       objAttrsProvider,
-		engineServerLauncher:                   engine_server_launcher.NewEngineServerLauncher(dockerManager, objAttrsProvider),
-		imageVersionTag:                        imageVersionTag,
-		logLevel:                               logLevel,
-		maybeCurrentlyRunningEngineVersionTag:  maybeCurrentlyRunningEngineVersionTag,
-		postVisitingHostMachinePortBinding:     nil,  // Will be filled in upon visiting
+		ctx:                                   ctx,
+		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
+		dockerManager:                         dockerManager,
+		objAttrsProvider:                      objAttrsProvider,
+		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(dockerManager, objAttrsProvider),
+		imageVersionTag:                       imageVersionTag,
+		logLevel:                              logLevel,
+		maybeCurrentlyRunningEngineVersionTag: maybeCurrentlyRunningEngineVersionTag,
+		postVisitingHostMachineIpAndPort:      nil, // Will be filled in upon successful visitation
 	}
 }
 
-func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachinePortBinding() *nat.PortBinding {
-	return guarantor.postVisitingHostMachinePortBinding
+func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachineIpAndPort() *hostMachineIpAndPort {
+	return guarantor.postVisitingHostMachineIpAndPort
 }
 
 // If the engine is stopped, try to start it
@@ -115,17 +115,18 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
 	}
 
-	var hostMachinePortBinding *nat.PortBinding
+	var hostMachineIpAddr net.IP
+	var hostMachinePortNum uint16
 	var engineLaunchErr error
 	if guarantor.imageVersionTag == defaultEngineImageVersionTag {
-		hostMachinePortBinding, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
+		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
 		)
 	} else {
-		hostMachinePortBinding, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
+		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
@@ -137,7 +138,10 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(engineLaunchErr, "An error occurred launching the engine server container")
 	}
 
-	guarantor.postVisitingHostMachinePortBinding = hostMachinePortBinding
+	guarantor.postVisitingHostMachineIpAndPort = &hostMachineIpAndPort{
+		ipAddr:  hostMachineIpAddr,
+		portNum: hostMachinePortNum,
+	}
 	logrus.Info("Successfully started Kurtosis engine")
 	return nil
 }
@@ -163,7 +167,7 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 }
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
-	guarantor.postVisitingHostMachinePortBinding = guarantor.preVisitingMaybeHostMachinePortBinding
+	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
 	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
 	if err != nil {
 		logrus.Warn("An error occurred getting the running engine's version; you may be running an out-of-date engine version")

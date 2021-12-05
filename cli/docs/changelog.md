@@ -1,4 +1,10 @@
 # TBD
+### Features
+* Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
+    * obj-attrs-schema-lib -> 0.5.0
+    * core dependencies -> 1.35.0
+    * engine dependencies -> 1.6.0
+
 ### Fixes
 * When the engine server API version that the CLI expects doesn't match the running engine server's API version, the user gets an error and is forced to restart their engine
 

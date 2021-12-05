@@ -6,6 +6,6 @@ replace github.com/kurtosis-tech/kurtosis-cli/commons => ../../commons
 
 require (
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211116225603-d9c52228a740
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20211202230137-91cf1e98661f
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 )
