@@ -1,4 +1,6 @@
 # TBD
+
+# 1.36.2
 ### Fixes
 * The `ModuleContainerArgs` now has a field for enclave ID, which is required when creating the enclave context inside the module
 
