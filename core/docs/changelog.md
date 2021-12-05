@@ -1,4 +1,6 @@
 # TBD
+
+# 1.36.1
 ### Changes
 * The module API is now a part of this protobuf, and the appropriate bindings are now available
 * The new `module_launch_api` subpackage of the API libraries now defines the API that module containers accept when being launched
