@@ -1,3 +1,6 @@
+// Own Version
+export { KURTOSIS_CORE_VERSION } from "./kurtosis_core_version/kurtosis_core_version";
+
 // Services
 export { FilesArtifactID, ContainerConfig, ContainerConfigBuilder } from "./lib/services/container_config";
 export { ServiceID } from "./lib/services/service";
