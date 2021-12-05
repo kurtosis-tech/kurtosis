@@ -1,5 +1,9 @@
 # TBD
 
+# 1.36.4
+### Fixes
+* Export `getArgsFromEnv` and `ModuleContainerArgs` types for the TS library
+
 # 1.36.3
 ### Fixes
 * Export the `ExecuteArgs`, `ExecuteResponse`, and `IExecutableModuleServiceServer` types for the Typescript library
