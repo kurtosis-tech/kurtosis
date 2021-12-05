@@ -1,5 +1,9 @@
 # TBD
 
+# 1.36.7
+### Changes
+* Switch to using `@grpc/grpc-js` for the Typescript library, as the `grpc` package is now deprecated
+
 # 1.36.6
 ### Features
 * Added own-version constants inside the API, so that consumers (e.g. modules) can know which version of the API container they're intended to be compatible with

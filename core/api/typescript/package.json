@@ -1,7 +1,7 @@
 {
     "name": "kurtosis-core-api-lib",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
-    "version": "1.36.6",
+    "version": "1.36.7",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis API server, which both testsuites and Kurtosis Modules use to manipulate the test environment.",
     "main": "./build/index",
     "types": "./build/index",
@@ -31,8 +31,8 @@
         "node": ">=16.13.0"
     },
     "dependencies": {
+        "@grpc/grpc-js": "^1.4.4",
         "google-protobuf": "^3.17.3",
-        "grpc": "^1.24.11",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2"
     },

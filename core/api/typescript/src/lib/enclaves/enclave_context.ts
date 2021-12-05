@@ -51,7 +51,7 @@ import {
 } from "../constructor_calls";
 import { ok, err, Result } from "neverthrow";
 import * as log from "loglevel";
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import * as path from "path"
 import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
