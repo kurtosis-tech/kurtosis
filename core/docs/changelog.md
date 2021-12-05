@@ -1,5 +1,9 @@
 # TBD
 
+# 1.36.8
+### Fixes
+* In the TS library, the `@types/google-protobuf` is now a `dependency` so that downstream projects get it as well
+
 # 1.36.7
 ### Changes
 * Switch to using `@grpc/grpc-js` for the Typescript library, as the `grpc` package is now deprecated
