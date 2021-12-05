@@ -1,5 +1,9 @@
 # TBD
 
+# 1.7.2
+### Fixes
+* Upgrade to Core 1.36.8, in an attempt to fix a weird error around protobuf empty object
+
 # 1.7.1
 ### Changes
 * Switch to using `@grpc/grpc-js` in the Typescript library for communicating with the engine, as the `grpc` package is deprecated now
