@@ -363,6 +363,11 @@ google-protobuf@^3.17.3:
   resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.18.1.tgz#31de10b65e833aa5bbd44680e8a748fa54c920f6"
   integrity sha512-cDqSamZ8rGs+pOzhIsBte7wpezUKg/sggeptDWN5odhnRY/eDLa5VWLeNeQvcfiqjS3yUwgM+6OePCJMB7aWZA==
 
+google-protobuf@^3.19.1:
+  version "3.19.1"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.19.1.tgz#5af5390e8206c446d8f49febaffd4b7f4ac28f41"
+  integrity sha512-Isv1RlNC+IzZzilcxnlVSf+JvuhxmY7DaxYCBy+zPS9XVuJRtlTTIXR9hnZ1YL1MMusJn/7eSy2swCzZIomQSg==
+
 growl@1.10.5:
   version "1.10.5"
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
@@ -449,13 +454,14 @@ json5@^1.0.1:
   dependencies:
     minimist "^1.2.0"
 
-kurtosis-core-api-lib@1.36.7:
-  version "1.36.7"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.7.tgz#74d863ff3f646135c710f6f5e05ed6bc5b49d876"
-  integrity sha512-sa6mIlPGJrZsTgpUk29f5PSFgjCtOrAReIhXoLf8/De2dLX+AF8G8eDynjyTLtZSmr6Vl9eJ9AeoDMkr1KBl4A==
+kurtosis-core-api-lib@1.36.8:
+  version "1.36.8"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.8.tgz#751bb84940bcb110bafcd3fd85a96981603d342d"
+  integrity sha512-qmRGak88mNzHFXEkjIKzxHUm0IKq4Ii29KaDzvWIQLX31IvFpXV+/EJeRnFN0yrsC5y+yRys95N3uuXPig/oFw==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
-    google-protobuf "^3.17.3"
+    "@types/google-protobuf" "^3.15.5"
+    google-protobuf "^3.19.1"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
