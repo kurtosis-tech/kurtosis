@@ -16,7 +16,7 @@ type APIContainerArgs struct {
 
 	ListenPortNum      uint16 `json:"listenPortNum"`
 
-	EnclaveId				 string `json:"enclaveId"'`
+	EnclaveId				 string `json:"enclaveId"`
 	NetworkId                string `json:"networkId"`
 	SubnetMask               string	`json:"subnetMask"`
 

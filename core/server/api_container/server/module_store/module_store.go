@@ -8,10 +8,10 @@ package module_store
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
-	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"sync"
@@ -25,7 +25,7 @@ type moduleInfo struct {
 	publicPort    *enclave_container_launcher.EnclaveContainerPort
 	// NOTE: When we want restart-able enclaves, we'll need to not store this client and instead recreate one
 	//  from the port num/protocol stored as a label on the module container
-	client        kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient
+	client        kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient
 }
 
 type ModuleStore struct {
@@ -120,7 +120,7 @@ func (store *ModuleStore) ExecuteModule(ctx context.Context, moduleId module_sto
 		return "", stacktrace.NewError("No module '%v' exists in the module store", moduleId)
 	}
 	client := info.client
-	args := &kurtosis_module_rpc_api_bindings.ExecuteArgs{ParamsJson: serializedParams}
+	args := &kurtosis_core_rpc_api_bindings.ExecuteArgs{ParamsJson: serializedParams}
 	resp, err := client.Execute(ctx, args)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
