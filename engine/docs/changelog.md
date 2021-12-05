@@ -1,5 +1,9 @@
 # TBD
 
+# 1.7.3
+### Fixes
+* Upgraded to Kurt Core 1.36.9, which fixes a bug with an error value not getting checked
+
 # 1.7.2
 ### Fixes
 * Upgrade to Core 1.36.8, in an attempt to fix a weird error around protobuf empty object

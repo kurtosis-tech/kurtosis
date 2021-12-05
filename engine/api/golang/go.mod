@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211205224905-99464ecf460f
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211205232847-ccb62e7d0112
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/net v0.0.0-20210913180222-943fd674d43e // indirect
