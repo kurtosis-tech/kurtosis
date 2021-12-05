@@ -1,4 +1,6 @@
 # TBD
+
+# 1.7.2
 ### Fixes
 * Upgrade to Core 1.36.8, in an attempt to fix a weird error around protobuf empty object
 
