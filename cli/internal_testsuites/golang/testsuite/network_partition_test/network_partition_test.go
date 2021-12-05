@@ -44,7 +44,7 @@ func TestNetworkPartition(t *testing.T) {
 	defer datastoreClientCloseFunc()
 
 
-	_, api1Client, api1ClientCloseFunc, err := test_helpers.AddAPIService(ctx, api1ServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
+	_, api1Client, api1ClientCloseFunc, err := test_helpers.AddAPIService(ctx, api1ServiceId, enclaveCtx, datastoreServiceCtx.GetPrivateIPAddress())
 	require.NoError(t, err, "An error occurred adding the first API service")
 	defer api1ClientCloseFunc()
 
@@ -79,7 +79,7 @@ func TestNetworkPartition(t *testing.T) {
 		ctx,
 		api2ServiceId,
 		enclaveCtx,
-		datastoreServiceCtx.GetIPAddress(),
+		datastoreServiceCtx.GetPrivateIPAddress(),
 		apiPartitionId,
 	)
 	require.NoError(t, err, "An error occurred adding the second API service to the network")
