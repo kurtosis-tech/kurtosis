@@ -1,5 +1,10 @@
 # TBD
 
+# 1.7.1
+### Changes
+* Switch to using `@grpc/grpc-js` in the Typescript library for communicating with the engine, as the `grpc` package is deprecated now
+* Upgrade to Kurt Core 1.36.7 to support the `@grpc/grpc-js` upgrade
+
 # 1.7.0
 ### Features
 * Added a unit test that will remind Kurtosis developers to add a breaking change to the changelog whenever they bump to a Kurt Core version that has an API break (since the engine server's API breaks when the Core API breaks due to the engine server's `KurtosisContext` returning a Core `EnclaveContext`)
