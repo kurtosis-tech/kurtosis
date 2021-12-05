@@ -1,5 +1,9 @@
 # TBD
 
+# 1.36.9
+### Fixes
+* Fixed an error where we wouldn't check the error value of launching a module container
+
 # 1.36.8
 ### Fixes
 * In the TS library, the `@types/google-protobuf` is now a `dependency` so that downstream projects get it as well

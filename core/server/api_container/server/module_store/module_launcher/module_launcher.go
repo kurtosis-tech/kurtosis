@@ -145,6 +145,9 @@ func (launcher ModuleLauncher) Launch(
 		cmdArgs,
 		volumeMounts,
 	)
+	if err != nil {
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the Docker container for module '%v'", containerImage)
+	}
 	shouldKillContainer := true
 	defer func() {
 		if shouldKillContainer {
