@@ -1,4 +1,7 @@
 # TBD
+### Changes
+* Switch to using `@grpc/grpc-js` in the Typescript library for communicating with the engine, as the `grpc` package is deprecated now
+* Upgrade to Kurt Core 1.36.7 to support the `@grpc/grpc-js` upgrade
 
 # 1.7.0
 ### Features

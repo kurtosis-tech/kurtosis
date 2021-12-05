@@ -1,5 +1,5 @@
 import { EngineServiceClient } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import { Result, err, ok, Err } from "neverthrow";
 import {newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
 import {
