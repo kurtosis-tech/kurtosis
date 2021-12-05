@@ -1,4 +1,6 @@
 # TBD
+
+# 1.7.3
 ### Fixes
 * Upgraded to Kurt Core 1.36.9, which fixes a bug with an error value not getting checked
 
