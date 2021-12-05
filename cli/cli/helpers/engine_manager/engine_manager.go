@@ -145,7 +145,7 @@ func (manager *EngineManager) GetEngineStatus(
 		ipAddr:  hostMachineIp,
 		portNum: hostMachinePortNumUint16,
 	}
-	engineClient, clientCloseFunc, err := getEngineClientFromHostPortIpAndPort(runningEngineIpAndPort)
+	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
 		return EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
 	}
@@ -261,7 +261,7 @@ func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, e
 	}
 	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachineIpAndPort()
 
-	engineClient, clientCloseFunc, err := getEngineClientFromHostPortIpAndPort(hostMachinePortBinding)
+	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
 	}
@@ -273,7 +273,7 @@ func startEngineWithGuarantor(ctx context.Context, currentStatus EngineStatus, e
 	return engineClient, clientCloseFunc, nil
 }
 
-func getEngineClientFromHostPortIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	url := fmt.Sprintf(
 		"%v:%v",
 		hostMachineIpAndPort.ipAddr.String(),
