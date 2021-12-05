@@ -1,4 +1,6 @@
 # TBD
+
+# 1.36.9
 ### Fixes
 * Fixed an error where we wouldn't check the error value of launching a module container
 
