@@ -7,6 +7,9 @@ package module_launch_api
 
 
 type ModuleContainerArgs struct {
+	// The ID of the enclave that the module will run inside
+	EnclaveID string 	`json:"enclaveId"`
+
 	// The port number that the module should listen on
 	ListenPortNum uint16	`json:"listenPortNum"`
 
@@ -21,6 +24,6 @@ type ModuleContainerArgs struct {
 	EnclaveDataDirMountpoint string	`json:"enclaveDataDirMountpoint"`
 }
 
-func NewModuleContainerArgs(listenPortNum uint16, apiContainerSocket string, serializedCustomParams string, enclaveDataDirMountpoint string) *ModuleContainerArgs {
-	return &ModuleContainerArgs{ListenPortNum: listenPortNum, ApiContainerSocket: apiContainerSocket, SerializedCustomParams: serializedCustomParams, EnclaveDataDirMountpoint: enclaveDataDirMountpoint}
+func NewModuleContainerArgs(enclaveID string, listenPortNum uint16, apiContainerSocket string, serializedCustomParams string, enclaveDataDirMountpoint string) *ModuleContainerArgs {
+	return &ModuleContainerArgs{EnclaveID: enclaveID, ListenPortNum: listenPortNum, ApiContainerSocket: apiContainerSocket, SerializedCustomParams: serializedCustomParams, EnclaveDataDirMountpoint: enclaveDataDirMountpoint}
 }

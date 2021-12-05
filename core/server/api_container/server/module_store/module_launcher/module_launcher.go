@@ -49,6 +49,9 @@ var cmdArgs []string = nil
 var volumeMounts map[string]string = nil
 
 type ModuleLauncher struct {
+	// The ID of the enclave that the API container is running inside
+	enclaveId string
+
 	dockerManager *docker_manager.DockerManager
 
 	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
@@ -61,8 +64,8 @@ type ModuleLauncher struct {
 	dockerNetworkId string
 }
 
-func NewModuleLauncher(dockerManager *docker_manager.DockerManager, apiContainerSocketInsideNetwork string, enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher, freeIpAddrTracker *lib.FreeIpAddrTracker, dockerNetworkId string) *ModuleLauncher {
-	return &ModuleLauncher{dockerManager: dockerManager, apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork, enclaveContainerLauncher: enclaveContainerLauncher, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewModuleLauncher(enclaveId string, dockerManager *docker_manager.DockerManager, apiContainerSocketInsideNetwork string, enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher, freeIpAddrTracker *lib.FreeIpAddrTracker, dockerNetworkId string) *ModuleLauncher {
+	return &ModuleLauncher{enclaveId: enclaveId, dockerManager: dockerManager, apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork, enclaveContainerLauncher: enclaveContainerLauncher, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -115,6 +118,7 @@ func (launcher ModuleLauncher) Launch(
 	}
 
 	args := module_launch_api.NewModuleContainerArgs(
+		launcher.enclaveId,
 		modulePortNum,
 		launcher.apiContainerSocketInsideNetwork,
 		serializedParams,
