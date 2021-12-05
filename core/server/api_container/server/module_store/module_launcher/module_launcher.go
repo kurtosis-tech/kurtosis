@@ -10,12 +10,11 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/api/golang/module_launch_api"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/current_time_str_provider"
-	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_docker_api"
-	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-module-api-lib/golang/kurtosis_module_rpc_api_consts"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -28,7 +27,11 @@ import (
 const (
 	waitForModuleAvailabilityTimeout = 10 * time.Second
 
+	modulePortNum      = uint16(1111)
 	modulePortProtocol = enclave_container_launcher.EnclaveContainerPortProtocol_TCP
+
+	// The filepath where the enclave data directory will be mounted on the module container
+	enclaveDataDirMountFilepathOnContainer = "/kurtosis-enclave-data"
 
 	// For now, we let users update their module images if they want to, though this should probably be configurable
 	shouldPullContainerImageBeforeStarting = false
@@ -38,15 +41,12 @@ const (
 
 	// Indicates that no alias should be set for the module
 	moduleAlias = ""
+
 )
 // These values indicate "don't override the ENTRYPOINT/CMD args" (since modules are configured via envvars)
 var entrypointArgs []string = nil
 var cmdArgs []string = nil
 var volumeMounts map[string]string = nil
-
-// TODO This shouldn't be hardcoded, and should instead come from a "module_launcher" library that's
-//   provided by module_api_lib!!!!
-var modulePortNum = uint16(kurtosis_module_rpc_api_consts.ListenPort)
 
 type ModuleLauncher struct {
 	dockerManager *docker_manager.DockerManager
@@ -76,7 +76,7 @@ func (launcher ModuleLauncher) Launch(
 	resultPrivatePort *enclave_container_launcher.EnclaveContainerPort,
 	resultPublicIp net.IP,
 	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
-	client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient,
+	client kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient,
 	resultErr error,
 ) {
 	privatePort, err := enclave_container_launcher.NewEnclaveContainerPort(modulePortNum, modulePortProtocol)
@@ -114,9 +114,15 @@ func (launcher ModuleLauncher) Launch(
 		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting a free IP address for new module")
 	}
 
-	envVars := map[string]string{
-		kurtosis_module_docker_api.ApiContainerSocketEnvVar: launcher.apiContainerSocketInsideNetwork,
-		kurtosis_module_docker_api.SerializedCustomParamsEnvVar: serializedParams,
+	args := module_launch_api.NewModuleContainerArgs(
+		modulePortNum,
+		launcher.apiContainerSocketInsideNetwork,
+		serializedParams,
+		enclaveDataDirMountFilepathOnContainer,
+	)
+	envVars, err := module_launch_api.GetEnvFromArgs(args)
+	if err != nil {
+		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the module container environment variables from args '%+v'", args)
 	}
 
 	containerId, publicIpAddr, publicPorts, err := launcher.enclaveContainerLauncher.Launch(
@@ -125,7 +131,7 @@ func (launcher ModuleLauncher) Launch(
 		shouldPullContainerImageBeforeStarting,
 		privateIpAddr,
 		launcher.dockerNetworkId,
-		kurtosis_module_docker_api.EnclaveDataDirMountpoint,
+		enclaveDataDirMountFilepathOnContainer,
 		privatePorts,
 		objAttrsSupplier,
 		envVars,
@@ -162,7 +168,7 @@ func (launcher ModuleLauncher) Launch(
 	if err != nil {
 		return "", nil, nil, nil, nil, nil, stacktrace.Propagate(err, "Couldn't dial module container '%v' at %v", moduleID, moduleSocket)
 	}
-	moduleClient := kurtosis_module_rpc_api_bindings.NewExecutableModuleServiceClient(conn)
+	moduleClient := kurtosis_core_rpc_api_bindings.NewExecutableModuleServiceClient(conn)
 
 	logrus.Debugf("Waiting for module container to become available...")
 	if err := waitUntilModuleContainerIsAvailable(ctx, moduleClient); err != nil {
@@ -177,7 +183,7 @@ func (launcher ModuleLauncher) Launch(
 // ==========================================================================================
 //                                   Private helper functions
 // ==========================================================================================
-func waitUntilModuleContainerIsAvailable(ctx context.Context, client kurtosis_module_rpc_api_bindings.ExecutableModuleServiceClient) error {
+func waitUntilModuleContainerIsAvailable(ctx context.Context, client kurtosis_core_rpc_api_bindings.ExecutableModuleServiceClient) error {
 	contextWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForModuleAvailabilityTimeout)
 	defer cancelFunc()
 	if _, err := client.IsAvailable(contextWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true)); err != nil {

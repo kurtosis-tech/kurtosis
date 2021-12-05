@@ -1,4 +1,10 @@
 # TBD
+### Changes
+* The module API is now a part of this protobuf, and the appropriate bindings are now available
+* The new `module_launch_api` subpackage of the API libraries now defines the API that module containers accept when being launched
+
+### Fixes
+* Corrects the circular dependency between this repo and `module-api-lib` (it used to be that `server` depends on `module-api-lib`, but `module-api-lib` depends on this repo because it needs `EnclaveContext`)
 
 # 1.36.0
 ### Features
