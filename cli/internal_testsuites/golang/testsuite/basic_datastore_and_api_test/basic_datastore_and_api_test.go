@@ -39,7 +39,7 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	logrus.Infof("Added datastore service")
 
 	logrus.Infof("Adding API service...")
-	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(ctx, apiServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
+	_, apiClient, apiClientCloseFunc, err := test_helpers.AddAPIService(ctx, apiServiceId, enclaveCtx, datastoreServiceCtx.GetPrivateIPAddress())
 	require.NoError(t, err, "An error occurred adding the API service to the enclave")
 	defer apiClientCloseFunc()
 	logrus.Infof("Added API service")
