@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Export `getArgsFromEnv` and `ModuleContainerArgs` types for the TS library
 
 # 1.36.3
 ### Fixes

@@ -20,6 +20,10 @@ export { V0CommandType, V0CommandTypeVisitor } from "./lib/bulk_command_executio
 // Constructor Calls
 export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, newRegisterServiceArgs, newStartServiceArgs, newGetServiceInfoArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs, newExecuteBulkCommandsArgs, newExecuteModuleArgs, newGetModuleInfoArgs } from "./lib/constructor_calls";
 
+// Module Launch API
+export { ModuleContainerArgs } from "./module_launch_api/module_container_args";
+import { getArgsFromEnv } from "./module_launch_api/args_io";
+
 // Kurtosis Core RPC API Bindings
 export { ApiContainerServiceClient } from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 export { PartitionConnections } from "./kurtosis_core_rpc_api_bindings/api_container_service_pb";
