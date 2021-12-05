@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added own-version constants inside the API, so that consumers (e.g. modules) can know which version of the API container they're intended to be compatible with
 
 # 1.36.5
 ### Fixes
