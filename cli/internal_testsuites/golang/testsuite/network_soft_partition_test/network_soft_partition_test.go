@@ -92,7 +92,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 		"--report",
 		"--json",
 		"--report-cycles",
-		"4", // We set report cycles to 5 for do it faster because default is 10
+		"4", // We set report cycles to 4 to generate the report faster because default is 10
 		"--no-dns", //No domain name resolution, also to improve velocity
 	}
 
