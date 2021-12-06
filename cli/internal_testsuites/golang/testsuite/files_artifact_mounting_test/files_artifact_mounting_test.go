@@ -19,8 +19,8 @@ const (
 
 	fileServerServiceImage                          = "flashspys/nginx-static"
 	fileServerServiceId          services.ServiceID = "file-server"
-	fileServerListenPortNum                         = 80
-	fileServerListenPortProtocol                    = "tcp"
+	fileServerPortId = "http"
+	fileServerPrivatePortNum = 80
 
 	waitForStartupTimeBetweenPolls = 500
 	waitForStartupMaxRetries       = 15
@@ -36,7 +36,10 @@ const (
 	expectedFile1Contents = "file1\n"
 	expectedFile2Contents = "file2\n"
 )
-var fileServerListenPortStr = fmt.Sprintf("%v/%v", fileServerListenPortNum, fileServerListenPortProtocol)
+var fileServerPortSpec = services.NewPortSpec(
+	fileServerPrivatePortNum,
+	services.PortProtocol_TCP,
+)
 
 func TestFilesArtifactMounting(t *testing.T) {
 	ctx := context.Background()
@@ -53,23 +56,25 @@ func TestFilesArtifactMounting(t *testing.T) {
 	require.NoError(t, enclaveCtx.RegisterFilesArtifacts(filesArtifacts), "An error occurred registering the files artifacts")
 
 	fileServerContainerConfigSupplier := getFileServerContainerConfigSupplier()
-	_, hostPortBindings, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(fileServerServiceId, fileServerContainerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
-	hostPortBinding, found := hostPortBindings[fileServerListenPortStr]
-	require.True(t, found, "Expected to find host port binding for port '%v', but none was found", fileServerListenPortStr)
-	fileServerHostIp := hostPortBinding.InterfaceIp
-	fileServerHostPortStr := hostPortBinding.InterfacePort
+	publicPort, found := serviceCtx.GetPublicPorts()[fileServerPortId]
+	require.True(t, found, "Expected to find public port for ID '%v', but none was found", fileServerPortId)
+	fileServerPublicIp := serviceCtx.GetMaybePublicIPAddress()
+	fileServerPublicPortNum := publicPort.GetNumber()
 
 	require.NoError(t,
-		enclaveCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, fileServerListenPortNum, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""),
+		// TODO It's suuuuuuuuuuper confusing that we have to pass the private port in here!!!! We should just require the user
+		//  to pass in the port ID and the API container will translate that to the private port automatically!!!
+		enclaveCtx.WaitForHttpGetEndpointAvailability(fileServerServiceId, fileServerPrivatePortNum, file1Filename, waitInitialDelayMilliseconds, waitForStartupMaxRetries, waitForStartupTimeBetweenPolls, ""),
 		"An error occurred waiting for the file server service to become available",
 	)
-	logrus.Infof("Added file server service with host port bindings: %+v", hostPortBindings)
+	logrus.Infof("Added file server service with public IP '%v' and port '%v'", fileServerPublicIp, fileServerPublicPortNum)
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	file1Contents, err := getFileContents(
-		fileServerHostIp,
-		fileServerHostPortStr,
+		fileServerPublicIp,
+		fileServerPublicPortNum,
 		file1Filename,
 	)
 	require.NoError(t, err, "An error occurred getting file 1's contents")
@@ -83,8 +88,8 @@ func TestFilesArtifactMounting(t *testing.T) {
 	)
 
 	file2Contents, err := getFileContents(
-		fileServerHostIp,
-		fileServerHostPortStr,
+		fileServerPublicIp,
+		fileServerPublicPortNum,
 		file2Filename,
 	)
 	require.NoError(t, err, "An error occurred getting file 2's contents")
@@ -107,8 +112,8 @@ func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory 
 
 		containerConfig := services.NewContainerConfigBuilder(
 			fileServerServiceImage,
-		).WithUsedPorts(map[string]bool{
-			fileServerListenPortStr: true,
+		).WithUsedPorts(map[string]*services.PortSpec{
+			fileServerPortId: fileServerPortSpec,
 		}).WithFilesArtifacts(map[services.FilesArtifactID]string{
 			testFilesArtifactId: "/static",
 		}).Build()
@@ -117,8 +122,8 @@ func getFileServerContainerConfigSupplier() func(ipAddr string, sharedDirectory 
 	return containerConfigSupplier
 }
 
-func getFileContents(ipAddress string, portStr string, filename string) (string, error) {
-	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portStr, filename))
+func getFileContents(ipAddress string, portNum uint16, filename string) (string, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%v:%v/%v", ipAddress, portNum, filename))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the contents of file '%v'", filename)
 	}

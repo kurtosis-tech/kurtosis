@@ -3,6 +3,7 @@ package module_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/kurtosis-tech/example-datastore-server/api/golang/datastore_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/modules"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
@@ -16,7 +17,7 @@ const (
 	testName = "module-test"
 	isPartitioningEnabled = false
 
-	testModuleImage = "kurtosistech/datastore-army-module:0.1.5"
+	testModuleImage = "kurtosistech/datastore-army-module:0.2.0"
 
 	datastoreArmyModuleId modules.ModuleID = "datastore-army"
 
@@ -30,7 +31,7 @@ const (
 )
 
 type DatastoreArmyModuleResult struct {
-	CreatedServiceIdPorts map[string]uint32 `json:"createdServiceIdPorts"`
+	CreatedServiceIdsToPortIds map[string]string `json:"createdServiceIdsToPortIds"`
 }
 
 func TestModule(t *testing.T) {
@@ -44,39 +45,35 @@ func TestModule(t *testing.T) {
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	logrus.Info("Loading module...")
-	// TODO TODO TODO Reeanble this!!!!! We currently don't have a way to get the host machine port bindings for
-	//  a service started by the module, so this is dependent on https://github.com/kurtosis-tech/kurtosis-core/issues/460
-	// moduleCtx, err := enclaveCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
-	_, err = enclaveCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
+	moduleCtx, err := enclaveCtx.LoadModule(datastoreArmyModuleId, testModuleImage, "{}")
 	require.NoError(t, err, "An error occurred adding the datastore army module")
 	logrus.Info("Module loaded successfully")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-
-	// TODO TODO TODO Reeanble this!!!!! We currently don't have a way to get the host machine port bindings for
-	//  a service started by the module, so this is dependent on https://github.com/kurtosis-tech/kurtosis-core/issues/460
-	/*
-	serviceIdsToPortUint := map[services.ServiceID]uint32{}
+	serviceIdsToPortIds := map[services.ServiceID]string{}
 	for i := 0; i < numModuleExecuteCalls; i++ {
 		logrus.Info("Adding two datastore services via the module...")
-		createdServiceIdsAndPorts, err := addTwoDatastoreServices(moduleCtx)
+		createdServiceIdsToPortIds, err := addTwoDatastoreServices(moduleCtx)
 		require.NoError(t, err, "An error occurred adding two datastore services via the module")
-		for serviceId, port := range createdServiceIdsAndPorts {
-			serviceIdsToPortUint[serviceId] = port
+		for serviceId, portId := range createdServiceIdsToPortIds {
+			serviceIdsToPortIds[serviceId] = portId
 		}
 		logrus.Info("Successfully added two datastore services via the module")
 	}
 
 	// Sanity-check that the datastore services that the module created are functional
-	logrus.Infof("Sanity-checking that all %v datastore services added via the module work as expected...", len(serviceIdsToPortUint))
-	for serviceId, portUint := range serviceIdsToPortUint {
+	logrus.Infof("Sanity-checking that all %v datastore services added via the module work as expected...", len(serviceIdsToPortIds))
+	for serviceId, portId := range serviceIdsToPortIds {
 		serviceCtx, err := enclaveCtx.GetServiceContext(serviceId)
 		require.NoError(t, err, "An error occurred getting the service context for service '%v'; this indicates that the module says it created a service that it actually didn't", serviceId)
-		ipAddr := serviceCtx.GetIPAddress()
+		ipAddr := serviceCtx.GetMaybePublicIPAddress()
+
+		publicPort, found := serviceCtx.GetPublicPorts()[portId]
+		require.True(t, found, "Expected to find public port '%v' on datastore service '%v', but none was found", portId, serviceId)
 
 		datastoreClient, datastoreClientConnCloseFunc, err := test_helpers.CreateDatastoreClient(
 			ipAddr,
-			fmt.Sprintf("%v", portUint),
+			publicPort.GetNumber(),
 		)
 		require.NoError(t, err, "An error occurred creating a new datastore client for service with ID '%v' and IP address '%v'", serviceId, ipAddr)
 		defer datastoreClientConnCloseFunc()
@@ -112,7 +109,6 @@ func TestModule(t *testing.T) {
 		)
 	}
 	logrus.Info("All services added via the module work as expected")
-	 */
 
 	logrus.Infof("Unloading module '%v'...", datastoreArmyModuleId)
 	require.NoError(
@@ -132,7 +128,7 @@ func TestModule(t *testing.T) {
 	logrus.Infof("Module '%v' successfully unloaded", datastoreArmyModuleId)
 }
 
-func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.ServiceID]uint32, error) {
+func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.ServiceID]string, error) {
 	paramsJsonStr := `{"numDatastores": 2}`
 	respJsonStr, err := moduleCtx.Execute(paramsJsonStr)
 	if err != nil {
@@ -144,9 +140,9 @@ func addTwoDatastoreServices(moduleCtx *modules.ModuleContext) (map[services.Ser
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing the module response")
 	}
 
-	result := map[services.ServiceID]uint32{}
-	for createdServiceIdStr, createdServiceIdPortNum := range parsedResult.CreatedServiceIdPorts {
-		result[services.ServiceID(createdServiceIdStr)] = createdServiceIdPortNum
+	result := map[services.ServiceID]string{}
+	for createdServiceIdStr, createdServicePortId := range parsedResult.CreatedServiceIdsToPortIds {
+		result[services.ServiceID(createdServiceIdStr)] = createdServicePortId
 	}
 	return result, nil
 }
