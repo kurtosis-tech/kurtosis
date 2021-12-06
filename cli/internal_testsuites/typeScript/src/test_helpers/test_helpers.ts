@@ -108,9 +108,9 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
         clientCloseFunction: () => void;
     },Error>> {
   
-    const getApiServiceContainerConfigSupplierResult = getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
+    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
 
-    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, getApiServiceContainerConfigSupplierResult)
+    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
 
     const [serviceContext, hostPortBindings] = addServiceToPartitionResult.value;
@@ -184,10 +184,10 @@ async function waitForHealthy(
 function getDatastoreContainerConfigSupplier(): ( ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 
     const containerConfigSupplier = ( ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-        const datastorePortsSet = new Set();
+        const datastorePortsSet = new Set<string>();
         datastorePortsSet.add(DATASTORE_PORT_STR);
 
-        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(datastorePortsSet as Set<string>).build();
+        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(datastorePortsSet).build();
 
         return ok(containerConfig);
     };
@@ -204,12 +204,12 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
        
         const datastoreConfigFileFilePath = datastoreConfigFileFilePathResult.value
   
-        const apiPortsSet = new Set()
+        const apiPortsSet = new Set<string>()
         apiPortsSet.add(API_PORT_STR);
         const startCmd:string[] = ["./example-api-server.bin", "--config", datastoreConfigFileFilePath.getAbsPathOnServiceContainer()]
   
         const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
-            .withUsedPorts(apiPortsSet as Set<string>)
+            .withUsedPorts(apiPortsSet)
             .withCmdOverride(startCmd)
             .build()
   
