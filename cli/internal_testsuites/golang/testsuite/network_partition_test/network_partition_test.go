@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
@@ -129,22 +128,24 @@ func repartitionNetwork(
 		apiPartitionServiceIds[api2ServiceId] = true
 	}
 
+	var connectionBetweenPartitions enclaves.PartitionConnection
+	if isConnectionBlocked {
+		connectionBetweenPartitions = enclaves.NewBlockedPartitionConnection()
+	} else {
+		connectionBetweenPartitions = enclaves.NewUnblockedPartitionConnection()
+	}
 	partitionServices := map[enclaves.PartitionID]map[services.ServiceID]bool{
 		apiPartitionId: apiPartitionServiceIds,
 		datastorePartitionId: {
 			datastoreServiceId: true,
 		},
 	}
-	partitionConnections := map[enclaves.PartitionID]map[enclaves.PartitionID]*kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
+	partitionConnections := map[enclaves.PartitionID]map[enclaves.PartitionID]enclaves.PartitionConnection{
 		apiPartitionId: {
-			datastorePartitionId: &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
-				IsBlocked: isConnectionBlocked,
-			},
+			datastorePartitionId: connectionBetweenPartitions,
 		},
 	}
-	defaultPartitionConnection := &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
-		IsBlocked: false,
-	}
+	defaultPartitionConnection := enclaves.NewUnblockedPartitionConnection()
 	if err := enclaveCtx.RepartitionNetwork(partitionServices, partitionConnections, defaultPartitionConnection); err != nil {
 		return stacktrace.Propagate(
 			err,
