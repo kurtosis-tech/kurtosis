@@ -5,6 +5,7 @@
     * core dependencies -> 1.35.0
     * engine dependencies -> 1.6.0
 * Added `network_soft_partition_test` in golang internal test suite
+* Added a unit test to ensure that an API break in the engine (which will require restarting the engine) is an API break for the CLI
 
 ### Fixes
 * When the engine server API version that the CLI expects doesn't match the running engine server's API version, the user gets an error and is forced to restart their engine
