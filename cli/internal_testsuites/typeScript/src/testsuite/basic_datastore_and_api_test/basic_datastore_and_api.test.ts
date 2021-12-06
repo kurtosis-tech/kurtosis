@@ -58,7 +58,6 @@ test("Test basic data store and API", async () => {
 
 		log.info("Added API service")
         
-        
         try {
             // ------------------------------------- TEST RUN ----------------------------------------------
             log.info(`Verifying that person with test ID ${TEST_PERSON_ID} doesn't already exist...`);
@@ -86,8 +85,8 @@ test("Test basic data store and API", async () => {
             }
             log.info("Verified that test person doesn't already exist")
             
-            
             log.info(`Adding test person with ID ${TEST_PERSON_ID}...`)
+
             const addPersonArgs = new serverApi.AddPersonArgs()
             addPersonArgs.setPersonId(TEST_PERSON_ID)
 
@@ -107,8 +106,8 @@ test("Test basic data store and API", async () => {
 
             const addPersonResult = await addPersonResultPromise;
             if(addPersonResult.isErr()) {
-                log.error(addPersonResult.error)
-                throw new Error(`An error occurred adding test person with ID ${TEST_PERSON_ID}`) 
+                log.error(`An error occurred adding test person with ID ${TEST_PERSON_ID}`)
+                throw addPersonResult.error;
             }
             log.info("Test person added")
             
@@ -133,8 +132,8 @@ test("Test basic data store and API", async () => {
                 })
                 const incrementBooksReadResult = await incrementBooksReadResultPromise;
                 if(incrementBooksReadResult.isErr()) { 
-                    log.error(incrementBooksReadResult.error)
-                    throw new Error("An error occurred incrementing the number of books read")
+                    log.error("An error occurred incrementing the number of books read")
+                    throw incrementBooksReadResult.error;
                 }
             }
             
@@ -167,15 +166,12 @@ test("Test basic data store and API", async () => {
             if(TEST_NUM_BOOKS_READ !== newPersonBooksRead){
                 throw new Error(`Expected number of book read ${TEST_NUM_BOOKS_READ} != actual number of books read ${newPersonBooksRead}`)
             }
-            
         }finally{
             apiClientCloseFunction()
             datastoreClientCloseFunction()
         }
-        
     }finally{
         stopEnclaveFunction()
     }
-    
 })
 

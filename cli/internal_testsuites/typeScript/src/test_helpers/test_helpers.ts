@@ -203,7 +203,7 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
 
     const containerConfigSupplier = (ipAddr:string,sharedDirectory: SharedPath): Result<ContainerConfig, Error> =>{
         const datastoreConfigFileFilePathResult = createDatastoreConfigFileInServiceDirectory(datastoreIPInsideNetwork, sharedDirectory)
-        if(datastoreConfigFileFilePathResult.isErr()) return err(datastoreConfigFileFilePathResult.error)
+        if(datastoreConfigFileFilePathResult.isErr()) { return err(datastoreConfigFileFilePathResult.error) }
        
         const datastoreConfigFileFilePath = datastoreConfigFileFilePathResult.value
   
@@ -232,12 +232,13 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
         datastoreIp:   datastoreIP,
         datastorePort: datastoreApi.LISTEN_PORT,
     };
-    const configJSONString = JSON.stringify(config);
+
+    const configJSONStringified = JSON.stringify(config);
   
-    log.debug(`API config JSON: ${configJSONString}`)
+    log.debug(`API config JSON: ${configJSONStringified}`)
 
     try {
-        fs.writeFileSync(configFileFilePath.getAbsPathOnThisContainer(), configJSONString);
+        fs.writeFileSync(configFileFilePath.getAbsPathOnThisContainer(), configJSONStringified);
     }catch(error){
         log.error("An error occurred writing the serialized config JSON to file")
         if(error instanceof Error){
