@@ -265,6 +265,25 @@ export namespace CleanArgs {
   }
 }
 
+export class CleanResponse extends jspb.Message {
+  getArtifactsMap(): jspb.Map<string, boolean>;
+  clearArtifactsMap(): void;
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CleanResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: CleanResponse): CleanResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: CleanResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CleanResponse;
+  static deserializeBinaryFromReader(message: CleanResponse, reader: jspb.BinaryReader): CleanResponse;
+}
+
+export namespace CleanResponse {
+  export type AsObject = {
+    artifactsMap: Array<[string, boolean]>,
+  }
+}
+
 export interface EnclaveContainersStatusMap {
   ENCLAVECONTAINERSSTATUS_EMPTY: 0;
   ENCLAVECONTAINERSSTATUS_RUNNING: 1;

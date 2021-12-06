@@ -1,4 +1,9 @@
-import {CreateEnclaveArgs, DestroyEnclaveArgs, StopEnclaveArgs} from "../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import {
+    CleanArgs,
+    CreateEnclaveArgs,
+    DestroyEnclaveArgs,
+    StopEnclaveArgs
+} from "../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import * as jspb from "google-protobuf";
 
 // // ====================================================================================================
@@ -31,5 +36,11 @@ export function newStopEnclaveArgs(enclaveId:string): DestroyEnclaveArgs {
 export function newDestroyEnclaveArgs(enclaveId:string): DestroyEnclaveArgs {
     const result: DestroyEnclaveArgs = new DestroyEnclaveArgs();
     result.setEnclaveId(enclaveId);
+    return result;
+}
+
+export function newCleanArgs(shouldCleanAll:boolean): CleanArgs {
+    const result: CleanArgs = new CleanArgs();
+    result.setShouldCleanAll(shouldCleanAll);
     return result;
 }

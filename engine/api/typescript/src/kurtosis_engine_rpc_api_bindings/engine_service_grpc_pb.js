@@ -16,6 +16,17 @@ function deserialize_engine_api_CleanArgs(buffer_arg) {
   return engine_service_pb.CleanArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_engine_api_CleanResponse(arg) {
+  if (!(arg instanceof engine_service_pb.CleanResponse)) {
+    throw new Error('Expected argument of type engine_api.CleanResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_engine_api_CleanResponse(buffer_arg) {
+  return engine_service_pb.CleanResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_engine_api_CreateEnclaveArgs(arg) {
   if (!(arg instanceof engine_service_pb.CreateEnclaveArgs)) {
     throw new Error('Expected argument of type engine_api.CreateEnclaveArgs');
@@ -158,17 +169,17 @@ destroyEnclave: {
     responseSerialize: serialize_google_protobuf_Empty,
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
-  // Gets rid of the enclaves
+  // Gets rid of old enclaves
 clean: {
     path: '/engine_api.EngineService/Clean',
     requestStream: false,
     responseStream: false,
     requestType: engine_service_pb.CleanArgs,
-    responseType: google_protobuf_empty_pb.Empty,
+    responseType: engine_service_pb.CleanResponse,
     requestSerialize: serialize_engine_api_CleanArgs,
     requestDeserialize: deserialize_engine_api_CleanArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_engine_api_CleanResponse,
+    responseDeserialize: deserialize_engine_api_CleanResponse,
   },
 };
 

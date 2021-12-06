@@ -21,8 +21,8 @@ service EngineService {
   rpc StopEnclave(StopEnclaveArgs) returns (google.protobuf.Empty) {};
   // Destroys an enclave, removing all artifacts associated with it
   rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
-  // Gets rid of the enclaves
-  rpc Clean(CleanArgs) returns (google.protobuf.Empty) {};
+  // Gets rid of old enclaves
+  rpc Clean(CleanArgs) returns (CleanResponse) {};
 }
 
 // ==============================================================================================
@@ -157,4 +157,11 @@ message DestroyEnclaveArgs {
 message CleanArgs {
   // If true, It will clean even the running enclaves
   bool should_clean_all = 1;
+}
+
+
+message CleanResponse {
+  // Set of artifact IDs
+  map<string, bool> artifacts = 1;
+
 }

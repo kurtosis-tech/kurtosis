@@ -39,11 +39,6 @@ const (
 
 	apiContainerListenPortNumInsideNetwork = uint16(7443)
 
-	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-	oldApiContainerPortNumLabel      = "com.kurtosistech.api-container-port-number"
-	oldApiContainerPortProtocolLabel = "com.kurtosistech.api-container-port-protocol"
-
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
 	//  a) the engine data directory is bind-mounted on the Docker host machine
@@ -63,17 +58,17 @@ const (
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
 	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-	pre2021_11_15_apiContainerPortNumLabel      = "com.kurtosistech.api-container-port-number"
-	pre2021_11_15_apiContainerPortNumBase = 10
+	pre2021_11_15_apiContainerPortNumLabel    = "com.kurtosistech.api-container-port-number"
+	pre2021_11_15_apiContainerPortNumBase     = 10
 	pre2021_11_15_apiContainerPortNumUintBits = 16
-	pre2021_11_15_apiContainerPortProtocol = schema.PortProtocol_TCP
+	pre2021_11_15_apiContainerPortProtocol    = schema.PortProtocol_TCP
 
 	// These are the old labels that the API container used to use before 2021-12-02 for declaring its port num protocol
 	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with the old label
-	pre2021_12_02_apiContainerPortNumLabel      = "com.kurtosistech.port-number"
-	pre2021_12_02_apiContainerPortNumBase = 10
+	pre2021_12_02_apiContainerPortNumLabel    = "com.kurtosistech.port-number"
+	pre2021_12_02_apiContainerPortNumBase     = 10
 	pre2021_12_02_apiContainerPortNumUintBits = 16
-	pre2021_12_02_apiContainerPortProtocol = schema.PortProtocol_TCP
+	pre2021_12_02_apiContainerPortProtocol    = schema.PortProtocol_TCP
 	// --------------------------- Old port parsing constants ------------------------------------
 
 	enclavesCleaningPhaseTitle             = "enclaves"
@@ -81,14 +76,13 @@ const (
 
 	// Obviously yes
 	shouldFetchStoppedContainersWhenDestroyingStoppedContainers = true
-
 )
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
 var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
-	schema.PortProtocol_TCP: "tcp",
+	schema.PortProtocol_TCP:  "tcp",
 	schema.PortProtocol_SCTP: "sctp",
-	schema.PortProtcol_UDP: "udp",
+	schema.PortProtcol_UDP:   "udp",
 }
 
 // Manages Kurtosis enclaves, and creates new ones in response to running tasks
@@ -421,9 +415,11 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	return nil
 }
 
-func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) error {
+func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
+
+	resultSuccessfullyRemovedArtifactIds := map[string]bool{}
 
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
@@ -449,6 +445,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) e
 			logrus.Infof("Successfully removed the following %v:", phaseTitle)
 			sort.Strings(successfullyRemovedArtifactIds)
 			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
+				resultSuccessfullyRemovedArtifactIds[successfulArtifactId] = true
 				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
 			}
 		}
@@ -467,10 +464,10 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) e
 
 	if len(phasesWithErrors) > 0 {
 		errorStr := "Errors occurred cleaning " + strings.Join(phasesWithErrors, ", ")
-		return stacktrace.NewError(errorStr)
+		return nil, stacktrace.NewError(errorStr)
 	}
 
-	return nil
+	return resultSuccessfullyRemovedArtifactIds, nil
 }
 
 // ====================================================================================================
@@ -658,7 +655,7 @@ func getApiContainerPrivatePortUsingPre2021_11_15Label(containerLabels map[strin
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing pre-2021-11-15 private port num string '%v' to a uint16", portNumStr)
 	}
-	portNumUint16 := uint16(portNumUint64)  // Safe to do because we pass in the number of bits to the ParseUint call above
+	portNumUint16 := uint16(portNumUint64) // Safe to do because we pass in the number of bits to the ParseUint call above
 	result, err := schema.NewPortSpec(portNumUint16, pre2021_11_15_apiContainerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -681,7 +678,7 @@ func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[strin
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing pre-2021-12-02 private port num string '%v' to a uint16", portNumStr)
 	}
-	portNumUint16 := uint16(portNumUint64)  // Safe to do because we pass in the number of bits to the ParseUint call above
+	portNumUint16 := uint16(portNumUint64) // Safe to do because we pass in the number of bits to the ParseUint call above
 	result, err := schema.NewPortSpec(portNumUint16, pre2021_12_02_apiContainerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -854,13 +851,13 @@ func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId string) (onHostMa
 }
 
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
-	getEnclavesResp, err := manager.GetEnclaves(ctx)
+	enclaves, err := manager.GetEnclaves(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
 	}
 
 	enclaveIdsToDestroy := []string{}
-	for enclaveId, enclaveInfo := range getEnclavesResp {
+	for enclaveId, enclaveInfo := range enclaves {
 		enclaveStatus := enclaveInfo.ContainersStatus
 		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
 			enclaveIdsToDestroy = append(enclaveIdsToDestroy, enclaveId)
@@ -936,6 +933,7 @@ func isContainerRunning(status types.ContainerStatus) (bool, error) {
 	}
 }
 
+// NOTE: We no longer have Kurtosis testsuites, so this can be removed after 2022-05-15 when we're confident no user will have metadata-acquiring testsuites in their Kurtosis engine anymore
 func (manager *EnclaveManager) cleanMetadataAcquisitionTestsuites(ctx context.Context, shouldKillRunningContainers bool) ([]string, []error, error) {
 	metadataAcquisitionTestsuiteLabels := map[string]string{
 		forever_constants.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
