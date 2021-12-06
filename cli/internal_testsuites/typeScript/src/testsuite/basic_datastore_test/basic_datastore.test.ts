@@ -50,9 +50,9 @@ test("Test basic datastore test", async () => {
                 datastoreClient.exists(existsArgs, (error: grpc.ServiceError | null, response?: ExistsResponse) => {
                     if (error === null) {
                         if (!response) {
-                            resolve(err(new Error("An error occurred checking if the test key exists")));
+                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                         } else {
-                            resolve(ok(response));
+                            resolve(ok(response!));
                         }
                     } else {
                         resolve(err(error));
@@ -61,7 +61,10 @@ test("Test basic datastore test", async () => {
             })
 
             const existsResponseResult = await existsResponseResultPromise;
-            if(existsResponseResult.isErr()) { throw existsResponseResult.error }
+            if(existsResponseResult.isErr()) { 
+                log.error("An error occurred checking if the test key exists")
+                throw existsResponseResult.error 
+            }
             const existsResponse = existsResponseResult.value
             if(existsResponse.getExists()) { throw new Error("Test key should not exist yet") }
 
@@ -78,9 +81,9 @@ test("Test basic datastore test", async () => {
                 datastoreClient.upsert(upsertArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                     if (error === null) {
                         if (!response) {
-                            resolve(err(new Error("An error occurred upserting the test key")));
+                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                         } else {
-                            resolve(ok(response));
+                            resolve(ok(response!));
                         }
                     } else {
                         resolve(err(error));
@@ -89,7 +92,10 @@ test("Test basic datastore test", async () => {
             })
 
             const upsertResponseResult = await upsertResponseResultPromise;
-            if(upsertResponseResult.isErr()){ throw upsertResponseResult.error }
+            if(upsertResponseResult.isErr()){ 
+                log.error("An error occurred upserting the test key")
+                throw upsertResponseResult.error 
+            }
 
             log.info(`Inserted value successfully`)
 
@@ -103,9 +109,9 @@ test("Test basic datastore test", async () => {
                 datastoreClient.get(getArgs, (error: grpc.ServiceError | null, response?: GetResponse) => {
                     if (error === null) {
                         if (!response) {
-                            resolve(err(new Error("An error occurred getting the test key after upload")));
+                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                         } else {
-                            resolve(ok(response));
+                            resolve(ok(response!));
                         }
                     } else {
                         resolve(err(error));
@@ -114,7 +120,10 @@ test("Test basic datastore test", async () => {
             })
 
             const getResponseResult = await getResponseResultPromise;
-            if(getResponseResult.isErr()){throw getResponseResult.error }
+            if(getResponseResult.isErr()){
+                log.error("An error occurred getting the test key after upload") 
+                throw getResponseResult.error 
+            }
 
             const getResponse = getResponseResult.value
             if(getResponse.getValue() !== TEST_VALUE) {throw new Error(`Returned value ${getResponse.getValue()} != test value ${TEST_VALUE}`) }
