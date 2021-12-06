@@ -425,16 +425,10 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423/go.mod h1:bng8Yf+Vjy1BLzFoK7slAt28GE8vX6GsaKe8BDdOt1Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
-github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918 h1:GhWsBXWFBYzaFeMtfgDVWtStrs2LjMBT9XSlSig1Ikg=
-github.com/kurtosis-tech/kurtosis-client/golang v0.0.0-20211027222420-ebca40d7f918/go.mod h1:UQD+w+gp8PItWKvIKJGO2PExpmO6p0XhWfBOtGPzBLM=
-github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e h1:EBVvfPP0k8l8okFuTIJEIkp+eslR1POyQGhrQeSuGSY=
-github.com/kurtosis-tech/kurtosis-module-api-lib/golang v0.0.0-20211027222830-d8f7dfe68c3e/go.mod h1:YYENsljkidco55fSWzMh19+vP9DM672srvgmk393Zag=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b h1:aARmILachF0sbwuYmtvY5Xm3DdhqwSI+wxHIDVu7oeo=
-github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20210921153930-d70d7667c51b/go.mod h1:yHrYJlkpZAVsb2eH7KK2cZXabz03ZBKV/npGwsbN6vM=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3/go.mod h1:Y0O+lt256iWpkdjDOB8r6csF96Pt3JVIFMbUuWIvr8o=
-github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211201003728-db67d51ade0c h1:GtGkMqTZsB/j71o8sILuU8LubbycLX3kYxdn06lbaaQ=
-github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211201003728-db67d51ade0c/go.mod h1:Ysr3LF2XJfzqHX4LlXQkRdFMY/DWdIiLJk2z+1QXe1s=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16 h1:NOAVoUkFbc4KZsjdhLTLsJQRMt2EplDv1H//vtCLvwM=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16/go.mod h1:Ysr3LF2XJfzqHX4LlXQkRdFMY/DWdIiLJk2z+1QXe1s=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
@@ -513,8 +507,6 @@ github.com/opencontainers/runtime-tools v0.0.0-20181011054405-1d69bd0f9c39/go.mo
 github.com/opencontainers/selinux v1.6.0/go.mod h1:VVGKuOLlE7v4PJyT6h7mNWvq1rzqiriPsEqVhc+svHE=
 github.com/opencontainers/selinux v1.8.0/go.mod h1:RScLhm78qiWa2gbVCcGkC7tCGdgk3ogry1nUQF8Evvo=
 github.com/opencontainers/selinux v1.8.2/go.mod h1:MUIHuUEvKB1wtJjQdOyYRgOnLD2xAPP8dBsCoU0KuF8=
-github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177 h1:nRlQD0u1871kaznCnn1EvYiMbum36v7hw1DLPEjds4o=
-github.com/palantir/stacktrace v0.0.0-20161112013806-78658fd2d177/go.mod h1:ao5zGxj8Z4x60IOVYZUbDSmt3R8Ddo080vEgPosHpak=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.8.1/go.mod h1:T2/BmBdy8dvIRq1a/8aqjN41wvWlN4lrapLU/GW4pbc=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
@@ -928,7 +920,6 @@ google.golang.org/grpc v1.33.2/go.mod h1:JMHMWHQWaTccqQQlmk3MJZS+GWXOdAesneDmEnv
 google.golang.org/grpc v1.35.0/go.mod h1:qjiiYl8FncCW8feJPdyg3v6XW24KsRHe+dy9BAGRRjU=
 google.golang.org/grpc v1.36.0/go.mod h1:qjiiYl8FncCW8feJPdyg3v6XW24KsRHe+dy9BAGRRjU=
 google.golang.org/grpc v1.38.0/go.mod h1:NREThFqKR1f3iQ6oBuvc5LadQuXVGo9rkm5ZGrQdJfM=
-google.golang.org/grpc v1.39.0/go.mod h1:PImNr+rS9TWYb2O4/emRugxiyHZ5JyHW5F+RPnDzfrE=
 google.golang.org/grpc v1.40.0 h1:AGJ0Ih4mHjSeibYkFGh1dD9KJ/eOtZ93I6hoHhukQ5Q=
 google.golang.org/grpc v1.40.0/go.mod h1:ogyxbiOoUXAkP+4+xa6PZSE9DZgIHtSpzjDTB9KAK34=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=

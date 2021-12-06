@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgrade to `object-attributes-schema-lib` v0.6.0 to support `id` label
 
 # 1.36.9
 ### Fixes

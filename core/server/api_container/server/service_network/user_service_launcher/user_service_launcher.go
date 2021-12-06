@@ -106,8 +106,11 @@ func (launcher UserServiceLauncher) Launch(
 		allObjAttrsPorts[portId] = objAttrsPort
 	}
 
+	//We use serviceID as the container alias
+	serviceId := dockerContainerAlias
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
 		userServiceContainerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
+			serviceId,
 			string(serviceGUID),
 			allObjAttrsPorts,
 		)
