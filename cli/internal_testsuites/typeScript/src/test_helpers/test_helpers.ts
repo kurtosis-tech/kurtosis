@@ -32,7 +32,6 @@ const DEFAULT_PARTITION_ID = "";
 const DATASTORE_PORT_STR = `${datastoreApi.LISTEN_PORT}/${datastoreApi.LISTEN_PROTOCOL}`;
 const API_PORT_STR = `${serverApi.LISTEN_PORT}/${serverApi.LISTEN_PROTOCOL}`;
 
-
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
         serviceContext: ServiceContext;
@@ -138,9 +137,7 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
         client,
         clientCloseFunction
     })
-  }
-
-
+};
 
 async function waitForHealthy(
   client: datastoreApi.DatastoreServiceClient | serverApi.ExampleAPIServerServiceClient,
@@ -218,7 +215,9 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
   
         return ok(containerConfig)
     }
-    return containerConfigSupplier
+
+    return containerConfigSupplier;
+
   }
   
   function createDatastoreConfigFileInServiceDirectory(datastoreIP: string, sharedDirectory: SharedPath): Result<SharedPath,Error>{
@@ -239,14 +238,15 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
 
     try {
         fs.writeFileSync(configFileFilePath.getAbsPathOnThisContainer(), configJSONStringified);
-    }catch(error){
+    }catch(error) {
         log.error("An error occurred writing the serialized config JSON to file")
         if(error instanceof Error){
             return err(error)
-        }else{
+        }else {
             return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
         }
     }
   
-    return ok(configFileFilePath)
+    return ok(configFileFilePath);
+
   }
