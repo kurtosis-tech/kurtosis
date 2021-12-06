@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.0
 ### Features
 * Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
     * obj-attrs-schema-lib -> 0.5.0
