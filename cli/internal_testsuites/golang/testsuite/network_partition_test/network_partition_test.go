@@ -128,6 +128,12 @@ func repartitionNetwork(
 		apiPartitionServiceIds[api2ServiceId] = true
 	}
 
+	var connectionBetweenPartitions enclaves.PartitionConnection
+	if isConnectionBlocked {
+		connectionBetweenPartitions = enclaves.NewBlockedPartitionConnection()
+	} else {
+		connectionBetweenPartitions = enclaves.NewUnblockedPartitionConnection()
+	}
 	partitionServices := map[enclaves.PartitionID]map[services.ServiceID]bool{
 		apiPartitionId: apiPartitionServiceIds,
 		datastorePartitionId: {
@@ -136,7 +142,7 @@ func repartitionNetwork(
 	}
 	partitionConnections := map[enclaves.PartitionID]map[enclaves.PartitionID]enclaves.PartitionConnection{
 		apiPartitionId: {
-			datastorePartitionId: enclaves.NewBlockedPartitionConnection(),
+			datastorePartitionId: connectionBetweenPartitions,
 		},
 	}
 	defaultPartitionConnection := enclaves.NewUnblockedPartitionConnection()
