@@ -53,8 +53,8 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
 
     const addServiceResult = await enclaveContext.addService(serviceId, containerConfigSupplier);
     if (addServiceResult.isErr()) {
-        log.error(addServiceResult.error);
-        return err(new Error("An error occurred adding the datastore service"));
+        log.error("An error occurred adding the datastore service");
+        return err(addServiceResult.error);
     }
     const serviceContext = addServiceResult.value;
 
