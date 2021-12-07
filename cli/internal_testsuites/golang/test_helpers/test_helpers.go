@@ -27,7 +27,7 @@ const (
 	apiServiceImage = "kurtosistech/example-api-server"
 
 	datastorePortId string = "rpc"
-	apiPortId string = "api"
+	apiPortId string = "rpc"
 
 	datastoreWaitForStartupMaxPolls = 10
 	datastoreWaitForStartupDelayMilliseconds = 1000
