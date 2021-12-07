@@ -42,11 +42,6 @@ const API_PORT_SPEC = new PortSpec(
     PortProtocol.TCP,
 )
 
-const DEFAULT_PARTITION_ID = "";
-
-const DATASTORE_PORT_STR = `${datastoreApi.LISTEN_PORT}/${datastoreApi.LISTEN_PROTOCOL}`;
-const API_PORT_STR = `${serverApi.LISTEN_PORT}/${serverApi.LISTEN_PROTOCOL}`;
-
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
         serviceContext: ServiceContext;

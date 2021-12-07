@@ -3,6 +3,8 @@
 * Added TypeScript test: `basic_datastore_test_and_api.ts`
 
 ### Fixes
+* Add proper logging for `enclave_setup.ts`
+* Resolve TypeScript test minor bug
 * Upgrade to engine server 1.7.3
 * Upgrade Typescript to the latest version of the 
 
