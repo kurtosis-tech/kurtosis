@@ -3,7 +3,6 @@ import * as apiServerApi from "example-api-server-api-lib";
 import { Result, ok, err } from "neverthrow"
 import log from "loglevel"
 import * as grpc from "@grpc/grpc-js"
-
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
@@ -19,7 +18,6 @@ const TEST_NUM_BOOKS_READ = 3;
 jest.setTimeout(30000)
 
 test("Test basic data store and API", async () => {
-
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
@@ -43,31 +41,58 @@ test("Test basic data store and API", async () => {
 
         log.info("Added datastore service")
 
-        log.info("Adding API service...")
-        const apiClientServiceResult: Result<{
-            serviceContext: ServiceContext;
-            client: apiServerApi.ExampleAPIServerServiceClient;
-            clientCloseFunction: () => void;
-        }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
-		
-        if(apiClientServiceResult.isErr()){ throw apiClientServiceResult.error }
-
-        const { 
-            client: apiClient, 
-            clientCloseFunction: apiClientCloseFunction  
-        } = apiClientServiceResult.value
-
-		    log.info("Added API service")
-        
         try {
-            // ------------------------------------- TEST RUN ----------------------------------------------
-            log.info(`Verifying that person with test ID ${TEST_PERSON_ID} doesn't already exist...`);
-            
-            const getPersonArgs = new apiServerApi.GetPersonArgs()
-            getPersonArgs.setPersonId(TEST_PERSON_ID)
 
-            const getPersonResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
-                    apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
+            log.info("Adding API service...")
+            const apiClientServiceResult: Result<{
+                serviceContext: ServiceContext;
+                client: apiServerApi.ExampleAPIServerServiceClient;
+                clientCloseFunction: () => void;
+            }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
+            
+            if(apiClientServiceResult.isErr()){ throw apiClientServiceResult.error }
+
+            const { 
+                client: apiClient, 
+                clientCloseFunction: apiClientCloseFunction  
+            } = apiClientServiceResult.value
+
+                log.info("Added API service")
+            
+            try {
+                // ------------------------------------- TEST RUN ----------------------------------------------
+                log.info(`Verifying that person with test ID ${TEST_PERSON_ID} doesn't already exist...`);
+                
+                const getPersonArgs = new apiServerApi.GetPersonArgs()
+                getPersonArgs.setPersonId(TEST_PERSON_ID)
+
+                const getPersonResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
+                        apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
+                            if (error === null) {
+                                if (!response) {
+                                    resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                                } else {
+                                    resolve(ok(response!));
+                                }
+                            } else {
+                                resolve(err(error));
+                            }
+                        })
+                })
+
+                const getPersonResult = await getPersonResultPromise;
+                if(getPersonResult.isOk()) { 
+                    throw new Error("Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
+                }
+                log.info("Verified that test person doesn't already exist")
+                
+                log.info(`Adding test person with ID ${TEST_PERSON_ID}...`)
+
+                const addPersonArgs = new apiServerApi.AddPersonArgs()
+                addPersonArgs.setPersonId(TEST_PERSON_ID)
+
+                const addPersonResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                    apiClient.addPerson(addPersonArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                         if (error === null) {
                             if (!response) {
                                 resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -78,47 +103,22 @@ test("Test basic data store and API", async () => {
                             resolve(err(error));
                         }
                     })
-            })
-
-            const getPersonResult = await getPersonResultPromise;
-            if(getPersonResult.isOk()) { 
-                throw new Error("Expected an error trying to get a person who doesn't exist yet, but didn't receive one")
-            }
-            log.info("Verified that test person doesn't already exist")
-            
-            log.info(`Adding test person with ID ${TEST_PERSON_ID}...`)
-
-            const addPersonArgs = new apiServerApi.AddPersonArgs()
-            addPersonArgs.setPersonId(TEST_PERSON_ID)
-
-            const addPersonResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                apiClient.addPerson(addPersonArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                    if (error === null) {
-                        if (!response) {
-                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                        } else {
-                            resolve(ok(response!));
-                        }
-                    } else {
-                        resolve(err(error));
-                    }
                 })
-            })
 
-            const addPersonResult = await addPersonResultPromise;
-            if(addPersonResult.isErr()) {
-                log.error(`An error occurred adding test person with ID ${TEST_PERSON_ID}`)
-                throw addPersonResult.error;
-            }
-            log.info("Test person added")
+                const addPersonResult = await addPersonResultPromise;
+                if(addPersonResult.isErr()) {
+                    log.error(`An error occurred adding test person with ID ${TEST_PERSON_ID}`)
+                    throw addPersonResult.error;
+                }
+                log.info("Test person added")
+                
+                log.info(`Incrementing test person's number of books read by ${TEST_NUM_BOOKS_READ}...`)
+                
+                const incrementBooksReadArgs = new apiServerApi.IncrementBooksReadArgs()
+                incrementBooksReadArgs.setPersonId(TEST_PERSON_ID)
             
-            log.info(`Incrementing test person's number of books read by ${TEST_NUM_BOOKS_READ}...`)
-            
-            const incrementBooksReadArgs = new apiServerApi.IncrementBooksReadArgs()
-            incrementBooksReadArgs.setPersonId(TEST_PERSON_ID)
-            
-            for (let i = 0; i < TEST_NUM_BOOKS_READ; i++) {
-                const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                for (let i = 0; i < TEST_NUM_BOOKS_READ; i++) {
+                    const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
                         apiClient.incrementBooksRead(incrementBooksReadArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                             if (error === null) {
                                 if (!response) {
@@ -177,4 +177,4 @@ test("Test basic data store and API", async () => {
     }finally{
         stopEnclaveFunction()
     }
-})
+});
