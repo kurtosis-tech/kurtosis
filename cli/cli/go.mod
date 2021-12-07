@@ -14,8 +14,8 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211207130921-a127d2c12d13
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211207131948-2ed441222a78
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211207131930-b0958ec2a4b0
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211207161344-8b8d54195ee1
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211207161126-f8fdd9ca21f5
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1

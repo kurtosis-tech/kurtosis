@@ -1,18 +1,24 @@
 # TBD
 ### Features
+* Added TypeScript test: `basic_datastore_test_and_api.ts`
 * The `module exec` command prints and follows the module's logs
+
+### Fixes
+* Add proper logging for `enclave_setup.ts`
+* Resolve TypeScript test minor bug
+* Upgrade Typescript to the latest version of the
 
 ### Changes
 * Upgraded `obj-attrs-schema-lib` to 0.6.0 which adds ID label
 * Upgraded `Kurt Core` to 1.36.10 
-* Upgraded `Kurt Engine` to 1.7.4
+* Upgraded `Kurt Engine` to 1.7.6
 
 # 0.8.0
 ### Features
 * Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
     * obj-attrs-schema-lib -> 0.5.0
     * core dependencies -> 1.36.9
-    * engine dependencies -> 1.7.3
+    * engine dependencies -> 1.7.2
 * Added `network_soft_partition_test` in golang internal test suite
 * Added a unit test to ensure that an API break in the engine (which will require restarting the engine) is an API break for the CLI
 
@@ -20,9 +26,9 @@
 * When the engine server API version that the CLI expects doesn't match the running engine server's API version, the user gets an error and is forced to restart their engine
 
 ### Breaking Changes
-* Upgraded the engine server to 1.7.3
+* Upgraded the engine server to 1.7.2
     * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
-    * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.7.3
+    * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.7.2
     * Module users will need to update their modules to [Module API Lib](https://github.com/kurtosis-tech/kurtosis-module-api-lib) 0.12.3
 
 # 0.7.4
