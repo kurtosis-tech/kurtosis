@@ -4,8 +4,8 @@ go 1.15
 
 require (
 	github.com/golang/protobuf v1.5.2
-	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211101152411-fc6471a58cdc
-	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211103235501-9f7a13cdadb4
+	github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318
+	github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211205232847-ccb62e7d0112
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211205233230-1f183ab76554
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
