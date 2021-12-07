@@ -17,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
 )
@@ -35,8 +34,7 @@ const (
 	// Titles of the cleaning phases
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
-	metadataAcquisitionTestsuitePhaseTitle = "metadata-acquiring testsuite containers"
-	enclavesCleaningPhaseTitle = "enclaves"
+	enclavesCleaningPhaseTitle  = "enclaves"
 )
 
 var CleanCmd = &cobra.Command{
@@ -46,7 +44,7 @@ var CleanCmd = &cobra.Command{
 		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
 		shouldCleanAllArgs,
 	),
-	RunE:  run,
+	RunE: run,
 }
 
 var shouldCleanAll bool
@@ -81,7 +79,7 @@ func run(cmd *cobra.Command, args []string) error {
 	defer closeClientFunc()
 
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
-	cleaningPhaseFunctions := map[string]func() ([]string, []error, error) {
+	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
 		oldEngineCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
 			return cleanStoppedEngineContainers(ctx, dockerManager)
@@ -89,10 +87,6 @@ func run(cmd *cobra.Command, args []string) error {
 		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
 			return cleanEnclaves(ctx, engineClient)
-		},
-		metadataAcquisitionTestsuitePhaseTitle: func() ([]string, []error, error) {
-			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
-			return cleanMetadataAcquisitionTestsuites(ctx, dockerManager, shouldCleanAll)
 		},
 	}
 
@@ -138,7 +132,7 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]string, []error, error) {
 	engineContainerLabels := map[string]string{
-		forever_constants.AppIDLabel: forever_constants.AppIDValue,
+		forever_constants.AppIDLabel:         forever_constants.AppIDValue,
 		forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 	}
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, engineContainerLabels, shouldCleanRunningEngineContainers)
@@ -148,41 +142,16 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
-func cleanMetadataAcquisitionTestsuites(ctx context.Context, dockerManager *docker_manager.DockerManager, shouldKillRunningContainers bool) ([]string, []error, error) {
-	metadataAcquisitionTestsuiteLabels := map[string]string{
-		forever_constants.ContainerTypeLabel: schema.ContainerTypeTestsuiteContainer,
-		schema.TestsuiteTypeLabelKey: schema.TestsuiteTypeLabelValue_MetadataAcquisition,
-	}
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := cleanContainers(ctx, dockerManager, metadataAcquisitionTestsuiteLabels, shouldKillRunningContainers)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning metadata-acquisition testsuite containers")
-	}
-	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
-}
-
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) ([]string, []error, error) {
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	cl := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
+	cleanResp, err := engineClient.Clean(ctx, cl)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
-	}
-
-	enclaveIdsToDestroy := []string{}
-	for enclaveId, enclaveInfo := range getEnclavesResp.EnclaveInfo {
-		enclaveStatus := enclaveInfo.ContainersStatus
-		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
-			enclaveIdsToDestroy = append(enclaveIdsToDestroy, enclaveId)
-		}
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while calling clean")
 	}
 
 	successfullyDestroyedEnclaveIds := []string{}
-	enclaveDestructionErrors := []error{}
-	for _, enclaveId := range enclaveIdsToDestroy {
-		destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs{EnclaveId: enclaveId}
-		if _, err := engineClient.DestroyEnclave(ctx, destroyEnclaveArgs); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v'", enclaveId)
-			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
-			continue
-		}
+	enclaveDestructionErrors := []error{} // should we make the clean endpoint return an errors array to have the same behavior as before in the cli?
+	for enclaveId, _ := range cleanResp.RemovedEnclaveIds {
 		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
 	}
 	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
