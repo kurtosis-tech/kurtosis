@@ -16,6 +16,8 @@ const EXEC_COMMAND_THAT_SHOULD_WORK = ["true"]
 const EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT = ["echo", INPUT_FOR_LOG_OUTPUT_TEST]
 const EXEC_COMMAND_THAT_SHOULD_FAIL = ["false"]
 
+jest.setTimeout(30000)
+
 test("Test exec command", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
     const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
@@ -35,7 +37,7 @@ test("Test exec command", async () => {
             throw addServiceResult.error
         };
 
-        const [ testServiceContext ] = addServiceResult.value
+        const testServiceContext = addServiceResult.value
 
         // ------------------------------------- TEST RUN ----------------------------------------------
         log.info(`Running exec command ${EXEC_COMMAND_THAT_SHOULD_WORK} that should return a successful exit code...`)
