@@ -2,7 +2,7 @@ import { ServiceContext } from "kurtosis-core-api-lib"
 import * as serverApi from "example-api-server-api-lib";
 import { Result, ok, err } from "neverthrow"
 import log from "loglevel"
-import * as grpc from "grpc"
+import * as grpc from "@grpc/grpc-js"
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";

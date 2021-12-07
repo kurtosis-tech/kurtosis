@@ -12,7 +12,7 @@ import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
 import { err, ok, Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import log from "loglevel";
 import * as fs from 'fs';
 
