@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/stacktrace"
@@ -43,7 +44,7 @@ func TestNetworkPartition(t *testing.T) {
 	defer datastoreClientCloseFunc()
 
 
-	_, api1Client, api1ClientCloseFunc, err := test_helpers.AddAPIService(ctx, api1ServiceId, enclaveCtx, datastoreServiceCtx.GetPrivateIPAddress())
+	_, api1Client, api1ClientCloseFunc, err := test_helpers.AddAPIService(ctx, api1ServiceId, enclaveCtx, datastoreServiceCtx.GetIPAddress())
 	require.NoError(t, err, "An error occurred adding the first API service")
 	defer api1ClientCloseFunc()
 
@@ -78,7 +79,7 @@ func TestNetworkPartition(t *testing.T) {
 		ctx,
 		api2ServiceId,
 		enclaveCtx,
-		datastoreServiceCtx.GetPrivateIPAddress(),
+		datastoreServiceCtx.GetIPAddress(),
 		apiPartitionId,
 	)
 	require.NoError(t, err, "An error occurred adding the second API service to the network")
@@ -128,24 +129,22 @@ func repartitionNetwork(
 		apiPartitionServiceIds[api2ServiceId] = true
 	}
 
-	var connectionBetweenPartitions enclaves.PartitionConnection
-	if isConnectionBlocked {
-		connectionBetweenPartitions = enclaves.NewBlockedPartitionConnection()
-	} else {
-		connectionBetweenPartitions = enclaves.NewUnblockedPartitionConnection()
-	}
 	partitionServices := map[enclaves.PartitionID]map[services.ServiceID]bool{
 		apiPartitionId: apiPartitionServiceIds,
 		datastorePartitionId: {
 			datastoreServiceId: true,
 		},
 	}
-	partitionConnections := map[enclaves.PartitionID]map[enclaves.PartitionID]enclaves.PartitionConnection{
+	partitionConnections := map[enclaves.PartitionID]map[enclaves.PartitionID]*kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
 		apiPartitionId: {
-			datastorePartitionId: connectionBetweenPartitions,
+			datastorePartitionId: &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
+				IsBlocked: isConnectionBlocked,
+			},
 		},
 	}
-	defaultPartitionConnection := enclaves.NewUnblockedPartitionConnection()
+	defaultPartitionConnection := &kurtosis_core_rpc_api_bindings.PartitionConnectionInfo{
+		IsBlocked: false,
+	}
 	if err := enclaveCtx.RepartitionNetwork(partitionServices, partitionConnections, defaultPartitionConnection); err != nil {
 		return stacktrace.Propagate(
 			err,

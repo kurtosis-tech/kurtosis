@@ -41,7 +41,7 @@ func TestFiles(t *testing.T) {
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	containerConfigSupplier := getContainerConfigSupplier()
 
-	serviceCtx, err := enclaveCtx.AddService(testService, containerConfigSupplier)
+	serviceCtx, _, err := enclaveCtx.AddService(testService, containerConfigSupplier)
 	require.NoError(t, err, "An error occurred adding the file server service")
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
