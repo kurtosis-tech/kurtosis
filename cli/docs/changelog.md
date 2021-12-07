@@ -1,7 +1,11 @@
 # TBD
 ### Features
 * The `module exec` command print and follow the module's logs
+
+### Changes
 * Upgraded `obj-attrs-schema-lib` to 0.6.0 which adds ID label
+* Upgraded `Kurt Core` to 1.36.10 
+* Upgraded `Kurt Engine` to 1.7.4
 
 # 0.8.0
 ### Features

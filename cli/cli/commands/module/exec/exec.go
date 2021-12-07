@@ -253,6 +253,9 @@ func run(cmd *cobra.Command, args []string) error {
 	)
 
 	modContainer, err := getModContainer(ctx, dockerManager, enclaveId, moduleId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module container")
+	}
 
 	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, modContainer.GetId(), shouldFollowContainerLogs)
 	if err != nil {

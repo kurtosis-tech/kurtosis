@@ -7,14 +7,15 @@ replace github.com/kurtosis-tech/kurtosis-cli/commons => ../commons
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/adrg/xdg v0.4.0
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211205224905-99464ecf460f
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211205230111-60f16e736d88
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211205230101-6e651ed2ef46
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211207130921-a127d2c12d13
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211207131948-2ed441222a78
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211207131930-b0958ec2a4b0
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
