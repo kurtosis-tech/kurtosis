@@ -14,8 +14,8 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -86,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 		dockerClient,
 	)
 
-	labels := getUserServiceContainerLabelsWithEnclaveId(enclaveId)
+	labels := labels_helper.GetUserServiceContainerLabelsWithEnclaveID(enclaveId)
 
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedUserServiceContainers)
 	if err != nil {
@@ -124,20 +124,9 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer readCloserLogs.Close()
 
-	_, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs)
-	if err == nil {
+	if _, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred copying the container logs to STDOUT")
 	}
 
 	return nil
-}
-
-// ====================================================================================================
-// 									   Private helper methods
-// ====================================================================================================
-func getUserServiceContainerLabelsWithEnclaveId(enclaveId string) map[string]string {
-	labels := map[string]string{}
-	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
-	labels[schema.EnclaveIDContainerLabel] = enclaveId
-	return labels
 }

@@ -1,5 +1,43 @@
 # TBD
 
+# 0.8.0
+### Features
+* Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
+    * obj-attrs-schema-lib -> 0.5.0
+    * core dependencies -> 1.36.9
+    * engine dependencies -> 1.7.3
+* Added `network_soft_partition_test` in golang internal test suite
+* Added a unit test to ensure that an API break in the engine (which will require restarting the engine) is an API break for the CLI
+
+### Fixes
+* When the engine server API version that the CLI expects doesn't match the running engine server's API version, the user gets an error and is forced to restart their engine
+
+### Breaking Changes
+* Upgraded the engine server to 1.7.3
+    * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
+    * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.7.3
+    * Module users will need to update their modules to [Module API Lib](https://github.com/kurtosis-tech/kurtosis-module-api-lib) 0.12.3
+
+# 0.7.4
+### Features
+* Added a `--partitioning` flag to `module exec` for enabling partitioning
+
+### Changes
+* The Go internal testsuite's enclaves will now be named with Unix millis, rather than Unix seconds
+* Partitioning defaults to false for `module exec`
+
+# 0.7.3
+### Features
+* Added new command named service shell (kurtosis service shell enclave_id service_id) which performs the same as docker exec -it container_id sh
+
+# 0.7.2
+### Features
+* The enclave for `module exec` will now be named after the module image and the time it was ran
+* Allow users running `module exec` to manually specify the ID of the enclave that will be created
+
+### Fixes
+* Fixed a bug where `service logs` that was successful would really fail
+
 # 0.7.1
 ### Fixes
 * Attempt to fix CLI artifact publishing

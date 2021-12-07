@@ -26,6 +26,9 @@ const (
 	datastoreImage = "kurtosistech/example-datastore-server"
 	apiServiceImage = "kurtosistech/example-api-server"
 
+	datastorePortId string = "rpc"
+	apiPortId string = "api"
+
 	datastoreWaitForStartupMaxPolls = 10
 	datastoreWaitForStartupDelayMilliseconds = 1000
 
@@ -34,8 +37,14 @@ const (
 
 	defaultPartitionId = ""
 )
-var datastorePortStr = fmt.Sprintf("%v/%v", datastore_rpc_api_consts.ListenPort, datastore_rpc_api_consts.ListenProtocol)
-var apiPortStr = fmt.Sprintf("%v/%v", example_api_server_rpc_api_consts.ListenPort, example_api_server_rpc_api_consts.ListenProtocol)
+var datastorePortSpec = services.NewPortSpec(
+	datastore_rpc_api_consts.ListenPort,
+	services.PortProtocol_TCP,
+)
+var apiPortSpec = services.NewPortSpec(
+	example_api_server_rpc_api_consts.ListenPort,
+	services.PortProtocol_TCP,
+)
 
 type GrpcAvailabilityChecker interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -46,28 +55,37 @@ type datastoreConfig struct {
 	DatastorePort uint16    `json:"datastorePort"`
 }
 
-func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext) (*services.ServiceContext, datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+func AddDatastoreService(
+	ctx context.Context,
+	serviceId services.ServiceID,
+	enclaveCtx *enclaves.EnclaveContext,
+) (
+	resultServiceCtx *services.ServiceContext,
+	resultClient datastore_rpc_api_bindings.DatastoreServiceClient,
+	resultClientCloseFunc func(),
+	resultErr error,
+) {
 	containerConfigSupplier := getDatastoreContainerConfigSupplier()
 
-	serviceCtx, hostPortBindings, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddService(serviceId, containerConfigSupplier)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the datastore service")
 	}
 
-	hostPortBinding, found := hostPortBindings[datastorePortStr]
+	publicPort, found := serviceCtx.GetPublicPorts()[datastorePortId]
 	if !found {
-		return nil, nil, nil, stacktrace.NewError("No datastore host port binding found for port string '%v'", datastorePortStr)
+		return nil, nil, nil, stacktrace.NewError("No datastore public port found for port ID '%v'", datastorePortId)
 	}
 
-	datastoreIp := hostPortBinding.InterfaceIp
-	datastorePortNumStr := hostPortBinding.InterfacePort
-	client, clientCloseFunc, err := CreateDatastoreClient(datastoreIp, datastorePortNumStr)
+	publicIp := serviceCtx.GetMaybePublicIPAddress()
+	publicPortNum := publicPort.GetNumber()
+	client, clientCloseFunc, err := CreateDatastoreClient(publicIp, publicPortNum)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the datastore client for IP '%v' and port '%v'",
-			datastoreIp,
-			datastorePortNumStr,
+			publicIp,
+			publicPortNum,
 		)
 	}
 
@@ -77,7 +95,7 @@ func AddDatastoreService(ctx context.Context, serviceId services.ServiceID, encl
 	return serviceCtx, client, clientCloseFunc, nil
 }
 
-func CreateDatastoreClient(ipAddr string, portNum string) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
+func CreateDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
 	url := fmt.Sprintf("%v:%v", ipAddr, portNum)
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
@@ -92,8 +110,8 @@ func CreateDatastoreClient(ipAddr string, portNum string) (datastore_rpc_api_bin
 	return client, clientCloseFunc, nil
 }
 
-func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
-	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceId, enclaveCtx, datastoreIPInsideNetwork, defaultPartitionId)
+func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceId, enclaveCtx, datastorePrivateIp, defaultPartitionId)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding API service to default partition")
 	}
@@ -101,20 +119,20 @@ func AddAPIService(ctx context.Context, serviceId services.ServiceID, enclaveCtx
 }
 
 
-func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastoreIPInsideNetwork string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
-	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
+func AddAPIServiceToPartition(ctx context.Context, serviceId services.ServiceID, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
+	containerConfigSupplier := getApiServiceContainerConfigSupplier(datastorePrivateIp)
 
-	serviceCtx, hostPortBindings, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
+	serviceCtx, err := enclaveCtx.AddServiceToPartition(serviceId, partitionId, containerConfigSupplier)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding the API service")
 	}
 
-	hostPortBinding, found := hostPortBindings[apiPortStr]
+	publicPort, found := serviceCtx.GetPublicPorts()[apiPortId]
 	if !found {
-		return nil, nil, nil, stacktrace.NewError("No API service host port binding found for port string '%v'", apiPortStr)
+		return nil, nil, nil, stacktrace.NewError("No API service public port found for port ID '%v'", apiPortId)
 	}
 
-	url := fmt.Sprintf("%v:%v", hostPortBinding.InterfaceIp, hostPortBinding.InterfacePort)
+	url := fmt.Sprintf("%v:%v", serviceCtx.GetMaybePublicIPAddress(), publicPort.GetNumber())
 	conn, err := grpc.Dial(url, grpc.WithInsecure())
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred connecting to API service on URL '%v'", url)
@@ -165,8 +183,8 @@ func getDatastoreContainerConfigSupplier() func(ipAddr string, sharedDirectory *
 	containerConfigSupplier := func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
 		containerConfig := services.NewContainerConfigBuilder(
 			datastoreImage,
-		).WithUsedPorts(map[string]bool{
-			datastorePortStr: true,
+		).WithUsedPorts(map[string]*services.PortSpec{
+			datastorePortId: datastorePortSpec,
 		}).Build()
 		return containerConfig, nil
 	}
@@ -189,8 +207,8 @@ func getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork string) func(
 
 		containerConfig := services.NewContainerConfigBuilder(
 			apiServiceImage,
-		).WithUsedPorts(map[string]bool{
-			apiPortStr: true,
+		).WithUsedPorts(map[string]*services.PortSpec{
+			apiPortId: apiPortSpec,
 		}).WithCmdOverride(startCmd).Build()
 
 		return containerConfig, nil
