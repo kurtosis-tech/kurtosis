@@ -4,9 +4,10 @@
 
 ### Fixes
 * Add proper logging for `enclave_setup.ts`
+* Fixed a bug with the Javascript REPL image
 * Resolve TypeScript test minor bug
 * Upgrade to engine server 1.7.3
-* Upgrade Typescript to the latest version of the 
+* Upgrade Typescript to the latest version of the engine-server library
 
 # 0.8.0
 ### Features
