@@ -47,7 +47,7 @@ test("Test basic data store and API", async () => {
             serviceContext: ServiceContext;
             client: serverApi.ExampleAPIServerServiceClient;
             clientCloseFunction: () => void;
-          }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getIPAddress())
+          }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
 		
           if(apiClientResult.isErr()){ throw apiClientResult.error }
 
