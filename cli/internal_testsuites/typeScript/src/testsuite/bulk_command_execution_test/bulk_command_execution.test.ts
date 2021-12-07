@@ -10,28 +10,28 @@ jest.setTimeout(40000)
 
 test("Test bulk command execution", async () => {
 
-      // ------------------------------------- ENGINE SETUP ----------------------------------------------
-      const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
-    
-      if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
-      
-      const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
-  
-      try {
-          // ------------------------------------- TEST RUN ----------------------------------------------
-	    log.info("Executing JSON-serialized commands to create a network with various services and repartition it...")
+    // ------------------------------------- ENGINE SETUP ----------------------------------------------
+    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
 
-	    const bulkCommandJson = generateBulkCommandJson()
+    if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
+
+    const { enclaveContext, stopEnclaveFunction } = createEnclaveResult.value
+
+    try {
+        // ------------------------------------- TEST RUN ----------------------------------------------
+        log.info("Executing JSON-serialized commands to create a network with various services and repartition it...")
+
+        const bulkCommandJson = generateBulkCommandJson()
 
         const executeBulkCommandsResult = await enclaveContext.executeBulkCommands(bulkCommandJson)
 
         if(executeBulkCommandsResult.isErr()) { throw executeBulkCommandsResult.error }
 
-	    log.info("Successfully executed JSON-serialized commands")
+        log.info("Successfully executed JSON-serialized commands")
 
-      }finally{
+    }finally{
         stopEnclaveFunction()
-      }
+    }
 })
 
 function generateBulkCommandJson() {
