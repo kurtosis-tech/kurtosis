@@ -21,6 +21,8 @@ service EngineService {
   rpc StopEnclave(StopEnclaveArgs) returns (google.protobuf.Empty) {};
   // Destroys an enclave, removing all artifacts associated with it
   rpc DestroyEnclave(DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
+  // Gets rid of old enclaves
+  rpc Clean(CleanArgs) returns (CleanResponse) {};
 }
 
 // ==============================================================================================
@@ -147,4 +149,19 @@ message StopEnclaveArgs {
 message DestroyEnclaveArgs {
   //The ID of the Kurtosis enclave to destroy
   string enclave_id = 1;
+}
+
+// ==============================================================================================
+//                                       Create Enclave
+// ==============================================================================================
+message CleanArgs {
+  // If true, It will clean even the running enclaves
+  bool should_clean_all = 1;
+}
+
+
+message CleanResponse {
+  // Set of removed enclave IDs
+  map<string, bool> removed_enclave_ids = 1;
+
 }

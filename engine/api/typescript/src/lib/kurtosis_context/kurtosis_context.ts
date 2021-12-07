@@ -1,13 +1,22 @@
 import { EngineServiceClient } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import * as grpc from "@grpc/grpc-js";
 import { Result, err, ok, Err } from "neverthrow";
-import {newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
+import {newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
 import {
+    CleanArgs,
+    CleanResponse,
     CreateEnclaveArgs,
-    CreateEnclaveResponse, DestroyEnclaveArgs, EnclaveAPIContainerHostMachineInfo, EnclaveAPIContainerInfo, EnclaveAPIContainerStatus, EnclaveAPIContainerStatusMap,
+    CreateEnclaveResponse,
+    DestroyEnclaveArgs,
+    EnclaveAPIContainerHostMachineInfo,
+    EnclaveAPIContainerInfo,
+    EnclaveAPIContainerStatus,
+    EnclaveAPIContainerStatusMap,
     EnclaveContainersStatus,
     EnclaveContainersStatusMap,
-    EnclaveInfo, GetEnclavesResponse, StopEnclaveArgs
+    EnclaveInfo,
+    GetEnclavesResponse,
+    StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as jspb from "google-protobuf";
@@ -24,7 +33,7 @@ export const DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM: number = 9710;
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
-// Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+// Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 export class KurtosisContext {
     private readonly client: EngineServiceClient;
 
@@ -54,7 +63,7 @@ export class KurtosisContext {
         return ok(kurtosisContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async createEnclave(
         enclaveId: string,
         isPartitioningEnabled: boolean,
@@ -101,7 +110,7 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
 
@@ -138,7 +147,7 @@ export class KurtosisContext {
         return ok(newEnclaveCtxResult.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
 
@@ -168,7 +177,7 @@ export class KurtosisContext {
         return ok(result);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>> {
         const args: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
 
@@ -189,7 +198,7 @@ export class KurtosisContext {
         return ok(null);
     }
 
-    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-api-lib/lib-documentation
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>> {
         const args: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
 
@@ -208,6 +217,37 @@ export class KurtosisContext {
         }
 
         return ok(null);
+    }
+
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
+    public async clean( shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
+
+        const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
+
+        const cleanPromise: Promise<Result<CleanResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.clean(cleanArgs, (error: grpc.ServiceError | null, response?: CleanResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const cleanResult: Result<CleanResponse, Error> = await cleanPromise;
+        if (!cleanResult.isOk()) {
+            return err(cleanResult.error)
+        }
+        const cleanResponse: CleanResponse = cleanResult.value;
+
+        const result: Set<string> = new Set();
+        for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
+            result.add(enclaveID);
+        }
+        return ok(result);
     }
 
     // ====================================================================================================

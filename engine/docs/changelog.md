@@ -1,5 +1,10 @@
 # TBD
 
+# 1.7.5
+### Features
+* Added clean endpoint which gets rid of the enclaves and the dependant containers
+
+
 # 1.7.4
 ### Changes
 * Upgraded to `Kurt Core` 1.36.10 which adds the latest version of `object-attributes-schema-lib`

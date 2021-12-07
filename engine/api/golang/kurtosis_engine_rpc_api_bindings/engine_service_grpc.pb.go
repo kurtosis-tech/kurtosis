@@ -32,6 +32,8 @@ type EngineServiceClient interface {
 	StopEnclave(ctx context.Context, in *StopEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Destroys an enclave, removing all artifacts associated with it
 	DestroyEnclave(ctx context.Context, in *DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Gets rid of old enclaves
+	Clean(ctx context.Context, in *CleanArgs, opts ...grpc.CallOption) (*CleanResponse, error)
 }
 
 type engineServiceClient struct {
@@ -87,6 +89,15 @@ func (c *engineServiceClient) DestroyEnclave(ctx context.Context, in *DestroyEnc
 	return out, nil
 }
 
+func (c *engineServiceClient) Clean(ctx context.Context, in *CleanArgs, opts ...grpc.CallOption) (*CleanResponse, error) {
+	out := new(CleanResponse)
+	err := c.cc.Invoke(ctx, "/engine_api.EngineService/Clean", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EngineServiceServer is the server API for EngineService service.
 // All implementations must embed UnimplementedEngineServiceServer
 // for forward compatibility
@@ -104,6 +115,8 @@ type EngineServiceServer interface {
 	StopEnclave(context.Context, *StopEnclaveArgs) (*emptypb.Empty, error)
 	// Destroys an enclave, removing all artifacts associated with it
 	DestroyEnclave(context.Context, *DestroyEnclaveArgs) (*emptypb.Empty, error)
+	// Gets rid of old enclaves
+	Clean(context.Context, *CleanArgs) (*CleanResponse, error)
 	mustEmbedUnimplementedEngineServiceServer()
 }
 
@@ -125,6 +138,9 @@ func (UnimplementedEngineServiceServer) StopEnclave(context.Context, *StopEnclav
 }
 func (UnimplementedEngineServiceServer) DestroyEnclave(context.Context, *DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DestroyEnclave not implemented")
+}
+func (UnimplementedEngineServiceServer) Clean(context.Context, *CleanArgs) (*CleanResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Clean not implemented")
 }
 func (UnimplementedEngineServiceServer) mustEmbedUnimplementedEngineServiceServer() {}
 
@@ -229,6 +245,24 @@ func _EngineService_DestroyEnclave_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EngineService_Clean_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CleanArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServiceServer).Clean(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/engine_api.EngineService/Clean",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServiceServer).Clean(ctx, req.(*CleanArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EngineService_ServiceDesc is the grpc.ServiceDesc for EngineService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -255,6 +289,10 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DestroyEnclave",
 			Handler:    _EngineService_DestroyEnclave_Handler,
+		},
+		{
+			MethodName: "Clean",
+			Handler:    _EngineService_Clean_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
