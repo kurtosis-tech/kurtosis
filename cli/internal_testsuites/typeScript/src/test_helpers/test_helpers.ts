@@ -4,9 +4,10 @@ import {
     SharedPath,
     ContainerConfig,
     ContainerConfigBuilder,
-    PortBinding,
     ServiceContext,
     PartitionID,
+    PortSpec,
+    PortProtocol,
 } from "kurtosis-core-api-lib";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
@@ -21,6 +22,9 @@ const CONFIG_FILEPATH_RELATIVE_TO_SHARED_DIR_ROOT = "config-file.txt";
 const DATASTORE_IMAGE = "kurtosistech/example-datastore-server";
 const API_SERVICE_IMAGE = "kurtosistech/example-api-server";
 
+const DATASTORE_PORT_ID = "rpc";
+const API_PORT_ID = "rpc";
+
 const DATASTORE_WAIT_FOR_STARTUP_MAX_POLLS = 10;
 const DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
@@ -29,8 +33,14 @@ const API_WAIT_FOR_STARTUP_DELAT_MILLISECONDS = 1000;
 
 const DEFAULT_PARTITION_ID = "";
 
-const DATASTORE_PORT_STR = `${datastoreApi.LISTEN_PORT}/${datastoreApi.LISTEN_PROTOCOL}`;
-const API_PORT_STR = `${serverApi.LISTEN_PORT}/${serverApi.LISTEN_PROTOCOL}`;
+const DATASTORE_PORT_SPEC = new PortSpec(
+    datastoreApi.LISTEN_PORT,
+    PortProtocol.TCP,
+)
+const API_PORT_SPEC = new PortSpec(
+    serverApi.LISTEN_PORT,
+    PortProtocol.TCP,
+)
 
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
@@ -42,23 +52,19 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
     const containerConfigSupplier = getDatastoreContainerConfigSupplier();
 
     const addServiceResult = await enclaveContext.addService(serviceId, containerConfigSupplier);
-
     if (addServiceResult.isErr()) {
         return err(new Error("An error occurred adding the datastore service"));
     }
+    const serviceContext = addServiceResult.value;
 
-    const [serviceContext, hostPortBindings] = addServiceResult.value;
-
-    const hostPortBinding: PortBinding | undefined = hostPortBindings.get(DATASTORE_PORT_STR);
-
-    if (hostPortBinding === undefined) {
-        return err(new Error(`No datastore host port binding found for port string ${DATASTORE_PORT_STR}`));
+    const publicPort: PortSpec | undefined = serviceContext.getPublicPorts().get(DATASTORE_PORT_ID);
+    if (publicPort === undefined) {
+        return err(new Error(`No datastore public port found for port ID '${DATASTORE_PORT_ID}'`))
     }
 
-    const datastoreIp = hostPortBinding.getInterfaceIp();
-    const datastorePortNumStr = hostPortBinding.getInterfacePort();
-
-    const { client, clientCloseFunction } = createDatastoreClient(datastoreIp, datastorePortNumStr);
+    const publicIp = serviceContext.getMaybePublicIPAddress();
+    const publicPortNum = publicPort.number;
+    const { client, clientCloseFunction } = createDatastoreClient(publicIp, publicPortNum);
 
     const waitForHealthyResult = await waitForHealthy(
         client,
@@ -74,7 +80,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
     return ok({ serviceContext, client, clientCloseFunction });
 };
 
-function createDatastoreClient(ipAddr: string, portNum: string): { client: datastoreApi.DatastoreServiceClient; clientCloseFunction: () => void } {
+function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClient; clientCloseFunction: () => void } {
     const url = `${ipAddr}:${portNum}`;
     const client = new datastoreApi.DatastoreServiceClient(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
@@ -112,16 +118,14 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, getApiServiceContainerConfigSupplierResult)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
+    const serviceContext = addServiceToPartitionResult.value;
 
-    const [serviceContext, hostPortBindings] = addServiceToPartitionResult.value;
-
-    const hostPortBinding: PortBinding | undefined = hostPortBindings.get(API_PORT_STR)
-
-    if (hostPortBinding === undefined) {
-        return err(new Error(`No API host port binding found for port string ${API_PORT_STR}`));
+    const publicPort: PortSpec | undefined = serviceContext.getPublicPorts().get(API_PORT_ID);
+    if (publicPort === undefined) {
+        return err(new Error(`No API service public port found for port ID '${API_PORT_ID}'`));
     }
   
-    const url = `${hostPortBinding.getInterfaceIp()}:${hostPortBinding.getInterfacePort()}`;
+    const url = `${serviceContext.getMaybePublicIPAddress()}:${publicPort.number}`;
     const client = new serverApi.ExampleAPIServerServiceClient(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
