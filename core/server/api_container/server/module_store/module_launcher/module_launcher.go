@@ -99,6 +99,7 @@ func (launcher ModuleLauncher) Launch(
 	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
 		moduleContainerAttrs, err := enclaveObjAttrsProvider.ForModuleContainer(
+			string(moduleID),
 			string(moduleGUID),
 			modulePortNum,
 		)
