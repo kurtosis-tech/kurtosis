@@ -292,40 +292,10 @@ func (manager *EnclaveManager) CreateEnclave(
 func (manager *EnclaveManager) GetEnclaves(
 	ctx context.Context,
 ) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	// TODO this is janky; we need a better way to find enclave networks!!! Ideally, we shouldn't actually know the labbel keys or values here
-	kurtosisNetworkLabels := map[string]string{
-		forever_constants.AppIDLabel: forever_constants.AppIDValue,
-	}
+	manager.mutex.Lock()
+	defer manager.mutex.Unlock()
 
-	networks, err := manager.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
-	}
-	result := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
-	for _, network := range networks {
-		enclaveId := network.GetName()
-		// Container retrieval requires an extra call to the Docker engine per enclave, so therefore could be expensive
-		//  if you have a LOT of enclaves. Maybe we want to make the getting of enclave container information be a separate
-		//  engine server endpoint??
-		containersStatus, apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := getEnclaveContainerInformation(ctx, manager.dockerManager, enclaveId)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting information about the containers in enclave '%v'", enclaveId)
-		}
-
-		enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
-		enclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-			EnclaveId:                       enclaveId,
-			NetworkId:                       network.GetId(),
-			NetworkCidr:                     network.GetIpAndMask().String(),
-			ContainersStatus:                containersStatus,
-			ApiContainerStatus:              apiContainerStatus,
-			ApiContainerInfo:                apiContainerInfo,
-			ApiContainerHostMachineInfo:     apiContainerHostMachineInfo,
-			EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
-		}
-		result[enclaveId] = enclaveInfo
-	}
-	return result, nil
+	return manager.getEnclavesWithoutMutex(ctx)
 }
 
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
@@ -853,7 +823,7 @@ func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId string) (onHostMa
 }
 
 func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
-	enclaves, err := manager.GetEnclaves(ctx)
+	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
 	}
@@ -946,4 +916,43 @@ func (manager *EnclaveManager) cleanMetadataAcquisitionTestsuites(ctx context.Co
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning metadata-acquisition testsuite containers")
 	}
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
+}
+
+func (manager *EnclaveManager) getEnclavesWithoutMutex(
+	ctx context.Context,
+) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+	// TODO this is janky; we need a better way to find enclave networks!!! Ideally, we shouldn't actually know the labbel keys or values here
+	kurtosisNetworkLabels := map[string]string{
+		forever_constants.AppIDLabel: forever_constants.AppIDValue,
+	}
+
+	networks, err := manager.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
+	}
+	result := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+	for _, network := range networks {
+		enclaveId := network.GetName()
+		// Container retrieval requires an extra call to the Docker engine per enclave, so therefore could be expensive
+		//  if you have a LOT of enclaves. Maybe we want to make the getting of enclave container information be a separate
+		//  engine server endpoint??
+		containersStatus, apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := getEnclaveContainerInformation(ctx, manager.dockerManager, enclaveId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting information about the containers in enclave '%v'", enclaveId)
+		}
+
+		enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
+		enclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+			EnclaveId:                       enclaveId,
+			NetworkId:                       network.GetId(),
+			NetworkCidr:                     network.GetIpAndMask().String(),
+			ContainersStatus:                containersStatus,
+			ApiContainerStatus:              apiContainerStatus,
+			ApiContainerInfo:                apiContainerInfo,
+			ApiContainerHostMachineInfo:     apiContainerHostMachineInfo,
+			EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
+		}
+		result[enclaveId] = enclaveInfo
+	}
+	return result, nil
 }
