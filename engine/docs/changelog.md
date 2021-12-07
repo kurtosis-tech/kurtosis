@@ -1,5 +1,10 @@
 # TBD
 
+# 1.7.4
+### Changes
+* Upgraded to `Kurt Core` 1.36.10 which adds the latest version of `object-attributes-schema-lib`
+* Upgrade to `object-attributes-schema-lib` v0.6.0 to support `id` label
+
 # 1.7.3
 ### Fixes
 * Upgraded to Kurt Core 1.36.9, which fixes a bug with an error value not getting checked
