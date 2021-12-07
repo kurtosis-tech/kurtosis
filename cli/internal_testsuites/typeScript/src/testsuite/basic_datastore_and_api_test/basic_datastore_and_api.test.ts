@@ -3,6 +3,7 @@ import * as apiServerApi from "example-api-server-api-lib";
 import { Result, ok, err } from "neverthrow"
 import log from "loglevel"
 import * as grpc from "@grpc/grpc-js"
+
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
@@ -56,7 +57,7 @@ test("Test basic data store and API", async () => {
             clientCloseFunction: apiClientCloseFunction  
         } = apiClientServiceResult.value
 
-		log.info("Added API service")
+		    log.info("Added API service")
         
         try {
             // ------------------------------------- TEST RUN ----------------------------------------------
@@ -129,49 +130,51 @@ test("Test basic data store and API", async () => {
                                 resolve(err(error));
                             }
                         })
-                })
-                const incrementBooksReadResult = await incrementBooksReadResultPromise;
-                if(incrementBooksReadResult.isErr()) { 
-                    log.error("An error occurred incrementing the number of books read")
-                    throw incrementBooksReadResult.error;
-                }
-            }
-            
-            log.info("Incremented number of books read")
-            
-            log.info("Retrieving test person to verify number of books read...")
-
-            const getPersonAfterUpdatingResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
-                apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
-                    if (error === null) {
-                        if (!response) {
-                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                        } else {
-                            resolve(ok(response!));
-                        }
-                    } else {
-                        resolve(err(error));
+                    })
+                    const incrementBooksReadResult = await incrementBooksReadResultPromise;
+                    if(incrementBooksReadResult.isErr()) { 
+                        log.error("An error occurred incrementing the number of books read")
+                        throw incrementBooksReadResult.error;
                     }
+                }
+                
+                log.info("Incremented number of books read")
+                
+                log.info("Retrieving test person to verify number of books read...")
+                
+                const getPersonAfterUpdatingResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
+                    apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
+                        if (error === null) {
+                            if (!response) {
+                                resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                            } else {
+                                resolve(ok(response!));
+                            }
+                        } else {
+                            resolve(err(error));
+                        }
+                    })
                 })
-            })
-            const  getPersonAfterUpdatingResult = await getPersonAfterUpdatingResultPromise
-            if(getPersonAfterUpdatingResult.isErr()){
-                log.error("An error occurred getting the test person to verify the number of books read")
-                throw getPersonAfterUpdatingResult.error
-            }
-            log.info("Retrieved test person")
-
-            const newPersonBooksRead = getPersonAfterUpdatingResult.value.getBooksRead()
-            
-            if(TEST_NUM_BOOKS_READ !== newPersonBooksRead){
-                throw new Error(`Expected number of book read ${TEST_NUM_BOOKS_READ} != actual number of books read ${newPersonBooksRead}`)
+                
+                const  getPersonAfterUpdatingResult = await getPersonAfterUpdatingResultPromise
+                if(getPersonAfterUpdatingResult.isErr()){
+                    log.error("An error occurred getting the test person to verify the number of books read")
+                    throw getPersonAfterUpdatingResult.error
+                }
+                log.info("Retrieved test person")
+                
+                const newPersonBooksRead = getPersonAfterUpdatingResult.value.getBooksRead()
+                
+                if(TEST_NUM_BOOKS_READ !== newPersonBooksRead){
+                    throw new Error(`Expected number of book read ${TEST_NUM_BOOKS_READ} != actual number of books read ${newPersonBooksRead}`)
+                }
+            }finally{
+                apiClientCloseFunction()
             }
         }finally{
-            apiClientCloseFunction()
             datastoreClientCloseFunction()
         }
     }finally{
         stopEnclaveFunction()
     }
 })
-

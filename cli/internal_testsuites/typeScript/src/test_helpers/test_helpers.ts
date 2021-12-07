@@ -29,7 +29,7 @@ const DATASTORE_WAIT_FOR_STARTUP_MAX_POLLS = 10;
 const DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
 const API_WAIT_FOR_STARTUP_MAX_POLLS = 10;
-const API_WAIT_FOR_STARTUP_DELAT_MILLISECONDS = 1000;
+const API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
 const DEFAULT_PARTITION_ID = "";
 
@@ -41,6 +41,11 @@ const API_PORT_SPEC = new PortSpec(
     serverApi.LISTEN_PORT,
     PortProtocol.TCP,
 )
+
+const DEFAULT_PARTITION_ID = "";
+
+const DATASTORE_PORT_STR = `${datastoreApi.LISTEN_PORT}/${datastoreApi.LISTEN_PROTOCOL}`;
+const API_PORT_STR = `${serverApi.LISTEN_PORT}/${serverApi.LISTEN_PROTOCOL}`;
 
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
@@ -119,6 +124,7 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
 
     const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
+
     const serviceContext = addServiceToPartitionResult.value;
 
     const publicPort: PortSpec | undefined = serviceContext.getPublicPorts().get(API_PORT_ID);
@@ -130,18 +136,14 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
     const client = new serverApi.ExampleAPIServerServiceClient(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
-    const waitForHealthyResult = await waitForHealthy(client, API_WAIT_FOR_STARTUP_MAX_POLLS, API_WAIT_FOR_STARTUP_DELAT_MILLISECONDS)
+    const waitForHealthyResult = await waitForHealthy(client, API_WAIT_FOR_STARTUP_MAX_POLLS, API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS)
 
     if(waitForHealthyResult.isErr()) {
         log.error("An error occurred waiting for the API service to become available")
         return err(waitForHealthyResult.error)
     }
   
-    return ok({
-        serviceContext,
-        client,
-        clientCloseFunction
-    })
+    return ok({ serviceContext, client, clientCloseFunction })
 };
 
 async function waitForHealthy(
@@ -253,5 +255,5 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
     }
   
     return ok(configFileFilePath);
+}
 
-  }

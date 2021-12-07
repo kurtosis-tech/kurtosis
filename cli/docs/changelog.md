@@ -1,4 +1,8 @@
 # TBD
+
+### Features
+* Added TypeScript test: `basic_datastore_test_and_api.ts`
+
 # 0.8.0
 ### Features
 * Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
