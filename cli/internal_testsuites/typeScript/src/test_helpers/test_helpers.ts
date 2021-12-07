@@ -115,9 +115,9 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
         clientCloseFunction: () => void;
     },Error>> {
   
-    const getApiServiceContainerConfigSupplierResult = getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
+    const containerConfigSupplier = getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork)
 
-    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, getApiServiceContainerConfigSupplierResult)
+    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceId, partitionId, containerConfigSupplier)
     if(addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
     const serviceContext = addServiceToPartitionResult.value;
 

@@ -1,5 +1,5 @@
 import { ServiceContext } from "kurtosis-core-api-lib"
-import * as serverApi from "example-api-server-api-lib";
+import * as apiServerApi from "example-api-server-api-lib";
 import { Result, ok, err } from "neverthrow"
 import log from "loglevel"
 import * as grpc from "@grpc/grpc-js"
@@ -43,18 +43,18 @@ test("Test basic data store and API", async () => {
         log.info("Added datastore service")
 
         log.info("Adding API service...")
-        const apiClientResult: Result<{
+        const apiClientServiceResult: Result<{
             serviceContext: ServiceContext;
-            client: serverApi.ExampleAPIServerServiceClient;
+            client: apiServerApi.ExampleAPIServerServiceClient;
             clientCloseFunction: () => void;
-          }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
+        }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
 		
-          if(apiClientResult.isErr()){ throw apiClientResult.error }
+        if(apiClientServiceResult.isErr()){ throw apiClientServiceResult.error }
 
         const { 
             client: apiClient, 
             clientCloseFunction: apiClientCloseFunction  
-        } = apiClientResult.value
+        } = apiClientServiceResult.value
 
 		log.info("Added API service")
         
@@ -62,11 +62,11 @@ test("Test basic data store and API", async () => {
             // ------------------------------------- TEST RUN ----------------------------------------------
             log.info(`Verifying that person with test ID ${TEST_PERSON_ID} doesn't already exist...`);
             
-            const getPersonArgs = new serverApi.GetPersonArgs()
+            const getPersonArgs = new apiServerApi.GetPersonArgs()
             getPersonArgs.setPersonId(TEST_PERSON_ID)
 
-            const getPersonResultPromise: Promise<Result<serverApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
-                    apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: serverApi.GetPersonResponse) => {
+            const getPersonResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
+                    apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
                         if (error === null) {
                             if (!response) {
                                 resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -87,7 +87,7 @@ test("Test basic data store and API", async () => {
             
             log.info(`Adding test person with ID ${TEST_PERSON_ID}...`)
 
-            const addPersonArgs = new serverApi.AddPersonArgs()
+            const addPersonArgs = new apiServerApi.AddPersonArgs()
             addPersonArgs.setPersonId(TEST_PERSON_ID)
 
             const addPersonResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
@@ -113,7 +113,7 @@ test("Test basic data store and API", async () => {
             
             log.info(`Incrementing test person's number of books read by ${TEST_NUM_BOOKS_READ}...`)
             
-            const incrementBooksReadArgs = new serverApi.IncrementBooksReadArgs()
+            const incrementBooksReadArgs = new apiServerApi.IncrementBooksReadArgs()
             incrementBooksReadArgs.setPersonId(TEST_PERSON_ID)
             
             for (let i = 0; i < TEST_NUM_BOOKS_READ; i++) {
@@ -141,8 +141,8 @@ test("Test basic data store and API", async () => {
             
             log.info("Retrieving test person to verify number of books read...")
 
-            const getNewPersonResultPromise: Promise<Result<serverApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
-                apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: serverApi.GetPersonResponse) => {
+            const getPersonAfterUpdatingResultPromise: Promise<Result<apiServerApi.GetPersonResponse, Error>> = new Promise((resolve, _unusedReject) => {
+                apiClient.getPerson(getPersonArgs, (error: grpc.ServiceError | null, response?: apiServerApi.GetPersonResponse) => {
                     if (error === null) {
                         if (!response) {
                             resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -154,14 +154,14 @@ test("Test basic data store and API", async () => {
                     }
                 })
             })
-            const  getNewPersonResult = await getNewPersonResultPromise
-            if(getNewPersonResult.isErr()){
+            const  getPersonAfterUpdatingResult = await getPersonAfterUpdatingResultPromise
+            if(getPersonAfterUpdatingResult.isErr()){
                 log.error("An error occurred getting the test person to verify the number of books read")
-                throw getNewPersonResult.error
+                throw getPersonAfterUpdatingResult.error
             }
             log.info("Retrieved test person")
 
-            const newPersonBooksRead = getNewPersonResult.value.getBooksRead()
+            const newPersonBooksRead = getPersonAfterUpdatingResult.value.getBooksRead()
             
             if(TEST_NUM_BOOKS_READ !== newPersonBooksRead){
                 throw new Error(`Expected number of book read ${TEST_NUM_BOOKS_READ} != actual number of books read ${newPersonBooksRead}`)
