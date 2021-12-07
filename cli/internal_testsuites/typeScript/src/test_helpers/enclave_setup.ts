@@ -14,7 +14,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 
 	const newKurtosisContextResult = KurtosisContext.newKurtosisContextFromLocalEngine();
 	if(newKurtosisContextResult.isErr()) {
-        log.error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`)
+        	log.error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`)
 		return err(newKurtosisContextResult.error)
 	}
 	const kurtosisContext = newKurtosisContextResult.value;
@@ -23,7 +23,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
 	const createEnclaveResult = await kurtosisContext.createEnclave(enclaveId, isPartitioningEnabled);
 	
 	if(createEnclaveResult.isErr()) {
-        log.error(`An error occurred creating enclave ${enclaveId}`)
+        	log.error(`An error occurred creating enclave ${enclaveId}`)
 		return err(createEnclaveResult.error)
 	}
 
