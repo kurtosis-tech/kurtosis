@@ -188,10 +188,10 @@ async function waitForHealthy(
 function getDatastoreContainerConfigSupplier(): ( ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 
     const containerConfigSupplier = ( ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-        const datastorePortsSet = new Set();
-        datastorePortsSet.add(DATASTORE_PORT_STR);
+        const usedPorts = new Map<string, PortSpec>();
+        usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
 
-        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(datastorePortsSet as Set<string>).build();
+        const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
 
         return ok(containerConfig);
     };
@@ -208,12 +208,12 @@ function getApiServiceContainerConfigSupplier(datastoreIPInsideNetwork:string):
        
         const datastoreConfigFileFilePath = datastoreConfigFileFilePathResult.value
   
-        const apiPortsSet = new Set()
-        apiPortsSet.add(API_PORT_STR);
+        const usedPorts = new Map<string, PortSpec>();
+        usedPorts.set(API_PORT_ID, API_PORT_SPEC);
         const startCmd:string[] = ["./example-api-server.bin", "--config", datastoreConfigFileFilePath.getAbsPathOnServiceContainer()]
   
         const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
-            .withUsedPorts(apiPortsSet as Set<string>)
+            .withUsedPorts(usedPorts)
             .withCmdOverride(startCmd)
             .build()
   
