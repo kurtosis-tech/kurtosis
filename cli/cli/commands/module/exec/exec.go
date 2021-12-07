@@ -271,38 +271,6 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getModContainer(ctx context.Context, dockerManager *docker_manager.DockerManager , enclaveId, moduleId string) (*docker_manager_types.Container, error){
-	labels := module_container_labels.GetModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
-	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
-	}
-
-	if containers == nil || len(containers) == 0 {
-		return nil, stacktrace.NewError("There is not any module container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
-	}
-
-	var containersWithSameModuleId = []*docker_manager_types.Container{}
-	for _, container := range containers {
-		labelsMap := container.GetLabels()
-		containerModuleId, found := labelsMap[schema.IDLabel]
-		if found && containerModuleId == moduleId {
-			containersWithSameModuleId = append(containersWithSameModuleId, container)
-		}
-	}
-
-	if len(containersWithSameModuleId) == 0 {
-		logrus.Errorf("There is not any module container with ID '%v'", moduleId)
-		return nil, stacktrace.NewError("There is not any module container with ID '%v'", moduleId)
-	}
-
-	if len(containersWithSameModuleId) > 1 {
-		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containers))
-	}
-
-	return containersWithSameModuleId[0], nil
-}
-
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
@@ -326,4 +294,35 @@ func getEnclaveId(moduleImage string) string {
 		pathElement,
 		time.Now().Unix(),
 	)
+}
+
+func getModContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error){
+	labels := module_container_labels.GetModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
+	}
+
+	if containers == nil || len(containers) == 0 {
+		return nil, stacktrace.NewError("There is not any module container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
+	}
+
+	var containersWithSameModuleId = []*docker_manager_types.Container{}
+	for _, container := range containers {
+		labelsMap := container.GetLabels()
+		containerModuleId, found := labelsMap[schema.IDLabel]
+		if found && containerModuleId == moduleId {
+			containersWithSameModuleId = append(containersWithSameModuleId, container)
+		}
+	}
+
+	if len(containersWithSameModuleId) == 0 {
+		return nil, stacktrace.NewError("There is not any module container with ID '%v'", moduleId)
+	}
+
+	if len(containersWithSameModuleId) > 1 {
+		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containersWithSameModuleId))
+	}
+
+	return containersWithSameModuleId[0], nil
 }

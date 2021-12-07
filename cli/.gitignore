@@ -56,3 +56,10 @@ build
 
 # Ignore Goreleaser dist directory
 dist
+
+# Node
+node_modules
+yarn-error.log
+
+#Jest
+coverage
