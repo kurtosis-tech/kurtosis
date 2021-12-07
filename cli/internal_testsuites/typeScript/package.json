@@ -4,18 +4,15 @@
     "test": "jest  ./build"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.3",
+    "@types/node": "^16.11.11",
     "axios": "^0.24.0",
-    "example-api-server-api-lib": "^0.2.2",
-    "example-datastore-server-api-lib": "^0.3.4",
-    "google-protobuf": "^3.19.1",
-    "grpc": "^1.24.11",
+    "example-api-server-api-lib": "0.3.0",
+    "example-datastore-server-api-lib": "0.4.0",
     "jest": "^27.3.1",
-    "kurtosis-core-api-lib": "^1.33.4",
-    "kurtosis-engine-api-lib": "^1.5.6",
+    "kurtosis-engine-api-lib": "1.7.3",
     "loglevel": "^1.8.0",
     "neverthrow": "^4.3.1",
-    "@types/google-protobuf": "^3.15.5",
-    "@types/jest": "^27.0.3",
     "typescript": "^4.5.2"
   }
 }

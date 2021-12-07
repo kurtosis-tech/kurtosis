@@ -1,6 +1,6 @@
 import { UpsertArgs, ExistsArgs, GetArgs, ExistsResponse, GetResponse } from "example-datastore-server-api-lib";
 import { ServiceID } from "kurtosis-core-api-lib"
-import * as grpc from "grpc"
+import * as grpc from "@grpc/grpc-js"
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import log from "loglevel"
 import { Result, ok, err } from "neverthrow"
