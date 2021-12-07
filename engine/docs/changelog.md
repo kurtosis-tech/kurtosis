@@ -1,9 +1,12 @@
 # TBD
 
+# 1.7.6
+### Fixes 
+* Added mutex lock in GetEnclaves
+
 # 1.7.5
 ### Features
 * Added clean endpoint which gets rid of the enclaves and the dependant containers
-
 
 # 1.7.4
 ### Changes
