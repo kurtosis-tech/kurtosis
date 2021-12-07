@@ -1,6 +1,7 @@
 # TBD
 ### Features
-* Added TypeScript test: `basic_datastore_test_and_api.ts`
+* Added TypeScript test: `bulk_command_execution.test.ts`
+* Added TypeScript test: `basic_datastore_and_api.test.ts`
 
 # 0.7.1
 ### Fixes
@@ -8,7 +9,7 @@
 
 # 0.7.0
 ### Features
-* Added TypeScript: `basic_datastore_test.ts`, `enclave_setup.ts` and `test_helpers.ts`
+* Added TypeScript: `basic_datastore.test.ts`, `enclave_setup.ts` and `test_helpers.ts`
 * Added TypeScript project inside of `internal_testsuites` folder. 
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
 * Add an extra API container status result to `enclave inspect`
