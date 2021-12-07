@@ -1,4 +1,6 @@
 # TBD
+
+# 1.7.6
 ### Fixes 
 * Added mutex lock in GetEnclaves
 
