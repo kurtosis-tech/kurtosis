@@ -266,8 +266,8 @@ export namespace CleanArgs {
 }
 
 export class CleanResponse extends jspb.Message {
-  getArtifactsMap(): jspb.Map<string, boolean>;
-  clearArtifactsMap(): void;
+  getRemovedEnclaveIdsMap(): jspb.Map<string, boolean>;
+  clearRemovedEnclaveIdsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanResponse.AsObject;
   static toObject(includeInstance: boolean, msg: CleanResponse): CleanResponse.AsObject;
@@ -280,7 +280,7 @@ export class CleanResponse extends jspb.Message {
 
 export namespace CleanResponse {
   export type AsObject = {
-    artifactsMap: Array<[string, boolean]>,
+    removedEnclaveIdsMap: Array<[string, boolean]>,
   }
 }
 

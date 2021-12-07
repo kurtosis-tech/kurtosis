@@ -244,8 +244,8 @@ export class KurtosisContext {
         const cleanResponse: CleanResponse = cleanResult.value;
 
         const result: Set<string> = new Set();
-        for (let artifactID of cleanResponse.getArtifactsMap().keys()) {
-            result.add(artifactID);
+        for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
+            result.add(enclaveID);
         }
         return ok(result);
     }

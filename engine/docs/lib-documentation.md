@@ -49,6 +49,12 @@ Stops the enclave with the given ID and destroys the enclave objects (containers
 **Args**
 * `enclaveId`: ID of the enclave to destroy.
 
+### clean(boolean shouldCleanAll) -\> Set\<EnclaveID\> RemovedEnclaveIds
+Gets rid of old enclaves and even of running ones if the arg `shouldCleanAll` is set to `true`
+
+**Returns**
+* `enclaveIds`: A set of the removed enclave IDs.
+
 ---
 
 _Found a bug? File it on [the repo][issues]!_

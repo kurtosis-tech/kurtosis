@@ -419,7 +419,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	resultSuccessfullyRemovedArtifactIds := map[string]bool{}
+	resultSuccessfullyRemovedArtifactsIds := map[string]map[string]bool{}
 
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
@@ -442,12 +442,14 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		}
 
 		if len(successfullyRemovedArtifactIds) > 0 {
+			artifactIDs := map[string]bool{}
 			logrus.Infof("Successfully removed the following %v:", phaseTitle)
 			sort.Strings(successfullyRemovedArtifactIds)
 			for _, successfulArtifactId := range successfullyRemovedArtifactIds {
-				resultSuccessfullyRemovedArtifactIds[successfulArtifactId] = true
+				artifactIDs[successfulArtifactId] = true
 				fmt.Fprintln(logrus.StandardLogger().Out, successfulArtifactId)
 			}
+			resultSuccessfullyRemovedArtifactsIds[phaseTitle] = artifactIDs
 		}
 
 		if len(removalErrors) > 0 {
@@ -467,7 +469,7 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.NewError(errorStr)
 	}
 
-	return resultSuccessfullyRemovedArtifactIds, nil
+	return resultSuccessfullyRemovedArtifactsIds[enclavesCleaningPhaseTitle], nil
 }
 
 // ====================================================================================================

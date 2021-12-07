@@ -161,7 +161,7 @@ message CleanArgs {
 
 
 message CleanResponse {
-  // Set of artifact IDs
-  map<string, bool> artifacts = 1;
+  // Set of removed enclave IDs
+  map<string, bool> removed_enclave_ids = 1;
 
 }

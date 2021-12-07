@@ -162,7 +162,7 @@ func (kurtosisCtx *KurtosisContext) Clean(ctx context.Context, shouldCleanAll bo
 		return nil, stacktrace.Propagate(err, "An error occurred when trying to perform a clean with the clean-all arg set to '%v'", shouldCleanAll)
 	}
 
-	return cleanResponse.Artifacts, nil
+	return cleanResponse.RemovedEnclaveIds, nil
 }
 
 // ====================================================================================================

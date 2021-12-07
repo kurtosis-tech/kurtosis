@@ -2079,7 +2079,7 @@ proto.engine_api.CleanResponse.prototype.toObject = function(opt_includeInstance
  */
 proto.engine_api.CleanResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    artifactsMap: (f = msg.getArtifactsMap()) ? f.toObject(includeInstance, undefined) : []
+    removedEnclaveIdsMap: (f = msg.getRemovedEnclaveIdsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2117,7 +2117,7 @@ proto.engine_api.CleanResponse.deserializeBinaryFromReader = function(msg, reade
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = msg.getArtifactsMap();
+      var value = msg.getRemovedEnclaveIdsMap();
       reader.readMessage(value, function(message, reader) {
         jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readBool, null, "", false);
          });
@@ -2151,7 +2151,7 @@ proto.engine_api.CleanResponse.prototype.serializeBinary = function() {
  */
 proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getArtifactsMap(true);
+  f = message.getRemovedEnclaveIdsMap(true);
   if (f && f.getLength() > 0) {
     f.serializeBinary(1, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
@@ -2159,12 +2159,12 @@ proto.engine_api.CleanResponse.serializeBinaryToWriter = function(message, write
 
 
 /**
- * map<string, bool> artifacts = 1;
+ * map<string, bool> removed_enclave_ids = 1;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<string,boolean>}
  */
-proto.engine_api.CleanResponse.prototype.getArtifactsMap = function(opt_noLazyCreate) {
+proto.engine_api.CleanResponse.prototype.getRemovedEnclaveIdsMap = function(opt_noLazyCreate) {
   return /** @type {!jspb.Map<string,boolean>} */ (
       jspb.Message.getMapField(this, 1, opt_noLazyCreate,
       null));
@@ -2175,8 +2175,8 @@ proto.engine_api.CleanResponse.prototype.getArtifactsMap = function(opt_noLazyCr
  * Clears values from the map. The map will be non-null.
  * @return {!proto.engine_api.CleanResponse} returns this
  */
-proto.engine_api.CleanResponse.prototype.clearArtifactsMap = function() {
-  this.getArtifactsMap().clear();
+proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveIdsMap = function() {
+  this.getRemovedEnclaveIdsMap().clear();
   return this;};
 
 
