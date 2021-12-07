@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added clean endpoint which gets rid of the enclaves and the dependant containers
+
 
 # 1.7.4
 ### Changes

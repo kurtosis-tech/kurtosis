@@ -13,6 +13,7 @@ interface IEngineServiceService extends grpc.ServiceDefinition<grpc.UntypedServi
   getEnclaves: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, engine_service_pb.GetEnclavesResponse>;
   stopEnclave: grpc.MethodDefinition<engine_service_pb.StopEnclaveArgs, google_protobuf_empty_pb.Empty>;
   destroyEnclave: grpc.MethodDefinition<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
+  clean: grpc.MethodDefinition<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
 }
 
 export const EngineServiceService: IEngineServiceService;
@@ -23,6 +24,7 @@ export interface IEngineServiceServer extends grpc.UntypedServiceImplementation 
   getEnclaves: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, engine_service_pb.GetEnclavesResponse>;
   stopEnclave: grpc.handleUnaryCall<engine_service_pb.StopEnclaveArgs, google_protobuf_empty_pb.Empty>;
   destroyEnclave: grpc.handleUnaryCall<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
+  clean: grpc.handleUnaryCall<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
 }
 
 export class EngineServiceClient extends grpc.Client {
@@ -42,4 +44,7 @@ export class EngineServiceClient extends grpc.Client {
   destroyEnclave(argument: engine_service_pb.DestroyEnclaveArgs, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
   destroyEnclave(argument: engine_service_pb.DestroyEnclaveArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
   destroyEnclave(argument: engine_service_pb.DestroyEnclaveArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientUnaryCall;
+  clean(argument: engine_service_pb.CleanArgs, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
+  clean(argument: engine_service_pb.CleanArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
+  clean(argument: engine_service_pb.CleanArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
 }

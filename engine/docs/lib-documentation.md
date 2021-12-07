@@ -49,6 +49,15 @@ Stops the enclave with the given ID and destroys the enclave objects (containers
 **Args**
 * `enclaveId`: ID of the enclave to destroy.
 
+### clean(boolean shouldCleanAll) -\> Set\<EnclaveID\> RemovedEnclaveIds
+Destroys enclaves in the Kurtosis engine.
+
+**Args**
+* `shouldCleanAll`: If set to true, destroys running enclaves in addition to stopped ones.
+
+**Returns**
+* `RemovedEnclaveIds`: A set of the removed enclave IDs.
+
 ---
 
 _Found a bug? File it on [the repo][issues]!_
