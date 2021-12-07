@@ -1,7 +1,7 @@
 {
     "name": "kurtosis-core-api-lib",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
-    "version": "1.36.9",
+    "version": "1.36.10",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis API server, which both testsuites and Kurtosis Modules use to manipulate the test environment.",
     "main": "./build/index",
     "types": "./build/index",
