@@ -20,16 +20,17 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/module_container_labels"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"io"
 	"regexp"
 	"strings"
 	"time"
@@ -241,6 +242,24 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.Info("Module loaded successfully")
 
+	modContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
+	if err != nil {
+		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+		logrus.Error("The module containers logs won't be printed. An error occurred getting the module container: \n%v", err)
+	}
+
+	if modContainer != nil {
+		readCloserLogs, err := dockerManager.GetContainerLogs(ctx, modContainer.GetId(), shouldFollowContainerLogs)
+		if err != nil {
+			//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+			logrus.Errorf("The module containers logs won't be printed. An error occurred getting service logs for container with ID '%v': \n%v", modContainer.GetId(), err)
+		}
+		if readCloserLogs != nil {
+			defer readCloserLogs.Close()
+			go printModuleContainerLogs(readCloserLogs)
+		}
+	}
+
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
 	executeModuleArgs := binding_constructors.NewExecuteModuleArgs(moduleId, executeParamsStr)
 	executeModuleResult, err := apiContainerClient.ExecuteModule(ctx, executeModuleArgs)
@@ -251,21 +270,6 @@ func run(cmd *cobra.Command, args []string) error {
 		"Module executed successfully and returned the following result:\n%v",
 		executeModuleResult.SerializedResult,
 	)
-
-	modContainer, err := getModContainer(ctx, dockerManager, enclaveId, moduleId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the module container")
-	}
-
-	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, modContainer.GetId(), shouldFollowContainerLogs)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", modContainer.GetId())
-	}
-	defer readCloserLogs.Close()
-
-	if _, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying the container logs to STDOUT")
-	}
 
 	shouldStopEnclave = false
 	return nil
@@ -296,8 +300,8 @@ func getEnclaveId(moduleImage string) string {
 	)
 }
 
-func getModContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error){
-	labels := module_container_labels.GetModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
+func getModuleContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error){
+	labels := getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
@@ -307,22 +311,23 @@ func getModContainer(ctx context.Context, dockerManager *docker_manager.DockerMa
 		return nil, stacktrace.NewError("There is not any module container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
 	}
 
-	var containersWithSameModuleId = []*docker_manager_types.Container{}
-	for _, container := range containers {
-		labelsMap := container.GetLabels()
-		containerModuleId, found := labelsMap[schema.IDLabel]
-		if found && containerModuleId == moduleId {
-			containersWithSameModuleId = append(containersWithSameModuleId, container)
-		}
+	if len(containers) > 1 {
+		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containers))
 	}
 
-	if len(containersWithSameModuleId) == 0 {
-		return nil, stacktrace.NewError("There is not any module container with ID '%v'", moduleId)
-	}
+	return containers[0], nil
+}
 
-	if len(containersWithSameModuleId) > 1 {
-		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containersWithSameModuleId))
-	}
+func getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId string, moduleId string) map[string]string {
+	labels := map[string]string{}
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeModuleContainer
+	labels[schema.EnclaveIDContainerLabel] = enclaveId
+	labels[schema.IDLabel] = moduleId
+	return labels
+}
 
-	return containersWithSameModuleId[0], nil
+func printModuleContainerLogs(readCloserLogs io.ReadCloser) {
+	if _, err := stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
+		logrus.Errorf("The module containers logs won't be printed. An error occurred copying the container logs to STDOUT: \n %v", err)
+	}
 }

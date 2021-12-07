@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* The `module exec` command print and follow the module's logs
+* The `module exec` command prints and follows the module's logs
 
 ### Changes
 * Upgraded `obj-attrs-schema-lib` to 0.6.0 which adds ID label
