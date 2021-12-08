@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Make a best-effort attempt to pull service & module images from Dockerhub, so users don't need to manually `docker pull`
 
 # 1.36.10
 ### Changes
