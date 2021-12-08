@@ -20,9 +20,8 @@ import (
 )
 
 const (
-	// For now, we rely on the users to update their own images if the image already exists in the Docker engine; we should
-	//  probably make this a configurable flag though
-	shouldPullImageBeforeLaunch = false
+	// This should probably be configurable
+	shouldPullImageBeforeLaunch = true
 
 	// User services shouldn't have access to the Docker engine
 	shouldBindMountDockerSocket = false

@@ -1,5 +1,9 @@
 # TBD
 
+# 1.36.11
+### Fixes
+* Make a best-effort attempt to pull service & module images from Dockerhub, so users don't need to manually `docker pull`
+
 # 1.36.10
 ### Changes
 * Upgrade to `object-attributes-schema-lib` v0.6.0 to support `id` label
