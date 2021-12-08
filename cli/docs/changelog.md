@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Make a best-effort attempt to pull module & user service images before starting them
 
 # 0.8.1
 ### Features
