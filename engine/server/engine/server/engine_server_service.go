@@ -19,7 +19,7 @@ type EngineServerService struct {
 	enclaveManager *enclave_manager.EnclaveManager
 }
 
-func NewEngineServerService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager) *EngineServerService {
+func NewEngineServrService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager) *EngineServerService {
 	service := &EngineServerService{
 		imageVersionTag:                  imageVersionTag,
 		enclaveManager:                   enclaveManager,

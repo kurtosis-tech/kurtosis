@@ -295,7 +295,11 @@ func (manager *EnclaveManager) GetEnclaves(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.getEnclavesWithoutMutex(ctx)
+	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclaves without the mutex")
+	}
+	return enclaves, nil
 }
 
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
@@ -313,7 +317,10 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.destroyEnclaveWithoutMutex(ctx, enclaveId)
+	if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the enclave without the mutex")
+	}
+	return nil
 }
 
 func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
