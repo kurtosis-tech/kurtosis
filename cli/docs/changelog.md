@@ -1,5 +1,11 @@
 # TBD
 
+# 0.8.2
+### Fixes
+* Make a best-effort attempt to pull module & user service images before starting them
+* The headers of `enclave inspect` are printed in deterministic, sorted order so they stop jumping around on subsequent runs
+* Fix a bug where the `sandbox` would error on `enclaveCtx.getServiceContext`
+
 # 0.8.1
 ### Features
 * Added TypeScript test: `basic_datastore_test_and_api.ts`

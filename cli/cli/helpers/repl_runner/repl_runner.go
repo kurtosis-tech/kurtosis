@@ -120,6 +120,7 @@ func RunREPL(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
 		repl_consts.KurtosisSocketEnvVar:          kurtosisApiContainerSocket,
+		repl_consts.EnclaveIdEnvVar: enclaveId,
 		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(
 		bindMounts,

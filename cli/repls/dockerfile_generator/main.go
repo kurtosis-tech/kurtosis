@@ -30,6 +30,7 @@ type TemplateData struct {
 	PackageInstallationDirpath    string
 	InstalledPackagesDirpath      string
 	KurtosisAPISocketEnvVar       string
+	EnclaveIDEnvVar               string
 	EnclaveDataMountDirpathEnvVar string
 }
 
@@ -79,6 +80,7 @@ func runMain() error {
 		PackageInstallationDirpath:    packageInstallationDirpath,
 		InstalledPackagesDirpath:      installedPackagesDirpath,
 		KurtosisAPISocketEnvVar:       repl_consts.KurtosisSocketEnvVar,
+		EnclaveIDEnvVar:               repl_consts.EnclaveIdEnvVar,
 		EnclaveDataMountDirpathEnvVar: repl_consts.EnclaveDataMountDirpathEnvVar,
 	}
 
