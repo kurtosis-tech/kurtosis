@@ -656,7 +656,6 @@
   integrity sha512-5tXH6Bx/kNGd3MgffdmP4dy2Z+G4eaXw0SE81Tq3BNadtnMR5/ySMzX4SLEzHJzSmPNn4HIdpQsBvXMUykr58w==
 
 "@types/node@*", "@types/node@>=12.12.47", "@types/node@>=13.7.0", "@types/node@^16.11.11":
-
   version "16.11.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.11.tgz#6ea7342dfb379ea1210835bada87b3c512120234"
   integrity sha512-KB0sixD67CeecHC33MYn+eYARkqTheIRNuu97y2XMjR7Wu3XibO1vaY6VBV6O/a89SPI81cEUIYT87UqUWlZNw==
@@ -1950,10 +1949,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.36.9:
-  version "1.36.9"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.9.tgz#033aa4d66e0e89804b6ac2fe25fbaf5f54e28efb"
-  integrity sha512-C7xNl9/YZOxVa6rubX29shB0rNC+lVKhk7O1yn2ypZWpUaWgbtYs78uZGO4U8b3TkJSTnZ135H/Qhb0Wefps6A==
+kurtosis-core-api-lib@1.36.11:
+  version "1.36.11"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.11.tgz#0d963fc5d30913faa3b3f5a47adf305c40401eb8"
+  integrity sha512-YljmQAr1L/D1/MNKxUAxZGj6YUxeTdmj0xYNBNd9kaKBIP2cCRsJmrp5JeKQGcIom/HE2QN/RLdwWKmLe4QzlA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
@@ -1961,14 +1960,14 @@ kurtosis-core-api-lib@1.36.9:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
-kurtosis-engine-api-lib@1.7.3:
-  version "1.7.3"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.7.3.tgz#227212c8ca524d57e12e6b3d830eef4b2915fffb"
-  integrity sha512-3r42TJ/LXfTduyO0U4IN+XJaNuXivShjKWFxhj/OT7t41R9Woch/nkxzD9Fuym3/NO63PmaitqegdvXyFVCIwQ==
+kurtosis-engine-api-lib@1.7.7:
+  version "1.7.7"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.7.7.tgz#772691f926fa7891b2d81a43729ead5a5ee6a36d"
+  integrity sha512-2XvDOj2HZOmwgth+uM4N9HlGvMgXd7tojxnnLlwu7aJBCVSu6m+KjKSjaiTDHhvrsM47FnTzfPht+Mz/rhyXvg==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     google-protobuf "^3.17.3"
-    kurtosis-core-api-lib "1.36.9"
+    kurtosis-core-api-lib "1.36.11"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 

@@ -16,5 +16,5 @@ CMD node -i --experimental-repl-await -e " \
     let grpc = require(\"@grpc/grpc-js\"); \
     let enclaveCtx; \
     const client = new kurtosisCore.ApiContainerServiceClient(\"${{ "{" }}{{ .KurtosisAPISocketEnvVar }}{{ "}" }}\", grpc.credentials.createInsecure()); \
-    enclaveCtx = new kurtosisCore.EnclaveContext(client, \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
+    enclaveCtx = new kurtosisCore.EnclaveContext(client, \"${{ "{" }}{{ .EnclaveIDEnvVar }}{{ "}" }}\", \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
 "
