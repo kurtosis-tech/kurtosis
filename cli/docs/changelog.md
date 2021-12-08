@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.2
 ### Fixes
 * Make a best-effort attempt to pull module & user service images before starting them
 * The headers of `enclave inspect` are printed in deterministic, sorted order so they stop jumping around on subsequent runs
