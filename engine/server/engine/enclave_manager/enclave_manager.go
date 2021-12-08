@@ -295,7 +295,11 @@ func (manager *EnclaveManager) GetEnclaves(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.getEnclavesWithoutMutex(ctx)
+	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclaves without the mutex")
+	}
+	return enclaves, nil
 }
 
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
@@ -313,75 +317,9 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	enclaveNetwork, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for a network for enclave '%v'", enclaveId)
+	if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the enclave without the mutex")
 	}
-	if !found {
-		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveId)
-	}
-
-	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
-			enclaveId,
-		)
-	}
-
-	// First, delete all enclave containers
-	enclaveContainersSearchLabels := map[string]string{
-		schema.EnclaveIDContainerLabel: enclaveId,
-	}
-	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(
-		ctx,
-		enclaveContainersSearchLabels,
-		shouldFetchStoppedContainersWhenDestroyingEnclave,
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveId)
-	}
-	removeContainerErrorStrs := []string{}
-	for _, container := range allEnclaveContainers {
-		containerName := container.GetName()
-		containerId := container.GetId()
-		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred removing container '%v' with ID '%v'",
-				containerName,
-				containerId,
-			)
-			removeContainerErrorStrs = append(
-				removeContainerErrorStrs,
-				wrappedErr.Error(),
-			)
-		}
-	}
-	if len(removeContainerErrorStrs) > 0 {
-		return stacktrace.NewError(
-			"An error occurred removing one or more containers in enclave '%v':\n%v",
-			enclaveId,
-			strings.Join(
-				removeContainerErrorStrs,
-				"\n\n",
-			),
-		)
-	}
-
-	// Next, remove the enclave data dir (if it exists)
-	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
-		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
-			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
-		}
-	}
-
-	// Finally, remove the network
-	if err := manager.dockerManager.RemoveNetwork(ctx, enclaveNetwork.GetId()); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
-	}
-
 	return nil
 }
 
@@ -839,7 +777,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	successfullyDestroyedEnclaveIds := []string{}
 	enclaveDestructionErrors := []error{}
 	for _, enclaveId := range enclaveIdsToDestroy {
-		if err := manager.DestroyEnclave(ctx, enclaveId); err != nil {
+		if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v'", enclaveId)
 			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
 			continue
@@ -955,4 +893,78 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 		result[enclaveId] = enclaveInfo
 	}
 	return result, nil
+}
+
+// Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
+func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
+	enclaveNetwork, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking for a network for enclave '%v'", enclaveId)
+	}
+	if !found {
+		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveId)
+	}
+
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
+			enclaveId,
+		)
+	}
+
+	// First, delete all enclave containers
+	enclaveContainersSearchLabels := map[string]string{
+		schema.EnclaveIDContainerLabel: enclaveId,
+	}
+	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(
+		ctx,
+		enclaveContainersSearchLabels,
+		shouldFetchStoppedContainersWhenDestroyingEnclave,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveId)
+	}
+	removeContainerErrorStrs := []string{}
+	for _, container := range allEnclaveContainers {
+		containerName := container.GetName()
+		containerId := container.GetId()
+		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing container '%v' with ID '%v'",
+				containerName,
+				containerId,
+			)
+			removeContainerErrorStrs = append(
+				removeContainerErrorStrs,
+				wrappedErr.Error(),
+			)
+		}
+	}
+	if len(removeContainerErrorStrs) > 0 {
+		return stacktrace.NewError(
+			"An error occurred removing one or more containers in enclave '%v':\n%v",
+			enclaveId,
+			strings.Join(
+				removeContainerErrorStrs,
+				"\n\n",
+			),
+		)
+	}
+
+	// Next, remove the enclave data dir (if it exists)
+	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
+		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
+			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
+		}
+	}
+
+	// Finally, remove the network
+	if err := manager.dockerManager.RemoveNetwork(ctx, enclaveNetwork.GetId()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+	}
+
+	return nil
 }
