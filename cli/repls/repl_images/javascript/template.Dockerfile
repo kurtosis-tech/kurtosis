@@ -13,7 +13,7 @@ ENV NODE_PATH="{{ .InstalledPackagesDirpath }}"
 #  the old callback syntax to load Kurtosis (not a big deal though)
 CMD node -i --experimental-repl-await -e " \
     let kurtosisCore = require(\"kurtosis-core-api-lib\"); \
-    let grpc = require(\"grpc\"); \
+    let grpc = require(\"@grpc/grpc-js\"); \
     let enclaveCtx; \
     const client = new kurtosisCore.ApiContainerServiceClient(\"${{ "{" }}{{ .KurtosisAPISocketEnvVar }}{{ "}" }}\", grpc.credentials.createInsecure()); \
     enclaveCtx = new kurtosisCore.EnclaveContext(client, \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
