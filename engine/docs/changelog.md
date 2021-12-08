@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Bump to Core 1.36.11, which attempts to pull module & user service images
 
 # 1.7.6
 ### Fixes 
