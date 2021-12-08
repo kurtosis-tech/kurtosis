@@ -33,8 +33,8 @@ const (
 	// The filepath where the enclave data directory will be mounted on the module container
 	enclaveDataDirMountFilepathOnContainer = "/kurtosis-enclave-data"
 
-	// For now, we let users update their module images if they want to, though this should probably be configurable
-	shouldPullContainerImageBeforeStarting = false
+	// This should probably be configurable
+	shouldPullContainerImageBeforeStarting = true
 
 	// Modules don't need to access the Docker engine directly, instead doing that through the API container
 	shouldBindMountDockerSocket = false
