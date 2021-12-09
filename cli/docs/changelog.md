@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added TypeScript test: `exec_command.test.ts`
+
 # 0.8.2
 ### Fixes
 * Make a best-effort attempt to pull module & user service images before starting them
