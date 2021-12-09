@@ -100,7 +100,7 @@ test("Test exec command", async () => {
 // ====================================================================================================
 function getContainerConfigSupplier(): (ipAddr:string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 	
-    const containerConfigSupplier = (pAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+    const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
 		const entrypointArgs = ["sleep"]
 		const cmdArgs = ["30"]
 
