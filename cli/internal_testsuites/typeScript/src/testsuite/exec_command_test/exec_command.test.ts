@@ -101,18 +101,18 @@ test("Test exec command", async () => {
 function getContainerConfigSupplier(): (ipAddr:string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 	
     const containerConfigSupplier = (ipAddr:string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-		const entrypointArgs = ["sleep"]
-		const cmdArgs = ["30"]
+        const entrypointArgs = ["sleep"]
+        const cmdArgs = ["30"]
 
-		const containerConfig = new ContainerConfigBuilder(EXEC_CMD_TEST_IMAGE)
+        const containerConfig = new ContainerConfigBuilder(EXEC_CMD_TEST_IMAGE)
             .withEntrypointOverride(entrypointArgs)
             .withCmdOverride(cmdArgs)
             .build()
         
-		return ok(containerConfig)
-	}
+        return ok(containerConfig)
+    }
 
-	return containerConfigSupplier
+    return containerConfigSupplier
 }
 
 async function runExecCmd(serviceContext: ServiceContext, command: string[]) {
