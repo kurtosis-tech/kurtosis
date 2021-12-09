@@ -139,8 +139,19 @@ func run(cmd *cobra.Command, args []string) error {
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")
 
+	sortedEnclaveObjHeaders := []string{}
+	for header := range enclaveObjectPrintingFuncs {
+		sortedEnclaveObjHeaders = append(sortedEnclaveObjHeaders, header)
+	}
+	sort.Strings(sortedEnclaveObjHeaders)
+
 	headersWithPrintErrs := []string{}
-	for header, printingFunc := range enclaveObjectPrintingFuncs {
+	for _, header := range sortedEnclaveObjHeaders {
+		printingFunc, found := enclaveObjectPrintingFuncs[header]
+		if !found {
+			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
+		}
+
 		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
 		numPadChars := (headerWidthChars - numRunesInHeader) / 2
 		padStr := strings.Repeat(headerPadChar, numPadChars)
