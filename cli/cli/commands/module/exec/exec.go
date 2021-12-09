@@ -242,27 +242,34 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.Info("Module loaded successfully")
 
-	modContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
+	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module container")
+	}
+
+	if moduleContainer == nil {
+		return stacktrace.Propagate(err, "It was not found any container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
+	}
+
+	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, moduleContainer.GetId(), shouldFollowContainerLogs)
 	if err != nil {
 		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
-		logrus.Error("The module containers logs won't be printed. An error occurred getting the module container: \n%v", err)
+		logrus.Errorf("The module containers logs won't be printed. An error occurred getting service logs for container with ID '%v': \n%v", moduleContainer.GetId(), err)
 	}
-
-	if modContainer != nil {
-		readCloserLogs, err := dockerManager.GetContainerLogs(ctx, modContainer.GetId(), shouldFollowContainerLogs)
-		if err != nil {
-			//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
-			logrus.Errorf("The module containers logs won't be printed. An error occurred getting service logs for container with ID '%v': \n%v", modContainer.GetId(), err)
-		}
-		if readCloserLogs != nil {
-			defer readCloserLogs.Close()
-			go printModuleContainerLogs(readCloserLogs)
-		}
-	}
-
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
+	if readCloserLogs != nil {
+		go printModuleContainerLogs(readCloserLogs)
+		logrus.Info("----------------------- MODULE LOGS ----------------------")
+	}
+
 	executeModuleArgs := binding_constructors.NewExecuteModuleArgs(moduleId, executeParamsStr)
 	executeModuleResult, err := apiContainerClient.ExecuteModule(ctx, executeModuleArgs)
+
+	//Stops printing logs
+	if readCloserLogs != nil {
+		readCloserLogs.Close()
+		logrus.Info("--------------------- END MODULE LOGS --------------------")
+	}
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing the module with params '%v'", executeParamsStr)
 	}
