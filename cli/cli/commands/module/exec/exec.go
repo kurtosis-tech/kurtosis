@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"io"
+	"net"
 	"regexp"
 	"strings"
 	"time"
@@ -59,6 +60,10 @@ const (
 
 	shouldFollowContainerLogs = true
 	shouldShowStoppedModuleContainers = false
+
+	netReadOpt = "read"
+
+	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -335,6 +340,13 @@ func getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId string, moduleId
 
 func printModuleContainerLogs(readCloserLogs io.ReadCloser) {
 	if _, err := stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
-		logrus.Errorf("The module containers logs won't be printed. An error occurred copying the container logs to STDOUT: \n %v", err)
+		opError, ok := err.(*net.OpError)
+		if ok {
+			//We ignore this type of error because it was generated when the main go routine closes the readCloserLogs object
+			if opError.Op == netReadOpt && strings.Contains(opError.Error(), netReadOptFailBecauseSourceIsUsedOrClosedErrorText) {
+				return
+			}
+		}
+		logrus.Errorf("An error occurred copying the container logs to STDOUT: \n %v", err)
 	}
 }
