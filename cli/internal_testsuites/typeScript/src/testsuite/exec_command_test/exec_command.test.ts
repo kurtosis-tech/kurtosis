@@ -120,5 +120,5 @@ async function runExecCmd(serviceContext: ServiceContext, command: string[]) {
     if(execCommandResult.isErr()) {
         return err(execCommandResult.error)
     }
-	return ok(execCommandResult.value)
+    return ok(execCommandResult.value)
 }
