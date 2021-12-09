@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.3
+### Features
+* Added call to clean endpoint
+
 # 0.8.2
 ### Fixes
 * Make a best-effort attempt to pull module & user service images before starting them
