@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added TypeScript test: `files_artifact_mounting.test.ts`
+
 # 0.8.3
 ### Features
 * Added call to clean endpoint
