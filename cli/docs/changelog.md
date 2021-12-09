@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Added call to clean endpoint and upgrade engine server 1.7.6
+* Added call to clean endpoint
 
 # 0.8.2
 ### Fixes
@@ -23,9 +23,9 @@
 # 0.8.0
 ### Features
 * Upgraded to the following dependencies to support users specifying a user-friendly port ID for their ports:
-  * obj-attrs-schema-lib -> 0.5.0
-  * core dependencies -> 1.36.9
-  * engine dependencies -> 1.7.2
+    * obj-attrs-schema-lib -> 0.5.0
+    * core dependencies -> 1.36.9
+    * engine dependencies -> 1.7.2
 * Added `network_soft_partition_test` in golang internal test suite
 * Added a unit test to ensure that an API break in the engine (which will require restarting the engine) is an API break for the CLI
 
@@ -34,9 +34,9 @@
 
 ### Breaking Changes
 * Upgraded the engine server to 1.7.2
-  * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
-  * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.7.2
-  * Module users will need to update their modules to [Module API Lib](https://github.com/kurtosis-tech/kurtosis-module-api-lib) 0.12.3
+    * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
+    * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.7.2
+    * Module users will need to update their modules to [Module API Lib](https://github.com/kurtosis-tech/kurtosis-module-api-lib) 0.12.3
 
 # 0.7.4
 ### Features
@@ -66,7 +66,7 @@
 ### Features
 * Added TypeScript test: `basic_datastore_test_and_api.ts`
 * Added TypeScript: `basic_datastore_test.ts`, `enclave_setup.ts` and `test_helpers.ts`
-* Added TypeScript project inside of `internal_testsuites` folder.
+* Added TypeScript project inside of `internal_testsuites` folder. 
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
 * Add an extra API container status result to `enclave inspect`
 * Reimplement endpoint availability-waiting test in new Go test framework
@@ -99,15 +99,15 @@
 
 ### Breaking Changes
 * Removed the `test` command
-  * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
+    * Users should migrate their tests out of the Kurtosis testing framework, and into a testing framework of choice in their language
 * The `--image` arg to `engine start` and `engine restart` has been replaced with a `--version` flag
-  * Users should use the new flag with the Docker tag of the engine to start
+    * Users should use the new flag with the Docker tag of the engine to start
 * The `--kurtosis-api-image` flag to `sandbox` has been replaced with a `--api-container-version` flag
-  * Users should use the new flag with the Docker tag of the API container to start
+    * Users should use the new flag with the Docker tag of the API container to start
 * The `--api-container-image` flag to `enclave new` has been replaced with a `--api-container-version` flag
-  * Users should use the new flag with the Docker tag of the API container to start
+    * Users should use the new flag with the Docker tag of the API container to start
 * The `--api-container-image` flag to `module exec` has been replaced with a `--api-container-version` flag
-  * Users should use the new flag with the Docker tag of the API container to start
+    * Users should use the new flag with the Docker tag of the API container to start
 
 # 0.6.8
 ### Features
@@ -119,8 +119,8 @@
 
 ### Fixes
 * The `kurtosis engine restart` suggestion when the engine is out-of-date now:
-  * No longer has a trailing space
-  * Is on the same line as the "engine is out-of-date" message
+    * No longer has a trailing space
+    * Is on the same line as the "engine is out-of-date" message
 
 # 0.6.6
 ### Features
@@ -136,7 +136,7 @@
 * Enable the unit test for the `RootCmd` because issue #69 is fixed
 
 ### Changes
-* Removed `version_checker` class, now the `checkCLILatestVersion` functionality is part of the `RootCmd` and the `checkIfEngineIsUpToDate` functionality is controlled by the `engine_existence_guarantor`
+* Removed `version_checker` class, now the `checkCLILatestVersion` functionality is part of the `RootCmd` and the `checkIfEngineIsUpToDate` functionality is controlled by the `engine_existence_guarantor` 
 
 # 0.6.3
 ### Fixes
@@ -157,7 +157,7 @@
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `kurtosistech/example-datastore-server` in `golang_internal_testsuite`
 * Replaced `kurtosistech/example-microservices_api` Docker image with `kurtosistech/example-api-server` in `golang_internal_testsuite`
 * Replaced `kurtosistech/example-microservices_datastore` Docker image with `docker/getting-started` in `bulk_command_execution_test` and `wait_for_endpoint_availability_test`
-* Upgraded `datastore army module` Docker image to the latest version `kurtosistech/datastore-army-module:0.1.5` in `module_test`
+* Upgraded `datastore army module` Docker image to the latest version `kurtosistech/datastore-army-module:0.1.5` in `module_test` 
 
 # 0.6.1
 ### Fixes
@@ -222,7 +222,7 @@
 
 ### Breaking Changes
 * Interactions with the CLI now require a Kurtosis engine to be running
-  * Users should run `kurtosis engine start` to start an engine
+    * Users should run `kurtosis engine start` to start an engine
 
 # 0.4.3
 ### Features
@@ -242,7 +242,7 @@
 # 0.4.2
 ### Features
 * `enclave` commands also show enclave state
-* Standardized table-printing logic into a `TablePrinter` object
+* Standardized table-printing logic into a `TablePrinter` object 
 * Added a `KeyValuePrinter` for pretty-printing key-value pairs
 * `enclave inspect` also prints the enclave ID & state
 

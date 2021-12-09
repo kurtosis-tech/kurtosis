@@ -143,18 +143,17 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 }
 
 func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) ([]string, []error, error) {
-	cl := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
-	cleanResp, err := engineClient.Clean(ctx, cl)
+	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
+	cleanResp, err := engineClient.Clean(ctx, cleanArgs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while calling clean")
 	}
 
 	successfullyDestroyedEnclaveIds := []string{}
-	enclaveDestructionErrors := []error{} // should we make the clean endpoint return an errors array to have the same behavior as before in the cli?
 	for enclaveId, _ := range cleanResp.RemovedEnclaveIds {
 		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
 	}
-	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
+	return successfullyDestroyedEnclaveIds, nil, nil
 }
 
 func cleanContainers(ctx context.Context, dockerManager *docker_manager.DockerManager, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
