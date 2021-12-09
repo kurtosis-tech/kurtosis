@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.3
+### Features
+* Added call to clean endpoint
+
 # 0.8.2
 ### Fixes
 * Make a best-effort attempt to pull module & user service images before starting them
@@ -8,7 +12,8 @@
 
 # 0.8.1
 ### Features
-* Added TypeScript test: `basic_datastore_test_and_api.ts`
+* Added TypeScript test: `bulk_command_execution.test.ts`
+* Added TypeScript test: `basic_datastore_and_api.test.ts`
 
 ### Fixes
 * Add proper logging for `enclave_setup.ts`
