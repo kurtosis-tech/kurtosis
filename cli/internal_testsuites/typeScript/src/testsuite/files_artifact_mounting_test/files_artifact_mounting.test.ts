@@ -145,7 +145,7 @@ function getFileServerContainerConfigSupplier(): (ipAddr: string, sharedDirector
 }
 
 async function getFileContents(ipAddress: string, portNum: number, filename: string): Promise<Result<string, Error>> {
-	let response;
+    let response;
     try {
         response = await axios(`http://${ipAddress}:${portNum}/${filename}`)
     }catch(error){
@@ -157,5 +157,5 @@ async function getFileContents(ipAddress: string, portNum: number, filename: str
         }
     }
     const bodyStr = String(response.data)
-	return ok(bodyStr)
+    return ok(bodyStr)
 }
