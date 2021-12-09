@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added call to clean endpoint
 
 # 0.8.2
 ### Fixes
