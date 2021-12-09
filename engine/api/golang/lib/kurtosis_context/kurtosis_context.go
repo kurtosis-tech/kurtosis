@@ -53,13 +53,9 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
 
-	kurtosisContext := &KurtosisContext{
-		client: engineServiceClient,
-	}
-
 	getEngineInfoResponse, err := engineServiceClient.GetEngineInfo(ctx, &emptypb.Empty{})
 	if err != nil {
-		errorStr := "An error occurred getting engine info."
+		errorStr := "An error occurred getting engine info"
 		grpcErrorCode := status.Code(err)
 		if grpcErrorCode == codes.Unavailable {
 			errorStr = "The Kurtosis Engine Server is unavailable, probably it is not running, you should start it before executing any request"
@@ -72,8 +68,6 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", runningEngineVersionStr)
 	}
-
-	logrus.Infof("%v", runningEngineSemver)
 
 	runningEngineMajorVersion := runningEngineSemver.Major()
 	runningEngineMinorVersion := runningEngineSemver.Minor()
@@ -92,6 +86,10 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 			runningEngineSemver.String(),
 			libraryEngineSemver.String(),
 		)
+	}
+
+	kurtosisContext := &KurtosisContext{
+		client: engineServiceClient,
 	}
 
 	return kurtosisContext, nil

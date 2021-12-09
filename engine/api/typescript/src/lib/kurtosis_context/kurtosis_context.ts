@@ -15,12 +15,15 @@ import {
     EnclaveContainersStatus,
     EnclaveContainersStatusMap,
     EnclaveInfo,
-    GetEnclavesResponse,
+    GetEnclavesResponse, GetEngineInfoResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as jspb from "google-protobuf";
 import { ApiContainerServiceClient, EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
+import {Status} from "@grpc/grpc-js/build/src/constants";
+import {SemVer, parse, major, minor} from "semver"
+import {KURTOSIS_ENGINE_VERSION} from "../../kurtosis_engine_version/kurtosis_engine_version";
 
 const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
@@ -42,7 +45,7 @@ export class KurtosisContext {
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
-    public static newKurtosisContextFromLocalEngine(): Result<KurtosisContext, Error>{
+    public async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
         const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM}`;
 
         let engineServiceClient: EngineServiceClient;
@@ -55,6 +58,61 @@ export class KurtosisContext {
             }
             return err(new Error(
                 "An unknown exception value was thrown during creation of the engine client that wasn't an error: " + exception
+            ));
+        }
+
+        const getEngineInfoPromise: Promise<Result<GetEngineInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+            engineServiceClient.getEngineInfo(emptyArg, (error: grpc.ServiceError | null, response?: GetEngineInfoResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    if(error.code === Status.UNAVAILABLE){
+                        resolve(err(new Error("The Kurtosis Engine Server is unavailable, probably it is not running, you should start it before executing any request")));
+                    }
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getEngineInfoResult: Result<GetEngineInfoResponse, Error> = await getEngineInfoPromise;
+        if (!getEngineInfoResult.isOk()) {
+            return err(getEngineInfoResult.error)
+        }
+
+        const engineInfoResponse: GetEngineInfoResponse = getEngineInfoResult.value;
+
+        const runningEngineVersionStr: string = engineInfoResponse.getEngineVersion()
+
+        const runningEngineSemver: SemVer | null = parse(runningEngineVersionStr)
+        if (runningEngineSemver === null){
+            return err(new Error(
+                `An error occurred parsing running engine version string ${runningEngineVersionStr} to semantic version`
+            ));
+        }
+
+        const runningEngineMajorVersion: number = major(runningEngineSemver)
+        const runningEngineMinorVersion: number = minor(runningEngineSemver)
+
+        const libraryEngineSemver: SemVer | null = parse(KURTOSIS_ENGINE_VERSION)
+        if (libraryEngineSemver === null){
+            return err(new Error(
+                `An error occurred parsing library engine version string ${KURTOSIS_ENGINE_VERSION} to semantic version`
+            ));
+        }
+
+        const libraryEngineMajorVersion: number = major(libraryEngineSemver)
+        const libraryEngineMinorVersion: number = minor(libraryEngineSemver)
+
+        const doApiVersionsMatch: boolean = libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+        if (!doApiVersionsMatch) {
+            return err(new Error(
+                `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and 
+                the engine version the library expects, ${libraryEngineSemver.version}`
             ));
         }
 
