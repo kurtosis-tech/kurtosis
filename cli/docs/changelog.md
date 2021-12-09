@@ -8,7 +8,8 @@
 
 # 0.8.1
 ### Features
-* Added TypeScript test: `basic_datastore_test_and_api.ts`
+* Added TypeScript test: `bulk_command_execution.test.ts`
+* Added TypeScript test: `basic_datastore_and_api.test.ts`
 
 ### Fixes
 * Add proper logging for `enclave_setup.ts`
