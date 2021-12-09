@@ -1,17 +1,30 @@
 # TBD
 ### Features
-* Added TypeScript test: `basic_datastore_test_and_api.ts`
 * The `module exec` command prints and follows the module's logs
+
+### Changes
+* Upgraded to the following dependencies to support ID label:
+  * obj-attrs-schema-lib -> 0.6.0
+  * core dependencies -> 1.36.11
+  * engine dependencies -> 1.7.7
+
+# 0.8.2
+### Fixes
+* Make a best-effort attempt to pull module & user service images before starting them
+* The headers of `enclave inspect` are printed in deterministic, sorted order so they stop jumping around on subsequent runs
+* Fix a bug where the `sandbox` would error on `enclaveCtx.getServiceContext`
+
+# 0.8.1
+### Features
+* Added TypeScript test: `bulk_command_execution.test.ts`
+* Added TypeScript test: `basic_datastore_and_api.test.ts`
 
 ### Fixes
 * Add proper logging for `enclave_setup.ts`
+* Fixed a bug with the Javascript REPL image
 * Resolve TypeScript test minor bug
-* Upgrade Typescript to the latest version of the
-
-### Changes
-* Upgraded `obj-attrs-schema-lib` to 0.6.0 which adds ID label
-* Upgraded `Kurt Core` to 1.36.10 
-* Upgraded `Kurt Engine` to 1.7.6
+* Upgrade to engine server 1.7.3
+* Upgrade Typescript to the latest version of the engine-server library
 
 # 0.8.0
 ### Features
