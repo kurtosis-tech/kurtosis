@@ -6,8 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -34,6 +36,7 @@ type KurtosisContext struct {
 // NewKurtosisContextFromLocalEngine
 // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
 func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
+	ctx := context.Background()
 	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultKurtosisEngineServerPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
@@ -50,6 +53,38 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 	kurtosisContext := &KurtosisContext{
 		client: engineServiceClient,
+	}
+
+	getEngineInfoResponse, err := engineServiceClient.GetEngineInfo(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting engine info")
+	}
+	runningEngineVersionStr := getEngineInfoResponse.GetEngineVersion()
+
+	runningEngineSemver, err := semver.StrictNewVersion(runningEngineVersionStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", runningEngineVersionStr)
+	}
+
+	logrus.Infof("%v", runningEngineSemver)
+
+	runningEngineMajorVersion := runningEngineSemver.Major()
+	runningEngineMinorVersion := runningEngineSemver.Minor()
+
+	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing library engine version string '%v' to semantic version", kurtosis_engine_version.KurtosisEngineVersion)
+	}
+	libraryEngineMajorVersion := libraryEngineSemver.Major()
+	libraryEngineMinorVersion := libraryEngineSemver.Minor()
+
+	doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+	if !doApiVersionsMatch {
+		return nil, stacktrace.NewError(
+			"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'",
+			runningEngineSemver.String(),
+			libraryEngineSemver.String(),
+		)
 	}
 
 	return kurtosisContext, nil

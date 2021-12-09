@@ -22,7 +22,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.7.7"
+	KurtosisEngineVersion = "1.7.7"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -74,13 +74,13 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) {
 	publicIpAddr, publicPortNum, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		DefaultVersion,
+		KurtosisEngineVersion,
 		logLevel,
 		listenPortNum,
 		engineDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", DefaultVersion)
+		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
 	}
 	return publicIpAddr, publicPortNum, nil
 }
