@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -57,7 +59,12 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 	getEngineInfoResponse, err := engineServiceClient.GetEngineInfo(ctx, &emptypb.Empty{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engine info")
+		errorStr := "An error occurred getting engine info."
+		grpcErrorCode := status.Code(err)
+		if grpcErrorCode == codes.Unavailable {
+			errorStr = "The Kurtosis Engine Server is unavailable, probably it is not running, you should start it before executing any request"
+		}
+		return nil, stacktrace.Propagate(err, errorStr)
 	}
 	runningEngineVersionStr := getEngineInfoResponse.GetEngineVersion()
 
