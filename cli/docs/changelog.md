@@ -2,6 +2,7 @@
 
 
 ### Features
+* Added TypeScript test: `files_artifact_mounting.test.ts`
 * Added TypeScript test: `exec_command.test.ts`
 
 # 0.8.4
