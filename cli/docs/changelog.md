@@ -1,5 +1,9 @@
 # TBD
 
+
+### Features
+* Added TypeScript test: `exec_command.test.ts`
+
 # 0.8.4
 ### Features
 * The `module exec` command prints and follows the module's logs
@@ -13,6 +17,7 @@
 # 0.8.3
 ### Features
 * Added call to clean endpoint
+
 
 # 0.8.2
 ### Fixes
