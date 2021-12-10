@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
@@ -22,11 +24,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"io"
+	"net"
 	"regexp"
 	"strings"
 	"time"
@@ -52,6 +57,13 @@ const (
 
 	// TODO Extract this validation into a centralized location for all commands that use an enclave ID
 	allowedEnclaveIdCharsRegexStr = `^[A-Za-z0-9._-]+$`
+
+	shouldFollowContainerLogs = true
+	shouldShowStoppedModuleContainers = false
+
+	netReadOpt = "read"
+
+	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 )
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
@@ -235,9 +247,34 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	logrus.Info("Module loaded successfully")
 
+	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the module container")
+	}
+
+	if moduleContainer == nil {
+		return stacktrace.Propagate(err, "It was not found any container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
+	}
+
+	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, moduleContainer.GetId(), shouldFollowContainerLogs)
+	if err != nil {
+		//We do not return because logs aren't mandatory, if it fails we continue executing the module without logs
+		logrus.Errorf("The module containers logs won't be printed. An error occurred getting service logs for container with ID '%v': \n%v", moduleContainer.GetId(), err)
+	}
 	logrus.Infof("Executing the module with execute params '%v'...", executeParamsStr)
+	if readCloserLogs != nil {
+		go printModuleContainerLogs(readCloserLogs)
+		logrus.Info("----------------------- MODULE LOGS ----------------------")
+	}
+
 	executeModuleArgs := binding_constructors.NewExecuteModuleArgs(moduleId, executeParamsStr)
 	executeModuleResult, err := apiContainerClient.ExecuteModule(ctx, executeModuleArgs)
+
+	//Stops printing logs
+	if readCloserLogs != nil {
+		readCloserLogs.Close()
+		logrus.Info("--------------------- END MODULE LOGS --------------------")
+	}
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred executing the module with params '%v'", executeParamsStr)
 	}
@@ -249,7 +286,6 @@ func run(cmd *cobra.Command, args []string) error {
 	shouldStopEnclave = false
 	return nil
 }
-
 
 // ====================================================================================================
 //                                      Private Helper Methods
@@ -274,4 +310,43 @@ func getEnclaveId(moduleImage string) string {
 		pathElement,
 		time.Now().Unix(),
 	)
+}
+
+func getModuleContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error){
+	labels := getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
+	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers by labels: '%+v'", labels)
+	}
+
+	if containers == nil || len(containers) == 0 {
+		return nil, stacktrace.NewError("There is not any module container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
+	}
+
+	if len(containers) > 1 {
+		return nil, stacktrace.NewError("Only one container with enclave-id '%v' and module-id '%v' should exist but there are '%v' containers with these properties", enclaveId, moduleId, len(containers))
+	}
+
+	return containers[0], nil
+}
+
+func getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId string, moduleId string) map[string]string {
+	labels := map[string]string{}
+	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeModuleContainer
+	labels[schema.EnclaveIDContainerLabel] = enclaveId
+	labels[schema.IDLabel] = moduleId
+	return labels
+}
+
+func printModuleContainerLogs(readCloserLogs io.ReadCloser) {
+	if _, err := stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
+		opError, ok := err.(*net.OpError)
+		if ok {
+			//We ignore this type of error because it was generated when the main go routine closes the readCloserLogs object
+			if opError.Op == netReadOpt && strings.Contains(opError.Error(), netReadOptFailBecauseSourceIsUsedOrClosedErrorText) {
+				return
+			}
+		}
+		logrus.Errorf("An error occurred copying the container logs to STDOUT: \n %v", err)
+	}
 }
