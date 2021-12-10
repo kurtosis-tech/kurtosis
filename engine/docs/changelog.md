@@ -1,4 +1,6 @@
 # TBD
+### FEATURES
+* Added deletion of dangling folders in clean endpoint
 
 # 1.7.7
 ### Fixes
