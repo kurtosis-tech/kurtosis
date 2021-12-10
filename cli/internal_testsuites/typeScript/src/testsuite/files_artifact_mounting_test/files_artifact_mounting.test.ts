@@ -57,12 +57,14 @@ test("Test files artifact mounting", async () => {
         const serviceContext = addServiceResult.value
         const publicPort = serviceContext.getPublicPorts().get(FILE_SERVER_PORT_ID)
         if(publicPort === undefined){
-            throw new Error(`Expected to find public port for ID ${FILE_SERVER_PORT_ID}, but none was found`)
+            throw new Error(`Expected to find public port for ID "${FILE_SERVER_PORT_ID}", but none was found`)
         }
 
         const fileServerPublicIp = serviceContext.getMaybePublicIPAddress();
         const fileServerPublicPortNum = publicPort.number
 
+        // TODO It's suuuuuuuuuuper confusing that we have to pass the private port in here!!!! We should just require the user
+        //  to pass in the port ID and the API container will translate that to the private port automatically!!!
         const waitForHttpGetEndpointAvailabilityResult = await enclaveContext.waitForHttpGetEndpointAvailability(
             FILE_SERVER_SERVICE_ID, 
             FILE_SERVER_PRIVATE_PORT_NUM,
@@ -74,10 +76,11 @@ test("Test files artifact mounting", async () => {
         );
 
         if(waitForHttpGetEndpointAvailabilityResult.isErr()){
+            log.error("An error occurred waiting for the file server service to become available")
             throw waitForHttpGetEndpointAvailabilityResult.error
         }
 
-        log.info(`Added file server service with public IP ${fileServerPublicIp} and port ${fileServerPublicPortNum}`)
+        log.info(`Added file server service with public IP "${fileServerPublicIp}" and port "${fileServerPublicPortNum}"`)
 
         // ------------------------------------- TEST RUN ----------------------------------------------
 
@@ -93,7 +96,7 @@ test("Test files artifact mounting", async () => {
 
         const file1Contents = file1ContentsResult.value
         if(file1Contents !== EXPECTED_FILE1_CONTENTS){
-            throw new Error(`Actual file 1 contents ${file1Contents} != expected file 1 contents ${EXPECTED_FILE1_CONTENTS}`)
+            throw new Error(`Actual file 1 contents "${file1Contents}" != expected file 1 contents "${EXPECTED_FILE1_CONTENTS}"`)
         }
 
         const file2ContentsResult = await getFileContents(
@@ -109,7 +112,7 @@ test("Test files artifact mounting", async () => {
 
         const file2Contents = file2ContentsResult.value
         if(file2Contents !== EXPECTED_FILE2_CONTENTS){
-            throw new Error(`Actual file 2 contents ${file2Contents} != expected file 2 contents ${EXPECTED_FILE2_CONTENTS}`)
+            throw new Error(`Actual file 2 contents "${file2Contents}" != expected file 2 contents "${EXPECTED_FILE2_CONTENTS}"`)
         }
 
 
@@ -149,7 +152,7 @@ async function getFileContents(ipAddress: string, portNum: number, filename: str
     try {
         response = await axios(`http://${ipAddress}:${portNum}/${filename}`)
     }catch(error){
-        log.error(`An error occurred getting the contents of file ${filename}`)
+        log.error(`An error occurred getting the contents of file "${filename}"`)
         if(error instanceof Error){
             return err(error)
         }else{
