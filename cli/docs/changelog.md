@@ -1,5 +1,15 @@
 # TBD
 
+# 0.8.4
+### Features
+* The `module exec` command prints and follows the module's logs
+
+### Changes
+* Upgraded to the following dependencies to support ID label:
+  * obj-attrs-schema-lib -> 0.6.0
+  * core dependencies -> 1.36.11
+  * engine dependencies -> 1.7.7
+
 # 0.8.3
 ### Features
 * Added call to clean endpoint
@@ -66,9 +76,8 @@
 
 # 0.7.0
 ### Features
-* Added TypeScript test: `basic_datastore_test_and_api.ts`
 * Added TypeScript: `basic_datastore_test.ts`, `enclave_setup.ts` and `test_helpers.ts`
-* Added TypeScript project inside of `internal_testsuites` folder. 
+* Added TypeScript project inside of `internal_testsuites` folder.
 * The `test_helpers` class now has a higher-level API: `AddDatastoreService` and `AddAPIService`, which makes many of our internal testsuite test setups a one-liner
 * Add an extra API container status result to `enclave inspect`
 * Reimplement endpoint availability-waiting test in new Go test framework
