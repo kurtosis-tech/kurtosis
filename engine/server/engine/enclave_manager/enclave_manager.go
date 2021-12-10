@@ -991,8 +991,9 @@ func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy 
 	if shouldEraseAll {
 		for _, f := range files {
 			if f.IsDir() {
-				if removeErr := os.RemoveAll(f.Name()); removeErr != nil {
-					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", f.Name())
+				folderPath := path.Join(allEnclavesOnEngineContainer, f.Name())
+				if removeErr := os.RemoveAll(folderPath); removeErr != nil {
+					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", folderPath)
 				}
 			}
 		}
@@ -1004,10 +1005,11 @@ func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy 
 		}
 
 		for _, f := range files {
-			_, ok := dirPaths[f.Name()]
+			folderPath := path.Join(allEnclavesOnEngineContainer, f.Name())
+			_, ok := dirPaths[folderPath]
 			if f.IsDir() && !ok {
-				if removeErr := os.RemoveAll(f.Name()); removeErr != nil {
-					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", f.Name())
+				if removeErr := os.RemoveAll(folderPath); removeErr != nil {
+					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", folderPath)
 				}
 			}
 		}
