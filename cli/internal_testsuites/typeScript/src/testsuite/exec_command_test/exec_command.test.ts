@@ -33,59 +33,59 @@ test("Test exec command", async () => {
         const addServiceResult = await enclaveContext.addService(TEST_SERVICE_ID, containerConfigSupplier)
 
         if(addServiceResult.isErr()) {
-            log.error(`An error occurred starting service ${TEST_SERVICE_ID}`);
+            log.error(`An error occurred starting service "${TEST_SERVICE_ID}"`);
             throw addServiceResult.error
         };
 
         const testServiceContext = addServiceResult.value
 
         // ------------------------------------- TEST RUN ----------------------------------------------
-        log.info(`Running exec command ${EXEC_COMMAND_THAT_SHOULD_WORK} that should return a successful exit code...`)
+        log.info(`Running exec command "${EXEC_COMMAND_THAT_SHOULD_WORK}" that should return a successful exit code...`)
         
         const runExecCmdShouldWorkResult = await runExecCmd(testServiceContext, EXEC_COMMAND_THAT_SHOULD_WORK)
 
         if(runExecCmdShouldWorkResult.isErr()){
-            log.error(`An error occurred running exec command ${EXEC_COMMAND_THAT_SHOULD_WORK}`)
+            log.error(`An error occurred running exec command "${EXEC_COMMAND_THAT_SHOULD_WORK}"`)
             throw runExecCmdShouldWorkResult.error
         }
         const [ shouldWorkExitCode ] = runExecCmdShouldWorkResult.value;
 
         if(SUCCESS_EXIT_CODE !== shouldWorkExitCode){
-            throw new Error(`Exec command ${EXEC_COMMAND_THAT_SHOULD_WORK} should work, but got unsuccessful exit code ${shouldWorkExitCode}`)
+            throw new Error(`Exec command "${EXEC_COMMAND_THAT_SHOULD_WORK}" should work, but got unsuccessful exit code ${shouldWorkExitCode}`)
         }
 
         log.info("Exec command returned successful exit code as expected")
 
-        log.info(`Running exec command ${EXEC_COMMAND_THAT_SHOULD_FAIL} that should return an error exit code...`)
+        log.info(`Running exec command "${EXEC_COMMAND_THAT_SHOULD_FAIL}" that should return an error exit code...`)
 
         const runExecCmdShouldFailResult = await runExecCmd(testServiceContext, EXEC_COMMAND_THAT_SHOULD_FAIL)
 
         if(runExecCmdShouldFailResult.isErr()){
-            log.error(`An error occurred running exec command ${EXEC_COMMAND_THAT_SHOULD_FAIL}`)
+            log.error(`An error occurred running exec command "${EXEC_COMMAND_THAT_SHOULD_FAIL}"`)
             throw runExecCmdShouldFailResult.error
         }
         const [ shouldFailExitCode ] = runExecCmdShouldFailResult.value;
 
         if(SUCCESS_EXIT_CODE === shouldFailExitCode){
-            throw new Error(`Exec command ${EXEC_COMMAND_THAT_SHOULD_FAIL} should fail, but got successful exit code ${SUCCESS_EXIT_CODE}`)
+            throw new Error(`Exec command "${EXEC_COMMAND_THAT_SHOULD_FAIL}" should fail, but got successful exit code ${SUCCESS_EXIT_CODE}`)
         }
 
-        log.info(`Running exec command ${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT} that should return log output...`)
+        log.info(`Running exec command "${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT}" that should return log output...`)
 
         const runExecCmdShouldLogOutputResult = await runExecCmd(testServiceContext, EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT)
 
         if(runExecCmdShouldLogOutputResult.isErr()){
-            log.error(`An error occurred running exec command ${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT}`)
+            log.error(`An error occurred running exec command "${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT}"`)
             throw runExecCmdShouldLogOutputResult.error
         }
         const [ shouldHaveLogOutputExitCode, logOutput ] = runExecCmdShouldLogOutputResult.value;
 
         if(SUCCESS_EXIT_CODE !== shouldHaveLogOutputExitCode){
-            throw new Error(`Exec command ${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT} should work, but got unsuccessful exit code ${shouldHaveLogOutputExitCode}`)
+            throw new Error(`Exec command "${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT}" should work, but got unsuccessful exit code ${shouldHaveLogOutputExitCode}`)
         }
 
         if(EXPECTED_LOG_OUTPUT !== logOutput){
-            throw new Error(`Exec command ${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT} should return ${INPUT_FOR_LOG_OUTPUT_TEST}, but got ${logOutput}`)
+            throw new Error(`Exec command "${EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT}" should return ${INPUT_FOR_LOG_OUTPUT_TEST}, but got ${logOutput}`)
         }
         
         log.info("Exec command returned error exit code as expected")
