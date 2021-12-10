@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.4
 ### Features
 * The `module exec` command prints and follows the module's logs
 
