@@ -1965,10 +1965,10 @@ kurtosis-core-api-lib@1.36.11:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
-kurtosis-engine-api-lib@1.8.1:
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.1.tgz#8c5f87d73b6d689111743a5e928fff47d47a53f5"
-  integrity sha512-ay/tTsfJaI8Tm/LAlY//JZXj+HZOPQbBOcNR5Q2cM8W8Cymn7scvU53K0FfLu2az6csaU7wnf2tygxUNusO7gw==
+kurtosis-engine-api-lib@1.8.2:
+  version "1.8.2"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.2.tgz#577aa5570880c766ef0a2b6d8439487ad634f429"
+  integrity sha512-IlWlYJxQ/W4WoBrmYKD2Ot2mXy5fC+GsslpmEWDXyM9fr38di4F3O4i/9MK4FXtgx5lCeHwfIJF0QRu7SrGEUA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
