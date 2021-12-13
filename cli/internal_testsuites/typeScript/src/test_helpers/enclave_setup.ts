@@ -12,7 +12,7 @@ export async function createEnclave(testName:string, isPartitioningEnabled: bool
         stopEnclaveFunction: () => void
     }, Error>> {
 
-	const newKurtosisContextResult = KurtosisContext.newKurtosisContextFromLocalEngine();
+	const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
 	if(newKurtosisContextResult.isErr()) {
         	log.error(`An error occurred connecting to the Kurtosis engine for running test ${testName}`)
 		return err(newKurtosisContextResult.error)

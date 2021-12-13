@@ -1,5 +1,13 @@
 # TBD
 
+# 0.8.6
+### Features
+* Upgrade to engine server 1.8.2 which adds the removal of dangling folders in the clean endpoint
+
+
+# 0.8.5
+### Features
+* Upgrade to engine server 1.8.1 which adds `Kurtosis Engine` checker in `KurtosisContext` creation
 
 ### Features
 * Added TypeScript test: `files_artifact_mounting.test.ts`
