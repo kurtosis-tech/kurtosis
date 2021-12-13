@@ -1,4 +1,6 @@
 # TBD
+
+# 1.8.2
 ### FEATURES
 * Added deletion of dangling folders in clean endpoint
 
