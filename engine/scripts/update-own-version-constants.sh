@@ -11,12 +11,12 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 UPDATE_VERSION_IN_FILE_SCRIPT_FILENAME="update-version-in-file.sh" # From devtools; expected to be on PATH
 
-API_DIRNAME="api"
-API_SUPPORTED_LANGS_REL_FILEPATH="${API_DIRNAME}/supported-languages.txt"
 
 # Relative to root of repo
 declare -A REL_FILEPATH_UPDATE_PATTERNS
-REL_FILEPATH_UPDATE_PATTERNS["launcher/engine_server_launcher/engine_server_launcher.go"]="DefaultVersion = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["api/golang/kurtosis_engine_version/kurtosis_engine_version.go"]="KurtosisEngineVersion = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["launcher/engine_server_launcher/engine_server_launcher.go"]="KurtosisEngineVersion = \"%s\""
+REL_FILEPATH_UPDATE_PATTERNS["api/typescript/src/kurtosis_engine_version/kurtosis_engine_version.ts"]="KURTOSIS_ENGINE_VERSION: string = \"%s\""
 
 
 # ==================================================================================================

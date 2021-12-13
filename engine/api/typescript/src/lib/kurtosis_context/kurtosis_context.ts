@@ -1,6 +1,6 @@
-import { EngineServiceClient } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
+import {EngineServiceClient} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import * as grpc from "@grpc/grpc-js";
-import { Result, err, ok, Err } from "neverthrow";
+import {err, ok, Result} from "neverthrow";
 import {newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
 import {
     CleanArgs,
@@ -11,16 +11,18 @@ import {
     EnclaveAPIContainerHostMachineInfo,
     EnclaveAPIContainerInfo,
     EnclaveAPIContainerStatus,
-    EnclaveAPIContainerStatusMap,
     EnclaveContainersStatus,
-    EnclaveContainersStatusMap,
     EnclaveInfo,
     GetEnclavesResponse,
+    GetEngineInfoResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as jspb from "google-protobuf";
-import { ApiContainerServiceClient, EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
+import {ApiContainerServiceClient, EnclaveContext, EnclaveID} from "kurtosis-core-api-lib";
+import {Status} from "@grpc/grpc-js/build/src/constants";
+import * as semver from "semver"
+import {KURTOSIS_ENGINE_VERSION} from "../../kurtosis_engine_version/kurtosis_engine_version";
 
 const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
@@ -42,7 +44,7 @@ export class KurtosisContext {
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
-    public static newKurtosisContextFromLocalEngine(): Result<KurtosisContext, Error>{
+    public async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
         const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM}`;
 
         let engineServiceClient: EngineServiceClient;
@@ -55,6 +57,61 @@ export class KurtosisContext {
             }
             return err(new Error(
                 "An unknown exception value was thrown during creation of the engine client that wasn't an error: " + exception
+            ));
+        }
+
+        const getEngineInfoPromise: Promise<Result<GetEngineInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+            engineServiceClient.getEngineInfo(emptyArg, (error: grpc.ServiceError | null, response?: GetEngineInfoResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never " + "happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    if(error.code === Status.UNAVAILABLE){
+                        resolve(err(new Error("The Kurtosis Engine Server is unavailable and is probably not running; you " +
+                            "will need to start it using the Kurtosis CLI before you can create a connection to it")));
+                    }
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getEngineInfoResult: Result<GetEngineInfoResponse, Error> = await getEngineInfoPromise;
+        if (!getEngineInfoResult.isOk()) {
+            return err(getEngineInfoResult.error)
+        }
+
+        const engineInfoResponse: GetEngineInfoResponse = getEngineInfoResult.value;
+
+        const runningEngineVersionStr: string = engineInfoResponse.getEngineVersion()
+
+        const runningEngineSemver: semver.SemVer | null = semver.parse(runningEngineVersionStr)
+        if (runningEngineSemver === null){
+            return err(new Error(
+                `An error occurred parsing running engine version string ${runningEngineVersionStr} to semantic version`
+            ));
+        }
+
+        const runningEngineMajorVersion: number = semver.major(runningEngineSemver)
+        const runningEngineMinorVersion: number = semver.minor(runningEngineSemver)
+
+        const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
+        if (libraryEngineSemver === null){
+            return err(new Error(
+                `An error occurred parsing library engine version string ${KURTOSIS_ENGINE_VERSION} to semantic version`
+            ));
+        }
+
+        const libraryEngineMajorVersion: number = semver.major(libraryEngineSemver)
+        const libraryEngineMinorVersion: number = semver.minor(libraryEngineSemver)
+
+        const doApiVersionsMatch: boolean = libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+        if (!doApiVersionsMatch) {
+            return err(new Error(
+                `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and the engine version the library expects, ${libraryEngineSemver.version}; you should use the version of this library that corresponds to the running engine version`
             ));
         }
 
@@ -100,9 +157,10 @@ export class KurtosisContext {
 
         const enclaveInfo: EnclaveInfo | undefined = response.getEnclaveInfo();
         if (enclaveInfo === undefined) {
-            return err(new Error("An error occurred creating enclave with ID " + enclaveId + " enclaveInfo is undefined; this is a bug on this library" ))
+            return err(new Error("An error occurred creating enclave with ID " + enclaveId + " enclaveInfo is undefined; " +
+                "this is a bug on this library" ))
         }
-        const newEnclaveContextResult: Result<EnclaveContext, Error> = this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = KurtosisContext.newEnclaveContextFromEnclaveInfo(enclaveInfo);
         if (newEnclaveContextResult.isErr()) {
             return err(new Error(`An error occurred creating an enclave context from a newly-created enclave; this should never happen`))
         }
@@ -112,35 +170,20 @@ export class KurtosisContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
-        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
 
-        const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getEnclaves(emptyArg, (error: grpc.ServiceError | null, response?: GetEnclavesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const getEnclavesResult: Result<GetEnclavesResponse, Error> = await getEnclavesPromise;
-        if (!getEnclavesResult.isOk()) {
-            return err(getEnclavesResult.error)
+        const getEnclavesResponsePromise: Promise<Result<GetEnclavesResponse, Error>> = this.getEnclaveResponse();
+        const getEnclavesResponseResult: Result<GetEnclavesResponse, Error> = await getEnclavesResponsePromise;
+        if (!getEnclavesResponseResult.isOk()) {
+            return err(getEnclavesResponseResult.error);
         }
-        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResult.value;
+        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
 
         const allEnclaveInfo: jspb.Map<string, EnclaveInfo> = getEnclavesResponse.getEnclaveInfoMap()
         const maybeEnclaveInfo: EnclaveInfo | undefined = allEnclaveInfo.get(enclaveId);
         if (maybeEnclaveInfo === undefined) {
             return err(new Error(`No enclave with ID '${enclaveId}' found`))
         }
-        const enclaveInfo: EnclaveInfo = maybeEnclaveInfo;
-
-        const newEnclaveCtxResult: Result<EnclaveContext, Error> = this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
+        const newEnclaveCtxResult: Result<EnclaveContext, Error> = KurtosisContext.newEnclaveContextFromEnclaveInfo(maybeEnclaveInfo);
         if (newEnclaveCtxResult.isErr()) {
             return err(newEnclaveCtxResult.error);
         }
@@ -149,26 +192,13 @@ export class KurtosisContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
-        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
 
-        const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getEnclaves(emptyArg, (error: grpc.ServiceError | null, response?: GetEnclavesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const getEnclavesResult: Result<GetEnclavesResponse, Error> = await getEnclavesPromise;
-        if (!getEnclavesResult.isOk()) {
-            return err(getEnclavesResult.error)
+        const getEnclavesResponsePromise: Promise<Result<GetEnclavesResponse, Error>> = this.getEnclaveResponse();
+        const getEnclavesResponseResult: Result<GetEnclavesResponse, Error> = await getEnclavesResponsePromise;
+        if (!getEnclavesResponseResult.isOk()) {
+            return err(getEnclavesResponseResult.error);
         }
-        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResult.value;
+        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
 
         const result: Set<EnclaveID> = new Set();
         for (let enclaveId of getEnclavesResponse.getEnclaveInfoMap().keys()) {
@@ -228,7 +258,8 @@ export class KurtosisContext {
             this.client.clean(cleanArgs, (error: grpc.ServiceError | null, response?: CleanResponse) => {
                 if (error === null) {
                     if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this " +
+                            "should never happen")));
                     } else {
                         resolve(ok(response!));
                     }
@@ -253,7 +284,7 @@ export class KurtosisContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private newEnclaveContextFromEnclaveInfo(enclaveInfo: EnclaveInfo): Result<EnclaveContext, Error> {
+    private static newEnclaveContextFromEnclaveInfo(enclaveInfo: EnclaveInfo): Result<EnclaveContext, Error> {
         const enclaveContainersStatus = enclaveInfo.getContainersStatus()
         if (enclaveContainersStatus !== EnclaveContainersStatus.ENCLAVECONTAINERSSTATUS_RUNNING) {
             return err(new Error(`Enclave containers status was '${enclaveContainersStatus}', but we can't create an enclave context from a non-running enclave`))
@@ -284,7 +315,8 @@ export class KurtosisContext {
                 return err(exception);
             }
             return err(new Error(
-                "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + exception
+                "An unknown exception value was thrown during creation of the API container client that" +
+                " wasn't an error: " + exception
             ));
         }
 
@@ -294,5 +326,29 @@ export class KurtosisContext {
             enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
         )
         return ok(result);
+    }
+
+    private async getEnclaveResponse(): Promise<Result<GetEnclavesResponse, Error>>{
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+
+        const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getEnclaves(emptyArg, (error: grpc.ServiceError | null, response?: GetEnclavesResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const getEnclavesResponseResult: Result<GetEnclavesResponse, Error> = await getEnclavesPromise;
+        if (!getEnclavesResponseResult.isOk()) {
+            return err(getEnclavesResponseResult.error)
+        }
+
+        return ok(getEnclavesResponseResult.value);
     }
 }
