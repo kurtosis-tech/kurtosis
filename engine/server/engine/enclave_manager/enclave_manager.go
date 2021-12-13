@@ -790,7 +790,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	}
 
 	//remove dangling folders if any
-	err = manager.deleteDanglingDirectories(enclaveIdsToNotDestroy, shouldCleanAll)
+	err = manager.deleteDanglingDirectories(enclaveIdsToNotDestroy)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to delete dangling directories")
 	}
@@ -981,36 +981,24 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 }
 
 // Gets rid of dangling folders
-func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []string, shouldEraseAll bool) error {
-	_, allEnclavesOnEngineContainer := manager.getAllEnclavesDirpaths()
-	files, err := ioutil.ReadDir(allEnclavesOnEngineContainer)
+func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []string) error {
+	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
+	fileInfos, err := ioutil.ReadDir(allEnclavesDirpathOnEngineContainer)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesOnEngineContainer)
+		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesDirpathOnEngineContainer)
 	}
 
-	if shouldEraseAll {
-		for _, f := range files {
-			if f.IsDir() {
-				folderPath := path.Join(allEnclavesOnEngineContainer, f.Name())
-				if removeErr := os.RemoveAll(folderPath); removeErr != nil {
-					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", folderPath)
-				}
-			}
-		}
-	} else {
-		dirPaths := map[string]bool{}
-		for _, enclaveId := range enclaveIdsToNotDestroy {
-			_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
-			dirPaths[enclaveDataDirpathOnEngineContainer] = true
-		}
+	enclaves := map[string]bool{}
+	for _, enclaveId := range enclaveIdsToNotDestroy {
+		enclaves[enclaveId] = true
+	}
 
-		for _, f := range files {
-			folderPath := path.Join(allEnclavesOnEngineContainer, f.Name())
-			_, ok := dirPaths[folderPath]
-			if f.IsDir() && !ok {
-				if removeErr := os.RemoveAll(folderPath); removeErr != nil {
-					return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", folderPath)
-				}
+	for _, fileInfo := range fileInfos {
+		_, ok := enclaves[fileInfo.Name()]
+		if fileInfo.IsDir() && !ok {
+			folderPath := path.Join(allEnclavesDirpathOnEngineContainer, fileInfo.Name())
+			if removeErr := os.RemoveAll(folderPath); removeErr != nil {
+				return stacktrace.Propagate(removeErr, "An error occurred removing the data dir '%v' on engine container", folderPath)
 			}
 		}
 	}
