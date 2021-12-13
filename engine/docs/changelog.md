@@ -1,4 +1,12 @@
 # TBD
+### Features
+* Added a public constant `KurtosisEngineVersion` in golang and typescript libraries
+* Added a validation to check if the running engine version is the expected in `KurtosisContext` creation
+* Added a user-friendly error text when a client try to create a `KurtosisContext` but the engine is unavailable
+
+### Breaking Changes
+* Renamed the public constant, `DefaultVersion` to `KurtosisEngineVersion` which is more descriptive
+  * Users should replace the constant name in their implementations
 
 # 1.7.7
 ### Fixes
