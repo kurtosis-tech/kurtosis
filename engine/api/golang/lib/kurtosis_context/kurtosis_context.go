@@ -3,13 +3,13 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/Masterminds/semver/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -58,7 +58,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		errorStr := "An error occurred getting engine info"
 		grpcErrorCode := status.Code(err)
 		if grpcErrorCode == codes.Unavailable {
-			errorStr = "The Kurtosis Engine Server is unavailable, probably it is not running, you should start it before executing any request"
+			errorStr = "The Kurtosis Engine Server is unavailable and is probably not running; you will need to start it using the Kurtosis CLI before you can create a connection to it"
 		}
 		return nil, stacktrace.Propagate(err, errorStr)
 	}
@@ -82,7 +82,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
 	if !doApiVersionsMatch {
 		return nil, stacktrace.NewError(
-			"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'",
+			"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'; you should use the version of this library that corresponds to the running engine version",
 			runningEngineSemver.String(),
 			libraryEngineSemver.String(),
 		)
