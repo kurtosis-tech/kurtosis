@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -767,10 +768,13 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	}
 
 	enclaveIdsToDestroy := []string{}
+	enclaveIdsToNotDestroy := []string{}
 	for enclaveId, enclaveInfo := range enclaves {
 		enclaveStatus := enclaveInfo.ContainersStatus
 		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
 			enclaveIdsToDestroy = append(enclaveIdsToDestroy, enclaveId)
+		} else {
+			enclaveIdsToNotDestroy = append(enclaveIdsToNotDestroy, enclaveId)
 		}
 	}
 
@@ -784,6 +788,13 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 		}
 		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
 	}
+
+	//remove dangling folders if any
+	err = manager.deleteDanglingDirectories(enclaveIdsToNotDestroy)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to delete dangling directories")
+	}
+
 	return successfullyDestroyedEnclaveIds, enclaveDestructionErrors, nil
 }
 
@@ -964,6 +975,32 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 	// Finally, remove the network
 	if err := manager.dockerManager.RemoveNetwork(ctx, enclaveNetwork.GetId()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+	}
+
+	return nil
+}
+
+// Gets rid of dangling folders
+func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []string) error {
+	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
+	fileInfos, err := ioutil.ReadDir(allEnclavesDirpathOnEngineContainer)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesDirpathOnEngineContainer)
+	}
+
+	enclaves := map[string]bool{}
+	for _, enclaveId := range enclaveIdsToNotDestroy {
+		enclaves[enclaveId] = true
+	}
+
+	for _, fileInfo := range fileInfos {
+		_, ok := enclaves[fileInfo.Name()]
+		if fileInfo.IsDir() && !ok {
+			folderPath := path.Join(allEnclavesDirpathOnEngineContainer, fileInfo.Name())
+			if removeErr := os.RemoveAll(folderPath); removeErr != nil {
+				return stacktrace.Propagate(removeErr, "An error occurred removing the data dir '%v' on engine container", folderPath)
+			}
+		}
 	}
 
 	return nil
