@@ -44,7 +44,7 @@ export class KurtosisContext {
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
-    public async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
+    public static async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
         const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM}`;
 
         let engineServiceClient: EngineServiceClient;

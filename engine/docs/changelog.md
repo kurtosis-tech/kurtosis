@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed `KurtosisContext.newKurtosisContextFromLocalEngine` method converting it to static method again
 
 # 1.8.0
 ### Features
