@@ -1,4 +1,6 @@
 # TBD
+
+# 1.8.0
 ### Features
 * Added a public constant `KurtosisEngineVersion` in golang and typescript libraries
 * Added a validation to check if the running engine version is the expected in `KurtosisContext` creation
