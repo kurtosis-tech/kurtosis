@@ -1,5 +1,9 @@
 # TBD
 
+# 1.8.1
+### Fixes
+* Fixed `KurtosisContext.newKurtosisContextFromLocalEngine` method converting it to static method again
+
 # 1.8.0
 ### Features
 * Added a public constant `KurtosisEngineVersion` in golang and typescript libraries
