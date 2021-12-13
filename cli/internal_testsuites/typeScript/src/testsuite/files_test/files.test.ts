@@ -14,7 +14,7 @@ const TEST_SERVICE:ServiceID = "test-service"
 const EXEC_COMMAND_SUCCESS_EXIT_CODE = 0
 const EXPECTED_TEST_FILE1_CONTENTS = "This is a test file"
 const EXPECTED_TEST_FILE2_CONTENTS = "This is another test file"
-const GENERATED_FILE_PERM_BITS = 644
+// const GENERATED_FILE_PERM_BITS = 644 (rw--r---r---)
 
 // Mapping of filepath_rel_to_shared_dir_root -> contents
 
@@ -111,6 +111,7 @@ function generateFileInServiceContainer(relativePath: string, contents: string, 
 
     try {
         fs.writeFileSync(sharedFilepath.getAbsPathOnThisContainer(),contents)
+        // to bytes array
     }catch(error){
         log.error(`An error occurred writing contents "${contents}" to file "${absFilepathOnThisContainer}" with perms "${GENERATED_FILE_PERM_BITS}"`)
         if(error instanceof Error){
