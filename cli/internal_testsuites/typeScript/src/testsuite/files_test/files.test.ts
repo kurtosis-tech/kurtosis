@@ -37,37 +37,36 @@ test("Test files", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const containerConfigSupplier = getContainerConfigSupplier()
 
-        const addServiceResult = await enclaveContext.addService(TEST_SERVICE,containerConfigSupplier)
+        const addServiceResult = await enclaveContext.addService(TEST_SERVICE, containerConfigSupplier)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
 
-	// ------------------------------------- TEST RUN ----------------------------------------------
-    for (let [relativeFilepath, expectedContents] of generatedFileRelPathsAndContents) {
-        console.log({relativeFilepath, expectedContents})
-        const sharedFilepath = serviceContext.getSharedDirectory().getChildPath(relativeFilepath)
+	    // ------------------------------------- TEST RUN ----------------------------------------------
+        for(let [relativeFilepath, expectedContents] of generatedFileRelPathsAndContents) {
+            const sharedFilepath = serviceContext.getSharedDirectory().getChildPath(relativeFilepath)
 
-        const catStaticFileCmd = ["cat", sharedFilepath.getAbsPathOnServiceContainer()]
+            const catStaticFileCmd = ["cat", sharedFilepath.getAbsPathOnServiceContainer()]
 
-        const execCommandResult = await serviceContext.execCommand(catStaticFileCmd)
+            const execCommandResult = await serviceContext.execCommand(catStaticFileCmd)
 
-        if(execCommandResult.isErr()){
-            log.error(`An error occurred executing command "${catStaticFileCmd}" to cat the static file "${relativeFilepath}" contents`)
-            throw execCommandResult.error
+            if(execCommandResult.isErr()){
+                log.error(`An error occurred executing command "${catStaticFileCmd}" to cat the static file "${relativeFilepath}" contents`)
+                throw execCommandResult.error
+            }
+
+            const [ exitCode, actualContents ] = execCommandResult.value
+
+            if(EXEC_COMMAND_SUCCESS_EXIT_CODE !== exitCode){
+                throw new Error(`Command "${catStaticFileCmd}" to cat the static file "${relativeFilepath}" exited with non-successful exit code "${exitCode}"`)
+            }
+
+            if(expectedContents !== actualContents){
+                throw new Error(`Static file contents "${actualContents}" don't match expected static file "${relativeFilepath}" contents "${expectedContents}"`)
+            }
+
+            log.info(`Static file "${relativeFilepath}" contents were "${expectedContents}" as expected`)
         }
-
-        const [ exitCode, actualContents ] = execCommandResult.value
-
-        if(EXEC_COMMAND_SUCCESS_EXIT_CODE !== exitCode){
-            throw new Error(`Command "${catStaticFileCmd}" to cat the static file "${relativeFilepath}" exited with non-successful exit code "${exitCode}"`)
-        }
-
-        if(expectedContents !== actualContents){
-            throw new Error(`Static file contents "${actualContents}" don't match expected static file "${relativeFilepath}" contents "${expectedContents}"`)
-        }
-
-	    log.info(`Static file "${relativeFilepath}" contents were "${expectedContents}" as expected`)
-    }
     
     }finally{
         stopEnclaveFunction()
@@ -78,11 +77,15 @@ test("Test files", async () => {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-function getContainerConfigSupplier():() => Result<ContainerConfig, Error> {
+function getContainerConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
 
-    const containerConfigSupplier = (): Result<ContainerConfig, Error> => {
-        for (let [relFilepath, contents] of generatedFileRelPathsAndContents) {
-            generateFileInServiceContainer
+    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+        for (let [relativeFilePath, contents] of generatedFileRelPathsAndContents) {
+            const generateFileInServiceContainerResult = generateFileInServiceContainer(relativeFilePath, contents, sharedDirectory)
+            if(generateFileInServiceContainerResult.isErr()){
+                log.error(`An error occurred generating file with relative filepath "${relativeFilePath}"`)
+                return err(generateFileInServiceContainerResult.error)
+            }
         }
 
         // We sleep because the only function of this container is to test Docker executing a command while it's running
