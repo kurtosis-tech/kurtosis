@@ -665,6 +665,11 @@
   resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-2.4.2.tgz#4c62fae93eb479660c3bd93f9d24d561597a8281"
   integrity sha512-ekoj4qOQYp7CvjX8ZDBgN86w3MqQhLE1hczEJbEIjgFEumDy+na/4AJAbLXfgEWFNB2pKadM5rPFtuSGMWK7xA==
 
+"@types/semver@^7.3.9":
+  version "7.3.9"
+  resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.9.tgz#152c6c20a7688c30b967ec1841d31ace569863fc"
+  integrity sha512-L/TMpyURfBkf+o/526Zb6kd/tchUP3iBDEPjqjb+U2MAJhVRxxrmr2fwpe08E7QsV7YLcpq0tUaQ9O9x97ZIxQ==
+
 "@types/stack-utils@^2.0.0":
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-2.0.1.tgz#20f18294f797f2209b5f65c8e3b5c8e8261d127c"
@@ -1960,16 +1965,18 @@ kurtosis-core-api-lib@1.36.11:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
-kurtosis-engine-api-lib@1.7.7:
-  version "1.7.7"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.7.7.tgz#772691f926fa7891b2d81a43729ead5a5ee6a36d"
-  integrity sha512-2XvDOj2HZOmwgth+uM4N9HlGvMgXd7tojxnnLlwu7aJBCVSu6m+KjKSjaiTDHhvrsM47FnTzfPht+Mz/rhyXvg==
+kurtosis-engine-api-lib@1.8.1:
+  version "1.8.1"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.1.tgz#8c5f87d73b6d689111743a5e928fff47d47a53f5"
+  integrity sha512-ay/tTsfJaI8Tm/LAlY//JZXj+HZOPQbBOcNR5Q2cM8W8Cymn7scvU53K0FfLu2az6csaU7wnf2tygxUNusO7gw==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
+    "@types/semver" "^7.3.9"
     google-protobuf "^3.17.3"
     kurtosis-core-api-lib "1.36.11"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
+    semver "^7.3.5"
 
 leven@^3.1.0:
   version "3.1.0"
@@ -2331,7 +2338,7 @@ semver@^6.0.0, semver@^6.3.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.3.0.tgz#ee0a64c8af5e8ceea67687b133761e1becbd1d3d"
   integrity sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==
 
-semver@^7.3.2:
+semver@^7.3.2, semver@^7.3.5:
   version "7.3.5"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.3.5.tgz#0b621c879348d8998e4b0e4be94b3f12e6018ef7"
   integrity sha512-PoeGJYh8HK4BTO/a9Tf6ZG3veo/A7ZVsYrSA6J8ny9nb3B1VrpkuN+z9OE5wfE5p6H4LchYZsegiQgbJD94ZFQ==
