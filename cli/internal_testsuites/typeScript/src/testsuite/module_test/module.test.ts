@@ -23,6 +23,8 @@ const TEST_DATASTORE_VALUE = "test-value"
 const WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000
 const WAIT_FOR_STARTUP_MAX_POLLS = 15
 
+jest.setTimeout(50000)
+
 test("Test module", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------
      const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
@@ -56,25 +58,23 @@ test("Test module", async () => {
                 throw addTwoDatastoreServicesResult.error
             }
             const createdServiceIdsToPortIds = addTwoDatastoreServicesResult.value
-            createdServiceIdsToPortIds.forEach((value, key) => {
-                serviceIdsToPortIds.set(key,value)
-            })
+            for(const [serviceId, portId] of createdServiceIdsToPortIds) {
+                serviceIdsToPortIds.set(serviceId, portId)
+            }
             log.info("Successfully added two datastore services via the module")
         }
 
         // Sanity-check that the datastore services that the module created are functional
         log.info(`Sanity-checking that all ${serviceIdsToPortIds.size} datastore services added via the module work as expected...`)
 
-        serviceIdsToPortIds.forEach(async (portId, serviceId) => {
+        for( const [serviceId, portId] of serviceIdsToPortIds) {
             const getServiceContextResult = await enclaveContext.getServiceContext(serviceId)
             if(getServiceContextResult.isErr()){
                 log.error(`An error occurred getting the service context for service '${serviceId}'; this indicates that the module says it created a service that it actually didn't`)
                 throw getServiceContextResult.error
             }
             const serviceContext = getServiceContextResult.value
-
             const ipAddr = serviceContext.getMaybePublicIPAddress()
-
             const publicPort: undefined | PortSpec = serviceContext.getPublicPorts().get(portId)
 
             if(publicPort === undefined){
@@ -147,7 +147,7 @@ test("Test module", async () => {
             finally{
                 datastoreClientCloseFunction()
             }
-        } )
+        }
         log.info("All services added via the module work as expected")
 
         log.info(`Unloading module "${DATASTORE_ARMY_MODULE_ID}"...`)
@@ -169,34 +169,34 @@ test("Test module", async () => {
      }finally{
          stopEnclaveFunction()
      }
+
+     jest.clearAllTimers()
 })
 
-async function addTwoDatastoreServices(moduleCtx: ModuleContext):Promise<Result<Map<ServiceID,string>, Error>>{
+async function addTwoDatastoreServices(moduleContext: ModuleContext):Promise<Result<Map<ServiceID,string>, Error>>{
     const paramsJsonStr = `{"numDatastores": 2}`
 
-    const executeResult = await moduleCtx.execute(paramsJsonStr);
+    const executeResult = await moduleContext.execute(paramsJsonStr);
     if(executeResult.isErr()) {
         log.error("An error occurred executing the datastore army module")
         return err(executeResult.error)
     }
     const respJsonStr = executeResult.value
 
-    const parsedResult:{createdServiceIdsToPortIds:string} = {
-        createdServiceIdsToPortIds: "createdServiceIdsToPortIds"
-    }
-
-    // if err := json.Unmarshal([]byte(respJsonStr), parsedResult); err != nil {
-    // 	return nil, stacktrace.Propagate(err, "An error occurred deserializing the module response")
-    // }
-
-    // result := map[services.ServiceID]string{}
-    // for createdServiceIdStr, createdServicePortId := range parsedResult.CreatedServiceIdsToPortIds {
-    // 	result[services.ServiceID(createdServiceIdStr)] = createdServicePortId
-    // }
-    // return result, nil
+    const parsedResult:{
+        createdServiceIdsToPortIds: {
+            [property:string]: string
+        }
+    } = JSON.parse(respJsonStr)
 
     const result = new Map<ServiceID,string>()
 
+    const createdServiceIdsToPortIds = parsedResult.createdServiceIdsToPortIds
+
+    for (const createdServiceIdStr in createdServiceIdsToPortIds) {
+        const createdServicePortId = createdServiceIdsToPortIds[createdServiceIdStr]
+        result.set(createdServiceIdStr, createdServicePortId)
+    }
 
     return ok(result)
 }
