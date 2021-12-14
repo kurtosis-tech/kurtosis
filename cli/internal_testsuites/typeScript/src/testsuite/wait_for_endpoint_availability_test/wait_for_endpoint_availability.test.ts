@@ -69,6 +69,8 @@ test("Test wait for endpoint availability", async () => {
     }finally{
         stopEnclaveFunction()
     }
+
+    jest.clearAllTimers()
 })
 
 
