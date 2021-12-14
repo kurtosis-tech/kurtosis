@@ -81,7 +81,7 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
     return ok({ serviceContext, client, clientCloseFunction });
 };
 
-function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClient; clientCloseFunction: () => void } {
+export function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClient; clientCloseFunction: () => void } {
     const url = `${ipAddr}:${portNum}`;
     const client = new datastoreApi.DatastoreServiceClient(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
@@ -141,7 +141,7 @@ async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: E
     return ok({ serviceContext, client, clientCloseFunction })
 };
 
-async function waitForHealthy(
+export async function waitForHealthy(
   client: datastoreApi.DatastoreServiceClient | serverApi.ExampleAPIServerServiceClient,
   retries: number,
   retriesDelayMilliseconds: number
