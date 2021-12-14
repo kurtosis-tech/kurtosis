@@ -4,7 +4,6 @@ import {
     PortProtocol, 
     PortSpec, 
     ServiceID, 
-    SharedPath 
 } from "kurtosis-core-api-lib"
 import log from "loglevel"
 import { ok, Result } from "neverthrow"
@@ -40,9 +39,7 @@ test("Test wait for endpoint availability", async () => {
     try {
         // ------------------------------------- TEST SETUP ----------------------------------------------
 
-        const configSupplier = getExampleServiceConfigSupplier()
-
-        const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, configSupplier)
+        const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, containerConfigSupplier)
 
         if(addServiceResult.isErr()){
             log.error("An error occurred adding the datastore service")
@@ -79,18 +76,13 @@ test("Test wait for endpoint availability", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getExampleServiceConfigSupplier(): (ipAddr:string, shareDirectory: SharedPath) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr:string, shareDirectory: SharedPath):Result<ContainerConfig, Error> => {
-        
-        const exampleServicePort = new Map<string, PortSpec>()
-        exampleServicePort.set(EXAMPLE_SERVICE_PORT_ID, exampleServicePrivatePortSpec)
-        
-        const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-            .withUsedPorts(exampleServicePort)
-            .build()
+function containerConfigSupplier(): Result<ContainerConfig, Error> {
+    const exampleServicePort = new Map<string, PortSpec>()
+    exampleServicePort.set(EXAMPLE_SERVICE_PORT_ID, exampleServicePrivatePortSpec)
+    
+    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
+        .withUsedPorts(exampleServicePort)
+        .build()
 
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
+    return ok(containerConfig)
 }
