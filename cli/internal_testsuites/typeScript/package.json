@@ -10,7 +10,7 @@
     "example-api-server-api-lib": "0.3.0",
     "example-datastore-server-api-lib": "0.4.0",
     "jest": "^27.3.1",
-    "kurtosis-engine-api-lib": "1.7.7",
+    "kurtosis-engine-api-lib": "1.8.2",
     "loglevel": "^1.8.0",
     "neverthrow": "^4.3.1",
     "typescript": "^4.5.2"

@@ -221,7 +221,7 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", guarantor.maybeCurrentlyRunningEngineVersionTag)
 	}
 
-	launcherEngineSemverStr := engine_server_launcher.DefaultVersion
+	launcherEngineSemverStr := engine_server_launcher.KurtosisEngineVersion
 	launcherEngineSemver, err := semver.StrictNewVersion(launcherEngineSemverStr)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred parsing CLI's engine version string '%v' to semantic version", launcherEngineSemverStr)
