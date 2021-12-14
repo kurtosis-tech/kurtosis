@@ -84,7 +84,6 @@ test("Test module", async () => {
             const { client: datastoreClient, clientCloseFunction: datastoreClientCloseFunction } = createDatastoreClient(ipAddr, publicPort.number);
 
             try{
-
                 const waitForHealthyResult = await waitForHealthy(datastoreClient, WAIT_FOR_STARTUP_MAX_POLLS, WAIT_FOR_STARTUP_DELAY_MILLISECONDS );
                 if(waitForHealthyResult.isErr()){
                     log.error("An error occurred waiting for the datastore service to become available");
@@ -101,7 +100,7 @@ test("Test module", async () => {
                             if (!response) {
                                 resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                             } else {
-                                resolve(ok(response!));
+                                resolve(ok(response));
                             }
                         } else {
                             resolve(err(error));
@@ -124,7 +123,7 @@ test("Test module", async () => {
                             if (!response) {
                                 resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                             } else {
-                                resolve(ok(response!));
+                                resolve(ok(response));
                             }
                         } else {
                             resolve(err(error));
@@ -183,11 +182,21 @@ async function addTwoDatastoreServices(moduleContext: ModuleContext):Promise<Res
     }
     const respJsonStr = executeResult.value
 
-    const parsedResult:{
+    let parsedResult:{
         createdServiceIdsToPortIds: {
             [property:string]: string
         }
-    } = JSON.parse(respJsonStr)
+    } 
+    try {
+        parsedResult = JSON.parse(respJsonStr)
+    }catch(error){
+        log.error("An error occurred deserializing the module response")
+        if(error instanceof Error){
+            return err(error)
+        }else{
+            return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
+        }
+    }
 
     const result = new Map<ServiceID,string>()
 
