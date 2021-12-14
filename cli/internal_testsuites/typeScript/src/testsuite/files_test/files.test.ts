@@ -38,7 +38,10 @@ test("Test files", async () => {
         const containerConfigSupplier = getContainerConfigSupplier()
 
         const addServiceResult = await enclaveContext.addService(TEST_SERVICE, containerConfigSupplier)
-        if(addServiceResult.isErr()){ throw addServiceResult.error }
+        if(addServiceResult.isErr()) {
+            log.error("An error occurred adding the file server service") 
+            throw addServiceResult.error 
+        }
 
         const serviceContext = addServiceResult.value
 
