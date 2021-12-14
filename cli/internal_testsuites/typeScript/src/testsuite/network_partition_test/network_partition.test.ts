@@ -24,6 +24,8 @@ const TEST_PERSON_ID = "46";
 const MILLISECONDS_IN_A_SECOND = 1000;
 const CONTEXT_TIME_OUT = 2 * MILLISECONDS_IN_A_SECOND;
 
+jest.setTimeout(30000)
+
 test("Test network partition", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------
      const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
@@ -113,6 +115,8 @@ test("Test network partition", async () => {
      }finally{
          stopEnclaveFunction()
      }
+
+     jest.clearAllTimers()
 })
 
 /*
