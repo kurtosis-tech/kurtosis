@@ -1,4 +1,4 @@
-import { ContainerConfig, ContainerConfigBuilder, ServiceContext, ServiceID, SharedPath } from "kurtosis-core-api-lib";
+import { ContainerConfig, ContainerConfigBuilder, ServiceID, SharedPath } from "kurtosis-core-api-lib";
 import log from "loglevel"
 import { ok, Result, err } from "neverthrow";
 import * as fs from "fs"
