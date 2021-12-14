@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added TypeScript test: `files.test.ts`
+
 # 0.8.6
 ### Features
 * Upgrade to engine server 1.8.2 which adds the removal of dangling folders in the clean endpoint
