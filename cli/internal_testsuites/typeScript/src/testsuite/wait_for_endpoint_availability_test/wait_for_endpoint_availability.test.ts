@@ -1,4 +1,12 @@
-import { ContainerConfig, ContainerConfigBuilder, PortProtocol, PortSpec, ServiceID, SharedPath } from "kurtosis-core-api-lib"
+import { 
+    ContainerConfig, 
+    ContainerConfigBuilder, 
+    PortProtocol, 
+    PortSpec, 
+    ServiceID, 
+    SharedPath 
+} from "kurtosis-core-api-lib"
+import log from "loglevel"
 import { ok, Result } from "neverthrow"
 
 import { createEnclave } from "../../test_helpers/enclave_setup"
@@ -19,7 +27,7 @@ const WAIT_INITIAL_DELAY_MILLISECONDS = 500
 
 const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, PortProtocol.TCP)
 
-jest.setTimeout(30000)
+jest.setTimeout(50000)
 
 test("Test wait for endpoint availability", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -37,6 +45,7 @@ test("Test wait for endpoint availability", async () => {
         const addServiceResult = await enclaveContext.addService(EXAMPLE_SERVICE_ID, configSupplier)
 
         if(addServiceResult.isErr()){
+            log.error("An error occurred adding the datastore service")
             throw addServiceResult.error
         }
 
@@ -50,12 +59,15 @@ test("Test wait for endpoint availability", async () => {
                     WAIT_INITIAL_DELAY_MILLISECONDS, 
                     WAIT_FOR_STARTUP_MAX_POLLS, 
                     WAIT_FOR_STARTUP_TIME_BETWEEN_POLLS, 
-                    HEALTHY_VALUE 
+                    HEALTHY_VALUE
             );
         
-        
+        if(waitWaitForHttpGetEndpointAvailabilityResult.isErr()){
+            log.error("An error occurred waiting for the datastore service to become available")
+            throw waitWaitForHttpGetEndpointAvailabilityResult.error
+        }
 
-
+        log.info(`Service: ${EXAMPLE_SERVICE_ID} is available`)
 
     }finally{
         stopEnclaveFunction()
@@ -69,6 +81,7 @@ test("Test wait for endpoint availability", async () => {
 
 function getExampleServiceConfigSupplier(): (ipAddr:string, shareDirectory: SharedPath) => Result<ContainerConfig, Error> {
     const containerConfigSupplier = (ipAddr:string, shareDirectory: SharedPath):Result<ContainerConfig, Error> => {
+        
         const exampleServicePort = new Map<string, PortSpec>()
         exampleServicePort.set(EXAMPLE_SERVICE_PORT_ID, exampleServicePrivatePortSpec)
         
