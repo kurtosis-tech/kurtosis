@@ -256,6 +256,8 @@ test("Test network soft partitions", async () => {
     }finally{
         stopEnclaveFunction()
     }
+
+    jest.clearAllTimers()
 })
 
 function getExampleServiceConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>{
