@@ -2,6 +2,7 @@
 
 ### Features
 
+* Added TypeScript test: `network_soft_partition.test.ts`
 * Added TypeScript test: `files.test.ts`
 * Added TypeScript test: `module.test.ts`
 * Added TypeScript test: `wait_for_endpoint_availability.test.ts`
