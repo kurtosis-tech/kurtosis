@@ -145,13 +145,13 @@ test("Test network partition", async () => {
                     if(incrementBooksReadResult.isOk()){
                         log.error("Expected the book increment call via API 1 to fail due to the network " +
                         "partition between API and datastore services, but no error was thrown")
-                        return err(incrementBooksReadResult.value)
+                        throw incrementBooksReadResult.value
                     }
                     log.info(`Incrementing books read via API 1 threw the following error as expected due to network partition: ${incrementBooksReadResult.error}`)
                 }
                     
                 // Adding another API service while the partition is in place ensures that partitioning works even when you add a node
-	            log.info("Adding second API container, to ensure adding a service under partition works...")
+                log.info("Adding second API container, to ensure adding a service under partition works...")
 
                 const addAPIServiceToPartitionResult = await addAPIServiceToPartition(API2_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress(), API_PARTITION_ID)
 
@@ -292,6 +292,7 @@ async function repartitionNetwork(
     
     const partitionServices = new Map<PartitionID, Set<ServiceID>>();
     const datastoreServiceId = new Set<ServiceID>();
+
     datastoreServiceId.add(DATASTORE_SERVICE_ID)
 
     partitionServices.set(API_PARTITION_ID, apiPartitionServiceIds)
@@ -299,7 +300,9 @@ async function repartitionNetwork(
 
     const partitionConnections = new Map<PartitionID, Map<PartitionID, PartitionConnection>>();
     const datastorePartitionId = new Map<PartitionID, PartitionConnection>();
+
     datastorePartitionId.set(DATASTORE_PARTITION_ID,connectionBetweenPartitions);
+    
     partitionConnections.set(API_PARTITION_ID, datastorePartitionId);
 
     const defaultPartitionConnection = new UnblockedPartitionConnection()
