@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Fix `SoftPartitionConnection` class constructor bug upon `isValidPacketLossValue` value decision.
+
 # 1.36.11
 ### Fixes
 * Make a best-effort attempt to pull service & module images from Dockerhub, so users don't need to manually `docker pull`
