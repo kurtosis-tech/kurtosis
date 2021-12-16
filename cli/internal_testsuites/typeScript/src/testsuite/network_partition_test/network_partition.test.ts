@@ -30,9 +30,8 @@ const TEST_PERSON_ID = "46";
 const TIME_IN_SECONDS = 2;
 const CONTEXT_TIME_OUT = new Date().setSeconds(new Date().getSeconds() + TIME_IN_SECONDS)
 
-const FIVE_SECONDS_IN_MILLISECONDS = 50000;
-
-jest.setTimeout(FIVE_SECONDS_IN_MILLISECONDS)
+const SEVENTY_SECONDS_IN_MILLISECONDS = 70000;
+jest.setTimeout(SEVENTY_SECONDS_IN_MILLISECONDS)
 
 test("Test network partition", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -101,7 +100,7 @@ test("Test network partition", async () => {
                             if (!response) {
                                 resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                             } else {
-                                resolve(ok(response!));
+                                resolve(ok(response));
                             }
                         } else {
                             resolve(err(error));
@@ -128,27 +127,28 @@ test("Test network partition", async () => {
 
                 log.info("Incrementing books read via API 1 while partition is in place, to verify no comms are possible...")
 
-                const newIncrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                    apiClient1.incrementBooksRead(incrementBooksReadArgs, { deadline: CONTEXT_TIME_OUT }, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                        if (error === null) {
-                            if (!response) {
-                                resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                {
+                    const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                        apiClient1.incrementBooksRead(incrementBooksReadArgs, { deadline: CONTEXT_TIME_OUT }, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                            if (error === null) {
+                                if (!response) {
+                                    resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                                } else {
+                                    resolve(ok(response));
+                                }
                             } else {
-                                resolve(ok(response!));
+                                resolve(err(error));
                             }
-                        } else {
-                            resolve(err(error));
-                        }
+                        })
                     })
-                })
-                const newIncrementBooksReadResult = await newIncrementBooksReadResultPromise;
-                if(newIncrementBooksReadResult.isOk()){
-                    log.error("Expected the book increment call via API 1 to fail due to the network " +
-                    "partition between API and datastore services, but no error was thrown")
-                    return err(newIncrementBooksReadResult.value)
+                    const incrementBooksReadResult = await incrementBooksReadResultPromise;
+                    if(incrementBooksReadResult.isOk()){
+                        log.error("Expected the book increment call via API 1 to fail due to the network " +
+                        "partition between API and datastore services, but no error was thrown")
+                        return err(incrementBooksReadResult.value)
+                    }
+                    log.info(`Incrementing books read via API 1 threw the following error as expected due to network partition: ${incrementBooksReadResult.error}`)
                 }
-                    
-                log.info(`Incrementing books read via API 1 threw the following error as expected due to network partition: ${newIncrementBooksReadResult.error}`)
                     
                 // Adding another API service while the partition is in place ensures that partitioning works even when you add a node
 	            log.info("Adding second API container, to ensure adding a service under partition works...")
@@ -167,37 +167,36 @@ test("Test network partition", async () => {
                 log.info("Incrementing books read via API 2 while partition is in place, to verify no comms are possible...")
 
                 try {
-
-                    const incrementBooksRead2ResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                    const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
                         apiClient2.incrementBooksRead(incrementBooksReadArgs, { deadline: CONTEXT_TIME_OUT },  (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                             if (error === null) {
                                 if (!response) {
                                     resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
                                 } else {
-                                    resolve(ok(response!));
+                                    resolve(ok(response));
                                 }
                             } else {
                                 resolve(err(error));
                             }
                         })
                     })
-    
-                    const incrementBooksRead2Result = await incrementBooksRead2ResultPromise;
-                    if(incrementBooksRead2Result.isOk()) { 
+                    
+                    const incrementBooksReadResult = await incrementBooksReadResultPromise;
+                    if(incrementBooksReadResult.isOk()) { 
                         log.error("Expected the book increment call via API 2 to fail due to the network " +
                         "partition between API and datastore services, but no error was thrown")
-                        throw incrementBooksRead2Result.value
+                        throw incrementBooksReadResult.value
                     }
-
-                    log.info(`Incrementing books read via API 2 threw the following error as expected due to network partition: ${incrementBooksRead2Result.error}`)
+                    
+                    log.info(`Incrementing books read via API 2 threw the following error as expected due to network partition: ${incrementBooksReadResult.error}`)
 
                     // Now, open the network back up
                     log.info("Repartitioning to heal partition between API and datastore...")
 
-                    const repartition2NetworkResult = await repartitionNetwork(enclaveContext, false, true)
-                    if(repartition2NetworkResult.isErr()){
+                    const repartitionNetworkResult = await repartitionNetwork(enclaveContext, false, true)
+                    if(repartitionNetworkResult.isErr()){
                         log.error("An error occurred healing the partition")
-                        throw repartition2NetworkResult.error
+                        throw repartitionNetworkResult.error
                     }
 
                     log.info("Partition healed successfully")
@@ -205,51 +204,54 @@ test("Test network partition", async () => {
                     log.info("Making another call via API 1 to increment books read, to ensure the partition is open...")
                     // Use infinite timeout because we expect the partition healing to fix the issue
                     
-                    const newestIncrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                        apiClient1.incrementBooksRead(incrementBooksReadArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                            if (error === null) {
-                                if (!response) {
-                                    resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    {
+                        const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                            apiClient1.incrementBooksRead(incrementBooksReadArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                                if (error === null) {
+                                    if (!response) {
+                                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                                    } else {
+                                        resolve(ok(response));
+                                    }
                                 } else {
-                                    resolve(ok(response!));
+                                    resolve(err(error));
                                 }
-                            } else {
-                                resolve(err(error));
-                            }
+                            })
                         })
-                    })
-
-                    const newestIncrementBooksReadResult = await newestIncrementBooksReadResultPromise;
-                    if(newestIncrementBooksReadResult.isErr()){
-                        log.error("An error occurred incrementing the number of books read via API 1, even though the partition should have been "+
-                        "healed by the goroutine")
-                        throw newestIncrementBooksReadResult.error
+                        
+                        const incrementBooksReadResult = await incrementBooksReadResultPromise;
+                        if(incrementBooksReadResult.isErr()){
+                            log.error("An error occurred incrementing the number of books read via API 1, even though the partition should have been "+
+                            "healed by the goroutine")
+                            throw incrementBooksReadResult.error
+                        }
                     }
-
                     log.info("Successfully incremented books read via API 1, indicating that the partition has healed successfully!")
 
                     log.info("Making another call via API 2 to increment books read, to ensure the partition is open...")
                     // Use infinite timeout because we expect the partition healing to fix the issue
 
-                    const newIncrementBooksRead2ResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                        apiClient2.incrementBooksRead(incrementBooksReadArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                            if (error === null) {
-                                if (!response) {
-                                    resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    {
+                        const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                            apiClient2.incrementBooksRead(incrementBooksReadArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                                if (error === null) {
+                                    if (!response) {
+                                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                                    } else {
+                                        resolve(ok(response));
+                                    }
                                 } else {
-                                    resolve(ok(response!));
+                                    resolve(err(error));
                                 }
-                            } else {
-                                resolve(err(error));
-                            }
+                            })
                         })
-                    })
-
-                    const newIncrementBooksRead2Result = await newIncrementBooksRead2ResultPromise;
-                    if(newIncrementBooksRead2Result.isErr()){
-                        log.error("An error occurred incrementing the number of books read via API 2, even though the partition should have been "+
-                        "healed by the goroutine")
-                        throw newIncrementBooksRead2Result.error
+                        
+                        const incrementBooksReadResult = await incrementBooksReadResultPromise;
+                        if(incrementBooksReadResult.isErr()){
+                            log.error("An error occurred incrementing the number of books read via API 2, even though the partition should have been "+
+                            "healed by the goroutine")
+                            throw incrementBooksReadResult.error
+                        }
                     }
 
                     log.info("Successfully incremented books read via API 2, indicating that the partition has healed successfully!")
@@ -274,7 +276,11 @@ test("Test network partition", async () => {
 Creates a repartitioner that will partition the network between the API & datastore services, with the connection between them configurable
 */
 
-async function repartitionNetwork( enclaveContext: EnclaveContext,  isConnectionBlocked: boolean, isApi2ServiceAddedYet: boolean ): Promise<Result<null, Error>> {
+async function repartitionNetwork( 
+    enclaveContext: EnclaveContext, 
+    isConnectionBlocked: boolean, 
+    isApi2ServiceAddedYet: boolean 
+    ): Promise<Result<null, Error>> {
     
     const apiPartitionServiceIds = new Set<ServiceID>()
     apiPartitionServiceIds.add(API1_SERVICE_ID)
@@ -285,7 +291,8 @@ async function repartitionNetwork( enclaveContext: EnclaveContext,  isConnection
         isConnectionBlocked ? new BlockedPartitionConnection() : new UnblockedPartitionConnection();
     
     const partitionServices = new Map<PartitionID, Set<ServiceID>>();
-    const datastoreServiceId = new Set<ServiceID>(DATASTORE_SERVICE_ID);
+    const datastoreServiceId = new Set<ServiceID>();
+    datastoreServiceId.add(DATASTORE_SERVICE_ID)
 
     partitionServices.set(API_PARTITION_ID, apiPartitionServiceIds)
     partitionServices.set(DATASTORE_PARTITION_ID, datastoreServiceId)
