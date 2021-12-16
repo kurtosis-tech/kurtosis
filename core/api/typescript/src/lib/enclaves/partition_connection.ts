@@ -50,7 +50,7 @@ export class SoftPartitionConnection {
     private readonly packetLossPercentage: number
 
     constructor(packetLossPercentage: number) {
-        if(SoftPartitionConnection.isValidPacketLossValue(packetLossPercentage)){
+        if(!SoftPartitionConnection.isValidPacketLossValue(packetLossPercentage)){
             throw new Error(`The packet loss percentage value ${packetLossPercentage} is not allowed, 
             it should be >= ${SMALLEST_POSSIBLE_NON_ZERO_PACKET_LOSS_VALUE} 
             and <= ${MAX_POSSIBLE_PACKET_LOSS_VALUE}`);
@@ -68,7 +68,6 @@ export class SoftPartitionConnection {
     // 									   Private helper methods
     // ====================================================================================================
     private static isValidPacketLossValue(packetLossPercentage: number): boolean {
-        return !(packetLossPercentage < SMALLEST_POSSIBLE_NON_ZERO_PACKET_LOSS_VALUE || packetLossPercentage > MAX_POSSIBLE_PACKET_LOSS_VALUE);
-
+        return packetLossPercentage >= SMALLEST_POSSIBLE_NON_ZERO_PACKET_LOSS_VALUE && packetLossPercentage <= MAX_POSSIBLE_PACKET_LOSS_VALUE;
     }
 }
