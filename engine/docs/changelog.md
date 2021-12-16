@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Upgraded to Kurtosis Core v1.36.12 which fixes a bug when creating soft network partitions in Tyepscript
+
 # 1.8.2
 ### FEATURES
 * Added deletion of dangling folders in clean endpoint
