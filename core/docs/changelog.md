@@ -1,5 +1,7 @@
 # TBD
 
+# 1.36.12
+
 ### Fixes
 * Fix `SoftPartitionConnection` class constructor bug upon `isValidPacketLossValue` value decision.
 
