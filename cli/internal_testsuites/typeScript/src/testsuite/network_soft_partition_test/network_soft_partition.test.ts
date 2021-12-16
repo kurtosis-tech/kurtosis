@@ -140,8 +140,9 @@ test("Test network soft partitions", async () => {
                 }
             }
             
-            if(ZERO_PACKET_LOSS !== mtrReportBeforeSoftPartition.report.hubs[0]["Loss%"]){
-                throw new Error(`Expected ${ZERO_PACKET_LOSS} value before soft partition, but ${mtrReportBeforeSoftPartition.report.hubs[0]["Loss%"]} was returned`)
+            const packetLoss = mtrReportBeforeSoftPartition.report.hubs[0]["Loss%"]
+            if(ZERO_PACKET_LOSS !== packetLoss){
+                throw new Error(`Expected zero packet loss before soft partitioning, but packet loss was ${packetLoss}`)
             }
         }
 
@@ -193,12 +194,12 @@ test("Test network soft partitions", async () => {
                 }
             }
 
-            if(ZERO_PACKET_LOSS === mtrReportAfterPartition.report.hubs[0]["Loss%"]){
-                console.log(mtrReportAfterPartition.report.hubs[0]["Loss%"])
-                throw new Error(`Expected value higher than ${ZERO_PACKET_LOSS} after partition, but ${mtrReportAfterPartition.report.hubs[0]["Loss%"]} was returned`)
+            const packetLoss = mtrReportAfterPartition.report.hubs[0]["Loss%"]
+            if(ZERO_PACKET_LOSS === packetLoss){
+                throw new Error(`Expected nonzero packet loss after applying the soft partition, but packet loss ${packetLoss}`)
             }
             
-            log.info(`Report complete successfully, there was ${mtrReportAfterPartition.report.hubs[0]["Loss%"]}${PERCENTAGE_SIGN} packet loss between services during the test`)
+            log.info(`Report complete successfully, there was ${packetLoss}${PERCENTAGE_SIGN} packet loss between services during the test`)
         }
 
         log.info("Executing repartition network to unblock partition and join services again...")
@@ -246,8 +247,9 @@ test("Test network soft partitions", async () => {
                 }
             }
 
-            if(ZERO_PACKET_LOSS !== mtrReportAfterUnblockedPartition.report.hubs[0]["Loss%"]){
-                throw new Error(`Expected ${ZERO_PACKET_LOSS} value after unblocked partition, but ${mtrReportAfterUnblockedPartition.report.hubs[0]["Loss%"]} was returned`)
+            const packetLoss = mtrReportAfterUnblockedPartition.report.hubs[0]["Loss%"]
+            if(ZERO_PACKET_LOSS !== packetLoss){
+                throw new Error(`Expected zero packet loss after removing the soft partition, but packet loss was ${packetLoss}`)
             }
 
 	        log.info("Report complete successfully, there was no packet loss between services during the test")
