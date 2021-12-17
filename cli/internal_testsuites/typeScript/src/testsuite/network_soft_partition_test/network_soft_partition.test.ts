@@ -134,9 +134,9 @@ test("Test network soft partitions", async () => {
             }catch(error){
                 log.error(`An error occurred unmarshalling json string "${jsonStr}" to mtr report struct`)
                 if(error instanceof Error){
-                    return err(error)
+                    throw error
                 }else{
-                    return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
+                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
                 }
             }
             
@@ -164,7 +164,6 @@ test("Test network soft partitions", async () => {
         log.info("Executing mtr report to check there is packet loss in services' communication after soft partition...")
 
         {
-
             const execCommandResult = await testServiceContext.execCommand(mtrReportCmd)
             
             if(execCommandResult.isErr()){
@@ -188,9 +187,9 @@ test("Test network soft partitions", async () => {
             }catch(error){
                 log.error(`An error occurred unmarshalling json string "${jsonStr}" to mtr report struct`)
                 if(error instanceof Error){
-                    return err(error)
+                    throw error
                 }else{
-                    return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
+                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
                 }
             }
 
@@ -241,9 +240,9 @@ test("Test network soft partitions", async () => {
             }catch(error){
                 log.error(`An error occurred unmarshalling json string "${jsonStr}" to mtr report struct`)
                 if(error instanceof Error){
-                    return err(error)
+                    throw error
                 }else{
-                    return err(new Error("Encountered error while writing the file, but the error wasn't of type Error"))
+                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
                 }
             }
 
@@ -312,7 +311,6 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
         log.error(`An error occurred repartitioning the network with partition connection = ${partitionConnection}`)
         return err(repartitionNetworkResult.error)
     }
-
 
     return ok(null)
 }
