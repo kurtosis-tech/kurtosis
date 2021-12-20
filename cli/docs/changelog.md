@@ -2,6 +2,8 @@
 
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
+* Added TypeScript test: `network_partition.test.ts`
+
 
 # 0.8.7
 ### Features
