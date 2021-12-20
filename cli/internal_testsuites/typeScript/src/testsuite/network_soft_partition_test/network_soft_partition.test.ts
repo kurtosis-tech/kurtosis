@@ -41,13 +41,14 @@ const ZERO_PACKET_LOSS = 0;
 const SOFT_PARTITION_PACKET_LOSS_PERCENTAGE = 40;
 
 const HUNDRED_SECONDS_IN_MILLISECONDS = 100000
-jest.setTimeout(HUNDRED_SECONDS_IN_MILLISECONDS);
 
 interface MtrReport {
     report: {
         hubs: Array<{"Loss%": number}>
     }
 }
+
+jest.setTimeout(HUNDRED_SECONDS_IN_MILLISECONDS);
 
 test("Test network soft partitions", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
@@ -174,11 +175,11 @@ test("Test network soft partitions", async () => {
             const [ exitCode, logOutput ] = execCommandResult.value
             
             if(EXEC_COMMAND_SUCCESS_EXIT_CODE !== exitCode){
-                throw new Error(`Command "${mtrReportCmd}" to run mtr report exited with non-successful exit code "${EXEC_COMMAND_SUCCESS_EXIT_CODE}"`)
+                throw new Error(`Command "${mtrReportCmd}" to run mtr report exited with non-successful exit code "${exitCode}"`)
             }
             
             const jsonStr = logOutput
-            log.debug(`MTR report after soft partition result:\n  newJsonStr`)
+            log.debug(`MTR report after soft partition result:\n  ${jsonStr}`)
             
             let mtrReportAfterPartition: MtrReport;
             
@@ -195,7 +196,7 @@ test("Test network soft partitions", async () => {
 
             const packetLoss = mtrReportAfterPartition.report.hubs[0]["Loss%"]
             if(ZERO_PACKET_LOSS === packetLoss){
-                throw new Error(`Expected nonzero packet loss after applying the soft partition, but packet loss ${packetLoss}`)
+                throw new Error(`Expected nonzero packet loss after applying the soft partition, but packet loss was ${packetLoss}`)
             }
             
             log.info(`Report complete successfully, there was ${packetLoss}${PERCENTAGE_SIGN} packet loss between services during the test`)
@@ -226,6 +227,7 @@ test("Test network soft partitions", async () => {
             }
 
             const [exitCode, logOutput] = execCommandResult.value
+
             if(EXEC_COMMAND_SUCCESS_EXIT_CODE !== exitCode){
                 throw new Error(`Command '${mtrReportCmd}' to run mtr report exited with non-successful exit code '${exitCode}'`)
             }
@@ -301,7 +303,10 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
     partitionServices.set(TEST_SERVICE_PARTITION_ID, new Set([TEST_SERVICE]))
 
     const partitionConnections = new Map<PartitionID, Map<PartitionID,PartitionConnection>>()
-    partitionConnections.set(EXAMPLE_SERVICE_PARTITION_ID, new Map([[TEST_SERVICE_PARTITION_ID, partitionConnection]]))
+    const examplePartitionConnections = new Map<PartitionID, PartitionConnection>();
+
+    examplePartitionConnections.set(TEST_SERVICE_PARTITION_ID, partitionConnection);
+    partitionConnections.set(EXAMPLE_SERVICE_PARTITION_ID, examplePartitionConnections)
 
     const defaultPartitionConnection = partitionConnection
 
