@@ -1,10 +1,9 @@
 # TBD
-
 ### Features
-
 * Added TypeScript test: `files.test.ts`
 * Added TypeScript test: `module.test.ts`
 * Added TypeScript test: `wait_for_endpoint_availability.test.ts`
+* `enclave inspect` also reports the enclave data directory on the host machine
 
 # 0.8.6
 ### Features

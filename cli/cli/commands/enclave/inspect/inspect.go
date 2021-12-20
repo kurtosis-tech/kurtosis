@@ -32,10 +32,11 @@ const (
 	kurtosisLogLevelArg = "kurtosis-log-level"
 	enclaveIdArg        = "enclave-id"
 
-	enclaveIdTitleName     = "Enclave ID"
-	enclaveStatusTitleName = "Enclave Status"
+	enclaveIdTitleName          = "Enclave ID"
+	enclaveDataDirpathTitleName = "Data Directory"
+	enclaveStatusTitleName      = "Enclave Status"
 	apiContainerStatusTitleName = "API Container Status"
-	apiContainerHostPortTitle = "API Container Host Port"
+	apiContainerHostPortTitle   = "API Container Host Port"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -119,11 +120,13 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
 	}
 
+	enclaveDataDirpath := enclaveInfo.GetEnclaveDataDirpathOnHostMachine()
 	enclaveContainersStatus := enclaveInfo.ContainersStatus
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
+	keyValuePrinter.AddPair(enclaveDataDirpathTitleName, enclaveDataDirpath)
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
