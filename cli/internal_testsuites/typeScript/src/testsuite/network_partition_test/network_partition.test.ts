@@ -27,8 +27,7 @@ const API2_SERVICE_ID: ServiceID   = "api2";
 
 const TEST_PERSON_ID = "46";
 
-const TIME_IN_SECONDS = 2;
-const CONTEXT_TIME_OUT = new Date().setSeconds(new Date().getSeconds() + TIME_IN_SECONDS)
+const SECONDS_TO_WAIT_BEFORE_CALLING_GRPC_CALL_TIMED_OUT = 2;
 
 const SEVENTY_SECONDS_IN_MILLISECONDS = 70000;
 jest.setTimeout(SEVENTY_SECONDS_IN_MILLISECONDS)
@@ -67,24 +66,25 @@ test("Test network partition", async () => {
 
             const { client: apiClient1, clientCloseFunction: apiClient1CloseFunction } = addAPIServiceResult.value;
 
-            const addPersonArgs = new AddPersonArgs()
-            addPersonArgs.setPersonId(TEST_PERSON_ID)
-
-            const addPerson1ResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                apiClient1.addPerson(addPersonArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                    if (error === null) {
-                        if (!response) {
-                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                        } else {
-                            resolve(ok(response));
-                        }
-                    } else {
-                        resolve(err(error));
-                    }
-                })
-            })
-
             try {
+
+                const addPersonArgs = new AddPersonArgs()
+                addPersonArgs.setPersonId(TEST_PERSON_ID)
+
+                const addPerson1ResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                    apiClient1.addPerson(addPersonArgs, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                        if (error === null) {
+                            if (!response) {
+                                resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                            } else {
+                                resolve(ok(response));
+                            }
+                        } else {
+                            resolve(err(error));
+                        }
+                    })
+                })
+
                 const addPerson1Result = await addPerson1ResultPromise;
                 if(addPerson1Result.isErr()) {
                     log.error(`An error occurred adding test person with ID ${TEST_PERSON_ID}`)
@@ -129,7 +129,9 @@ test("Test network partition", async () => {
 
                 {
                     const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                        apiClient1.incrementBooksRead(incrementBooksReadArgs, { deadline: CONTEXT_TIME_OUT }, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                        const incrementBooksDeadline = new Date();
+                        incrementBooksDeadline.setSeconds(incrementBooksDeadline.getSeconds() + SECONDS_TO_WAIT_BEFORE_CALLING_GRPC_CALL_TIMED_OUT)
+                        apiClient1.incrementBooksRead(incrementBooksReadArgs, { deadline: incrementBooksDeadline }, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                             if (error === null) {
                                 if (!response) {
                                     resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -162,13 +164,16 @@ test("Test network partition", async () => {
 
                 const { client: apiClient2, clientCloseFunction: apiClient2CloseFunction } = addAPIServiceToPartitionResult.value
 
-            	log.info("Second API container added successfully")
-
-                log.info("Incrementing books read via API 2 while partition is in place, to verify no comms are possible...")
-
                 try {
+
+                    log.info("Second API container added successfully")
+
+                    log.info("Incrementing books read via API 2 while partition is in place, to verify no comms are possible...")
+
                     const incrementBooksReadResultPromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-                        apiClient2.incrementBooksRead(incrementBooksReadArgs, { deadline: CONTEXT_TIME_OUT },  (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+                        const incrementBooksDeadline = new Date();
+                        incrementBooksDeadline.setSeconds(incrementBooksDeadline.getSeconds() + SECONDS_TO_WAIT_BEFORE_CALLING_GRPC_CALL_TIMED_OUT)
+                        apiClient2.incrementBooksRead(incrementBooksReadArgs, { deadline: incrementBooksDeadline },  (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                             if (error === null) {
                                 if (!response) {
                                     resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -291,19 +296,19 @@ async function repartitionNetwork(
         isConnectionBlocked ? new BlockedPartitionConnection() : new UnblockedPartitionConnection();
     
     const partitionServices = new Map<PartitionID, Set<ServiceID>>();
-    const datastoreServiceId = new Set<ServiceID>();
+    const datastorePartitionServiceIds = new Set<ServiceID>();
 
-    datastoreServiceId.add(DATASTORE_SERVICE_ID)
+    datastorePartitionServiceIds.add(DATASTORE_SERVICE_ID)
 
     partitionServices.set(API_PARTITION_ID, apiPartitionServiceIds)
-    partitionServices.set(DATASTORE_PARTITION_ID, datastoreServiceId)
+    partitionServices.set(DATASTORE_PARTITION_ID, datastorePartitionServiceIds)
 
     const partitionConnections = new Map<PartitionID, Map<PartitionID, PartitionConnection>>();
-    const datastorePartitionId = new Map<PartitionID, PartitionConnection>();
+    const apiPartitionConnections = new Map<PartitionID, PartitionConnection>();
 
-    datastorePartitionId.set(DATASTORE_PARTITION_ID,connectionBetweenPartitions);
+    apiPartitionConnections.set(DATASTORE_PARTITION_ID,connectionBetweenPartitions);
     
-    partitionConnections.set(API_PARTITION_ID, datastorePartitionId);
+    partitionConnections.set(API_PARTITION_ID, apiPartitionConnections);
 
     const defaultPartitionConnection = new UnblockedPartitionConnection()
 
