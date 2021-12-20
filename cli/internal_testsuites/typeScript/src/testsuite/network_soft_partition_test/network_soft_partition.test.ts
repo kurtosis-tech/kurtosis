@@ -137,7 +137,7 @@ test("Test network soft partitions", async () => {
                 if(error instanceof Error){
                     throw error
                 }else{
-                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
+                    throw new Error("Encountered error while parsing json file, but the error wasn't of type Error")
                 }
             }
             
@@ -190,7 +190,7 @@ test("Test network soft partitions", async () => {
                 if(error instanceof Error){
                     throw error
                 }else{
-                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
+                    throw new Error("Encountered error while parsing json file, but the error wasn't of type Error")
                 }
             }
 
@@ -244,7 +244,7 @@ test("Test network soft partitions", async () => {
                 if(error instanceof Error){
                     throw error
                 }else{
-                    throw new Error("Encountered error while writing the file, but the error wasn't of type Error")
+                    throw new Error("Encountered error while parsing json file, but the error wasn't of type Error")
                 }
             }
 
@@ -253,7 +253,7 @@ test("Test network soft partitions", async () => {
                 throw new Error(`Expected zero packet loss after removing the soft partition, but packet loss was ${packetLoss}`)
             }
 
-	        log.info("Report complete successfully, there was no packet loss between services during the test")
+            log.info("Report complete successfully, there was no packet loss between services during the test")
         }
 
     }finally{
@@ -262,40 +262,6 @@ test("Test network soft partitions", async () => {
 
     jest.clearAllTimers()
 })
-
-function getExampleServiceConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>{
-    const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, PortProtocol.TCP);
-    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-        const exampleServiceMainPortId = new Map<string,PortSpec>()
-        exampleServiceMainPortId.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
-        const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-                .withUsedPorts(exampleServiceMainPortId)
-                .build()
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
-}
-
-function getTestServiceContainerConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
-    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
-        
-        // We sleep because the only function of this container is to test Docker executing a command while it's running
-		// NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
-		// args), but this provides a nice little regression test of the ENTRYPOINT overriding
-        const entrypointArgs = [SLEEP_CMD]
-        const cmdArgs = [TEST_SERVICE_SLEEP_MILLISECONDS_STR]
-        
-        const containerConfig = new ContainerConfigBuilder(KURTOSIS_IP_ROUTE_2_DOCKER_IMAGE_NAME)
-                .withEntrypointOverride(entrypointArgs)
-                .withCmdOverride(cmdArgs)
-                .build()
-        
-        return ok(containerConfig)
-    }
-
-    return containerConfigSupplier
-}
 
 async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConnection: PartitionConnection): Promise<Result<null, Error>> {
     const partitionServices = new Map<PartitionID,Set<ServiceID>>()
@@ -318,4 +284,38 @@ async function repartitionNetwork(enclaveContext: EnclaveContext, partitionConne
     }
 
     return ok(null)
+}
+
+function getExampleServiceConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>{
+    const portSpec = new PortSpec(EXAMPLE_SERVICE_PORT_NUM_INSIDE_NETWORK, PortProtocol.TCP);
+    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+        const usedPorts = new Map<string,PortSpec>()
+        usedPorts.set(EXAMPLE_SERVICE_MAIN_PORT_ID,portSpec)
+        const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
+                .withUsedPorts(usedPorts)
+                .build()
+        return ok(containerConfig)
+    }
+
+    return containerConfigSupplier
+}
+
+function getTestServiceContainerConfigSupplier():(ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error> {
+    const containerConfigSupplier = (ipAddr: string, sharedDirectory: SharedPath): Result<ContainerConfig, Error> => {
+        
+        // We sleep because the only function of this container is to test Docker executing a command while it's running
+        // NOTE: We could just as easily combine this into a single array (rather than splitting between ENTRYPOINT and CMD
+        // args), but this provides a nice little regression test of the ENTRYPOINT overriding
+        const entrypointArgs = [SLEEP_CMD]
+        const cmdArgs = [TEST_SERVICE_SLEEP_MILLISECONDS_STR]
+        
+        const containerConfig = new ContainerConfigBuilder(KURTOSIS_IP_ROUTE_2_DOCKER_IMAGE_NAME)
+                .withEntrypointOverride(entrypointArgs)
+                .withCmdOverride(cmdArgs)
+                .build()
+        
+        return ok(containerConfig)
+    }
+
+    return containerConfigSupplier
 }
