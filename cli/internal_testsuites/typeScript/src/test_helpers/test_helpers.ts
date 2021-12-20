@@ -108,7 +108,7 @@ export async function addAPIService( serviceId: ServiceID, enclaveContext: Encla
     return ok({ serviceContext, client, clientCloseFunction})
 }
 
-async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string, partitionId: PartitionID):
+export async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string, partitionId: PartitionID):
     Promise<Result<{
         serviceContext: ServiceContext;
         client: serverApi.ExampleAPIServerServiceClient;

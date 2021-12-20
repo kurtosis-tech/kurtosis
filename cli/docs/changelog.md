@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added TypeScript test: `network_partition.test.ts`
+
 # 0.8.7
 ### Features
 * Added TypeScript test: `files.test.ts`
