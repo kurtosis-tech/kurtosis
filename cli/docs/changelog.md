@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.7
 ### Features
 * Added TypeScript test: `files.test.ts`
 * Added TypeScript test: `module.test.ts`
