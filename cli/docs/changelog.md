@@ -1,9 +1,10 @@
 # TBD
+### Fixes
+* Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
 
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
 * Added TypeScript test: `network_partition.test.ts`
-
 
 # 0.8.7
 ### Features
