@@ -1964,7 +1964,7 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.36.12, kurtosis-core-api-lib@^1.36.12:
+kurtosis-core-api-lib@1.36.12:
   version "1.36.12"
   resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.12.tgz#12b1c8f0b312676f1631fb12e73806d1e6698853"
   integrity sha512-uf0yBNgsv/fu/abArO6WDjtIk1iz0OQyS+Ph5loaQoVj6PvPJM4IYxTiB4HJICMoqDYtK/xD3kFmFZMEON4d/g==
@@ -1975,7 +1975,7 @@ kurtosis-core-api-lib@1.36.12, kurtosis-core-api-lib@^1.36.12:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
-kurtosis-engine-api-lib@^1.8.3:
+kurtosis-engine-api-lib@1.8.3:
   version "1.8.3"
   resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.3.tgz#cfe0f9d285a9cbca76a44ee0223098118cd0260f"
   integrity sha512-W6ssXuh0PmSOJJom3aAkqmKk+lNNt9hO0Ly+sBDUk5L3hoC0zvOOgS3wUxEAG/mcrHk9xHrqRnbwdzPKk4y32w==
