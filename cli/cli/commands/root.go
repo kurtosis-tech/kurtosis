@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/cli_config_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
@@ -93,6 +94,13 @@ func init() {
 //                                       Private Helper Functions
 // ====================================================================================================
 func globalSetup(cmd *cobra.Command, args []string) error {
+
+	kurtosisCLIConfig, err := cli_config_manager.GetKurtosisCLIConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis CLI config")
+	}
+	logrus.Infof("Kurtosis CLI config '%+v'", kurtosisCLIConfig.GetAcceptSendingMetrics())
+
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not parse log level string '%v'", logLevelStr)

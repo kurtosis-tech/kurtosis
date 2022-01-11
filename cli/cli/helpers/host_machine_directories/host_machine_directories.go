@@ -11,6 +11,8 @@ const (
 
 	sessionCacheFilename = "session-cache"
 
+	kurtosisCLIConfigFilename = "kurtosis-cli-config"
+
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
 	cacheFileForTests = "tests-content"
@@ -27,6 +29,16 @@ func GetEngineDataDirpath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting engine data dirpath from relative path '%v'", xdgRelFilepath)
 	}
 	return engineDataDirpath, nil
+}
+
+// Get the filepath where the CLI configs are saved
+func GetKurtosisCLIConfigFile() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisCLIConfigFilename)
+	kurtosisCLIConfigFilepath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis CLI config filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return kurtosisCLIConfigFilepath, nil
 }
 
 // TODO Plug this into the 'test' auth framework in a different PR
@@ -56,7 +68,6 @@ func GetCacheFileForTest() (string, error) {
 	}
 	return cacheFileForTestFilepath, nil
 }
-
 
 // ====================================================================================================
 //                                     Private Helper Functions
