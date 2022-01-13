@@ -11,7 +11,7 @@ const (
 
 	sessionCacheFilename = "session-cache"
 
-	kurtosisCLIConfigFilename = "kurtosis-cli-config"
+	kurtosisCLIConfigYAMLFilename = "kurtosis-cli-config.yml"
 
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
@@ -31,14 +31,14 @@ func GetEngineDataDirpath() (string, error) {
 	return engineDataDirpath, nil
 }
 
-// Get the filepath where the CLI configs are saved
-func GetKurtosisCLIConfigFile() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisCLIConfigFilename)
-	kurtosisCLIConfigFilepath, err := xdg.DataFile(xdgRelFilepath)
+// Get the yaml filepath where the CLI configs are saved
+func GetKurtosisCLIConfigYAMLFile() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisCLIConfigYAMLFilename)
+	kurtosisCLIConfigYAMLFilepath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis CLI config filepath from relative path '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis CLI config YAML filepath from relative path '%v'", xdgRelFilepath)
 	}
-	return kurtosisCLIConfigFilepath, nil
+	return kurtosisCLIConfigYAMLFilepath, nil
 }
 
 // TODO Plug this into the 'test' auth framework in a different PR

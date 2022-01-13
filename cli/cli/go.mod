@@ -19,6 +19,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211213143849-68ea060d2b36
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
+	github.com/manifoldco/promptui v0.9.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0

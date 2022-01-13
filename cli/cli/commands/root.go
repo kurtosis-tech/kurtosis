@@ -17,9 +17,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/cli_config_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/config/yaml_config_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -34,6 +35,9 @@ import (
 
 const (
 	logLevelStrArg = "cli-log-level"
+	acceptSendingMetricsStrArg = "accept-sending-metrics"
+
+	notProvidedAcceptSendingMetricsValue = "not-provided"
 
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
@@ -61,6 +65,12 @@ type GitHubReleaseReponse struct {
 var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
+var acceptSendingMetricsStr string
+var defaultAcceptSendingMetricsStr = notProvidedAcceptSendingMetricsValue
+var userAcceptSendingMetricsValidInputs = []string{"y", "yes"}
+var userDoNotAcceptSendingMetricsValidInputs = []string{"n", "no"}
+var allAcceptSendingMetricsValidInputs = append(userAcceptSendingMetricsValidInputs, userDoNotAcceptSendingMetricsValidInputs...)
+
 var RootCmd = &cobra.Command{
 	// Leaving out the "use" will auto-use os.Args[0]
 	Use:   "",
@@ -80,6 +90,13 @@ func init() {
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
 
+	RootCmd.PersistentFlags().StringVar(
+		&acceptSendingMetricsStr,
+		acceptSendingMetricsStrArg,
+		defaultAcceptSendingMetricsStr,
+		"Sets if you accept sending usage metrics to improve the product, valid inputs are: y/yes or n/no",
+	)
+
 	RootCmd.AddCommand(sandbox.SandboxCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
@@ -94,22 +111,73 @@ func init() {
 //                                       Private Helper Functions
 // ====================================================================================================
 func globalSetup(cmd *cobra.Command, args []string) error {
-
-	kurtosisCLIConfig, err := cli_config_manager.GetKurtosisCLIConfig()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis CLI config")
+	if err := setupCLILogs(cmd); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
-	logrus.Infof("Kurtosis CLI config '%+v'", kurtosisCLIConfig.GetAcceptSendingMetrics())
 
+	if err := showMetricsConsentPrompt(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred showing metrics consent prompt")
+	}
+
+	checkCLIVersion()
+
+	return nil
+}
+
+func setupCLILogs(cmd *cobra.Command) error {
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not parse log level string '%v'", logLevelStr)
 	}
 	logrus.SetOutput(cmd.OutOrStdout())
 	logrus.SetLevel(logLevel)
+	return nil
+}
 
-	checkCLIVersion()
+func showMetricsConsentPrompt() error {
+	config, err := yaml_config_manager.GetCurrentOrCreateDefaultConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the CLI config")
+	}
+	defer func() {
+		if err := config.Save(); err != nil {
+			logrus.Warnf("Failed to save latest CLI config changes:\n%v", config.String())
+		}
+	}()
 
+	if !config.HasMetricsConsentPromptBeenDisplayed() {
+		var userAcceptSendingMetricsInput string
+
+		if acceptSendingMetricsStr != notProvidedAcceptSendingMetricsValue {
+			userAcceptSendingMetricsInput = acceptSendingMetricsStr
+		} else {
+			promptDisplayer := prompt_displayer.NewPromptDisplayer(config)
+			userAcceptSendingMetricsInput, err = promptDisplayer.DisplayUserMetricsConsentPrompt()
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
+			}
+		}
+
+		if err := validateMetricsConsentPromptInput(userAcceptSendingMetricsInput); err != nil {
+			return stacktrace.Propagate(err, "An error occurred validating user accept metrics consent prompt input")
+		}
+
+		if contains(userAcceptSendingMetricsValidInputs, userAcceptSendingMetricsInput) {
+			config.UserAcceptSendingMetrics()
+		} else {
+			config.UserDoNotAcceptSendingMetrics()
+		}
+	}
+
+	return nil
+}
+
+func validateMetricsConsentPromptInput(input string) error {
+	input = strings.ToLower(input)
+	isValid := contains(allAcceptSendingMetricsValidInputs, input)
+	if !isValid {
+		return stacktrace.NewError("Yo have entered an invalid input '%v'. Valid inputs: '%+v'", input, allAcceptSendingMetricsValidInputs)
+	}
 	return nil
 }
 
@@ -309,3 +377,13 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 
 	return latestReleaseVersion, nil
 }
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
