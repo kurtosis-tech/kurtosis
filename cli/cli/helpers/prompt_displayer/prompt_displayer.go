@@ -1,39 +1,63 @@
 package prompt_displayer
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/manifoldco/promptui"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
-	metricsPromptLabel             = "Do you accept collecting and sending metrics to improve the product? yes/no"
+	metricsPromptLabel             = "Do you accept collecting and sending metrics to improve the product?"
 	defaultMetricsPromptInputValue = "yes"
 )
 
+var userAcceptSendingMetricsValidInputs = []string{"y", "yes"}
+var userDoNotAcceptSendingMetricsValidInputs = []string{"n", "no"}
+var allAcceptSendingMetricsValidInputs = append(userAcceptSendingMetricsValidInputs, userDoNotAcceptSendingMetricsValidInputs...)
+
 type PromptDisplayer struct {
-	cliConfig config.Config
 }
 
-func NewPromptDisplayer(cliConfig config.Config) *PromptDisplayer {
-	return &PromptDisplayer{cliConfig: cliConfig}
+func NewPromptDisplayer() *PromptDisplayer {
+	return &PromptDisplayer{}
 }
 
-func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPrompt() (string, error) {
+func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPromptAndGetUserInputResult() (bool, error) {
 
 	prompt := promptui.Prompt{
 		Label:   metricsPromptLabel,
 		Default: defaultMetricsPromptInputValue,
+		Validate: validateMetricsConsentPromptInput,
 	}
 
-	result, err := prompt.Run()
+	userAcceptSendingMetricsInput, err := prompt.Run()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred running metrics consent prompt")
+		return false, stacktrace.Propagate(err, "An error occurred running metrics consent prompt")
 	}
-	logrus.Debugf("User choose %q\n", result)
+	logrus.Debugf("User choose %q\n", userAcceptSendingMetricsInput)
 
-	promptDisplayer.cliConfig.MetricsConsentPromptHasBeenDisplayed()
+	if contains(userAcceptSendingMetricsValidInputs, userAcceptSendingMetricsInput) {
+		return true, nil
+	}
 
-	return result, nil
+	return false, nil
+}
+
+func validateMetricsConsentPromptInput(input string) error {
+	input = strings.ToLower(input)
+	isValid := contains(allAcceptSendingMetricsValidInputs, input)
+	if !isValid {
+		return stacktrace.NewError("Yo have entered an invalid input '%v'. Valid inputs: '%+v'", input, allAcceptSendingMetricsValidInputs)
+	}
+	return nil
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if strings.ToLower(v) == strings.ToLower(str) {
+			return true
+		}
+	}
+	return false
 }

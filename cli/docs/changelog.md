@@ -1,10 +1,11 @@
 # TBD
 ### Features
-* Added `config` interface to define the way to interact with the CLI configs
-* Added `yaml_config_manager` which implements `config` interface and store values in the `kurtosis-cli-config.yml` file 
-* Added `prompt_displayer` to display prompt to users
+* Added `KurtosisConfig` which contains Kurtosis CLI configurations encapsulated to avoid accidentally editions
+* Added `ConfigStore` which saves and get the `KurtosisConfig` content in/from the `kurtosis-cli-config.yml` file 
+* Added `ConfigInitializer` handle `KurtosisConfig` initial status, request users if it is needed
+* Added `ConfigProvider` which is in charge of return the `KurtosisConfig` if it already exists and if it not requests user for initial configuration
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
-* Added a new flag `accept-sending-metrics` to send metrics user consent acceptance, useful when running from CI to avoid displaying the prompt
+* Added a new flag `accept-sending-metrics` to send metrics user consent acceptance, useful when running from CI to avoid displaying the prompt //TODO remove this when we remove the flag
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker

@@ -17,7 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/config/yaml_config_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
@@ -67,9 +67,6 @@ var defaultLogLevelStr = logrus.InfoLevel.String()
 
 var acceptSendingMetricsStr string
 var defaultAcceptSendingMetricsStr = notProvidedAcceptSendingMetricsValue
-var userAcceptSendingMetricsValidInputs = []string{"y", "yes"}
-var userDoNotAcceptSendingMetricsValidInputs = []string{"n", "no"}
-var allAcceptSendingMetricsValidInputs = append(userAcceptSendingMetricsValidInputs, userDoNotAcceptSendingMetricsValidInputs...)
 
 var RootCmd = &cobra.Command{
 	// Leaving out the "use" will auto-use os.Args[0]
@@ -115,13 +112,28 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	if err := showMetricsConsentPrompt(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred showing metrics consent prompt")
+	_, err := getKurtosisConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 	}
 
 	checkCLIVersion()
 
 	return nil
+}
+
+func getKurtosisConfig() (*config.KurtosisConfig, error) {
+	configStore := config.NewConfigStore()
+	promptDisplayer := prompt_displayer.NewPromptDisplayer()
+	configInitializer := config.NewConfigInitializer(promptDisplayer)
+	configProvider := config.NewConfigProvider(configStore, configInitializer)
+
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
+	}
+	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)
+	return kurtosisConfig, nil
 }
 
 func setupCLILogs(cmd *cobra.Command) error {
@@ -131,53 +143,6 @@ func setupCLILogs(cmd *cobra.Command) error {
 	}
 	logrus.SetOutput(cmd.OutOrStdout())
 	logrus.SetLevel(logLevel)
-	return nil
-}
-
-func showMetricsConsentPrompt() error {
-	config, err := yaml_config_manager.GetCurrentOrCreateDefaultConfig()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the CLI config")
-	}
-	defer func() {
-		if err := config.Save(); err != nil {
-			logrus.Warnf("Failed to save latest CLI config changes:\n%v", config.String())
-		}
-	}()
-
-	if !config.HasMetricsConsentPromptBeenDisplayed() {
-		var userAcceptSendingMetricsInput string
-
-		if acceptSendingMetricsStr != notProvidedAcceptSendingMetricsValue {
-			userAcceptSendingMetricsInput = acceptSendingMetricsStr
-		} else {
-			promptDisplayer := prompt_displayer.NewPromptDisplayer(config)
-			userAcceptSendingMetricsInput, err = promptDisplayer.DisplayUserMetricsConsentPrompt()
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
-			}
-		}
-
-		if err := validateMetricsConsentPromptInput(userAcceptSendingMetricsInput); err != nil {
-			return stacktrace.Propagate(err, "An error occurred validating user accept metrics consent prompt input")
-		}
-
-		if contains(userAcceptSendingMetricsValidInputs, userAcceptSendingMetricsInput) {
-			config.UserAcceptSendingMetrics()
-		} else {
-			config.UserDoNotAcceptSendingMetrics()
-		}
-	}
-
-	return nil
-}
-
-func validateMetricsConsentPromptInput(input string) error {
-	input = strings.ToLower(input)
-	isValid := contains(allAcceptSendingMetricsValidInputs, input)
-	if !isValid {
-		return stacktrace.NewError("Yo have entered an invalid input '%v'. Valid inputs: '%+v'", input, allAcceptSendingMetricsValidInputs)
-	}
 	return nil
 }
 
@@ -377,13 +342,3 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 
 	return latestReleaseVersion, nil
 }
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
