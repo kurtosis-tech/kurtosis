@@ -29,7 +29,7 @@ type KurtosisConfigStore struct {
 	mutex *sync.Mutex
 }
 
-func wewKurtosisConfigStore() *KurtosisConfigStore {
+func newKurtosisConfigStore() *KurtosisConfigStore {
 	return &KurtosisConfigStore{mutex: &sync.Mutex{}}
 }
 

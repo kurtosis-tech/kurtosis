@@ -34,11 +34,11 @@ func (promptDisplayer *PromptDisplayer) DisplayOverrideKurtosisConfigConfirmatio
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred running Kurtosis config override prompt")
 	}
-	logrus.Debugf("User choose %q\n", userOverrideKurtosisConfigInput)
+	logrus.Debugf("Kurtosis config confirmation prompt user input: '%v'", userOverrideKurtosisConfigInput)
 
-	overrideKurtosisConfig := user_input_validations.IsConfirmationValidInput(userOverrideKurtosisConfigInput)
+	userConfirmOverrideKurtosisConfig := user_input_validations.IsConfirmationInput(userOverrideKurtosisConfigInput)
 
-	return overrideKurtosisConfig, nil
+	return userConfirmOverrideKurtosisConfig, nil
 }
 
 func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPromptAndGetUserInputResult() (bool, error) {
@@ -53,9 +53,9 @@ func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPromptAndGetUse
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred running metrics consent prompt")
 	}
-	logrus.Debugf("User choose %q\n", userAcceptSendingMetricsInput)
+	logrus.Debugf("User metrics consent prompt user input: '%v'", userAcceptSendingMetricsInput)
 
-	userAcceptSendingMetrics := user_input_validations.IsAcceptedSendingMetricsValidInput(userAcceptSendingMetricsInput)
+	userAcceptSendingMetrics := user_input_validations.IsAcceptSendingMetricsInput(userAcceptSendingMetricsInput)
 
 	return userAcceptSendingMetrics, nil
 }

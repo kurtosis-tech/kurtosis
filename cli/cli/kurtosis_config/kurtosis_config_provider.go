@@ -16,7 +16,7 @@ func NewKurtosisConfigProvider(configStore *KurtosisConfigStore, configInitializ
 }
 
 func NewDefaultKurtosisConfigProvider() *KurtosisConfigProvider {
-	configStore := wewKurtosisConfigStore()
+	configStore := newKurtosisConfigStore()
 	promptDisplayer := prompt_displayer.NewPromptDisplayer()
 	configInitializer := newKurtosisConfigInitializer(promptDisplayer)
 
@@ -24,7 +24,7 @@ func NewDefaultKurtosisConfigProvider() *KurtosisConfigProvider {
 	return configProvider
 }
 
-func (configProvider *KurtosisConfigProvider) IsAlreadyCreated() bool {
+func (configProvider *KurtosisConfigProvider) IsConfigAlreadyCreated() bool {
 	return configProvider.configStore.HasConfig()
 }
 

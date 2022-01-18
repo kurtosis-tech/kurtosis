@@ -43,12 +43,8 @@ func ValidateConfirmationInput(input string) error {
 	return nil
 }
 
-func IsConfirmationValidInput(input string) bool {
-	if contains(validConfirmInputs, input) {
-		return true
-	}
-
-	return false
+func IsConfirmationInput(input string) bool {
+	return contains(validConfirmInputs, input)
 }
 
 func ValidateMetricsConsentInput(input string) error {
@@ -65,7 +61,7 @@ func ValidateMetricsConsentInput(input string) error {
 	return nil
 }
 
-func IsAcceptedSendingMetricsValidInput(input string) bool {
+func IsAcceptSendingMetricsInput(input string) bool {
 	return contains(userAcceptSendingMetricsValidInputs, input)
 }
 // ====================================================================================================

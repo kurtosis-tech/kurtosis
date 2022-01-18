@@ -54,19 +54,6 @@ func persistentPreRun(cmd *cobra.Command, args []string) error {
 
 func run(cmd *cobra.Command, args []string) error {
 
-	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
-	if configProvider.IsAlreadyCreated() {
-		promptDisplayer := prompt_displayer.NewPromptDisplayer()
-		userOverridKurtosisConfigDecision, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult();
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
-		}
-		if !userOverridKurtosisConfigDecision {
-			logrus.Infof("Skipping overriding Kurtosis config")
-			return nil
-		}
-	}
-
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
@@ -77,7 +64,20 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred validating metrics consent input")
 	}
 
-	userAcceptSendingMetrics := user_input_validations.IsAcceptedSendingMetricsValidInput(acceptSendingMetricsStr)
+	userAcceptSendingMetrics := user_input_validations.IsAcceptSendingMetricsInput(acceptSendingMetricsStr)
+
+	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
+	if configProvider.IsConfigAlreadyCreated() {
+		promptDisplayer := prompt_displayer.NewPromptDisplayer()
+		userOverrideKurtosisConfig, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult();
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
+		}
+		if !userOverrideKurtosisConfig {
+			logrus.Infof("Skipping overriding Kurtosis config")
+			return nil
+		}
+	}
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
 

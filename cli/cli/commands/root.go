@@ -100,8 +100,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	_, err := getKurtosisConfig()
-	if err != nil {
+	if err := initializeKurtosisConfig(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 	}
 
@@ -110,14 +109,14 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+func initializeKurtosisConfig() error {
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	_, err := configProvider.GetOrInitializeConfig()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
+		return stacktrace.Propagate(err, "An error occurred getting or initializing config")
 	}
-	return kurtosisConfig, nil
+	return nil
 }
 
 func setupCLILogs(cmd *cobra.Command) error {
