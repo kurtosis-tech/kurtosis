@@ -31,6 +31,8 @@ const (
 	ServiceCmdStr = "service"
 		ServiceLogsCmdStr = "logs"
 		ShellCmdStr = "shell"
+	ConfigCmdStr = "config"
+		InitCmdStr = "init"
 	TestCmdStr = "test"
 	VersionCmdStr = "version"
 )

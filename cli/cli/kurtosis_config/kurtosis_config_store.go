@@ -1,4 +1,4 @@
-package config
+package kurtosis_config
 
 import (
 	"github.com/go-yaml/yaml"
@@ -25,22 +25,24 @@ func newYamlContent(userAcceptSendingMetrics bool) *yamlContent {
 	return &yamlContent{UserAcceptSendingMetrics: userAcceptSendingMetrics}
 }
 
-type ConfigStore struct {
+type KurtosisConfigStore struct {
 	mutex *sync.Mutex
 }
 
-func NewConfigStore() *ConfigStore {
-	return &ConfigStore{mutex: &sync.Mutex{}}
+func wewKurtosisConfigStore() *KurtosisConfigStore {
+	return &KurtosisConfigStore{mutex: &sync.Mutex{}}
 }
 
-func (configStore *ConfigStore) HasConfig() bool {
+func (configStore *KurtosisConfigStore) HasConfig() bool {
 	if currentKurtosisConfig != nil {
 		return true
 	}
 
 	yamlFileContent, err := getKurtosisConfigYAMLFileContent()
 	if err != nil {
-		logrus.Warnf("An error occurred getting Kurtosis config YAML file content, error:\n%v", err)
+		if !os.IsNotExist(err) {
+			logrus.Warnf("An error occurred getting Kurtosis config YAML file content, error:\n%v", err)
+		}
 		return false
 	}
 
@@ -51,7 +53,7 @@ func (configStore *ConfigStore) HasConfig() bool {
 	return false
 }
 
-func (configStore *ConfigStore) GetConfig() (*KurtosisConfig, error) {
+func (configStore *KurtosisConfigStore) GetConfig() (*KurtosisConfig, error) {
 	if currentKurtosisConfig == nil {
 		kurtosisConfigYAMLFileContent, err := getKurtosisConfigYAMLFileContent()
 		if err != nil {
@@ -63,7 +65,7 @@ func (configStore *ConfigStore) GetConfig() (*KurtosisConfig, error) {
 	return currentKurtosisConfig, nil
 }
 
-func (configStore *ConfigStore) SetConfig(kurtosisConfig *KurtosisConfig) error {
+func (configStore *KurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig) error {
 	currentKurtosisConfig = kurtosisConfig
 	currentYAMLContent := newYamlContentFromCurrentKurtosisConfig()
 
@@ -86,7 +88,7 @@ func (configStore *ConfigStore) SetConfig(kurtosisConfig *KurtosisConfig) error 
 // ====================================================================================================
 //                                     Private Helper Functions
 // ====================================================================================================
-func (configStore *ConfigStore) saveKurtosisConfigYAMLFile(yamlContent *yamlContent) error {
+func (configStore *KurtosisConfigStore) saveKurtosisConfigYAMLFile(yamlContent *yamlContent) error {
 	kurtosisConfigYAMLContent, err := yaml.Marshal(yamlContent)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred marshalling Kurtosis config content '%+v' to a YAML content", yamlContent)

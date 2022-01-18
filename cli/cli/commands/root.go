@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
@@ -17,11 +18,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,9 +35,6 @@ import (
 
 const (
 	logLevelStrArg = "cli-log-level"
-	acceptSendingMetricsStrArg = "accept-sending-metrics"
-
-	notProvidedAcceptSendingMetricsValue = "not-provided"
 
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
@@ -65,9 +62,6 @@ type GitHubReleaseReponse struct {
 var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
-var acceptSendingMetricsStr string
-var defaultAcceptSendingMetricsStr = notProvidedAcceptSendingMetricsValue
-
 var RootCmd = &cobra.Command{
 	// Leaving out the "use" will auto-use os.Args[0]
 	Use:   "",
@@ -87,13 +81,6 @@ func init() {
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
 
-	RootCmd.PersistentFlags().StringVar(
-		&acceptSendingMetricsStr,
-		acceptSendingMetricsStrArg,
-		defaultAcceptSendingMetricsStr,
-		"Sets if you accept sending usage metrics to improve the product, valid inputs are: y/yes or n/no",
-	)
-
 	RootCmd.AddCommand(sandbox.SandboxCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
@@ -102,6 +89,7 @@ func init() {
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(clean.CleanCmd)
+	RootCmd.AddCommand(config.ConfigCmd)
 }
 
 // ====================================================================================================
@@ -122,17 +110,13 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getKurtosisConfig() (*config.KurtosisConfig, error) {
-	configStore := config.NewConfigStore()
-	promptDisplayer := prompt_displayer.NewPromptDisplayer()
-	configInitializer := config.NewConfigInitializer(promptDisplayer)
-	configProvider := config.NewConfigProvider(configStore, configInitializer)
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 
 	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
 	}
-	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)
 	return kurtosisConfig, nil
 }
 

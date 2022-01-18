@@ -1,4 +1,4 @@
-package config
+package kurtosis_config
 
 type KurtosisConfig struct {
 	userAcceptSendingMetrics bool

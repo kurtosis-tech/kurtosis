@@ -1,19 +1,19 @@
-package config
+package kurtosis_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type ConfigInitializer struct {
+type KurtosisConfigInitializer struct {
 	promptDisplayer *prompt_displayer.PromptDisplayer
 }
 
-func NewConfigInitializer(promptDisplayer *prompt_displayer.PromptDisplayer) *ConfigInitializer {
-	return &ConfigInitializer{promptDisplayer: promptDisplayer}
+func newKurtosisConfigInitializer(promptDisplayer *prompt_displayer.PromptDisplayer) *KurtosisConfigInitializer {
+	return &KurtosisConfigInitializer{promptDisplayer: promptDisplayer}
 }
 
-func (configInitializer *ConfigInitializer) InitInteractiveConfig() (*KurtosisConfig, error) {
+func (configInitializer *KurtosisConfigInitializer) InitInteractiveConfig() (*KurtosisConfig, error) {
 
 	userInputResult, err := configInitializer.promptDisplayer.DisplayUserMetricsConsentPromptAndGetUserInputResult()
 	if err != nil {
