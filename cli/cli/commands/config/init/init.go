@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_input_validations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -46,14 +47,25 @@ func init() {
 	)
 }
 
-// Defined and empty persistentPreRun func to overwrite the inherited from root cmd
+// It is empty to overwrite the inherited from root cmd
 func persistentPreRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
 func run(cmd *cobra.Command, args []string) error {
 
-	//TODO checks if config already exist an throw a prompt to override configuration
+	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
+	if configProvider.IsAlreadyCreated() {
+		promptDisplayer := prompt_displayer.NewPromptDisplayer()
+		userOverridKurtosisConfigDecision, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult();
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
+		}
+		if !userOverridKurtosisConfigDecision {
+			logrus.Infof("Skipping overriding Kurtosis config")
+			return nil
+		}
+	}
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
@@ -69,7 +81,6 @@ func run(cmd *cobra.Command, args []string) error {
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
 
-	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 	if err := configProvider.SetConfig(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 	}

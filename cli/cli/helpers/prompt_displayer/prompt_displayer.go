@@ -9,7 +9,10 @@ import (
 
 const (
 	metricsPromptLabel             = "Do you accept collecting and sending metrics to improve the product?"
-	defaultMetricsPromptInputValue = "yes"
+	defaultMetricsPromptInputValue = user_input_validations.YesInput
+
+	overrideConfigPromptLabel             = "The Kurtosis Config is already created, Do you want to override it?"
+	defaultOverrideConfigPromptInputValue = user_input_validations.NotInput
 )
 
 type PromptDisplayer struct {
@@ -19,11 +22,30 @@ func NewPromptDisplayer() *PromptDisplayer {
 	return &PromptDisplayer{}
 }
 
+func (promptDisplayer *PromptDisplayer) DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult() (bool, error) {
+
+	prompt := promptui.Prompt{
+		Label:    overrideConfigPromptLabel,
+		Default:  string(defaultOverrideConfigPromptInputValue),
+		Validate: user_input_validations.ValidateConfirmationInput,
+	}
+
+	userOverrideKurtosisConfigInput, err := prompt.Run()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred running Kurtosis config override prompt")
+	}
+	logrus.Debugf("User choose %q\n", userOverrideKurtosisConfigInput)
+
+	overrideKurtosisConfig := user_input_validations.IsConfirmationValidInput(userOverrideKurtosisConfigInput)
+
+	return overrideKurtosisConfig, nil
+}
+
 func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPromptAndGetUserInputResult() (bool, error) {
 
 	prompt := promptui.Prompt{
 		Label:    metricsPromptLabel,
-		Default:  defaultMetricsPromptInputValue,
+		Default:  string(defaultMetricsPromptInputValue),
 		Validate: user_input_validations.ValidateMetricsConsentInput,
 	}
 

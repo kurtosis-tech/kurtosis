@@ -24,6 +24,10 @@ func NewDefaultKurtosisConfigProvider() *KurtosisConfigProvider {
 	return configProvider
 }
 
+func (configProvider *KurtosisConfigProvider) IsAlreadyCreated() bool {
+	return configProvider.configStore.HasConfig()
+}
+
 func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfig, error){
 
 	var (
