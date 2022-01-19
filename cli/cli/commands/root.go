@@ -22,6 +22,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/event"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -100,22 +104,51 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	if err := initializeKurtosisConfig(); err != nil {
+	metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
+	}
+
+	if err := initializeKurtosisConfig(metricsClient); err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 	}
 
 	checkCLIVersion()
+	time.Sleep(5* time.Minute)
 
 	return nil
 }
 
-func initializeKurtosisConfig() error {
+func initializeKurtosisConfig(metricsClient client.MetricsClient) error {
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 
-	_, err := configProvider.GetOrInitializeConfig()
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting or initializing config")
 	}
+
+	var metricsLabel string
+	if kurtosisConfig.IsUserAcceptSendingMetrics() {
+		metricsLabel = "yes"
+	} else {
+		metricsLabel = "no"
+	}
+
+	metricsEvent, err := event.NewEvent(
+		event.InstallCategory,
+		event.ConsentAction,
+		metricsLabel,
+		"",
+		0,
+		)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new metrics event")
+	}
+
+	if err := metricsClient.Track(metricsEvent); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking metrics event &+v", metricsEvent)
+	}
+
 	return nil
 }
 
