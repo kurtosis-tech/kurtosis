@@ -1,6 +1,7 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/machine_id_provider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
@@ -53,7 +54,12 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 		}
 
-		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
+		userId, err := machine_id_provider.GetProtectedMachineID()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting protected machine ID")
+		}
+
+		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, userId)
 		if err != nil {
 			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
 			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)

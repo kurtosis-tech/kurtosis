@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/machine_id_provider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_input_validations"
@@ -100,7 +101,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	//We want to track everytime that users change the metrics consent decision
 	if acceptSendingMetricsConfigValueChange {
-		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
+		userId, err := machine_id_provider.GetProtectedMachineID()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting protected machine ID")
+		}
+		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, userId)
 		if err != nil {
 			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
 			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
