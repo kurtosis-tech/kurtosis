@@ -20,11 +20,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/event"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -104,12 +103,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
-	}
-
-	if err := initializeKurtosisConfig(metricsClient); err != nil {
+	if err := initializeKurtosisConfig(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 	}
 
@@ -119,7 +113,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func initializeKurtosisConfig(metricsClient client.MetricsClient) error {
+func initializeKurtosisConfig() error {
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 
 	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
@@ -127,26 +121,15 @@ func initializeKurtosisConfig(metricsClient client.MetricsClient) error {
 		return stacktrace.Propagate(err, "An error occurred getting or initializing config")
 	}
 
-	var metricsLabel string
-	if kurtosisConfig.IsUserAcceptSendingMetrics() {
-		metricsLabel = "yes"
-	} else {
-		metricsLabel = "no"
-	}
-
-	metricsEvent, err := event.NewEvent(
-		event.InstallCategory,
-		event.ConsentAction,
-		metricsLabel,
-		"",
-		0,
-		)
+	metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new metrics event")
+		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
 	}
 
-	if err := metricsClient.Track(metricsEvent); err != nil {
-		return stacktrace.Propagate(err, "An error occurred tracking metrics event &+v", metricsEvent)
+	metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
+
+	if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
+		return stacktrace.Propagate(err, "An error occurred tracking if user accept sending metrics")
 	}
 
 	return nil
