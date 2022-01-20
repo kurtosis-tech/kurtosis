@@ -69,6 +69,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	userAcceptSendingMetrics := user_input_validations.IsAcceptSendingMetricsInput(acceptSendingMetricsStr)
 
+	acceptSendingMetricsConfigValueChange := true
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 	if configProvider.IsConfigAlreadyCreated() {
 		promptDisplayer := prompt_displayer.NewPromptDisplayer()
@@ -80,6 +81,15 @@ func run(cmd *cobra.Command, args []string) error {
 			logrus.Infof("Skipping overriding Kurtosis config")
 			return nil
 		}
+
+		currentConfig, err := configProvider.GetOrInitializeConfig()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting or initializing config")
+		}
+
+		if userAcceptSendingMetrics == currentConfig.IsUserAcceptSendingMetrics() {
+			acceptSendingMetricsConfigValueChange = false
+		}
 	}
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
@@ -88,15 +98,20 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 	}
 
-	metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
-	}
+	//We want to track everytime that users change the metrics consent decision
+	if acceptSendingMetricsConfigValueChange {
+		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
+		if err != nil {
+			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
+		} else {
+			metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
 
-	metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
-
-	if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
-		return stacktrace.Propagate(err, "An error occurred tracking if user accept sending metrics")
+			if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
+				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
+			}
+		}
 	}
 
 	return nil

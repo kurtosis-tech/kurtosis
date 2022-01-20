@@ -1,7 +1,10 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -48,6 +51,19 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 		}
 		if err = configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
+		}
+
+		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
+		if err != nil {
+			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
+		} else {
+			metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
+
+			if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
+				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
+			}
 		}
 	}
 	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)

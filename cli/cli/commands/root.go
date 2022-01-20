@@ -20,11 +20,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -116,20 +113,9 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 func initializeKurtosisConfig() error {
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 
-	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	_, err := configProvider.GetOrInitializeConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting or initializing config")
-	}
-
-	metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, "Hashed-User-ID")
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
-	}
-
-	metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
-
-	if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
-		return stacktrace.Propagate(err, "An error occurred tracking if user accept sending metrics")
 	}
 
 	return nil
