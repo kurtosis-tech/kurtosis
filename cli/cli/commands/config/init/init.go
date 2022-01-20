@@ -111,6 +111,10 @@ func run(cmd *cobra.Command, args []string) error {
 				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
 				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
 			}
+
+			if !kurtosisConfig.IsUserAcceptSendingMetrics() {
+				metricsTracker.DisableTracking()
+			}
 		}
 	}
 

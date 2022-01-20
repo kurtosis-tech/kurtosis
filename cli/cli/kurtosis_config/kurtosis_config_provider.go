@@ -64,6 +64,10 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
 				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
 			}
+
+			if !kurtosisConfig.IsUserAcceptSendingMetrics() {
+				metricsTracker.DisableTracking()
+			}
 		}
 	}
 	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)

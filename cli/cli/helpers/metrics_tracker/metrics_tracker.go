@@ -41,3 +41,7 @@ func (tracker *MetricsTracker) TrackUserAcceptSendingMetrics(userAcceptSendingMe
 
 	return nil
 }
+
+func (tracker *MetricsTracker) DisableTracking() {
+	tracker.DisableTracking()
+}
