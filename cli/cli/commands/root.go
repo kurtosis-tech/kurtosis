@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/annotations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -100,8 +101,10 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	if err := initializeKurtosisConfig(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
+	if !annotations.ShouldSkipConfigInitializationOnGlobalSetup(cmd.Annotations) {
+		if err := initializeKurtosisConfig(); err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
+		}
 	}
 
 	checkCLIVersion()
