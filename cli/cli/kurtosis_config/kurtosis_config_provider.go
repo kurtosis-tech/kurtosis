@@ -1,17 +1,15 @@
 package kurtosis_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/machine_id_provider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
+
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 type KurtosisConfigProvider struct {
-	configStore *KurtosisConfigStore
+	configStore       *KurtosisConfigStore
 	configInitializer *KurtosisConfigInitializer
 }
 
@@ -32,11 +30,11 @@ func (configProvider *KurtosisConfigProvider) IsConfigAlreadyCreated() bool {
 	return configProvider.configStore.HasConfig()
 }
 
-func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfig, error){
+func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfig, error) {
 
 	var (
 		kurtosisConfig *KurtosisConfig
-		err error
+		err            error
 	)
 
 	hasConfig := configProvider.configStore.HasConfig()
@@ -50,30 +48,27 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}
-		if err = configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
-		}
 
-		userId, err := machine_id_provider.GetProtectedMachineID()
+		//Tracking user metrics consent
+		metricsClient, err := metrics_tracker.CreateMetricsClient()
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting protected machine ID")
-		}
-
-		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, userId)
-		if err != nil {
-			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+			//We don't throw and error if this fails, because we don't want to interrupt user's execution
 			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
 		} else {
 			metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
-
 			if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
-				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+				//We don't throw and error if this fails, because we don't want to interrupt user's execution
 				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
 			}
-
 			if !kurtosisConfig.IsUserAcceptSendingMetrics() {
+				//If user reject sending metrics the feature will be disabled
 				metricsTracker.DisableTracking()
 			}
+		}
+
+		//Saving config
+		if err = configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 		}
 	}
 	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)

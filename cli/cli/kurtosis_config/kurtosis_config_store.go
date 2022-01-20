@@ -160,7 +160,7 @@ func getKurtosisConfigYAMLFileContent() (*yamlContent, error) {
 }
 
 func getKurtosisConfigYAMLFilepath() (string, error) {
-	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFile()
+	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFilepath()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath")
 	}

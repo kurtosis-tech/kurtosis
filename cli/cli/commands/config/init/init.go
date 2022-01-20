@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/machine_id_provider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_input_validations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/client/snow_plow_client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -74,7 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 	if configProvider.IsConfigAlreadyCreated() {
 		promptDisplayer := prompt_displayer.NewPromptDisplayer()
-		userOverrideKurtosisConfig, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult();
+		userOverrideKurtosisConfig, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult()
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
 		}
@@ -95,32 +92,29 @@ func run(cmd *cobra.Command, args []string) error {
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
 
-	if err := configProvider.SetConfig(kurtosisConfig); err != nil {
-		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
-	}
-
 	//We want to track everytime that users change the metrics consent decision
 	if acceptSendingMetricsConfigValueChange {
-		userId, err := machine_id_provider.GetProtectedMachineID()
+		//Tracking user metrics consent
+		metricsClient, err := metrics_tracker.CreateMetricsClient()
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting protected machine ID")
-		}
-		metricsClient, err := snow_plow_client.NewSnowPlowClient(source.KurtosisCLISource, userId)
-		if err != nil {
-			//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+			//We don't throw and error if this fails, because we don't want to interrupt user's execution
 			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
 		} else {
 			metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
-
 			if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
-				//If tracking fails, we don't throw and error, because we don't want to interrupt user's execution
+				//We don't throw and error if this fails, because we don't want to interrupt user's execution
 				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
 			}
-
 			if !kurtosisConfig.IsUserAcceptSendingMetrics() {
+				//If user reject sending metrics the feature will be disabled
 				metricsTracker.DisableTracking()
 			}
 		}
+	}
+
+	//Saving config
+	if err := configProvider.SetConfig(kurtosisConfig); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 	}
 
 	return nil

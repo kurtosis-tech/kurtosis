@@ -43,5 +43,5 @@ func (tracker *MetricsTracker) TrackUserAcceptSendingMetrics(userAcceptSendingMe
 }
 
 func (tracker *MetricsTracker) DisableTracking() {
-	tracker.DisableTracking()
+	tracker.client.DisableTracking()
 }

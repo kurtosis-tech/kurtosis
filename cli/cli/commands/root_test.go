@@ -37,7 +37,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testing.T) {
-	filepath, err := host_machine_directories.GetCacheFileForTest()
+	filepath, err := host_machine_directories.GetCacheFileForTestFilepath()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
 
 	version, err := getLatestCLIReleaseVersionFromCacheFile(filepath)
@@ -47,7 +47,7 @@ func TestGetLatestCLIReleaseVersionFromCacheFile_CacheFileDoesNotExist(t *testin
 }
 
 func TestGetLatestCLIReleaseVersionFromCacheFile_SaveVersionInCacheFileAndGetVersionFromIt(t *testing.T) {
-	filepath, err := host_machine_directories.GetCacheFileForTest()
+	filepath, err := host_machine_directories.GetCacheFileForTestFilepath()
 	require.NoError(t, err, "An error occurred getting the cache file filepath for test")
 
 	versionForTest := "1.1.99"
