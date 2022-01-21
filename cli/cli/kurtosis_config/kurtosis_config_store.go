@@ -168,7 +168,7 @@ func getKurtosisConfigYAMLFilepath() (string, error) {
 }
 
 func newYamlContentFromCurrentKurtosisConfig() *yamlContent {
-	yamlContent := newYamlContent(currentKurtosisConfig.userAcceptSendingMetrics)
+	yamlContent := newYamlContent(currentKurtosisConfig.shouldSendMetrics)
 	return yamlContent
 }
 

@@ -1,61 +1,85 @@
 package prompt_displayer
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_input_validations"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/manifoldco/promptui"
 	"github.com/sirupsen/logrus"
+	"strings"
 )
 
 const (
-	metricsPromptLabel             = "Do you accept collecting and sending metrics to improve the product?"
-	defaultMetricsPromptInputValue = user_input_validations.YesInput
+	//Valid confirm inputs
+	yInput    validPromptInput = "y"
+	YesInput  validPromptInput = "yes"
 
-	overrideConfigPromptLabel             = "The Kurtosis Config is already created, Do you want to override it?"
-	defaultOverrideConfigPromptInputValue = user_input_validations.NotInput
+	//Valid not confirm inputs
+	nInput   validPromptInput = "n"
+	NoInput  validPromptInput = "no"
 )
 
-type PromptDisplayer struct {
-}
+type validPromptInput string
 
-func NewPromptDisplayer() *PromptDisplayer {
-	return &PromptDisplayer{}
-}
+var validConfirmInputs = []validPromptInput{yInput, YesInput}
+var validRejectInputs = []validPromptInput{nInput, NoInput}
+var allValidDecisionInputs = append(validConfirmInputs, validRejectInputs...)
 
-func (promptDisplayer *PromptDisplayer) DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult() (bool, error) {
 
+func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue validPromptInput) (bool, error) {
 	prompt := promptui.Prompt{
-		Label:    overrideConfigPromptLabel,
-		Default:  string(defaultOverrideConfigPromptInputValue),
-		Validate: user_input_validations.ValidateConfirmationInput,
+		Label:    label,
+		Default:  string(defaultValue),
+		Validate: validateConfirmationInput,
 	}
 
-	userOverrideKurtosisConfigInput, err := prompt.Run()
+	userInput, err := prompt.Run()
 	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred running Kurtosis config override prompt")
+		return false, stacktrace.Propagate(err, "An error occurred displaying the prompt")
 	}
-	logrus.Debugf("Kurtosis config confirmation prompt user input: '%v'", userOverrideKurtosisConfigInput)
+	logrus.Debugf("User input: '%v'", userInput)
 
-	userConfirmOverrideKurtosisConfig := user_input_validations.IsConfirmationInput(userOverrideKurtosisConfigInput)
+	userConfirmOverrideKurtosisConfig := isConfirmationInput(userInput)
 
 	return userConfirmOverrideKurtosisConfig, nil
 }
 
-func (promptDisplayer *PromptDisplayer) DisplayUserMetricsConsentPromptAndGetUserInputResult() (bool, error) {
-
-	prompt := promptui.Prompt{
-		Label:    metricsPromptLabel,
-		Default:  string(defaultMetricsPromptInputValue),
-		Validate: user_input_validations.ValidateMetricsConsentInput,
+// ====================================================================================================
+//                                       Private Helper Functions
+// ====================================================================================================
+func validateConfirmationInput(input string) error {
+	isValid := contains(allValidDecisionInputs, input)
+	if !isValid {
+		return stacktrace.NewError(
+			"Yo have entered an invalid input '%v'. "+
+				"Valid inputs for confirmation: '%+v' "+
+				"Valid inputs for not confirmation: '%+v'",
+			input,
+			getValidInputsListStrFromValidPromptInputsSlice(validConfirmInputs),
+			getValidInputsListStrFromValidPromptInputsSlice(validRejectInputs))
 	}
 
-	userAcceptSendingMetricsInput, err := prompt.Run()
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred running metrics consent prompt")
+	return nil
+}
+
+func isConfirmationInput(input string) bool {
+	return contains(validConfirmInputs, input)
+}
+
+func contains(s []validPromptInput, str string) bool {
+	for _, v := range s {
+		vStr := string(v)
+		if strings.ToLower(vStr) == strings.ToLower(str) {
+			return true
+		}
 	}
-	logrus.Debugf("User metrics consent prompt user input: '%v'", userAcceptSendingMetricsInput)
+	return false
+}
 
-	userAcceptSendingMetrics := user_input_validations.IsAcceptSendingMetricsInput(userAcceptSendingMetricsInput)
+func getValidInputsListStrFromValidPromptInputsSlice(validUserInputsSlice []validPromptInput) string {
+	var validInputsSliceStr []string
 
-	return userAcceptSendingMetrics, nil
+	for _, validInput := range validUserInputsSlice {
+		validInputsSliceStr = append(validInputsSliceStr, string(validInput))
+	}
+	validInputsListStr := strings.Join(validInputsSliceStr, `','`)
+	return validInputsListStr
 }

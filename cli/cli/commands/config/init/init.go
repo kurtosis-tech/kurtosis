@@ -1,12 +1,10 @@
 package init
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/annotations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_input_validations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,41 +14,34 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg     = "kurtosis-log-level"
 	acceptSendingMetricsArg = "accept-sending-metrics"
+
+	overrideConfigPromptLabel = "The Kurtosis Config is already created, Do you want to override it?"
+
+	//Valid accept sending metrics inputs
+	acceptSendingMetricsInput  = "send-metrics"
+	rejectSendingMetricsInput  = "dont-send-metrics"
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
+var allAcceptSendingMetricsValidInputs = []string{acceptSendingMetricsInput, rejectSendingMetricsInput}
+
 var positionalArgs = []string{
 	acceptSendingMetricsArg,
+}
+
+var annotationsMap = map[string]string{
+	annotations.SkipConfigInitializationOnGlobalSetupKey: annotations.SkipConfigInitializationOnGlobalSetupValue,
 }
 
 var InitCmd = &cobra.Command{
 	Use:                   command_str_consts.InitCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short:                 "Initialize the Kurtosis CLI configuration",
-	PersistentPreRunE:     persistentPreRun,
 	RunE:                  run,
+	Annotations:           annotationsMap,
 }
-
-var kurtosisLogLevelStr string
 
 func init() {
-	InitCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaultKurtosisLogLevel,
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-}
-
-// It is empty to overwrite the inherited from root cmd
-func persistentPreRun(cmd *cobra.Command, args []string) error {
-	return nil
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -61,17 +52,15 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	acceptSendingMetricsStr := parsedPositionalArgs[acceptSendingMetricsArg]
 
-	if err := user_input_validations.ValidateMetricsConsentInput(acceptSendingMetricsStr); err != nil {
+	userAcceptSendingMetrics, err := validateMetricsConsentInputAndGetBooleanResult(acceptSendingMetricsStr)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred validating metrics consent input")
 	}
-
-	userAcceptSendingMetrics := user_input_validations.IsAcceptSendingMetricsInput(acceptSendingMetricsStr)
 
 	acceptSendingMetricsConfigValueChange := true
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 	if configProvider.IsConfigAlreadyCreated() {
-		promptDisplayer := prompt_displayer.NewPromptDisplayer()
-		userOverrideKurtosisConfig, err := promptDisplayer.DisplayOverrideKurtosisConfigConfirmationPromptAndGetUserInputResult()
+		userOverrideKurtosisConfig, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(overrideConfigPromptLabel, prompt_displayer.NoInput)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
 		}
@@ -118,4 +107,38 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// ====================================================================================================
+//                                       Private Helper Functions
+// ====================================================================================================
+func validateMetricsConsentInputAndGetBooleanResult(input string) (bool, error) {
+
+	userAcceptSendingMetrics := false
+
+	isValid := contains(allAcceptSendingMetricsValidInputs, input)
+	if !isValid {
+		 return userAcceptSendingMetrics, stacktrace.NewError(
+			"Yo have entered an invalid 'accept sending metrics argument'. "+
+				"You have to set'%v' if you accept sending metrics or"+
+				"you have to set '%v' if you reject sending metrics",
+			input,
+			acceptSendingMetricsInput,
+			rejectSendingMetricsInput)
+	}
+
+	if input == acceptSendingMetricsInput {
+		userAcceptSendingMetrics = true
+	}
+
+	return userAcceptSendingMetrics, nil
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if strings.ToLower(v) == strings.ToLower(str) {
+			return true
+		}
+	}
+	return false
 }

@@ -5,17 +5,13 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type KurtosisConfigInitializer struct {
-	promptDisplayer *prompt_displayer.PromptDisplayer
-}
+const (
+	metricsPromptLabel = "Do you accept collecting and sending metrics to improve the product?"
+)
 
-func newKurtosisConfigInitializer(promptDisplayer *prompt_displayer.PromptDisplayer) *KurtosisConfigInitializer {
-	return &KurtosisConfigInitializer{promptDisplayer: promptDisplayer}
-}
+func InitInteractiveConfig() (*KurtosisConfig, error) {
 
-func (configInitializer *KurtosisConfigInitializer) InitInteractiveConfig() (*KurtosisConfig, error) {
-
-	userInputResult, err := configInitializer.promptDisplayer.DisplayUserMetricsConsentPromptAndGetUserInputResult()
+	userInputResult, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, prompt_displayer.YesInput)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 	}

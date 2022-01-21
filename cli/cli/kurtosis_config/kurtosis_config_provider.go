@@ -2,27 +2,21 @@ package kurtosis_config
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 type KurtosisConfigProvider struct {
-	configStore       *KurtosisConfigStore
-	configInitializer *KurtosisConfigInitializer
+	configStore *KurtosisConfigStore
 }
 
-func NewKurtosisConfigProvider(configStore *KurtosisConfigStore, configInitializer *KurtosisConfigInitializer) *KurtosisConfigProvider {
-	return &KurtosisConfigProvider{configStore: configStore, configInitializer: configInitializer}
+func NewKurtosisConfigProvider(configStore *KurtosisConfigStore) *KurtosisConfigProvider {
+	return &KurtosisConfigProvider{configStore: configStore}
 }
 
 func NewDefaultKurtosisConfigProvider() *KurtosisConfigProvider {
 	configStore := newKurtosisConfigStore()
-	promptDisplayer := prompt_displayer.NewPromptDisplayer()
-	configInitializer := newKurtosisConfigInitializer(promptDisplayer)
-
-	configProvider := NewKurtosisConfigProvider(configStore, configInitializer)
+	configProvider := NewKurtosisConfigProvider(configStore)
 	return configProvider
 }
 
@@ -44,7 +38,7 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 			return nil, stacktrace.Propagate(err, "An error occurred getting config")
 		}
 	} else {
-		kurtosisConfig, err = configProvider.configInitializer.InitInteractiveConfig()
+		kurtosisConfig, err = InitInteractiveConfig()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}

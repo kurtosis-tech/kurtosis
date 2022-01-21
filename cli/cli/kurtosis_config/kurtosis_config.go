@@ -1,17 +1,17 @@
 package kurtosis_config
 
 type KurtosisConfig struct {
-	userAcceptSendingMetrics bool
+	shouldSendMetrics bool
 }
 
 func NewKurtosisConfig(userAcceptSendingMetrics bool) *KurtosisConfig {
-	return &KurtosisConfig{userAcceptSendingMetrics: userAcceptSendingMetrics}
+	return &KurtosisConfig{shouldSendMetrics: userAcceptSendingMetrics}
 }
 
 func (config *KurtosisConfig) IsUserAcceptSendingMetrics() bool {
-	return config.userAcceptSendingMetrics
+	return config.shouldSendMetrics
 }
 
 func (config *KurtosisConfig) SetUserAcceptSendingMetrics(userAcceptSendingMetrics bool) {
-	config.userAcceptSendingMetrics = userAcceptSendingMetrics
+	config.shouldSendMetrics = userAcceptSendingMetrics
 }
