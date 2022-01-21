@@ -108,7 +108,6 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	checkCLIVersion()
-	time.Sleep(5* time.Minute)
 
 	return nil
 }

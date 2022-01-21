@@ -8,7 +8,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/adrg/xdg v0.4.0
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/denisbrodbeck/machineid v1.0.1 // indirect
+	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -18,7 +18,6 @@ require (
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20211208185136-47008f6bab37
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20211213143926-a40550c88b0f
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20211213143849-68ea060d2b36
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220120134706-69a8c65507d0
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0

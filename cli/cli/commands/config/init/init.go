@@ -3,7 +3,6 @@ package init
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/annotations"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_tracker"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -57,7 +56,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred validating metrics consent input")
 	}
 
-	acceptSendingMetricsConfigValueChange := true
 	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
 	if configProvider.IsConfigAlreadyCreated() {
 		userOverrideKurtosisConfig, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(overrideConfigPromptLabel, prompt_displayer.NoInput)
@@ -68,38 +66,9 @@ func run(cmd *cobra.Command, args []string) error {
 			logrus.Infof("Skipping overriding Kurtosis config")
 			return nil
 		}
-
-		currentConfig, err := configProvider.GetOrInitializeConfig()
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting or initializing config")
-		}
-
-		if userAcceptSendingMetrics == currentConfig.IsUserAcceptSendingMetrics() {
-			acceptSendingMetricsConfigValueChange = false
-		}
 	}
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
-
-	//We want to track everytime that users change the metrics consent decision
-	if acceptSendingMetricsConfigValueChange {
-		//Tracking user metrics consent
-		metricsClient, err := metrics_tracker.CreateMetricsClient()
-		if err != nil {
-			//We don't throw and error if this fails, because we don't want to interrupt user's execution
-			logrus.Debugf("An error occurred creating SnowPlow metrics client\n%v", err)
-		} else {
-			metricsTracker := metrics_tracker.NewMetricsTracker(metricsClient)
-			if err = metricsTracker.TrackUserAcceptSendingMetrics(kurtosisConfig.IsUserAcceptSendingMetrics()); err != nil {
-				//We don't throw and error if this fails, because we don't want to interrupt user's execution
-				logrus.Debugf("An error occurred knowing if user accept sending metrics\n%v", err)
-			}
-			if !kurtosisConfig.IsUserAcceptSendingMetrics() {
-				//If user reject sending metrics the feature will be disabled
-				metricsTracker.DisableTracking()
-			}
-		}
-	}
 
 	//Saving config
 	if err := configProvider.SetConfig(kurtosisConfig); err != nil {

@@ -1,4 +1,4 @@
-package metrics_tracker
+package metrics_user_id_store
 
 import (
 	"github.com/denisbrodbeck/machineid"
