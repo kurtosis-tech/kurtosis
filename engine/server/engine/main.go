@@ -14,6 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/server"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -75,7 +77,12 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager)
+	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, serverArgs.MetricsUserID, serverArgs.UserAcceptSendingMetrics)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
+	}
+
+	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
