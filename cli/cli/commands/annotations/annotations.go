@@ -1,12 +1,12 @@
 package annotations
 
 const (
-	SkipConfigInitializationOnGlobalSetupKey = "skip-config-on-global"
-	SkipConfigInitializationOnGlobalSetupValue = ""
+	SkipKurtosisConfigInitializationOnGlobalSetupKey   = "skip-kurtosis-config-initialization-on-global-setup"
+	SkipKurtosisConfigInitializationOnGlobalSetupValue = ""
 )
 
-func ShouldSkipConfigInitializationOnGlobalSetup(annotations map[string]string) bool {
-	if _, found := annotations[SkipConfigInitializationOnGlobalSetupKey]; found {
+func ShouldSkipKurtosisConfigInitializationOnGlobalSetup(annotations map[string]string) bool {
+	if _, found := annotations[SkipKurtosisConfigInitializationOnGlobalSetupKey]; found {
 		return true
 	}
 	return false

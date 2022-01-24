@@ -101,7 +101,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	if !annotations.ShouldSkipConfigInitializationOnGlobalSetup(cmd.Annotations) {
+	if !annotations.ShouldSkipKurtosisConfigInitializationOnGlobalSetup(cmd.Annotations) {
 		if err := initializeKurtosisConfig(); err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 		}

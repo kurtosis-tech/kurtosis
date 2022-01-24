@@ -29,7 +29,7 @@ var positionalArgs = []string{
 }
 
 var annotationsMap = map[string]string{
-	annotations.SkipConfigInitializationOnGlobalSetupKey: annotations.SkipConfigInitializationOnGlobalSetupValue,
+	annotations.SkipKurtosisConfigInitializationOnGlobalSetupKey: annotations.SkipKurtosisConfigInitializationOnGlobalSetupValue,
 }
 
 var InitCmd = &cobra.Command{
