@@ -7,6 +7,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -115,6 +117,18 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
 	}
 
+	metricsUserIdStore := metrics_user_id_store.NewMetricsUserIDStore()
+	metricsUserId, err := metricsUserIdStore.GetUserID()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
+	}
+
+	kurtosisConfigProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
+	kurtosisConfig, err := kurtosisConfigProvider.GetOrInitializeConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error ocurred getting or Kurtosis config")
+	}
+
 	var hostMachineIpAddr net.IP
 	var hostMachinePortNum uint16
 	var engineLaunchErr error
@@ -124,6 +138,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
+			metricsUserId,
+			kurtosisConfig.IsUserAcceptSendingMetrics(),
 		)
 	} else {
 		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -132,6 +148,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.logLevel,
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
+			metricsUserId,
+			kurtosisConfig.IsUserAcceptSendingMetrics(),
 		)
 	}
 	if engineLaunchErr != nil {
