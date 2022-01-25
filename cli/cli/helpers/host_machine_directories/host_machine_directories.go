@@ -11,6 +11,8 @@ const (
 
 	sessionCacheFilename = "session-cache"
 
+	kurtosisConfigYAMLFilename = "kurtosis-config.yml"
+
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
 	cacheFileForTests = "tests-content"
@@ -27,6 +29,16 @@ func GetEngineDataDirpath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting engine data dirpath from relative path '%v'", xdgRelFilepath)
 	}
 	return engineDataDirpath, nil
+}
+
+// Get the yaml filepath where the Kurtosis configs are saved
+func GetKurtosisConfigYAMLFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisConfigYAMLFilename)
+	kurtosisConfigYAMLFilepath, err := xdg.ConfigFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return kurtosisConfigYAMLFilepath, nil
 }
 
 // TODO Plug this into the 'test' auth framework in a different PR
@@ -56,7 +68,6 @@ func GetCacheFileForTest() (string, error) {
 	}
 	return cacheFileForTestFilepath, nil
 }
-
 
 // ====================================================================================================
 //                                     Private Helper Functions

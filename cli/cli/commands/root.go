@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
@@ -87,21 +88,29 @@ func init() {
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(clean.CleanCmd)
+	RootCmd.AddCommand(config.ConfigCmd)
 }
 
 // ====================================================================================================
 //                                       Private Helper Functions
 // ====================================================================================================
 func globalSetup(cmd *cobra.Command, args []string) error {
+	if err := setupCLILogs(cmd); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
+	}
+
+	checkCLIVersion()
+
+	return nil
+}
+
+func setupCLILogs(cmd *cobra.Command) error {
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not parse log level string '%v'", logLevelStr)
 	}
 	logrus.SetOutput(cmd.OutOrStdout())
 	logrus.SetLevel(logLevel)
-
-	checkCLIVersion()
-
 	return nil
 }
 

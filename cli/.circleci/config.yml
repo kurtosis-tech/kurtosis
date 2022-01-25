@@ -96,6 +96,9 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      #Run config init to avoid metrics consent prompt when execute engine start command,
+      #We do not send metrics from CI to not dirty the metrics data
+      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis config init dont-send-metrics
       - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis engine start
       - run: ./internal_testsuites/golang/scripts/build.sh
   # -- End build jobs ---------------------------------------

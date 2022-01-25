@@ -1,4 +1,15 @@
 # TBD
+### Features
+* Added configuration framework which is composed by:
+  * The `KurtosisConfig` object which contains Kurtosis CLI configurations encapsulated to avoid accidentally editions
+  * The `KurtosisConfigStore` which saves and get the `KurtosisConfig` content in/from the `kurtosis-cli-config.yml` file 
+  * The `KurtosisConfigInitializer` handle `KurtosisConfig` initial status, request users if it is needed
+  * The `KurtosisConfigProvider` which is in charge of return the `KurtosisConfig` if it already exists and if it not requests user for initial configuration
+  * The `config init` command to initialize the `KurtosisConfig`, it requires one positional args to set if user accept or not to send metrics
+* Added `PromptDisplayer` to display CLI prompts
+* Added `user metrics consent prompt` to request user consents to collecting and sending metrics
+* Added `override Kurtosis config confirmation prompt` to request user for confirmation when them trying to initialize the config, and it is already created
+
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
 
