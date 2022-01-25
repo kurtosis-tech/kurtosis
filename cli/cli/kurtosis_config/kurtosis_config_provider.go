@@ -26,14 +26,17 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 		err error
 	)
 
-	hasConfig := configProvider.configStore.HasConfig()
-	if hasConfig {
+	doesKurtosisConfigAlreadyExists, err := configProvider.configStore.HasConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking if Kurtosis config already exists")
+	}
+	if doesKurtosisConfigAlreadyExists {
 		kurtosisConfig, err = configProvider.configStore.GetConfig()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting config")
 		}
 	} else {
-		kurtosisConfig, err = InitInteractiveConfig()
+		kurtosisConfig, err = initInteractiveConfig()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}

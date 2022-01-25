@@ -1,21 +1,25 @@
 package kurtosis_config
 
 import (
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_optin"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
-	metricsPromptLabel = "Do you accept collecting and sending metrics to improve the product?"
+	metricsPromptLabel = "Is it okay to send anonymized metrics purely to improve the product?"
 )
 
-func InitInteractiveConfig() (*KurtosisConfig, error) {
+func initInteractiveConfig() (*KurtosisConfig, error) {
 
-	userInputResult, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, true)
+	fmt.Println(metrics_optin.WhyKurtosisCollectMetricsDescriptionNote)
+
+	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, true)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 	}
 
-	kurtosisConfig := NewKurtosisConfig(userInputResult)
+	kurtosisConfig := NewKurtosisConfig(didUserAcceptSendingMetrics)
 	return kurtosisConfig, nil
 }

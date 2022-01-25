@@ -15,6 +15,7 @@ const (
 )
 
 var (
+	// NOTE: This will be initialized exactly once (singleton pattern)
 	currentKurtosisConfigStore *kurtosisConfigStore
 	once sync.Once
 )
@@ -25,31 +26,43 @@ type kurtosisConfigStore struct {
 }
 
 func GetKurtosisConfigStore() *kurtosisConfigStore {
+	// NOTE: We use a 'once' to initialize the KurtosisConfigStore because it contains a mutex to guard
+	//the config file, and we don't ever want multiple KurtosisConfigStore instances in existence
 	once.Do(func() {
 		currentKurtosisConfigStore = &kurtosisConfigStore{mutex: &sync.RWMutex{}}
 	})
 	return currentKurtosisConfigStore
 }
 
-func (configStore *kurtosisConfigStore) HasConfig() bool {
+func (configStore *kurtosisConfigStore) HasConfig() (bool, error) {
+	configStore.mutex.RLock()
+	defer configStore.mutex.RUnlock()
 
-	kurtosisConfig, err := configStore.getKurtosisConfigFromYAMLFile()
+	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFilepath()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			logrus.Warnf("An error occurred getting Kurtosis config from YAML file, error:\n%v", err)
+		return false, stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath")
+	}
+
+	kurtosisConfigFileInfo, err := os.Stat(kurtosisConfigYAMLFilepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		} else {
+			return false, stacktrace.Propagate(err, "An error occurred getting Kurtosis config YAML file info")
 		}
-		return false
 	}
 
-	if kurtosisConfig != nil {
-		return true
+	if kurtosisConfigFileInfo != nil {
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }
 
 //TDOD if this process tends to be slow we could improve performance applying "Write Through and Write Back in Cache"
 func (configStore *kurtosisConfigStore) GetConfig() (*KurtosisConfig, error) {
+	configStore.mutex.RLock()
+	defer configStore.mutex.RUnlock()
 
 	kurtosisConfig, err := configStore.getKurtosisConfigFromYAMLFile()
 	if err != nil {
@@ -60,6 +73,8 @@ func (configStore *kurtosisConfigStore) GetConfig() (*KurtosisConfig, error) {
 }
 
 func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *KurtosisConfig) error {
+	configStore.mutex.Lock()
+	defer configStore.mutex.Unlock()
 
 	if err := configStore.saveKurtosisConfigYAMLFile(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving Kurtosis config YAML file")
@@ -77,13 +92,10 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 	}
 
 	logrus.Debugf("Saving latest changes in Kurtosis config YAML file...")
-	kurtosisConfigYAMLFilepath, err := getKurtosisConfigYAMLFilepath()
+	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFilepath()
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath")
 	}
-
-	configStore.mutex.Lock()
-	defer configStore.mutex.Unlock()
 
 	err = ioutil.WriteFile(kurtosisConfigYAMLFilepath, kurtosisConfigYAMLContent, kurtosisConfigFilePermissions)
 	if err != nil {
@@ -94,17 +106,15 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 }
 
 func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*KurtosisConfig, error) {
-	kurtosisConfigYAMLFilepath, err := getKurtosisConfigYAMLFilepath()
+	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFilepath()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis config YAML filepath")
 	}
 	logrus.Debugf("Kurtosis config YAML filepath: '%v'", kurtosisConfigYAMLFilepath)
 
-	configStore.mutex.RLock()
-	defer configStore.mutex.RUnlock()
 	kurtosisConfigYAMLFile, err := os.Open(kurtosisConfigYAMLFilepath)
 	if err != nil {
-		return nil, err
+		return nil, stacktrace.Propagate(err, "An error occurred opening Kurtosis config YAML file")
 	}
 	defer func() {
 		if err := kurtosisConfigYAMLFile.Close(); err != nil {
@@ -120,16 +130,8 @@ func (configStore *kurtosisConfigStore) getKurtosisConfigFromYAMLFile() (*Kurtos
 	newKurtosisConfig := &KurtosisConfig{}
 
 	if err := yaml.Unmarshal(fileContentBytes, newKurtosisConfig); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", fileContentBytes)
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling Kurtosis config YAML file content '%v'", string(fileContentBytes))
 	}
 
 	return newKurtosisConfig, nil
-}
-
-func getKurtosisConfigYAMLFilepath() (string, error) {
-	kurtosisConfigYAMLFilepath, err := host_machine_directories.GetKurtosisConfigYAMLFile()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath")
-	}
-	return kurtosisConfigYAMLFilepath, nil
 }

@@ -42,9 +42,9 @@ func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue boo
 	}
 	logrus.Debugf("User input: '%v'", userInput)
 
-	userConfirmOverrideKurtosisConfig := isConfirmationInput(userInput)
+	didUserConfirm := isConfirmationInput(userInput)
 
-	return userConfirmOverrideKurtosisConfig, nil
+	return didUserConfirm, nil
 }
 
 // ====================================================================================================
@@ -56,7 +56,7 @@ func validateConfirmationInput(input string) error {
 		return stacktrace.NewError(
 			"You have entered an invalid input '%v'. "+
 				"Valid inputs for confirmation: '%v' "+
-				"Valid inputs for not confirmation: '%v'",
+				"Valid inputs for rejection: '%v'",
 			input,
 			getValidInputsListStrFromValidPromptInputsSlice(validConfirmInputs),
 			getValidInputsListStrFromValidPromptInputsSlice(validRejectInputs))
