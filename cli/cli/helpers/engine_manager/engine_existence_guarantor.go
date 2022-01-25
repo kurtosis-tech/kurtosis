@@ -123,10 +123,9 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	kurtosisConfigProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
-	kurtosisConfig, err := kurtosisConfigProvider.GetOrInitializeConfig()
+	kurtosisConfig, err := getKurtosisConfig()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error ocurred getting or Kurtosis config")
+		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
 	}
 
 	var hostMachineIpAddr net.IP
@@ -246,4 +245,14 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
+}
+
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
+
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
+	}
+	return kurtosisConfig, nil
 }
