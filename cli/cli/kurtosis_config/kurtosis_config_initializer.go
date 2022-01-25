@@ -11,7 +11,7 @@ const (
 
 func InitInteractiveConfig() (*KurtosisConfig, error) {
 
-	userInputResult, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, prompt_displayer.YesInput)
+	userInputResult, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, true)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 	}

@@ -1,17 +1,10 @@
 package kurtosis_config
 
 type KurtosisConfig struct {
-	shouldSendMetrics bool
+	//We set public fields because YAML marshalling needs it on this way
+	ShouldSendMetrics bool `yaml:"should-send-metrics"`
 }
 
-func NewKurtosisConfig(userAcceptSendingMetrics bool) *KurtosisConfig {
-	return &KurtosisConfig{shouldSendMetrics: userAcceptSendingMetrics}
-}
-
-func (config *KurtosisConfig) IsUserAcceptSendingMetrics() bool {
-	return config.shouldSendMetrics
-}
-
-func (config *KurtosisConfig) SetUserAcceptSendingMetrics(userAcceptSendingMetrics bool) {
-	config.shouldSendMetrics = userAcceptSendingMetrics
+func NewKurtosisConfig(doesUserAcceptSendingMetrics bool) *KurtosisConfig {
+	return &KurtosisConfig{ShouldSendMetrics: doesUserAcceptSendingMetrics}
 }

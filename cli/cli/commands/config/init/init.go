@@ -2,7 +2,6 @@ package init
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/annotations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -28,16 +27,11 @@ var positionalArgs = []string{
 	acceptSendingMetricsArg,
 }
 
-var annotationsMap = map[string]string{
-	annotations.SkipKurtosisConfigInitializationOnGlobalSetupKey: annotations.SkipKurtosisConfigInitializationOnGlobalSetupValue,
-}
-
 var InitCmd = &cobra.Command{
 	Use:                   command_str_consts.InitCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short:                 "Initialize the Kurtosis CLI configuration",
 	RunE:                  run,
-	Annotations:           annotationsMap,
 }
 
 func init() {
@@ -56,9 +50,9 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred validating metrics consent input")
 	}
 
-	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
-	if configProvider.IsConfigAlreadyCreated() {
-		userOverrideKurtosisConfig, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(overrideConfigPromptLabel, prompt_displayer.NoInput)
+	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
+	if kurtosisConfigStore.HasConfig() {
+		userOverrideKurtosisConfig, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(overrideConfigPromptLabel, false)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred overwriting Kurtosis config")
 		}
@@ -70,9 +64,10 @@ func run(cmd *cobra.Command, args []string) error {
 
 	kurtosisConfig := kurtosis_config.NewKurtosisConfig(userAcceptSendingMetrics)
 
-	if err := configProvider.SetConfig(kurtosisConfig); err != nil {
+	if err := kurtosisConfigStore.SetConfig(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 	}
+
 	return nil
 }
 
@@ -81,24 +76,24 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 func validateMetricsConsentInputAndGetBooleanResult(input string) (bool, error) {
 
-	userAcceptSendingMetrics := false
+	didUserAcceptSendingMetrics := false
 
 	isValid := contains(allAcceptSendingMetricsValidInputs, input)
 	if !isValid {
-		 return userAcceptSendingMetrics, stacktrace.NewError(
-			"Yo have entered an invalid 'accept sending metrics argument'. "+
-				"You have to set'%v' if you accept sending metrics or"+
-				"you have to set '%v' if you reject sending metrics",
+		 return false, stacktrace.NewError(
+			"You have entered an invalid argument '%v'. "+
+				"You have to set '%v' to accept sending metrics or "+
+				"you have to set '%v' to skip sending metrics",
 			input,
 			acceptSendingMetricsInput,
 			rejectSendingMetricsInput)
 	}
 
 	if input == acceptSendingMetricsInput {
-		userAcceptSendingMetrics = true
+		didUserAcceptSendingMetrics = true
 	}
 
-	return userAcceptSendingMetrics, nil
+	return didUserAcceptSendingMetrics, nil
 }
 
 func contains(s []string, str string) bool {

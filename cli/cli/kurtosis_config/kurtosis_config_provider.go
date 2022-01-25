@@ -6,21 +6,17 @@ import (
 )
 
 type KurtosisConfigProvider struct {
-	configStore *KurtosisConfigStore
+	configStore *kurtosisConfigStore
 }
 
-func NewKurtosisConfigProvider(configStore *KurtosisConfigStore) *KurtosisConfigProvider {
+func NewKurtosisConfigProvider(configStore *kurtosisConfigStore) *KurtosisConfigProvider {
 	return &KurtosisConfigProvider{configStore: configStore}
 }
 
 func NewDefaultKurtosisConfigProvider() *KurtosisConfigProvider {
-	configStore := newKurtosisConfigStore()
+	configStore := GetKurtosisConfigStore()
 	configProvider := NewKurtosisConfigProvider(configStore)
 	return configProvider
-}
-
-func (configProvider *KurtosisConfigProvider) IsConfigAlreadyCreated() bool {
-	return configProvider.configStore.HasConfig()
 }
 
 func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*KurtosisConfig, error){
@@ -47,11 +43,4 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 	}
 	logrus.Debugf("Loaded Kurtosis Config  %+v", kurtosisConfig)
 	return kurtosisConfig, nil
-}
-
-func (configProvider *KurtosisConfigProvider) SetConfig(kurtosisConfig *KurtosisConfig) error {
-	if err := configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
-		return stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
-	}
-	return nil
 }

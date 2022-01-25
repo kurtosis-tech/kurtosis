@@ -9,7 +9,6 @@
 * Added `PromptDisplayer` to display CLI prompts
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
 * Added `override Kurtosis config confirmation prompt` to request user for confirmation when them trying to initialize the config, and it is already created
-* Added command's annotations to share app configurations between commands
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker

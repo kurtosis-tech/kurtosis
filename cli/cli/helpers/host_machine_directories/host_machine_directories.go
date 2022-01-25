@@ -34,7 +34,7 @@ func GetEngineDataDirpath() (string, error) {
 // Get the yaml filepath where the Kurtosis configs are saved
 func GetKurtosisConfigYAMLFile() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisConfigYAMLFilename)
-	kurtosisConfigYAMLFilepath, err := xdg.DataFile(xdgRelFilepath)
+	kurtosisConfigYAMLFilepath, err := xdg.ConfigFile(xdgRelFilepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath from relative path '%v'", xdgRelFilepath)
 	}

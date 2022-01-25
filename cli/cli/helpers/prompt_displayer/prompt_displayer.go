@@ -10,24 +10,29 @@ import (
 const (
 	//Valid confirm inputs
 	yInput    validPromptInput = "y"
-	YesInput  validPromptInput = "yes"
+	yesInput  validPromptInput = "yes"
 
 	//Valid not confirm inputs
 	nInput   validPromptInput = "n"
-	NoInput  validPromptInput = "no"
+	noInput  validPromptInput = "no"
 )
 
 type validPromptInput string
 
-var validConfirmInputs = []validPromptInput{yInput, YesInput}
-var validRejectInputs = []validPromptInput{nInput, NoInput}
+var validConfirmInputs = []validPromptInput{yInput, yesInput}
+var validRejectInputs = []validPromptInput{nInput, noInput}
 var allValidDecisionInputs = append(validConfirmInputs, validRejectInputs...)
 
 
-func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue validPromptInput) (bool, error) {
+func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue bool) (bool, error) {
+	defaultValueStr := string(noInput)
+	if defaultValue {
+		defaultValueStr = string(yesInput)
+	}
+
 	prompt := promptui.Prompt{
 		Label:    label,
-		Default:  string(defaultValue),
+		Default:  defaultValueStr,
 		Validate: validateConfirmationInput,
 	}
 
@@ -49,9 +54,9 @@ func validateConfirmationInput(input string) error {
 	isValid := contains(allValidDecisionInputs, input)
 	if !isValid {
 		return stacktrace.NewError(
-			"Yo have entered an invalid input '%v'. "+
-				"Valid inputs for confirmation: '%+v' "+
-				"Valid inputs for not confirmation: '%+v'",
+			"You have entered an invalid input '%v'. "+
+				"Valid inputs for confirmation: '%v' "+
+				"Valid inputs for not confirmation: '%v'",
 			input,
 			getValidInputsListStrFromValidPromptInputsSlice(validConfirmInputs),
 			getValidInputsListStrFromValidPromptInputsSlice(validRejectInputs))
