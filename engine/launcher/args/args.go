@@ -24,10 +24,10 @@ type EngineServerArgs struct {
 	EngineDataDirpathOnHostMachine string	`json:"engineDataDirpathOnHostMachine"`
 
 	//The protected user ID for metrics analytics purpose `json:"metricsUserID"`
-	MetricsUserID string
+	MetricsUserID string `json:"metricsUserID"`
 
 	//User consent to send metrics
-	UserAcceptSendingMetrics bool
+	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 }
 
 
@@ -39,15 +39,15 @@ func NewEngineServerArgs(
 	imageVersionTag string,
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
-	userAcceptSendingMetrics bool,
+	didUserAcceptSendingMetrics bool,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		ListenPortNum:                  listenPortNum,
 		LogLevelStr:                    logLevelStr,
 		ImageVersionTag:                imageVersionTag,
 		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
-		MetricsUserID: metricsUserID,
-		UserAcceptSendingMetrics: userAcceptSendingMetrics,
+		MetricsUserID:                  metricsUserID,
+		DidUserAcceptSendingMetrics:    didUserAcceptSendingMetrics,
 	}
 
 	if err := result.validate(); err != nil {

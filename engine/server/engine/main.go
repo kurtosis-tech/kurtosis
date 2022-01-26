@@ -77,12 +77,12 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, serverArgs.MetricsUserID, serverArgs.UserAcceptSendingMetrics)
+	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating SnowPlow metrics client")
+		return stacktrace.Propagate(err, "An error occurred creating the default metrics client")
 	}
 
-	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient)
+	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)

@@ -68,7 +68,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
-	userAcceptSendingMetrics bool,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
@@ -81,7 +81,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		listenPortNum,
 		engineDataDirpathOnHostMachine,
 		metricsUserID,
-		userAcceptSendingMetrics,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
@@ -96,7 +96,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
-	userAcceptSendingMetrics bool,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
@@ -145,7 +145,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 		engineDataDirpathOnHostMachine,
 		metricsUserID,
-		userAcceptSendingMetrics,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")

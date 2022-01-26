@@ -1,12 +1,21 @@
 # TBD
+### Features
+* Added metrics client to track enclave's events (e.g.: when users create an enclave)
+* 
+### Breaking Changes
+* Change the `EngineServerLauncher.LaunchWithDefaultVersion()` and `EngineServerLauncher.LaunchWithCustomVersion()` methods API, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
+* Change `NewEngineServerService` constructor, now receives three new arguments `metricsUserID`, `didUserAcceptSendingMetrics` and `metricsClient`
+  * Users should add there three new arguments in every call
+* Change `EngineServerArgs` constructor, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
 
 # 1.8.3
-
 ### Fixes
 * Upgraded to Kurtosis Core v1.36.12 which fixes a bug when creating soft network partitions in Tyepscript
 
 # 1.8.2
-### FEATURES
+### Features
 * Added deletion of dangling folders in clean endpoint
 
 # 1.8.1
