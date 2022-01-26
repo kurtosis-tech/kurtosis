@@ -34,6 +34,12 @@ type APIContainerArgs struct {
 	// The dirpath on the Docker host machine where enclave data is stored, which the API container
 	//  will use to bind-mount the directory into the services that it starts
 	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
+
+	//The protected user ID for metrics analytics purpose
+	MetricsUserID string `json:"metricsUserID"`
+
+	//User consent to send metrics
+	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 }
 
 
@@ -50,6 +56,8 @@ func NewAPIContainerArgs(
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnAPIContainer string,
 	enclaveDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		LogLevel:                         logLevel,
@@ -62,6 +70,8 @@ func NewAPIContainerArgs(
 		IsPartitioningEnabled:            isPartitioningEnabled,
 		EnclaveDataDirpathOnAPIContainer: enclaveDataDirpathOnAPIContainer,
 		EnclaveDataDirpathOnHostMachine:  enclaveDataDirpathOnHostMachine,
+		MetricsUserID:                    metricsUserID,
+		DidUserAcceptSendingMetrics:      didUserAcceptSendingMetrics,
 	}
 
 	if err := result.validate(); err != nil {

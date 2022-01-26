@@ -72,6 +72,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
@@ -90,6 +92,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		apiContainerIpAddr,
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -109,6 +113,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
@@ -145,6 +151,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isPartitioningEnabled,
 		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred creating the API container args")

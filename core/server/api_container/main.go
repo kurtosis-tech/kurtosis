@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
@@ -22,6 +23,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -92,12 +95,18 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
+	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the default metrics client")
+	}
+
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		enclaveDataDir,
 		externalContainerStore,
 		serviceNetwork,
 		moduleStore,
+		metricsClient,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

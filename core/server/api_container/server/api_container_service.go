@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -61,6 +62,8 @@ type ApiContainerService struct {
 	moduleStore *module_store.ModuleStore
 
 	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
+
+	metricsClient client.MetricsClient
 }
 
 func NewApiContainerService(
@@ -68,12 +71,14 @@ func NewApiContainerService(
 	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		enclaveDataDir:         enclaveDirectory,
 		externalContainerStore: externalContainerStore,
 		serviceNetwork:         serviceNetwork,
 		moduleStore:            moduleStore,
+		metricsClient: 			metricsClient,
 	}
 
 	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
@@ -126,6 +131,12 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
 	}
+
+	if err := service.metricsClient.TrackLoadModule(args.ModuleId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking load module event\n%v",err)
+	}
+
 	result := binding_constructors.NewLoadModuleResponse(
 		privateIpAddr.String(),
 		privateApiPort,
@@ -140,6 +151,12 @@ func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurto
 	if err := service.moduleStore.UnloadModule(ctx, moduleId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
 	}
+
+	if err := service.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking unload module event\n%v",err)
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
@@ -150,6 +167,12 @@ func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurt
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
 	}
+
+	if err := service.metricsClient.TrackExecuteModule(args.ModuleId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking execute module event\n%v",err)
+	}
+
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}
 	return resp, nil
 }
