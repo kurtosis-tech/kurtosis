@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/annotations"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -22,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -101,24 +99,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	if !annotations.ShouldSkipConfigInitializationOnGlobalSetup(cmd.Annotations) {
-		if err := initializeKurtosisConfig(); err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
-		}
-	}
-
 	checkCLIVersion()
-
-	return nil
-}
-
-func initializeKurtosisConfig() error {
-	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
-
-	_, err := configProvider.GetOrInitializeConfig()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting or initializing config")
-	}
 
 	return nil
 }
