@@ -138,7 +138,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
 			metricsUserId,
-			kurtosisConfig.IsUserAcceptSendingMetrics(),
+			kurtosisConfig.ShouldSendMetrics,
 		)
 	} else {
 		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -148,7 +148,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			kurtosis_context.DefaultKurtosisEngineServerPortNum,
 			engineDataDirpath,
 			metricsUserId,
-			kurtosisConfig.IsUserAcceptSendingMetrics(),
+			kurtosisConfig.ShouldSendMetrics,
 		)
 	}
 	if engineLaunchErr != nil {
