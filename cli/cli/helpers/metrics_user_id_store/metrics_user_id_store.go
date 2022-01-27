@@ -17,19 +17,32 @@ const (
 	metricsUserIDFilePermissions os.FileMode = 0644
 )
 
+var (
+	// NOTE: This will be initialized exactly once (singleton pattern)
+	currentMetricsUserIDStore *MetricsUserIDStore
+	once sync.Once
+)
+
 type yamlContent struct {
 	MetricsUserID string `yaml:"metrics-user-id"`
 }
 
 type MetricsUserIDStore struct {
-	mutex *sync.Mutex
+	mutex *sync.RWMutex
 }
 
-func NewMetricsUserIDStore() *MetricsUserIDStore {
-	return &MetricsUserIDStore{mutex: &sync.Mutex{}}
+func GetMetricsUserIDStore() *MetricsUserIDStore {
+	// NOTE: We use a 'once' to initialize the MetricsUserIDStore because it contains a mutex to guard
+	//the file, and we don't ever want multiple MetricsUserIDStore instances in existence
+	once.Do(func() {
+		currentMetricsUserIDStore = &MetricsUserIDStore{mutex: &sync.RWMutex{}}
+	})
+	return currentMetricsUserIDStore
 }
 
 func (store *MetricsUserIDStore) GetUserID() (string, error) {
+	store.mutex.RLock()
+	defer store.mutex.RUnlock()
 
 	userID, err := store.getMetricsUserIDFromYAMLFile()
 	if err != nil {
@@ -38,6 +51,8 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 			if err != nil {
 				return "", stacktrace.Propagate(err, "An error occurred generating protected machine ID")
 			}
+			store.mutex.Lock()
+			defer store.mutex.Unlock()
 			if err = store.saveMetricsUserIdYAMLFile(userID); err != nil {
 				return "", stacktrace.Propagate(err, "An error occurred saving metrics user id in YAML file")
 			}

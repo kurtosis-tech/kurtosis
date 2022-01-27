@@ -117,7 +117,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		return stacktrace.Propagate(err, "An error occurred creating the engine data dirpath '%v'", engineDataDirpath)
 	}
 
-	metricsUserIdStore := metrics_user_id_store.NewMetricsUserIDStore()
+	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
+	metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")

@@ -41,7 +41,6 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*Kurtosis
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}
 
-		//Saving config
 		if err = configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
 		}
