@@ -9,6 +9,8 @@
 * Added `PromptDisplayer` to display CLI prompts
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
 * Added `override Kurtosis config confirmation prompt` to request user for confirmation when them trying to initialize the config, and it is already created
+* Added `MetricsUserIDStore` which generates a hashed user ID base on OS configuration, save this ID in a YAML file to use it when is needed
+* Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
