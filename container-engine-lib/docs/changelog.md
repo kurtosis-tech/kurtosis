@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added K8sManager, kurtosisBackendCore Interface and implementations for both k8s and kubernetes and KurtosisBackend
 
 # 0.8.6
 ### Fixes
