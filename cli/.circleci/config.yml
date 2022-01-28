@@ -134,7 +134,7 @@ jobs:
           zip -r "${output_dirname}.zip" "${output_dirname}"
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
-          destination: golang-testsuite-enclaves.zip
+          destination: enclave-dumps.zip
 
       # Finally, fail the job if the testsuite failed
       - run: "! [ -f /tmp/testsuite-failed ]"
@@ -175,7 +175,7 @@ jobs:
           zip -r "${output_dirname}.zip" "${output_dirname}"
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
-          destination: typescript-testsuite-enclaves.zip
+          destination: enclave-dumps.zip
 
       # Finally, fail the job if the testsuite failed
       - run: "! [ -f /tmp/testsuite-failed ]"
