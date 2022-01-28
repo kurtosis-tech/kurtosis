@@ -6,7 +6,7 @@ orbs:
 executors:
   ubuntu_vm:
     machine:
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202111-01
 
 parameters:
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
@@ -114,7 +114,9 @@ jobs:
       #We do not send metrics from CI to not dirty the metrics data
       - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis config init dont-send-metrics
       - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis engine start
-      - run: ./internal_testsuites/typeScript/scripts/build.sh
+      #Run install Yarn because TypeScript tests are managed with Yarn package manager
+      - run: npm install -g yarn
+      - run: ./internal_testsuites/typescript/scripts/build.sh
   # -- End build jobs ---------------------------------------
 
   # -- Artifact-publishing jobs --------------------------------
