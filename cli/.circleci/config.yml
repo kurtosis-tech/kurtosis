@@ -139,7 +139,7 @@ jobs:
           destination: golang-testsuite-enclaves.zip
 
       # Finally, fail the job if the testsuite failed
-      - run: ! [ -f /tmp/testsuite-failed ]
+      - run: "! [ -f /tmp/testsuite-failed ]"
 
   build_typescript_testsuite:
     executor: ubuntu_vm
@@ -170,7 +170,6 @@ jobs:
       # Dump enclave data so we can debug any issues that arise
       - run: |
           set -euo pipefail
-          ./internal_testsuites/typescript/scripts/build.sh
           cd /tmp
           output_dirname="enclave-dumps"
           mkdir "${output_dirname}"
@@ -183,7 +182,7 @@ jobs:
           destination: typescript-testsuite-enclaves.zip
 
       # Finally, fail the job if the testsuite failed
-      - run: ! [ -f /tmp/testsuite-failed ]
+      - run: "! [ -f /tmp/testsuite-failed ]"
   # -- End build jobs ---------------------------------------
 
   # -- Artifact-publishing jobs --------------------------------
