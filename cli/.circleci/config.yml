@@ -6,7 +6,7 @@ orbs:
 executors:
   ubuntu_vm:
     machine:
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202111-01
 
 parameters:
   # To upgrade the Docker Engine version, see which versions are supported at: https://circleci.com/docs/2.0/building-docker-images/#docker-version
@@ -103,6 +103,22 @@ jobs:
       - run: ./internal_testsuites/golang/scripts/build.sh
   # -- End build jobs ---------------------------------------
 
+  build_typescript_testsuite:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+      #Run config init to avoid metrics consent prompt when execute engine start command,
+      #We do not send metrics from CI to not dirty the metrics data
+      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis config init dont-send-metrics
+      - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis engine start
+      #Run install Yarn because TypeScript tests are managed with Yarn package manager
+      - run: npm install -g yarn
+      - run: ./internal_testsuites/typescript/scripts/build.sh
+  # -- End build jobs ---------------------------------------
+
   # -- Artifact-publishing jobs --------------------------------
   push_repl_images:
     docker:
@@ -167,6 +183,16 @@ workflows:
                 - develop
                 - master
       - build_golang_testsuite:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - build_typescript_testsuite:
           context:
             - docker-user
           requires:
