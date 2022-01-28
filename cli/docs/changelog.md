@@ -10,6 +10,7 @@
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
 * Added `override Kurtosis config confirmation prompt` to request user for confirmation when they're trying to initialize the config but it's already created
 * Add `enclave dump` subcommand to dump all the logs & container specs for an enclave
+* `enclave inspect` now also prints the service ID in addition to the GUID
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
