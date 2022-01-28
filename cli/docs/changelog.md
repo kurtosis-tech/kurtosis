@@ -12,7 +12,7 @@
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
-* Set the Typescript internal tests' timeouts to 3m to match Golang (see https://github.com/kurtosis-tech/kurtosis-engine-server/issues/83 for the longterm fix)
+* Set the Typescript internal tests' timeouts to 3m to match Golang
 
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
