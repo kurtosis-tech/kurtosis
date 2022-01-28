@@ -445,6 +445,10 @@ github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220125155926-18c5d59022
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220125155926-18c5d5902231/go.mod h1:raRRB7VplPuBYQRXoELUz+whuGBADMuLfZhrWLq3qA0=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220126190225-1289862ed9fd h1:DvEnN9fMjtaXJVsV0Joy3iJeHIvGlnKZZXALXtvuz1Q=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220126190225-1289862ed9fd/go.mod h1:raRRB7VplPuBYQRXoELUz+whuGBADMuLfZhrWLq3qA0=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220128142209-05916797360f h1:GonFrCg07Mz4oK1eXFTq+1aRETwJ9lcniCwr9Kt8Cic=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220128142209-05916797360f/go.mod h1:gETy5SwmmyglHsTk3x5Nvw4PxfMytsAAXWpbQ9UnIwk=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220128142538-02ac87f863b8 h1:U4Bv1Fzo6xRCqbbdc8IyTPsPC4OGXiCHJlfNGhoXqq4=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220128142538-02ac87f863b8/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3 h1:Begoh17x/9rLWQLM64A8oINjoQk1DFKN2iwhQf1i0Rc=
 github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3/go.mod h1:Y0O+lt256iWpkdjDOB8r6csF96Pt3JVIFMbUuWIvr8o=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16 h1:NOAVoUkFbc4KZsjdhLTLsJQRMt2EplDv1H//vtCLvwM=

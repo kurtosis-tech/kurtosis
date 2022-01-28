@@ -35,7 +35,7 @@ type APIContainerArgs struct {
 	//  will use to bind-mount the directory into the services that it starts
 	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
 
-	//The protected user ID for metrics analytics purpose
+	//The anonymized user ID for metrics analytics purpose
 	MetricsUserID string `json:"metricsUserID"`
 
 	//User consent to send metrics

@@ -132,9 +132,9 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
 	}
 
-	if err := service.metricsClient.TrackLoadModule(args.ModuleId); err != nil {
+	if err := service.metricsClient.TrackLoadModule(args.ModuleId, image, serializedParams); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking load module event\n%v",err)
+		logrus.Errorf("An error occurred tracking load module event\n%v",err)
 	}
 
 	result := binding_constructors.NewLoadModuleResponse(
@@ -154,7 +154,7 @@ func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurto
 
 	if err := service.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking unload module event\n%v",err)
+		logrus.Errorf("An error occurred tracking unload module event\n%v",err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -168,9 +168,9 @@ func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurt
 		return nil, stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
 	}
 
-	if err := service.metricsClient.TrackExecuteModule(args.ModuleId); err != nil {
+	if err := service.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking execute module event\n%v",err)
+		logrus.Errorf("An error occurred tracking execute module event\n%v",err)
 	}
 
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}

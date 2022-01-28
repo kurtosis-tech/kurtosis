@@ -1,11 +1,11 @@
 # TBD
 ### Features
-* Added metrics client to track module's events (e.g.: when users load a module)
+* Added metrics client to track module events (e.g.: when users load a module)
 
 ### Breaking Changes
-* Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+* Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
-* Change `ApiContainerService` constructor, now receives a new extra argument `metricsClient`
+* Change `ApiContainerService` constructor to now receive a new extra argument `metricsClient`
   * Users should add this new argument in every call
 * Change `ApiContainerArgs` constructor, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call

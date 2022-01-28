@@ -95,9 +95,9 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
-	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the default metrics client")
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
 
 	//Creation of ApiContainerService
