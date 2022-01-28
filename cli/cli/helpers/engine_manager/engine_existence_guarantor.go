@@ -118,7 +118,6 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	}
 
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
-	metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
@@ -249,7 +248,8 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 }
 
 func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
-	configProvider := kurtosis_config.NewDefaultKurtosisConfigProvider()
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
 
 	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
 	if err != nil {

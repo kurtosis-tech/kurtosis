@@ -2,7 +2,6 @@ package metrics_user_id_store
 
 import (
 	"github.com/denisbrodbeck/machineid"
-	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -12,7 +11,12 @@ import (
 )
 
 const (
-	applicationID = "kurtosis-cli"
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//DO NOT CHANGE THIS VALUE
+	//Changing this value will change the user IDs that get generated
+	//which will truncate our ability to analyze user historical trends
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	applicationID = "kurtosis"
 
 	metricsUserIDFilePermissions os.FileMode = 0644
 )
@@ -22,10 +26,6 @@ var (
 	currentMetricsUserIDStore *MetricsUserIDStore
 	once sync.Once
 )
-
-type yamlContent struct {
-	MetricsUserID string `yaml:"metrics-user-id"`
-}
 
 type MetricsUserIDStore struct {
 	mutex *sync.RWMutex
@@ -41,23 +41,31 @@ func GetMetricsUserIDStore() *MetricsUserIDStore {
 }
 
 func (store *MetricsUserIDStore) GetUserID() (string, error) {
-	store.mutex.RLock()
-	defer store.mutex.RUnlock()
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
 
-	userID, err := store.getMetricsUserIDFromYAMLFile()
+	shouldCreateNewUserId := false
+
+	userID, err := store.getMetricsUserIDFromFile()
 	if err != nil {
 		if os.IsNotExist(err) {
-			userID, err = machineid.ProtectedID(applicationID)
-			if err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred generating protected machine ID")
-			}
-			store.mutex.Lock()
-			defer store.mutex.Unlock()
-			if err = store.saveMetricsUserIdYAMLFile(userID); err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred saving metrics user id in YAML file")
-			}
+			shouldCreateNewUserId = true
 		} else {
-			return "", stacktrace.Propagate(err, "An error occurred getting metrics user id from YAML file")
+			return "", stacktrace.Propagate(err, "An error occurred getting metrics user id from file")
+		}
+	}
+
+	if userID == "" {
+		shouldCreateNewUserId = true
+	}
+
+	if shouldCreateNewUserId {
+		userID, err = machineid.ProtectedID(applicationID)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred generating anonimazed user ID")
+		}
+		if err = store.saveMetricsUserIdFile(userID); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred saving metrics user id in file")
 		}
 	}
 
@@ -67,61 +75,48 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 // ====================================================================================================
 //                                     Private Helper Functions
 // ====================================================================================================
-func (store *MetricsUserIDStore) getMetricsUserIDFromYAMLFile() (string, error) {
-	filepath, err := host_machine_directories.GetMetricsUserIdYAMLFilepath()
+func (store *MetricsUserIDStore) getMetricsUserIDFromFile() (string, error) {
+	filepath, err := host_machine_directories.GetMetricsUserIdFilepath()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the metrics user id YAML filepath")
+		return "", stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")
 	}
-	logrus.Debugf("Metrics user id YAML filepath: '%v'", filepath)
+	logrus.Debugf("Metrics user id filepath: '%v'", filepath)
 
-	yamlFile, err := os.Open(filepath)
+	fileContent, err := os.Open(filepath)
 	if err != nil {
 		return "", err
 	}
 	defer func() {
-		if err := yamlFile.Close(); err != nil {
-			logrus.Warnf("We tried to close the metrics user id YAML file, but doing so threw an error:\n%v", err)
+		if err := fileContent.Close(); err != nil {
+			logrus.Warnf("We tried to close the metrics user id file, but doing so threw an error:\n%v", err)
 		}
 	}()
 
-	fileContentBytes, err := ioutil.ReadAll(yamlFile)
+	fileContentBytes, err := ioutil.ReadAll(fileContent)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred reading metrics user id YAML file")
+		return "", stacktrace.Propagate(err, "An error occurred reading metrics user id file")
 	}
 
-	newYAMLContent := &yamlContent{}
+	fileContentStr := string(fileContentBytes)
 
-	if err := yaml.Unmarshal(fileContentBytes, newYAMLContent); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred unmarshalling metrics user id YAML file content '%v'", fileContentBytes)
-	}
-
-	return newYAMLContent.MetricsUserID, nil
+	return fileContentStr, nil
 }
 
-func (store *MetricsUserIDStore) saveMetricsUserIdYAMLFile(metricsUserId string) error {
+func (store *MetricsUserIDStore) saveMetricsUserIdFile(metricsUserId string) error {
 
-	newYAMLContent := &yamlContent{}
-	newYAMLContent.MetricsUserID = metricsUserId
+	fileContent := append([]byte{}, metricsUserId...)
 
-	marshalledYAMLContent, err := yaml.Marshal(newYAMLContent)
+	logrus.Debugf("Saving metrics user id in file...")
+
+	filepath, err := host_machine_directories.GetMetricsUserIdFilepath()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred marshalling metrics user id content '%+v' to a YAML content", newYAMLContent)
+		return stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")
 	}
 
-	logrus.Debugf("Saving metrics user id in YAML file...")
-
-	filepath, err := host_machine_directories.GetMetricsUserIdYAMLFilepath()
+	err = ioutil.WriteFile(filepath, fileContent, metricsUserIDFilePermissions)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the metrics user id YAML filepath")
+		return stacktrace.Propagate(err, "An error occurred writing metrics user id file '%v'", filepath)
 	}
-
-	store.mutex.Lock()
-	defer store.mutex.Unlock()
-
-	err = ioutil.WriteFile(filepath, marshalledYAMLContent, metricsUserIDFilePermissions)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred writing metrics user id YAML file '%v'", filepath)
-	}
-	logrus.Debugf("Metrics user id YAML file saved")
+	logrus.Debugf("Metrics user id file saved")
 	return nil
 }

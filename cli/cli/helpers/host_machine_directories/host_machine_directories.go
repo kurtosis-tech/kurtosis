@@ -15,9 +15,7 @@ const (
 
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
-	cacheFileForTestsFilename = "tests-content"
-
-	metricsUserIDFilename = "metrics-user-id.yml"
+	metricsUserIDFilename = "metrics-user-id"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
@@ -43,7 +41,7 @@ func GetKurtosisConfigYAMLFilepath() (string, error) {
 	return kurtosisConfigYAMLFilepath, nil
 }
 
-func GetMetricsUserIdYAMLFilepath() (string, error) {
+func GetMetricsUserIdFilepath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(metricsUserIDFilename)
 	filepath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
@@ -69,15 +67,6 @@ func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting the latest release version cache filepath from relative path '%v'", xdgRelFilepath)
 	}
 	return latestCLIReleaseVersionCacheFilepath, nil
-}
-
-func GetCacheFileForTestFilepath() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(cacheFileForTestsFilename)
-	cacheFileForTestFilepath, err := xdg.CacheFile(xdgRelFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the cache file for test filepath from relative path '%v'", xdgRelFilepath)
-	}
-	return cacheFileForTestFilepath, nil
 }
 
 // ====================================================================================================
