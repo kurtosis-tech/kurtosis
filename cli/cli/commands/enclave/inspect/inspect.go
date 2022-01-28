@@ -42,7 +42,6 @@ const (
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIdArg,
 }
@@ -60,19 +59,11 @@ var InspectCmd = &cobra.Command{
 	RunE:                  run,
 }
 
-var kurtosisLogLevelStr string
-
 func init() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
