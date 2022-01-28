@@ -16,6 +16,7 @@ const (
 		EnclaveNewCmdStr = "new"
 		EnclaveStopCmdStr = "stop"
 		EnclaveRmCmdStr = "rm"
+		EnclaveDumpCmdStr = "dump"
 	EngineCmdStr            = "engine"
 		EngineStartCmdStr   = "start"
 		EngineStatusCmdStr  = "status"
