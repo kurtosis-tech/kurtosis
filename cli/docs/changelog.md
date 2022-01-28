@@ -1,5 +1,10 @@
 # TBD
 ### Features
+* `enclave inspect` now also prints the service ID in addition to the GUID
+
+# 0.8.8
+### Features
+* Added TypeScript Tests to CI
 * Added configuration framework which is composed by:
   * The `KurtosisConfig` object which contains Kurtosis CLI configurations encapsulated to avoid accidentally editions
   * The `KurtosisConfigStore` which saves and get the `KurtosisConfig` content in/from the `kurtosis-cli-config.yml` file 
@@ -10,7 +15,7 @@
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
 * Added `override Kurtosis config confirmation prompt` to request user for confirmation when they're trying to initialize the config but it's already created
 * Add `enclave dump` subcommand to dump all the logs & container specs for an enclave
-* `enclave inspect` now also prints the service ID in addition to the GUID
+* After the internal testsuites run in CI, the enclaves are dumped and exported so Kurtosis devs can debug any test cases that fail in CI
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
@@ -21,10 +26,6 @@
 
 ### Changes
 * When a `module exec` fails, don't stop the enclave so the user can continue debugging
-
-### Breaking Changes
-* The CLI now requires the user to make an explicit choice about whether to send user metrics via an interactive prompt which will fail in CI
-    * Users using the CLI inside of CI will need to run either `kurtosis config init send-metrics` or `kurtosis config init dont-send-metrics` before executing any `kurtosis` commands
 
 # 0.8.7
 ### Features
