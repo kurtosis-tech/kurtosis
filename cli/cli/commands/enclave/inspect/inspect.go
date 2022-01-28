@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -29,8 +28,7 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg = "kurtosis-log-level"
-	enclaveIdArg        = "enclave-id"
+	enclaveIdArg = "enclave-id"
 
 	enclaveIdTitleName          = "Enclave ID"
 	enclaveDataDirpathTitleName = "Data Directory"
@@ -44,7 +42,6 @@ const (
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIdArg,
 }
@@ -62,30 +59,11 @@ var InspectCmd = &cobra.Command{
 	RunE:                  run,
 }
 
-var kurtosisLogLevelStr string
-
 func init() {
-	InspectCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaultKurtosisLogLevel,
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
