@@ -1,5 +1,6 @@
 # TBD
 ### Features
+* Added TypeScript Tests to CI
 * Added configuration framework which is composed by:
   * The `KurtosisConfig` object which contains Kurtosis CLI configurations encapsulated to avoid accidentally editions
   * The `KurtosisConfigStore` which saves and get the `KurtosisConfig` content in/from the `kurtosis-cli-config.yml` file 
