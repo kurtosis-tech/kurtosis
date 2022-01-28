@@ -101,7 +101,19 @@ jobs:
       - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis config init dont-send-metrics
       - run: /tmp/workspace/cli/dist/cli_linux_amd64/kurtosis engine start
       - run: ./internal_testsuites/golang/scripts/build.sh
-  # -- End build jobs ---------------------------------------
+
+      # Package the logs so we can debug any issues that arise
+      - run: |
+          cd /tmp
+          output_dirname="enclave-dumps"
+          mkdir "${output_dirname}"
+          for enclave_id in $(kurtosis enclave ls | tail -n+2 | awk '{print $1}'); do
+            kurtosis enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+          done
+          zip -r "${output_dirname}.zip" "${output_dirname}"
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
 
   build_typescript_testsuite:
     executor: ubuntu_vm
@@ -117,6 +129,19 @@ jobs:
       #Run install Yarn because TypeScript tests are managed with Yarn package manager
       - run: npm install -g yarn
       - run: ./internal_testsuites/typescript/scripts/build.sh
+
+      # Package the logs so we can debug any issues that arise
+      - run: |
+          cd /tmp
+          output_dirname="enclave-dumps"
+          mkdir "${output_dirname}"
+          for enclave_id in $(kurtosis enclave ls | tail -n+2 | awk '{print $1}'); do
+            kurtosis enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+          done
+          zip -r "${output_dirname}.zip" "${output_dirname}"
+      - store_artifacts:
+          path: /tmp/enclave-dumps.zip
+          destination: enclave-dumps.zip
   # -- End build jobs ---------------------------------------
 
   # -- Artifact-publishing jobs --------------------------------
