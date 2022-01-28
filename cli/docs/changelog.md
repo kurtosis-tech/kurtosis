@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.8
 ### Features
 * Added TypeScript Tests to CI
 * Added configuration framework which is composed by:
