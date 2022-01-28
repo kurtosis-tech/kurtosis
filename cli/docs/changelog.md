@@ -23,10 +23,6 @@
 ### Changes
 * When a `module exec` fails, don't stop the enclave so the user can continue debugging
 
-### Breaking Changes
-* The CLI now requires the user to make an explicit choice about whether to send user metrics via an interactive prompt which will fail in CI
-    * Users using the CLI inside of CI will need to run either `kurtosis config init send-metrics` or `kurtosis config init dont-send-metrics` before executing any `kurtosis` commands
-
 # 0.8.7
 ### Features
 * Added TypeScript test: `files.test.ts`
