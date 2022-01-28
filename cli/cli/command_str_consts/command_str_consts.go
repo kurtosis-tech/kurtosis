@@ -16,6 +16,7 @@ const (
 		EnclaveNewCmdStr = "new"
 		EnclaveStopCmdStr = "stop"
 		EnclaveRmCmdStr = "rm"
+		EnclaveDumpCmdStr = "dump"
 	EngineCmdStr            = "engine"
 		EngineStartCmdStr   = "start"
 		EngineStatusCmdStr  = "status"
@@ -31,6 +32,8 @@ const (
 	ServiceCmdStr = "service"
 		ServiceLogsCmdStr = "logs"
 		ShellCmdStr = "shell"
+	ConfigCmdStr = "config"
+		InitCmdStr = "init"
 	TestCmdStr = "test"
 	VersionCmdStr = "version"
 )
