@@ -8,7 +8,7 @@
   * The `config init` command to initialize the `KurtosisConfig`, it requires one positional args to set if user accept or not to send metrics
 * Added `PromptDisplayer` to display CLI prompts
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
-* Added `override Kurtosis config confirmation prompt` to request user for confirmation when them trying to initialize the config, and it is already created
+* Added `override Kurtosis config confirmation prompt` to request user for confirmation when they're trying to initialize the config but it's already created
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
@@ -16,6 +16,13 @@
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
 * Added TypeScript test: `network_partition.test.ts`
+
+### Changes
+* When a `module exec` fails, don't stop the enclave so the user can continue debugging
+
+### Breaking Changes
+* The CLI now requires the user to make an explicit choice about whether to send user metrics via an interactive prompt which will fail in CI
+    * Users using the CLI inside of CI will need to run either `kurtosis config init send-metrics` or `kurtosis config init dont-send-metrics` before executing any `kurtosis` commands
 
 # 0.8.7
 ### Features
