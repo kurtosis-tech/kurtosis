@@ -23,7 +23,7 @@ const TEST_DATASTORE_VALUE = "test-value"
 const WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000
 const WAIT_FOR_STARTUP_MAX_POLLS = 15
 
-jest.setTimeout(50000)
+jest.setTimeout(180000)
 
 test("Test module", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------

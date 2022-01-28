@@ -14,7 +14,7 @@ const DATASTORE_SERVICE_ID: ServiceID = "datastore";
 const TEST_KEY = "test-key"
 const TEST_VALUE = "test-value";
 
-jest.setTimeout(30000)
+jest.setTimeout(180000)
 
 test("Test basic datastore test", async () => {
         

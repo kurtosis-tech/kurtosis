@@ -29,8 +29,7 @@ const TEST_PERSON_ID = "46";
 
 const SECONDS_TO_WAIT_BEFORE_CALLING_GRPC_CALL_TIMED_OUT = 2;
 
-const SEVENTY_SECONDS_IN_MILLISECONDS = 70000;
-jest.setTimeout(SEVENTY_SECONDS_IN_MILLISECONDS)
+jest.setTimeout(180000)
 
 test("Test network partition", async () => {
      // ------------------------------------- ENGINE SETUP ----------------------------------------------

@@ -2,6 +2,9 @@
 ### Features
 * `enclave inspect` now also prints the service ID in addition to the GUID
 
+### Fixes
+* Set the Typescript internal tests' timeouts to 3m to match Golang
+
 # 0.8.8
 ### Features
 * Added TypeScript Tests to CI
