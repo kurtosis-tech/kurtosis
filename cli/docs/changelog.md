@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Set the Typescript internal tests' timeouts to 3m to match Golang
 
 # 0.8.8
 ### Features
@@ -17,7 +19,6 @@
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
-* Set the Typescript internal tests' timeouts to 3m to match Golang
 
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
