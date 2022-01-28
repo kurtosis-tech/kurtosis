@@ -44,7 +44,6 @@ parameters:
     default: "cli_linux_amd64/kurtosis"
 
 
-
 # NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
 #  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
 #  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
@@ -109,15 +108,15 @@ jobs:
       - checkout
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
-      # We call Kurtosis a bunch later, so make it very easy to do
+      # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           set -euo pipefail
-          echo 'alias kurtosis="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
-      - run: kurtosis config init dont-send-metrics
-      - run: kurtosis engine start
+      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - run: "${KURTOSIS_BINPATH} engine start"
       - run: ./internal_testsuites/golang/scripts/build.sh
 
       # Package the logs so we can debug any issues that arise
@@ -126,13 +125,13 @@ jobs:
           cd /tmp
           output_dirname="enclave-dumps"
           mkdir "${output_dirname}"
-          for enclave_id in $(kurtosis enclave ls | tail -n+2 | awk '{print $1}'); do
-            kurtosis enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
+            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
           done
           zip -r "${output_dirname}.zip" "${output_dirname}"
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
-          destination: enclave-dumps.zip
+          destination: golang-testsuite-enclaves.zip
 
   build_typescript_testsuite:
     executor: ubuntu_vm
@@ -140,15 +139,15 @@ jobs:
       - checkout
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
-      # We call Kurtosis a bunch later, so make it very easy to do
+      # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
           set -euo pipefail
-          echo 'alias kurtosis="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
-      - run: kurtosis config init dont-send-metrics
-      - run: kurtosis engine start
+      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - run: "${KURTOSIS_BINPATH} engine start"
       #Run install Yarn because TypeScript tests are managed with Yarn package manager
       - run: npm install -g yarn
       - run: ./internal_testsuites/typescript/scripts/build.sh
@@ -159,13 +158,13 @@ jobs:
           cd /tmp
           output_dirname="enclave-dumps"
           mkdir "${output_dirname}"
-          for enclave_id in $(kurtosis enclave ls | tail -n+2 | awk '{print $1}'); do
-            kurtosis enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
+          for enclave_id in $("${KURTOSIS_BINPATH}" enclave ls | tail -n+2 | awk '{print $1}'); do
+            "${KURTOSIS_BINPATH}" enclave dump "${enclave_id}" "${output_dirname}/${enclave_id}"
           done
           zip -r "${output_dirname}.zip" "${output_dirname}"
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
-          destination: enclave-dumps.zip
+          destination: typescript-testsuite-enclaves.zip
   # -- End build jobs ---------------------------------------
 
   # -- Artifact-publishing jobs --------------------------------
