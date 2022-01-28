@@ -69,7 +69,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 
 	if err := service.metricsClient.TrackCreateEnclave(enclaveInfo.EnclaveId); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking create enclave event\n%v",err)
+		logrus.Errorf("An error occurred tracking create enclave event\n%v",err)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
@@ -96,7 +96,7 @@ func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurto
 
 	if err := service.metricsClient.TrackStopEnclave(enclaveId); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking stop enclave event\n%v",err)
+		logrus.Errorf("An error occurred tracking stop enclave event\n%v",err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -110,7 +110,7 @@ func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *ku
 
 	if err := service.metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking destroy enclave event\n%v",err)
+		logrus.Errorf("An error occurred tracking destroy enclave event\n%v",err)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -120,11 +120,6 @@ func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_en
 	enclaveIDs, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
-	}
-
-	if err := service.metricsClient.TrackCleanEnclave(args.ShouldCleanAll); err != nil {
-		//We don't want to interrupt user's flow if something fails when tracking metrics
-		logrus.Debugf("An error occurred tracking clean enclave event\n%v",err)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveIds: enclaveIDs}

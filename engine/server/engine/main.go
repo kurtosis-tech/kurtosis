@@ -77,9 +77,9 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	metricsClient, err := metrics_client.CreateDefaultMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the default metrics client")
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
 
 	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, metricsClient, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)

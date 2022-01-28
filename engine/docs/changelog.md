@@ -1,13 +1,13 @@
 # TBD
 ### Features
-* Added metrics client to track enclave's events (e.g.: when users create an enclave)
-* 
+* Added metrics client to track enclave events (e.g.: when users create an enclave)
+
 ### Breaking Changes
-* Change the `EngineServerLauncher.LaunchWithDefaultVersion()` and `EngineServerLauncher.LaunchWithCustomVersion()` methods API, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+* Change the `EngineServerLauncher.LaunchWithDefaultVersion()` and `EngineServerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
-* Change `NewEngineServerService` constructor, now receives three new arguments `metricsUserID`, `didUserAcceptSendingMetrics` and `metricsClient`
+* Change `NewEngineServerService` constructor to now receive three new arguments `metricsUserID`, `didUserAcceptSendingMetrics` and `metricsClient`
   * Users should add there three new arguments in every call
-* Change `EngineServerArgs` constructor, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+* Change `EngineServerArgs` constructor, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
 
 # 1.8.3
