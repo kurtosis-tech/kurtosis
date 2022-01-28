@@ -15,7 +15,7 @@ const API_SERVICE_ID = "api";
 const TEST_PERSON_ID = "23";
 const TEST_NUM_BOOKS_READ = 3;
 
-jest.setTimeout(30000)
+jest.setTimeout(180000)
 
 test("Test basic data store and API", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------

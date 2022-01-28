@@ -6,7 +6,7 @@ const TEST_NAME = "bulk-command-execution-test";
 const IS_PARTITIONING_ENABLED = true;
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 
-jest.setTimeout(40000)
+jest.setTimeout(180000)
 
 test("Test bulk command execution", async () => {
 

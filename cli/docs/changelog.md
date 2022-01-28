@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Set the Typescript internal tests' timeouts to 3m to match Golang
 
 # 0.8.8
 ### Features
