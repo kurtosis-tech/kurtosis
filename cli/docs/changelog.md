@@ -1,9 +1,11 @@
 # TBD
 ### Features
 * `enclave inspect` now also prints the service ID in addition to the GUID
+* The enclave ID argument to `enclave inspect` is now tab-completable
 
 ### Fixes
 * Set the Typescript internal tests' timeouts to 3m to match Golang
+* Fix the Kurtosis completion
 
 # 0.8.8
 ### Features
