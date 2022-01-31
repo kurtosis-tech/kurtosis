@@ -46,5 +46,5 @@ static_resources:
               - endpoint:
                   address:
                     socket_address:
-                      address: localhost
+                      address: 0.0.0.0
                       port_value: 9710
