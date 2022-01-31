@@ -1,5 +1,10 @@
 # TBD
 
+### Fixes
+
+* Refactored engine/library semVer checking to be more lax, and let continue the code run if semVer couldn't be parsed 
+
+
 # 1.8.3
 
 ### Fixes
