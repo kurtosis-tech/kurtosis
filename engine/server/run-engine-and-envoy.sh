@@ -36,8 +36,6 @@ for command_to_run in "${COMMANDS_TO_RUN[@]}"; do
     PIDS_TO_WAIT_FOR+=("${!}")
 done
 
-echo "${PIDS_TO_WAIT_FOR}"
-
 for pid in "${PIDS_TO_WAIT_FOR[@]}"; do
     if wait "${pid}"; then
         echo "PID '${pid}' exited successfully"

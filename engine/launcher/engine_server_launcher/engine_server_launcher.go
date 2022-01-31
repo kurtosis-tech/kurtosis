@@ -253,11 +253,11 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
+func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, grpcListenPortNum uint16) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
 		netstatWaitForAvailabilityPortProtocol,
-		listenPortNum,
+		grpcListenPortNum,
 	)
 	execCmd := []string{
 		"sh",

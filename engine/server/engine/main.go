@@ -81,7 +81,7 @@ func runMain () error {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
 	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.ListenPortNum,
+		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,
