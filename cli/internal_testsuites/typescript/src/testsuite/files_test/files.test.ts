@@ -22,7 +22,7 @@ const generatedFileRelPathsAndContents = new Map<string,string>();
 generatedFileRelPathsAndContents.set("test1.txt", EXPECTED_TEST_FILE1_CONTENTS)
 generatedFileRelPathsAndContents.set("test2.txt", EXPECTED_TEST_FILE2_CONTENTS)
 
-jest.setTimeout(40000)
+jest.setTimeout(180000)
 
 test("Test files", async () => {
 

@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	metricsPromptLabel = "Is it okay to send anonymized metrics purely to improve the product?"
-	metricsConsentPromptLabel = "Ok you do not want to send metrics, but is it okay to send only that you reject sending metrics?"
+	metricsConsentPromptLabel       = "Is it okay to send anonymized metrics purely to improve the product?"
+	secondMetricsConsentPromptLabel = "Ok you do not want to send metrics, but is it okay to send only that you reject sending metrics?"
+
+	displayConfirmationPromptDefaultValue = true
 
 	forceUserAcceptanceArgumentInMetricsClient = true
 
@@ -27,13 +29,13 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 
 	didUserAcceptSendingThatThemRejectSendingMetrics := false
 
-	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsPromptLabel, true)
+	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, displayConfirmationPromptDefaultValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 	}
 
 	if !didUserAcceptSendingMetrics {
-		didUserAcceptSendingThatThemRejectSendingMetrics, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, true)
+		didUserAcceptSendingThatThemRejectSendingMetrics, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(secondMetricsConsentPromptLabel, displayConfirmationPromptDefaultValue)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 		}

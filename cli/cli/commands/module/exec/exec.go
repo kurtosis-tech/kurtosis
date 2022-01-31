@@ -38,18 +38,18 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg = "kurtosis-log-level"
-	loadParamsStrArg = "load-params"
-	executeParamsStrArg = "execute-params"
-	apiContainerVersionArg = "api-container-version"
-	moduleImageArg = "module-image"
-	enclaveIdArg = "enclave-id"
+	kurtosisLogLevelArg      = "kurtosis-log-level"
+	loadParamsStrArg         = "load-params"
+	executeParamsStrArg      = "execute-params"
+	apiContainerVersionArg   = "api-container-version"
+	moduleImageArg           = "module-image"
+	enclaveIdArg             = "enclave-id"
 	isPartitioningEnabledArg = "with-partitioning"
 
-	defaultLoadParams              = "{}"
-	defaultExecuteParams           = "{}"
-	defaultEnclaveId               = ""
-	defaultIsPartitioningEnabled   = false
+	defaultLoadParams            = "{}"
+	defaultExecuteParams         = "{}"
+	defaultEnclaveId             = ""
+	defaultIsPartitioningEnabled = false
 
 	shouldPublishAllPorts = true
 
@@ -58,13 +58,14 @@ const (
 	// TODO Extract this validation into a centralized location for all commands that use an enclave ID
 	allowedEnclaveIdCharsRegexStr = `^[A-Za-z0-9._-]+$`
 
-	shouldFollowContainerLogs = true
+	shouldFollowContainerLogs         = true
 	shouldShowStoppedModuleContainers = false
 
 	netReadOpt = "read"
 
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 )
+
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 
 var positionalArgs = []string{
@@ -79,10 +80,10 @@ var userRequestedEnclaveId string
 var isPartitioningEnabled bool
 
 var ExecCmd = &cobra.Command{
-	Use:   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
+	Use:                   command_str_consts.ModuleExecCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
-	Short: "Creates a new enclave and loads & executes the given executable module inside it",
-	RunE:  run,
+	Short:                 "Creates a new enclave and loads & executes the given executable module inside it",
+	RunE:                  run,
 }
 
 func init() {
@@ -198,19 +199,16 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	enclaveInfo := response.GetEnclaveInfo()
 
-	shouldStopEnclave := true
+	completedSuccessfully := false
 	defer func() {
-		if shouldStopEnclave {
-			destroyEnclaveArgs := &kurtosis_engine_rpc_api_bindings.StopEnclaveArgs{
-				EnclaveId: enclaveId,
-			}
-			if  _, err := engineClient.StopEnclave(ctx, destroyEnclaveArgs); err != nil {
-				logrus.Errorf(
-					"The module didn't execute correctly so we tried to stop the created enclave, but doing so threw an error:\n%v",
-					err,
-				)
-				logrus.Errorf("ACTION NEEDED: You'll need to stop enclave '%v' manually!!", enclaveId)
-			}
+		if !completedSuccessfully {
+			logrus.Warnf(
+				"NOTE: Even though the module didn't complete successfully, we've left the enclave running so you can continue to debug; to stop this enclave and free its resources, run '%v %v %v %v'",
+				command_str_consts.KurtosisCmdStr,
+				command_str_consts.EnclaveCmdStr,
+				command_str_consts.EnclaveStopCmdStr,
+				enclaveId,
+			)
 		}
 	}()
 	logrus.Infof("Enclave '%v' created successfully", enclaveId)
@@ -283,7 +281,7 @@ func run(cmd *cobra.Command, args []string) error {
 		executeModuleResult.SerializedResult,
 	)
 
-	shouldStopEnclave = false
+	completedSuccessfully = true
 	return nil
 }
 
@@ -312,7 +310,7 @@ func getEnclaveId(moduleImage string) string {
 	)
 }
 
-func getModuleContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error){
+func getModuleContainer(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string, moduleId string) (*docker_manager_types.Container, error) {
 	labels := getModuleContainerLabelsWithEnclaveIDAndModuleId(enclaveId, moduleId)
 	containers, err := dockerManager.GetContainersByLabels(ctx, labels, shouldShowStoppedModuleContainers)
 	if err != nil {

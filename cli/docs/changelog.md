@@ -1,5 +1,15 @@
 # TBD
 ### Features
+* Added `MetricsUserIDStore` which generates a hashed user ID based on OS configuration, and saves the ID in a file to use it in future runs of the CLI
+* Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
+* Track if user consent sending metrics to improve the product
+
+### Fixes
+* Set the Typescript internal tests' timeouts to 3m to match Golang
+
+# 0.8.8
+### Features
+* Added TypeScript Tests to CI
 * Added configuration framework which is composed by:
   * The `KurtosisConfig` object which contains Kurtosis CLI configurations encapsulated to avoid accidentally editions
   * The `KurtosisConfigStore` which saves and get the `KurtosisConfig` content in/from the `kurtosis-cli-config.yml` file 
@@ -8,9 +18,9 @@
   * The `config init` command to initialize the `KurtosisConfig`, it requires one positional args to set if user accept or not to send metrics
 * Added `PromptDisplayer` to display CLI prompts
 * Added `user metrics consent prompt` to request user consents to collecting and sending metrics
-* Added `override Kurtosis config confirmation prompt` to request user for confirmation when them trying to initialize the config, and it is already created
-* Added `MetricsUserIDStore` which generates a hashed user ID based on OS configuration, and saves the ID in a file to use it in future runs of the CLI
-* Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
+* Added `override Kurtosis config confirmation prompt` to request user for confirmation when they're trying to initialize the config but it's already created
+* Add `enclave dump` subcommand to dump all the logs & container specs for an enclave
+* After the internal testsuites run in CI, the enclaves are dumped and exported so Kurtosis devs can debug any test cases that fail in CI
 
 ### Fixes
 * Limit the max number of Typescript tests running at once to 4, to not overwhelm Docker
@@ -18,6 +28,9 @@
 ### Features
 * Added TypeScript test: `network_soft_partition.test.ts`
 * Added TypeScript test: `network_partition.test.ts`
+
+### Changes
+* When a `module exec` fails, don't stop the enclave so the user can continue debugging
 
 # 0.8.7
 ### Features
