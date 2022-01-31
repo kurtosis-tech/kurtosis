@@ -495,6 +495,7 @@ github.com/kurtosis-tech/metrics-library v0.0.0-20220110155203-030829d5be9e h1:Q
 github.com/kurtosis-tech/metrics-library v0.0.0-20220119194648-bea5acc0c2eb h1:BPaSHoHrMHrAYsmkdYDXFUI1T7uNEpCVEecq1Yt22Rw=
 github.com/kurtosis-tech/metrics-library v0.0.0-20220119194648-bea5acc0c2eb/go.mod h1:dMw1BNmU20flf8lgSjehOj8WTisz8rtNfzH+KT7lYLs=
 github.com/kurtosis-tech/metrics-library v0.0.0-20220119195600-180e17ca08e1 h1:K8/sTgKyCC3EIwn3pEJPRCURCqSvpNbmpUveq8MN3sg=
+github.com/kurtosis-tech/metrics-library v0.0.0-20220131124718-7cbbf6f60e59 h1:/82G4wDFK8WM6lckpstwRS3timjCZaDhlCyIBNKp1Pw=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220119195600-180e17ca08e1 h1:HVaeKzOgXfOUk3/Njbqyt+4AAfItZEv7CHHljoDPwWI=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220119195600-180e17ca08e1/go.mod h1:t2f2zlHncOvZjyE8rhEZa9T90LSJiLAms84VH2cFeUI=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220119195909-59fd59edbb5d h1:Gm+ylrHTXIAx3T8iy41SYMrfNcMCRAZNEAL/JEk3Oy4=
@@ -513,6 +514,12 @@ github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220120123933-25205e25f0
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220120123933-25205e25f00b/go.mod h1:t2f2zlHncOvZjyE8rhEZa9T90LSJiLAms84VH2cFeUI=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220120134706-69a8c65507d0 h1:qV7mut6G2xxl1Zqfsudt76Edondx10WY6e/ery+Adco=
 github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220120134706-69a8c65507d0/go.mod h1:t2f2zlHncOvZjyE8rhEZa9T90LSJiLAms84VH2cFeUI=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131124718-7cbbf6f60e59 h1:LDht5YTmvnCDnzmCGUru/ZP90sVJIrF5e+fdXdeg1Fw=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131124718-7cbbf6f60e59/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131130249-0e79e979d069 h1:6YLKXd+gH2uZhJO2NPKQEQjNyCURqlyWZlfo8kSidEs=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131130249-0e79e979d069/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131132137-526effac6b84 h1:lT5GGfBsA+w3Z1TlSzR1YM8nZYKKS0ENrJ8Mihb9FE8=
+github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220131132137-526effac6b84/go.mod h1:tteWV+M47xMHxqCIPQmdmgPW80rhN8YfzrgRRWbQhOw=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16 h1:NOAVoUkFbc4KZsjdhLTLsJQRMt2EplDv1H//vtCLvwM=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16/go.mod h1:Ysr3LF2XJfzqHX4LlXQkRdFMY/DWdIiLJk2z+1QXe1s=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
@@ -660,6 +667,8 @@ github.com/safchain/ethtool v0.0.0-20190326074333-42ed695e3de8/go.mod h1:Z0q5wiB
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529/go.mod h1:DxrIzT+xaE7yg65j358z/aeFdxmN0P9QXhEzd20vsDc=
 github.com/seccomp/libseccomp-golang v0.9.1/go.mod h1:GbW5+tmTXfcxTToHLXlScSlAvWlF4P2Ca7zGrPiEpWo=
+github.com/segmentio/backo-go v1.0.0 h1:kbOAtGJY2DqOR0jfRkYEorx/b18RgtepGtY3+Cpe6qA=
+github.com/segmentio/backo-go v1.0.0/go.mod h1:kJ9mm9YmoWSkk+oQ+5Cj8DEoRCX2JT6As4kEtIIOp1M=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.0.4-0.20170822132746-89742aefa4b2/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
 github.com/sirupsen/logrus v1.0.6/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
@@ -735,6 +744,8 @@ github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415/go.mod h1:
 github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f/go.mod h1:5yf86TLmAcydyeJq5YvxkGPE2fm/u4myDekKRoLuqhs=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
+github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c h1:3lbZUMbMiGUW/LMkfsEABsc5zNT9+b1CvsJx47JzJ8g=
+github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c/go.mod h1:UrdRz5enIKZ63MEE3IF9l2/ebyx59GyGgPi+tICQdmM=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
@@ -1181,6 +1192,8 @@ gopkg.in/inf.v0 v0.9.1/go.mod h1:cWUDdTG/fYaXco+Dcufb5Vnc6Gp2YChqWtbxRZE0mXw=
 gopkg.in/ini.v1 v1.62.0/go.mod h1:pNLf8WUiyNEtQjuu5G5vTm06TEv9tsIgeAvK8hOrP4k=
 gopkg.in/natefinch/lumberjack.v2 v2.0.0/go.mod h1:l0ndWWf7gzL7RNwBG7wST/UCcT4T24xpD6X8LsfU/+k=
 gopkg.in/resty.v1 v1.12.0/go.mod h1:mDo4pnntr5jdWRML875a/NmxYqAlA73dVijT2AXvQQo=
+gopkg.in/segmentio/analytics-go.v3 v3.1.0 h1:UzxH1uaGZRpMKDhJyBz0pexz6yUoBU3x8bJsRk/HV6U=
+gopkg.in/segmentio/analytics-go.v3 v3.1.0/go.mod h1:4QqqlTlSSpVlWA9/9nDcPw+FkM2yv1NQoYjUbL9/JAw=
 gopkg.in/square/go-jose.v2 v2.2.2/go.mod h1:M9dMgbHiYLoDGQrXy7OpJDJWiKiU//h+vD76mk0e1AI=
 gopkg.in/square/go-jose.v2 v2.3.1/go.mod h1:M9dMgbHiYLoDGQrXy7OpJDJWiKiU//h+vD76mk0e1AI=
 gopkg.in/square/go-jose.v2 v2.5.1/go.mod h1:M9dMgbHiYLoDGQrXy7OpJDJWiKiU//h+vD76mk0e1AI=
