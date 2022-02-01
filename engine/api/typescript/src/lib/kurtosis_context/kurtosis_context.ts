@@ -91,12 +91,12 @@ export class KurtosisContext {
 
         const runningEngineSemver: semver.SemVer | null = semver.parse(runningEngineVersionStr)
         if (runningEngineSemver === null){
-            log.warn(`We expected the running engine version to match format X.Y.Z, but instead got ${runningEngineVersionStr}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
+            log.warn(`We expected the running engine version to match format X.Y.Z, but instead got '${runningEngineVersionStr}'; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
       
         const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
         if (libraryEngineSemver === null){
-            log.warn(`We expected the library engine version to match format X.Y.Z, but instead got ${KURTOSIS_ENGINE_VERSION}; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
+            log.warn(`We expected the API library version to match format X.Y.Z, but instead got '${KURTOSIS_ENGINE_VERSION}'; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
        
         if(runningEngineSemver && libraryEngineSemver){
