@@ -1,6 +1,7 @@
 # TBD
 ### Features
-* Add the `-f` flag to `service logs` to allow users to keep following logs
+* `enclave inspect` now also prints the service ID in addition to the GUID
+* * Add the `-f` flag to `service logs` to allow users to keep following logs
 
 # 0.8.9
 ### Fixes
