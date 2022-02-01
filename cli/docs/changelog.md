@@ -1,4 +1,6 @@
 # TBD
+### Features
+* `enclave inspect` now also prints the service ID in addition to the GUID
 
 # 0.8.9
 ### Fixes
