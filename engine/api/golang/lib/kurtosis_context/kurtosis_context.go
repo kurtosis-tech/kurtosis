@@ -3,6 +3,7 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
@@ -66,26 +67,33 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 	runningEngineSemver, err := semver.StrictNewVersion(runningEngineVersionStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing running engine version string '%v' to semantic version", runningEngineVersionStr)
+		logrus.Warnf("We expected the running engine version to match format X.Y.Z, but instead got '%v'; "+
+			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", runningEngineVersionStr)
 	}
-
-	runningEngineMajorVersion := runningEngineSemver.Major()
-	runningEngineMinorVersion := runningEngineSemver.Minor()
 
 	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing library engine version string '%v' to semantic version", kurtosis_engine_version.KurtosisEngineVersion)
+		logrus.Warnf("We expected the API library version to match format X.Y.Z, but instead got '%v'; "+
+			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_engine_version.KurtosisEngineVersion)
 	}
-	libraryEngineMajorVersion := libraryEngineSemver.Major()
-	libraryEngineMinorVersion := libraryEngineSemver.Minor()
 
-	doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
-	if !doApiVersionsMatch {
-		return nil, stacktrace.NewError(
-			"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'; you should use the version of this library that corresponds to the running engine version",
-			runningEngineSemver.String(),
-			libraryEngineSemver.String(),
-		)
+	if runningEngineSemver != nil && libraryEngineSemver != nil {
+
+		runningEngineMajorVersion := runningEngineSemver.Major()
+		runningEngineMinorVersion := runningEngineSemver.Minor()
+
+		libraryEngineMajorVersion := libraryEngineSemver.Major()
+		libraryEngineMinorVersion := libraryEngineSemver.Minor()
+
+		doApiVersionsMatch := libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+
+		if !doApiVersionsMatch {
+			return nil, stacktrace.NewError(
+				"An API version mismatch was detected between the running engine version '%v' and the engine version the library expects, '%v'; you should use the version of this library that corresponds to the running engine version",
+				runningEngineSemver.String(),
+				libraryEngineSemver.String(),
+			)
+		}
 	}
 
 	kurtosisContext := &KurtosisContext{

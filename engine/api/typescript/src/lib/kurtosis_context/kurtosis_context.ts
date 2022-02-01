@@ -1,6 +1,7 @@
 import {EngineServiceClient} from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import * as grpc from "@grpc/grpc-js";
 import {err, ok, Result} from "neverthrow";
+import log from "loglevel"
 import {newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
 import {
     CleanArgs,
@@ -90,29 +91,27 @@ export class KurtosisContext {
 
         const runningEngineSemver: semver.SemVer | null = semver.parse(runningEngineVersionStr)
         if (runningEngineSemver === null){
-            return err(new Error(
-                `An error occurred parsing running engine version string ${runningEngineVersionStr} to semantic version`
-            ));
+            log.warn(`We expected the running engine version to match format X.Y.Z, but instead got '${runningEngineVersionStr}'; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
-
-        const runningEngineMajorVersion: number = semver.major(runningEngineSemver)
-        const runningEngineMinorVersion: number = semver.minor(runningEngineSemver)
-
+      
         const libraryEngineSemver: semver.SemVer | null = semver.parse(KURTOSIS_ENGINE_VERSION)
         if (libraryEngineSemver === null){
-            return err(new Error(
-                `An error occurred parsing library engine version string ${KURTOSIS_ENGINE_VERSION} to semantic version`
-            ));
+            log.warn(`We expected the API library version to match format X.Y.Z, but instead got '${KURTOSIS_ENGINE_VERSION}'; this means that we can't verify the API library and engine versions match so you may encounter runtime errors`)
         }
+       
+        if(runningEngineSemver && libraryEngineSemver){
+            const runningEngineMajorVersion = semver.major(runningEngineSemver)
+            const runningEngineMinorVersion = semver.minor(runningEngineSemver)
+            
+            const libraryEngineMajorVersion = semver.major(libraryEngineSemver)
+            const libraryEngineMinorVersion = semver.minor(libraryEngineSemver)
 
-        const libraryEngineMajorVersion: number = semver.major(libraryEngineSemver)
-        const libraryEngineMinorVersion: number = semver.minor(libraryEngineSemver)
-
-        const doApiVersionsMatch: boolean = libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
-        if (!doApiVersionsMatch) {
-            return err(new Error(
-                `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and the engine version the library expects, ${libraryEngineSemver.version}; you should use the version of this library that corresponds to the running engine version`
-            ));
+            const doApiVersionsMatch: boolean = libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+            if (!doApiVersionsMatch) {
+                return err(new Error(
+                    `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and the engine version the library expects, ${libraryEngineSemver.version}; you should use the version of this library that corresponds to the running engine version`
+                    ));
+                }
         }
 
         const kurtosisContext: KurtosisContext = new KurtosisContext(engineServiceClient);
