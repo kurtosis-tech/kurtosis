@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* `enclave stop` and `enclave rm` require at least one enclave ID
 
 # 0.8.9
 ### Fixes
