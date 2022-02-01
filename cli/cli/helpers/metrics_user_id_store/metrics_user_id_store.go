@@ -44,22 +44,19 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
-	shouldCreateNewUserId := false
+	var userID string
 
-	userID, err := store.getMetricsUserIDFromFile()
+	doesMetricsUserIDFilepathExist, err := store.doesMetricsUserIDFilepathExist()
 	if err != nil {
-		if os.IsNotExist(err) {
-			shouldCreateNewUserId = true
-		} else {
+		return "", stacktrace.Propagate(err, "An error occurred checking if metrics user id store filepath exists")
+	}
+
+	if doesMetricsUserIDFilepathExist {
+		userID, err = store.getMetricsUserIDFromFile()
+		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting metrics user id from file")
 		}
-	}
-
-	if userID == "" {
-		shouldCreateNewUserId = true
-	}
-
-	if shouldCreateNewUserId {
+	} else {
 		userID, err = machineid.ProtectedID(applicationID)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "An error occurred generating anonimazed user ID")
@@ -75,6 +72,22 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 // ====================================================================================================
 //                                     Private Helper Functions
 // ====================================================================================================
+func (store *MetricsUserIDStore) doesMetricsUserIDFilepathExist() (bool, error){
+	filepath, err := host_machine_directories.GetMetricsUserIdFilepath()
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")
+	}
+
+	_, err = os.Stat(filepath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, stacktrace.Propagate(err, "An error occurred checking if filepath '%v' exists", filepath)
+	}
+	return true, nil
+}
+
 func (store *MetricsUserIDStore) getMetricsUserIDFromFile() (string, error) {
 	filepath, err := host_machine_directories.GetMetricsUserIdFilepath()
 	if err != nil {
@@ -82,17 +95,7 @@ func (store *MetricsUserIDStore) getMetricsUserIDFromFile() (string, error) {
 	}
 	logrus.Debugf("Metrics user id filepath: '%v'", filepath)
 
-	fileContent, err := os.Open(filepath)
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		if err := fileContent.Close(); err != nil {
-			logrus.Warnf("We tried to close the metrics user id file, but doing so threw an error:\n%v", err)
-		}
-	}()
-
-	fileContentBytes, err := ioutil.ReadAll(fileContent)
+	fileContentBytes, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading metrics user id file")
 	}
@@ -104,7 +107,7 @@ func (store *MetricsUserIDStore) getMetricsUserIDFromFile() (string, error) {
 
 func (store *MetricsUserIDStore) saveMetricsUserIdFile(metricsUserId string) error {
 
-	fileContent := append([]byte{}, metricsUserId...)
+	fileContent := []byte(metricsUserId)
 
 	logrus.Debugf("Saving metrics user id in file...")
 

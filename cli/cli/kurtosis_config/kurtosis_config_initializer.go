@@ -6,19 +6,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	metricsConsentPromptLabel       = "Is it okay to send anonymized metrics purely to improve the product?"
-	secondMetricsConsentPromptLabel = "Ok you do not want to send metrics, but is it okay to send only that you reject sending metrics?"
+	secondMetricsConsentPromptLabel = "That's okay; we understand. Would it be alright if we send a one-time event recording your opt-out so we can see how much users dislike the metrics? Regardless of your choice, no other events will be tracked per your election."
 
-	displayConfirmationPromptDefaultValue = true
-
-	forceUserAcceptanceArgumentInMetricsClient = true
+	shouldSendMetricsDefaultValue = true
+	shouldSendMetricsOptOutEventDefaultValue = true
 
 	shouldFlushMetricsClientQueueOnEachEvent = true
 )
@@ -27,21 +26,20 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 
 	fmt.Println(metrics_optin.WhyKurtosisCollectMetricsDescriptionNote)
 
-	didUserAcceptSendingThatThemRejectSendingMetrics := false
-
-	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, displayConfirmationPromptDefaultValue)
+	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, shouldSendMetricsDefaultValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 	}
+	didUserConsentToSendMetricsElectionEvent := didUserAcceptSendingMetrics
 
 	if !didUserAcceptSendingMetrics {
-		didUserAcceptSendingThatThemRejectSendingMetrics, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(secondMetricsConsentPromptLabel, displayConfirmationPromptDefaultValue)
+		didUserConsentToSendMetricsElectionEvent, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(secondMetricsConsentPromptLabel, shouldSendMetricsOptOutEventDefaultValue)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
 		}
 	}
 
-	if didUserAcceptSendingMetrics || didUserAcceptSendingThatThemRejectSendingMetrics{
+	if didUserConsentToSendMetricsElectionEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
 		metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -49,8 +47,8 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 			return nil, stacktrace.Propagate(err, "An error occurred getting metrics user ID")
 		}
 
-		//We pass forceUserAcceptanceArgumentInMetricsClient argument here because if we don't do this, the metrics client will be "DoNothing"
-		metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCLISource, kurtosis_cli_version.KurtosisCLIVersion, metricsUserId, forceUserAcceptanceArgumentInMetricsClient, shouldFlushMetricsClientQueueOnEachEvent)
+		// This is a special metrics client that, if the user allows, will record their decision about whether to send metrics or not
+		metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCLISource, kurtosis_cli_version.KurtosisCLIVersion, metricsUserId, didUserConsentToSendMetricsElectionEvent, shouldFlushMetricsClientQueueOnEachEvent)
 		if err != nil {
 			return nil,  stacktrace.Propagate(err, "An error occurred creating the metrics client")
 		}
