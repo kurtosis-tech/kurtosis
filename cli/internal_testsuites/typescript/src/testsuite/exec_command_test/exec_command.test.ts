@@ -16,7 +16,7 @@ const EXEC_COMMAND_THAT_SHOULD_WORK = ["true"]
 const EXEC_COMMAND_THAT_SHOULD_HAVE_LOG_OUTPUT = ["echo", INPUT_FOR_LOG_OUTPUT_TEST]
 const EXEC_COMMAND_THAT_SHOULD_FAIL = ["false"]
 
-jest.setTimeout(30000)
+jest.setTimeout(180000)
 
 test("Test exec command", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------

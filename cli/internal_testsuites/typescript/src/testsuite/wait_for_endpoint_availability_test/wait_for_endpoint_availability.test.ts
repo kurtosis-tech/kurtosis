@@ -26,7 +26,7 @@ const WAIT_INITIAL_DELAY_MILLISECONDS = 500
 
 const exampleServicePrivatePortSpec = new PortSpec(EXAMPLE_SERVICE_PRIVATE_PORT_NUM, PortProtocol.TCP)
 
-jest.setTimeout(50000)
+jest.setTimeout(180000)
 
 test("Test wait for endpoint availability", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------

@@ -40,15 +40,13 @@ const PERCENTAGE_SIGN = "%";
 const ZERO_PACKET_LOSS = 0;
 const SOFT_PARTITION_PACKET_LOSS_PERCENTAGE = 40;
 
-const HUNDRED_SECONDS_IN_MILLISECONDS = 100000
-
 interface MtrReport {
     report: {
         hubs: Array<{"Loss%": number}>
     }
 }
 
-jest.setTimeout(HUNDRED_SECONDS_IN_MILLISECONDS);
+jest.setTimeout(180000)
 
 test("Test network soft partitions", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------

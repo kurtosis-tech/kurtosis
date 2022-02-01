@@ -29,7 +29,7 @@ const EXPECTED_FILE2_CONTENTS = "file2\n"
 
 const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, PortProtocol.TCP )
 
-jest.setTimeout(40000)
+jest.setTimeout(180000)
 
 test("Test files artifact mounting", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
