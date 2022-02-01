@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add the `-f` flag to `service logs` to allow users to keep following logs
 
 # 0.8.9
 ### Fixes
