@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.9
 ### Fixes
 * Set the Typescript internal tests' timeouts to 3m to match Golang
 * Fixed an issue where a failure to dump a container's logs on `enclave dump` would incorrectly report that the issue was with a different container
