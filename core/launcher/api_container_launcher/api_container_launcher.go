@@ -76,10 +76,11 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
-	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultGrpcPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultGrpcProxyPublicPort *enclave_container_launcher.EnclaveContainerPort,
 	resultErr error,
 ) {
-	containerId, publicIpAddr, publicPort, err := launcher.LaunchWithCustomVersion(
+	containerId, publicIpAddr, publicGrpcPort, publicGrpcProxyPort, err := launcher.LaunchWithCustomVersion(
 		ctx,
 		DefaultVersion,
 		logLevel,
@@ -94,9 +95,9 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		enclaveDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
 	}
-	return containerId, publicIpAddr, publicPort, nil
+	return containerId, publicIpAddr, publicGrpcPort, publicGrpcProxyPort, nil
 }
 
 func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
@@ -115,7 +116,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
-	resultPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultGrpcPublicPort *enclave_container_launcher.EnclaveContainerPort,
+	resultGrpcProxyPublicPort *enclave_container_launcher.EnclaveContainerPort,
 	resultErr error,
 ) {
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
@@ -152,12 +154,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		enclaveDataDirpathOnHostMachine,
 	)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
 	}
 
 	envVars, err := args.GetEnvFromArgs(argsObj)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred generating the API container's environment variables")
 	}
 
 	containerImageAndTag := fmt.Sprintf(
@@ -168,12 +170,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	grpcPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
 	}
 
 	grpcProxyPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcProxyPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
 	}
 
 	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{
@@ -199,7 +201,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		volumeMounts,
 	)
 	if err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
 
 	shouldKillContainer := true
@@ -213,16 +215,21 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	}()
 
 	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcPortNum); err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
 	}
 
-	publicPort, found := publicPorts[schema.KurtosisInternalContainerGRPCPortID]
+	publicGrpcPort, found := publicPorts[schema.KurtosisInternalContainerGRPCPortID]
 	if !found {
-		return "", nil, nil, stacktrace.NewError("No public port was found for '%v' - this is very strange!", schema.KurtosisInternalContainerGRPCPortID)
+		return "", nil, nil, nil, stacktrace.NewError("No public port was found for '%v' - this is very strange!", schema.KurtosisInternalContainerGRPCPortID)
+	}
+
+	publicGrpcProxyPort, found := publicPorts[schema.KurtosisInternalContainerGRPCProxyPortID]
+	if !found {
+		return "", nil, nil, nil, stacktrace.NewError("No public port was found for '%v' - this is very strange!", schema.KurtosisInternalContainerGRPCPortID)
 	}
 
 	shouldKillContainer = false
-	return containerId, publicIpAddr, publicPort, nil
+	return containerId, publicIpAddr, publicGrpcPort, publicGrpcProxyPort, nil
 }
 
 func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
