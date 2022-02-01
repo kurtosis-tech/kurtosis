@@ -67,7 +67,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	enclaveId string,
 	networkId string,
 	subnetMask string,
-	listenPort uint16,
+	grpcListenPort uint16,
+	grpcProxyListenPort uint16,
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
@@ -85,7 +86,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		enclaveId,
 		networkId,
 		subnetMask,
-		listenPort,
+		grpcListenPort,
+		grpcProxyListenPort,
 		gatewayIpAddr,
 		apiContainerIpAddr,
 		isPartitioningEnabled,
@@ -104,7 +106,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	enclaveId string,
 	networkId string,
 	subnetMask string,
-	portNum uint16,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
 	gatewayIpAddr net.IP,
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
@@ -118,13 +121,14 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
 		apiContainerAttrs, err := enclaveObjAttrsProvider.ForApiContainer(
 			apiContainerIpAddr,
-			portNum,
+			grpcPortNum,
+			grpcProxyPortNum,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
 				"An error occurred getting the API container object attributes using port num '%v'",
-				portNum,
+				grpcPortNum,
 			)
 		}
 		return apiContainerAttrs, nil
@@ -136,7 +140,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	}
 	argsObj, err := args.NewAPIContainerArgs(
 		logLevel.String(),
-		portNum,
+		grpcPortNum,
+		grpcProxyPortNum,
 		enclaveId,
 		networkId,
 		subnetMask,
@@ -161,12 +166,19 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		imageVersionTag,
 	)
 
-	grpcPort, err := enclave_container_launcher.NewEnclaveContainerPort(portNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
+	grpcPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
 	}
+
+	grpcProxyPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcProxyPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
+	}
+
 	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{
 		schema.KurtosisInternalContainerGRPCPortID: grpcPort,
+		schema.KurtosisInternalContainerGRPCProxyPortID: grpcProxyPort,
 	}
 
 	log.Debugf("Launching Kurtosis API container...")
@@ -200,7 +212,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		}
 	}()
 
-	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, portNum); err != nil {
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcPortNum); err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
 	}
 

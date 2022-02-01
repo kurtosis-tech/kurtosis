@@ -14,7 +14,8 @@ const (
 type APIContainerArgs struct {
 	LogLevel                 string `json:"logLevel"`
 
-	ListenPortNum      uint16 `json:"listenPortNum"`
+	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
+	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
 	EnclaveId				 string `json:"enclaveId"`
 	NetworkId                string `json:"networkId"`
@@ -41,7 +42,8 @@ type APIContainerArgs struct {
 //  we get compile errors if there are missing fields
 func NewAPIContainerArgs(
 	logLevel string,
-	listenPortNum uint16,
+	grpcListenPortNum uint16,
+	grpcProxyListenPortNum uint16,
 	enclaveId string,
 	networkId string,
 	subnetMask string,
@@ -53,7 +55,8 @@ func NewAPIContainerArgs(
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		LogLevel:                         logLevel,
-		ListenPortNum:                    listenPortNum,
+		GrpcListenPortNum:                grpcListenPortNum,
+		GrpcProxyListenPortNum: 		  grpcProxyListenPortNum,
 		EnclaveId:                        enclaveId,
 		NetworkId:                        networkId,
 		SubnetMask:                       subnetMask,
