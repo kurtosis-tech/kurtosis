@@ -26,7 +26,7 @@ COMMANDS_TO_RUN=(
 
 PIDS_TO_WAIT_FOR=()
 
-function run-kurtosis-engine() {
+function run-api-container() {
     echo "running run-api-container func"
     ./api-container
 }

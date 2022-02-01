@@ -107,7 +107,7 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.ListenPortNum,
+		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -155,7 +155,7 @@ func createServiceNetworkAndModuleStore(
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
 		"%v:%v",
 		args.ApiContainerIpAddr,
-		args.ListenPortNum,
+		args.GrpcListenPortNum,
 	)
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(

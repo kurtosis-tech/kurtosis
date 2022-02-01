@@ -14,8 +14,8 @@ const (
 type APIContainerArgs struct {
 	LogLevel                 string `json:"logLevel"`
 
-	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
-	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
+	GrpcListenPortNum    	 uint16 `json:"grpcListenPortNum"`
+	GrpcProxyListenPortNum 	 uint16 `json:"grpcProxyListenPortNum"`
 
 	EnclaveId				 string `json:"enclaveId"`
 	NetworkId                string `json:"networkId"`
