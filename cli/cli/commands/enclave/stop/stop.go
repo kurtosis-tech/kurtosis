@@ -34,6 +34,10 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
+	if len(args) == 0 {
+		return stacktrace.NewError("At least one enclave ID to stop must be provided")
+	}
+
 	logrus.Info("Stopping enclaves...")
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
