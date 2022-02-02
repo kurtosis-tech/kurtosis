@@ -40,6 +40,8 @@ const (
 	failureExitCode = 1
 
 	grpcServerStopGracePeriod = 5 * time.Second
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
 
 func main() {
@@ -95,7 +97,7 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
-	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, shouldFlushMetricsClientQueueOnEachEvent)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
