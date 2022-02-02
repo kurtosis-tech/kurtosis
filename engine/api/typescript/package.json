@@ -32,7 +32,7 @@
         "@grpc/grpc-js": "^1.4.4",
         "@types/semver": "^7.3.9",
         "google-protobuf": "^3.17.3",
-        "kurtosis-core-api-lib": "1.36.12",
+        "kurtosis-core-api-lib": "1.37.0",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2",
         "semver": "^7.3.5"

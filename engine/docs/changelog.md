@@ -10,6 +10,9 @@
 * Change `EngineServerArgs` constructor, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
 
+### Changes
+* Upgraded to `Kurt Core` 1.37.0 which implements module's metrics
+
 # 1.8.3
 ### Fixes
 * Upgraded to Kurtosis Core v1.36.12 which fixes a bug when creating soft network partitions in Tyepscript
