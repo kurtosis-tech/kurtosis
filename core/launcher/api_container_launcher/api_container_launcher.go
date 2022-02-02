@@ -21,7 +21,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.36.12"
+	DefaultVersion = "1.37.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	portProtocolToMonitorWhenWaitingForAvailability = "tcp"
@@ -72,6 +72,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
@@ -90,6 +92,8 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		apiContainerIpAddr,
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", DefaultVersion)
@@ -109,6 +113,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	apiContainerIpAddr net.IP,
 	isPartitioningEnabled bool,
 	enclaveDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultContainerId string,
 	resultPublicIpAddr net.IP,
@@ -145,6 +151,8 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		isPartitioningEnabled,
 		enclaveDataDirpathOnAPIContainer,
 		enclaveDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred creating the API container args")
