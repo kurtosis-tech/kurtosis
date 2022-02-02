@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -57,9 +58,41 @@ var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Short:                 "Lists detailed information about an enclave",
 	RunE:                  run,
+	ValidArgsFunction:     getValidArgs,
 }
 
 func init() {
+}
+
+// TODO ADD THIS TO ALL COMMANDS THAT TAKE ENCLAVE ID AS THEIR FIRST ARG!!!!
+func getValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	ctx := context.Background()
+
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		logrus.Debug(stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
+		))
+		return []string{}, cobra.ShellCompDirectiveError
+	}
+
+	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
+	if err != nil {
+		logrus.Debug(stacktrace.Propagate(
+			err,
+			"An error occurred getting the enclaves retrieving for enclave ID tab completion",
+		))
+		return []string{}, cobra.ShellCompDirectiveError
+	}
+
+	result := []string{}
+	for enclaveId := range enclaves {
+		result = append(result, string(enclaveId))
+	}
+	sort.Strings(result)
+
+	return result, cobra.ShellCompDirectiveDefault
 }
 
 func run(cmd *cobra.Command, args []string) error {

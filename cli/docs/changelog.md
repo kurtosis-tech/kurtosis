@@ -1,6 +1,12 @@
 # TBD
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+
 ### Changes
 * Added a wrapper over the `CobraCmd` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+
+### Fixes
+* Fix the Kurtosis completion
 
 # 0.8.10
 ### Features
