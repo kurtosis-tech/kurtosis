@@ -1,5 +1,12 @@
 # TBD
 
+# 0.8.11
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+
+### Fixes
+* Fix the Kurtosis completion
+
 # 0.8.10
 ### Features
 * `enclave inspect` now also prints the service ID in addition to the GUID
