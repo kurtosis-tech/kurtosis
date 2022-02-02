@@ -13,6 +13,9 @@
 ### Changes
 * Upgraded to `Kurt Core` 1.37.0 which implements module's metrics
 
+### Fixes
+* Refactored engine/library semVer checking to be more lax, and let continue the code run if semVer couldn't be parsed
+
 # 1.8.3
 ### Fixes
 * Upgraded to Kurtosis Core v1.36.12 which fixes a bug when creating soft network partitions in Tyepscript
