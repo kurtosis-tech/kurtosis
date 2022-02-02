@@ -1,4 +1,6 @@
 # TBD
+
+# 0.8.11
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
 
