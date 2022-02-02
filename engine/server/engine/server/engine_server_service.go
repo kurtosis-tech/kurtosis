@@ -47,7 +47,6 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		apiContainerLogLevel,
 		args.EnclaveId,
 		args.IsPartitioningEnabled,
-		args.ShouldPublishAllPorts,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with ID '%v'", args.EnclaveId)

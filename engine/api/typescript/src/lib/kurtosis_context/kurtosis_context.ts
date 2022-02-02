@@ -304,7 +304,7 @@ export class KurtosisContext {
             return err(new Error(`API container was listed as running, but no API container host machine info exists`))
         }
 
-        const apiContainerHostMachineUrl: string = `${apiContainerHostMachineInfo.getIpOnHostMachine()}:${apiContainerHostMachineInfo.getPortOnHostMachine()}`
+        const apiContainerHostMachineUrl: string = `${apiContainerHostMachineInfo.getIpOnHostMachine()}:${apiContainerHostMachineInfo.getGrpcPortOnHostMachine()}`
 
         let apiContainerClient: ApiContainerServiceClient;
         // TODO SECURITY: Use HTTPS!

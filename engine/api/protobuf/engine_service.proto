@@ -91,16 +91,21 @@ message EnclaveAPIContainerInfo {
   string container_id = 1;
   // The IP inside the enclave network of the API container (i.e. how services inside the network can reach the API container)
   string ip_inside_enclave = 2;
-  // The port inside the enclave network that the API container is listening on
-  uint32 port_inside_enclave = 3;
+  // The grpc port inside the enclave network that the API container is listening on
+  uint32 grpc_port_inside_enclave = 3;
+  // The grpc-proxy port inside the enclave network that the API container is listening on
+  uint32 grpc_proxy_port_inside_enclave = 4;
+
 }
 
 // Will only be present if the API container is running
 message EnclaveAPIContainerHostMachineInfo {
   // The interface IP on the container engine host machine where the API container can be reached
   string ip_on_host_machine = 4;
-  // The port on the container engine host machine where the API container can be reached
-  uint32 port_on_host_machine = 5;
+  // The grpc port on the container engine host machine where the API container can be reached
+  uint32 grpc_port_on_host_machine = 5;
+  // The grpc-proxy port on the container engine host machine where the API container can be reached
+  uint32 grpc_proxy_port_on_host_machine = 6;
 }
 
 // Enclaves are defined by a network in the container system, which is why there's a bunch of network information here
