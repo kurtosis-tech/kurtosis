@@ -17,7 +17,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220127131649-910fa836bb22 //TODO upgrade with a released version
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220128142538-02ac87f863b8 //TODO upgrade with a released version
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220202190835-835f8f983d37
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

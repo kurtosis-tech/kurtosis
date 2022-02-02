@@ -30,6 +30,8 @@ const (
 	failureExitCode = 1
 
 	grpcServerStopGracePeriod = 5 * time.Second
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
 
 func main() {
@@ -77,7 +79,7 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, shouldFlushMetricsClientQueueOnEachEvent)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
