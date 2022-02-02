@@ -405,6 +405,10 @@ github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16/go.mod h1:Ysr3LF2XJfzqHX4LlXQkRdFMY/DWdIiLJk2z+1QXe1s=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220128190558-de644d08ed9b h1:7GKCnMrAT+AHALkT/1Oe7JG02qwdPWMCN2CEcDXwhq8=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220128190558-de644d08ed9b/go.mod h1:Ysr3LF2XJfzqHX4LlXQkRdFMY/DWdIiLJk2z+1QXe1s=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202133644-ad6cae2d4202 h1:OOhyMNiGDeg1MIMfU7XZ1PysumN2g+Rczy4oSo1WqBM=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202133644-ad6cae2d4202/go.mod h1:4hHaA6y92qFQjedsvcAZBjwyzdwd5NEQXAf2dsgltDI=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202143530-6e855c2c665b h1:XrhaTAWObkwAHlPRWixOc/gxDKI3/dt3R1PkOwRK7so=
+github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202143530-6e855c2c665b/go.mod h1:4hHaA6y92qFQjedsvcAZBjwyzdwd5NEQXAf2dsgltDI=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=

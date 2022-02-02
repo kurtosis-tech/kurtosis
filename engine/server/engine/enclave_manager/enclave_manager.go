@@ -172,7 +172,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNetworkAttrs := enclaveObjAttrsProvider.ForEnclaveNetwork()
+	enclaveNetworkAttrs, _ := enclaveObjAttrsProvider.ForEnclaveNetwork()
 	enclaveNetworkName := enclaveNetworkAttrs.GetName()
 	enclaveNetworkLabels := enclaveNetworkAttrs.GetLabels()
 
