@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Added a wrapper over the `CobraCmd` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
 
 # 0.8.10
 ### Features
