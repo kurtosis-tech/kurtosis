@@ -1,4 +1,6 @@
 # TBD
+
+# 1.37.0
 ### Features
 * Added metrics client to track module events (e.g.: when users load a module)
 
