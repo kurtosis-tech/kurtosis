@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -45,13 +46,13 @@ const (
 
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
-	latestCLIReleaseCacheFileContentSeparator       = ";"
+	latestCLIReleaseCacheFileContentSeparator               = ";"
 	latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile = 0755
-	latestCLIReleaseCacheFileExpirationHours        = 24
-	latestCLIReleaseCacheFileContentColumnsAmount   = 2
-	latestCLIReleaseCacheFileContentDateIndex       = 0
-	latestCLIReleaseCacheFileContentVersionIndex    = 1
-	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
+	latestCLIReleaseCacheFileExpirationHours                = 24
+	latestCLIReleaseCacheFileContentColumnsAmount           = 2
+	latestCLIReleaseCacheFileContentDateIndex               = 0
+	latestCLIReleaseCacheFileContentVersionIndex            = 1
+	latestCLIReleaseCacheFileCreationDateTimeFormat         = time.RFC3339
 )
 
 type GitHubReleaseReponse struct {
@@ -62,8 +63,7 @@ var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
 var RootCmd = &cobra.Command{
-	// Leaving out the "use" will auto-use os.Args[0]
-	Use:   "",
+	Use:   command_str_consts.KurtosisCmdStr,
 	Short: "A CLI for interacting with the Kurtosis engine",
 
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
@@ -306,7 +306,6 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 		logrus.Debugf("The latest release version cache file content is out-of-date, it was generated on '%v' and it expired on '%v'", cacheCreationDate, cacheExpirationDate)
 		return "", nil
 	}
-
 
 	return latestReleaseVersion, nil
 }

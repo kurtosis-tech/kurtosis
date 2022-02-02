@@ -1,4 +1,9 @@
 # TBD
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+
+### Fixes
+* Fix the Kurtosis completion
 
 # 0.8.10
 ### Features
