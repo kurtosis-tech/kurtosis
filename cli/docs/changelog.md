@@ -1,4 +1,7 @@
 # TBD
+### Features
+* `enclave inspect` now also prints the service ID in addition to the GUID
+
 ### Fixes
 * `enclave stop` and `enclave rm` require at least one enclave ID
 
