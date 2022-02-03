@@ -11,11 +11,11 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_command_framework/framework"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -48,10 +48,10 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 	"Kurtosis Modules":  printModules,
 }
 
-var EnclaveInspectCmd = &framework.KurtosisCommand{
+var EnclaveInspectCmd = &kurtosis_command.KurtosisCommand{
 	CommandStr:       command_str_consts.EnclaveInspectCmdStr,
 	ShortDescription: "Lists detailed information about an enclave",
-	Args:             []*framework.ArgConfig{
+	Args:             []*kurtosis_command.ArgConfig{
 		{
 			Key:             enclaveIdArgKey,
 			CompletionsFunc: getCompletions,
@@ -74,7 +74,7 @@ func init() {
 }
  */
 
-func getCompletions(flags *framework.ParsedFlags, previousArgs *framework.ParsedArgs) ([]string, error) {
+func getCompletions(flags *kurtosis_command.ParsedFlags, previousArgs *kurtosis_command.ParsedArgs) ([]string, error) {
 	ctx := context.Background()
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -102,7 +102,7 @@ func getCompletions(flags *framework.ParsedFlags, previousArgs *framework.Parsed
 	return result, nil
 }
 
-func validate(flags *framework.ParsedFlags, args *framework.ParsedArgs) error {
+func validate(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.ParsedArgs) error {
 	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)
@@ -141,7 +141,7 @@ func validate(flags *framework.ParsedFlags, args *framework.ParsedArgs) error {
 	return nil
 }
 
-func run(flags *framework.ParsedFlags, args *framework.ParsedArgs) error {
+func run(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.ParsedArgs) error {
 	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)

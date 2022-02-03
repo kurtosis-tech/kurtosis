@@ -1,4 +1,4 @@
-package framework
+package kurtosis_command
 
 import (
 	"github.com/stretchr/testify/require"

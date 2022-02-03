@@ -1,4 +1,4 @@
-package framework
+package kurtosis_command
 
 const (
 	arg1Key = "arg1"
