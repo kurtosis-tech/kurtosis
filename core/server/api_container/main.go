@@ -61,7 +61,7 @@ func main() {
 
 }
 
-func runMain () error {
+func runMain() error {
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -123,7 +123,7 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.ListenPortNum,
+		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -149,10 +149,10 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createServiceNetworkAndModuleStore(
-		dockerManager *docker_manager.DockerManager,
-		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-		freeIpAddrTracker *lib.FreeIpAddrTracker,
-		args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+	dockerManager *docker_manager.DockerManager,
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
+	freeIpAddrTracker *lib.FreeIpAddrTracker,
+	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()
@@ -162,7 +162,7 @@ func createServiceNetworkAndModuleStore(
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
 
 	dockerNetworkId := args.NetworkId
@@ -171,7 +171,7 @@ func createServiceNetworkAndModuleStore(
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
 		"%v:%v",
 		args.ApiContainerIpAddr,
-		args.ListenPortNum,
+		args.GrpcListenPortNum,
 	)
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(

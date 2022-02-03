@@ -34,7 +34,7 @@ const (
 /*
 Class responsible for taking an artifact containing compressed files and uncompressing its contents
 	into a Docker volume that will be mounted on a new service
- */
+*/
 type FilesArtifactExpander struct {
 	// Host machine dirpath so the expander can bind-mount it to the artifact expansion containers
 	enclaveDataDirpathOnHostMachine string
@@ -55,13 +55,16 @@ func NewFilesArtifactExpander(enclaveDataDirpathOnHostMachine string, dockerMana
 }
 
 func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
-		ctx context.Context,
-		serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
-		artifactIdsToExpand map[string]bool,
+	ctx context.Context,
+	serviceGUID service_network_types.ServiceGUID, // Service GUID for whom the artifacts are being expanded into volumes
+	artifactIdsToExpand map[string]bool,
 ) (map[string]string, error) {
 	artifactIdsToVolAttrs := map[string]schema.ObjectAttributes{}
 	for artifactId := range artifactIdsToExpand {
-		destVolAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
+		destVolAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for artifact '%v' and service GUID '%v'", artifactId, serviceGUID)
+		}
 		artifactIdsToVolAttrs[artifactId] = destVolAttrs
 	}
 
@@ -90,7 +93,10 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		volumeMounts := map[string]string{
 			volumeName: destVolMntDirpathOnExpander,
 		}
-		containerAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
+		containerAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for artifact '%v' and service GUID '%v'", artifactId, serviceGUID)
+		}
 		containerName := containerAttrs.GetName()
 		containerLabels := containerAttrs.GetLabels()
 		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts, containerLabels); err != nil {
@@ -109,11 +115,11 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 // NOTE: This is a separate function so we can defer the releasing of the IP address and guarantee that it always
 //  goes back into the IP pool
 func (expander *FilesArtifactExpander) runExpanderContainer(
-		ctx context.Context,
-		containerName string,
-		containerCmd []string,
-		volumeMounts map[string]string,
-		labels map[string]string,
+	ctx context.Context,
+	containerName string,
+	containerCmd []string,
+	volumeMounts map[string]string,
+	labels map[string]string,
 ) error {
 	// NOTE: This silently (temporarily) uses up one of the user's requested IP addresses with a container
 	//  that's not one of their services! This could get confusing if the user requests exactly a wide enough
@@ -173,6 +179,3 @@ func getExtractionCommand(artifactFilepath string) (dockerRunCmd []string) {
 		destVolMntDirpathOnExpander,
 	}
 }
-
-
-
