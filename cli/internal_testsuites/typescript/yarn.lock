@@ -1964,17 +1964,6 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.36.12:
-  version "1.36.12"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.36.12.tgz#12b1c8f0b312676f1631fb12e73806d1e6698853"
-  integrity sha512-uf0yBNgsv/fu/abArO6WDjtIk1iz0OQyS+Ph5loaQoVj6PvPJM4IYxTiB4HJICMoqDYtK/xD3kFmFZMEON4d/g==
-  dependencies:
-    "@grpc/grpc-js" "^1.4.4"
-    "@types/google-protobuf" "^3.15.5"
-    google-protobuf "^3.19.1"
-    loglevel "^1.7.1"
-    neverthrow "^4.2.2"
-
 kurtosis-core-api-lib@1.37.0:
   version "1.37.0"
   resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.37.0.tgz#6f05e971b10a8c32782bf98e36d80c20c0a2fb64"
@@ -1986,15 +1975,15 @@ kurtosis-core-api-lib@1.37.0:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
-kurtosis-engine-api-lib@1.8.3:
-  version "1.8.3"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.3.tgz#cfe0f9d285a9cbca76a44ee0223098118cd0260f"
-  integrity sha512-W6ssXuh0PmSOJJom3aAkqmKk+lNNt9hO0Ly+sBDUk5L3hoC0zvOOgS3wUxEAG/mcrHk9xHrqRnbwdzPKk4y32w==
+kurtosis-engine-api-lib@1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.9.0.tgz#43d7747b95490dad40af4ec3de7e5531270a6007"
+  integrity sha512-icZ4CN8Id9HVmorwkz6Wo7khjG2J43jK9nMTbnYkfxyCJclg+8LVV49L/Ldl/7xXw+gY6KBndK7Vc06rr5ZiRQ==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     google-protobuf "^3.17.3"
-    kurtosis-core-api-lib "1.36.12"
+    kurtosis-core-api-lib "1.37.0"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"
