@@ -1,4 +1,6 @@
 # TBD
+
+# 1.37.1
 ### Changes
 * Add metrics client close call to flush the queue
 * Upgrade to `metrics-client-library` v0.1.2
