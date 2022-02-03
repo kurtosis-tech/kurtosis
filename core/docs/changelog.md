@@ -1,4 +1,8 @@
 # TBD
+### Fixes
+* Upgrade `object-attributes-schema-lib` to 0.6.1
+* fixes core with the port changes in the Launcher and the error checks for the validations added in `object-attributes-schema-lib`
+* changes `_` separator to `-`
 
 # 1.37.1
 ### Changes
