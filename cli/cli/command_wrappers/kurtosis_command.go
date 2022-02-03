@@ -82,7 +82,7 @@ type ArgConfig struct {
 	CompletionsFunc func(flags *ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
 
 	// Will be run after the user presses ENTER and before we start actually running the command
-	ValidationFunc func(flags *ParsedFlags, allArgs *ParsedArgs)
+	ValidationFunc func(flags *ParsedFlags, allArgs *ParsedArgs) error
 }
 
 // This is a struct that can take higher-level, Kurtosis-specific information (e.g. "this command takes in an enclave ID")
@@ -100,6 +100,8 @@ type KurtosisCommand struct {
 
 	// Order IS important
 	Args []*ArgConfig
+
+	RunFunc func(flags *ParsedFlags, args *ParsedArgs) error
 }
 
 
@@ -154,10 +156,9 @@ func (args *ParsedArgs) GetGreedyArg(key string) ([]string, error) {
 	return elems, nil
 }
 
-// Gets the Cobra commnad, and panics if there's an error
-// TODO Switch this to a proper error-generating function???
+// Gets the Cobra command, and panics if there's an error because this is intended to be run inside the init() during
+//  initialization of the code
 func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
-
 	// Verify no duplicate flag keys
 	usedFlagKeys := map[string]bool{}
 	for _, flagConfig := range kurtosisCmd.Flags {
@@ -189,7 +190,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		}
 		if _, found := usedArgKeys[key]; found {
 			panic(stacktrace.NewError(
-				"Found duplicate flags with key '%v' for command '%v'",
+				"Found duplicate args with key '%v' for command '%v'",
 				key,
 				kurtosisCmd.CommandStr,
 			))
@@ -204,8 +205,9 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		key := argConfig.Key
 		if terminalArgKey != "" {
 			panic(stacktrace.NewError(
-				"Arg '%v' must be the last argument because it's either optional or greedy, but arg '%v' was declared after it",
+				"Arg '%v' for command '%v' must be the last argument because it's either optional or greedy, but arg '%v' was declared after it",
 				terminalArgKey,
+				kurtosisCmd.CommandStr,
 				key,
 			))
 		}
@@ -246,30 +248,41 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		return completions, cobra.ShellCompDirectiveNoFileComp
 	}
 
+	// Prepare the run function to be slotted into the Cobra command, which will do both arg validation & logic execution
 	cobraRunFunc := func(cmd *cobra.Command, args []string) error {
-		/*
 		parsedFlags := &ParsedFlags{
 			cmdFlagsSet: cmd.Flags(),
 		}
 
-		 */
+		parsedArgs, err := parseArgsForValidation(kurtosisCmd.Args, args)
+		if err != nil {
+			logrus.Debugf("An error occurred while parsing args '%+v':\n%v", args, err)
 
-		// TODO check that there is indeed a validation function
+			// NOTE: This is a VERY special instance where we don't wrap the error with stacktrace.Propagate, because
+			//  the errors returned by this function will *only* be arg-parsing errors and the stacktrace just adds
+			//  clutter & confusion to what the user sees without providing any useful information
+			return err
+		}
 
-		// TODO apply validation
+		// Validate all the args
+		for _, config := range kurtosisCmd.Args {
+			validationFunc := config.ValidationFunc
+			if validationFunc == nil {
+				continue
+			}
+			if err := validationFunc(parsedFlags, parsedArgs); err != nil {
+				return stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
+			}
+		}
 
-		// TODO run the user's custom logic
+		if err := kurtosisCmd.RunFunc(parsedFlags, parsedArgs); err != nil {
+			return stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
+		}
 
-
-		// TODO DEBUGGING
-		fmt.Println("Hello world!")
 		return nil
 	}
 
-
-
-	// TODO build cobra command
-	// TODO build usage
+	// Build usage string
 	allArgUsageStrs := []string{}
 	for _, argConfig := range kurtosisCmd.Args {
 		argUsageStr := renderArgUsageStr(argConfig)
@@ -290,6 +303,11 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		RunE: cobraRunFunc,
 	}
 }
+
+
+// ====================================================================================================
+//                                   Private Helper Functions
+// ====================================================================================================
 
 // Takes in the currently-entered arg strings, categorizes them according to the arg configs defined, and
 //  returns the ArgConfig whose completion function should be used
