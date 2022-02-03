@@ -55,7 +55,7 @@ type PositionalArgKey string
 type FlagConfig struct {
 	Key string
 
-	Default
+	// TODO Add flag defaults!!!
 
 	// TODO???
 	ValidationFunc func(string) error
@@ -110,23 +110,26 @@ type KurtosisCommand struct {
 type ParsedFlags struct {
 	cmdFlagsSet *pflag.FlagSet
 }
-func (flags *ParsedFlags) GetString(name string) string {
+func (flags *ParsedFlags) GetString(name string) (string, error) {
 	value, err := flags.cmdFlagsSet.GetString(name)
 	if err != nil {
-		// We panic (rather than returning an error) here because if the user got a ParsedFlags instance at all, they
-		//  got it by using our machinery which should guarantee that the flag exists
-		panic(stacktrace.Propagate(err, "An error occurred getting string flag '%v', which should never happen because we added the flags"))
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting string flag '%v'; this is a bug in Kurtosis!",
+			name,
+		)
 	}
-	return value
+	return value, nil
 }
-func (flags *ParsedFlags) GetUint32(name string) uint32 {
+func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
 	value, err := flags.cmdFlagsSet.GetUint32(name)
 	if err != nil {
-		// We panic (rather than returning an error) here because if the user got a ParsedFlags instance at all, they
-		//  got it by using our machinery which should guarantee that the flag exists
-		panic(stacktrace.Propagate(err, "An error occurred getting uint32 flag '%v', which should never happen because we added the flags"))
+		return 0, stacktrace.Propagate(err,
+			"An error occurred getting uint32 flag '%v'; this is a bug in Kurtosis!",
+			name,
+		)
 	}
-	return value
+	return value, nil
 }
 
 // WILL do validation on args
@@ -202,6 +205,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		if terminalArgKey != "" {
 			panic(stacktrace.NewError(
 				"Arg '%v' must be the last argument because it's either optional or greedy, but arg '%v' was declared after it",
+				terminalArgKey,
 				key,
 			))
 		}
@@ -214,13 +218,18 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	//  is in the process of typing when they press TAB. However, in my tests on Bash, the shell will automatically
 	//  filter the results based off the partialStr without us needing to filter them ~ ktoday, 2022-02-02
 	getCompletionsFunc := func(cmd *cobra.Command, previousArgStrs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		parsedFlags := &ParsedFlags{
+			cmdFlagsSet: cmd.Flags(),
+		}
+
 		parsedArgs, argToComplete := parseArgsForCompletion(kurtosisCmd.Args, previousArgStrs)
 		if argToComplete != nil {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		parsedFlags := &ParsedFlags{
-			cmdFlagsSet: cmd.Flags(),
+		completionFunc := argToComplete.CompletionsFunc
+		if completionFunc == nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		completions, err := argToComplete.CompletionsFunc(parsedFlags, parsedArgs)
@@ -237,26 +246,24 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		return completions, cobra.ShellCompDirectiveNoFileComp
 	}
 
-
-
-
-
-	// TODO validation on the Kurtosis command
-	perArgGroupConsumedStrs := [][]string{}
-	for _, argGroup := range kurtosisCmd.PositionalArgGroups {
-		argStrConsumer := argGroup.getArgStrConsumer()
-	}
-
-	// Build the flags list
-
 	cobraRunFunc := func(cmd *cobra.Command, args []string) error {
+		/*
 		parsedFlags := &ParsedFlags{
 			cmdFlagsSet: cmd.Flags(),
 		}
 
-		// TODO apply the positional argument
+		 */
+
+		// TODO check that there is indeed a validation function
+
+		// TODO apply validation
+
+		// TODO run the user's custom logic
 
 
+		// TODO DEBUGGING
+		fmt.Println("Hello world!")
+		return nil
 	}
 
 
@@ -280,6 +287,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		Short:                 kurtosisCmd.ShortDescription,
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
+		RunE: cobraRunFunc,
 	}
 }
 
@@ -293,26 +301,30 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 func parseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArgs, *ArgConfig) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
+
 	var nextArg *ArgConfig = nil
+	if len(argConfigs) > 0 {
+		nextArg = argConfigs[0]
+	}
+
 	configIdx := 0
 	inputIdx := 0
 	for configIdx < len(argConfigs) && inputIdx < len(input) {
 		config := argConfigs[configIdx]
-		numGrabbedArgs := 1
+		key := config.Key
+
+		// Greedy case (arg must always be last)
 		if config.IsGreedy {
-			numGrabbedArgs = len(input) - inputIdx
-		}
-		endIdx := inputIdx + numGrabbedArgs
-		grabbedArgs := input[inputIdx:endIdx]
-		if config.IsGreedy {
-			greedyArgValues[config.Key] = grabbedArgs
-		} else {
-			nonGreedyArgValues[config.Key] = grabbedArgs[0]
+			greedyArgValues[key] = input[inputIdx:]
+			inputIdx += len(input) - inputIdx
+			nextArg = config  // Greedy args must always be at the end, so they'll be infinitely-completable
+			break
 		}
 
-		// Set up for next iteration
-		inputIdx = inputIdx + numGrabbedArgs
-		configIdx = configIdx + 1
+		// Non-greedy case
+		nonGreedyArgValues[key] = input[inputIdx]
+		configIdx += 1
+		inputIdx += 1
 		if configIdx >= len(argConfigs) {
 			// If there's not another ArgConfig (indicating we've used them all) then we return nil to indicate
 			//  that tab completion shouldn't be done (since no more args are needed)
@@ -334,8 +346,11 @@ func parseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArg
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 	inputIdx := 0
-	for _, config := range argConfigs {
+	for configIdx, config := range argConfigs {
 		key := config.Key
+		if config.IsOptional && configIdx < len(argConfigs) - 1 {
+			return nil, stacktrace.NewError("Arg '%v' is marked as optional, but isn't the last argument; this is a bug in Kurtosis!", key)
+		}
 		if inputIdx >= len(input) {
 			if !config.IsOptional {
 				return nil, stacktrace.NewError("Missing required arg '%v'", config.Key)
@@ -356,21 +371,27 @@ func parseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArg
 			continue
 		}
 
-		numGrabbedArgs := 1
+		// Greedy case (arg must always be last)
 		if config.IsGreedy {
-			numGrabbedArgs = len(input) - inputIdx
-		}
-		endIdx := inputIdx + numGrabbedArgs
-		grabbedArgs := input[inputIdx:endIdx]
-		if config.IsGreedy {
-			greedyArgValues[config.Key] = grabbedArgs
-		} else {
-			nonGreedyArgValues[config.Key] = grabbedArgs[0]
+			greedyArgValues[key] = input[inputIdx:]
+			inputIdx += len(input) - inputIdx
+			break
 		}
 
-		// Set up for next iteration
-		inputIdx = inputIdx + numGrabbedArgs
+		nonGreedyArgValues[key] = input[inputIdx]
+		inputIdx += 1
 	}
+
+	numArgTokenGroupings := len(greedyArgValues) + len(nonGreedyArgValues)
+	if numArgTokenGroupings != len(argConfigs) {
+		return nil, stacktrace.NewError(
+			"Expected '%v' arg token groups, but got '%v'",
+			len(argConfigs),
+			numArgTokenGroupings,
+		)
+	}
+
+
 	result := &ParsedArgs{
 		nonGreedyArgs: nonGreedyArgValues,
 		greedyArgs:    greedyArgValues,

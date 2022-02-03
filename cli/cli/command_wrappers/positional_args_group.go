@@ -1,7 +1,6 @@
 package command_wrappers
 
-import "github.com/kurtosis-tech/stacktrace"
-
+/*
 // Cases:
 // Simple required: enclave-id
 // Complex required: enclave-id service-id
@@ -43,3 +42,5 @@ type
 type compositePositionalArgsGroup struct {
 
 }
+
+ */
