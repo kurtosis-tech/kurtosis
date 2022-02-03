@@ -2,7 +2,6 @@ package init
 
 import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_optin"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -15,7 +14,7 @@ import (
 const (
 	acceptSendingMetricsArg = "accept-sending-metrics"
 
-	overrideConfigPromptLabel = "The Kurtosis Config is already created, Do you want to override it?"
+	overrideConfigPromptLabel = "The Kurtosis Config is already created; do you want to override it?"
 
 	//Valid accept sending metrics inputs
 	acceptSendingMetricsInput  = "send-metrics"
@@ -32,10 +31,7 @@ var InitCmd = &cobra.Command{
 	Use:                   command_str_consts.InitCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
 	Short:                 "Initialize the Kurtosis CLI configuration",
-	// TODO Make this dynamic to display exactly what metrics we collect from the users
-	Long: "Initializes the configuration file that the CLI uses with the given values.\n" +
-		"\n" +
-		metrics_optin.WhyKurtosisCollectMetricsDescriptionNote,
+	Long: "Initializes the configuration file that the CLI uses with the given values",
 	RunE:                  run,
 }
 
