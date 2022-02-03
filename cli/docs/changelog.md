@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.2
 ### Fixes
 * Fixed a bug with `engine restart` using `stacktrace.Propagate` incorrectly
 * The yes/no prompt now displays valid options
