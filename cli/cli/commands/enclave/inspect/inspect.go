@@ -12,16 +12,15 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_wrappers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
@@ -29,7 +28,7 @@ import (
 )
 
 const (
-	enclaveIdArg = "enclave-id"
+	enclaveIdArgKey = "enclave-id"
 
 	enclaveIdTitleName          = "Enclave ID"
 	enclaveDataDirpathTitleName = "Data Directory"
@@ -43,16 +42,26 @@ const (
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
-var positionalArgs = []string{
-	enclaveIdArg,
-}
-
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error{
 	"Interactive REPLs": printInteractiveRepls,
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
 
+var EnclaveInspectCmd = &command_wrappers.KurtosisCommand{
+	CommandStr:       command_str_consts.EnclaveInspectCmdStr,
+	ShortDescription: "Lists detailed information about an enclave",
+	Args:             []*command_wrappers.ArgConfig{
+		{
+			Key:             enclaveIdArgKey,
+			CompletionsFunc: getCompletions,
+			ValidationFunc:  validate,
+		},
+	},
+	RunFunc:          run,
+}
+
+/*
 var InspectCmd = &cobra.Command{
 	Use:                   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
 	DisableFlagsInUseLine: true,
@@ -63,27 +72,25 @@ var InspectCmd = &cobra.Command{
 
 func init() {
 }
+ */
 
-// TODO ADD THIS TO ALL COMMANDS THAT TAKE ENCLAVE ID AS THEIR FIRST ARG!!!!
-func getValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func getCompletions(flags *command_wrappers.ParsedFlags, previousArgs *command_wrappers.ParsedArgs) ([]string, error) {
 	ctx := context.Background()
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
-		logrus.Debug(stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred connecting to the Kurtosis engine for retrieving the enclave IDs for tab completion",
-		))
-		return []string{}, cobra.ShellCompDirectiveError
+		)
 	}
 
 	enclaves, err := kurtosisCtx.GetEnclaves(ctx)
 	if err != nil {
-		logrus.Debug(stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting the enclaves retrieving for enclave ID tab completion",
-		))
-		return []string{}, cobra.ShellCompDirectiveError
+		)
 	}
 
 	result := []string{}
@@ -92,17 +99,55 @@ func getValidArgs(cmd *cobra.Command, args []string, toComplete string) ([]strin
 	}
 	sort.Strings(result)
 
-	return result, cobra.ShellCompDirectiveDefault
+	return result, nil
 }
 
-func run(cmd *cobra.Command, args []string) error {
+func validate(flags *command_wrappers.ParsedFlags, args *command_wrappers.ParsedArgs) error {
+	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)
+	}
+
 	ctx := context.Background()
 
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+	// TODO It seems really bad to do this twice!! We do it here, and in the 'run' method as well
+	//  It makes for some really clean validation-vs-run code, but maybe that's being too ambitious
+	//  and it's better to have it all rolled into one so you can reuse the engineManager that gets created here
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
-	enclaveId := parsedPositionalArgs[enclaveIdArg]
+	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
+		dockerClient,
+	)
+
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
+	}
+	defer closeClientFunc()
+
+	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveId)
+	}
+
+	if _, found := getEnclavesResp.EnclaveInfo[enclaveId]; !found {
+		return stacktrace.Propagate(err, "No enclave found with ID '%v'", enclaveId)
+	}
+	return nil
+}
+
+func run(flags *command_wrappers.ParsedFlags, args *command_wrappers.ParsedArgs) error {
+	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)
+	}
+
+	ctx := context.Background()
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

@@ -82,7 +82,7 @@ type ArgConfig struct {
 	CompletionsFunc func(flags *ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
 
 	// Will be run after the user presses ENTER and before we start actually running the command
-	ValidationFunc func(flags *ParsedFlags, allArgs *ParsedArgs) error
+	ValidationFunc func(flags *ParsedFlags, args *ParsedArgs) error
 }
 
 // This is a struct that can take higher-level, Kurtosis-specific information (e.g. "this command takes in an enclave ID")
@@ -297,6 +297,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:                   usageStr,
 		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the uasge string
+		// TODO FLAGS!!!
 		Short:                 kurtosisCmd.ShortDescription,
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
