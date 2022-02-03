@@ -6,6 +6,7 @@
 
 ### Changes
 * Switched the `enclave inspect` to the new command framework
+* Cleaned up our Kurtosis-custom logic wrapping the Cobra commands
 
 ### Fixes
 * Fix the Kurtosis completion
