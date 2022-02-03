@@ -45,6 +45,10 @@ import (
 // - REPL ID (requires enclave ID)
 // - module ID
 
+const (
+	shouldPrintCompletionDebugLogsToStderr = false
+)
+
 // After the input the user entered is parsed, flag values will be categorized by these keys
 type FlagKey string
 
@@ -225,24 +229,39 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		}
 
 		parsedArgs, argToComplete := parseArgsForCompletion(kurtosisCmd.Args, previousArgStrs)
-		if argToComplete != nil {
+		if argToComplete == nil {
+			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
+			// See:
+			//  https://github.com/spf13/cobra/blob/master/shell_completions.md#:~:text=the%20RunE%20function.-,Debugging,ShellCompDirectiveNoFileComp%20%23%20This%20is%20on%20stderr
+			cobra.CompDebugln("Not completing because no argument needs completion", shouldPrintCompletionDebugLogsToStderr)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		completionFunc := argToComplete.CompletionsFunc
 		if completionFunc == nil {
+			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
+			// See:
+			//  https://github.com/spf13/cobra/blob/master/shell_completions.md#:~:text=the%20RunE%20function.-,Debugging,ShellCompDirectiveNoFileComp%20%23%20This%20is%20on%20stderr
+			cobra.CompDebugln(
+				fmt.Sprintf(
+					"Not completing because arg needing completion '%v' doesn't have a custom completion function",
+					argToComplete.Key,
+				),
+				shouldPrintCompletionDebugLogsToStderr,
+			)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		completions, err := argToComplete.CompletionsFunc(parsedFlags, parsedArgs)
 		if err != nil {
-			// TODO Link to our Github issues!
-			logrus.Errorf(
-				"The following error occurred running the completions function with previous arg strs '%+v' and toComplete string '%v'; this is a bug in Kurtosis!\n%v",
+			// NOTE: We can't just use regular logging because the STDOUT of this function is captured for use with completions
+			// TODO Send the user to our Github issues!
+			cobra.CompErrorln(fmt.Sprintf(
+				"ERROR: The following error occurred running the completions function with previous arg strs '%+v' and toComplete string '%v'; this is a bug in Kurtosis!\n%v",
 				previousArgStrs,
 				toComplete,
 				err,
-			)
+			))
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		return completions, cobra.ShellCompDirectiveNoFileComp

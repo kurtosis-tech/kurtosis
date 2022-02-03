@@ -45,9 +45,18 @@ func TestParseArgsForCompletion_NoArgsNoTokens(t *testing.T) {
 	args := []*ArgConfig{}
 	tokens := []string{}
 	parsedArgs, argToComplete := parseArgsForCompletion(args, tokens)
+	require.Nil(t, argToComplete)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
-	require.Nil(t, argToComplete)
+}
+
+func TestParseArgsForCompletion_Missing1Token(t *testing.T) {
+	args := validArgsConfig[:1]
+	tokens := []string{}
+	parsedArgs, argToComplete := parseArgsForCompletion(args, tokens)
+	require.Equal(t, validArgsConfig[0], argToComplete)
+	require.Equal(t, 0, len(parsedArgs.greedyArgs))
+	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
 }
 
 func TestParseArgsForCompletion_NoTokens(t *testing.T) {
