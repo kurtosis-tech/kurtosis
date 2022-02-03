@@ -1,4 +1,6 @@
 # TBD
+
+# 1.9.0
 ### Features
 * Added metrics client to track enclave events (e.g.: when users create an enclave)
 
