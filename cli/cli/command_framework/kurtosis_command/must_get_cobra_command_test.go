@@ -49,6 +49,9 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 	)
 }
 
+// TODO Add test to verify that no two flags have the same shorthand
+// TODO Add test to verify that shorthands are always a single letter
+
 func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
 	kurtosisCmd := &KurtosisCommand{
 		CommandStr:       "test",

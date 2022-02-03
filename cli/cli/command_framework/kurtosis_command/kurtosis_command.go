@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"strings"
 )
 
@@ -209,6 +210,41 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 // ====================================================================================================
 //                                   Private Helper Functions
 // ====================================================================================================
+func parseFlags(flagConfigs []*FlagConfig, cobraFlags *pflag.FlagSet) (*ParsedFlags, error) {
+
+	resultUint32Flags := map[string]uint32{}
+	resultStringFlags := map[string]string{}
+	resultBoolFlags := map[string]bool{}
+
+	for _, config := range flagConfigs {
+		key := config.Key
+		typeStr := config.Type.typeStr
+		switch typeStr {
+		case FlagType_Uint32.typeStr:
+			value, err := cobraFlags.GetUint32(key)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting uint32 flag '%v' from the underlying Cobra flag set", key)
+			}
+			resultUint32Flags[key] = value
+		case FlagType_String.typeStr:
+			value, err := cobraFlags.GetString(key)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting string flag '%v' from the underlying Cobra flag set", key)
+			}
+			resultStringFlags[key] = value
+		case FlagType_Bool.typeStr:
+			value, err := cobraFlags.GetBool(key)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting bool flag '%v' from the underlying Cobra flag set", key)
+			}
+			resultBoolFlags[key] = value
+		default:
+			return nil, stacktrace.NewError("Flag '%v' has unrecognized type string '%v'; this is a bug in Kurtosis!", typeStr)
+		}
+	}
+	// TODO Verify that the length of the resulting map == length of flag configs
+	numParsedFlagValues := len(resultUint32Flags)
+}
 
 // Takes in the currently-entered arg strings, categorizes them according to the arg configs defined, and
 //  returns the ArgConfig whose completion function should be used
