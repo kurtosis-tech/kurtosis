@@ -101,6 +101,11 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
+	defer func() {
+		if err := metricsClient.Close(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
