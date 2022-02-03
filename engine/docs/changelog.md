@@ -1,5 +1,11 @@
 # TBD
 
+# 1.9.1
+### Changes
+* Add metrics client close call to flush the queue
+* Upgrade to `metrics-client-library` v0.1.2
+* Upgrade to `kurtosis-core` v1.37.1
+
 # 1.9.0
 ### Features
 * Added metrics client to track enclave events (e.g.: when users create an enclave)
