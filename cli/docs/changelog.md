@@ -4,9 +4,6 @@
 * Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
 * Track if user consent sending metrics to improve the product
 
-### Fixes
-* Set the Typescript internal tests' timeouts to 3m to match Golang
-
 ### Breaking Changes
 * Upgraded the engine server to 1.9.2
   * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
@@ -14,6 +11,28 @@
 
 ### Changes
 * Upgraded the kurtosis core to 1.37.0
+
+# 0.8.11
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+
+### Fixes
+* Fix the Kurtosis completion
+
+# 0.8.10
+### Features
+* `enclave inspect` now also prints the service ID in addition to the GUID
+* Add the `-f` flag to `service logs` to allow users to keep following logs
+
+### Fixes
+* `enclave stop` and `enclave rm` require at least one enclave ID
+* Turned down the parallelism of the Golang & Typescript testsuites to 2 (from 4), so that we're less likely to face test timeouts (both on local machine & CI)
+
+# 0.8.9
+### Fixes
+* Set the Typescript internal tests' timeouts to 3m to match Golang
+* Fixed an issue where a failure to dump a container's logs on `enclave dump` would incorrectly report that the issue was with a different container
+* Fixed `enclave dump` breaking if a REPL container is present
 
 # 0.8.8
 ### Features
