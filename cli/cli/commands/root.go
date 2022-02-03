@@ -36,6 +36,9 @@ import (
 const (
 	logLevelStrArg = "cli-log-level"
 
+	// Command that Cobra creates for generating shell completion
+	completionCommandStr = "completion"
+
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
 	acceptHttpHeaderValue      = "application/json"
@@ -99,7 +102,13 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	checkCLIVersion()
+	// We don't check the CLI version if the user's running the 'completion' command because:
+	//  1) They're likely capturing the completion output anyways and won't see the message
+	//  2) The WARN message that gets printed will break the completion script
+	shouldSkipVersionCheck := len(args) > 0 && args[0] == completionCommandStr
+	if !shouldSkipVersionCheck {
+		checkCLIVersion()
+	}
 
 	return nil
 }

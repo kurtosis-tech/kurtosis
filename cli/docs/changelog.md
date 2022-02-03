@@ -7,6 +7,7 @@
 
 ### Fixes
 * Fix the Kurtosis completion
+* Don't run the CLI version check when the user's running the `completion` command
 
 # 0.8.11
 ### Features
