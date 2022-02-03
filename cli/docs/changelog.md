@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.1
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
 * Added a "Debugging User Issues" section to the README
