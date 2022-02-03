@@ -5,6 +5,9 @@
 * Added a wrapper over the `CobraCmd` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
 
 ### Changes
+* Upgraded the engine server to 1.9.1
+* Upgraded the kurtosis core to 1.37.1
+* Upgraded the metrics library to 0.1.2
 * Switched the `enclave inspect` to the new command framework
 * Cleaned up our Kurtosis-custom logic wrapping the Cobra commands
 
