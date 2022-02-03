@@ -79,7 +79,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			serviceGUID)
 	}
 
-	containerAttrs := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
+	containerAttrs, _ := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
 	containerName := containerAttrs.GetName()
 	containerLabels := containerAttrs.GetLabels()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(

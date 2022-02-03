@@ -61,7 +61,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 ) (map[string]string, error) {
 	artifactIdsToVolAttrs := map[string]schema.ObjectAttributes{}
 	for artifactId := range artifactIdsToExpand {
-		destVolAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
+		destVolAttrs, _ := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
 		artifactIdsToVolAttrs[artifactId] = destVolAttrs
 	}
 
@@ -90,7 +90,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		volumeMounts := map[string]string{
 			volumeName: destVolMntDirpathOnExpander,
 		}
-		containerAttrs := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
+		containerAttrs, _ := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
 		containerName := containerAttrs.GetName()
 		containerLabels := containerAttrs.GetLabels()
 		if err := expander.runExpanderContainer(ctx, containerName, containerCmd, volumeMounts, containerLabels); err != nil {
