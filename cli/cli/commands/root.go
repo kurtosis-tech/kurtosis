@@ -34,7 +34,8 @@ import (
 )
 
 const (
-	logLevelStrArg = "cli-log-level"
+	// !!! WARNING !!!! If you change the name of this flag, make sure to update it in the "Debugging User Issues" section of the README!!!
+	cliLogLevelStrFlag = "cli-log-level"
 
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
@@ -75,7 +76,7 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.PersistentFlags().StringVar(
 		&logLevelStr,
-		logLevelStrArg,
+		cliLogLevelStrFlag,
 		defaultLogLevelStr,
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
@@ -115,6 +116,12 @@ func setupCLILogs(cmd *cobra.Command) error {
 }
 
 func checkCLIVersion() {
+	// We temporarily set the logrus output to STDERR so that only these version warning messages get sent there
+	// This is so that if you're running a command that actually prints output (e.g. 'completion', to generate completions)
+	//  then this version check message doesn't show up in the output and potentially mess things up
+	logrus.SetOutput(os.Stderr)
+	defer logrus.SetOutput(os.Stdout)
+
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
@@ -127,7 +134,6 @@ func checkCLIVersion() {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 	}
-	return
 }
 
 func isLatestCLIVersion() (bool, string, error) {
