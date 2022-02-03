@@ -2,6 +2,12 @@
 ### Features
 * Added metrics client to track enclave events (e.g.: when users create an enclave)
 
+### Fixes
+* Refactored engine/library semVer checking to be more lax, and let continue the code run if semVer couldn't be parsed
+
+### Changes
+* Upgraded to `Kurt Core` 1.37.0 which implements module's metrics
+
 ### Breaking Changes
 * Change the `EngineServerLauncher.LaunchWithDefaultVersion()` and `EngineServerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
@@ -9,12 +15,6 @@
   * Users should add there three new arguments in every call
 * Change `EngineServerArgs` constructor, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
   * Users should add these two new arguments in every call
-
-### Changes
-* Upgraded to `Kurt Core` 1.37.0 which implements module's metrics
-
-### Fixes
-* Refactored engine/library semVer checking to be more lax, and let continue the code run if semVer couldn't be parsed
 
 # 1.8.3
 ### Fixes

@@ -23,8 +23,8 @@ type EngineServerArgs struct {
 	//  enclave data directories to the API container & services that the APIC starts
 	EngineDataDirpathOnHostMachine string	`json:"engineDataDirpathOnHostMachine"`
 
-	//The anonymized user ID for metrics analytics purpose `json:"metricsUserID"`
-	MetricsUserID string `json:"metricsUserID"`
+	//The anonymized user ID for metrics analytics purpose `json:"metricsUserId"`
+	MetricsUserID string `json:"metricsUserId"`
 
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
