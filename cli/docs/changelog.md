@@ -1,4 +1,16 @@
 # TBD
+### Features
+* Added `MetricsUserIDStore` which generates a hashed user ID based on OS configuration, and saves the ID in a file to use it in future runs of the CLI
+* Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
+* Track if user consent sending metrics to improve the product
+
+### Breaking Changes
+* Upgraded the engine server to 1.9.2
+  * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
+  * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.9.0
+
+### Changes
+* Upgraded the kurtosis core to 1.37.0
 
 # 0.8.11
 ### Features
