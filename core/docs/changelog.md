@@ -1,5 +1,10 @@
 # TBD
 
+# 1.37.1
+### Changes
+* Add metrics client close call to flush the queue
+* Upgrade to `metrics-client-library` v0.1.2
+
 # 1.37.0
 ### Features
 * Added metrics client to track module events (e.g.: when users load a module)
