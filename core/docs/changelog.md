@@ -1,4 +1,6 @@
 # TBD
+
+# 1.37.2
 ### Fixes
 * Upgrade `object-attributes-schema-lib` to 0.6.1
 * fixes core with the port changes in the Launcher and the error checks for the validations added in `object-attributes-schema-lib`
