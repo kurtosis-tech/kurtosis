@@ -64,36 +64,6 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		usedFlagKeys[key] = true
 	}
 
-	// Verify all flag default values match their declared types
-	for _, flagConfig := range kurtosisCmd.Flags {
-		key := flagConfig.Key
-		typeStr := flagConfig.Type.AsString()
-		defaultValStr := flagConfig.Default
-		defaultValueDoesntMatchType := false
-		switch typeStr {
-		case flags.FlagType_String.AsString():
-			// Nothing to do
-		case flags.FlagType_Bool.AsString():
-			_, err := strconv.ParseBool(defaultValStr)
-			defaultValueDoesntMatchType = err != nil
-		case flags.FlagType_Uint32.AsString():
-			_, err := strconv.ParseUint(defaultValStr, uintBase, uint32Bits)
-			defaultValueDoesntMatchType = err != nil
-		default:
-			panic(stacktrace.NewError("Flag '%v' on command '%v' is of unrecognized type '%v'", key, kurtosisCmd.CommandStr, typeStr))
-		}
-		if defaultValueDoesntMatchType {
-			panic(stacktrace.NewError(
-				"Default value of flag '%v' on command '%v' is '%v', which doesn't match the flag's declared type of '%v'",
-				key,
-				kurtosisCmd.CommandStr,
-				defaultValStr,
-				typeStr,
-			))
-		}
-	}
-
-
 	// Verify no duplicate arg keys
 	usedArgKeys := map[string]bool{}
 	for _, argConfig := range kurtosisCmd.Args {
@@ -225,16 +195,71 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		kurtosisCmd.CommandStr,
 		strings.Join(allArgUsageStrs, " "),
 	)
-	
-	return &cobra.Command{
+
+	result := &cobra.Command{
 		Use:                   usageStr,
 		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the usage string
-		// TODO FLAGS!!!
 		Short:                 kurtosisCmd.ShortDescription,
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
 		RunE: cobraRunFunc,
 	}
+
+	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
+	// Verify all flag default values match their declared types
+	resultFlags := result.Flags()
+	for _, flagConfig := range kurtosisCmd.Flags {
+		key := flagConfig.Key
+		usage := flagConfig.Usage
+		defaultValStr := flagConfig.Default
+
+		typeStr := flagConfig.Type.AsString()
+		defaultValueDoesntMatchType := false
+		switch typeStr {
+		case flags.FlagType_String.AsString():
+			// No validation needed because the default type is already string
+			resultFlags.String(
+				key,
+				defaultValStr,
+				usage,
+			)
+		case flags.FlagType_Bool.AsString():
+			defaultValue, err := strconv.ParseBool(defaultValStr)
+			if err != nil {
+				defaultValueDoesntMatchType = true
+				break
+			}
+			resultFlags.Bool(
+				key,
+				defaultValue,
+				usage,
+			)
+		case flags.FlagType_Uint32.AsString():
+			defaultValueUint64, err := strconv.ParseUint(defaultValStr, uintBase, uint32Bits)
+			if err != nil {
+				defaultValueDoesntMatchType = true
+				break
+			}
+			resultFlags.Uint32(
+				key,
+				uint32(defaultValueUint64),
+				usage,
+			)
+		default:
+			panic(stacktrace.NewError("Flag '%v' on command '%v' is of unrecognized type '%v'", key, kurtosisCmd.CommandStr, typeStr))
+		}
+		if defaultValueDoesntMatchType {
+			panic(stacktrace.NewError(
+				"Default value of flag '%v' on command '%v' is '%v', which doesn't match the flag's declared type of '%v'",
+				key,
+				kurtosisCmd.CommandStr,
+				defaultValStr,
+				typeStr,
+			))
+		}
+	}
+
+	return result
 }
 
 

@@ -22,6 +22,9 @@ type FlagConfig struct {
 	// Long-form name of the flag
 	Key string
 
+	// Usage string
+	Usage string
+
 	// A single-character shorthand for the flag
 	// If shorthand is emptystring, no shorthand will be used
 	Shorthand string

@@ -2,7 +2,8 @@
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
 * Added a "Debugging User Issues" section to the README
-* Added a wrapper over the `CobraCmd` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+* Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+* Added flags to `KurtosisCommand`
 
 ### Changes
 * Switched the `enclave inspect` to the new command framework
