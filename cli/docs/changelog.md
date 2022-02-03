@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.0
 ### Features
 * Added `MetricsUserIDStore` which generates a hashed user ID based on OS configuration, and saves the ID in a file to use it in future runs of the CLI
 * Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
