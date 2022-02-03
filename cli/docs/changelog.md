@@ -24,7 +24,8 @@
 * Track if user consent sending metrics to improve the product
 
 ### Breaking Changes
-* Upgraded the engine server to 1.9.2
+* Required the user to make an election about whether to send product analytic metrics
+  * **Users using Kurtosis in CI will need to initialize the configuration as part of their CI steps [using these instructions](https://docs.kurtosistech.com/running-in-ci.html)**
   * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
   * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.9.0
 
