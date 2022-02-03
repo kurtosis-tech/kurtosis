@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix `kurtosis-core` dependency version in Typescript library, upgraded to v1.37.1
 
 # 1.9.1
 ### Changes
