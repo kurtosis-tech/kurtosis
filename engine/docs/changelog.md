@@ -1,5 +1,9 @@
 # TBD
 
+# 1.9.2
+### Fixes
+* Fix `kurtosis-core` dependency version in Typescript library, upgraded to v1.37.1
+
 # 1.9.1
 ### Changes
 * Add metrics client close call to flush the queue

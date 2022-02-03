@@ -1,6 +1,6 @@
 {
     "name": "kurtosis-engine-api-lib",
-    "version": "1.9.1",
+    "version": "1.9.2",
     "main": "./build/index",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating and destroying Kurtosis Enclaves.",
     "types": "./build/index",
@@ -32,7 +32,7 @@
         "@grpc/grpc-js": "^1.4.4",
         "@types/semver": "^7.3.9",
         "google-protobuf": "^3.17.3",
-        "kurtosis-core-api-lib": "1.37.0",
+        "kurtosis-core-api-lib": "1.37.1",
         "loglevel": "^1.7.1",
         "neverthrow": "^4.2.2",
         "semver": "^7.3.5"
