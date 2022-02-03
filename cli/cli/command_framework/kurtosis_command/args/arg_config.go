@@ -1,6 +1,7 @@
 package args
 
 import (
+	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
 )
 
@@ -22,9 +23,9 @@ type ArgConfig struct {
 	//  modified using previous arg values
 	// The previousArgs will only contain values for the args that come before this one (since completion doesn't make
 	//  sense in the middle of an entry
-	CompletionsFunc func(flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
+	CompletionsFunc func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *ParsedArgs) ([]string, error)
 
 	// Will be run after the user presses ENTER and before we start actually running the command
-	ValidationFunc func(flags *flags.ParsedFlags, args *ParsedArgs) error
+	ValidationFunc func(ctx context.Context, flags *flags.ParsedFlags, args *ParsedArgs) error
 }
 

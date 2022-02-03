@@ -74,7 +74,7 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 				Key: flag1Key,
 			},
 			{
-				Key: flag2Key,
+				Key: flag1Key,
 			},
 		},
 	}
@@ -94,7 +94,7 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 			Default: "123",
 		},
 		{
-			Key:     flag1Key,
+			Key:     flag2Key,
 			Type:    flags.FlagType_Uint32,
 			Default: "true",
 		},
@@ -117,25 +117,6 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 			illegalFlag.Default,
 		)
 	}
-}
-
-func TestMustGetCobraCommand_FlagWithNoTypePanics(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
-		CommandStr:       "test",
-		ShortDescription: "Short description",
-		LongDescription:  "This is a very long description",
-		Flags: []*flags.FlagConfig{
-			{
-				Key:       flag1Key,
-			},
-		},
-	}
-
-	require.Panics(
-		t,
-		func() { kurtosisCmd.MustGetCobraCommand() },
-		"Expected a panic when a flag has no type",
-	)
 }
 
 func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
@@ -200,6 +181,30 @@ func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
 		t,
 		func() { kurtosisCmd.MustGetCobraCommand() },
 		"Expected a panic when setting a flag whose shorthand is greater than one letter",
+	)
+}
+
+func TestMustGetCobraCommand_TestEmptyShorthandsDontTriggerShorthandValidation(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*flags.FlagConfig{
+			{
+				Key: flag1Key,
+				Shorthand: "",
+			},
+			{
+				Key: flag2Key,
+				Shorthand: "",
+			},
+		},
+	}
+
+	require.NotPanics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected duplicate emptystring shorthands to be allowed",
 	)
 }
 
@@ -317,5 +322,91 @@ func TestMustGetCobraCommand_WorkingFlagDefaultValueChecking(t *testing.T) {
 		t,
 		func() { kurtosisCmd.MustGetCobraCommand() },
 		"Expected default value flag validation to work",
+	)
+}
+
+func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Args: []*args.ArgConfig{
+			{
+				Key: arg1Key,
+				DefaultValue: nil,
+				IsOptional: true,
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected an optional arg with a nil default to cause a panic",
+	)
+}
+
+func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Args: []*args.ArgConfig{
+			{
+				Key: arg1Key,
+				DefaultValue: nil,
+				IsOptional: false,
+			},
+		},
+	}
+
+	require.NotPanics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected a required argument to skip default-value validation",
+	)
+}
+
+func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Args: []*args.ArgConfig{
+			{
+				Key: arg1Key,
+				IsGreedy: false,
+				DefaultValue: []string{"foo", "bar"},
+				IsOptional: true,
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected an optional non-greedy arg with a string slice default type to cause a panic",
+	)
+}
+
+func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Args: []*args.ArgConfig{
+			{
+				Key: arg1Key,
+				IsGreedy: true,
+				DefaultValue: "foobar",
+				IsOptional: true,
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected an optional greedy arg with a string default type to cause a panic",
 	)
 }
