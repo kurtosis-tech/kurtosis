@@ -17,15 +17,15 @@ require (
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220203170307-3448dddfa123
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220203171410-4a4a6b7f8db6
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220203171354-4b73f0b49637
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220203174723-751d451ad1cf
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220203174658-141344d282d3
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220203164828-34e4c3e3e948
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359
