@@ -63,7 +63,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 	for artifactId := range artifactIdsToExpand {
 		destVolAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpansionVolume(string(serviceGUID), artifactId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for artifact '%v' and service GUID '%v'", artifactId, serviceGUID)
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for files artifact expansion volume for artifact '%v' for service with GUID '%v'", artifactId, serviceGUID)
 		}
 		artifactIdsToVolAttrs[artifactId] = destVolAttrs
 	}
@@ -95,7 +95,7 @@ func (expander FilesArtifactExpander) ExpandArtifactsIntoVolumes(
 		}
 		containerAttrs, err := expander.enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(string(serviceGUID), artifactId)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for artifact '%v' and service GUID '%v'", artifactId, serviceGUID)
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the files artifact expansion container for artifact '%v' for service with GUID '%v'", artifactId, serviceGUID)
 		}
 		containerName := containerAttrs.GetName()
 		containerLabels := containerAttrs.GetLabels()

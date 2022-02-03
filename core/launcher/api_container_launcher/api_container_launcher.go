@@ -136,8 +136,9 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
-				"An error occurred getting the API container object attributes using port num '%v'",
+				"An error occurred getting the API container object attributes using port num '%v' and proxy port '%v'",
 				grpcPortNum,
+				grpcProxyPortNum,
 			)
 		}
 		return apiContainerAttrs, nil
@@ -179,12 +180,12 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	grpcPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port '%v'", grpcPortNum)
 	}
 
 	grpcProxyPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcProxyPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port with portNum '%v' and grpcPortNum '%v'", grpcPortNum, grpcProxyPortNum)
 	}
 
 	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{
@@ -234,7 +235,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	publicGrpcProxyPort, found := publicPorts[schema.KurtosisInternalContainerGRPCProxyPortID]
 	if !found {
-		return "", nil, nil, nil, stacktrace.NewError("No public port was found for '%v' - this is very strange!", schema.KurtosisInternalContainerGRPCPortID)
+		return "", nil, nil, nil, stacktrace.NewError("No public port was found for '%v' - this is very strange!", schema.KurtosisInternalContainerGRPCProxyPortID)
 	}
 
 	shouldKillContainer = false

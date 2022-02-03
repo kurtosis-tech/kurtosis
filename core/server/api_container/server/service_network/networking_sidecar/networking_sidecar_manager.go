@@ -80,7 +80,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 
 	containerAttrs, err := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the service GUID '%v'", serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the networking sidecar attached to service with GUID '%v'", serviceGUID)
 	}
 	containerName := containerAttrs.GetName()
 	containerLabels := containerAttrs.GetLabels()
