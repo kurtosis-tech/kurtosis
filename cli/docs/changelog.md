@@ -5,6 +5,7 @@
 * Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
 * Added flags to `KurtosisCommand`
 * Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
+* Added tab-completion & enclave ID validation to `enclave rm` command
 
 ### Changes
 * Switched the `enclave inspect` to the new command framework

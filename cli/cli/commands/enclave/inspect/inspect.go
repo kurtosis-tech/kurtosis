@@ -76,6 +76,7 @@ var EnclaveInspectCmd = &kurtosis_command.KurtosisCommand{
 	PostValidationAndRunFunc: teardown,
 }
 
+// TODO generalize this to something like EngineUsingKurtosisCommand or something
 func setup(ctx context.Context) (context.Context, error) {
 	result := ctx
 
@@ -96,7 +97,7 @@ func setup(ctx context.Context) (context.Context, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
 	result = context.WithValue(result, engineClientCtxKey, engineClient)
-	result = context.WithValue(result, engineClientCloseFuncCtxKey, closeClientFunc())
+	result = context.WithValue(result, engineClientCloseFuncCtxKey, closeClientFunc)
 
 	return result, nil
 }
@@ -203,7 +204,7 @@ func teardown(ctx context.Context) {
 				logrus.Warnf("We tried to close the engine client after we're done using it, but doing so threw an error:\n%v", err)
 			}
 		} else {
-			logrus.Errorf("Expected the object at context key '%v' to be an engine client close function, but it wasn't; this is a bug in Kurtosis!", engineClientCloseFuncCtxKey),
+			logrus.Errorf("Expected the object at context key '%v' to be an engine client close function, but it wasn't; this is a bug in Kurtosis!", engineClientCloseFuncCtxKey)
 		}
 	} else {
 		logrus.Errorf(

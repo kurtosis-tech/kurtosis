@@ -22,7 +22,7 @@ func NewEnclaveIDArg(
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
-	validate := getValidationFunc(argKey, engineClientCtxKey)
+	validate := getValidationFunc(argKey, engineClientCtxKey, isGreedy)
 
 	return &args.ArgConfig{
 		Key:             argKey,
@@ -67,7 +67,7 @@ func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs 
 }
 
 // Create a validation function using the previously-created
-func getValidationFunc(argKey string, engineClientCtxKey string) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
+func getValidationFunc(argKey string, engineClientCtxKey string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 		uncastedEngineClient := ctx.Value(engineClientCtxKey)
 		if uncastedEngineClient == nil {
@@ -78,18 +78,30 @@ func getValidationFunc(argKey string, engineClientCtxKey string) func(context.Co
 			return stacktrace.NewError("Found an object that should be the engine client stored in the context under key '%v', but this object wasn't of the correct engine client type", engineClientCtxKey)
 		}
 
-		enclaveId, err := args.GetNonGreedyArg(argKey)
-		if err != nil {
-			return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", argKey)
+		var enclaveIdsToValidate []string
+		if isGreedy {
+			enclaveIds, err := args.GetGreedyArg(argKey)
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected a value for greedy arg '%v' but didn't find one", argKey)
+			}
+			enclaveIdsToValidate = enclaveIds
+		} else {
+			enclaveId, err := args.GetNonGreedyArg(argKey)
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but didn't find one", argKey)
+			}
+			enclaveIdsToValidate = []string{enclaveId}
 		}
 
 		getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveId)
+			return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to check if the enclaves exist")
 		}
 
-		if _, found := getEnclavesResp.EnclaveInfo[enclaveId]; !found {
-			return stacktrace.Propagate(err, "No enclave found with ID '%v'", enclaveId)
+		for _, enclaveId := range enclaveIdsToValidate {
+			if _, found := getEnclavesResp.EnclaveInfo[enclaveId]; !found {
+				return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
+			}
 		}
 		return nil
 	}
