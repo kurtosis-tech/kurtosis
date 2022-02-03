@@ -210,6 +210,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	resultFlags := result.Flags()
 	for _, flagConfig := range kurtosisCmd.Flags {
 		key := flagConfig.Key
+		shorthand := flagConfig.Shorthand
 		usage := flagConfig.Usage
 		defaultValStr := flagConfig.Default
 
@@ -218,8 +219,9 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		switch typeStr {
 		case flags.FlagType_String.AsString():
 			// No validation needed because the default type is already string
-			resultFlags.String(
+			resultFlags.StringP(
 				key,
+				shorthand,
 				defaultValStr,
 				usage,
 			)
@@ -229,8 +231,9 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 				defaultValueDoesntMatchType = true
 				break
 			}
-			resultFlags.Bool(
+			resultFlags.BoolP(
 				key,
+				shorthand,
 				defaultValue,
 				usage,
 			)
@@ -240,8 +243,9 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 				defaultValueDoesntMatchType = true
 				break
 			}
-			resultFlags.Uint32(
+			resultFlags.Uint32P(
 				key,
+				shorthand,
 				uint32(defaultValueUint64),
 				usage,
 			)
