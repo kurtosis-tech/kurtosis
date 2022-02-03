@@ -1,4 +1,8 @@
 # TBD
+### Changes
+* Upgraded the engine server to 1.9.1
+* Upgraded the kurtosis core to 1.37.1
+* Upgraded the metrics library to 0.1.2
 
 # 0.9.0
 ### Features
