@@ -80,7 +80,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 
 	// Verify that we don't have any invalid positional arg combinations, e.g.:
 	//  - Any arg after an optional arg (the parser wouldn't know whether you want the optional arg or the one after it)
-	//  - Any arg after an arg that consumes N args (since the CLI couldn't know where
+	//  - Any arg after an arg that consumes N args (since the CLI couldn't know where the greedy arg stops and the required arg begins)
 	terminalArgKey := ""
 	for _, argConfig := range kurtosisCmd.Args {
 		key := argConfig.Key
@@ -196,7 +196,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	
 	return &cobra.Command{
 		Use:                   usageStr,
-		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the uasge string
+		DisableFlagsInUseLine: true, // Not needed since we manually add the string in the usage string
 		// TODO FLAGS!!!
 		Short:                 kurtosisCmd.ShortDescription,
 		Long:                  kurtosisCmd.LongDescription,
