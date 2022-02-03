@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"sort"
 	"strings"
 )
 
@@ -24,7 +25,7 @@ const (
 	shouldForceRemoveFlagKey = "force"
 	enclaveIdArgKey          = "enclave-id"
 
-	defaultShouldForceRemove = false
+	defaultShouldForceRemove = "false"
 )
 
 var EnclaveRmCmd = &kurtosis_command.KurtosisCommand{
@@ -37,7 +38,7 @@ var EnclaveRmCmd = &kurtosis_command.KurtosisCommand{
 			Usage:     "Deletes all enclaves, regardless of whether they're already stopped",
 			Shorthand: "f",
 			Type:      flags.FlagType_Bool,
-			Default:   "false",
+			Default:   defaultShouldForceRemove,
 		},
 	},
 	// TODO Use a prebuilt enclaveIdArg component here!!!
@@ -52,35 +53,10 @@ var EnclaveRmCmd = &kurtosis_command.KurtosisCommand{
 	RunFunc:          run,
 }
 
-/*
-var RmCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveRmCmdStr + " [flags] " + enclaveIdArgKey + " [" + enclaveIdArgKey + "...]",
-	DisableFlagsInUseLine: true,
-	Short: "Destroys the specified enclaves",
-	Long: "Destroys the specified enclaves, removing all resources associated with them",
-	RunE:  run,
-}
-
-
-var shouldForceRemove bool
-
-func init() {
-	RmCmd.Flags().BoolVarP(
-		&shouldForceRemove,
-		shouldForceRemoveFlagKey,
-		"f",
-		defaultShouldForceRemove,
-		"Deletes all enclaves, regardless of whether they're already stopped",
-	)
-
-}
-
-func run(cmd *cobra.Command, args []string) error {
-*/
 func run(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	ctx := context.Background()
 
-	allEnclaveIds, err := args.GetGreedyArg(enclaveIdArgKey)
+	inputtedEnclaveIds, err := args.GetGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave IDs using arg key '%v'; this is a bug in Kurtosis!", enclaveIdArgKey)
 	}
@@ -88,6 +64,13 @@ func run(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the force-removal flag value using key '%v'; this is a bug in Kurtosis!", shouldForceRemoveFlagKey)
 	}
+
+	logrus.Debugf("inputted enclave IDs: %+v", inputtedEnclaveIds)
+
+	// Condense the enclave IDs down into a unique set, so we don't try to double-destroy an enclave
+	enclaveIdsToDestroy := getUniqueSortedEnclaveIDs(inputtedEnclaveIds)
+
+	logrus.Debugf("Unique enclave IDs to destroy: %+v", enclaveIdsToDestroy)
 
 	logrus.Info("Destroying enclaves...")
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -113,7 +96,7 @@ func run(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	allEnclaveInfo := getEnclavesResp.EnclaveInfo
 
 	enclaveDestructionErrorStrs := []string{}
-	for _, enclaveId := range allEnclaveIds {
+	for _, enclaveId := range enclaveIdsToDestroy {
 		if err := destroyEnclave(ctx, enclaveId, allEnclaveInfo, engineClient, shouldForceRemove); err != nil {
 			enclaveDestructionErrorStrs = append(enclaveDestructionErrorStrs, err.Error())
 		}
@@ -135,6 +118,20 @@ func run(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func getUniqueSortedEnclaveIDs(rawInput []string) []string {
+	uniqueEnclaveIds := map[string]bool{}
+	for _, inputId := range rawInput {
+		uniqueEnclaveIds[inputId] = true
+	}
+
+	result := []string{}
+	for inputId := range uniqueEnclaveIds {
+		result = append(result, inputId)
+	}
+	sort.Strings(result)
+	return result
+}
+
 func destroyEnclave(
 	ctx context.Context,
 	enclaveId string,

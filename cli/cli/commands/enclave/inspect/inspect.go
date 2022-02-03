@@ -63,19 +63,6 @@ var EnclaveInspectCmd = &kurtosis_command.KurtosisCommand{
 	RunFunc:          run,
 }
 
-/*
-var InspectCmd = &cobra.Command{
-	Use:                   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
-	DisableFlagsInUseLine: true,
-	Short:                 "Lists detailed information about an enclave",
-	RunE:                  run,
-	ValidArgsFunction:     getValidArgs,
-}
-
-func init() {
-}
- */
-
 func getCompletions(flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
 	ctx := context.Background()
 
