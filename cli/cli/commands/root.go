@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_wrappers"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -35,6 +34,8 @@ import (
 )
 
 const (
+	cliLogLevelStrFlag = "cli-log-level"
+
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
 	acceptHttpHeaderValue      = "application/json"
@@ -74,10 +75,7 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.PersistentFlags().StringVar(
 		&logLevelStr,
-		// It's pretty weird that this flag is pulled from the command wrappers package rather than living here where
-		//  it's used. Unfortunately, this package will need to import commands that use the command wrappers package
-		//  and the command wrappers package needs the flag, so having the constant live here would cause an import cycle.
-		command_wrappers.CLILogLevelStrFlag,
+		cliLogLevelStrFlag,
 		defaultLogLevelStr,
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
