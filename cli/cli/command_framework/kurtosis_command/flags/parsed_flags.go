@@ -1,4 +1,4 @@
-package parsed_flags
+package flags
 
 import (
 	"github.com/kurtosis-tech/stacktrace"

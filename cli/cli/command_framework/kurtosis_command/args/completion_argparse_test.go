@@ -1,13 +1,12 @@
-package parsed_args
+package args
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestParseArgsForCompletion_NoArgsNoTokens(t *testing.T) {
-	args := []*kurtosis_command.ArgConfig{}
+	args := []*ArgConfig{}
 	tokens := []string{}
 	parsedArgs, argToComplete := ParseArgsForCompletion(args, tokens)
 	require.Nil(t, argToComplete)
@@ -33,7 +32,7 @@ func TestParseArgsForCompletion_NoTokens(t *testing.T) {
 }
 
 func TestParseArgsForCompletion_NoArgs(t *testing.T) {
-	args := []*kurtosis_command.ArgConfig{}
+	args := []*ArgConfig{}
 	parsedArgs, argToComplete := ParseArgsForCompletion(args, validTokens)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))

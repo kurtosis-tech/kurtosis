@@ -1,7 +1,6 @@
-package parsed_args
+package args
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -47,7 +46,7 @@ func TestParseArgsForValidation_AllTokensSupplied(t *testing.T) {
 // Technically, the validation that we do in creating the KurtosisCommand should force the greedy arg to be last,
 //  but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
-	args := []*kurtosis_command.ArgConfig{
+	args := []*ArgConfig{
 		{
 			Key: arg1Key,
 		},
@@ -74,7 +73,7 @@ func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
 // Technically, the validation that we do in creating the KurtosisCommand should force the optional arg to be last,
 //  but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
-	args := []*kurtosis_command.ArgConfig{
+	args := []*ArgConfig{
 		{
 			Key: arg1Key,
 		},
@@ -98,7 +97,7 @@ func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
 
 func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 	defaultValue := "NON GREEDY DEFAULT"
-	args := []*kurtosis_command.ArgConfig{
+	args := []*ArgConfig{
 		{
 			Key:          arg1Key,
 			IsOptional:   true,
@@ -117,7 +116,7 @@ func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 
 func TestParseArgsForValidation_OptionalArgWithToken(t *testing.T) {
 	defaultValue := "NON GREEDY DEFAULT"
-	args := []*kurtosis_command.ArgConfig{
+	args := []*ArgConfig{
 		{
 			Key:          arg1Key,
 			IsOptional:   true,

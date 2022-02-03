@@ -2,8 +2,8 @@ package kurtosis_command
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -31,13 +31,13 @@ type KurtosisCommand struct {
 	LongDescription string
 
 	// Order isn't important here
-	Flags []*FlagConfig
+	Flags []*flags.FlagConfig
 
 	// Order IS important here
-	Args []*ArgConfig
+	Args []*args.ArgConfig
 
 	// The actual logic that the command will run
-	RunFunc func(flags *parsed_flags.ParsedFlags, args *parsed_args.ParsedArgs) error
+	RunFunc func(flags *flags.ParsedFlags, args *args.ParsedArgs) error
 }
 
 // Gets a Cobra command represnting the KurtosisCommand
@@ -67,16 +67,16 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	// Verify all flag default values match their declared types
 	for _, flagConfig := range kurtosisCmd.Flags {
 		key := flagConfig.Key
-		typeStr := flagConfig.Type.typeStr
+		typeStr := flagConfig.Type.AsString()
 		defaultValStr := flagConfig.Default
 		defaultValueDoesntMatchType := false
 		switch typeStr {
-		case FlagType_String.typeStr:
+		case flags.FlagType_String.AsString():
 			// Nothing to do
-		case FlagType_Bool.typeStr:
+		case flags.FlagType_Bool.AsString():
 			_, err := strconv.ParseBool(defaultValStr)
 			defaultValueDoesntMatchType = err != nil
-		case FlagType_Uint32.typeStr:
+		case flags.FlagType_Uint32.AsString():
 			_, err := strconv.ParseUint(defaultValStr, uintBase, uint32Bits)
 			defaultValueDoesntMatchType = err != nil
 		default:
@@ -137,9 +137,9 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	//  is in the process of typing when they press TAB. However, in my tests on Bash, the shell will automatically
 	//  filter the results based off the partialStr without us needing to filter them ~ ktoday, 2022-02-02
 	getCompletionsFunc := func(cmd *cobra.Command, previousArgStrs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		parsedFlags := parsed_flags.NewParsedFlags(cmd.Flags())
+		parsedFlags := flags.NewParsedFlags(cmd.Flags())
 
-		parsedArgs, argToComplete := parsed_args.ParseArgsForCompletion(kurtosisCmd.Args, previousArgStrs)
+		parsedArgs, argToComplete := args.ParseArgsForCompletion(kurtosisCmd.Args, previousArgStrs)
 		if argToComplete == nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
@@ -183,12 +183,12 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	}
 
 	// Prepare the run function to be slotted into the Cobra command, which will do both arg validation & logic execution
-	cobraRunFunc := func(cmd *cobra.Command, args []string) error {
-		parsedFlags := parsed_flags.NewParsedFlags(cmd.Flags())
+	cobraRunFunc := func(cmd *cobra.Command, allArgs []string) error {
+		parsedFlags := flags.NewParsedFlags(cmd.Flags())
 
-		parsedArgs, err := parsed_args.ParseArgsForValidation(kurtosisCmd.Args, args)
+		parsedArgs, err := args.ParseArgsForValidation(kurtosisCmd.Args, allArgs)
 		if err != nil {
-			logrus.Debugf("An error occurred while parsing args '%+v':\n%v", args, err)
+			logrus.Debugf("An error occurred while parsing args '%+v':\n%v", allArgs, err)
 
 			// NOTE: This is a VERY special instance where we don't wrap the error with stacktrace.Propagate, because
 			//  the errors returned by this function will *only* be arg-parsing errors and the stacktrace just adds
@@ -242,7 +242,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 //                                   Private Helper Functions
 // ====================================================================================================
 
-func renderArgUsageStr(arg *ArgConfig) string {
+func renderArgUsageStr(arg *args.ArgConfig) string {
 	result := arg.Key
 	if arg.IsGreedy {
 		result = result + "..."

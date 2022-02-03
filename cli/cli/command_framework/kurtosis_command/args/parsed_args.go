@@ -1,7 +1,6 @@
-package parsed_args
+package args
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -17,11 +16,11 @@ type ParsedArgs struct {
 //     the previous args (which is actually good behaviour)
 //  - If the input isn't long enough, the resulting ParsedArgs object won't have arg strings for all the args
 //  - A nil value for the returned kurtosis_command.ArgConfig indicates that no completion should be used
-func ParseArgsForCompletion(argConfigs []*kurtosis_command.ArgConfig, input []string) (*ParsedArgs, *kurtosis_command.ArgConfig) {
+func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArgs, *ArgConfig) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 
-	var nextArg *kurtosis_command.ArgConfig = nil
+	var nextArg *ArgConfig = nil
 	if len(argConfigs) > 0 {
 		nextArg = argConfigs[0]
 	}
@@ -62,7 +61,7 @@ func ParseArgsForCompletion(argConfigs []*kurtosis_command.ArgConfig, input []st
 // Parses all the args, guaranteeing that the required args are filled out and that default values for non-optional arguments get applied
 // This means that if no error was returned, the returned ParsedArgs object is guaranteed to have all the args that were
 //  passed in
-func ParseArgsForValidation(argConfigs []*kurtosis_command.ArgConfig, input []string) (*ParsedArgs, error) {
+func ParseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArgs, error) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 	inputIdx := 0

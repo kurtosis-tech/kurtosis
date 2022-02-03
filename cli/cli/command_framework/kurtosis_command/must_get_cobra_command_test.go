@@ -1,6 +1,8 @@
 package kurtosis_command
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -20,7 +22,7 @@ const (
 	flag2Key = "flag2"
 )
 
-var validArgsConfig = []*ArgConfig{
+var validArgsConfig = []*args.ArgConfig{
 	{
 		Key: arg1Key,
 	},
@@ -45,7 +47,7 @@ func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*ArgConfig{
+		Args:             []*args.ArgConfig{
 			{
 				Key:             arg1Key,
 			},
@@ -67,7 +69,7 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Flags: []*FlagConfig{
+		Flags: []*flags.FlagConfig{
 			{
 				Key: flag1Key,
 			},
@@ -85,16 +87,16 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testing.T) {
-	illegalFlagVariants := []*FlagConfig{
+	illegalFlagVariants := []*flags.FlagConfig{
 		{
-			Key:       flag1Key,
-			Type:      FlagType_Bool,
-			Default:   "123",
+			Key:     flag1Key,
+			Type:    flags.FlagType_Bool,
+			Default: "123",
 		},
 		{
-			Key:       flag1Key,
-			Type:      FlagType_Uint32,
-			Default:   "true",
+			Key:     flag1Key,
+			Type:    flags.FlagType_Uint32,
+			Default: "true",
 		},
 	}
 	for _, illegalFlag := range illegalFlagVariants {
@@ -102,7 +104,7 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 			CommandStr:       "test",
 			ShortDescription: "Short description",
 			LongDescription:  "This is a very long description",
-			Flags: []*FlagConfig{
+			Flags: []*flags.FlagConfig{
 				illegalFlag,
 			},
 		}
@@ -117,18 +119,14 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 	}
 }
 
-func TestMustGetCobraCommand_FlagWithNonsenseTypePanics(t *testing.T) {
+func TestMustGetCobraCommand_FlagWithNoTypePanics(t *testing.T) {
 	kurtosisCmd := &KurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Flags: []*FlagConfig{
+		Flags: []*flags.FlagConfig{
 			{
 				Key:       flag1Key,
-				Type:      FlagType{
-					// Technically this shouldn't even be possible since this is private, but we simulate it anywaysa
-					typeStr: "NONSENSE TYPE WILL NEVER EXIST",
-				},
 			},
 		},
 	}
@@ -136,21 +134,81 @@ func TestMustGetCobraCommand_FlagWithNonsenseTypePanics(t *testing.T) {
 	require.Panics(
 		t,
 		func() { kurtosisCmd.MustGetCobraCommand() },
-		"Expected a panic when a flag has a nonsense type",
+		"Expected a panic when a flag has no type",
 	)
 }
 
-// TODO Add test to verify that no two flags have the same shorthand
-// TODO Add test to verify that shorthands are always a single letter
-// TODO Add flags to verify that an unrecognized flag type throws a panic
-// Add some tests to verify that the flag type assertions work
+func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*flags.FlagConfig{
+			{
+				Key: flag1Key,
+				Type: flags.FlagType_String,
+			},
+		},
+	}
+
+	require.NotPanics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected no panic when a flag has a valid type",
+	)
+}
+
+func TestMustGetCobraCommand_DuplicateFlagShorthandsPanic(t *testing.T) {
+	dupedShorthandValue := "x"
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*flags.FlagConfig{
+			{
+				Key: flag1Key,
+				Shorthand: dupedShorthandValue,
+			},
+			{
+				Key: flag2Key,
+				Shorthand: dupedShorthandValue,
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected a panic when setting two flags with the same shorthand value",
+	)
+}
+
+func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*flags.FlagConfig{
+			{
+				Key: flag1Key,
+				Shorthand: "this is way too long",
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected a panic when setting a flag whose shorthand is greater than one letter",
+	)
+}
 
 func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
 	kurtosisCmd := &KurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args: []*ArgConfig{
+		Args: []*args.ArgConfig{
 			{
 				Key: "  ",
 			},
@@ -169,7 +227,7 @@ func TestMustGetCobraCommand_EmptyFlagKeyCausesPanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Flags: []*FlagConfig{
+		Flags: []*flags.FlagConfig{
 			{
 				Key: "  ",
 			},
@@ -188,7 +246,7 @@ func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*ArgConfig{
+		Args:             []*args.ArgConfig{
 			{
 				Key:             arg1Key,
 			},
@@ -215,7 +273,7 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
-		Args:             []*ArgConfig{
+		Args:             []*args.ArgConfig{
 			{
 				Key:             arg1Key,
 			},
@@ -233,5 +291,31 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 		t,
 		func() { kurtosisCmd.MustGetCobraCommand() },
 		"Expected a panic when trying to supply a greedy argument with another argument after it",
+	)
+}
+
+func TestMustGetCobraCommand_WorkingFlagDefaultValueChecking(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*flags.FlagConfig{
+			{
+				Key:     flag1Key,
+				Type:    flags.FlagType_Uint32,
+				Default: "0",
+			},
+			{
+				Key:     flag2Key,
+				Type:    flags.FlagType_Bool,
+				Default: "false",
+			},
+		},
+	}
+
+	require.NotPanics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected default value flag validation to work",
 	)
 }

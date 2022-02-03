@@ -1,4 +1,4 @@
-package kurtosis_command
+package flags
 
 const (
 	uint32Base = 10
