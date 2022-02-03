@@ -39,11 +39,16 @@ type KurtosisCommand struct {
 
 	// Oftentimes, the validation logic and the run logic will require the same resources (e.g. a dockerClient, or
 	//  dockerManager, or engineClient, etc.) This function will run before both validation & run, so that you can
-	//  create resources and bind them into the context that gets passed to the validation & run funcs
-	PreValidationAndRunFunc func(ctx context.Context) error
+	//  create resources and add them into the context that gets passed to the validation & run funcs
+	PreValidationAndRunFunc func(ctx context.Context) (context.Context, error)
 
 	// The actual logic that the command will run
 	RunFunc func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error
+
+	// Function used to close resources opened in PreValidationAndRunFunc, which is guaranteed to run no matter the outcome
+	//  of validation or run
+	// This function should only be used for closing resources, and cannot change the return value of the command
+	PostValidationAndRunFunc func(ctx context.Context)
 }
 
 // Gets a Cobra command represnting the KurtosisCommand
@@ -227,8 +232,6 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 
 	// Prepare the run function to be slotted into the Cobra command, which will do both arg validation & logic execution
 	cobraRunFunc := func(cmd *cobra.Command, allArgs []string) error {
-		ctx := context.Background()
-
 		parsedFlags := flags.NewParsedFlags(cmd.Flags())
 
 		parsedArgs, err := args.ParseArgsForValidation(kurtosisCmd.Args, allArgs)
@@ -241,10 +244,16 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 			return err
 		}
 
+		ctx := context.Background()
 		if kurtosisCmd.PreValidationAndRunFunc != nil {
-			if err := kurtosisCmd.PreValidationAndRunFunc(ctx); err != nil {
+			newCtx, err := kurtosisCmd.PreValidationAndRunFunc(ctx)
+			if err != nil {
 				return stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
 			}
+			ctx = newCtx
+		}
+		if kurtosisCmd.PostValidationAndRunFunc != nil {
+			defer kurtosisCmd.PostValidationAndRunFunc(ctx)
 		}
 
 		// Validate all the args
