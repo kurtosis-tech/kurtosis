@@ -98,7 +98,14 @@ func run(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	enclaveDestructionErrorStrs := []string{}
 	for _, enclaveId := range enclaveIdsToDestroy {
 		if err := destroyEnclave(ctx, enclaveId, allEnclaveInfo, engineClient, shouldForceRemove); err != nil {
-			enclaveDestructionErrorStrs = append(enclaveDestructionErrorStrs, err.Error())
+			enclaveDestructionErrorStrs = append(
+				enclaveDestructionErrorStrs,
+				fmt.Sprintf(
+					">>>>>>>>>>>>>>>>> %v <<<<<<<<<<<<<<<<<\n%v",
+					enclaveId,
+					err.Error(),
+				),
+			)
 		}
 	}
 

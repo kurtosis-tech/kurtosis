@@ -13,6 +13,7 @@
 ### Fixes
 * Fix the Kurtosis completion
 * The CLI version mismatch warning messages are printed to STDERR so as not to interfere with any other command output (e.g. `completion`)
+* Made the error traces easier to read when `enclave rm` fails
 
 # 0.8.11
 ### Features
