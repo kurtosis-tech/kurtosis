@@ -22,7 +22,7 @@ const (
 // We sleep forever because all the commands this container will run will be executed
 //  via Docker exec
 var sidecarContainerCommand = []string{
-	"sleep","infinity",
+	"sleep", "infinity",
 }
 
 // Embeds the given command in a call to whichever shell is native to the image, so that a command with things
@@ -34,7 +34,6 @@ var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
 		strings.Join(unwrappedCmd, " "),
 	}
 }
-
 
 // ==========================================================================================
 //                                        Interface
@@ -68,9 +67,9 @@ func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerMan
 
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Add(
-		ctx context.Context,
-		serviceGUID service_network_types.ServiceGUID,
-		serviceContainerId string) (NetworkingSidecar, error) {
+	ctx context.Context,
+	serviceGUID service_network_types.ServiceGUID,
+	serviceContainerId string) (NetworkingSidecar, error) {
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -79,7 +78,10 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			serviceGUID)
 	}
 
-	containerAttrs := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
+	containerAttrs, err := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the networking sidecar attached to service with GUID '%v'", serviceGUID)
+	}
 	containerName := containerAttrs.GetName()
 	containerLabels := containerAttrs.GetLabels()
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -124,8 +126,8 @@ func (manager *StandardNetworkingSidecarManager) Add(
 }
 
 func (manager *StandardNetworkingSidecarManager) Remove(
-		ctx context.Context,
-		sidecar NetworkingSidecar) error {
+	ctx context.Context,
+	sidecar NetworkingSidecar) error {
 	sidecarContainerId := sidecar.GetContainerID()
 	sidecarIp := sidecar.GetIPAddr()
 	if err := manager.dockerManager.KillContainer(ctx, sidecarContainerId); err != nil {
