@@ -560,5 +560,5 @@ func updateTrafficControlConfiguration(
 
 func newServiceGUID(serviceID service_network_types.ServiceID) service_network_types.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
-	return service_network_types.ServiceGUID(string(serviceID) + "_" + suffix)
+	return service_network_types.ServiceGUID(string(serviceID) + "-" + suffix)
 }

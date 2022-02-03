@@ -41,8 +41,8 @@ const (
 
 	// Indicates that no alias should be set for the module
 	moduleAlias = ""
-
 )
+
 // These values indicate "don't override the ENTRYPOINT/CMD args" (since modules are configured via envvars)
 var entrypointArgs []string = nil
 var cmdArgs []string = nil
@@ -96,7 +96,7 @@ func (launcher ModuleLauncher) Launch(
 	}
 
 	suffix := current_time_str_provider.GetCurrentTimeStr()
-	moduleGUID :=  module_store_types.ModuleGUID(string(moduleID) + "_" + suffix)
+	moduleGUID := module_store_types.ModuleGUID(string(moduleID) + "-" + suffix)
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
 		moduleContainerAttrs, err := enclaveObjAttrsProvider.ForModuleContainer(
 			string(moduleID),
