@@ -102,13 +102,7 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	// We don't check the CLI version if the user's running the 'completion' command because:
-	//  1) They're likely capturing the completion output anyways and won't see the message
-	//  2) The WARN message that gets printed will break the completion script
-	shouldSkipVersionCheck := len(args) > 0 && args[0] == completionCommandStr
-	if !shouldSkipVersionCheck {
-		checkCLIVersion()
-	}
+	checkCLIVersion()
 
 	return nil
 }
@@ -124,6 +118,12 @@ func setupCLILogs(cmd *cobra.Command) error {
 }
 
 func checkCLIVersion() {
+	// We temporarily set the logrus output to STDERR so that only these version warning messages get sent there
+	// This is so that if you're running a command that actually prints output (e.g. 'completion', to generate completions)
+	//  then this version check message doesn't show up in the output and potentially mess things up
+	logrus.SetOutput(os.Stderr)
+	defer logrus.SetOutput(os.Stdout)
+
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
@@ -136,7 +136,6 @@ func checkCLIVersion() {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 	}
-	return
 }
 
 func isLatestCLIVersion() (bool, string, error) {

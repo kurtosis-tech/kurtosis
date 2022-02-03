@@ -7,7 +7,7 @@
 
 ### Fixes
 * Fix the Kurtosis completion
-* Don't run the CLI version check when the user's running the `completion` command
+* The CLI version mismatch warning messages are printed to STDERR so as not to interfere with any other command output (e.g. `completion`)
 
 # 0.8.11
 ### Features
