@@ -1,6 +1,7 @@
 package prompt_displayer
 
 import (
+	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/manifoldco/promptui"
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,9 @@ const (
 	//Valid not confirm inputs
 	nInput   validPromptInput = "n"
 	noInput  validPromptInput = "no"
+
+	// Anything beyond this and it runs off the edge of the screen so the user doesn't see it
+	maxLabelLength = 100
 )
 
 type validPromptInput string
@@ -25,13 +29,23 @@ var allValidDecisionInputs = append(validConfirmInputs, validRejectInputs...)
 
 
 func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue bool) (bool, error) {
-	defaultValueStr := string(noInput)
-	if defaultValue {
-		defaultValueStr = string(yesInput)
+	if len(label) > maxLabelLength {
+		return false, stacktrace.NewError("Label '%v' is longer than the maximum allowed characters, '%v'", label, maxLabelLength)
 	}
 
+	defaultValueStr := string(nInput)
+	if defaultValue {
+		defaultValueStr = string(yInput)
+	}
+
+	labelWithValidInputs := fmt.Sprintf(
+		"%v (%v/%v)",
+		label,
+		yInput,
+		nInput,
+	)
 	prompt := promptui.Prompt{
-		Label:    label,
+		Label:    labelWithValidInputs,
 		Default:  defaultValueStr,
 		Validate: validateConfirmationInput,
 	}

@@ -1,4 +1,13 @@
 # TBD
+### Fixes
+* Fixed a bug with `engine restart` using `stacktrace.Propagate` incorrectly
+* The yes/no prompt now displays valid options
+
+### Removals
+* On further review, removed the big long metrics paragraph from the `config init` helptext; this likely isn't going to land well
+
+### Changes
+* Be more explicit in our explanation to users about product analytics metrics
 
 # 0.9.1
 ### Features
