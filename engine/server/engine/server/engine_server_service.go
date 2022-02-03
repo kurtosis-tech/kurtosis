@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/server/engine/enclave_manager"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -17,12 +18,23 @@ type EngineServerService struct {
 	imageVersionTag string
 
 	enclaveManager *enclave_manager.EnclaveManager
+
+	metricsClient client.MetricsClient
+
+	//The protected user ID for metrics analytics purpose
+	metricsUserID string
+
+	//User consent to send metrics
+	didUserAcceptSendingMetrics bool
 }
 
-func NewEngineServerService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager) *EngineServerService {
+func NewEngineServerService(imageVersionTag string, enclaveManager *enclave_manager.EnclaveManager, metricsClient client.MetricsClient, metricsUserId string, didUserAcceptSendingMetrics bool) *EngineServerService {
 	service := &EngineServerService{
-		imageVersionTag:                  imageVersionTag,
-		enclaveManager:                   enclaveManager,
+		imageVersionTag:             imageVersionTag,
+		enclaveManager:              enclaveManager,
+		metricsClient:               metricsClient,
+		metricsUserID:               metricsUserId,
+		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 	}
 	return service
 }
@@ -48,9 +60,16 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		args.EnclaveId,
 		args.IsPartitioningEnabled,
 		args.ShouldPublishAllPorts,
+		service.metricsUserID,
+		service.didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with ID '%v'", args.EnclaveId)
+	}
+
+	if err := service.metricsClient.TrackCreateEnclave(enclaveInfo.EnclaveId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking create enclave event\n%v",err)
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
@@ -74,23 +93,35 @@ func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurto
 	if err := service.enclaveManager.StopEnclave(ctx, enclaveId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
 	}
+
+	if err := service.metricsClient.TrackStopEnclave(enclaveId); err != nil {
+		//We don't want to interrupt user's flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking stop enclave event\n%v",err)
+	}
+
 	return &emptypb.Empty{}, nil
 }
 
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
-
-	if err := service.enclaveManager.DestroyEnclave(ctx, args.EnclaveId); err != nil {
+	enclaveId := args.EnclaveId
+	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
+	}
+
+	if err := service.metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
+		//We don't want to interrupt user's flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking destroy enclave event\n%v",err)
 	}
 
 	return &emptypb.Empty{}, nil
 }
 
-func (service *EngineServerService) Clean (ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*kurtosis_engine_rpc_api_bindings.CleanResponse, error){
+func (service *EngineServerService) Clean(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CleanArgs) (*kurtosis_engine_rpc_api_bindings.CleanResponse, error) {
 	enclaveIDs, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
+
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveIds: enclaveIDs}
 	return response, nil
 }

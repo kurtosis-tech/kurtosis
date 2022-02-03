@@ -133,6 +133,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	enclaveId string,
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -233,6 +235,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
 			enclaveDataDirpathOnHostMachine,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 	} else {
 		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
@@ -247,6 +251,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
 			enclaveDataDirpathOnHostMachine,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 	}
 	if launchApiContainerErr != nil {

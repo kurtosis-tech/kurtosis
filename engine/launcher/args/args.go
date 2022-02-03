@@ -22,6 +22,12 @@ type EngineServerArgs struct {
 	// The engine needs to know about this so it knows what filepath on the host machine to use when bind-mounting
 	//  enclave data directories to the API container & services that the APIC starts
 	EngineDataDirpathOnHostMachine string	`json:"engineDataDirpathOnHostMachine"`
+
+	//The anonymized user ID for metrics analytics purpose `json:"metricsUserId"`
+	MetricsUserID string `json:"metricsUserId"`
+
+	//User consent to send metrics
+	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 }
 
 
@@ -32,12 +38,16 @@ func NewEngineServerArgs(
 	logLevelStr string,
 	imageVersionTag string,
 	engineDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		ListenPortNum:                  listenPortNum,
 		LogLevelStr:                    logLevelStr,
 		ImageVersionTag:                imageVersionTag,
 		EngineDataDirpathOnHostMachine: engineDataDirpathOnHostMachine,
+		MetricsUserID:                  metricsUserID,
+		DidUserAcceptSendingMetrics:    didUserAcceptSendingMetrics,
 	}
 
 	if err := result.validate(); err != nil {
@@ -62,4 +72,3 @@ func (args EngineServerArgs) validate() error {
 	}
 	return nil
 }
-
