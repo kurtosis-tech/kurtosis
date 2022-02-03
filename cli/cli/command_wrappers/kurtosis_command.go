@@ -9,51 +9,14 @@ import (
 	"strings"
 )
 
-// Phases:
-// Parse: the user presses tab-complete (so no error-reporting)
-// Validation: the user has pressed ENTER
-
-
-// I want the KUrtosis dev to be able to:
-// - Define autocomplete and validation in the same spot
-// - Be able to reuse autocomplete/validation components (e.g. enclave ID is supercommon)
-// - Should be free to define
-// - Their run function should be: func(flags ParsedFlags, positionalArgs ParsedPositionalArgs) error
-// - ParsedFlags will have GetBoolFlag, GetStringFlag, GetIntFlag, etc.
-// - ParsedPositionalArgs will have GetSingleElemArg() string and GetNElemsArgs() []string
-// - Before their run function runs, all the validations will be applied
-
-// Things I'll need to provide cobra:
-// - ValidArgsFunc
-// - RunFuncE that does my positional arg validation, wrapped around the user's actual RunFuncE
-
-// I don't care right now about:
-// - Flag
-// - Flag value autocompletion
-
-// GetCobraCommand impl:
-// 1. Verify that there aren't any duplicate flag or arg names
-// 2. Generate a tentative arg-consuming function (for autcomplete) that tells what type of autocomplete to do (if any) using the ArgConfig
-// 3. Generate a definitive arg-consuming function (for actual entry) that verifies that all args have been filled out
-
-// Options:
-// 1) constantly pass off args
-
-// Validations that should be genericized:
-// - enclave ID
-// - service ID (requires enclave ID)
-// - REPL ID (requires enclave ID)
-// - module ID
-
 const (
-	shouldPrintCompletionDebugLogsToStderr = false
+	// It's pretty weird that this flag - which is a global flag that gets set on the root command - lives here
+	//  rather than in the root package. Unfortunately, the root package will need to import commands that import
+	//  this package, so if this package depends on the root to get this constant then we get an import cycle.
+	// That said, it *does* make some amount of sense to live here: this flag will be set on all commands, and all
+	//  commands will have completion, and we need to check this flag to see if we log completion errors to STDERR.
+	CLILogLevelStrFlag = "cli-log-level"
 )
-
-// After the input the user entered is parsed, flag values will be categorized by these keys
-type FlagKey string
-
-// After the input the user entered is parsed, positional arg values will be categorized by these keys
-type PositionalArgKey string
 
 // TODO Maybe better to make several different types of flags here - one for each type of value
 type FlagConfig struct {
@@ -61,7 +24,7 @@ type FlagConfig struct {
 
 	// TODO Add flag defaults!!!
 
-	// TODO???
+	// TODO Use this!
 	ValidationFunc func(string) error
 }
 
@@ -108,11 +71,6 @@ type KurtosisCommand struct {
 	RunFunc func(flags *ParsedFlags, args *ParsedArgs) error
 }
 
-
-// TODO Set DisableFlagsInUseLine: true when we have positional arguments
-
-
-// NOT DOING: Not going to build flag validation in as part of this framework yet - will leave it to the user to do
 type ParsedFlags struct {
 	cmdFlagsSet *pflag.FlagSet
 }
@@ -224,6 +182,24 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	//  is in the process of typing when they press TAB. However, in my tests on Bash, the shell will automatically
 	//  filter the results based off the partialStr without us needing to filter them ~ ktoday, 2022-02-02
 	getCompletionsFunc := func(cmd *cobra.Command, previousArgStrs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		shouldPrintDebuggingMessagesToStderr := false
+
+		// This will be set by the root function as a persistent flag
+		// We need to check this value manually - rather than relying on whether logrus.GetLevel is debug - because
+		//  the logrus debug level is only set in the root command's PersistentPreRunE function, which is set only when
+		//  executing the commands - NOT when doing completion
+		cliLogLevelStr, err := cmd.Flags().GetString(CLILogLevelStrFlag)
+		if err != nil {
+			// TODO Give them a link to file on our Github!
+			cobra.CompErrorln(fmt.Sprintf(
+				"An error occurred getting the value of the CLI log level flag '%v' to check if we should print further completion messages to STDERR; this is a bug in Kurtosis!\n%v",
+				CLILogLevelStrFlag,
+				err,
+			))
+		} else {
+			shouldPrintDebuggingMessagesToStderr = cliLogLevelStr == logrus.DebugLevel.String()
+		}
+
 		parsedFlags := &ParsedFlags{
 			cmdFlagsSet: cmd.Flags(),
 		}
@@ -233,7 +209,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
 			//  https://github.com/spf13/cobra/blob/master/shell_completions.md#:~:text=the%20RunE%20function.-,Debugging,ShellCompDirectiveNoFileComp%20%23%20This%20is%20on%20stderr
-			cobra.CompDebugln("Not completing because no argument needs completion", shouldPrintCompletionDebugLogsToStderr)
+			cobra.CompDebugln("Not completing because no argument needs completion", shouldPrintDebuggingMessagesToStderr)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
@@ -247,21 +223,25 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 					"Not completing because arg needing completion '%v' doesn't have a custom completion function",
 					argToComplete.Key,
 				),
-				shouldPrintCompletionDebugLogsToStderr,
+				shouldPrintDebuggingMessagesToStderr,
 			)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		completions, err := argToComplete.CompletionsFunc(parsedFlags, parsedArgs)
 		if err != nil {
-			// NOTE: We can't just use regular logging because the STDOUT of this function is captured for use with completions
-			// TODO Send the user to our Github issues!
-			cobra.CompErrorln(fmt.Sprintf(
-				"ERROR: The following error occurred running the completions function with previous arg strs '%+v' and toComplete string '%v'; this is a bug in Kurtosis!\n%v",
-				previousArgStrs,
-				toComplete,
-				err,
-			))
+			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
+			// See:
+			//  https://github.com/spf13/cobra/blob/master/shell_completions.md#:~:text=the%20RunE%20function.-,Debugging,ShellCompDirectiveNoFileComp%20%23%20This%20is%20on%20stderr
+			cobra.CompDebugln(
+				fmt.Sprintf(
+					"An error occurred running the completions function with previous arg strs '%+v' and toComplete string '%v':\n%v",
+					previousArgStrs,
+					toComplete,
+					err,
+				),
+				shouldPrintDebuggingMessagesToStderr,
+			)
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		return completions, cobra.ShellCompDirectiveNoFileComp
