@@ -18,7 +18,7 @@ const (
 	noInput  validPromptInput = "no"
 
 	// Anything beyond this and it runs off the edge of the screen so the user doesn't see it
-	maxLabelLength = 100
+	maxLabelLength = 110
 )
 
 type validPromptInput string

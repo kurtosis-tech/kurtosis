@@ -13,7 +13,7 @@ import (
 
 const (
 	metricsConsentPromptLabel       = "Is it okay to send anonymized metrics purely to improve the product?"
-	secondMetricsConsentPromptLabel = "Is it alright if we send a one-time event for your opt-out so we can see how much users dislike the metrics?"
+	secondMetricsConsentPromptLabel = "Is it alright if we record your opt-out as a one-time event so we can see how much users dislike metrics?"
 
 	shouldSendMetricsDefaultValue = true
 	shouldSendMetricsOptOutEventDefaultValue = true
@@ -78,7 +78,7 @@ func printMetricsPreface() {
 	fmt.Println("User metrics are useful for detecting product bugs and seeing feature usage. However, they're")
 	fmt.Println("also heavily abused to invade our privacy. I hate it as much as I'm guessing you do.")
 	fmt.Println("")
-	fmt.Println("Kurtosis is a small startup so product analytics metrics are invaluable for us to determine")
+	fmt.Println("Kurtosis is a small startup so product analytics metrics are vital for us to determine")
 	fmt.Println("where to put resources, but it was important to me that we do this ethically.")
 	fmt.Println("")
 	fmt.Println("Therefore, we've made our metrics:")
