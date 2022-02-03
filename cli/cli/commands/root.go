@@ -34,6 +34,7 @@ import (
 )
 
 const (
+	// !!! WARNING !!!! If you change the name of this flag, make sure to update it in the "Debugging User Issues" section of the README!!!
 	cliLogLevelStrFlag = "cli-log-level"
 
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
