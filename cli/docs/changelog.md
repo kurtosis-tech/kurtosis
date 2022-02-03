@@ -8,6 +8,7 @@
 ### Changes
 * Switched the `enclave inspect` to the new command framework
 * Cleaned up our Kurtosis-custom logic wrapping the Cobra commands
+* Switched `enclave rm` to use the new command framework
 
 ### Fixes
 * Fix the Kurtosis completion
