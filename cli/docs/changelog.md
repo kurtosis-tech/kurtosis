@@ -7,6 +7,14 @@
 ### Fixes
 * Set the Typescript internal tests' timeouts to 3m to match Golang
 
+### Breaking Changes
+* Upgraded the engine server to 1.9.2
+  * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
+  * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.9.0
+
+### Changes
+* Upgraded the kurtosis core to 1.37.0
+
 # 0.8.8
 ### Features
 * Added TypeScript Tests to CI
