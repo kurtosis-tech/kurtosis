@@ -49,8 +49,66 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 	)
 }
 
+func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testing.T) {
+	illegalFlagVariants := []*FlagConfig{
+		{
+			Key:       flag1Key,
+			Type:      FlagType_Bool,
+			Default:   "123",
+		},
+		{
+			Key:       flag1Key,
+			Type:      FlagType_Uint32,
+			Default:   "true",
+		},
+	}
+	for _, illegalFlag := range illegalFlagVariants {
+		kurtosisCmd := &KurtosisCommand{
+			CommandStr:       "test",
+			ShortDescription: "Short description",
+			LongDescription:  "This is a very long description",
+			Flags: []*FlagConfig{
+				illegalFlag,
+			},
+		}
+
+		require.Panics(
+			t,
+			func() { kurtosisCmd.MustGetCobraCommand() },
+			"Expected a panic when trying to set a flag with type '%v' and default value string '%v' that doesn't match the type",
+			illegalFlag.Type.AsString(),
+			illegalFlag.Default,
+		)
+	}
+}
+
+func TestMustGetCobraCommand_FlagWithNonsenseTypePanics(t *testing.T) {
+	kurtosisCmd := &KurtosisCommand{
+		CommandStr:       "test",
+		ShortDescription: "Short description",
+		LongDescription:  "This is a very long description",
+		Flags: []*FlagConfig{
+			{
+				Key:       flag1Key,
+				Type:      FlagType{
+					// Technically this shouldn't even be possible since this is private, but we simulate it anywaysa
+					typeStr: "NONSENSE TYPE WILL NEVER EXIST",
+				},
+			},
+		},
+	}
+
+	require.Panics(
+		t,
+		func() { kurtosisCmd.MustGetCobraCommand() },
+		"Expected a panic when a flag has a nonsense type",
+	)
+}
+
 // TODO Add test to verify that no two flags have the same shorthand
 // TODO Add test to verify that shorthands are always a single letter
+// TODO Add flags to verify that an unrecognized flag type throws a panic
+// Add some tests to verify that the flag type assertions work
 
 func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
 	kurtosisCmd := &KurtosisCommand{

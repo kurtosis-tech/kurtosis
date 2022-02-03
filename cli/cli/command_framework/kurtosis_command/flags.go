@@ -1,8 +1,7 @@
 package kurtosis_command
 
-import (
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/spf13/pflag"
+const (
+	uint32Base = 10
 )
 
 // Struct-based enum: https://threedots.tech/post/safer-enums-in-go/
@@ -15,54 +14,24 @@ var (
 	FlagType_String = FlagType{typeStr: "string"}
 	FlagType_Bool = FlagType{typeStr: "bool"}
 )
+func (flagType *FlagType) AsString() string {
+	return flagType.typeStr
+}
 
-// TODO Maybe better to make several different types of flags here - one for each type of value
 type FlagConfig struct {
-	// Long-form name
+	// Long-form name of the flag
 	Key string
 
 	// A single-character shorthand for the flag
-	Shorthand byte
+	// If shorthand is emptystring, no shorthand will be used
+	Shorthand string
 
+	// Used for validating the flag
 	Type FlagType
 
+	// Default, serialized as a string, that will be displayed in the usage
 	Default string
 
-	// TODO Use this!
-	ValidationFunc func(string) error
+	// TODO Validation function
 }
 
-type ParsedFlags struct {
-	cmdFlagsSet *pflag.FlagSet
-}
-func (flags *ParsedFlags) GetString(name string) (string, error) {
-	value, err := flags.cmdFlagsSet.GetString(name)
-	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"An error occurred getting string flag '%v'",
-			name,
-		)
-	}
-	return value, nil
-}
-func (flags *ParsedFlags) GetUint32(name string) (uint32, error) {
-	value, err := flags.cmdFlagsSet.GetUint32(name)
-	if err != nil {
-		return 0, stacktrace.Propagate(err,
-			"An error occurred getting uint32 flag '%v'",
-			name,
-		)
-	}
-	return value, nil
-}
-func (flags *ParsedFlags) GetBool(name string) (bool, error) {
-	value, err := flags.cmdFlagsSet.GetBool(name)
-	if err != nil {
-		return 0, stacktrace.Propagate(err,
-			"An error occurred getting bool flag '%v'",
-			name,
-		)
-	}
-	return value, nil
-}

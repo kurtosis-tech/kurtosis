@@ -12,6 +12,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -74,7 +76,7 @@ func init() {
 }
  */
 
-func getCompletions(flags *kurtosis_command.ParsedFlags, previousArgs *kurtosis_command.ParsedArgs) ([]string, error) {
+func getCompletions(flags *parsed_flags.ParsedFlags, previousArgs *parsed_args.ParsedArgs) ([]string, error) {
 	ctx := context.Background()
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -102,7 +104,7 @@ func getCompletions(flags *kurtosis_command.ParsedFlags, previousArgs *kurtosis_
 	return result, nil
 }
 
-func validate(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.ParsedArgs) error {
+func validate(flags *parsed_flags.ParsedFlags, args *parsed_args.ParsedArgs) error {
 	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)
@@ -141,7 +143,7 @@ func validate(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.Parsed
 	return nil
 }
 
-func run(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.ParsedArgs) error {
+func run(flags *parsed_flags.ParsedFlags, args *parsed_args.ParsedArgs) error {
 	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for arg '%v' but didn't find one", enclaveIdArgKey)

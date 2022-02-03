@@ -2,15 +2,20 @@ package kurtosis_command
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/parsed_flags"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	"strconv"
 	"strings"
 )
 
 const (
 	shouldLogCompletionDebugMessagesToStderr = true
+
+	uintBase = 10
+	uint32Bits = 32
 )
 
 // This is a struct intended to abstract away much of the details of creating a Cobra command that does what we want,
@@ -32,7 +37,7 @@ type KurtosisCommand struct {
 	Args []*ArgConfig
 
 	// The actual logic that the command will run
-	RunFunc func(flags *ParsedFlags, args *ParsedArgs) error
+	RunFunc func(flags *parsed_flags.ParsedFlags, args *parsed_args.ParsedArgs) error
 }
 
 // Gets a Cobra command represnting the KurtosisCommand
@@ -58,6 +63,36 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		}
 		usedFlagKeys[key] = true
 	}
+
+	// Verify all flag default values match their declared types
+	for _, flagConfig := range kurtosisCmd.Flags {
+		key := flagConfig.Key
+		typeStr := flagConfig.Type.typeStr
+		defaultValStr := flagConfig.Default
+		defaultValueDoesntMatchType := false
+		switch typeStr {
+		case FlagType_String.typeStr:
+			// Nothing to do
+		case FlagType_Bool.typeStr:
+			_, err := strconv.ParseBool(defaultValStr)
+			defaultValueDoesntMatchType = err != nil
+		case FlagType_Uint32.typeStr:
+			_, err := strconv.ParseUint(defaultValStr, uintBase, uint32Bits)
+			defaultValueDoesntMatchType = err != nil
+		default:
+			panic(stacktrace.NewError("Flag '%v' on command '%v' is of unrecognized type '%v'", key, kurtosisCmd.CommandStr, typeStr))
+		}
+		if defaultValueDoesntMatchType {
+			panic(stacktrace.NewError(
+				"Default value of flag '%v' on command '%v' is '%v', which doesn't match the flag's declared type of '%v'",
+				key,
+				kurtosisCmd.CommandStr,
+				defaultValStr,
+				typeStr,
+			))
+		}
+	}
+
 
 	// Verify no duplicate arg keys
 	usedArgKeys := map[string]bool{}
@@ -102,7 +137,8 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	//  is in the process of typing when they press TAB. However, in my tests on Bash, the shell will automatically
 	//  filter the results based off the partialStr without us needing to filter them ~ ktoday, 2022-02-02
 	getCompletionsFunc := func(cmd *cobra.Command, previousArgStrs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		parsedFlags := &ParsedFlags{
+		parsedFlags := parsed_flags.NewParsedFlags(cmd.Flags())
+		parsedFlags := &parsed_flags.ParsedFlags{
 			cmdFlagsSet: cmd.Flags(),
 		}
 
@@ -151,7 +187,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 
 	// Prepare the run function to be slotted into the Cobra command, which will do both arg validation & logic execution
 	cobraRunFunc := func(cmd *cobra.Command, args []string) error {
-		parsedFlags := &ParsedFlags{
+		parsedFlags := &parsed_flags.ParsedFlags{
 			cmdFlagsSet: cmd.Flags(),
 		}
 
@@ -210,42 +246,6 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 // ====================================================================================================
 //                                   Private Helper Functions
 // ====================================================================================================
-func parseFlags(flagConfigs []*FlagConfig, cobraFlags *pflag.FlagSet) (*ParsedFlags, error) {
-
-	resultUint32Flags := map[string]uint32{}
-	resultStringFlags := map[string]string{}
-	resultBoolFlags := map[string]bool{}
-
-	for _, config := range flagConfigs {
-		key := config.Key
-		typeStr := config.Type.typeStr
-		switch typeStr {
-		case FlagType_Uint32.typeStr:
-			value, err := cobraFlags.GetUint32(key)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting uint32 flag '%v' from the underlying Cobra flag set", key)
-			}
-			resultUint32Flags[key] = value
-		case FlagType_String.typeStr:
-			value, err := cobraFlags.GetString(key)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting string flag '%v' from the underlying Cobra flag set", key)
-			}
-			resultStringFlags[key] = value
-		case FlagType_Bool.typeStr:
-			value, err := cobraFlags.GetBool(key)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred getting bool flag '%v' from the underlying Cobra flag set", key)
-			}
-			resultBoolFlags[key] = value
-		default:
-			return nil, stacktrace.NewError("Flag '%v' has unrecognized type string '%v'; this is a bug in Kurtosis!", typeStr)
-		}
-	}
-	// TODO Verify that the length of the resulting map == length of flag configs
-	numParsedFlagValues := len(resultUint32Flags)
-}
-
 // Takes in the currently-entered arg strings, categorizes them according to the arg configs defined, and
 //  returns the ArgConfig whose completion function should be used
 // NOTES:
@@ -253,7 +253,7 @@ func parseFlags(flagConfigs []*FlagConfig, cobraFlags *pflag.FlagSet) (*ParsedFl
 //     the previous args (which is actually good behaviour)
 //  - If the input isn't long enough, the resulting ParsedArgs object won't have arg strings for all the args
 //  - A nil value for the returned ArgConfig indicates that no completion should be used
-func parseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArgs, *ArgConfig) {
+func parseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*parsed_args.ParsedArgs, *ArgConfig) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 
@@ -288,7 +288,7 @@ func parseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 			nextArg = argConfigs[configIdx]
 		}
 	}
-	result := &ParsedArgs{
+	result := &parsed_args.ParsedArgs{
 		nonGreedyArgs: nonGreedyArgValues,
 		greedyArgs:    greedyArgValues,
 	}
@@ -298,7 +298,7 @@ func parseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 // Parses all the args, guaranteeing that the required args are filled out and that default values for non-optional arguments get applied
 // This means that if no error was returned, the returned ParsedArgs object is guaranteed to have all the args that were
 //  passed in
-func parseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArgs, error) {
+func parseArgsForValidation(argConfigs []*ArgConfig, input []string) (*parsed_args.ParsedArgs, error) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 	inputIdx := 0
@@ -348,7 +348,7 @@ func parseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArg
 	}
 
 
-	result := &ParsedArgs{
+	result := &parsed_args.ParsedArgs{
 		nonGreedyArgs: nonGreedyArgValues,
 		greedyArgs:    greedyArgValues,
 	}
