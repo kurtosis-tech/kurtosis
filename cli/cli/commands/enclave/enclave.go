@@ -24,7 +24,7 @@ var EnclaveCmd = &cobra.Command{
 
 func init() {
 	EnclaveCmd.AddCommand(ls.LsCmd)
-	EnclaveCmd.AddCommand(inspect.InspectCmd)
+	EnclaveCmd.AddCommand(inspect.EnclaveInspectCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(new.NewCmd)
 	EnclaveCmd.AddCommand(stop.StopCmd)
 	EnclaveCmd.AddCommand(rm.RmCmd)
