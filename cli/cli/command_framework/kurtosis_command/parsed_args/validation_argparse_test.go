@@ -1,30 +1,31 @@
-package kurtosis_command
+package parsed_args
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestParseArgsForValidation_MissingAllTokens(t *testing.T) {
 	tokens := []string{}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_Missing2Tokens(t *testing.T) {
 	tokens := []string{arg1Value}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_Missing1Token(t *testing.T) {
 	tokens := []string{arg1Value, arg2Value}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_AllTokensSupplied(t *testing.T) {
-	parsedArgs, err := parseArgsForValidation(validArgsConfig, validTokens)
+	parsedArgs, err := ParseArgsForValidation(validArgsConfig, validTokens)
 	require.NoError(t, err)
 
 	actualArg1Value, err := parsedArgs.GetNonGreedyArg(arg1Key)
@@ -46,7 +47,7 @@ func TestParseArgsForValidation_AllTokensSupplied(t *testing.T) {
 // Technically, the validation that we do in creating the KurtosisCommand should force the greedy arg to be last,
 //  but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
-	args := []*ArgConfig{
+	args := []*kurtosis_command.ArgConfig{
 		{
 			Key: arg1Key,
 		},
@@ -66,14 +67,14 @@ func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
 		"4",
 		"5",
 	}
-	_, err := parseArgsForValidation(args, tokens)
+	_, err := ParseArgsForValidation(args, tokens)
 	require.Error(t, err)
 }
 
 // Technically, the validation that we do in creating the KurtosisCommand should force the optional arg to be last,
 //  but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
-	args := []*ArgConfig{
+	args := []*kurtosis_command.ArgConfig{
 		{
 			Key: arg1Key,
 		},
@@ -91,13 +92,13 @@ func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
 		"2",
 		"3",
 	}
-	_, err := parseArgsForValidation(args, tokens)
+	_, err := ParseArgsForValidation(args, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 	defaultValue := "NON GREEDY DEFAULT"
-	args := []*ArgConfig{
+	args := []*kurtosis_command.ArgConfig{
 		{
 			Key:          arg1Key,
 			IsOptional:   true,
@@ -106,7 +107,7 @@ func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 	}
 	tokens := []string{}
 
-	parsedArgs, err := parseArgsForValidation(args, tokens)
+	parsedArgs, err := ParseArgsForValidation(args, tokens)
 	require.NoError(t, err)
 
 	value, err := parsedArgs.GetNonGreedyArg(arg1Key)
@@ -116,7 +117,7 @@ func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 
 func TestParseArgsForValidation_OptionalArgWithToken(t *testing.T) {
 	defaultValue := "NON GREEDY DEFAULT"
-	args := []*ArgConfig{
+	args := []*kurtosis_command.ArgConfig{
 		{
 			Key:          arg1Key,
 			IsOptional:   true,
@@ -128,7 +129,7 @@ func TestParseArgsForValidation_OptionalArgWithToken(t *testing.T) {
 		suppliedValue,
 	}
 
-	parsedArgs, err := parseArgsForValidation(args, tokens)
+	parsedArgs, err := ParseArgsForValidation(args, tokens)
 	require.NoError(t, err)
 
 	value, err := parsedArgs.GetNonGreedyArg(arg1Key)

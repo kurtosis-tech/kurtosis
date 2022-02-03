@@ -1,14 +1,15 @@
-package kurtosis_command
+package parsed_args
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestParseArgsForCompletion_NoArgsNoTokens(t *testing.T) {
-	args := []*ArgConfig{}
+	args := []*kurtosis_command.ArgConfig{}
 	tokens := []string{}
-	parsedArgs, argToComplete := parseArgsForCompletion(args, tokens)
+	parsedArgs, argToComplete := ParseArgsForCompletion(args, tokens)
 	require.Nil(t, argToComplete)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
@@ -17,7 +18,7 @@ func TestParseArgsForCompletion_NoArgsNoTokens(t *testing.T) {
 func TestParseArgsForCompletion_Missing1Token(t *testing.T) {
 	args := validArgsConfig[:1]
 	tokens := []string{}
-	parsedArgs, argToComplete := parseArgsForCompletion(args, tokens)
+	parsedArgs, argToComplete := ParseArgsForCompletion(args, tokens)
 	require.Equal(t, validArgsConfig[0], argToComplete)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
@@ -25,22 +26,22 @@ func TestParseArgsForCompletion_Missing1Token(t *testing.T) {
 
 func TestParseArgsForCompletion_NoTokens(t *testing.T) {
 	tokens := []string{}
-	parsedArgs, argToComplete := parseArgsForCompletion(validArgsConfig, tokens)
+	parsedArgs, argToComplete := ParseArgsForCompletion(validArgsConfig, tokens)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
 	require.Equal(t, validArgsConfig[0], argToComplete)
 }
 
 func TestParseArgsForCompletion_NoArgs(t *testing.T) {
-	args := []*ArgConfig{}
-	parsedArgs, argToComplete := parseArgsForCompletion(args, validTokens)
+	args := []*kurtosis_command.ArgConfig{}
+	parsedArgs, argToComplete := ParseArgsForCompletion(args, validTokens)
 	require.Equal(t, 0, len(parsedArgs.greedyArgs))
 	require.Equal(t, 0, len(parsedArgs.nonGreedyArgs))
 	require.Nil(t, argToComplete)
 }
 
 func TestParseArgsForCompletion_ArgsAndTokens(t *testing.T) {
-	parsedArgs, argToComplete := parseArgsForCompletion(validArgsConfig, validTokens)
+	parsedArgs, argToComplete := ParseArgsForCompletion(validArgsConfig, validTokens)
 	// Because the last arg is greedy, we should get completion for any more the user wants to add
 	require.Equal(t, validArgsConfig[2], argToComplete)
 
@@ -61,7 +62,7 @@ func TestParseArgsForCompletion_ArgsAndTokens(t *testing.T) {
 }
 
 func TestParseArgsForCompletion_NonGreedyLastArgMeansNoCompletion(t *testing.T) {
-	parsedArgs, argToComplete := parseArgsForCompletion(validArgsConfig[:2], validTokens)
+	parsedArgs, argToComplete := ParseArgsForCompletion(validArgsConfig[:2], validTokens)
 	require.Nil(t, argToComplete)
 
 	actualArg1Value, err := parsedArgs.GetNonGreedyArg(arg1Key)

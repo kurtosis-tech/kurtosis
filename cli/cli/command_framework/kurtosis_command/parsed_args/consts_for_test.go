@@ -1,4 +1,6 @@
-package kurtosis_command
+package parsed_args
+
+import "github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
 
 const (
 	arg1Key = "arg1"
@@ -15,7 +17,7 @@ const (
 	flag2Key = "flag2"
 )
 
-var validArgsConfig = []*ArgConfig{
+var validArgsConfig = []*kurtosis_command.ArgConfig{
 	{
 		Key: arg1Key,
 	},

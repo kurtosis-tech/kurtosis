@@ -34,4 +34,3 @@ type FlagConfig struct {
 
 	// TODO Validation function
 }
-
