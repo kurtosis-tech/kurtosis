@@ -1975,6 +1975,17 @@ kurtosis-core-api-lib@1.36.12:
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
 
+kurtosis-core-api-lib@1.37.0:
+  version "1.37.0"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.37.0.tgz#6f05e971b10a8c32782bf98e36d80c20c0a2fb64"
+  integrity sha512-o/qPWMy2vhv5lAqDkoIgXkb2Uqu7ZMDMq5ZFwEbGSeEfaIMXCv9ADvlZEFcD9XAn7YJ8fI5uAADVEq5+FxXutg==
+  dependencies:
+    "@grpc/grpc-js" "^1.4.4"
+    "@types/google-protobuf" "^3.15.5"
+    google-protobuf "^3.19.1"
+    loglevel "^1.7.1"
+    neverthrow "^4.2.2"
+
 kurtosis-engine-api-lib@1.8.3:
   version "1.8.3"
   resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.8.3.tgz#cfe0f9d285a9cbca76a44ee0223098118cd0260f"
