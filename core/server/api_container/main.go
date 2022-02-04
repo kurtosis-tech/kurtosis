@@ -61,7 +61,7 @@ func main() {
 
 }
 
-func runMain () error {
+func runMain() error {
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -101,6 +101,11 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
+	defer func() {
+		if err := metricsClient.Close(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
@@ -144,10 +149,10 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createServiceNetworkAndModuleStore(
-		dockerManager *docker_manager.DockerManager,
-		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-		freeIpAddrTracker *lib.FreeIpAddrTracker,
-		args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+	dockerManager *docker_manager.DockerManager,
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
+	freeIpAddrTracker *lib.FreeIpAddrTracker,
+	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()
@@ -157,7 +162,7 @@ func createServiceNetworkAndModuleStore(
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
 
 	dockerNetworkId := args.NetworkId

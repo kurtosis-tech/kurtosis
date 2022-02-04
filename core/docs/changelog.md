@@ -1,5 +1,16 @@
 # TBD
 
+# 1.37.2
+### Fixes
+* Upgrade `object-attributes-schema-lib` to 0.6.1
+* fixes core with the port changes in the Launcher and the error checks for the validations added in `object-attributes-schema-lib`
+* changes `_` separator to `-`
+
+# 1.37.1
+### Changes
+* Add metrics client close call to flush the queue
+* Upgrade to `metrics-client-library` v0.1.2
+
 # 1.37.0
 ### Features
 * Added metrics client to track module events (e.g.: when users load a module)

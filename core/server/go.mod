@@ -15,7 +15,7 @@ require (
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
 	github.com/kurtosis-tech/kurtosis-core/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220202190835-835f8f983d37
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220203164828-34e4c3e3e948
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202183930-b5cae3986495
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

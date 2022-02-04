@@ -1,40 +1,41 @@
 package args
 
 import (
-	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 	"strings"
+
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
-	jsonFieldTag          = "json"
+	jsonFieldTag = "json"
 )
 
 // Fields are public for JSON de/serialization
 type APIContainerArgs struct {
-	LogLevel                 string `json:"logLevel"`
+	LogLevel string `json:"logLevel"`
 
-	GrpcListenPortNum    	 uint16 `json:"grpcListenPortNum"`
-	GrpcProxyListenPortNum 	 uint16 `json:"grpcProxyListenPortNum"`
+	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
+	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
-	EnclaveId				 string `json:"enclaveId"`
-	NetworkId                string `json:"networkId"`
-	SubnetMask               string	`json:"subnetMask"`
+	EnclaveId  string `json:"enclaveId"`
+	NetworkId  string `json:"networkId"`
+	SubnetMask string `json:"subnetMask"`
 
 	// Necessary so that when the API container starts modules, it knows which IP addr to give them
-	ApiContainerIpAddr string	`json:"apiContainerIpAddr"`
+	ApiContainerIpAddr string `json:"apiContainerIpAddr"`
 
 	// Instructs the API container that these IP addrs are already taken and shouldn't be used
-	TakenIpAddrs			 map[string]bool `json:"takenIpAddrsSet"`
+	TakenIpAddrs map[string]bool `json:"takenIpAddrsSet"`
 
-	IsPartitioningEnabled bool	`json:"isPartitioningEnabled"`
+	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
 	// The location on the API container where the enclave data directory will have been bind-mounted
 	EnclaveDataDirpathOnAPIContainer string `json:"enclaveDataDirpathOnAPIContainer"`
 
 	// The dirpath on the Docker host machine where enclave data is stored, which the API container
 	//  will use to bind-mount the directory into the services that it starts
-	EnclaveDataDirpathOnHostMachine string	`json:"enclaveDataDirpathOnHostMachine"`
+	EnclaveDataDirpathOnHostMachine string `json:"enclaveDataDirpathOnHostMachine"`
 
 	//The anonymized user ID for metrics analytics purpose
 	MetricsUserID string `json:"metricsUserID"`
@@ -42,7 +43,6 @@ type APIContainerArgs struct {
 	//User consent to send metrics
 	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
 }
-
 
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
@@ -64,7 +64,7 @@ func NewAPIContainerArgs(
 	result := &APIContainerArgs{
 		LogLevel:                         logLevel,
 		GrpcListenPortNum:                grpcListenPortNum,
-		GrpcProxyListenPortNum: 		  grpcProxyListenPortNum,
+		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
 		EnclaveId:                        enclaveId,
 		NetworkId:                        networkId,
 		SubnetMask:                       subnetMask,
@@ -88,7 +88,7 @@ func (args APIContainerArgs) validate() error {
 	reflectVal := reflect.ValueOf(args)
 	reflectValType := reflectVal.Type()
 	for i := 0; i < reflectValType.NumField(); i++ {
-		field := reflectValType.Field(i);
+		field := reflectValType.Field(i)
 		jsonFieldName := field.Tag.Get(jsonFieldTag)
 
 		// Ensure no empty strings
@@ -99,4 +99,3 @@ func (args APIContainerArgs) validate() error {
 	}
 	return nil
 }
-

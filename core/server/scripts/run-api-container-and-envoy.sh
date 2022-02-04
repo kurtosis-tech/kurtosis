@@ -19,7 +19,6 @@ COMMANDS_TO_RUN=(
     "run-api-container"
 )
 
-
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
@@ -27,8 +26,8 @@ COMMANDS_TO_RUN=(
 PIDS_TO_WAIT_FOR=()
 
 function run-api-container() {
-    echo "running run-api-container func"
-    ./api-container
+    echo "starting api container"
+    "${script_dirpath}"/api-container
 }
 
 function run-envoy() {
