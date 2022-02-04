@@ -3,11 +3,8 @@ package kurtosis_config
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_optin"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_consent_to_send_metrics_election"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -18,8 +15,6 @@ const (
 
 	shouldSendMetricsDefaultValue = true
 	shouldSendMetricsOptOutEventDefaultValue = true
-
-	shouldFlushMetricsClientQueueOnEachEvent = true
 )
 
 func initInteractiveConfig() (*KurtosisConfig, error) {
@@ -40,27 +35,10 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 	}
 
 	if didUserConsentToSendMetricsElectionEvent {
-		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
-
-		metricsUserId, err := metricsUserIdStore.GetUserID()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting metrics user ID")
-		}
-
-		// This is a special metrics client that, if the user allows, will record their decision about whether to send metrics or not
-		metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCLISource, kurtosis_cli_version.KurtosisCLIVersion, metricsUserId, didUserConsentToSendMetricsElectionEvent, shouldFlushMetricsClientQueueOnEachEvent)
-		if err != nil {
-			return nil,  stacktrace.Propagate(err, "An error occurred creating the metrics client")
-		}
-		defer func() {
-			if err := metricsClient.Close(); err != nil {
-				logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
-			}
-		}()
-
-		if err := metricsClient.TrackShouldSendMetricsUserElection(didUserAcceptSendingMetrics); err != nil {
+		userConsentToSendMetricsElectionStore := user_consent_to_send_metrics_election.GetUserConsentToSendMetricsElectionStore()
+		if err := userConsentToSendMetricsElectionStore.Create(); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Errorf("An error occurred tracking should send metrics user election event\n%v",err)
+			logrus.Debugf("An error occurred creating user consent to send metrics election file\n%v",err)
 		}
 	}
 

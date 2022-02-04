@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added the functionality to execute retries when sending user metrics consent election fails
+
+### Changes
+* Upgraded the metrics library to xxx  //TODO replace with version number
 
 # 0.9.1
 ### Features

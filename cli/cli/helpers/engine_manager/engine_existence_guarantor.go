@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_consent_to_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
@@ -126,6 +127,13 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	kurtosisConfig, err := getKurtosisConfig()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting Kurtosis config")
+	}
+
+	//It is necessary to try track this metric on every execution to be the most closed to garantiza
+	//at least one successful deliver
+	if err := user_consent_to_send_metrics_election.TrackUserConsentToSendingMetricsElection(); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
 	}
 
 	var hostMachineIpAddr net.IP
