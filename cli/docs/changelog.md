@@ -5,6 +5,9 @@
 ### Changes
 * Upgraded the metrics library to xxx  //TODO replace with version number
 
+### Fixes
+* Fix `network_soft_partition_test` in Golang and Typescript internal testsuite
+
 # 0.9.1
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
