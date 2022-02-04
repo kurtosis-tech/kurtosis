@@ -40,7 +40,7 @@ const (
 
 	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
-	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(9771)
+	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(9711)
 
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:

@@ -18,7 +18,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-00010101000000-000000000000
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202133644-ad6cae2d4202
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220202183930-b5cae3986495
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/sirupsen/logrus v1.8.1
