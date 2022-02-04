@@ -3,6 +3,15 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
@@ -14,14 +23,6 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net"
-	"os"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 const (
@@ -134,6 +135,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	// TODO put in coreApiVersion as a param here!
 	enclaveId string,
 	isPartitioningEnabled bool,
+	shouldPublishAllPorts bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -236,6 +240,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
 			enclaveDataDirpathOnHostMachine,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 	} else {
 		apiContainerId, apiContainerPublicIpAddr, apiContainerGrpcPublicPort, apiContainerGrpcProxyPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
@@ -251,6 +257,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
 			enclaveDataDirpathOnHostMachine,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 	}
 	if launchApiContainerErr != nil {
@@ -274,14 +282,14 @@ func (manager *EnclaveManager) CreateEnclave(
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-			ContainerId:       apiContainerId,
-			IpInsideEnclave:   apiContainerPrivateIpAddr.String(),
-			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
+			ContainerId:                apiContainerId,
+			IpInsideEnclave:            apiContainerPrivateIpAddr.String(),
+			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
 			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:   apiContainerPublicIpAddr.String(),
-			GrpcPortOnHostMachine: uint32(apiContainerGrpcPublicPort.GetNumber()),
+			IpOnHostMachine:            apiContainerPublicIpAddr.String(),
+			GrpcPortOnHostMachine:      uint32(apiContainerGrpcPublicPort.GetNumber()),
 			GrpcProxyPortOnHostMachine: uint32(apiContainerGrpcProxyPublicPort.GetNumber()),
 		},
 		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
@@ -480,9 +488,9 @@ func getEnclaveContainerInformation(
 			}
 
 			resultApiContainerInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-				ContainerId:       container.GetId(),
-				IpInsideEnclave:   apiContainerIpInsideNetwork,
-				GrpcPortInsideEnclave: uint32(apiContainerObjAttrPrivateGrpcPort.GetNumber()),
+				ContainerId:                container.GetId(),
+				IpInsideEnclave:            apiContainerIpInsideNetwork,
+				GrpcPortInsideEnclave:      uint32(apiContainerObjAttrPrivateGrpcPort.GetNumber()),
 				GrpcProxyPortInsideEnclave: uint32(apiContainerObjAttrPrivateGrpcProxyPort.GetNumber()),
 			}
 
@@ -533,7 +541,6 @@ func getEnclaveContainerInformation(
 					)
 				}
 
-
 				allApiContainerPublicPortBindings := container.GetHostPortBindings()
 				apiContainerPublicGrpcPortBinding, foundApiContainerPublicGrpcPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivateGrpcPort]
 				if !foundApiContainerPublicGrpcPortBinding {
@@ -563,8 +570,8 @@ func getEnclaveContainerInformation(
 				}
 
 				resultApiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-					IpOnHostMachine:   apiContainerPublicGrpcPortBinding.HostIP,
-					GrpcPortOnHostMachine: uint32(apiContainerPublicGrpcPortNumUint16),
+					IpOnHostMachine:            apiContainerPublicGrpcPortBinding.HostIP,
+					GrpcPortOnHostMachine:      uint32(apiContainerPublicGrpcPortNumUint16),
 					GrpcProxyPortOnHostMachine: uint32(apiContainerPublicGrpcProxyPortNumUint16),
 				}
 			}

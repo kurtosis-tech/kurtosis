@@ -23,7 +23,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	KurtosisEngineVersion = "1.8.3"
+	KurtosisEngineVersion = "1.9.2"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!
@@ -71,6 +71,8 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	grpcProxyListenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortNum uint16,
@@ -83,6 +85,8 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
 		engineDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
@@ -97,6 +101,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
 	grpcProxyListenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortNum uint16,
@@ -158,6 +164,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		logLevel.String(),
 		imageVersionTag,
 		engineDataDirpathOnHostMachine,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")

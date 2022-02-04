@@ -68,4 +68,4 @@ _Found a bug? File it on [the repo][issues]!_
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
 [enclavecontext]: ../kurtosis-core/lib-documentation#enclavecontext
-[enclavecontext_repartitionnetwork]: ../kurtosis-core/lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnectioninfo-partitionconnections-partitionconnectioninfo-defaultconnection
+[enclavecontext_repartitionnetwork]: ../kurtosis-core/lib-documentation#repartitionnetworkmappartitionid-setserviceid-partitionservices-mappartitionid-mappartitionid-partitionconnection-partitionconnections-partitionconnection-defaultconnection

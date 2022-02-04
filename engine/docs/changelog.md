@@ -1,12 +1,39 @@
 # TBD
 
-# 1.8.3
+# 1.9.2
+### Fixes
+* Fix `kurtosis-core` dependency version in Typescript library, upgraded to v1.37.1
 
+# 1.9.1
+### Changes
+* Add metrics client close call to flush the queue
+* Upgrade to `metrics-client-library` v0.1.2
+* Upgrade to `kurtosis-core` v1.37.1
+
+# 1.9.0
+### Features
+* Added metrics client to track enclave events (e.g.: when users create an enclave)
+
+### Fixes
+* Refactored engine/library semVer checking to be more lax, and let continue the code run if semVer couldn't be parsed
+
+### Changes
+* Upgraded to `Kurt Core` 1.37.0 which implements module's metrics
+
+### Breaking Changes
+* Change the `EngineServerLauncher.LaunchWithDefaultVersion()` and `EngineServerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
+* Change `NewEngineServerService` constructor to now receive three new arguments `metricsUserID`, `didUserAcceptSendingMetrics` and `metricsClient`
+  * Users should add there three new arguments in every call
+* Change `EngineServerArgs` constructor, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
+
+# 1.8.3
 ### Fixes
 * Upgraded to Kurtosis Core v1.36.12 which fixes a bug when creating soft network partitions in Tyepscript
 
 # 1.8.2
-### FEATURES
+### Features
 * Added deletion of dangling folders in clean endpoint
 
 # 1.8.1

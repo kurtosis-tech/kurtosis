@@ -3,6 +3,7 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
@@ -72,10 +73,9 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 
 	libraryEngineSemver, err := semver.StrictNewVersion(kurtosis_engine_version.KurtosisEngineVersion)
 	if err != nil {
-		logrus.Warnf("We expected the library engine version to match format X.Y.Z, but instead got '%v'; "+
+		logrus.Warnf("We expected the API library version to match format X.Y.Z, but instead got '%v'; "+
 			"this means that we can't verify the API library and engine versions match so you may encounter runtime errors", kurtosis_engine_version.KurtosisEngineVersion)
 	}
-
 
 	if runningEngineSemver != nil && libraryEngineSemver != nil {
 
