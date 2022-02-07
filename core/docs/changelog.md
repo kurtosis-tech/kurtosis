@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added Envoy Proxy to support gRPC-web
+
 # 1.37.2
 ### Fixes
 * Upgrade `object-attributes-schema-lib` to 0.6.1

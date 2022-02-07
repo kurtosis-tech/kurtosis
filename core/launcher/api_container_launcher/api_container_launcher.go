@@ -186,7 +186,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	grpcProxyPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcProxyPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port with portNum '%v' and grpcPortNum '%v'", grpcPortNum, grpcProxyPortNum)
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC proxy port with portNum '%v'", grpcProxyPortNum)
 	}
 
 	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{
@@ -226,7 +226,11 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	}()
 
 	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcPortNum); err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
+	}
+
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcProxyPortNum); err != nil {
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc-proxy port to become available")
 	}
 
 	publicGrpcPort, found := publicPorts[schema.KurtosisInternalContainerGRPCPortID]
