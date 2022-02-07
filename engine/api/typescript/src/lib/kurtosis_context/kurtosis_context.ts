@@ -31,7 +31,8 @@ const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
 const API_CONTAINER_LOG_LEVEL: string = "info";
 
-export const DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM: number = 9710;
+export const DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PORT_NUM: number = 9710;
+export const DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PROXY_PORT_NUM: number = 9711;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
@@ -46,7 +47,7 @@ export class KurtosisContext {
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
-        const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM}`;
+        const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${DEFAULT_KURTOSIS_ENGINE_SERVER_GRPC_PORT_NUM}`;
 
         let engineServiceClient: EngineServiceClient;
         // TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers

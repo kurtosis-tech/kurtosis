@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Added envoy proxy to support grpc-web calls from GUI
+
 # 1.9.2
 ### Fixes
 * Fix `kurtosis-core` dependency version in Typescript library, upgraded to v1.37.1

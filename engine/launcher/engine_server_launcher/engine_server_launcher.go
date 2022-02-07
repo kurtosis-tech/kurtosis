@@ -69,7 +69,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16,
+	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -99,7 +99,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	imageVersionTag string,
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16,
+	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -152,7 +152,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
-			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
+			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's grpc-proxy port",
 			grpcProxyListenPortNum,
 			grpcProxyPortProtocol,
 		)
@@ -227,7 +227,11 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}()
 
 	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcListenPortNum); err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcListenPortNum)
+	}
+
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcProxyListenPortNum); err != nil {
+		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcProxyListenPortNum)
 	}
 
 	hostMachineEnginePortBinding, found := hostMachinePortBindings[grpcPortObj]
@@ -261,11 +265,11 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, grpcListenPortNum uint16) error {
+func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
 		netstatWaitForAvailabilityPortProtocol,
-		grpcListenPortNum,
+		listenPortNum,
 	)
 	execCmd := []string{
 		"sh",
