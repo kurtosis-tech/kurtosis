@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.3
 ### Fixes
 * Fix and error in CLI release version cache file generation
 
