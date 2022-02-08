@@ -12,7 +12,7 @@ orbs:
 jobs:
   check_code:
     docker:
-      - image: cimg/go:1.15.13
+      - image: cimg/go:1.16
     steps:
       - checkout
 
@@ -23,7 +23,10 @@ jobs:
             circleci-agent step halt
           fi
 
-      - run: scripts/build.sh
+      - run: |
+          git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
+          golang/scripts/build.sh
 
 workflows:
   build:
@@ -37,6 +40,9 @@ workflows:
                 - develop
                 - master
       - check_code:
+          context:
+            # This pulls in KurtosisBot's Github token, so that we can read from our private repos
+            - github-user
           filters:
             branches:
               ignore:
