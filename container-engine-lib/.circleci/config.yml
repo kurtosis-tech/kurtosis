@@ -26,7 +26,7 @@ jobs:
       - run: |
           git config --global url."https://${KURTOSISBOT_GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           go env -w "GOPRIVATE=github.com/kurtosis-tech/*"
-          golang/scripts/build.sh
+          scripts/build.sh
 
 workflows:
   build:
