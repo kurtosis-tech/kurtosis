@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import {PartitionConnectionInfo} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {PartitionConnectionInfo} from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb";
 import {newPartitionConnectionInfo} from "../constructor_calls";
 
 

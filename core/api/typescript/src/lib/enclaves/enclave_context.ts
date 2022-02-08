@@ -3,7 +3,7 @@
  * All Rights Reserved.
  */
 
-import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_grpc_pb";
 import {
     RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
@@ -27,7 +27,7 @@ import {
     GetModuleInfoResponse,
     GetModulesResponse,
     Port,
-} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+} from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb";
 import { ModuleID, ModuleContext } from "../modules/module_context";
 import { ServiceID} from "../services/service";
 import { SharedPath } from "../services/shared_path";

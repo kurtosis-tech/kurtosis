@@ -1,4 +1,4 @@
-import { Port } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb"
+import { Port } from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb"
 
 export type PortProtocol = Port.ProtocolMap[keyof Port.ProtocolMap];
 export namespace PortProtocol {

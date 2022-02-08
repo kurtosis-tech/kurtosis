@@ -1,4 +1,4 @@
-import { ExecCommandArgs, ExecuteBulkCommandsArgs, ExecuteModuleArgs, LoadModuleArgs, RegisterServiceArgs, RemoveServiceArgs, RepartitionArgs, StartServiceArgs, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "../../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import { ExecCommandArgs, ExecuteBulkCommandsArgs, ExecuteModuleArgs, LoadModuleArgs, RegisterServiceArgs, RemoveServiceArgs, RepartitionArgs, StartServiceArgs, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "../../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb";
 import { V0CommandTypeVisitor, V0CommandType } from "./v0_command_types";
 import { ok, err, Result } from "neverthrow";
 import * as protobuf from "google-protobuf";

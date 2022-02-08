@@ -1,5 +1,5 @@
-import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_grpc_pb";
+import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb";
 import { newExecuteModuleArgs as newExecuteModuleArgs } from "../constructor_calls";
 import { ok, err, Result } from "neverthrow";
 import * as grpc from "@grpc/grpc-js";
