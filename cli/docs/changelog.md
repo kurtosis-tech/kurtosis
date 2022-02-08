@@ -7,6 +7,11 @@
 
 ### Fixes
 * Fix `network_soft_partition_test` in Golang and Typescript internal testsuite
+* Fix typo in metrics consent message
+
+# 0.9.3
+### Fixes
+* Fix and error in CLI release version cache file generation
 
 # 0.9.2
 ### Fixes

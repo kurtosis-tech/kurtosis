@@ -7,7 +7,6 @@ package commands
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
@@ -56,6 +55,8 @@ const (
 	latestCLIReleaseCacheFileContentDateIndex               = 0
 	latestCLIReleaseCacheFileContentVersionIndex            = 1
 	latestCLIReleaseCacheFileCreationDateTimeFormat         = time.RFC3339
+
+	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 )
 
 type GitHubReleaseReponse struct {
@@ -246,22 +247,14 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 }
 
 func saveLatestCLIReleaseVersionInCacheFile(filepath, latestReleaseVersion string) error {
-	cacheFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening the '%v' file", filepath)
-	}
-	defer func() {
-		if err := cacheFile.Close(); err != nil {
-			logrus.Warnf("We tried to close the latest release CLI version cache file, but doing so threw an error:\n%v", err)
-		}
-	}()
 
 	now := time.Now()
 	cacheCreationDateString := now.Format(latestCLIReleaseCacheFileCreationDateTimeFormat)
 	content := strings.Join([]string{cacheCreationDateString, latestReleaseVersion}, latestCLIReleaseCacheFileContentSeparator)
+	fileContent := []byte(content)
 
 	logrus.Debugf("Saving content '%v' in cache file...", content)
-	if _, err := fmt.Fprintf(cacheFile, "%s", content); err != nil {
+	if err := ioutil.WriteFile(filepath, fileContent, getLatestCLIReleaseCacheFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving content '%v' in latest release version cache file", content)
 	}
 	logrus.Debugf("Content successfully saved in cache file")
