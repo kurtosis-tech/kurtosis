@@ -40,8 +40,8 @@ const (
 
 	apiContainerListenPortNumInsideNetwork = uint16(7443)
 
-	// this will be updated later by Karen
-	apiContainerGRPPCListenPortNumInsideNetwork = uint16(0)
+	// TODO this will be updated later by Karen
+	apiContainerGRPPCListenPortNumInsideNetwork = uint16(7444)
 
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
@@ -177,7 +177,6 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveId)
 	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork()
-
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
 	}
