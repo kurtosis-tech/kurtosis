@@ -1,5 +1,14 @@
 # TBD
 
+# 1.10.0
+### Breaking Changes
+* `kurtosis-core` API changed : `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` now adds two new arguments `grpcListenPort` and `grpcProxyListenPort` and deleted the one named `listenPort`
+  * Users should update, `object-attributes-schema-lib` to v0.7.0 and `kurtosis-engine` to v.1.10.0
+
+### Changes
+* Upgrade to `object-attributes-schema-lib` v0.7.0
+* Upgrade to `kurtosis-core` v1.38.0
+
 # 1.9.2
 ### Fixes
 * Fix `kurtosis-core` dependency version in Typescript library, upgraded to v1.37.1
