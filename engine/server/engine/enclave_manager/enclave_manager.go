@@ -40,6 +40,9 @@ const (
 
 	apiContainerListenPortNumInsideNetwork = uint16(7443)
 
+	// this will be updated later by Karen
+	apiContainerGRPPCListenPortNumInsideNetwork = uint16(0)
+
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
 	//  a) the engine data directory is bind-mounted on the Docker host machine
@@ -173,7 +176,12 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNetworkAttrs := enclaveObjAttrsProvider.ForEnclaveNetwork()
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork()
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
+	}
+
 	enclaveNetworkName := enclaveNetworkAttrs.GetName()
 	enclaveNetworkLabels := enclaveNetworkAttrs.GetLabels()
 
@@ -224,13 +232,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	var apiContainerPublicPort *enclave_container_launcher.EnclaveContainerPort
 	var launchApiContainerErr error
 	if apiContainerImageVersionTag == "" {
-		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithDefaultVersion(
+		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, _, launchApiContainerErr = apiContainerLauncher.LaunchWithDefaultVersion(
 			setupCtx,
 			apiContainerLogLevel,
 			enclaveId,
 			networkId,
 			networkIpAndMask.String(),
 			apiContainerListenPortNumInsideNetwork,
+			apiContainerGRPPCListenPortNumInsideNetwork,
 			gatewayIp,
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
@@ -239,7 +248,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			didUserAcceptSendingMetrics,
 		)
 	} else {
-		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
+		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, _, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
 			setupCtx,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
@@ -247,6 +256,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			networkId,
 			networkIpAndMask.String(),
 			apiContainerListenPortNumInsideNetwork,
+			apiContainerGRPPCListenPortNumInsideNetwork,
 			gatewayIp,
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
