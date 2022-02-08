@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fix typo in metrics consent message
 
 # 0.9.3
 ### Fixes
