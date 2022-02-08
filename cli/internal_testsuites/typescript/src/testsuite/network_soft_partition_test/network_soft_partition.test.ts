@@ -108,7 +108,7 @@ test("Test network soft partitions", async () => {
             "--report",
             "--json",
             "--report-cycles",
-            "1", // We set report cycles to 4 to generate the report faster because default is 10
+            "2", // We set report cycles to 2 to generate the report faster because default is 10
             "--no-dns", //No domain name resolution, also to improve velocity
         ];
 

@@ -1,7 +1,9 @@
-package user_consent_to_send_metrics_election
+package user_send_metrics_election
 
 import (
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/file_backed_user_send_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -10,19 +12,24 @@ import (
 )
 
 const (
-	shouldFlushMetricsClientQueueOnEachEvent                                = true
-	didUserAcceptSendingMetricsValueIfUserConsentToSendMetricsElectionExist = true
+	shouldFlushMetricsClientQueueOnEachEvent                 = true
+	didUserAcceptSendingMetricsValueForMetricsClientCreation = true
 )
 
-func TrackUserConsentToSendingMetricsElection() error {
+func SendAnyBackloggedUserMetricsElectionEvent() error {
 
-	userConsentToSendMetricsElectionStore := GetUserConsentToSendMetricsElectionStore()
-	doesUserConsentToSendMetricsElectionExist, err := userConsentToSendMetricsElectionStore.Exist()
+	filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the user consent to send metrics election filepath")
+	}
+
+	fileBackedUserSendMetricsElectionEventBacklog := file_backed_user_send_metrics_election_event_backlog.GetFileBackedUserSendMetricsElectionEventBacklog(filepath)
+	shouldSendMetrics, doesUserSendMetricsElectionEventBacked, err := fileBackedUserSendMetricsElectionEventBacklog.Get()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking if user consent to send metrics election exist")
 	}
 
-	if doesUserConsentToSendMetricsElectionExist {
+	if doesUserSendMetricsElectionEventBacked {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
 		metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -30,16 +37,16 @@ func TrackUserConsentToSendingMetricsElection() error {
 			return stacktrace.Propagate(err, "An error occurred getting metrics user ID")
 		}
 
-		mtrClientCallback := &metricsClientCallbackObject{}
+		metricsClientCallback := &metricsElectionEventBacklogClearingCallback{}
 
 		// This is a special metrics client that, if the user allows, will record their decision about whether to send metrics or not
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 			source.KurtosisCLISource,
 			kurtosis_cli_version.KurtosisCLIVersion,
 			metricsUserId,
-			didUserAcceptSendingMetricsValueIfUserConsentToSendMetricsElectionExist,
+			didUserAcceptSendingMetricsValueForMetricsClientCreation,
 			shouldFlushMetricsClientQueueOnEachEvent,
-			mtrClientCallback,
+			metricsClientCallback,
 		)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating the metrics client")
@@ -50,7 +57,7 @@ func TrackUserConsentToSendingMetricsElection() error {
 			}
 		}()
 
-		if err := metricsClient.TrackShouldSendMetricsUserElection(didUserAcceptSendingMetricsValueIfUserConsentToSendMetricsElectionExist); err != nil {
+		if err := metricsClient.TrackShouldSendMetricsUserElection(shouldSendMetrics); err != nil {
 			return stacktrace.Propagate(err, "An error occurred tracking should send metrics user election event")
 		}
 	}

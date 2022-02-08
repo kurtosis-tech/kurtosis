@@ -3,7 +3,7 @@
 * Added the functionality to execute retries when sending user metrics consent election fails
 
 ### Changes
-* Upgraded the metrics library to xxx  //TODO replace with version number
+* Upgraded the metrics library to 0.2.0
 
 ### Fixes
 * Fix `network_soft_partition_test` in Golang and Typescript internal testsuite

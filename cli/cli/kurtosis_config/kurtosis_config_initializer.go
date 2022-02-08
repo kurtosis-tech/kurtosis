@@ -2,8 +2,10 @@ package kurtosis_config
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_consent_to_send_metrics_election"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/file_backed_user_send_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -34,10 +36,19 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 	}
 
 	if didUserConsentToSendMetricsElectionEvent {
-		userConsentToSendMetricsElectionStore := user_consent_to_send_metrics_election.GetUserConsentToSendMetricsElectionStore()
-		if err := userConsentToSendMetricsElectionStore.Create(); err != nil {
+		filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the user consent to send metrics election filepath")
+		}
+		userConsentToSendMetricsElectionStore := file_backed_user_send_metrics_election_event_backlog.GetFileBackedUserSendMetricsElectionEventBacklog(filepath)
+		if err := userConsentToSendMetricsElectionStore.Set(didUserAcceptSendingMetrics); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
 			logrus.Debugf("An error occurred creating user consent to send metrics election file\n%v",err)
+		}
+		//Here we are trying to send this metric for first time
+		if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
+			//We don't want to interrupt users flow if something fails when tracking metrics
+			logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
 		}
 	}
 
