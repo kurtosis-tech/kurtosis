@@ -1,5 +1,10 @@
 # TBD
 
+# 1.38.0
+### Breaking Changes
+* Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `grpcListenPort` and `grpcProxyListenPort` and deleting the one named `listenPort`
+  * Users should add these two new arguments in every call instead of the old one named `listenPort`
+
 # 1.37.2
 ### Fixes
 * Upgrade `object-attributes-schema-lib` to 0.6.1
