@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.4
 ### Features
 * Added the functionality to execute retries when sending user-metrics-consent-election fails
 
