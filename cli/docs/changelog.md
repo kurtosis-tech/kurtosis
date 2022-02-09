@@ -1,5 +1,12 @@
 # TBD
+### Features
+* Added the functionality to execute retries when sending user-metrics-consent-election fails
+
+### Changes
+* Upgraded the metrics library to 0.2.0
+
 ### Fixes
+* Fix `network_soft_partition_test` in Golang and Typescript internal testsuite
 * Fix typo in metrics consent message
 
 # 0.9.3
