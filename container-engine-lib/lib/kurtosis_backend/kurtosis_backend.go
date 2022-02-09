@@ -20,7 +20,7 @@ func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore kurtosis_backend
 	}
 }
 
-func (kb KurtosisBackend) CreateEngine(
+func (kb *KurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
@@ -39,7 +39,7 @@ func (kb KurtosisBackend) CreateEngine(
 	return resultPublicIpAddr, resultPublicPortNum, resultErr
 }
 
-func (kb KurtosisBackend) StopEngine(ctx context.Context) error {
+func (kb *KurtosisBackend) StopEngine(ctx context.Context) error {
 	err := kb.kurtosisBackendCore.StopEngine(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, " an error ocurred while trying to stop the kurtosis engine")
@@ -47,7 +47,7 @@ func (kb KurtosisBackend) StopEngine(ctx context.Context) error {
 	return nil
 }
 
-func (kb KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+func (kb *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	engineNames, engineErrors, err := kb.kurtosisBackendCore.CleanStoppedEngines(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, " an error ocurred while trying to clean the kurtosis engines")
@@ -55,7 +55,7 @@ func (kb KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []
 	return engineNames, engineErrors, nil
 }
 
-func (kb KurtosisBackend) GetEngineStatus(
+func (kb *KurtosisBackend) GetEngineStatus(
 	ctx context.Context,
 ) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
 	engineStatus, ipAddr, portNum, err = kb.kurtosisBackendCore.GetEngineStatus(ctx)
