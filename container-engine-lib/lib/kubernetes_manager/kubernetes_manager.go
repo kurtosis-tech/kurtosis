@@ -122,7 +122,7 @@ func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deployme
 
 	deploymentResult, err := deploymentsClient.Create(ctx, deployment, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create deployment %s", deploymentName)
+		return nil, stacktrace.Propagate(err, "Failed to create deployment '%s' in namespace '%s'", deploymentName, namespace)
 	}
 
 	return deploymentResult, nil
@@ -143,7 +143,7 @@ func (manager *KubernetesManager) RemoveDeployment(ctx context.Context, namespac
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
 	if err := deploymentsClient.Delete(ctx, name, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete deployment '%s' with delete options '%v'", name, removeServiceDeleteOptions)
+		return stacktrace.Propagate(err, "Failed to delete deployment '%s' with delete options '%v' and for namespace '%s'", name, removeServiceDeleteOptions, namespace)
 	}
 	return nil
 }
@@ -168,7 +168,7 @@ func (manager *KubernetesManager) GetDeploymentsByLabels(ctx context.Context, na
 
 	deployments, err := deploymentsClient.List(ctx, listOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get deployment by labels '%+v' in namespace %s", deploymentLabels, namespace)
+		return nil, stacktrace.Propagate(err, "Failed to get deployment by labels '%+v' in namespace '%s'", deploymentLabels, namespace)
 	}
 
 	return deployments, nil
@@ -195,7 +195,7 @@ func (manager *KubernetesManager) UpdateDeploymentReplicas(ctx context.Context, 
 		return err
 	})
 	if retryErr != nil {
-		stacktrace.Propagate(retryErr, "Failed to update deployment replicas by labels %v", deploymentLabels)
+		stacktrace.Propagate(retryErr, "Failed to update deployment replicas by labels '%+v' and namespace '%s'", deploymentLabels, namespace)
 	}
 
 	return nil
@@ -234,7 +234,7 @@ func (manager *KubernetesManager) CreateService(ctx context.Context, name string
 
 	serviceResult, err := servicesClient.Create(ctx, service, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create service %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to create service '%s' in namespace '%s'", name, namespace)
 	}
 
 	return serviceResult, nil
@@ -244,7 +244,7 @@ func (manager *KubernetesManager) RemoveService(ctx context.Context, namespace s
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	if err := servicesClient.Delete(ctx, name, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete service %s", name)
+		return stacktrace.Propagate(err, "Failed to delete service '%s' with delete options '%v' and namespace '%s'", name, removeServiceDeleteOptions, namespace)
 	}
 
 	return nil
@@ -255,25 +255,25 @@ func (manager *KubernetesManager) GetServiceByName(ctx context.Context, namespac
 
 	serviceResult, err := servicesClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get service %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to get service '%s' for namespace '%s'", name, namespace)
 	}
 
 	return serviceResult, nil
 }
 
-func (manager *KubernetesManager) ListServices(ctx context.Context) (*apiv1.ServiceList, error) {
-	servicesClient := manager.kubernetesClientSet.CoreV1().Services(apiv1.NamespaceDefault)
+func (manager *KubernetesManager) ListServices(ctx context.Context, namespace string) (*apiv1.ServiceList, error) {
+	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	serviceResult, err := servicesClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list services")
+		return nil, stacktrace.Propagate(err, "Failed to list services for namespace '%s'", namespace)
 	}
 
 	return serviceResult, nil
 }
 
-func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
-	servicesClient := manager.kubernetesClientSet.CoreV1().Services(apiv1.NamespaceDefault)
+func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, serviceLabels map[string]string, namespace string) (*apiv1.ServiceList, error) {
+	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(serviceLabels).String(),
@@ -281,7 +281,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, servi
 
 	serviceResult, err := servicesClient.List(ctx, listOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list services")
+		return nil, stacktrace.Propagate(err, "Failed to list services with labels '%+v' for namespace '%s'", serviceLabels, namespace)
 	}
 
 	return serviceResult, nil
@@ -305,7 +305,7 @@ func (manager *KubernetesManager) CreateStorageClass(ctx context.Context, name s
 
 	storageClassResult, err := storageClassClient.Create(ctx, storageClass, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create storage class with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to create storage class with name '%s'", name)
 	}
 
 	return storageClassResult, nil
@@ -316,7 +316,7 @@ func (manager *KubernetesManager) RemoveStorageClass(ctx context.Context, name s
 
 	err := storageClassClient.Delete(ctx, name, removeServiceDeleteOptions)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to delete storage class with name %s", name)
+		return stacktrace.Propagate(err, "Failed to delete storage class with name '%s' with delete options '%v'", name, removeServiceDeleteOptions)
 	}
 
 	return nil
@@ -327,7 +327,7 @@ func (manager *KubernetesManager) GetStorageClass(ctx context.Context, name stri
 
 	storageClassResult, err := storageClassClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get storage class with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to get storage class with name '%s'", name)
 	}
 
 	return storageClassResult, nil
@@ -363,7 +363,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(ctx context.Context, vo
 
 	persistentVolumeResult, err := volumesClient.Create(ctx, persistentVolume, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name %s", volumeName)
+		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name '%s'", volumeName)
 	}
 
 	return persistentVolumeResult, nil
@@ -373,7 +373,7 @@ func (manager *KubernetesManager) RemovePersistentVolume(ctx context.Context, vo
 	volumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
 	if err := volumesClient.Delete(ctx, volumeName, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to create persistent volume with name %s", volumeName)
+		return stacktrace.Propagate(err, "Failed to create persistent volume with name '%s' and deleteOptions '%v'", volumeName, removeServiceDeleteOptions)
 	}
 
 	return nil
@@ -384,7 +384,7 @@ func (manager *KubernetesManager) GetPersistentVolume(ctx context.Context, volum
 
 	persistentVolumeResult, err := volumesClient.Get(ctx, volumeName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name %s", volumeName)
+		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name '%s'", volumeName)
 	}
 
 	return persistentVolumeResult, nil
@@ -395,7 +395,7 @@ func (manager *KubernetesManager) ListPersistentVolumes(ctx context.Context, vol
 
 	persistentVolumesResult, err := volumesClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name %s", volumeName)
+		return nil, stacktrace.Propagate(err, "Failed to list persistent volumes")
 	}
 
 	return persistentVolumesResult, nil
@@ -410,7 +410,7 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 
 	persistentVolumesResult, err := volumesClient.List(ctx, listOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume with name %v", persistentVolumeLabels)
+		return nil, stacktrace.Propagate(err, "Failed to get persistent volumes by labels '%+v'", persistentVolumeLabels)
 	}
 
 	return persistentVolumesResult, nil
@@ -442,7 +442,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(ctx context.Contex
 
 	persistentVolumeClaimResult, err := volumeClaimsClient.Create(ctx, persistentVolumeClaim, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name %s", persistentVolumeClaimName)
+		return nil, stacktrace.Propagate(err, "Failed to create persistent volume claim with name '%s' with namespace '%s'", persistentVolumeClaimName, namespace)
 	}
 
 	return persistentVolumeClaimResult, nil
@@ -452,7 +452,7 @@ func (manager *KubernetesManager) RemovePersistentVolumeClaim(ctx context.Contex
 	volumeClaimsClient := manager.kubernetesClientSet.CoreV1().PersistentVolumeClaims(namespace)
 
 	if err := volumeClaimsClient.Delete(ctx, persistentVolumeClaimName, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name %s", persistentVolumeClaimName)
+		return stacktrace.Propagate(err, "Failed to delete persistent volume claim with name '%s' with delete options '%v' and namespace '%s'", persistentVolumeClaimName, removeServiceDeleteOptions, namespace)
 	}
 
 	return nil
@@ -463,7 +463,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaim(ctx context.Context, 
 
 	volumeClaim, err := persistentVolumeClaimsClient.Get(ctx, persistentVolumeClaimName, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with name %s", persistentVolumeClaimName)
+		return nil, stacktrace.Propagate(err, "Failed to get persistent volume claim with name '%s' and with namespace '%s'", persistentVolumeClaimName, namespace)
 	}
 
 	return volumeClaim, nil
@@ -474,7 +474,7 @@ func (manager *KubernetesManager) ListPersistentVolumeClaims(ctx context.Context
 
 	persistentVolumeClaimsResult, err := persistentVolumeClaimsClient.List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list persistent volume claims")
+		return nil, stacktrace.Propagate(err, "Failed to list persistent volume claims for namespace '%s'", namespace)
 	}
 
 	return persistentVolumeClaimsResult, nil
@@ -489,7 +489,7 @@ func (manager *KubernetesManager) GetPersistentVolumeClaimsByLabels(ctx context.
 
 	persistentVolumeClaimsResult, err := persistentVolumeClaimsClient.List(ctx, listOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to Get persistent volume claim with labels %v", persistentVolumeClaimLabels)
+		return nil, stacktrace.Propagate(err, "Failed to Get persistent volume claim with labels '%+v' and namespace '%s'", persistentVolumeClaimLabels, namespace)
 	}
 
 	return persistentVolumeClaimsResult, nil
@@ -509,7 +509,7 @@ func (manager *KubernetesManager) CreateNamespace(ctx context.Context, name stri
 
 	namespaceResult, err := namespaceClient.Create(ctx, namespace, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create namespace with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to create namespace with name '%s'", name)
 	}
 
 	return namespaceResult, nil
@@ -519,7 +519,7 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, name stri
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
 	if err := namespaceClient.Delete(ctx, name, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete namespace with name %s", name)
+		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%v'", name, removeServiceDeleteOptions)
 	}
 
 	return nil
@@ -530,7 +530,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 
 	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get namespace with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
 	}
 
 	return namespace, nil
@@ -556,7 +556,7 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 
 	namespaces, err := namespaceClient.List(ctx, listOptions)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to list namespaces with labels %v", namespaceLabels)
+		return nil, stacktrace.Propagate(err, "Failed to list namespaces with labels '%+v'", namespaceLabels)
 	}
 
 	return namespaces, nil
@@ -577,28 +577,28 @@ func (manager *KubernetesManager) CreateDaemonSet(ctx context.Context, namespace
 
 	daemonSetResult, err := daemonSetClient.Create(ctx, daemonSet, metav1.CreateOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create daemonSet with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to create daemonSet with name '%s' and namespace '%s'", name, namespace)
 	}
 
 	return daemonSetResult, nil
 }
 
-func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, name string) error {
+func (manager *KubernetesManager) RemoveDaemonSet(ctx context.Context, name string, namespace string) error {
 
-	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(apiv1.NamespaceDefault)
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
 	if err := daemonSetClient.Delete(ctx, name, removeServiceDeleteOptions); err != nil {
-		return stacktrace.Propagate(err, "Failed to delete daemonSet with name %s", name)
+		return stacktrace.Propagate(err, "Failed to delete daemonSet with name '%s' with delete options '%v'", name, removeServiceDeleteOptions)
 	}
 
 	return nil
 }
 
-func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string) (*appsv1.DaemonSet, error) {
-	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(apiv1.NamespaceDefault)
+func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, name string, namespace string) (*appsv1.DaemonSet, error) {
+	daemonSetClient := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
 
 	daemonSet, err := daemonSetClient.Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get daemonSet with name %s", name)
+		return nil, stacktrace.Propagate(err, "Failed to get daemonSet with name '%s' in namespace '%s'", name, namespace)
 	}
 
 	return daemonSet, nil
