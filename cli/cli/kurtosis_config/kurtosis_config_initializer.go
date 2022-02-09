@@ -2,11 +2,9 @@ package kurtosis_config
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
-	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -17,8 +15,6 @@ const (
 
 	shouldSendMetricsDefaultValue = true
 	shouldSendMetricsOptOutEventDefaultValue = true
-
-	shouldFlushMetricsClientQueueOnEachEvent = true
 )
 
 func initInteractiveConfig() (*KurtosisConfig, error) {
@@ -26,7 +22,7 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 
 	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, shouldSendMetricsDefaultValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
+		return nil, stacktrace.Propagate(err, "An error occurred displaying user-metrics-consent prompt")
 	}
 	didUserConsentToSendMetricsElectionEvent := didUserAcceptSendingMetrics
 
@@ -34,32 +30,20 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 		fmt.Println("That's okay; we understand. No product analytic metrics will be collected from this point forward.")
 		didUserConsentToSendMetricsElectionEvent, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(secondMetricsConsentPromptLabel, shouldSendMetricsOptOutEventDefaultValue)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
+			return nil, stacktrace.Propagate(err, "An error occurred displaying user-metrics-consent prompt")
 		}
 	}
 
 	if didUserConsentToSendMetricsElectionEvent {
-		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
-
-		metricsUserId, err := metricsUserIdStore.GetUserID()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting metrics user ID")
-		}
-
-		// This is a special metrics client that, if the user allows, will record their decision about whether to send metrics or not
-		metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCLISource, kurtosis_cli_version.KurtosisCLIVersion, metricsUserId, didUserConsentToSendMetricsElectionEvent, shouldFlushMetricsClientQueueOnEachEvent)
-		if err != nil {
-			return nil,  stacktrace.Propagate(err, "An error occurred creating the metrics client")
-		}
-		defer func() {
-			if err := metricsClient.Close(); err != nil {
-				logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
-			}
-		}()
-
-		if err := metricsClient.TrackShouldSendMetricsUserElection(didUserAcceptSendingMetrics); err != nil {
+		userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
+		if err := userMetricsElectionEventBacklog.Set(didUserAcceptSendingMetrics); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Errorf("An error occurred tracking should send metrics user election event\n%v",err)
+			logrus.Debugf("An error occurred creating user-consent-to-send-metrics election file\n%v",err)
+		}
+		//Here we are trying to send this metric for first time, but if it fails we'll continue to retry every time the CLI runs
+		if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
+			//We don't want to interrupt users flow if something fails when tracking metrics
+			logrus.Debugf("An error occurred tracking user-consent-to-send-metrics election\n%v",err)
 		}
 	}
 
@@ -72,7 +56,7 @@ func printMetricsPreface() {
 	fmt.Println("============================================================================================")
 	fmt.Println("                               Metrics Election Preface")
 	fmt.Println("============================================================================================")
-	fmt.Println("The Kurtosis CLI has the potential collect anonymized product analytics metrics, and I want")
+	fmt.Println("The Kurtosis CLI has the potential to collect anonymized product analytics metrics, and I want")
 	fmt.Println("to explain why this big message is popping up in your face right now.")
 	fmt.Println("")
 	fmt.Println("User metrics are useful for detecting product bugs and seeing feature usage. However, they're")
@@ -81,13 +65,13 @@ func printMetricsPreface() {
 	fmt.Println("Kurtosis is a small startup so product analytics metrics are vital for us to determine")
 	fmt.Println("where to put resources, but it was important to me that we do this ethically.")
 	fmt.Println("")
-	fmt.Println("Therefore, we've made our metrics:")
+	fmt.Println("Therefore, our metrics are")
 	fmt.Println(" - private: we will *never* give or sell your data to third parties")
 	fmt.Println(" - opt-in: we require you to make a choice about collection rather than assuming you want in")
 	fmt.Println(" - anonymized: your user ID is a hash; we don't know who you are")
 	fmt.Println(" - obfuscated: potentially-sensitive parameters (like module exec params) are hashed as well")
 	fmt.Println("")
-	fmt.Println("If that sounds fair to you, we'd really appreciate you helping us get the data to make our product")
+	fmt.Println("If that sounds fair to you, we'd really appreciate you helping us get the data to make the product")
 	fmt.Println("better. In exchange, you have my personal word to honor the trust you place in us by fulfilling")
 	fmt.Println("our metrics promises above.")
 	fmt.Println("")

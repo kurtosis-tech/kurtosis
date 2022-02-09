@@ -17,6 +17,8 @@ const (
 
 	metricsUserIDFilename = "metrics-user-id"
 
+	userSendMetricsElection = "user-send-metrics-election"
+
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
 )
@@ -46,6 +48,15 @@ func GetMetricsUserIdFilepath() (string, error) {
 	filepath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return filepath, nil
+}
+
+func GetUserSendMetricsElectionFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(userSendMetricsElection)
+	filepath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the user-send-metrics-election filepath from relative path '%v'", xdgRelFilepath)
 	}
 	return filepath, nil
 }

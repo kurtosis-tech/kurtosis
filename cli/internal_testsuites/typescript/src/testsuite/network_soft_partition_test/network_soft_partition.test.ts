@@ -38,7 +38,9 @@ const TEST_SERVICE_SLEEP_MILLISECONDS_STR = "300000";
 
 const PERCENTAGE_SIGN = "%";
 const ZERO_PACKET_LOSS = 0;
-const SOFT_PARTITION_PACKET_LOSS_PERCENTAGE = 40;
+const SOFT_PARTITION_PACKET_LOSS_PERCENTAGE = 99;
+
+const ZERO_ELEMENTS_IN_MTR_HUB_FIELD = 0
 
 interface MtrReport {
     report: {
@@ -106,7 +108,7 @@ test("Test network soft partitions", async () => {
             "--report",
             "--json",
             "--report-cycles",
-            "4", // We set report cycles to 4 to generate the report faster because default is 10
+            "2", // We set report cycles to 2 to generate the report faster because default is 10
             "--no-dns", //No domain name resolution, also to improve velocity
         ];
 
@@ -137,6 +139,10 @@ test("Test network soft partitions", async () => {
                 }else{
                     throw new Error("Encountered error while parsing json file, but the error wasn't of type Error")
                 }
+            }
+
+            if (mtrReportBeforeSoftPartition.report.hubs.length === ZERO_ELEMENTS_IN_MTR_HUB_FIELD) {
+                throw new Error("There isn't any element in the report hub field");
             }
             
             const packetLoss = mtrReportBeforeSoftPartition.report.hubs[0]["Loss%"]
@@ -192,12 +198,11 @@ test("Test network soft partitions", async () => {
                 }
             }
 
-            const packetLoss = mtrReportAfterPartition.report.hubs[0]["Loss%"]
-            if(ZERO_PACKET_LOSS === packetLoss){
-                throw new Error(`Expected nonzero packet loss after applying the soft partition, but packet loss was ${packetLoss}`)
+            if(ZERO_ELEMENTS_IN_MTR_HUB_FIELD !== mtrReportAfterPartition.report.hubs.length) {
+                throw new Error(`The absence of hub's elements means that all packets were lost, so shouldn't be any hub's elements on the report but it contains ${mtrReportAfterPartition.report.hubs.length} elements`)
             }
             
-            log.info(`Report complete successfully, there was ${packetLoss}${PERCENTAGE_SIGN} packet loss between services during the test`)
+            log.info("Report complete successfully, no package was sent")
         }
 
         log.info("Executing repartition network to unblock partition and join services again...")
@@ -244,6 +249,10 @@ test("Test network soft partitions", async () => {
                 }else{
                     throw new Error("Encountered error while parsing json file, but the error wasn't of type Error")
                 }
+            }
+
+            if (mtrReportAfterUnblockedPartition.report.hubs.length === ZERO_ELEMENTS_IN_MTR_HUB_FIELD) {
+                throw new Error("There isn't any element in the report hub field");
             }
 
             const packetLoss = mtrReportAfterUnblockedPartition.report.hubs[0]["Loss%"]

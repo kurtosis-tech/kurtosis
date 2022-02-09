@@ -35,7 +35,9 @@ const (
 
 	percentageSign = "%"
 	zeroPacketLoss = float64(0)
-	softPartitionPacketLossPercentage = float32(40)
+	softPartitionPacketLossPercentage = float32(99)
+
+	zeroElementsInMtrHubField = 0
 )
 
 type MtrReport struct {
@@ -92,7 +94,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 		"--report",
 		"--json",
 		"--report-cycles",
-		"4", // We set report cycles to 4 to generate the report faster because default is 10
+		"2", // We set report cycles to 2 to generate the report faster because default is 10
 		"--no-dns", //No domain name resolution, also to improve velocity
 	}
 
@@ -113,6 +115,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 	mtrReportBeforeSoftPartition := new(MtrReport)
 	err = json.Unmarshal([]byte(jsonStr), mtrReportBeforeSoftPartition)
 	require.NoError(t, err, "An error occurred unmarshalling json string '%v' to mtr report struct ", jsonStr)
+	require.Greaterf(t, len(mtrReportBeforeSoftPartition.Report.Hubs), zeroElementsInMtrHubField, "There isn't any element in the report hub field")
 	require.Equal(t, zeroPacketLoss, mtrReportBeforeSoftPartition.Report.Hubs[0].Loss)
 	logrus.Info("Report complete successfully, there was no packet loss between services during the test")
 
@@ -142,8 +145,8 @@ func TestNetworkSoftPartitions(t *testing.T) {
 	mtrReportAfterPartition := new(MtrReport)
 	err = json.Unmarshal([]byte(jsonStr), mtrReportAfterPartition)
 	require.NoError(t, err, "An error occurred unmarshalling json string '%v' to mtr report struct ", jsonStr)
-	require.NotEqual(t, zeroPacketLoss, mtrReportAfterPartition.Report.Hubs[0].Loss)
-	logrus.Infof("Report complete successfully, there was %v%v packet loss between services during the test", mtrReportAfterPartition.Report.Hubs[0].Loss, percentageSign)
+	require.Equalf(t, zeroElementsInMtrHubField, len(mtrReportAfterPartition.Report.Hubs), "The absence of hub's elements means that all packets were lost, so shouldn't be any hub's elements on the report but it contains %v elements", len(mtrReportAfterPartition.Report.Hubs))
+	logrus.Infof("Report complete successfully, no package was sent")
 
 	logrus.Info("Executing repartition network to unblock partition and join services again...")
 	unblockedPartitionConnection := enclaves.NewUnblockedPartitionConnection()
@@ -169,6 +172,7 @@ func TestNetworkSoftPartitions(t *testing.T) {
 	mtrReportAfterUnblockedPartition := new(MtrReport)
 	err = json.Unmarshal([]byte(jsonStr), mtrReportAfterUnblockedPartition)
 	require.NoError(t, err, "An error occurred unmarshalling json string '%v' to mtr report struct ", jsonStr)
+	require.Greaterf(t, len(mtrReportAfterUnblockedPartition.Report.Hubs), zeroElementsInMtrHubField, "There aren't any element in the report hub field")
 	require.Equal(t, zeroPacketLoss, mtrReportAfterUnblockedPartition.Report.Hubs[0].Loss)
 	logrus.Info("Report complete successfully, there was no packet loss between services during the test")
 }
