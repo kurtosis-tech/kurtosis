@@ -1,4 +1,7 @@
 # TBD
+### Features
+* `service shell` will first try to find & use `bash` before dropping down to `sh`
+
 ### Fixes
 * Fix typo in metrics consent message
 
