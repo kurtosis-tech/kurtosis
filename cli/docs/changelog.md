@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Added the functionality to execute retries when sending user metrics consent election fails
+* Added the functionality to execute retries when sending user-metrics-consent-election fails
 
 ### Changes
 * Upgraded the metrics library to 0.2.0

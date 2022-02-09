@@ -2,10 +2,9 @@ package kurtosis_config
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/file_backed_user_send_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +22,7 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 
 	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, shouldSendMetricsDefaultValue)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
+		return nil, stacktrace.Propagate(err, "An error occurred displaying user-metrics-consent prompt")
 	}
 	didUserConsentToSendMetricsElectionEvent := didUserAcceptSendingMetrics
 
@@ -31,24 +30,20 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 		fmt.Println("That's okay; we understand. No product analytic metrics will be collected from this point forward.")
 		didUserConsentToSendMetricsElectionEvent, err = prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(secondMetricsConsentPromptLabel, shouldSendMetricsOptOutEventDefaultValue)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred displaying user metrics consent prompt")
+			return nil, stacktrace.Propagate(err, "An error occurred displaying user-metrics-consent prompt")
 		}
 	}
 
 	if didUserConsentToSendMetricsElectionEvent {
-		filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the user consent to send metrics election filepath")
-		}
-		userConsentToSendMetricsElectionStore := file_backed_user_send_metrics_election_event_backlog.GetFileBackedUserSendMetricsElectionEventBacklog(filepath)
-		if err := userConsentToSendMetricsElectionStore.Set(didUserAcceptSendingMetrics); err != nil {
+		userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
+		if err := userMetricsElectionEventBacklog.Set(didUserAcceptSendingMetrics); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Debugf("An error occurred creating user consent to send metrics election file\n%v",err)
+			logrus.Debugf("An error occurred creating user-consent-to-send-metrics election file\n%v",err)
 		}
-		//Here we are trying to send this metric for first time
+		//Here we are trying to send this metric for first time, but if it fails we'll continue to retry every time the CLI runs
 		if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
 			//We don't want to interrupt users flow if something fails when tracking metrics
-			logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
+			logrus.Debugf("An error occurred tracking user-consent-to-send-metrics election\n%v",err)
 		}
 	}
 

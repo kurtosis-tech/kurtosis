@@ -1,9 +1,8 @@
 package user_send_metrics_election
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/file_backed_user_send_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -18,18 +17,13 @@ const (
 
 func SendAnyBackloggedUserMetricsElectionEvent() error {
 
-	filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
+	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
+	shouldSendMetrics, hasBackloggedEvent, err := userMetricsElectionEventBacklog.Get()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the user consent to send metrics election filepath")
+		return stacktrace.Propagate(err, "An error occurred checking if a user-consent-to-send-metrics-election backlog exists")
 	}
 
-	fileBackedUserSendMetricsElectionEventBacklog := file_backed_user_send_metrics_election_event_backlog.GetFileBackedUserSendMetricsElectionEventBacklog(filepath)
-	shouldSendMetrics, doesUserSendMetricsElectionEventBacked, err := fileBackedUserSendMetricsElectionEventBacklog.Get()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking if user consent to send metrics election exist")
-	}
-
-	if doesUserSendMetricsElectionEventBacked {
+	if hasBackloggedEvent {
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 
 		metricsUserId, err := metricsUserIdStore.GetUserID()
@@ -39,7 +33,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 
 		metricsClientCallback := &metricsElectionEventBacklogClearingCallback{}
 
-		// This is a special metrics client that, if the user allows, will record their decision about whether to send metrics or not
+		// This is a special metrics client that, will record their decision about whether to send metrics or not
 		metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 			source.KurtosisCLISource,
 			kurtosis_cli_version.KurtosisCLIVersion,
@@ -49,7 +43,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 			metricsClientCallback,
 		)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the metrics client")
+			return stacktrace.Propagate(err, "An error occurred creating the metrics client for recording send-metrics election")
 		}
 		defer func() {
 			if err := metricsClientCloseFunc(); err != nil {
@@ -58,7 +52,7 @@ func SendAnyBackloggedUserMetricsElectionEvent() error {
 		}()
 
 		if err := metricsClient.TrackShouldSendMetricsUserElection(shouldSendMetrics); err != nil {
-			return stacktrace.Propagate(err, "An error occurred tracking should send metrics user election event")
+			return stacktrace.Propagate(err, "An error occurred tracking should-send-metrics user election event")
 		}
 	}
 
