@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Upgraded the engine server to 1.10.0
+* Upgraded the kurtosis core to 1.38.0
+* Upgraded the object-attributes-schema-lib to 0.7.0
+* changes the generated kurtosis enclave name to lower case
 
 # 0.9.4
 ### Features

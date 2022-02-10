@@ -104,7 +104,10 @@ func RunREPL(
 
 	interactiveReplGuid := getReplGUID()
 
-	replAttrs := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	replAttrs, err := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when trying to get the repl attributes for the interactiveReplGuid '%s'", interactiveReplGuid)
+	}
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := replAttrs.GetName()
