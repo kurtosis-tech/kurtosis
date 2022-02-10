@@ -66,7 +66,7 @@ Args:
 Returns:
 	id: The deployment ID
 */
-func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deploymentName string, namespace string, labels map[string]string, containerImage string, replicas int32, volumes []apiv1.Volume, volumeMounts []apiv1.VolumeMount, envVars map[string]string, containerName string) (*appsv1.Deployment, error) {
+func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deploymentName string, namespace string, deploymentLabels map[string]string,podLabels map[string]string,  containerImage string, replicas int32, volumes []apiv1.Volume, volumeMounts []apiv1.VolumeMount, envVars map[string]string, containerName string) (*appsv1.Deployment, error) {
 	deploymentsClient := manager.kubernetesClientSet.AppsV1().Deployments(namespace)
 
 	var podEnvVars []apiv1.EnvVar
@@ -81,11 +81,11 @@ func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deployme
 
 	objectMeta := metav1.ObjectMeta{
 		Name:   deploymentName,
-		Labels: labels,
+		Labels: deploymentLabels,
 	}
 
 	selector := &metav1.LabelSelector{
-		MatchLabels: labels,
+		MatchLabels: podLabels, // this should always match the Pod labels, otherwise it will fail
 	}
 
 	containers := []apiv1.Container{
@@ -104,7 +104,7 @@ func (manager *KubernetesManager) CreateDeployment(ctx context.Context, deployme
 
 	podTemplateSpec := apiv1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: labels,
+			Labels: podLabels,
 		},
 		Spec: podSpec,
 	}

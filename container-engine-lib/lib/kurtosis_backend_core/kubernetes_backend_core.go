@@ -34,7 +34,7 @@ type KurtosisKubernetesBackendCore struct {
 
 func NewKurtosisKubernetesBackendCore(log *logrus.Logger, k8sManager *kubernetes_manager.KubernetesManager, objAttrsProvider schema.ObjectAttributesProvider) *KurtosisKubernetesBackendCore {
 	return &KurtosisKubernetesBackendCore{
-		log:              log,
+		log: log,
 
 		kubernetesManager: k8sManager,
 		objAttrsProvider:  objAttrsProvider,
@@ -55,13 +55,18 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	resultErr error,
 ) {
 	// getting the object attributes for the engine server
-	engineAttrs, err := kkb.objAttrsProvider.ForEngineServer(listenPortNum)
+	engineAttrs, err := kkb.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes deployment
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
+	}
+
+	// getting the object attributes for the engine server
+	engineAttrsForPod, err := kkb.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes pod
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
 
 	engineDataDirpathOnHostMachine = defaultHostPathInMinikube
-
 
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")
@@ -80,7 +85,7 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	)
 
 	// checking if the kurtosis namespace already exists and creating it otherwise
-	kurtosisNamespaceList, err := kkb.kubernetesManager.GetNamespacesByLabels(ctx,engineLabels)
+	kurtosisNamespaceList, err := kkb.kubernetesManager.GetNamespacesByLabels(ctx, engineLabels)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
@@ -135,7 +140,7 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	}
 
 	// creating deployment
-	_, err = kkb.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
+	_, err = kkb.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
@@ -252,7 +257,7 @@ func (kkb KurtosisKubernetesBackendCore) GetEngineStatus(
 
 	engineDeployment := deployments[0]
 
-	service, err:=kkb.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
+	service, err := kkb.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
 
 	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
 
