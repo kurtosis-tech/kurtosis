@@ -1,4 +1,8 @@
 # TBD
+### Changes
+* Upgrade to `object-attributes-schema-lib` v0.7.1
+* Upgrade to `kurtosis-core` v1.38.1
+
 ### Fixes
 * Don't choke when trying to destroy an enclave whose enclave ID is a subset of another
 
