@@ -1,4 +1,8 @@
 # TBD
+### Breaking Changes
+* Upgraded to engine server 1.10, which makes name & label values compatible with Kubernetes
+    * **Users must restart their engine servers and should recreate any enclaves!**
+
 ### Changes
 * Upgraded the engine server to 1.10.0
 * Upgraded the kurtosis core to 1.38.0
