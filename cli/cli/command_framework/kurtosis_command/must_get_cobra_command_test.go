@@ -37,7 +37,7 @@ func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
 				Key: flag1Key,
 			},
 			{
-				Key: flag2Key,
+				Key: flag1Key,
 			},
 		},
 	}

@@ -6,6 +6,11 @@
 * Changed the generated kurtosis enclave name to lower case
 * Changed constants/vars in tests
 
+### Fixes
+* CLI `build.sh` wasn't calling `go test`
+* Fixed multiple log messages & `stacktrace.Propagate`s that didn't have formatstr variables
+* Fixed broken `DuplicateFlagsCausePanic` unit test
+
 # 0.9.4
 ### Features
 * Added the functionality to execute retries when sending user-metrics-consent-election fails

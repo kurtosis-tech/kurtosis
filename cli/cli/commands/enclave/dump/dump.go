@@ -109,7 +109,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldGetStoppedContainers)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk")
+		return stacktrace.Propagate(
+			err,
+			"An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk",
+			enclaveId,
+		 )
 	}
 
 	// Create output directory
@@ -117,7 +121,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", enclaveOutputDirpath)
 	}
 	if err := os.Mkdir(enclaveOutputDirpath, createdDirPerms); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'")
+		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", enclaveOutputDirpath)
 	}
 
 	workerPool := workerpool.New(numContainersToDumpAtOnce)
@@ -223,7 +227,7 @@ func dumpContainerInfo(
 		containerId,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	jsonSerializedInspectResultBytes, err := json.MarshalIndent(inspectResult, containerSpecJsonSerializationPrefix, containerSpecJsonSerializationIndent)
 	if err != nil {
@@ -252,7 +256,7 @@ func dumpContainerInfo(
 		},
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'", containerId)
 	}
 	defer containerLogsReadCloser.Close()
 	logsOutputFilepath := path.Join(containerOutputDirpath, containerLogsFilename)
