@@ -129,10 +129,10 @@ func NewEnclaveManager(
 //  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	// TODO put in coreApiVersion as a param here!
+// TODO put in coreApiVersion as a param here!
 	enclaveId string,
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool,
@@ -402,10 +402,20 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 // There is a 1:1 mapping between Docker network and enclave - no network, no enclave, and vice versa
 // We therefore use this function to check for the existence of an enclave, as well as get network info about existing enclaves
 func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId string) (*types.Network, bool, error) {
-	matchingNetworks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
+	allNetworksWithEnclaveIdInName, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, "An error occurred getting networks matching name '%v'", enclaveId)
 	}
+
+	// NOTE: GetNetworksByName will match networks that have the enclaveId *even as a substring*, so we have to filter again
+	// to get the network (if any) that has a name *exactly* == enclave ID
+	matchingNetworks := []*types.Network{}
+	for _, networkWithEnclaveId := range allNetworksWithEnclaveIdInName {
+		if networkWithEnclaveId.GetName() == enclaveId {
+			matchingNetworks = append(matchingNetworks, networkWithEnclaveId)
+		}
+	}
+
 	numMatchingNetworks := len(matchingNetworks)
 	logrus.Debugf("Found %v networks matching name '%v': %+v", numMatchingNetworks, enclaveId, matchingNetworks)
 	if numMatchingNetworks > 1 {
