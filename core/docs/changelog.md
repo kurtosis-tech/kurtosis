@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Upgrade `object-attributes-schema-lib` to 0.7.1
 
 # 1.38.0
 ### Breaking Changes
