@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Don't choke when trying to destroy an enclave whose enclave ID is a subset of another
 
 # 1.10.0
 ### Breaking Changes
