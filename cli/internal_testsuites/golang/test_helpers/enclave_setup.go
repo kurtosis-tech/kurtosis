@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testsuiteNameEnclaveIDFragment = "golang-engine-server-test"
+	testsuiteNameEnclaveIDFragment = "go-eng-svr-test"
 
 	millisInNanos = 1000
 )
@@ -21,7 +21,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
 	enclaveId := enclaves.EnclaveID(fmt.Sprintf(
-		"%v_%v_%v",
+		"%v.%v.%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
 		time.Now().UnixNano() / millisInNanos,

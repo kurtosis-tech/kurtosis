@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	testName = "wait-for-endpoint-availability-test"
+	testName = "wait-for-endpoint-avail-test"
 	isPartitioningEnabled = false
 
 	dockerGettingStartedImage                       = "docker/getting-started"

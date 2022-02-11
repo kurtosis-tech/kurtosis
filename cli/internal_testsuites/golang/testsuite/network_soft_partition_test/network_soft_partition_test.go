@@ -27,7 +27,7 @@ const (
 	exampleServicePartitionID enclaves.PartitionID = "example"
 	testServicePartitionID    enclaves.PartitionID = "test"
 
-	exampleServiceMainPortID = "main-port"
+	exampleServiceMainPortID = "mainport"
 
 	sleepCmd = "sleep"
 
