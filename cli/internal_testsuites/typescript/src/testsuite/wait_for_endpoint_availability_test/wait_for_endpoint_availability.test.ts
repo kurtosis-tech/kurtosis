@@ -10,7 +10,7 @@ import { ok, Result } from "neverthrow"
 
 import { createEnclave } from "../../test_helpers/enclave_setup"
 
-const TEST_NAME = "wait-for-endpoint-avail-test"
+const TEST_NAME = "wait-for-endpoint-availability-test"
 const IS_PARTITIONING_ENABLED = false
 
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started"

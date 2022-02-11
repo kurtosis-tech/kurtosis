@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testsuiteNameEnclaveIDFragment = "go-eng-svr-test"
+	testsuiteNameEnclaveIDFragment = "go-testsuite"
 
 	millisInNanos = 1000
 )
