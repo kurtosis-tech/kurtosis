@@ -1,4 +1,7 @@
 # TBD
+### Fixes
+* Fixes a panic due to passing `nil` into `stacktrace.Propagate`
+* Fix some variable name shadowing in `EnclaveManager`
 
 # 1.10.1
 ### Changes
