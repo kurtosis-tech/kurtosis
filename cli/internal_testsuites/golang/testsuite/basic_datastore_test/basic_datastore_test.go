@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testName = "basic-datastore-test"
+	testName = "basic-datastore"
 	isPartitioningEnabled = false
 
 	datastoreServiceId services.ServiceID = "datastore"

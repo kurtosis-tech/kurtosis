@@ -6,7 +6,7 @@ import * as utf8 from "utf8"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "files-test";
+const TEST_NAME = "files";
 const IS_PARTITIONING_ENABLED = false;
 
 const DOCKER_IMAGE = "alpine:3.12.4"

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testName              = "network-soft-partition-test"
+	testName              = "network-soft-partition"
 	isPartitioningEnabled = true
 
 	dockerGettingStartedImage                             = "docker/getting-started"

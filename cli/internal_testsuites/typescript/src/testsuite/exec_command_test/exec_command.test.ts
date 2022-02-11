@@ -4,7 +4,7 @@ import { err, ok, Result } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "exec-command-test";
+const TEST_NAME = "exec-command";
 const IS_PARTITIONING_ENABLED = false;
 const EXEC_CMD_TEST_IMAGE = "alpine:3.12.4";
 const INPUT_FOR_LOG_OUTPUT_TEST = "hello";

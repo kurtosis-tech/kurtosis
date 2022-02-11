@@ -16,7 +16,7 @@ import { ok, Result, err } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "network-soft-partition-test";
+const TEST_NAME = "network-soft-partition";
 const IS_PARTITIONING_ENABLED = true;
 
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
