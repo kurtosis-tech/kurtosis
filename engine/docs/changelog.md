@@ -1,4 +1,6 @@
 # TBD
+
+# 1.10.1
 ### Changes
 * Upgrade to `object-attributes-schema-lib` v0.7.1
 * Upgrade to `kurtosis-core` v1.38.1
