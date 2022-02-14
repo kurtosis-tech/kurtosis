@@ -3,8 +3,7 @@
  * All Rights Reserved.
  */
 
-import {PartitionConnectionInfo} from "../../kurtosis_core_rpc_api_bindings/node/api_container_service_pb";
-import {newPartitionConnectionInfo} from "../constructor_calls";
+import { PartitionConnectionInfo, newPartitionConnectionInfo } from "../../";
 
 
 const UNBLOCKED_PARTITION_CONNECTION_PACKET_LOSS_VALUE: number = 0;
