@@ -43,10 +43,16 @@ if ! version="$("${get_version_script_filepath}")"; then
     exit 1
 fi
 
-if ! go test "${cli_module_dirpath}/..."; then
-    echo "Error: Go tests failed" >&2
-    exit 1
-fi
+(
+    if ! cd "${cli_module_dirpath}"; then
+        echo "Error: Couldn't cd to the CLI module directory in preparation for running Go tests" >&2
+        exit 1
+    fi
+    if ! go test "./..."; then
+        echo "Error: Go tests failed" >&2
+        exit 1
+    fi
+)
 
 # vvvvvvvv Goreleaser variables vvvvvvvvvvvvvvvvvvv
 export CLI_BINARY_FILENAME \
