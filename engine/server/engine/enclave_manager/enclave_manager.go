@@ -443,11 +443,11 @@ func getEnclaveContainerInformation(
 	*kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo,
 	error,
 ) {
-	containers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
+	allEnclaveContainers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
 	if err != nil {
 		return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
-	if len(containers) == 0 {
+	if len(allEnclaveContainers) == 0 {
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY,
 			kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT,
 			nil,
@@ -459,22 +459,22 @@ func getEnclaveContainerInformation(
 	resultApiContainerStatus := kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT
 	var resultApiContainerInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo = nil
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo = nil
-	for _, container := range containers {
-		containerStatus := container.GetStatus()
-		isContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
-		if isContainerRunning {
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerStatus := enclaveContainer.GetStatus()
+		isEnclaveContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
+		if isEnclaveContainerRunning {
 			resultContainersStatus = kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
 		}
 
 		// Parse API container info, if it exists
-		containerLabels := container.GetLabels()
+		containerLabels := enclaveContainer.GetLabels()
 		containerTypeLabelValue, found := containerLabels[forever_constants.ContainerTypeLabel]
 		if found && containerTypeLabelValue == schema.ContainerTypeAPIContainer {
 			if resultApiContainerInfo != nil {
 				return 0, 0, nil, nil, stacktrace.NewError("Found a second API container inside the network; this should never happen!")
 			}
 
-			if isContainerRunning {
+			if isEnclaveContainerRunning {
 				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 			} else {
 				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED
@@ -488,19 +488,19 @@ func getEnclaveContainerInformation(
 				)
 			}
 
-			apiContainerObjAttrPrivatePort, getPrivatePortErr := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels)
-			if getPrivatePortErr != nil {
+			apiContainerObjAttrPrivatePort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels)
+			if err != nil {
 				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container private port")
 			}
 
 			resultApiContainerInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-				ContainerId:       container.GetId(),
+				ContainerId:       enclaveContainer.GetId(),
 				IpInsideEnclave:   apiContainerIpInsideNetwork,
 				PortInsideEnclave: uint32(apiContainerObjAttrPrivatePort.GetNumber()),
 			}
 
 			// We only get host machine info if the container is running
-			if isContainerRunning {
+			if isEnclaveContainerRunning {
 				apiContainerPrivatePortObjAttrProto := apiContainerObjAttrPrivatePort.GetProtocol()
 				apiContainerPrivatePortDockerProto, foundDockerProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivatePortObjAttrProto]
 				if !foundDockerProto {
@@ -524,7 +524,7 @@ func getEnclaveContainerInformation(
 					)
 				}
 
-				allApiContainerPublicPortBindings := container.GetHostPortBindings()
+				allApiContainerPublicPortBindings := enclaveContainer.GetHostPortBindings()
 				apiContainerPublicPortBinding, foundApiContainerPublicPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivatePort]
 				if !foundApiContainerPublicPortBinding {
 					return 0, 0, nil, nil, stacktrace.NewError(
