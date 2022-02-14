@@ -556,7 +556,7 @@ func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[strin
 		var portSpecs map[string]*schema.PortSpec
 		// TODO REMOVE THIS CHECK AFTER 2022-04-14, WEHN NOBODY WILL BE USING THE OLD PORT SPEC!
 		if strings.Contains(serializedPortSpecsStr, ":") {
-			preFeb2022PortSpecs, err := schema.DeserializePortSpecs(serializedPortSpecsStr)
+			preFeb2022PortSpecs, err := deserializePre2022_02_14PortSpec(serializedPortSpecsStr)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred deserializing pre-2022-02-14 API container port spec string '%v'", serializedPortSpecsStr)
 			}

@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Actually handle old port specs
 
 # 1.10.3
 ### Fixes
