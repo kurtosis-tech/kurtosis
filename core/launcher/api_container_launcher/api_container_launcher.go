@@ -22,11 +22,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-<<<<<<< HEAD
-	DefaultVersion = "1.37.2"
-=======
-	DefaultVersion = "1.38.0"
->>>>>>> develop
+	DefaultVersion = "1.38.1"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	portProtocolToMonitorWhenWaitingForAvailability = "tcp"
@@ -190,11 +186,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 
 	grpcProxyPort, err := enclave_container_launcher.NewEnclaveContainerPort(grpcProxyPortNum, enclave_container_launcher.EnclaveContainerPortProtocol_TCP)
 	if err != nil {
-<<<<<<< HEAD
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC proxy port with portNum '%v'", grpcProxyPortNum)
-=======
 		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred constructing the enclave container port object representing the API container's gRPC port with portNum '%v' and grpcPortNum '%v'", grpcPortNum, grpcProxyPortNum)
->>>>>>> develop
 	}
 
 	privatePorts := map[string]*enclave_container_launcher.EnclaveContainerPort{

@@ -4,6 +4,10 @@
 * Added Envoy Proxy to support gRPC-web
 * Added interfaces to Service, Module and Enclave Contexts
 
+# 1.38.1
+### Changes
+* Upgrade `object-attributes-schema-lib` to 0.7.1
+
 # 1.38.0
 ### Breaking Changes
 * Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `grpcListenPort` and `grpcProxyListenPort` and deleting the one named `listenPort`
