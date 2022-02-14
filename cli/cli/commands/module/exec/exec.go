@@ -55,8 +55,7 @@ const (
 
 	moduleId = "my-module"
 
-	// TODO Extract this validation into a centralized location for all commands that use an enclave ID
-	allowedEnclaveIdCharsRegexStr = `^[A-Za-z0-9._-]+$`
+	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
 	shouldFollowContainerLogs         = true
 	shouldShowStoppedModuleContainers = false
@@ -119,6 +118,7 @@ func init() {
 		defaultEnclaveId,
 		fmt.Sprintf(
 			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
+			// TODO Get this from the Kurtosis backend maybe????
 			allowedEnclaveIdCharsRegexStr,
 		),
 	)
@@ -296,7 +296,7 @@ func getEnclaveId(moduleImage string) string {
 	pathElement := reference.Path(namedModuleImage)
 
 	return fmt.Sprintf(
-		"%v_%v",
+		"%v.%v",
 		pathElement,
 		time.Now().Unix(),
 	)
