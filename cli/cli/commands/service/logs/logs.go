@@ -136,6 +136,7 @@ func run(cmd *cobra.Command, args []string) error {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred copying the non-TTY container logs stream to STDOUT for container with name '%v' and ID '%v'",
+				serviceContainer.GetName(),
 				serviceContainerId,
 			)
 		}

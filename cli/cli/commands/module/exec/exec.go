@@ -281,17 +281,17 @@ func run(cmd *cobra.Command, args []string) error {
 //                                      Private Helper Methods
 // ====================================================================================================
 func getEnclaveId(moduleImage string) string {
-	defaultEnclaveId := execution_ids.GetExecutionID()
+	enclaveId := execution_ids.GetExecutionID()
 	parsedModuleImage, err := reference.Parse(moduleImage)
 	if err != nil {
-		logrus.Warn("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, defaultEnclaveId)
-		return defaultEnclaveId
+		logrus.Warnf("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, enclaveId)
+		return enclaveId
 	}
 
 	namedModuleImage, ok := parsedModuleImage.(reference.Named)
 	if !ok {
-		logrus.Warn("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, defaultEnclaveId)
-		return defaultEnclaveId
+		logrus.Warnf("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, enclaveId)
+		return enclaveId
 	}
 	pathElement := reference.Path(namedModuleImage)
 

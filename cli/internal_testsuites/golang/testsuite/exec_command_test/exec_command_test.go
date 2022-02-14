@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testName = "exec-command-test"
+	testName = "exec-command"
 	isPartitioningEnabled = false
 
 	execCmdTestImage      = "alpine:3.12.4"

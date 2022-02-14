@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testName              = "network-soft-partition-test"
+	testName              = "network-soft-partition"
 	isPartitioningEnabled = true
 
 	dockerGettingStartedImage                             = "docker/getting-started"
@@ -27,7 +27,7 @@ const (
 	exampleServicePartitionID enclaves.PartitionID = "example"
 	testServicePartitionID    enclaves.PartitionID = "test"
 
-	exampleServiceMainPortID = "main-port"
+	exampleServiceMainPortID = "main"
 
 	sleepCmd = "sleep"
 
