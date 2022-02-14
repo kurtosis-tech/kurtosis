@@ -16,7 +16,7 @@ export interface ServiceContextBackend {
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
 
-    private backend: ServiceContextBackend
+    private readonly backend: ServiceContextBackend
     private readonly serviceId: ServiceID
     private readonly sharedDirectory: SharedPath
     private readonly privateIpAddr: string

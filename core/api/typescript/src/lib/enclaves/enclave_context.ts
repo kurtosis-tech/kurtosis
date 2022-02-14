@@ -45,10 +45,9 @@ export type EnclaveID = string;
 
 export type PartitionID = string;
 
-const DEFAULT_PARTITION_ID: PartitionID = "";
-
 // This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
 //  or it was repartitioned away)
+const DEFAULT_PARTITION_ID: PartitionID = "";
 
 // The path on the user service container where the enclave data dir will be bind-mounted
 const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
@@ -90,11 +89,10 @@ export interface EnclaveContextBackend {
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
-    private backend: EnclaveContextBackend
+    private readonly backend: EnclaveContextBackend
 
-      // The location on the filesystem where this code is running where the enclave data dir exists
-      private readonly enclaveDataDirpath: string;
-
+    // The location on the filesystem where this code is running where the enclave data dir exists
+    private readonly enclaveDataDirpath: string;
 
     constructor(client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode, enclaveId: EnclaveID, enclaveDataDirpath: string){
         if(client instanceof ApiContainerServiceClientWeb){
@@ -304,9 +302,9 @@ export class EnclaveContext {
         // NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
         //  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
         // Independent of adding/removing them from the enclave
-        const RemoveServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
+        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
 
-        const removeServiceResult = await this.backend.removeService(RemoveServiceArgs)
+        const removeServiceResult = await this.backend.removeService(removeServiceArgs)
 
         if(removeServiceResult.isErr()){
             return err(removeServiceResult.error)
@@ -326,10 +324,10 @@ export class EnclaveContext {
         ): Promise<Result<null, Error>> {
 
             if (partitionServices === null) {
-                return err(new Error("Partition services map cannot be nil"));
+                return err(new Error("Partition services map cannot be null"));
             }
             if (defaultConnection === null) {
-                return err(new Error("Default connection cannot be nil"));
+                return err(new Error("Default connection cannot be null"));
             }
     
             // Cover for lazy/confused users
@@ -339,20 +337,19 @@ export class EnclaveContext {
     
             const reqPartitionServices: Map<string, PartitionServices> = new Map();
             for (const [partitionId, serviceIdSet] of partitionServices.entries()) {
-    
                 const partitionIdStr: string = String(partitionId);
                 reqPartitionServices.set(partitionIdStr, newPartitionServices(serviceIdSet));
             }
     
             const reqPartitionConns: Map<string, PartitionConnections> = new Map();
             for (const [partitionAId, partitionAConnsMap] of partitionConnections.entries()) {
-                
                 const partitionAConnsStrMap: Map<string, PartitionConnectionInfo> = new Map();
+
                 for (const [partitionBId, conn] of partitionAConnsMap.entries()) {
-    
                     const partitionBIdStr: string = String(partitionBId);
                     partitionAConnsStrMap.set(partitionBIdStr, conn.getPartitionConnectionInfo());
                 }
+
                 const partitionAConns: PartitionConnections = newPartitionConnections(partitionAConnsStrMap);
                 const partitionAIdStr: string = String(partitionAId);
                 reqPartitionConns.set(partitionAIdStr, partitionAConns);
@@ -381,7 +378,7 @@ export class EnclaveContext {
             retriesDelayMilliseconds: number, 
             bodyText: string): Promise<Result<null, Error>> {
             
-        return this.backend,this.waitForHttpGetEndpointAvailability(serviceId, port, path, initialDelayMilliseconds, retries, retriesDelayMilliseconds, bodyText)
+        return this.backend.waitForHttpGetEndpointAvailability(serviceId, port, path, initialDelayMilliseconds, retries, retriesDelayMilliseconds, bodyText)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -395,7 +392,7 @@ export class EnclaveContext {
             retriesDelayMilliseconds: number, 
             bodyText: string): Promise<Result<null, Error>> {
                 
-        return this.backend,this.waitForHttpPostEndpointAvailability(serviceId, port, path, requestBody,initialDelayMilliseconds, retries, retriesDelayMilliseconds, bodyText)
+        return this.backend.waitForHttpPostEndpointAvailability(serviceId, port, path, requestBody,initialDelayMilliseconds, retries, retriesDelayMilliseconds, bodyText)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -405,7 +402,7 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServices(): Promise<Result<Set<ServiceID>, Error>> {
-        const getServicesResponseResult = await  this.backend.getServices()
+        const getServicesResponseResult = await this.backend.getServices()
 
         if(getServicesResponseResult.isErr()){
             return err(getServicesResponseResult.error)
@@ -441,7 +438,7 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
-      // ====================================================================================================
+    // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
     private getSharedDirectory(relativeServiceDirpath: string): SharedPath {

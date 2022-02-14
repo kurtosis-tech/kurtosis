@@ -8,8 +8,6 @@ import {
 } from "../..";
 import { ModuleContextBackend, ModuleID } from "./module_context";
 
-
-
 export class GrpcWebModuleContextBackend implements ModuleContextBackend{
     private readonly client: ApiContainerServiceClientWeb;
     
@@ -37,8 +35,8 @@ export class GrpcWebModuleContextBackend implements ModuleContextBackend{
         if (!executeModuleResult.isOk()) {
             return err(executeModuleResult.error);
         }
-        const resp: ExecuteModuleResponse = executeModuleResult.value;
+        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
 
-        return ok(resp.getSerializedResult());
+        return ok(executeModuleResponse.getSerializedResult());
     }
 }

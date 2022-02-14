@@ -35,8 +35,8 @@ export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
         if (!executeModuleResult.isOk()) {
             return err(executeModuleResult.error);
         }
-        const resp: ExecuteModuleResponse = executeModuleResult.value;
+        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
 
-        return ok(resp.getSerializedResult());
+        return ok(executeModuleResponse.getSerializedResult());
     }
 }

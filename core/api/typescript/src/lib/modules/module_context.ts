@@ -11,7 +11,7 @@ export interface ModuleContextBackend {
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ModuleContext {
-    private backend: ModuleContextBackend
+    private readonly backend: ModuleContextBackend
     private readonly moduleId: ModuleID;
 
     

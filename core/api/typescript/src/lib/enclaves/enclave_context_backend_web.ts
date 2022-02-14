@@ -43,7 +43,7 @@ export type PartitionID = string;
 
 export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
 
-    readonly client: ApiContainerServiceClientWeb;
+    public readonly client: ApiContainerServiceClientWeb;
 
     private readonly enclaveId: EnclaveID;
 
@@ -59,29 +59,30 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
     public async loadModule(
             moduleId: ModuleID,
             image: string,
-            serializedParams: string): Promise<Result<ModuleContext, Error>> {
-        const args: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
+            serializedParams: string
+        ): Promise<Result<ModuleContext, Error>> {
+            const args: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
 
-        const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.loadModule(args, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+            const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
+                this.client.loadModule(args, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
+                    if (error === null) {
+                        if (!response) {
+                            resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                        } else {
+                            resolve(ok(response!));
+                        }
                     } else {
-                        resolve(ok(response!));
+                        resolve(err(error));
                     }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const loadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
-        if (loadModuleResult.isErr()) {
-            return err(loadModuleResult.error);
-        }
+                })
+            });
+            const loadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
+            if (loadModuleResult.isErr()) {
+                return err(loadModuleResult.error);
+            }
 
-        const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
-        return ok(moduleCtx);
+            const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
+            return ok(moduleCtx);
     }
 
     public async unloadModule(moduleId: ModuleID): Promise<Result<null,Error>> {
@@ -180,7 +181,7 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
         if (registerServicePromiseResult.isErr()) {
             return err(registerServicePromiseResult.error);
         }
-        // TODO Add a 'finally' to remove the service if this function doesn't complete successfully
+
         const registerServiceResponse: RegisterServiceResponse = registerServicePromiseResult.value;
 
         return ok(registerServiceResponse)
@@ -235,7 +236,6 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {
-
         const removeServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.removeService(args, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
@@ -253,7 +253,6 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
     }
 
     public async repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>> {
-
         const promiseRepartition: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.repartition(repartitionArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
@@ -272,38 +271,40 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
     }
 
     public async waitForHttpGetEndpointAvailability(
-        serviceId: ServiceID,
-        port: number, 
-        path: string,
-        initialDelayMilliseconds: number, 
-        retries: number, 
-        retriesDelayMilliseconds: number, 
-        bodyText: string): Promise<Result<null, Error>> {
-    const availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs = newWaitForHttpGetEndpointAvailabilityArgs(
-        serviceId,
-        port,
-        path,
-        initialDelayMilliseconds,
-        retries,
-        retriesDelayMilliseconds,
-        bodyText);
+            serviceId: ServiceID,
+            port: number,
+            path: string,
+            initialDelayMilliseconds: number,
+            retries: number,
+            retriesDelayMilliseconds: number,
+            bodyText: string
+        ): Promise<Result<null, Error>> {
 
-    const promiseWaitForHttpGetEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-        this.client.waitForHttpGetEndpointAvailability(availabilityArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-            if (error === null) {
-                resolve(ok(null));
-            } else {
-                resolve(err(error));
-            }
-        })
-    });
-    const resultWaitForHttpGetEndpointAvailability: Result<null, Error> = await promiseWaitForHttpGetEndpointAvailability;
-    if (resultWaitForHttpGetEndpointAvailability.isErr()) {
-        return err(resultWaitForHttpGetEndpointAvailability.error);
+        const availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs = newWaitForHttpGetEndpointAvailabilityArgs(
+            serviceId,
+            port,
+            path,
+            initialDelayMilliseconds,
+            retries,
+            retriesDelayMilliseconds,
+            bodyText);
+
+        const promiseWaitForHttpGetEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.waitForHttpGetEndpointAvailability(availabilityArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+                if (error === null) {
+                    resolve(ok(null));
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const resultWaitForHttpGetEndpointAvailability: Result<null, Error> = await promiseWaitForHttpGetEndpointAvailability;
+        if (resultWaitForHttpGetEndpointAvailability.isErr()) {
+            return err(resultWaitForHttpGetEndpointAvailability.error);
+        }
+
+        return ok(null);
     }
-
-    return ok(null);
-}
 
     public async waitForHttpPostEndpointAvailability(
             serviceId: ServiceID,
@@ -313,7 +314,9 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
             initialDelayMilliseconds: number, 
             retries: number, 
             retriesDelayMilliseconds: number, 
-            bodyText: string): Promise<Result<null, Error>> {
+            bodyText: string
+        ): Promise<Result<null, Error>> {
+
         const availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs = newWaitForHttpPostEndpointAvailabilityArgs(
             serviceId,
             port,
@@ -342,7 +345,6 @@ export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
     }
 
     public async executeBulkCommands(bulkCommandsJson: string): Promise<Result<null, Error>> {
-
         const args: ExecuteBulkCommandsArgs = newExecuteBulkCommandsArgs(bulkCommandsJson);
         
         const promiseExecuteBulkCommands: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
