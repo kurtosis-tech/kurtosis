@@ -1,6 +1,6 @@
 # TBD
 ### Breaking Changes
-* Upgraded to engine server 1.10, which makes name & label values compatible with Kubernetes
+* Upgraded to engine server 1.10.2, which makes name & label values compatible with Kubernetes
     * **Users must restart their engine servers and should recreate any enclaves!**
 
 ### Changes
@@ -11,6 +11,7 @@
 * Changed constants/vars in tests
 
 ### Fixes
+* Fixed a bug where trying to destroy an enclave whose ID was a subset of another enclave ID would fail
 * CLI `build.sh` wasn't calling `go test`
 * Fixed multiple log messages & `stacktrace.Propagate`s that didn't have formatstr variables
 * Fixed broken `DuplicateFlagsCausePanic` unit test
