@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Don't break on old port spec (`portId:1234/TCP`)
 
 # 1.10.2
 ### Fixes
