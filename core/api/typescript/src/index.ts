@@ -9,7 +9,7 @@ export { SharedPath } from "./lib/services/shared_path"
 export { PortSpec, PortProtocol } from "./lib/services/port_spec"
 
 // Enclaves
-export {  EnclaveContext } from "./lib/enclaves/enclave_context";
+export { EnclaveID, PartitionID, EnclaveContext } from "./lib/enclaves/enclave_context";
 export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./lib/enclaves/partition_connection"
 
 // Modules
@@ -18,7 +18,7 @@ export { ModuleContext, ModuleID } from "./lib/modules/module_context";
 // Bulk Command Execution
 export { SchemaVersion } from "./lib/bulk_command_execution/bulk_command_schema_version";
 export { V0BulkCommands, V0SerializableCommand } from "./lib/bulk_command_execution/v0_bulk_command_api/v0_bulk_commands";
-export { V0CommandType } from "./lib/bulk_command_execution/v0_bulk_command_api/v0_command_types";;
+export { V0CommandType, V0CommandTypeVisitor } from "./lib/bulk_command_execution/v0_bulk_command_api/v0_command_types";;
 
 // Constructor Calls
 export {

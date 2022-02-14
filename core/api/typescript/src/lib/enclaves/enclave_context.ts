@@ -5,8 +5,8 @@
 
 import { ok, err, Result } from "neverthrow";
 import log from "loglevel";
-import jspb from "google-protobuf";
-import path from "path-browserify"
+import * as jspb from "google-protobuf";
+import * as path from "path-browserify"
 import { 
     ApiContainerServiceClientWeb, 
     ApiContainerServiceClientNode, 
