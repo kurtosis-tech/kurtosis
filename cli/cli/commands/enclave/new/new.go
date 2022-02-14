@@ -27,8 +27,6 @@ const (
 	shouldPublishPorts = true
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
-
 var apiContainerVersion string
 var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
@@ -44,7 +42,7 @@ func init() {
 		&kurtosisLogLevelStr,
 		kurtosisLogLevelArg,
 		"l",
-		defaultKurtosisLogLevel,
+		defaults.DefaultCoreLogLevel.String(),
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),

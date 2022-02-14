@@ -66,8 +66,6 @@ const (
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
-
 var positionalArgs = []string{
 	moduleImageArg,
 }
@@ -91,7 +89,7 @@ func init() {
 		&kurtosisLogLevelStr,
 		kurtosisLogLevelArg,
 		"l",
-		defaultKurtosisLogLevel,
+		defaults.DefaultCoreLogLevel.String(),
 		fmt.Sprintf(
 			"The log level that Kurtosis itself should log at (%v)",
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),

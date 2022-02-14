@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* The engine & API containers will log at `debug` level by default, to better help us debug issues that are hard to reproduce
 
 # 0.9.4
 ### Features
