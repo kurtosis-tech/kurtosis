@@ -1,4 +1,6 @@
 # TBD
+
+# 0.10.0
 ### Breaking Changes
 * Upgraded to engine server 1.10.4, which makes name & label values compatible with Kubernetes
     * **Enclave IDs, service IDs, and module IDs must now conform to the regex `^[a-z0-9][-a-z0-9.]*[a-z0-9]$`**
