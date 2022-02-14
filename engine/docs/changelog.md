@@ -1,5 +1,9 @@
 # TBD
 
+# 1.10.3
+### Fixes
+* Don't break on old port spec (`portId:1234/TCP`)
+
 # 1.10.2
 ### Fixes
 * Fixes a panic due to passing `nil` into `stacktrace.Propagate`
