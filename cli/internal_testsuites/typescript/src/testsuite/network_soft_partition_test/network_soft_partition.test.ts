@@ -16,7 +16,7 @@ import { ok, Result, err } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "network-soft-partition-test";
+const TEST_NAME = "network-soft-partition";
 const IS_PARTITIONING_ENABLED = true;
 
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
@@ -30,7 +30,7 @@ const EXEC_COMMAND_SUCCESS_EXIT_CODE = 0;
 const EXAMPLE_SERVICE_PARTITION_ID: PartitionID = "example";
 const TEST_SERVICE_PARTITION_ID: PartitionID = "test";
 
-const EXAMPLE_SERVICE_MAIN_PORT_ID = "main-port";
+const EXAMPLE_SERVICE_MAIN_PORT_ID = "main";
 
 const SLEEP_CMD = "sleep";
 

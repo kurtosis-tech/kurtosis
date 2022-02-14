@@ -2,7 +2,7 @@ import log from "loglevel";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "bulk-command-execution-test";
+const TEST_NAME = "bulk-command-execution";
 const IS_PARTITIONING_ENABLED = true;
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
 

@@ -8,7 +8,7 @@ import { Result, ok, err } from "neverthrow"
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import { addDatastoreService } from "../../test_helpers/test_helpers";
 
-const TEST_NAME = "basic-datastore-test";
+const TEST_NAME = "basic-datastore";
 const IS_PARTITIONING_ENABLED = false;
 const DATASTORE_SERVICE_ID: ServiceID = "datastore";
 const TEST_KEY = "test-key"

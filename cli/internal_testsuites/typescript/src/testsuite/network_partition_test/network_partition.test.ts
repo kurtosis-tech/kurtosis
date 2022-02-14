@@ -15,7 +15,7 @@ import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import { addAPIService, addAPIServiceToPartition, addDatastoreService } from "../../test_helpers/test_helpers";
 
-const TEST_NAME = "network-partition-test";
+const TEST_NAME = "network-partition";
 const IS_PARTITIONING_ENABLED = true;
 
 const API_PARTITION_ID: PartitionID = "api";
