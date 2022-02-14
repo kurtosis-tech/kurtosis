@@ -18,5 +18,5 @@ const (
 	// If this version is passed to the engine, the engine will use its default version
 	DefaultAPIContainerVersion = ""
 )
-var DefaultCoreLogLevel = logrus.DebugLevel
+var DefaultApiContainerLogLevel = logrus.DebugLevel
 var DefaultEngineLogLevel = logrus.DebugLevel

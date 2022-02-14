@@ -31,9 +31,9 @@ const (
 
 	isPartitioningEnabled = true
 
-	apiContainerVersionArg = "api-container-version"
-	javascriptReplImageArg = "javascript-repl-image"
-	kurtosisLogLevelArg    = "kurtosis-log-level"
+	apiContainerVersionArg  = "api-container-version"
+	apiContainerLogLevelArg = "api-container-log-level"
+	javascriptReplImageArg  = "javascript-repl-image"
 
 )
 
@@ -43,28 +43,28 @@ var SandboxCmd = &cobra.Command{
 	RunE:  run,
 }
 
-var kurtosisLogLevelStr string
+var apiContainerLogLevelStr string
 var apiContainerVersion string
 var jsReplImage string
 
 
 func init() {
-	SandboxCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaults.DefaultCoreLogLevel.String(),
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
-
 	SandboxCmd.Flags().StringVar(
 		&apiContainerVersion,
 		apiContainerVersionArg,
 		defaults.DefaultAPIContainerVersion,
 		"The version of the Kurtosis API container to use inside the enclave (blank will use the engine server default version)",
+	)
+
+	SandboxCmd.Flags().StringVarP(
+		&apiContainerLogLevelStr,
+		apiContainerLogLevelArg,
+		"l",
+		defaults.DefaultApiContainerLogLevel.String(),
+		fmt.Sprintf(
+			"The log level that the started API container should log at (%v)",
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+		),
 	)
 
 	SandboxCmd.Flags().StringVarP(
@@ -79,12 +79,6 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -111,7 +105,7 @@ func run(cmd *cobra.Command, args []string) error {
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId:              enclaveId,
 		ApiContainerVersionTag: apiContainerVersion,
-		ApiContainerLogLevel:   kurtosisLogLevelStr,
+		ApiContainerLogLevel:   apiContainerLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
 		ShouldPublishAllPorts:  shouldPublishPorts,
 	}

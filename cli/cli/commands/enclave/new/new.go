@@ -20,8 +20,8 @@ import (
 
 const (
 	apiContainerVersionArg   = "api-container-version"
+	apiContainerLogLevelArg  = "api-container-log-level"
 	isPartitioningEnabledArg = "partition-enabled"
-	kurtosisLogLevelArg      = "kurtosis-log-level"
 
 	defaultIsPartitioningEnabled = false
 	shouldPublishPorts = true
@@ -40,11 +40,11 @@ var NewCmd = &cobra.Command{
 func init() {
 	NewCmd.Flags().StringVarP(
 		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
+		apiContainerLogLevelArg,
 		"l",
-		defaults.DefaultCoreLogLevel.String(),
+		defaults.DefaultApiContainerLogLevel.String(),
 		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
+			"The log level that the API container should log at (%v)",
 			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
 		),
 	)
@@ -67,12 +67,6 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
