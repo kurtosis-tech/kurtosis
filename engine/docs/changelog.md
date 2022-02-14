@@ -2,6 +2,29 @@
 
 ### Features
 * Added envoy proxy to support grpc-web calls from GUI
+* Added Kurt Context Interface
+
+# 1.10.2
+### Fixes
+* Fixes a panic due to passing `nil` into `stacktrace.Propagate`
+* Fix some variable name shadowing in `EnclaveManager`
+
+# 1.10.1
+### Changes
+* Upgrade to `object-attributes-schema-lib` v0.7.1
+* Upgrade to `kurtosis-core` v1.38.1
+
+### Fixes
+* Don't choke when trying to destroy an enclave whose enclave ID is a subset of another
+
+# 1.10.0
+### Breaking Changes
+* `kurtosis-core` API changed : `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` now adds two new arguments `grpcListenPort` and `grpcProxyListenPort` and deleted the one named `listenPort`
+  * Users should update, `object-attributes-schema-lib` to v0.7.0 and `kurtosis-engine` to v.1.10.0
+
+### Changes
+* Upgrade to `object-attributes-schema-lib` v0.7.0
+* Upgrade to `kurtosis-core` v1.38.0
 
 # 1.9.2
 ### Fixes

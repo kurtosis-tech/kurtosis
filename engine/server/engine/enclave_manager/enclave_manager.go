@@ -43,6 +43,9 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(9711)
 
+	// TODO this will be updated later by Karen
+	apiContainerGRPPCListenPortNumInsideNetwork = uint16(7444)
+
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
 	//  a) the engine data directory is bind-mounted on the Docker host machine
@@ -176,7 +179,11 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNetworkAttrs, _ := enclaveObjAttrsProvider.ForEnclaveNetwork()
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
+	}
+
 	enclaveNetworkName := enclaveNetworkAttrs.GetName()
 	enclaveNetworkLabels := enclaveNetworkAttrs.GetLabels()
 
@@ -401,10 +408,20 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 // There is a 1:1 mapping between Docker network and enclave - no network, no enclave, and vice versa
 // We therefore use this function to check for the existence of an enclave, as well as get network info about existing enclaves
 func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId string) (*types.Network, bool, error) {
-	matchingNetworks, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
+	allNetworksWithEnclaveIdInName, err := manager.dockerManager.GetNetworksByName(ctx, enclaveId)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, "An error occurred getting networks matching name '%v'", enclaveId)
 	}
+
+	// NOTE: GetNetworksByName will match networks that have the enclaveId *even as a substring*, so we have to filter again
+	// to get the network (if any) that has a name *exactly* == enclave ID
+	matchingNetworks := []*types.Network{}
+	for _, networkWithEnclaveId := range allNetworksWithEnclaveIdInName {
+		if networkWithEnclaveId.GetName() == enclaveId {
+			matchingNetworks = append(matchingNetworks, networkWithEnclaveId)
+		}
+	}
+
 	numMatchingNetworks := len(matchingNetworks)
 	logrus.Debugf("Found %v networks matching name '%v': %+v", numMatchingNetworks, enclaveId, matchingNetworks)
 	if numMatchingNetworks > 1 {
@@ -432,11 +449,11 @@ func getEnclaveContainerInformation(
 	*kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo,
 	error,
 ) {
-	containers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
+	allEnclaveContainers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
 	if err != nil {
 		return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
-	if len(containers) == 0 {
+	if len(allEnclaveContainers) == 0 {
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_EMPTY,
 			kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT,
 			nil,
@@ -448,22 +465,22 @@ func getEnclaveContainerInformation(
 	resultApiContainerStatus := kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT
 	var resultApiContainerInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo = nil
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo = nil
-	for _, container := range containers {
-		containerStatus := container.GetStatus()
-		isContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
-		if isContainerRunning {
+	for _, enclaveContainer := range allEnclaveContainers {
+		containerStatus := enclaveContainer.GetStatus()
+		isEnclaveContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
+		if isEnclaveContainerRunning {
 			resultContainersStatus = kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
 		}
 
 		// Parse API container info, if it exists
-		containerLabels := container.GetLabels()
+		containerLabels := enclaveContainer.GetLabels()
 		containerTypeLabelValue, found := containerLabels[forever_constants.ContainerTypeLabel]
 		if found && containerTypeLabelValue == schema.ContainerTypeAPIContainer {
 			if resultApiContainerInfo != nil {
 				return 0, 0, nil, nil, stacktrace.NewError("Found a second API container inside the network; this should never happen!")
 			}
 
-			if isContainerRunning {
+			if isEnclaveContainerRunning {
 				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING
 			} else {
 				resultApiContainerStatus = kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED
@@ -477,28 +494,28 @@ func getEnclaveContainerInformation(
 				)
 			}
 
-			apiContainerObjAttrPrivateGrpcPort, getPrivateGrpcPortErr := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCPortID)
-			if getPrivateGrpcPortErr != nil {
+			apiContainerObjAttrPrivateGrpcPort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCPortID)
+			if err != nil {
 				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container grpc private port")
 			}
 
-			apiContainerObjAttrPrivateGrpcProxyPort, getPrivateGrpcProxyPortErr := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCProxyPortID)
-			if getPrivateGrpcProxyPortErr != nil {
+			apiContainerObjAttrPrivateGrpcProxyPort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCProxyPortID)
+			if err != nil {
 				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container grpc-proxy private port")
 			}
 
 			resultApiContainerInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-				ContainerId:                container.GetId(),
+				ContainerId:                enclaveContainer.GetId(),
 				IpInsideEnclave:            apiContainerIpInsideNetwork,
 				GrpcPortInsideEnclave:      uint32(apiContainerObjAttrPrivateGrpcPort.GetNumber()),
 				GrpcProxyPortInsideEnclave: uint32(apiContainerObjAttrPrivateGrpcProxyPort.GetNumber()),
 			}
 
 			// We only get host machine info if the container is running
-			if isContainerRunning {
+			if isEnclaveContainerRunning {
 				apiContainerPrivateGrpcPortObjAttrProto := apiContainerObjAttrPrivateGrpcPort.GetProtocol()
-				apiContainerPrivateGrpcPortDockerProto, foundDockerGrpcProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivateGrpcPortObjAttrProto]
-				if !foundDockerGrpcProto {
+				apiContainerPrivateGrpcPortDockerProto, foundDockerProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivateGrpcPortObjAttrProto]
+				if !foundDockerProto {
 					return 0, 0, nil, nil, stacktrace.NewError(
 						"No Docker protocol was defined for obj attr proto '%v'; this is a bug in Kurtosis",
 						apiContainerPrivateGrpcPortObjAttrProto,
@@ -541,7 +558,7 @@ func getEnclaveContainerInformation(
 					)
 				}
 
-				allApiContainerPublicPortBindings := container.GetHostPortBindings()
+				allApiContainerPublicPortBindings := enclaveContainer.GetHostPortBindings()
 				apiContainerPublicGrpcPortBinding, foundApiContainerPublicGrpcPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivateGrpcPort]
 				if !foundApiContainerPublicGrpcPortBinding {
 					return 0, 0, nil, nil, stacktrace.NewError(
