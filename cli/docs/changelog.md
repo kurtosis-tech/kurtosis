@@ -1,8 +1,7 @@
 # TBD
 ### Breaking Changes
-* Upgraded to engine server 1.10.2, which makes name & label values compatible with Kubernetes
+* Upgraded to engine server 1.10.4, which makes name & label values compatible with Kubernetes
     * **Enclave IDs, service IDs, and module IDs must now conform to the regex `^[a-z0-9][-a-z0-9.]*[a-z0-9]$`**
-    * **Users must restart their engine servers and should recreate any enclaves!**
 * The `--kurtosis-log-level` flag to set the API container's log level has been renamed to `--api-container-log-level` for the following commands:
     * `enclave new`
     * `module exec`

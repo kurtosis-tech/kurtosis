@@ -57,10 +57,10 @@ github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-202112070208
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220211165032-0c26113b418f h1:+GegtzIw1vx8O8dQhvGzv3JX99brQMAIPc9u/zXdG10=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220211165032-0c26113b418f/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220211180157-4e21ed549839 h1:idPvIFHmhX6PQQUOT+v3q0R6qKKsbNnZJOHA1iBJ8fk=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220211180157-4e21ed549839/go.mod h1:PbTWiU+u/EoF3kyqCQqcdgaS/B8bNjTXWE/psoOdGO0=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214160714-e82b7592d68d h1:e/09zjIuquJ9+HsoH9vyahhDbx5C5f5E7n+YvMRx66k=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214160714-e82b7592d68d/go.mod h1:PbTWiU+u/EoF3kyqCQqcdgaS/B8bNjTXWE/psoOdGO0=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214214522-63b14eb3c24f h1:WzMZz7M+U8wAadAtcul/8vS7u5+NuF5f0MqI/jFHCdQ=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214214522-63b14eb3c24f/go.mod h1:PbTWiU+u/EoF3kyqCQqcdgaS/B8bNjTXWE/psoOdGO0=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214215159-4e472c34c6dd h1:jzIrx+O2GaM7xt/Vqatr4MGYG9h+zCEC7e9DXy2C8nE=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220214215159-4e472c34c6dd/go.mod h1:PbTWiU+u/EoF3kyqCQqcdgaS/B8bNjTXWE/psoOdGO0=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
