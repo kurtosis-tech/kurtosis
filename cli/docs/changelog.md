@@ -1,4 +1,18 @@
 # TBD
+### Changes
+* The engine & API containers will log at `debug` level by default, to better help us debug issues that are hard to reproduce
+
+### Fixes
+* Fixed an issue where `setupCLILogs` was accidentally setting the logrus output to STDOUT rather than the Cobra command output
+* Removed several `logrus.SetLevel`s that were overriding the CLI log level set using `--cli-log-level`
+
+### Breaking Changes
+* The `--kurtosis-log-level` flag to set the API container's log level has been renamed to `--api-container-log-level` for the following commands:
+    * `enclave new`
+    * `module exec`
+    * `sandbox`
+* The `--kurtosis-log-level` flag no longer exists for the `enclave ls` command
+    * Users should use `--cli-log-level` instead
 
 # 0.9.4
 ### Features
