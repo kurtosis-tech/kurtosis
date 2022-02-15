@@ -1,7 +1,7 @@
 # TBD
 
 ### Features
-* Added gRPC web support
+* Added Envoy Proxy to support gRPC-web
 
 ### Breaking Changes
 * The API container now takes in a `version` arg so that it can accurately report its own version to the metrics client
@@ -15,10 +15,6 @@
 # 1.38.2
 ### Changes
 * Upgraded to obj-attrs-schema-lib 0.7.2, which allows for labels of 256 characters in length
-
-### Features
-* Added Envoy Proxy to support gRPC-web
-* Added interfaces to Service, Module and Enclave Contexts
 
 # 1.38.1
 ### Changes
