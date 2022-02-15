@@ -1,4 +1,4 @@
-package kurtosis_command
+package args
 
 import (
 	"github.com/stretchr/testify/require"
@@ -7,24 +7,24 @@ import (
 
 func TestParseArgsForValidation_MissingAllTokens(t *testing.T) {
 	tokens := []string{}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_Missing2Tokens(t *testing.T) {
 	tokens := []string{arg1Value}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_Missing1Token(t *testing.T) {
 	tokens := []string{arg1Value, arg2Value}
-	_, err := parseArgsForValidation(validArgsConfig, tokens)
+	_, err := ParseArgsForValidation(validArgsConfig, tokens)
 	require.Error(t, err)
 }
 
 func TestParseArgsForValidation_AllTokensSupplied(t *testing.T) {
-	parsedArgs, err := parseArgsForValidation(validArgsConfig, validTokens)
+	parsedArgs, err := ParseArgsForValidation(validArgsConfig, validTokens)
 	require.NoError(t, err)
 
 	actualArg1Value, err := parsedArgs.GetNonGreedyArg(arg1Key)
@@ -66,7 +66,7 @@ func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
 		"4",
 		"5",
 	}
-	_, err := parseArgsForValidation(args, tokens)
+	_, err := ParseArgsForValidation(args, tokens)
 	require.Error(t, err)
 }
 
@@ -91,7 +91,7 @@ func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
 		"2",
 		"3",
 	}
-	_, err := parseArgsForValidation(args, tokens)
+	_, err := ParseArgsForValidation(args, tokens)
 	require.Error(t, err)
 }
 
@@ -106,7 +106,7 @@ func TestParseArgsForValidation_OptionalArgNoTokens(t *testing.T) {
 	}
 	tokens := []string{}
 
-	parsedArgs, err := parseArgsForValidation(args, tokens)
+	parsedArgs, err := ParseArgsForValidation(args, tokens)
 	require.NoError(t, err)
 
 	value, err := parsedArgs.GetNonGreedyArg(arg1Key)
@@ -128,7 +128,7 @@ func TestParseArgsForValidation_OptionalArgWithToken(t *testing.T) {
 		suppliedValue,
 	}
 
-	parsedArgs, err := parseArgsForValidation(args, tokens)
+	parsedArgs, err := ParseArgsForValidation(args, tokens)
 	require.NoError(t, err)
 
 	value, err := parsedArgs.GetNonGreedyArg(arg1Key)

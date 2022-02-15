@@ -27,6 +27,6 @@ func init() {
 	EnclaveCmd.AddCommand(inspect.EnclaveInspectCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(new.NewCmd)
 	EnclaveCmd.AddCommand(stop.StopCmd)
-	EnclaveCmd.AddCommand(rm.RmCmd)
+	EnclaveCmd.AddCommand(rm.EnclaveRmCmd.MustGetCobraCommand())
 	EnclaveCmd.AddCommand(dump.EnclaveDumpCmd)
 }
