@@ -7,7 +7,7 @@ import { GrpcNodeServiceContextBackend } from './grpc_node_service_context_backe
 import { GrpcWebServiceContextBackend } from './grpc_web_service_context_backend';
 import { PortSpec } from './port_spec';
 import { ServiceID } from './service';
-import { ServiceContextBackend } from './service_context_interface';
+import { ServiceContextBackend } from './service_context_backend';
 import { SharedPath } from './shared_path';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation

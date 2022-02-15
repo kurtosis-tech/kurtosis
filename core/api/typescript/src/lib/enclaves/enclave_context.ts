@@ -30,7 +30,7 @@ import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../..
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GrpcNodeEnclaveContextBackend } from "./grpc_node_enclave_context_backend";
 import { GrpcWebEnclaveContextBackend } from "./grpc_web_enclave_context_backend";
-import EnclaveContextBackend from "./enclave_context_interface";
+import EnclaveContextBackend from "./enclave_context_backend";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import { newExecuteBulkCommandsArgs, 
     newGetModuleInfoArgs, 

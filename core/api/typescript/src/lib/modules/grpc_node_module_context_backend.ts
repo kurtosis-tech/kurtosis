@@ -1,6 +1,6 @@
 import { ok, err, Result } from "neverthrow";
 import * as grpc_node from "@grpc/grpc-js";
-import { ModuleContextBackend } from "./module_context_interface";
+import { ModuleContextBackend } from "./module_context_backend";
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 

@@ -2,7 +2,7 @@ import * as grpc_node from "@grpc/grpc-js"
 import { ok, err, Result } from 'neverthrow';
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { ExecCommandArgs, ExecCommandResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ServiceContextBackend } from "./service_context_interface";
+import { ServiceContextBackend } from "./service_context_backend";
 
 export class GrpcNodeServiceContextBackend implements ServiceContextBackend {
     private readonly client: ApiContainerServiceClientNode

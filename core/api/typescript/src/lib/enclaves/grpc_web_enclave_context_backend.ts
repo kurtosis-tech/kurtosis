@@ -22,7 +22,7 @@ import {
     GetModulesResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import EnclaveContextBackend from "./enclave_context_interface";
+import EnclaveContextBackend from "./enclave_context_backend";
 import { EnclaveID } from "./enclave_context";
 
 export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {

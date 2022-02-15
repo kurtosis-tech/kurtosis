@@ -2,7 +2,7 @@ import { err, ok, Result } from "neverthrow";
 import { newExecuteModuleArgs } from "../constructor_calls";
 import { GrpcNodeModuleContextBackend } from "./grpc_node_module_context_backend";
 import { GrpcWebModuleContextBackend } from "./grpc_web_module_context_backend";
-import { ModuleContextBackend } from "./module_context_interface";
+import { ModuleContextBackend } from "./module_context_backend";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { ExecuteModuleArgs } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";

@@ -2,7 +2,7 @@ import { ok, err, Result } from "neverthrow";
 import * as grpc_web from "grpc-web";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ModuleContextBackend } from "./module_context_interface";
+import { ModuleContextBackend } from "./module_context_backend";
 
 export class GrpcWebModuleContextBackend implements ModuleContextBackend{
     private readonly client: ApiContainerServiceClientWeb;
