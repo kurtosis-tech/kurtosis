@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.0
 ### Fixes
 * Fixed several bugs that were causing product analytics events to get dropped for users who had opted in
 
