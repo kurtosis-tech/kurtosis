@@ -1,4 +1,8 @@
 # TBD
+
+### Features
+* Added gRPC web support
+
 ### Breaking Changes
 * The API container now takes in a `version` arg so that it can accurately report its own version to the metrics client
 
