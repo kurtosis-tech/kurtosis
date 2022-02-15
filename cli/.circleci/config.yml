@@ -209,7 +209,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} module exec --enclave-id new-test-enclave kurtosistech/datastore-army-module --execute-params '{\"numDatastores\":2}'"
       - run: "${KURTOSIS_BINPATH} enclave ls"
       - run: "${KURTOSIS_BINPATH} enclave rm -f new-test-enclave"
-      - run: "${KURTOSIS_BINPATH} enclave clean -a"
+      - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
   # -- End build jobs ---------------------------------------
