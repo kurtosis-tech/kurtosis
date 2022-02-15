@@ -2,7 +2,6 @@ package commands
 
 import (
 	"bytes"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
@@ -17,27 +16,15 @@ const (
 )
 
 func TestVersion(t *testing.T) {
-	filepath, err := host_machine_directories.GetLatestCLIReleaseVersionCacheFilepath()
-	require.NoError(t, err, "An error occurred getting the latest CLI release version cache file filepath")
-
-	fileInfo, err := os.Stat(filepath)
-	if !os.IsNotExist(err) {
-		require.NoError(t, err, "An error occurred getting the latest CLI release version cache file info")
-	}
-
-	if fileInfo != nil {
-		err = os.Remove(filepath)
-		require.NoError(t, err, "An error occurred removing latest CLI release version cache file")
-	}
-
 	buf := new(bytes.Buffer)
+
 	root := RootCmd
 	root.SetOut(buf)
-	root.SetErr(buf)
+	root.SetErr(os.Stderr) // We do this because we don't want any "you're using an out-of-date version of the CLI" to fail this test
 	root.SetArgs([]string{"version"})
-	if err := root.Execute(); err != nil {
-		t.Fatal(err)
-	}
+
+	err := root.Execute()
+	require.NoError(t, err)
 
 	assert.Equal(t, kurtosis_cli_version.KurtosisCLIVersion + "\n", buf.String())
 }

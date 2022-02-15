@@ -16,11 +16,11 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220203170307-3448dddfa123
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220203174723-751d451ad1cf
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220203174658-141344d282d3
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220203164828-34e4c3e3e948
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20211206192525-530b79739d16
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220215173806-4e33eb6f2288
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220215195617-02b283810dd0
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220215195533-15b337afb251
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220215113756-abe2c0a2dd75
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/sirupsen/logrus v1.8.1

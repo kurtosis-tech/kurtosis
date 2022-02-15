@@ -2,7 +2,54 @@
 ### Features
 * `service shell` will first try to find & use `bash` before dropping down to `sh`
 
+# 0.11.0
 ### Fixes
+* Fixed several bugs that were causing product analytics events to get dropped for users who had opted in
+
+### Breaking Changes
+* Use engine version 1.11.0
+    * Users should upgrade to `kurtosis-engine-api-lib` 1.11.0
+
+# 0.10.1
+### Fixes
+* Allow for 256-character labels
+
+# 0.10.0
+### Breaking Changes
+* Upgraded to engine server 1.10.4, which makes name & label values compatible with Kubernetes
+    * **Enclave IDs, service IDs, and module IDs must now conform to the regex `^[a-z0-9][-a-z0-9.]*[a-z0-9]$`**
+* The `--kurtosis-log-level` flag to set the API container's log level has been renamed to `--api-container-log-level` for the following commands:
+    * `enclave new`
+    * `module exec`
+    * `sandbox`
+* The `--kurtosis-log-level` flag no longer exists for the `enclave ls` command
+    * Users should use `--cli-log-level` instead
+
+### Changes
+* The engine & API containers will log at `debug` level by default, to better help us debug issues that are hard to reproduce
+* Upgraded the engine server to 1.10.0
+* Upgraded the kurtosis core to 1.38.0
+* Upgraded the object-attributes-schema-lib to 0.7.0
+* Changed the generated kurtosis enclave name to lower case
+* Changed constants/vars in tests
+
+### Fixes
+* Fixed an issue where `setupCLILogs` was accidentally setting the logrus output to STDOUT rather than the Cobra command output
+* Removed several `logrus.SetLevel`s that were overriding the CLI log level set using `--cli-log-level`
+* Fixed a bug where trying to destroy an enclave whose ID was a subset of another enclave ID would fail
+* CLI `build.sh` wasn't calling `go test`
+* Fixed multiple log messages & `stacktrace.Propagate`s that didn't have formatstr variables
+* Fixed broken `DuplicateFlagsCausePanic` unit test
+
+# 0.9.4
+### Features
+* Added the functionality to execute retries when sending user-metrics-consent-election fails
+
+### Changes
+* Upgraded the metrics library to 0.2.0
+
+### Fixes
+* Fix `network_soft_partition_test` in Golang and Typescript internal testsuite
 * Fix typo in metrics consent message
 
 # 0.9.3

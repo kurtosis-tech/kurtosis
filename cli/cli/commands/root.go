@@ -20,7 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -101,7 +103,13 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	checkCLIVersion()
+	checkCLIVersion(cmd)
+
+	//It is necessary to try track this metric on every execution to have at least one successful deliver
+	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
+	}
 
 	return nil
 }
@@ -116,12 +124,13 @@ func setupCLILogs(cmd *cobra.Command) error {
 	return nil
 }
 
-func checkCLIVersion() {
+func checkCLIVersion(cmd *cobra.Command) {
 	// We temporarily set the logrus output to STDERR so that only these version warning messages get sent there
 	// This is so that if you're running a command that actually prints output (e.g. 'completion', to generate completions)
 	//  then this version check message doesn't show up in the output and potentially mess things up
-	logrus.SetOutput(os.Stderr)
-	defer logrus.SetOutput(os.Stdout)
+	currentOut := logrus.StandardLogger().Out
+	logrus.SetOutput(cmd.ErrOrStderr())
+	defer logrus.SetOutput(currentOut)
 
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
@@ -307,4 +316,15 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 	}
 
 	return latestReleaseVersion, nil
+}
+
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
+	}
+	return kurtosisConfig, nil
 }
