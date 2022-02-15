@@ -86,6 +86,6 @@ export class ServiceContext {
 
         const execCommandResponse = execCommandResponseResult.value
 
-        return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()]);
+        return ok(execCommandResponse);
     }
 }

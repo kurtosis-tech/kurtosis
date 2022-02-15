@@ -10,8 +10,8 @@ export class GrpcWebServiceContextBackend implements ServiceContextBackend {
         this.client = client
     }
 
-    public async execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>> {
-        const promiseExecCommand: Promise<Result<ExecCommandResponse, Error>> = new Promise((resolve, _unusedReject) => {
+    public async execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<[number, string], Error>> {
+        const execCommandPromise: Promise<Result<ExecCommandResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.execCommand(execCommandArgs, {}, (error: grpc_web.RpcError | null, response?: ExecCommandResponse) => {
                 if (error === null) {
                     if (!response) {
@@ -24,8 +24,13 @@ export class GrpcWebServiceContextBackend implements ServiceContextBackend {
                 }
             })
         });
-        const resultExecCommand: Result<ExecCommandResponse, Error> = await promiseExecCommand;
+        const execCommandResponseResult: Result<ExecCommandResponse, Error> = await execCommandPromise;
+        if(execCommandResponseResult.isErr()){
+            return err(execCommandResponseResult.error)
+        }
+
+        const execCommandResponse = execCommandResponseResult.value
         
-        return resultExecCommand
+        return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()])
     }
 }
