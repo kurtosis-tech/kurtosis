@@ -12,6 +12,8 @@ const (
 
 // Fields are public for JSON de/serialization
 type APIContainerArgs struct {
+	Version string `json:"version"`
+
 	LogLevel string `json:"logLevel"`
 
 	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
@@ -46,6 +48,7 @@ type APIContainerArgs struct {
 // Even though the fields are public due to JSON de/serialization requirements, we still have this constructor so that
 //  we get compile errors if there are missing fields
 func NewAPIContainerArgs(
+	version string,
 	logLevel string,
 	grpcListenPortNum uint16,
 	grpcProxyListenPortNum uint16,

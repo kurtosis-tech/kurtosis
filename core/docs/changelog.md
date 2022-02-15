@@ -1,4 +1,12 @@
 # TBD
+### Breaking Changes
+* The API container now takes in a `version` arg so that it can accurately report its own version to the metrics client
+
+### Changes
+* Product analytics events are sent when the action is made, not after it succeeds, so that we don't drop actions
+
+### Fixes
+* Update `metrics-lib` to 0.2.1, which fixes a bug where `LoadModule` events would get dropped if they didn't have a tag
 
 # 1.38.2
 ### Changes

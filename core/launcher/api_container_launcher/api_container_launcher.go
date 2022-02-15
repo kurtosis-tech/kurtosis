@@ -149,6 +149,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(): true,
 	}
 	argsObj, err := args.NewAPIContainerArgs(
+		imageVersionTag,
 		logLevel.String(),
 		grpcPortNum,
 		grpcProxyPortNum,
