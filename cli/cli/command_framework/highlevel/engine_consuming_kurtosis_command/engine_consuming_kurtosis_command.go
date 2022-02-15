@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -77,7 +77,7 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 		))
 	}
 
-	lowlevelCmd := &kurtosis_command.LowlevelKurtosisCommand{
+	lowlevelCmd := &lowlevel.LowlevelKurtosisCommand{
 		CommandStr:       cmd.CommandStr,
 		ShortDescription: cmd.ShortDescription,
 		LongDescription:  cmd.LongDescription,

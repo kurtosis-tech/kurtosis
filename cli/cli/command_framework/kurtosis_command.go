@@ -1,4 +1,4 @@
-package kurtosis_command
+package command_framework
 
 import "github.com/spf13/cobra"
 

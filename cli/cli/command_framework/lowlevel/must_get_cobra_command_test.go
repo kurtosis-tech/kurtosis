@@ -1,8 +1,8 @@
-package kurtosis_command
+package lowlevel
 
 import (
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -49,10 +49,10 @@ func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Args:             []*args.ArgConfig{
 			{
-				Key:             arg1Key,
+				Key: arg1Key,
 			},
 			{
-				Key:             arg1Key,
+				Key: arg1Key,
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Flags: []*flags.FlagConfig{
 			{
-				Key: flag1Key,
+				Key:  flag1Key,
 				Type: flags.FlagType_String,
 			},
 		},
@@ -147,11 +147,11 @@ func TestMustGetCobraCommand_DuplicateFlagShorthandsPanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Flags: []*flags.FlagConfig{
 			{
-				Key: flag1Key,
+				Key:       flag1Key,
 				Shorthand: dupedShorthandValue,
 			},
 			{
-				Key: flag2Key,
+				Key:       flag2Key,
 				Shorthand: dupedShorthandValue,
 			},
 		},
@@ -171,7 +171,7 @@ func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Flags: []*flags.FlagConfig{
 			{
-				Key: flag1Key,
+				Key:       flag1Key,
 				Shorthand: "this is way too long",
 			},
 		},
@@ -191,11 +191,11 @@ func TestMustGetCobraCommand_TestEmptyShorthandsDontTriggerShorthandValidation(t
 		LongDescription:  "This is a very long description",
 		Flags: []*flags.FlagConfig{
 			{
-				Key: flag1Key,
+				Key:       flag1Key,
 				Shorthand: "",
 			},
 			{
-				Key: flag2Key,
+				Key:       flag2Key,
 				Shorthand: "",
 			},
 		},
@@ -253,14 +253,14 @@ func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Args:             []*args.ArgConfig{
 			{
-				Key:             arg1Key,
+				Key: arg1Key,
 			},
 			{
-				Key:             arg2Key,
+				Key:        arg2Key,
 				IsOptional: true,
 			},
 			{
-				Key:             arg3Key,
+				Key:        arg3Key,
 				IsOptional: true,
 			},
 		},
@@ -280,14 +280,14 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Args:             []*args.ArgConfig{
 			{
-				Key:             arg1Key,
+				Key: arg1Key,
 			},
 			{
-				Key:             arg2Key,
+				Key:      arg2Key,
 				IsGreedy: true,
 			},
 			{
-				Key:             arg3Key,
+				Key: arg3Key,
 			},
 		},
 	}
@@ -332,9 +332,9 @@ func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
 		LongDescription:  "This is a very long description",
 		Args: []*args.ArgConfig{
 			{
-				Key: arg1Key,
+				Key:          arg1Key,
 				DefaultValue: nil,
-				IsOptional: true,
+				IsOptional:   true,
 			},
 		},
 	}
@@ -353,9 +353,9 @@ func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) 
 		LongDescription:  "This is a very long description",
 		Args: []*args.ArgConfig{
 			{
-				Key: arg1Key,
+				Key:          arg1Key,
 				DefaultValue: nil,
-				IsOptional: false,
+				IsOptional:   false,
 			},
 		},
 	}
@@ -374,10 +374,10 @@ func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *t
 		LongDescription:  "This is a very long description",
 		Args: []*args.ArgConfig{
 			{
-				Key: arg1Key,
-				IsGreedy: false,
+				Key:          arg1Key,
+				IsGreedy:     false,
 				DefaultValue: []string{"foo", "bar"},
-				IsOptional: true,
+				IsOptional:   true,
 			},
 		},
 	}
@@ -396,10 +396,10 @@ func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *test
 		LongDescription:  "This is a very long description",
 		Args: []*args.ArgConfig{
 			{
-				Key: arg1Key,
-				IsGreedy: true,
+				Key:          arg1Key,
+				IsGreedy:     true,
 				DefaultValue: "foobar",
-				IsOptional: true,
+				IsOptional:   true,
 			},
 		},
 	}
