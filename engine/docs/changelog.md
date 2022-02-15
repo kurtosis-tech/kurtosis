@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Kurtosis enclaves created via `KurtosisContext.CreateEnclave` default to the debug loglevel
 
 # 1.11.0
 ### Breaking Changes
