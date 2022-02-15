@@ -1,9 +1,10 @@
 package args
 
 import (
-	"github.com/kurtosis-tech/stacktrace"
 	"reflect"
 	"strings"
+
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (

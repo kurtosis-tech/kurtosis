@@ -1,21 +1,18 @@
-// package: api_container_api
-// file: api_container_service.proto
+import * as jspb from 'google-protobuf'
 
-import * as jspb from "google-protobuf";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+
 
 export class Port extends jspb.Message {
   getNumber(): number;
-  setNumber(value: number): void;
+  setNumber(value: number): Port;
 
-  getProtocol(): Port.ProtocolMap[keyof Port.ProtocolMap];
-  setProtocol(value: Port.ProtocolMap[keyof Port.ProtocolMap]): void;
+  getProtocol(): Port.Protocol;
+  setProtocol(value: Port.Protocol): Port;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: Port, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): Port;
   static deserializeBinaryFromReader(message: Port, reader: jspb.BinaryReader): Port;
@@ -24,30 +21,26 @@ export class Port extends jspb.Message {
 export namespace Port {
   export type AsObject = {
     number: number,
-    protocol: Port.ProtocolMap[keyof Port.ProtocolMap],
+    protocol: Port.Protocol,
   }
 
-  export interface ProtocolMap {
-    TCP: 0;
-    SCTP: 1;
-    UDP: 2;
+  export enum Protocol { 
+    TCP = 0,
+    SCTP = 1,
+    UDP = 2,
   }
-
-  export const Protocol: ProtocolMap;
 }
 
 export class StartExternalContainerRegistrationResponse extends jspb.Message {
   getRegistrationKey(): string;
-  setRegistrationKey(value: string): void;
+  setRegistrationKey(value: string): StartExternalContainerRegistrationResponse;
 
   getIpAddr(): string;
-  setIpAddr(value: string): void;
+  setIpAddr(value: string): StartExternalContainerRegistrationResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartExternalContainerRegistrationResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartExternalContainerRegistrationResponse): StartExternalContainerRegistrationResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StartExternalContainerRegistrationResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StartExternalContainerRegistrationResponse;
   static deserializeBinaryFromReader(message: StartExternalContainerRegistrationResponse, reader: jspb.BinaryReader): StartExternalContainerRegistrationResponse;
@@ -62,16 +55,14 @@ export namespace StartExternalContainerRegistrationResponse {
 
 export class FinishExternalContainerRegistrationArgs extends jspb.Message {
   getRegistrationKey(): string;
-  setRegistrationKey(value: string): void;
+  setRegistrationKey(value: string): FinishExternalContainerRegistrationArgs;
 
   getContainerId(): string;
-  setContainerId(value: string): void;
+  setContainerId(value: string): FinishExternalContainerRegistrationArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FinishExternalContainerRegistrationArgs.AsObject;
   static toObject(includeInstance: boolean, msg: FinishExternalContainerRegistrationArgs): FinishExternalContainerRegistrationArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: FinishExternalContainerRegistrationArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): FinishExternalContainerRegistrationArgs;
   static deserializeBinaryFromReader(message: FinishExternalContainerRegistrationArgs, reader: jspb.BinaryReader): FinishExternalContainerRegistrationArgs;
@@ -86,19 +77,17 @@ export namespace FinishExternalContainerRegistrationArgs {
 
 export class LoadModuleArgs extends jspb.Message {
   getModuleId(): string;
-  setModuleId(value: string): void;
+  setModuleId(value: string): LoadModuleArgs;
 
   getContainerImage(): string;
-  setContainerImage(value: string): void;
+  setContainerImage(value: string): LoadModuleArgs;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): void;
+  setSerializedParams(value: string): LoadModuleArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoadModuleArgs.AsObject;
   static toObject(includeInstance: boolean, msg: LoadModuleArgs): LoadModuleArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: LoadModuleArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): LoadModuleArgs;
   static deserializeBinaryFromReader(message: LoadModuleArgs, reader: jspb.BinaryReader): LoadModuleArgs;
@@ -114,26 +103,24 @@ export namespace LoadModuleArgs {
 
 export class LoadModuleResponse extends jspb.Message {
   getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): void;
+  setPrivateIpAddr(value: string): LoadModuleResponse;
 
-  hasPrivatePort(): boolean;
-  clearPrivatePort(): void;
   getPrivatePort(): Port | undefined;
-  setPrivatePort(value?: Port): void;
+  setPrivatePort(value?: Port): LoadModuleResponse;
+  hasPrivatePort(): boolean;
+  clearPrivatePort(): LoadModuleResponse;
 
   getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): void;
+  setPublicIpAddr(value: string): LoadModuleResponse;
 
-  hasPublicPort(): boolean;
-  clearPublicPort(): void;
   getPublicPort(): Port | undefined;
-  setPublicPort(value?: Port): void;
+  setPublicPort(value?: Port): LoadModuleResponse;
+  hasPublicPort(): boolean;
+  clearPublicPort(): LoadModuleResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): LoadModuleResponse.AsObject;
   static toObject(includeInstance: boolean, msg: LoadModuleResponse): LoadModuleResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: LoadModuleResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): LoadModuleResponse;
   static deserializeBinaryFromReader(message: LoadModuleResponse, reader: jspb.BinaryReader): LoadModuleResponse;
@@ -150,13 +137,11 @@ export namespace LoadModuleResponse {
 
 export class UnloadModuleArgs extends jspb.Message {
   getModuleId(): string;
-  setModuleId(value: string): void;
+  setModuleId(value: string): UnloadModuleArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UnloadModuleArgs.AsObject;
   static toObject(includeInstance: boolean, msg: UnloadModuleArgs): UnloadModuleArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UnloadModuleArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UnloadModuleArgs;
   static deserializeBinaryFromReader(message: UnloadModuleArgs, reader: jspb.BinaryReader): UnloadModuleArgs;
@@ -170,16 +155,14 @@ export namespace UnloadModuleArgs {
 
 export class ExecuteModuleArgs extends jspb.Message {
   getModuleId(): string;
-  setModuleId(value: string): void;
+  setModuleId(value: string): ExecuteModuleArgs;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): void;
+  setSerializedParams(value: string): ExecuteModuleArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteModuleArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ExecuteModuleArgs): ExecuteModuleArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecuteModuleArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecuteModuleArgs;
   static deserializeBinaryFromReader(message: ExecuteModuleArgs, reader: jspb.BinaryReader): ExecuteModuleArgs;
@@ -194,13 +177,11 @@ export namespace ExecuteModuleArgs {
 
 export class ExecuteModuleResponse extends jspb.Message {
   getSerializedResult(): string;
-  setSerializedResult(value: string): void;
+  setSerializedResult(value: string): ExecuteModuleResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteModuleResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ExecuteModuleResponse): ExecuteModuleResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecuteModuleResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecuteModuleResponse;
   static deserializeBinaryFromReader(message: ExecuteModuleResponse, reader: jspb.BinaryReader): ExecuteModuleResponse;
@@ -214,13 +195,11 @@ export namespace ExecuteModuleResponse {
 
 export class GetModuleInfoArgs extends jspb.Message {
   getModuleId(): string;
-  setModuleId(value: string): void;
+  setModuleId(value: string): GetModuleInfoArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetModuleInfoArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetModuleInfoArgs): GetModuleInfoArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetModuleInfoArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetModuleInfoArgs;
   static deserializeBinaryFromReader(message: GetModuleInfoArgs, reader: jspb.BinaryReader): GetModuleInfoArgs;
@@ -234,26 +213,24 @@ export namespace GetModuleInfoArgs {
 
 export class GetModuleInfoResponse extends jspb.Message {
   getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): void;
+  setPrivateIpAddr(value: string): GetModuleInfoResponse;
 
-  hasPrivatePort(): boolean;
-  clearPrivatePort(): void;
   getPrivatePort(): Port | undefined;
-  setPrivatePort(value?: Port): void;
+  setPrivatePort(value?: Port): GetModuleInfoResponse;
+  hasPrivatePort(): boolean;
+  clearPrivatePort(): GetModuleInfoResponse;
 
   getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): void;
+  setPublicIpAddr(value: string): GetModuleInfoResponse;
 
-  hasPublicPort(): boolean;
-  clearPublicPort(): void;
   getPublicPort(): Port | undefined;
-  setPublicPort(value?: Port): void;
+  setPublicPort(value?: Port): GetModuleInfoResponse;
+  hasPublicPort(): boolean;
+  clearPublicPort(): GetModuleInfoResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetModuleInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetModuleInfoResponse): GetModuleInfoResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetModuleInfoResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetModuleInfoResponse;
   static deserializeBinaryFromReader(message: GetModuleInfoResponse, reader: jspb.BinaryReader): GetModuleInfoResponse;
@@ -270,12 +247,11 @@ export namespace GetModuleInfoResponse {
 
 export class RegisterFilesArtifactsArgs extends jspb.Message {
   getFilesArtifactUrlsMap(): jspb.Map<string, string>;
-  clearFilesArtifactUrlsMap(): void;
+  clearFilesArtifactUrlsMap(): RegisterFilesArtifactsArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterFilesArtifactsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterFilesArtifactsArgs): RegisterFilesArtifactsArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RegisterFilesArtifactsArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RegisterFilesArtifactsArgs;
   static deserializeBinaryFromReader(message: RegisterFilesArtifactsArgs, reader: jspb.BinaryReader): RegisterFilesArtifactsArgs;
@@ -289,16 +265,14 @@ export namespace RegisterFilesArtifactsArgs {
 
 export class RegisterServiceArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): RegisterServiceArgs;
 
   getPartitionId(): string;
-  setPartitionId(value: string): void;
+  setPartitionId(value: string): RegisterServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterServiceArgs): RegisterServiceArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RegisterServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RegisterServiceArgs;
   static deserializeBinaryFromReader(message: RegisterServiceArgs, reader: jspb.BinaryReader): RegisterServiceArgs;
@@ -313,16 +287,14 @@ export namespace RegisterServiceArgs {
 
 export class RegisterServiceResponse extends jspb.Message {
   getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): void;
+  setPrivateIpAddr(value: string): RegisterServiceResponse;
 
   getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): void;
+  setRelativeServiceDirpath(value: string): RegisterServiceResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RegisterServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RegisterServiceResponse): RegisterServiceResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RegisterServiceResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RegisterServiceResponse;
   static deserializeBinaryFromReader(message: RegisterServiceResponse, reader: jspb.BinaryReader): RegisterServiceResponse;
@@ -337,35 +309,36 @@ export namespace RegisterServiceResponse {
 
 export class StartServiceArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): StartServiceArgs;
 
   getDockerImage(): string;
-  setDockerImage(value: string): void;
+  setDockerImage(value: string): StartServiceArgs;
 
   getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): void;
-  clearEntrypointArgsList(): void;
-  getEntrypointArgsList(): Array<string>;
-  setEntrypointArgsList(value: Array<string>): void;
-  addEntrypointArgs(value: string, index?: number): string;
+  clearPrivatePortsMap(): StartServiceArgs;
 
-  clearCmdArgsList(): void;
+  getEntrypointArgsList(): Array<string>;
+  setEntrypointArgsList(value: Array<string>): StartServiceArgs;
+  clearEntrypointArgsList(): StartServiceArgs;
+  addEntrypointArgs(value: string, index?: number): StartServiceArgs;
+
   getCmdArgsList(): Array<string>;
-  setCmdArgsList(value: Array<string>): void;
-  addCmdArgs(value: string, index?: number): string;
+  setCmdArgsList(value: Array<string>): StartServiceArgs;
+  clearCmdArgsList(): StartServiceArgs;
+  addCmdArgs(value: string, index?: number): StartServiceArgs;
 
   getDockerEnvVarsMap(): jspb.Map<string, string>;
-  clearDockerEnvVarsMap(): void;
+  clearDockerEnvVarsMap(): StartServiceArgs;
+
   getEnclaveDataDirMntDirpath(): string;
-  setEnclaveDataDirMntDirpath(value: string): void;
+  setEnclaveDataDirMntDirpath(value: string): StartServiceArgs;
 
   getFilesArtifactMountDirpathsMap(): jspb.Map<string, string>;
-  clearFilesArtifactMountDirpathsMap(): void;
+  clearFilesArtifactMountDirpathsMap(): StartServiceArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StartServiceArgs): StartServiceArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StartServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StartServiceArgs;
   static deserializeBinaryFromReader(message: StartServiceArgs, reader: jspb.BinaryReader): StartServiceArgs;
@@ -386,15 +359,14 @@ export namespace StartServiceArgs {
 
 export class StartServiceResponse extends jspb.Message {
   getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): void;
+  setPublicIpAddr(value: string): StartServiceResponse;
 
   getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): void;
+  clearPublicPortsMap(): StartServiceResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartServiceResponse): StartServiceResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StartServiceResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StartServiceResponse;
   static deserializeBinaryFromReader(message: StartServiceResponse, reader: jspb.BinaryReader): StartServiceResponse;
@@ -409,13 +381,11 @@ export namespace StartServiceResponse {
 
 export class GetServiceInfoArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): GetServiceInfoArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceInfoArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceInfoArgs): GetServiceInfoArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetServiceInfoArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetServiceInfoArgs;
   static deserializeBinaryFromReader(message: GetServiceInfoArgs, reader: jspb.BinaryReader): GetServiceInfoArgs;
@@ -429,26 +399,26 @@ export namespace GetServiceInfoArgs {
 
 export class GetServiceInfoResponse extends jspb.Message {
   getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): void;
+  setPrivateIpAddr(value: string): GetServiceInfoResponse;
 
   getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): void;
+  clearPrivatePortsMap(): GetServiceInfoResponse;
+
   getPublicIpAddr(): string;
-  setPublicIpAddr(value: string): void;
+  setPublicIpAddr(value: string): GetServiceInfoResponse;
 
   getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): void;
+  clearPublicPortsMap(): GetServiceInfoResponse;
+
   getEnclaveDataDirMountDirpath(): string;
-  setEnclaveDataDirMountDirpath(value: string): void;
+  setEnclaveDataDirMountDirpath(value: string): GetServiceInfoResponse;
 
   getRelativeServiceDirpath(): string;
-  setRelativeServiceDirpath(value: string): void;
+  setRelativeServiceDirpath(value: string): GetServiceInfoResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceInfoResponse): GetServiceInfoResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetServiceInfoResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetServiceInfoResponse;
   static deserializeBinaryFromReader(message: GetServiceInfoResponse, reader: jspb.BinaryReader): GetServiceInfoResponse;
@@ -467,16 +437,14 @@ export namespace GetServiceInfoResponse {
 
 export class RemoveServiceArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): RemoveServiceArgs;
 
   getContainerStopTimeoutSeconds(): number;
-  setContainerStopTimeoutSeconds(value: number): void;
+  setContainerStopTimeoutSeconds(value: number): RemoveServiceArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveServiceArgs): RemoveServiceArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RemoveServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RemoveServiceArgs;
   static deserializeBinaryFromReader(message: RemoveServiceArgs, reader: jspb.BinaryReader): RemoveServiceArgs;
@@ -491,19 +459,19 @@ export namespace RemoveServiceArgs {
 
 export class RepartitionArgs extends jspb.Message {
   getPartitionServicesMap(): jspb.Map<string, PartitionServices>;
-  clearPartitionServicesMap(): void;
+  clearPartitionServicesMap(): RepartitionArgs;
+
   getPartitionConnectionsMap(): jspb.Map<string, PartitionConnections>;
-  clearPartitionConnectionsMap(): void;
-  hasDefaultConnection(): boolean;
-  clearDefaultConnection(): void;
+  clearPartitionConnectionsMap(): RepartitionArgs;
+
   getDefaultConnection(): PartitionConnectionInfo | undefined;
-  setDefaultConnection(value?: PartitionConnectionInfo): void;
+  setDefaultConnection(value?: PartitionConnectionInfo): RepartitionArgs;
+  hasDefaultConnection(): boolean;
+  clearDefaultConnection(): RepartitionArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RepartitionArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RepartitionArgs): RepartitionArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RepartitionArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RepartitionArgs;
   static deserializeBinaryFromReader(message: RepartitionArgs, reader: jspb.BinaryReader): RepartitionArgs;
@@ -519,12 +487,11 @@ export namespace RepartitionArgs {
 
 export class PartitionServices extends jspb.Message {
   getServiceIdSetMap(): jspb.Map<string, boolean>;
-  clearServiceIdSetMap(): void;
+  clearServiceIdSetMap(): PartitionServices;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionServices.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionServices): PartitionServices.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionServices, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionServices;
   static deserializeBinaryFromReader(message: PartitionServices, reader: jspb.BinaryReader): PartitionServices;
@@ -538,12 +505,11 @@ export namespace PartitionServices {
 
 export class PartitionConnections extends jspb.Message {
   getConnectionInfoMap(): jspb.Map<string, PartitionConnectionInfo>;
-  clearConnectionInfoMap(): void;
+  clearConnectionInfoMap(): PartitionConnections;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionConnections.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionConnections): PartitionConnections.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionConnections, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionConnections;
   static deserializeBinaryFromReader(message: PartitionConnections, reader: jspb.BinaryReader): PartitionConnections;
@@ -557,13 +523,11 @@ export namespace PartitionConnections {
 
 export class PartitionConnectionInfo extends jspb.Message {
   getPacketLossPercentage(): number;
-  setPacketLossPercentage(value: number): void;
+  setPacketLossPercentage(value: number): PartitionConnectionInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionConnectionInfo.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionConnectionInfo): PartitionConnectionInfo.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionConnectionInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionConnectionInfo;
   static deserializeBinaryFromReader(message: PartitionConnectionInfo, reader: jspb.BinaryReader): PartitionConnectionInfo;
@@ -577,18 +541,16 @@ export namespace PartitionConnectionInfo {
 
 export class ExecCommandArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): ExecCommandArgs;
 
-  clearCommandArgsList(): void;
   getCommandArgsList(): Array<string>;
-  setCommandArgsList(value: Array<string>): void;
-  addCommandArgs(value: string, index?: number): string;
+  setCommandArgsList(value: Array<string>): ExecCommandArgs;
+  clearCommandArgsList(): ExecCommandArgs;
+  addCommandArgs(value: string, index?: number): ExecCommandArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecCommandArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ExecCommandArgs): ExecCommandArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecCommandArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecCommandArgs;
   static deserializeBinaryFromReader(message: ExecCommandArgs, reader: jspb.BinaryReader): ExecCommandArgs;
@@ -603,16 +565,14 @@ export namespace ExecCommandArgs {
 
 export class ExecCommandResponse extends jspb.Message {
   getExitCode(): number;
-  setExitCode(value: number): void;
+  setExitCode(value: number): ExecCommandResponse;
 
   getLogOutput(): string;
-  setLogOutput(value: string): void;
+  setLogOutput(value: string): ExecCommandResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecCommandResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ExecCommandResponse): ExecCommandResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecCommandResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecCommandResponse;
   static deserializeBinaryFromReader(message: ExecCommandResponse, reader: jspb.BinaryReader): ExecCommandResponse;
@@ -627,31 +587,29 @@ export namespace ExecCommandResponse {
 
 export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): WaitForHttpGetEndpointAvailabilityArgs;
 
   getPort(): number;
-  setPort(value: number): void;
+  setPort(value: number): WaitForHttpGetEndpointAvailabilityArgs;
 
   getPath(): string;
-  setPath(value: string): void;
+  setPath(value: string): WaitForHttpGetEndpointAvailabilityArgs;
 
   getInitialDelayMilliseconds(): number;
-  setInitialDelayMilliseconds(value: number): void;
+  setInitialDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
 
   getRetries(): number;
-  setRetries(value: number): void;
+  setRetries(value: number): WaitForHttpGetEndpointAvailabilityArgs;
 
   getRetriesDelayMilliseconds(): number;
-  setRetriesDelayMilliseconds(value: number): void;
+  setRetriesDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
 
   getBodyText(): string;
-  setBodyText(value: string): void;
+  setBodyText(value: string): WaitForHttpGetEndpointAvailabilityArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpGetEndpointAvailabilityArgs.AsObject;
   static toObject(includeInstance: boolean, msg: WaitForHttpGetEndpointAvailabilityArgs): WaitForHttpGetEndpointAvailabilityArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WaitForHttpGetEndpointAvailabilityArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WaitForHttpGetEndpointAvailabilityArgs;
   static deserializeBinaryFromReader(message: WaitForHttpGetEndpointAvailabilityArgs, reader: jspb.BinaryReader): WaitForHttpGetEndpointAvailabilityArgs;
@@ -671,34 +629,32 @@ export namespace WaitForHttpGetEndpointAvailabilityArgs {
 
 export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
   getServiceId(): string;
-  setServiceId(value: string): void;
+  setServiceId(value: string): WaitForHttpPostEndpointAvailabilityArgs;
 
   getPort(): number;
-  setPort(value: number): void;
+  setPort(value: number): WaitForHttpPostEndpointAvailabilityArgs;
 
   getPath(): string;
-  setPath(value: string): void;
+  setPath(value: string): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRequestBody(): string;
-  setRequestBody(value: string): void;
+  setRequestBody(value: string): WaitForHttpPostEndpointAvailabilityArgs;
 
   getInitialDelayMilliseconds(): number;
-  setInitialDelayMilliseconds(value: number): void;
+  setInitialDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetries(): number;
-  setRetries(value: number): void;
+  setRetries(value: number): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetriesDelayMilliseconds(): number;
-  setRetriesDelayMilliseconds(value: number): void;
+  setRetriesDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
 
   getBodyText(): string;
-  setBodyText(value: string): void;
+  setBodyText(value: string): WaitForHttpPostEndpointAvailabilityArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
   static toObject(includeInstance: boolean, msg: WaitForHttpPostEndpointAvailabilityArgs): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WaitForHttpPostEndpointAvailabilityArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WaitForHttpPostEndpointAvailabilityArgs;
   static deserializeBinaryFromReader(message: WaitForHttpPostEndpointAvailabilityArgs, reader: jspb.BinaryReader): WaitForHttpPostEndpointAvailabilityArgs;
@@ -719,13 +675,11 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
 
 export class ExecuteBulkCommandsArgs extends jspb.Message {
   getSerializedCommands(): string;
-  setSerializedCommands(value: string): void;
+  setSerializedCommands(value: string): ExecuteBulkCommandsArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecuteBulkCommandsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ExecuteBulkCommandsArgs): ExecuteBulkCommandsArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecuteBulkCommandsArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecuteBulkCommandsArgs;
   static deserializeBinaryFromReader(message: ExecuteBulkCommandsArgs, reader: jspb.BinaryReader): ExecuteBulkCommandsArgs;
@@ -739,12 +693,11 @@ export namespace ExecuteBulkCommandsArgs {
 
 export class GetServicesResponse extends jspb.Message {
   getServiceIdsMap(): jspb.Map<string, boolean>;
-  clearServiceIdsMap(): void;
+  clearServiceIdsMap(): GetServicesResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServicesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServicesResponse): GetServicesResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetServicesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetServicesResponse;
   static deserializeBinaryFromReader(message: GetServicesResponse, reader: jspb.BinaryReader): GetServicesResponse;
@@ -758,12 +711,11 @@ export namespace GetServicesResponse {
 
 export class GetModulesResponse extends jspb.Message {
   getModuleIdsMap(): jspb.Map<string, boolean>;
-  clearModuleIdsMap(): void;
+  clearModuleIdsMap(): GetModulesResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetModulesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetModulesResponse): GetModulesResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetModulesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetModulesResponse;
   static deserializeBinaryFromReader(message: GetModulesResponse, reader: jspb.BinaryReader): GetModulesResponse;

@@ -1,5 +1,11 @@
 # TBD
 
+# 1.39.1
+
+### Features
+* Added Envoy Proxy to support gRPC-web
+
+
 # 1.39.0
 ### Breaking Changes
 * The API container now takes in a `version` arg so that it can accurately report its own version to the metrics client

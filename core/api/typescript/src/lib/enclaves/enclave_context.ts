@@ -3,61 +3,57 @@
  * All Rights Reserved.
  */
 
-import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import {
-    RegisterFilesArtifactsArgs,
-    RegisterServiceArgs,
-    RegisterServiceResponse,
+import { ok, err, Result } from "neverthrow";
+import log from "loglevel";
+import * as jspb from "google-protobuf";
+import * as path from "path-browserify"
+import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
+import { 
+    PartitionConnectionInfo, 
+    PartitionServices, 
+    Port, 
+    RemoveServiceArgs, 
+    RepartitionArgs, 
     StartServiceArgs,
-    GetServiceInfoArgs,
-    GetServiceInfoResponse,
-    RemoveServiceArgs,
-    PartitionConnectionInfo,
-    PartitionServices,
     PartitionConnections,
-    RepartitionArgs,
-    WaitForHttpGetEndpointAvailabilityArgs,
-    WaitForHttpPostEndpointAvailabilityArgs,
-    ExecuteBulkCommandsArgs,
-    StartServiceResponse,
-    GetServicesResponse,
     LoadModuleArgs,
     UnloadModuleArgs,
     GetModuleInfoArgs,
-    GetModuleInfoResponse,
-    GetModulesResponse,
-    Port,
+    RegisterFilesArtifactsArgs,
+    RegisterServiceArgs,
+    GetServiceInfoArgs,
+    WaitForHttpGetEndpointAvailabilityArgs,
+    WaitForHttpPostEndpointAvailabilityArgs,
+    ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ModuleID, ModuleContext } from "../modules/module_context";
-import { ServiceID} from "../services/service";
-import { SharedPath } from "../services/shared_path";
-import { ServiceContext} from "../services/service_context";
-import {
-    newLoadModuleArgs,
-    newGetModuleInfoArgs,
-    newRegisterFilesArtifactsArgs,
-    newRegisterServiceArgs,
-    newStartServiceArgs,
-    newGetServiceInfoArgs,
-    newRemoveServiceArgs,
-    newPartitionServices,
-    newPartitionConnections,
-    newRepartitionArgs,
-    newWaitForHttpGetEndpointAvailabilityArgs,
-    newWaitForHttpPostEndpointAvailabilityArgs,
-    newExecuteBulkCommandsArgs,
-    newUnloadModuleArgs,
-    newPort
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { GrpcNodeEnclaveContextBackend } from "./grpc_node_enclave_context_backend";
+import { GrpcWebEnclaveContextBackend } from "./grpc_web_enclave_context_backend";
+import EnclaveContextBackend from "./enclave_context_backend";
+import { ModuleContext, ModuleID } from "../modules/module_context";
+import { newExecuteBulkCommandsArgs, 
+    newGetModuleInfoArgs, 
+    newGetServiceInfoArgs, 
+    newLoadModuleArgs, 
+    newPartitionConnections, 
+    newPartitionServices, 
+    newPort, 
+    newRegisterFilesArtifactsArgs, 
+    newRegisterServiceArgs, 
+    newRemoveServiceArgs, 
+    newRepartitionArgs, 
+    newStartServiceArgs, 
+    newUnloadModuleArgs, 
+    newWaitForHttpGetEndpointAvailabilityArgs, 
+    newWaitForHttpPostEndpointAvailabilityArgs 
 } from "../constructor_calls";
-import { ok, err, Result } from "neverthrow";
-import * as log from "loglevel";
-import * as grpc from "@grpc/grpc-js";
-import * as path from "path"
-import * as jspb from "google-protobuf";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import { ContainerConfig, FilesArtifactID } from "../services/container_config";
+import { ServiceID } from "../services/service";
+import { SharedPath } from "../services/shared_path";
+import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
-import {PartitionConnection} from "./partition_connection";
+import { PartitionConnection } from "./partition_connection";
 
 export type EnclaveID = string;
 
@@ -72,104 +68,61 @@ const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
-    private readonly client: ApiContainerServiceClient;
 
-    private readonly enclaveId: EnclaveID;
-    
+    private readonly backend: EnclaveContextBackend
+
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    /*
-    Creates a new EnclaveContext object with the given parameters.
-    */
-    constructor(client: ApiContainerServiceClient, enclaveId: EnclaveID, enclaveDataDirpath: string) {
-        this.client = client;
-        this.enclaveId = enclaveId;
+    constructor(client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode, enclaveId: EnclaveID, enclaveDataDirpath: string){
+        if(client instanceof ApiContainerServiceClientWeb){
+            this.backend = new GrpcWebEnclaveContextBackend(client, enclaveId)
+        }else{
+            this.backend = new GrpcNodeEnclaveContextBackend(client, enclaveId)
+        }
         this.enclaveDataDirpath = enclaveDataDirpath;
     }
-
+   
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getEnclaveId(): EnclaveID {
-        return this.enclaveId;
+        return this.backend.getEnclaveId();
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async loadModule(
-            moduleId: ModuleID,
-            image: string,
-            serializedParams: string): Promise<Result<ModuleContext, Error>> {
-        const args: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
-
-        const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.loadModule(args, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const loadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
-        if (!loadModuleResult.isOk()) {
-            return err(loadModuleResult.error);
+    public async loadModule(moduleId: ModuleID, image: string, serializedParams: string): Promise<Result<ModuleContext, Error>> {
+        const loadModuleArgs: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
+        
+        const loadModuleResult = await this.backend.loadModule(loadModuleArgs)
+        if(loadModuleResult.isErr()){
+            return err(loadModuleResult.error)
         }
-
-        const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
-        return ok(moduleCtx);
+        const moduleContext:ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
+        return ok(moduleContext)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async unloadModule(moduleId: ModuleID): Promise<Result<null,Error>> {
-        const args: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
+        const unloadModuleArgs: UnloadModuleArgs = newUnloadModuleArgs(moduleId);
 
-        const unloadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(args, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        })
-
-        const unloadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await unloadModulePromise;
-        if (!unloadModuleResult.isOk()) {
-            return err(unloadModuleResult.error);
+        const unloadModuleResult = await this.backend.unloadModule(unloadModuleArgs)
+        if(unloadModuleResult.isErr()){
+            return err(unloadModuleResult.error)
         }
-        return ok(null);
+        const result = unloadModuleResult.value
+        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
-        const args: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
-        
-        const getModuleInfoPromise: Promise<Result<GetModuleInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModuleInfo(args, (error: grpc.ServiceError | null, response?: GetModuleInfoResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    }
-                    resolve(ok(response!));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const getModuleInfoResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
-        if (!getModuleInfoResult.isOk()) {
-            return err(getModuleInfoResult.error);
-        }
+        const getModuleInfoArgs: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
 
-        const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
-        return ok(moduleCtx);
+        const getModuleInfotResult = await this.backend.getModuleInfo(getModuleInfoArgs)
+        if(getModuleInfotResult.isErr()){
+            return err(getModuleInfotResult.error)
+        }
+        const moduleContext: ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
+
+        return ok(moduleContext)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -178,27 +131,15 @@ export class EnclaveContext {
         for (const [artifactId, url] of filesArtifactUrls.entries()) {
             filesArtifactIdStrsToUrls.set(String(artifactId), url);
         }
-        const args: RegisterFilesArtifactsArgs = newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls);
-        
-        const promiseRegisterFilesArtifacts: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerFilesArtifacts(args, (error: grpc.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRegisterFilesArtifacts: Result<google_protobuf_empty_pb.Empty, Error> = await promiseRegisterFilesArtifacts;
-        if (!resultRegisterFilesArtifacts.isOk()) {
-            return err(resultRegisterFilesArtifacts.error);
-        }
+        const registerFilesArtifactsArgs: RegisterFilesArtifactsArgs = newRegisterFilesArtifactsArgs(filesArtifactIdStrsToUrls);
 
-        return ok(null);
+        const registerFilesArtifactsResult = await this.backend.registerFilesArtifacts(registerFilesArtifactsArgs)
+
+        if(registerFilesArtifactsResult.isErr()){
+            return err(registerFilesArtifactsResult.error)
+        }
+        const result = registerFilesArtifactsResult.value
+        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -212,8 +153,7 @@ export class EnclaveContext {
             DEFAULT_PARTITION_ID,
             containerConfigSupplier,
         );
-
-        if (!resultAddServiceToPartition.isOk()) {
+        if (resultAddServiceToPartition.isErr()) {
             return err(resultAddServiceToPartition.error);
         }
 
@@ -227,145 +167,110 @@ export class EnclaveContext {
             containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
 
-        log.trace("Registering new service ID with Kurtosis API...");
-        const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
+            log.trace("Registering new service ID with Kurtosis API...");
 
-        const promiseRegisterService: Promise<Result<RegisterServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerService(registerServiceArgs, (error: grpc.ServiceError | null, response?: RegisterServiceResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRegisterService: Result<RegisterServiceResponse, Error> = await promiseRegisterService;
-        if (!resultRegisterService.isOk()) {
-            return err(resultRegisterService.error);
-        }
-        // TODO Add a 'finally' to remove the service if this function doesn't complete successfully
-        const registerServiceResp: RegisterServiceResponse = resultRegisterService.value;
+            const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
 
-        log.trace("New service successfully registered with Kurtosis API");
+            const registerServiceResponseResult = await this.backend.registerService(registerServiceArgs)
+            if(registerServiceResponseResult.isErr()){
+                return err(registerServiceResponseResult.error)
+            }
+    
+            const registerServiceResponse = registerServiceResponseResult.value
+    
+            log.trace("New service successfully registered with Kurtosis API");
+    
+            const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
+            const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
+    
+            const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
+    
+            log.trace("Generating container config object using the container config supplier...")
+            const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
+            if (containerConfigSupplierResult.isErr()){
+                return err(containerConfigSupplierResult.error);
+            }
+            const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
+            log.trace("Container config object successfully generated")
+    
+            log.trace("Creating files artifact ID str -> mount dirpaths map...");
+            const artifactIdStrToMountDirpath: Map<string, string> = new Map();
+            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
+    
+                artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
+            }
+            log.trace("Successfully created files artifact ID str -> mount dirpaths map");
+    
+            log.trace("Starting new service with Kurtosis API...");
+            const privatePorts = containerConfig.usedPorts;
+            const privatePortsForApi: Map<string, Port> = new Map();
+            for (const [portId, portSpec] of privatePorts.entries()) {
+                const portSpecForApi: Port = newPort(
+                    portSpec.number,
+                    portSpec.protocol,
+                )
+                privatePortsForApi.set(portId, portSpecForApi);
+            }
+            const startServiceArgs: StartServiceArgs = newStartServiceArgs(
+                serviceId, 
+                containerConfig.image,
+                privatePortsForApi,
+                containerConfig.entrypointOverrideArgs,
+                containerConfig.cmdOverrideArgs,
+                containerConfig.environmentVariableOverrides,
+                SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
+                artifactIdStrToMountDirpath);
+    
+            const startServiceResponseResult = await this.backend.startService(startServiceArgs)
+            if(startServiceResponseResult.isErr()){
+                return err(startServiceResponseResult.error)
+            }
+    
+            const startServiceResponse = startServiceResponseResult.value
+    
+            log.trace("Successfully started service with Kurtosis API");
+    
+            const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+                startServiceResponse.getPublicPortsMap(),
+            );
+    
+            const serviceContext: ServiceContext = new ServiceContext(
+                this.backend.getClient(),
+                serviceId,
+                sharedDirectory,
+                privateIpAddr,
+                privatePorts,
+                startServiceResponse.getPublicIpAddr(),
+                serviceCtxPublicPorts,
+            );
 
-        const privateIpAddr: string = registerServiceResp.getPrivateIpAddr();
-        const relativeServiceDirpath: string = registerServiceResp.getRelativeServiceDirpath();
-
-        const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
-
-        log.trace("Generating container config object using the container config supplier...")
-        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
-        if (!containerConfigSupplierResult.isOk()){
-            return err(containerConfigSupplierResult.error);
-        }
-        const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-        log.trace("Container config object successfully generated")
-
-        log.trace("Creating files artifact ID str -> mount dirpaths map...");
-        const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-        for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
-
-            artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-        }
-        log.trace("Successfully created files artifact ID str -> mount dirpaths map");
-
-        log.trace("Starting new service with Kurtosis API...");
-        const privatePorts = containerConfig.usedPorts;
-        const privatePortsForApi: Map<string, Port> = new Map();
-        for (const [portId, portSpec] of privatePorts.entries()) {
-            const portSpecForApi: Port = newPort(
-                portSpec.number,
-                portSpec.protocol,
-            )
-            privatePortsForApi.set(portId, portSpecForApi);
-        }
-        const startServiceArgs: StartServiceArgs = newStartServiceArgs(
-            serviceId, 
-            containerConfig.image,
-            privatePortsForApi,
-            containerConfig.entrypointOverrideArgs,
-            containerConfig.cmdOverrideArgs,
-            containerConfig.environmentVariableOverrides,
-            SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
-            artifactIdStrToMountDirpath);
-
-        const promiseStartService: Promise<Result<StartServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.startService(startServiceArgs, (error: Error | null, response?: StartServiceResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultStartService: Result<StartServiceResponse, Error> = await promiseStartService;
-        if (!resultStartService.isOk()) {
-            return err(resultStartService.error);
-        }
-        const resp: StartServiceResponse = resultStartService.value;
-        log.trace("Successfully started service with Kurtosis API");
-
-        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            resp.getPublicPortsMap(),
-        );
-
-        const serviceContext: ServiceContext = new ServiceContext(
-            this.client,
-            serviceId,
-            sharedDirectory,
-            privateIpAddr,
-            privatePorts,
-            resp.getPublicIpAddr(),
-            serviceCtxPublicPorts,
-        );
-        return ok(serviceContext)
+            return ok(serviceContext)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServiceContext(serviceId: ServiceID): Promise<Result<ServiceContext, Error>> {
         const getServiceInfoArgs: GetServiceInfoArgs = newGetServiceInfoArgs(serviceId);
-        
-        const promiseGetServiceInfo: Promise<Result<GetServiceInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServiceInfo(getServiceInfoArgs, (error: Error | null, response?: GetServiceInfoResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultGetServiceInfo: Result<GetServiceInfoResponse, Error> = await promiseGetServiceInfo;
-        if (!resultGetServiceInfo.isOk()) {
-            return err(resultGetServiceInfo.error);
-        }
-        const resp: GetServiceInfoResponse = resultGetServiceInfo.value;
 
-        if (resp.getPrivateIpAddr() === "") {
+        const getServiceInfoResult = await this.backend.getServiceInfo(getServiceInfoArgs)
+        if(getServiceInfoResult.isErr()){
+            return err(getServiceInfoResult.error)
+        }
+
+        const serviceInfo = getServiceInfoResult.value
+        if (serviceInfo.getPrivateIpAddr() === "") {
             return err(new Error(
                 "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
-        if (resp.getPublicIpAddr() === "") {
+        if (serviceInfo.getPublicIpAddr() === "") {
             return err(new Error(
                 "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 ) 
             );
         }
 
-        const relativeServiceDirpath: string = resp.getRelativeServiceDirpath();
+        const relativeServiceDirpath: string = serviceInfo.getRelativeServiceDirpath();
         if (relativeServiceDirpath === "") {
             return err(new Error(
                 "Kurtosis API reported an empty relative service directory path for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
@@ -373,7 +278,7 @@ export class EnclaveContext {
             );
         }
 
-        const enclaveDataDirMountDirpathOnSvcContainer: string = resp.getEnclaveDataDirMountDirpath();
+        const enclaveDataDirMountDirpathOnSvcContainer: string = serviceInfo.getEnclaveDataDirMountDirpath();
         if (enclaveDataDirMountDirpathOnSvcContainer === "") {
             return err(new Error(
                 "Kurtosis API reported an empty enclave data dir mount dirpath for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
@@ -384,19 +289,19 @@ export class EnclaveContext {
         const sharedDirectory: SharedPath = this.getSharedDirectory(relativeServiceDirpath)
 
         const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            resp.getPrivatePortsMap(),
+            serviceInfo.getPrivatePortsMap(),
         );
         const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-            resp.getPublicPortsMap(),
+            serviceInfo.getPublicPortsMap(),
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
-            this.client,
+            this.backend.getClient(),
             serviceId,
             sharedDirectory,
-            resp.getPrivateIpAddr(),
+            serviceInfo.getPrivateIpAddr(),
             serviceCtxPrivatePorts,
-            resp.getPublicIpAddr(),
+            serviceInfo.getPublicIpAddr(),
             serviceCtxPublicPorts,
         );
 
@@ -405,43 +310,35 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async removeService(serviceId: ServiceID, containerStopTimeoutSeconds: number): Promise<Result<null, Error>> {
-
         log.debug("Removing service '" + serviceId + "'...");
         // NOTE: This is kinda weird - when we remove a service we can never get it back so having a container
         //  stop timeout doesn't make much sense. It will make more sense when we can stop/start containers
         // Independent of adding/removing them from the enclave
-        const args: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
-        
-        const removeServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRemoveService: Result<null, Error> = await removeServicePromise;
-        if (!resultRemoveService.isOk()) {
-            return err(resultRemoveService.error);
+        const removeServiceArgs: RemoveServiceArgs = newRemoveServiceArgs(serviceId, containerStopTimeoutSeconds);
+
+        const removeServiceResult = await this.backend.removeService(removeServiceArgs)
+        if(removeServiceResult.isErr()){
+            return err(removeServiceResult.error)
         }
 
         log.debug("Successfully removed service ID " + serviceId);
 
-        return ok(null);
+        return ok(null)
+
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async repartitionNetwork(
             partitionServices: Map<PartitionID, Set<ServiceID>>,
             partitionConnections: Map<PartitionID, Map<PartitionID, PartitionConnection>>,
-            defaultConnection: PartitionConnection): Promise<Result<null, Error>> {
+            defaultConnection: PartitionConnection
+        ): Promise<Result<null, Error>> {
 
         if (partitionServices === null) {
-            return err(new Error("Partition services map cannot be nil"));
+            return err(new Error("Partition services map cannot be null"));
         }
         if (defaultConnection === null) {
-            return err(new Error("Default connection cannot be nil"));
+            return err(new Error("Default connection cannot be null"));
         }
 
         // Cover for lazy/confused users
@@ -451,20 +348,19 @@ export class EnclaveContext {
 
         const reqPartitionServices: Map<string, PartitionServices> = new Map();
         for (const [partitionId, serviceIdSet] of partitionServices.entries()) {
-
             const partitionIdStr: string = String(partitionId);
             reqPartitionServices.set(partitionIdStr, newPartitionServices(serviceIdSet));
         }
 
         const reqPartitionConns: Map<string, PartitionConnections> = new Map();
         for (const [partitionAId, partitionAConnsMap] of partitionConnections.entries()) {
-            
             const partitionAConnsStrMap: Map<string, PartitionConnectionInfo> = new Map();
-            for (const [partitionBId, conn] of partitionAConnsMap.entries()) {
 
+            for (const [partitionBId, conn] of partitionAConnsMap.entries()) {
                 const partitionBIdStr: string = String(partitionBId);
                 partitionAConnsStrMap.set(partitionBIdStr, conn.getPartitionConnectionInfo());
             }
+
             const partitionAConns: PartitionConnections = newPartitionConnections(partitionAConnsStrMap);
             const partitionAIdStr: string = String(partitionAId);
             reqPartitionConns.set(partitionAIdStr, partitionAConns);
@@ -474,57 +370,43 @@ export class EnclaveContext {
 
         const repartitionArgs: RepartitionArgs = newRepartitionArgs(reqPartitionServices, reqPartitionConns, reqDefaultConnection);
 
-        const promiseRepartition: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.repartition(repartitionArgs, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRepartition: Result<null, Error> = await promiseRepartition;
-        if (!resultRepartition.isOk()) {
-            return err(resultRepartition.error);
+        const repartitionNetworkResult = await this.backend.repartitionNetwork(repartitionArgs)
+        if(repartitionNetworkResult.isErr()){
+            return err(repartitionNetworkResult.error)
         }
 
-        return ok(null);
+        return ok(null)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpGetEndpointAvailability(
-        serviceId: ServiceID,
-        port: number, 
-        path: string,
-        initialDelayMilliseconds: number, 
-        retries: number, 
-        retriesDelayMilliseconds: number, 
-        bodyText: string): Promise<Result<null, Error>> {
-    const availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs = newWaitForHttpGetEndpointAvailabilityArgs(
-        serviceId,
-        port,
-        path,
-        initialDelayMilliseconds,
-        retries,
-        retriesDelayMilliseconds,
-        bodyText);
+            serviceId: ServiceID,
+            port: number, 
+            path: string,
+            initialDelayMilliseconds: number, 
+            retries: number, 
+            retriesDelayMilliseconds: number, 
+            bodyText: string
+        ): Promise<Result<null, Error>> {
 
-    const promiseWaitForHttpGetEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-        this.client.waitForHttpGetEndpointAvailability(availabilityArgs, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-            if (error === null) {
-                resolve(ok(null));
-            } else {
-                resolve(err(error));
-            }
-        })
-    });
-    const resultWaitForHttpGetEndpointAvailability: Result<null, Error> = await promiseWaitForHttpGetEndpointAvailability;
-    if (!resultWaitForHttpGetEndpointAvailability.isOk()) {
-        return err(resultWaitForHttpGetEndpointAvailability.error);
+        const availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs = newWaitForHttpGetEndpointAvailabilityArgs(
+            serviceId,
+            port,
+            path,
+            initialDelayMilliseconds,
+            retries,
+            retriesDelayMilliseconds,
+            bodyText
+        );
+
+        const waitForHttpGetEndpointAvailabilityResult = await this.backend.waitForHttpGetEndpointAvailability(availabilityArgs)
+        if(waitForHttpGetEndpointAvailabilityResult.isErr()){
+            return err(waitForHttpGetEndpointAvailabilityResult.error)
+        }
+
+        const result = waitForHttpGetEndpointAvailabilityResult.value
+        return ok(result) 
     }
-
-    return ok(null);
-}
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpPostEndpointAvailability(
@@ -545,70 +427,34 @@ export class EnclaveContext {
             retries,
             retriesDelayMilliseconds,
             bodyText);
-
-        const promiseWaitForHttpPostEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.waitForHttpPostEndpointAvailability(availabilityArgs, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultWaitForHttpPostEndpointAvailability: Result<null, Error> = await promiseWaitForHttpPostEndpointAvailability;
-        if (!resultWaitForHttpPostEndpointAvailability.isOk()) {
-            return err(resultWaitForHttpPostEndpointAvailability.error);
-        }
-
-        return ok(null);
+                
+        return this.backend.waitForHttpPostEndpointAvailability(availabilityArgs)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async executeBulkCommands(bulkCommandsJson: string): Promise<Result<null, Error>> {
+        const executeBulkCommandsArgs: ExecuteBulkCommandsArgs = newExecuteBulkCommandsArgs(bulkCommandsJson);
 
-        const args: ExecuteBulkCommandsArgs = newExecuteBulkCommandsArgs(bulkCommandsJson);
-        
-        const promiseExecuteBulkCommands: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeBulkCommands(args, (error: Error | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultExecuteBulkCommands: Result<null, Error> = await promiseExecuteBulkCommands;
-        if (!resultExecuteBulkCommands.isOk()) {
-            return err(resultExecuteBulkCommands.error);
+        const executeBulkCommandsResult = await this.backend.executeBulkCommands(executeBulkCommandsArgs)
+        if(executeBulkCommandsResult.isErr()){
+            return err(executeBulkCommandsResult.error)
         }
 
-        return ok(null);
+        const result = executeBulkCommandsResult.value
+
+        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getServices(): Promise<Result<Set<ServiceID>, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
-        
-        const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServices(emptyArg, (error: Error | null, response?: GetServicesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
 
-        const resultGetServices: Result<GetServicesResponse, Error> = await promiseGetServices;
-        if (!resultGetServices.isOk()) {
-            return err(resultGetServices.error);
+        const getServicesResponseResult = await this.backend.getServices(emptyArg)
+        if(getServicesResponseResult.isErr()){
+            return err(getServicesResponseResult.error)
         }
 
-        const getServicesResponse: GetServicesResponse = resultGetServices.value;
+        const getServicesResponse = getServicesResponseResult.value
 
         const serviceIDs: Set<ServiceID> = new Set<ServiceID>()
 
@@ -622,31 +468,17 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async getModules(): Promise<Result<Set<ModuleID>, Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
-        
-        const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModules(emptyArg, (error: Error | null, response?: GetModulesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
 
-        const getModulesResult: Result<GetModulesResponse, Error> = await getModulesPromise;
-        if (!getModulesResult.isOk()) {
-            return err(getModulesResult.error);
+        const getModulesResponseResult = await this.backend.getModules(emptyArg)
+        if(getModulesResponseResult.isErr()){
+            return err(getModulesResponseResult.error)
         }
 
-        const getModulesResponse: GetModulesResponse = getModulesResult.value;
+        const modulesResponse = getModulesResponseResult.value
 
         const moduleIds: Set<ModuleID> = new Set<ModuleID>()
 
-        getModulesResponse.getModuleIdsMap().forEach((value: boolean, key: string) => {
+        modulesResponse.getModuleIdsMap().forEach((value: boolean, key: string) => {
             moduleIds.add(key)
         })
 
