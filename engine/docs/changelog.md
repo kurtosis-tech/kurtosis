@@ -1,5 +1,9 @@
 # TBD
 
+# 1.10.5
+### Changes
+* Upgraded to object-attributes-schema-lib 0.7.2 and core 1.38.2 which allows for 256-char label values
+
 # 1.10.4
 ### Fixes
 * Actually handle old port specs
