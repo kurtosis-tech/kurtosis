@@ -1,4 +1,6 @@
 # TBD
+
+# 0.10.1
 ### Fixes
 * Allow for 256-character labels
 
