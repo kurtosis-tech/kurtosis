@@ -16,10 +16,10 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220215114221-4a91fb2e5fb3
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220215114558-6fa0a539f13e
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220215114547-b5c9a3524b7a
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220208134051-b4dd410b15ac
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220215173806-4e33eb6f2288
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220215195617-02b283810dd0
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220215195533-15b337afb251
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220215113756-abe2c0a2dd75
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
