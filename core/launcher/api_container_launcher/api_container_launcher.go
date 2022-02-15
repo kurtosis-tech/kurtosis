@@ -21,7 +21,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	DefaultVersion = "1.38.2"
+	DefaultVersion = "1.39.0"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	portProtocolToMonitorWhenWaitingForAvailability = "tcp"
@@ -149,6 +149,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		apiContainerIpAddr.String(): true,
 	}
 	argsObj, err := args.NewAPIContainerArgs(
+		imageVersionTag,
 		logLevel.String(),
 		grpcPortNum,
 		grpcProxyPortNum,

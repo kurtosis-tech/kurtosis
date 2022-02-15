@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
@@ -43,6 +42,11 @@ const (
 
 	shouldFlushMetricsClientQueueOnEachEvent = false
 )
+
+type doNothingMetricsClientCallback struct{}
+
+func (d doNothingMetricsClientCallback) Success()          {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
@@ -97,12 +101,19 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
-	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisCoreSource, api_container_launcher.DefaultVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, shouldFlushMetricsClientQueueOnEachEvent)
+	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisCoreSource,
+		serverArgs.Version,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		doNothingMetricsClientCallback{},
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
 	defer func() {
-		if err := metricsClient.Close(); err != nil {
+		if err := closeClientFunc(); err != nil {
 			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
 		}
 	}()
