@@ -1,44 +1,40 @@
-import { ApiContainerServiceClient } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { newExecuteModuleArgs as newExecuteModuleArgs } from "../constructor_calls";
-import { ok, err, Result } from "neverthrow";
-import * as grpc from "@grpc/grpc-js";
+import { err, ok, Result } from "neverthrow";
+import { newExecuteModuleArgs } from "../constructor_calls";
+import { GrpcNodeModuleContextBackend } from "./grpc_node_module_context_backend";
+import { GrpcWebModuleContextBackend } from "./grpc_web_module_context_backend";
+import { ModuleContextBackend } from "./module_context_backend";
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { ExecuteModuleArgs } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
-export type ModuleID = string;
+export type ModuleID= string;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ModuleContext {
-    private readonly client: ApiContainerServiceClient;
+    private readonly backend: ModuleContextBackend
     private readonly moduleId: ModuleID;
+
     
-    constructor (client: ApiContainerServiceClient, moduleId: ModuleID) {
-        this.client = client;
-        this.moduleId = moduleId;
+    constructor (client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode, moduleId: ModuleID) {
+        if(client instanceof ApiContainerServiceClientWeb){
+            this.backend = new GrpcWebModuleContextBackend(client)
+        }else{
+            this.backend = new GrpcNodeModuleContextBackend(client)
+        }
+
+        this.moduleId = moduleId
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async execute(serializedParams: string): Promise<Result<string, Error>> {
-        const args: ExecuteModuleArgs = newExecuteModuleArgs(this.moduleId, serializedParams);
+        const executeModuleArgs: ExecuteModuleArgs = newExecuteModuleArgs(this.moduleId, serializedParams);
 
-        const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeModule(args, (error: grpc.ServiceError | null, response?: ExecuteModuleResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const executeModuleResult: Result<ExecuteModuleResponse, Error> = await executeModulePromise;
-        if (!executeModuleResult.isOk()) {
-            return err(executeModuleResult.error);
+        const executeResponseResult = await this.backend.execute(executeModuleArgs)
+        if(executeResponseResult.isErr()){
+            return err(executeResponseResult.error)
         }
-        const resp: ExecuteModuleResponse = executeModuleResult.value;
 
-        return ok(resp.getSerializedResult());
+        const executeResponse = executeResponseResult.value
+        return ok(executeResponse.getSerializedResult())
     }
 }

@@ -8,6 +8,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"time"
+
 	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
@@ -15,8 +18,6 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
-	"time"
 )
 
 const (
@@ -226,7 +227,11 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	}()
 
 	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcPortNum); err != nil {
-		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container to become available")
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
+	}
+
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcProxyPortNum); err != nil {
+		return "", nil, nil, nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc-proxy port to become available")
 	}
 
 	publicGrpcPort, found := publicPorts[schema.KurtosisInternalContainerGRPCPortID]

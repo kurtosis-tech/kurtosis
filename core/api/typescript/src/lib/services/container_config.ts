@@ -1,4 +1,4 @@
-import { PortProtocol, PortSpec } from "./port_spec";
+import { PortSpec } from "./port_spec";
 
 // The ID of an artifact containing files that should be mounted into a service container
 export type FilesArtifactID = string;
