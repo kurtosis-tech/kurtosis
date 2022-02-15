@@ -1,25 +1,20 @@
 import { ok, err, Result } from "neverthrow";
-import * as grpc_web from "grpc-web";
-import { 
-    ApiContainerServiceClientWeb,
-    newExecuteModuleArgs,
-    ExecuteModuleArgs, 
-    ExecuteModuleResponse
-} from "../..";
-import { ModuleContextBackend, ModuleID } from "./module_context";
+import * as grpc_node from "@grpc/grpc-js";
+import { ModuleContextBackend } from "./module_context_interface";
+import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
-export class GrpcWebModuleContextBackend implements ModuleContextBackend{
-    private readonly client: ApiContainerServiceClientWeb;
+
+export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
+    private readonly client: ApiContainerServiceClientNode;
     
-    constructor (client: ApiContainerServiceClientWeb) {
+    constructor (client: ApiContainerServiceClientNode) {
         this.client = client;
     }
 
-    public async execute(serializedParams: string, moduleId: ModuleID): Promise<Result<string, Error>> {
-        const args: ExecuteModuleArgs = newExecuteModuleArgs(moduleId, serializedParams);
-
+    public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<string, Error>> {
         const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeModule(args, {}, (error: grpc_web.RpcError | null, response?: ExecuteModuleResponse) => {
+            this.client.executeModule(executeModuleArgs, (error: grpc_node.ServiceError | null, response?: ExecuteModuleResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -32,7 +27,7 @@ export class GrpcWebModuleContextBackend implements ModuleContextBackend{
             })
         });
         const executeModuleResult: Result<ExecuteModuleResponse, Error> = await executeModulePromise;
-        if (!executeModuleResult.isOk()) {
+        if (executeModuleResult.isErr()) {
             return err(executeModuleResult.error);
         }
         const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;

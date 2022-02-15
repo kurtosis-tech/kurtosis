@@ -3,6 +3,7 @@
  * All Rights Reserved.
  */
 
+import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
     RegisterFilesArtifactsArgs,
@@ -26,7 +27,6 @@ import {
 import { ServiceID } from './services/service';
 import { PartitionID } from './enclaves/enclave_context';
 import { ModuleID } from "./modules/module_context";
-import * as jspb from "google-protobuf";
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)

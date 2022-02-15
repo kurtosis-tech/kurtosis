@@ -1,13 +1,8 @@
 import * as grpc_web from "grpc-web";
 import { ok, err, Result } from 'neverthrow';
-import { 
-    ApiContainerServiceClientWeb,
-    ExecCommandArgs, 
-    ExecCommandResponse,
-    newExecCommandArgs,
-    ServiceID
- } from "../..";
-import { ServiceContextBackend } from "./service_context";
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { ExecCommandArgs, ExecCommandResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import { ServiceContextBackend } from "./service_context_interface";
 
 export class GrpcWebServiceContextBackend implements ServiceContextBackend {
     private readonly client: ApiContainerServiceClientWeb
@@ -15,11 +10,9 @@ export class GrpcWebServiceContextBackend implements ServiceContextBackend {
         this.client = client
     }
 
-    public async execCommand(command: string[], serviceId: ServiceID): Promise<Result<[number, string], Error>> {
-        const args: ExecCommandArgs = newExecCommandArgs(serviceId, command);
-
+    public async execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>> {
         const promiseExecCommand: Promise<Result<ExecCommandResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.execCommand(args, {}, (error: grpc_web.RpcError | null, response?: ExecCommandResponse) => {
+            this.client.execCommand(execCommandArgs, {}, (error: grpc_web.RpcError | null, response?: ExecCommandResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -32,11 +25,7 @@ export class GrpcWebServiceContextBackend implements ServiceContextBackend {
             })
         });
         const resultExecCommand: Result<ExecCommandResponse, Error> = await promiseExecCommand;
-        if (resultExecCommand.isErr()) {
-            return err(resultExecCommand.error);
-        }
-        const resp: ExecCommandResponse = resultExecCommand.value;
-
-        return ok([resp.getExitCode(), resp.getLogOutput()]);
+        
+        return resultExecCommand
     }
 }

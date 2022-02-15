@@ -1,17 +1,14 @@
-import { Result } from 'neverthrow';
-import { 
-    ApiContainerServiceClientNode, 
-    ApiContainerServiceClientWeb,
-    ServiceID,
-    SharedPath,
-    PortSpec 
-} from '../..';
-import { GrpcNodeServiceContextBackend } from './service_context_backend_node';
-import { GrpcWebServiceContextBackend } from './service_context_backend_web';
-
-export interface ServiceContextBackend {
-    execCommand(command: string[], serviceId: ServiceID): Promise<Result<[number, string], Error>>
-}
+import { err, ok, Result } from 'neverthrow';
+import { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
+import { newExecCommandArgs } from '../constructor_calls';
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { GrpcNodeServiceContextBackend } from './grpc_node_service_context_backend';
+import { GrpcWebServiceContextBackend } from './grpc_web_service_context_backend';
+import { PortSpec } from './port_spec';
+import { ServiceID } from './service';
+import { ServiceContextBackend } from './service_context_interface';
+import { SharedPath } from './shared_path';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
@@ -19,18 +16,18 @@ export class ServiceContext {
     private readonly backend: ServiceContextBackend
     private readonly serviceId: ServiceID
     private readonly sharedDirectory: SharedPath
-    private readonly privateIpAddr: string
+    private readonly privateIpAddress: string
     private readonly privatePorts: Map<string, PortSpec>
-    private readonly publicIpAddr: string
+    private readonly publicIpAddress: string
     private readonly publicPorts: Map<string, PortSpec>
 
     constructor(
         client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode,
         serviceId: ServiceID,
         sharedDirectory: SharedPath,
-        privateIpAddr: string,
+        privateIpAddress: string,
         privatePorts: Map<string, PortSpec>,
-        publicIpAddr: string,
+        publicIpAddress: string,
         publicPorts: Map<string, PortSpec>
         ){
 
@@ -42,44 +39,53 @@ export class ServiceContext {
 
         this.serviceId = serviceId
         this.sharedDirectory = sharedDirectory
-        this.privateIpAddr = privateIpAddr
+        this.privateIpAddress = privateIpAddress
         this.privatePorts = privatePorts
-        this.publicIpAddr = publicIpAddr
+        this.publicIpAddress = publicIpAddress
         this.publicPorts = publicPorts
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getServiceID(): ServiceID { 
-        return this.getServiceID();
+        return this.serviceId;
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getSharedDirectory(): SharedPath {
-        return  this.getSharedDirectory()
+        return  this.sharedDirectory
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getPrivateIPAddress(): string {
-        return this.getPrivateIPAddress();
+        return this.privateIpAddress
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getPrivatePorts(): Map<string, PortSpec> {
-        return this.getPrivatePorts();
+        return this.privatePorts
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getMaybePublicIPAddress(): string {
-        return this.getMaybePublicIPAddress();
+        return this.publicIpAddress
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getPublicPorts(): Map<string, PortSpec> {
-        return this.getPublicPorts();
+        return this.publicPorts
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async execCommand(command: string[], ): Promise<Result<[number, string], Error>> {
-       return this.backend.execCommand(command, this.serviceId)
+        const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceId, command);
+
+        const execCommandResponseResult = await this.backend.execCommand(execCommandArgs)
+        if(execCommandResponseResult.isErr()){
+            return err(execCommandResponseResult.error)
+        }
+
+        const execCommandResponse = execCommandResponseResult.value
+
+        return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()]);
     }
 }

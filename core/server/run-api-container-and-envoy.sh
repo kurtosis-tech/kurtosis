@@ -39,15 +39,25 @@ function run-envoy() {
 
 for command_to_run in "${COMMANDS_TO_RUN[@]}"; do
     "${command_to_run}" &
-    PIDS_TO_WAIT_FOR+=("${!}")
+    command_pid="${!}"
+    PIDS_TO_WAIT_FOR+=("${command_pid}")
+    echo "Launched command '${command_to_run}' with PID '${command_pid}'"
 done
+
+did_errors_occur="false"
 
 for pid in "${PIDS_TO_WAIT_FOR[@]}"; do
     if wait "${pid}"; then
         echo "PID '${pid}' exited successfully"
     else
+        did_errors_occur="true"
         echo "PID '${pid}' errored"
     fi
 done
 
-echo "Finished running API Container & Envoy Proxy"
+if "${did_errors_occur}"; then
+    echo "Error: One or more errors occurred running the API container & Envoy proxy" >&2
+    exit 1
+fi
+
+echo "The API container & Envoy proxy finished successfully"

@@ -10,8 +10,6 @@ WORKDIR /run
 
 COPY ./build/api-container ./run-api-container-and-envoy.sh ./
 
-RUN chmod +x run-api-container-and-envoy.sh
-
 ENV ENVOY_UID=0
 
-CMD ./run-api-container-and-envoy.sh
+CMD bash ./run-api-container-and-envoy.sh

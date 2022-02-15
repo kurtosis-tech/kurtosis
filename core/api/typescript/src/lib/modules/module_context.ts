@@ -1,13 +1,13 @@
-import { Result } from "neverthrow";
-import { ApiContainerServiceClientNode, ApiContainerServiceClientWeb } from "../..";
-import { GrpcNodeModuleContextBackend } from "./module_context_backend_node";
-import { GrpcWebModuleContextBackend } from "./module_context_backend_web";
+import { err, ok, Result } from "neverthrow";
+import { newExecuteModuleArgs } from "../constructor_calls";
+import { GrpcNodeModuleContextBackend } from "./grpc_node_module_context_backend";
+import { GrpcWebModuleContextBackend } from "./grpc_web_module_context_backend";
+import { ModuleContextBackend } from "./module_context_interface";
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import { ExecuteModuleArgs } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
-export type ModuleID = string;
-
-export interface ModuleContextBackend {
-    execute(serializedParams: string, moduleId: ModuleID): Promise<Result<string, Error>>
-}
+export type ModuleID= string;
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ModuleContext {
@@ -27,6 +27,14 @@ export class ModuleContext {
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async execute(serializedParams: string): Promise<Result<string, Error>> {
-        return this.backend.execute(serializedParams, this.moduleId)
+        const executeModuleArgs: ExecuteModuleArgs = newExecuteModuleArgs(this.moduleId, serializedParams);
+
+        const executeResponseResult = await this.backend.execute(executeModuleArgs)
+        if(executeResponseResult.isErr()){
+            return err(executeResponseResult.error)
+        }
+
+        const executeResponse = executeResponseResult.value
+        return ok(executeResponse)
     }
 }
