@@ -17,11 +17,6 @@ import (
 )
 
 const (
-	// To avoid duplicating work, we'll instantiate the docker manager & engine client in the command's pre-validation-and-run function,
-	//  and then pass it to both validation & run functions
-	// This is the key where the engine client will be stored in the context
-	dockerManagerCtxKey = "docker-manager"
-	engineClientCtxKey = "engine-client"
 	engineClientCloseFuncCtxKey = "engine-client-close-func"
 )
 
@@ -116,8 +111,8 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 		}
-		result = context.WithValue(result, engineClientCtxKey, engineClient)
-		result = context.WithValue(result, cmd.EngineClientContextKey, closeClientFunc)
+		result = context.WithValue(result, cmd.EngineClientContextKey, engineClient)
+		result = context.WithValue(result, engineClientCloseFuncCtxKey, closeClientFunc)
 
 		return result, nil
 	}
@@ -127,23 +122,23 @@ func (cmd *EngineConsumingKurtosisCommand)  getRunFunc() func(context.Context, *
 	// Do the gruntwork necessary to give a Kurtosis dev the Docker manager & engine client without them
 	// needing to think about how they should get it
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-		uncastedEngineClient := ctx.Value(engineClientCtxKey)
+		uncastedEngineClient := ctx.Value(cmd.EngineClientContextKey)
 		if uncastedEngineClient == nil {
-			return stacktrace.NewError("Expected an engine client to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", engineClientCtxKey)
+			return stacktrace.NewError("Expected an engine client to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", cmd.EngineClientContextKey)
 		}
 		engineClient, ok := uncastedEngineClient.(kurtosis_engine_rpc_api_bindings.EngineServiceClient)
 		if !ok {
-			return stacktrace.NewError("Found an object that should be the engine client stored in the context under key '%v', but this object wasn't of the correct type", engineClientCtxKey)
+			return stacktrace.NewError("Found an object that should be the engine client stored in the context under key '%v', but this object wasn't of the correct type", cmd.EngineClientContextKey)
 		}
 
 		// TODO GET RID OF THIS!!! Everything should be doable through the engine client
-		uncastedDockerManager := ctx.Value(dockerManagerCtxKey)
+		uncastedDockerManager := ctx.Value(cmd.DockerManagerContextKey)
 		if uncastedDockerManager == nil {
-			return stacktrace.NewError("Expected a Docker manager to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", dockerManagerCtxKey)
+			return stacktrace.NewError("Expected a Docker manager to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", cmd.DockerManagerContextKey)
 		}
 		dockerManager, ok := uncastedDockerManager.(*docker_manager.DockerManager)
 		if !ok {
-			return stacktrace.NewError("Found an object that should be the Docker manager stored in the context under key '%v', but this object wasn't of the correct type", dockerManagerCtxKey)
+			return stacktrace.NewError("Found an object that should be the Docker manager stored in the context under key '%v', but this object wasn't of the correct type", cmd.DockerManagerContextKey)
 		}
 
 		if err := cmd.RunFunc(ctx, dockerManager, engineClient, flags, args); err != nil {
