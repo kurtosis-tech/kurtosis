@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testName = "module-test"
+	testName = "module"
 	isPartitioningEnabled = false
 
 	testModuleImage = "kurtosistech/datastore-army-module:0.2.0"

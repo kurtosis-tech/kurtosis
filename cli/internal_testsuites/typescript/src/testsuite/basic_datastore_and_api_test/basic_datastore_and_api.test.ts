@@ -8,7 +8,7 @@ import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import { addAPIService, addDatastoreService } from "../../test_helpers/test_helpers";
 
-const TEST_NAME = "basic-datastore-and-api-test";
+const TEST_NAME = "basic-datastore-and-api";
 const IS_PARTITIONING_ENABLED = false;
 const DATASTORE_SERVICE_ID = "datastore";
 const API_SERVICE_ID = "api";

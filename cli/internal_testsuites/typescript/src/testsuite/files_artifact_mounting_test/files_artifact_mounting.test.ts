@@ -5,7 +5,7 @@ import axios from "axios"
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
 
-const TEST_NAME = "files-artifact-mounting-test"
+const TEST_NAME = "files-artifact-mounting"
 const IS_PARTITIONING_ENABLED = false
 
 const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"

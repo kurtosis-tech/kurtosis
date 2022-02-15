@@ -38,11 +38,11 @@ import (
 )
 
 const (
-	kurtosisLogLevelArg      = "kurtosis-log-level"
 	loadParamsStrArg         = "load-params"
 	executeParamsStrArg      = "execute-params"
-	apiContainerVersionArg   = "api-container-version"
-	moduleImageArg           = "module-image"
+	apiContainerVersionArg  = "api-container-version"
+	apiContainerLogLevelArg = "api-container-log-level"
+	moduleImageArg          = "module-image"
 	enclaveIdArg             = "enclave-id"
 	isPartitioningEnabledArg = "with-partitioning"
 
@@ -55,8 +55,7 @@ const (
 
 	moduleId = "my-module"
 
-	// TODO Extract this validation into a centralized location for all commands that use an enclave ID
-	allowedEnclaveIdCharsRegexStr = `^[A-Za-z0-9._-]+$`
+	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
 	shouldFollowContainerLogs         = true
 	shouldShowStoppedModuleContainers = false
@@ -66,16 +65,14 @@ const (
 	netReadOptFailBecauseSourceIsUsedOrClosedErrorText = "use of closed network connection"
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
-
 var positionalArgs = []string{
 	moduleImageArg,
 }
 
-var kurtosisLogLevelStr string
 var loadParamsStr string
 var executeParamsStr string
 var apiContainerVersion string
+var apiContainerLogLevelStr string
 var userRequestedEnclaveId string
 var isPartitioningEnabled bool
 
@@ -87,16 +84,6 @@ var ExecCmd = &cobra.Command{
 }
 
 func init() {
-	ExecCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaultKurtosisLogLevel,
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
-	)
 	ExecCmd.Flags().StringVar(
 		&loadParamsStr,
 		loadParamsStrArg,
@@ -115,12 +102,23 @@ func init() {
 		defaults.DefaultAPIContainerVersion,
 		"The image of the API container that should be started inside the enclave where the module will execute (blank will use the engine's default version)",
 	)
+	ExecCmd.Flags().StringVarP(
+		&apiContainerLogLevelStr,
+		apiContainerLogLevelArg,
+		"l",
+		defaults.DefaultApiContainerLogLevel.String(),
+		fmt.Sprintf(
+			"The log level that the started API container should log at (%v)",
+			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
+		),
+	)
 	ExecCmd.Flags().StringVar(
 		&userRequestedEnclaveId,
 		enclaveIdArg,
 		defaultEnclaveId,
 		fmt.Sprintf(
 			"The ID to give the enclave that will be created to execute the module inside, which must match regex '%v' (default: use the module image and the current Unix time)",
+			// TODO Get this from the Kurtosis backend maybe????
 			allowedEnclaveIdCharsRegexStr,
 		),
 	)
@@ -134,12 +132,6 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
@@ -188,7 +180,7 @@ func run(cmd *cobra.Command, args []string) error {
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId:              enclaveId,
 		ApiContainerVersionTag: apiContainerVersion,
-		ApiContainerLogLevel:   kurtosisLogLevelStr,
+		ApiContainerLogLevel:   apiContainerLogLevelStr,
 		IsPartitioningEnabled:  isPartitioningEnabled,
 		ShouldPublishAllPorts:  shouldPublishAllPorts,
 	}
@@ -289,22 +281,22 @@ func run(cmd *cobra.Command, args []string) error {
 //                                      Private Helper Methods
 // ====================================================================================================
 func getEnclaveId(moduleImage string) string {
-	defaultEnclaveId := execution_ids.GetExecutionID()
+	enclaveId := execution_ids.GetExecutionID()
 	parsedModuleImage, err := reference.Parse(moduleImage)
 	if err != nil {
-		logrus.Warn("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, defaultEnclaveId)
-		return defaultEnclaveId
+		logrus.Warnf("Couldn't parse the module image string '%v'; using enclave ID '%v'", moduleImage, enclaveId)
+		return enclaveId
 	}
 
 	namedModuleImage, ok := parsedModuleImage.(reference.Named)
 	if !ok {
-		logrus.Warn("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, defaultEnclaveId)
-		return defaultEnclaveId
+		logrus.Warnf("Module image string '%v' couldn't be cast to a named reference; using enclave ID '%v'", moduleImage, enclaveId)
+		return enclaveId
 	}
 	pathElement := reference.Path(namedModuleImage)
 
 	return fmt.Sprintf(
-		"%v_%v",
+		"%v.%v",
 		pathElement,
 		time.Now().Unix(),
 	)

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testName = "files-artifact-mounting-test"
+	testName = "files-artifact-mounting"
 	isPartitioningEnabled = false
 
 	fileServerServiceImage                          = "flashspys/nginx-static"

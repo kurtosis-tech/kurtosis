@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	kurtosisPrefix = "KT"
+	kurtosisPrefix = "kt"
 
 	// YYYY-MM-DDTHH.MM.SS.sss
-	executionTimestampFormat = "2006-01-02T15.04.05.000"
+	executionTimestampFormat = "2006-01-02t15.04.05.000"
 )
 
 func GetExecutionID() string {
