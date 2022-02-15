@@ -25,9 +25,7 @@ const (
 	engineClientCloseFuncCtxKey = "engine-client-close-func"
 )
 
-// This is a convenience KurtosisCommand that will guarantee to start an engine
-// - The Docker manager & engine connection get instantiated
-// - The command takes in one or more enclave
+// This is a convenience KurtosisCommand for commands that interact with the engine
 type EngineConsumingKurtosisCommand struct {
 	// The string for the command (e.g. "inspect" or "ls")
 	CommandStr string
@@ -84,7 +82,22 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 		))
 	}
 
-	setupFunc := func(ctx context.Context) (context.Context, error) {
+	lowlevelCmd := &kurtosis_command.LowlevelKurtosisCommand{
+		CommandStr:       cmd.CommandStr,
+		ShortDescription: cmd.ShortDescription,
+		LongDescription:  cmd.LongDescription,
+		Flags:            cmd.Flags,
+		Args:             cmd.Args,
+		PreValidationAndRunFunc:  cmd.getSetupFunc(),
+		RunFunc:                  cmd.getRunFunc(),
+		PostValidationAndRunFunc: cmd.getTeardownFunc(),
+	}
+
+	return lowlevelCmd.MustGetCobraCommand()
+}
+
+func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) (context.Context, error) {
+	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
 		dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -108,10 +121,12 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 
 		return result, nil
 	}
+}
 
+func (cmd *EngineConsumingKurtosisCommand)  getRunFunc() func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	// Do the gruntwork necessary to give a Kurtosis dev the Docker manager & engine client without them
 	// needing to think about how they should get it
-	runFunc := func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 		uncastedEngineClient := ctx.Value(engineClientCtxKey)
 		if uncastedEngineClient == nil {
 			return stacktrace.NewError("Expected an engine client to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", engineClientCtxKey)
@@ -137,13 +152,15 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 				"An error occurred calling the run function for command '%v' with short description '%v'; this is a bug in Kurtosis!",
 				cmd.CommandStr,
 				cmd.ShortDescription,
-			 )
+			)
 		}
 
 		return nil
 	}
+}
 
-	teardownFunc := func(ctx context.Context) {
+func (cmd *EngineConsumingKurtosisCommand) getTeardownFunc() func(ctx context.Context) {
+	return func(ctx context.Context) {
 		uncastedEngineClientCloseFunc := ctx.Value(engineClientCloseFuncCtxKey)
 		if uncastedEngineClientCloseFunc != nil {
 			engineClientCloseFunc, ok := uncastedEngineClientCloseFunc.(func() error)
@@ -161,29 +178,4 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 			)
 		}
 	}
-
-	lowlevelCmd := &kurtosis_command.LowlevelKurtosisCommand{
-		CommandStr:       cmd.CommandStr,
-		ShortDescription: cmd.ShortDescription,
-		LongDescription:  cmd.LongDescription,
-		Flags:            cmd.Flags,
-		Args:             cmd.Args,
-		PreValidationAndRunFunc:  setupFunc,
-		RunFunc:                  runFunc,
-		PostValidationAndRunFunc: teardownFunc,
-	}
-
-	return lowlevelCmd.MustGetCobraCommand()
-}
-
-func getSetupFunc() {
-
-}
-
-func getRunFunc() {
-
-}
-
-func getTeardownFunc() {
-
 }

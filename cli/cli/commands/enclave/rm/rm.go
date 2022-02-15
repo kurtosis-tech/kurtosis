@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -17,18 +19,24 @@ import (
 )
 
 const (
-	shouldAcceptMultipleEnclaves = true
+	enclaveIdArgKey = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = true
 
 	shouldForceRemoveFlagKey = "force"
-
 	defaultShouldForceRemove = "false"
+
+	dockerManagerCtxKey = "docker-manager"
+	engineClientCtxKey = "engine-client"
 )
 
 var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:       command_str_consts.EnclaveRmCmdStr,
-	ShortDescription: "Destroys the specified enclaves",
-	LongDescription:  "Destroys the specified enclaves, removing all resources associated with them",
-	Flags:            []*flags.FlagConfig{
+	CommandStr:              command_str_consts.EnclaveRmCmdStr,
+	ShortDescription:        "Destroys the specified enclaves",
+	LongDescription:         "Destroys the specified enclaves, removing all resources associated with them",
+	DockerManagerContextKey: dockerManagerCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
+	Flags: []*flags.FlagConfig{
 		{
 			Key:       shouldForceRemoveFlagKey,
 			Usage:     "Deletes all enclaves, regardless of whether they're already stopped",
@@ -37,17 +45,29 @@ var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 			Default:   defaultShouldForceRemove,
 		},
 	},
-	ShouldAcceptMultipleEnclaveIDs: shouldAcceptMultipleEnclaves,
-	RunFunc:                        run,
+	Args:                    []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+	},
+	RunFunc: run,
 }
 
 func run(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	enclaveIds []string,
 	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
 ) error {
+	enclaveIds, err := args.GetGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
+	}
+
 	shouldForceRemove, err := flags.GetBool(shouldForceRemoveFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the force-removal flag value using key '%v'; this is a bug in Kurtosis!", shouldForceRemoveFlagKey)

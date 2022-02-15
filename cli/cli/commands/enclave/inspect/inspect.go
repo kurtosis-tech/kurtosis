@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
@@ -25,7 +27,9 @@ import (
 )
 
 const (
-	shouldAcceptMultipleEnclaves = false
+	enclaveIdArgKey = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = false
 
 	enclaveIdTitleName          = "Enclave ID"
 	enclaveDataDirpathTitleName = "Data Directory"
@@ -35,6 +39,9 @@ const (
 
 	headerWidthChars = 100
 	headerPadChar    = "="
+
+	dockerManagerCtxKey = "docker-manager"
+	engineClientCtxKey = "engine-client"
 
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
@@ -46,21 +53,32 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:       command_str_consts.EnclaveInspectCmdStr,
-	ShortDescription: "Lists detailed information about an enclave",
-	ShouldAcceptMultipleEnclaveIDs: shouldAcceptMultipleEnclaves,
-	RunFunc:                        run,
+	CommandStr:              command_str_consts.EnclaveInspectCmdStr,
+	ShortDescription:        "Lists detailed information about an enclave",
+	DockerManagerContextKey: dockerManagerCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
+	Args:                    []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+	},
+	RunFunc:                 run,
 }
 
 func run(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
-	enclaveIds []string,
 	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
 ) error {
-	// Because this passes through the KurtosisCommand framework, we're guaranteed to have a value here
-	enclaveId := enclaveIds[0]
+	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
+	}
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
