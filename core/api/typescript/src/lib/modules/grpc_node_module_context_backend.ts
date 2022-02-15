@@ -4,7 +4,6 @@ import { ModuleContextBackend } from "./module_context_interface";
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
-
 export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
     private readonly client: ApiContainerServiceClientNode;
     
@@ -12,7 +11,7 @@ export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
         this.client = client;
     }
 
-    public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<string, Error>> {
+    public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>> {
         const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.executeModule(executeModuleArgs, (error: grpc_node.ServiceError | null, response?: ExecuteModuleResponse) => {
                 if (error === null) {
@@ -32,6 +31,6 @@ export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
         }
         const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
 
-        return ok(executeModuleResponse.getSerializedResult());
+        return ok(executeModuleResponse);
     }
 }

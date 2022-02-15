@@ -21,15 +21,14 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import { ModuleContext, ModuleID } from "../modules/module_context";
 import { EnclaveID } from "./enclave_context";
 
 export default interface EnclaveContextBackend {
     getClient(): ApiContainerServiceClientWeb | ApiContainerServiceClientNode
     getEnclaveId(): EnclaveID
-    loadModule(moduleId: ModuleID, loadModuleArgs: LoadModuleArgs): Promise<Result<ModuleContext, Error>>
+    loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>>
-    getModuleContext(moduleId: ModuleID, getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<ModuleContext, Error>>
+    getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>>
     registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>>
     registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>
     startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>

@@ -35,6 +35,6 @@ export class ModuleContext {
         }
 
         const executeResponse = executeResponseResult.value
-        return ok(executeResponse)
+        return ok(executeResponse.getSerializedResult())
     }
 }

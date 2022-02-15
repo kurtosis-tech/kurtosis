@@ -11,7 +11,7 @@ export class GrpcWebModuleContextBackend implements ModuleContextBackend{
         this.client = client;
     }
 
-    public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<string, Error>> {
+    public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>> {
         const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.executeModule(executeModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteModuleResponse) => {
                 if (error === null) {
@@ -31,6 +31,6 @@ export class GrpcWebModuleContextBackend implements ModuleContextBackend{
         }
         const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
 
-        return ok(executeModuleResponse.getSerializedResult());
+        return ok(executeModuleResponse);
     }
 }

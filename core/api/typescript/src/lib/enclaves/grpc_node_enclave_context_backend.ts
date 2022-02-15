@@ -24,7 +24,6 @@ import {
 import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import EnclaveContextBackend from "./enclave_context_interface";
 import { EnclaveID } from "./enclave_context";
-import { ModuleContext, ModuleID } from "../modules/module_context";
 
 export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
@@ -45,10 +44,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return this.enclaveId;
     }
 
-    public async loadModule(
-            moduleId: ModuleID,
-            loadModuleArgs: LoadModuleArgs
-        ): Promise<Result<ModuleContext, Error>> {
+    public async loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>> {
         const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.loadModule(loadModuleArgs, (error: grpc_node.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
@@ -62,13 +58,12 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
                 }
             })
         });
-        const loadModuleResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
-        if (loadModuleResult.isErr()) {
-            return err(loadModuleResult.error);
+        const loadModulePromiseResult: Result<google_protobuf_empty_pb.Empty, Error> = await loadModulePromise;
+        if (loadModulePromiseResult.isErr()) {
+            return err(loadModulePromiseResult.error);
         }
 
-        const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
-        return ok(moduleCtx);
+        return ok(null);
     }
 
     public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>> {
@@ -93,7 +88,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return ok(null);
     }
 
-    public async getModuleContext(moduleId: ModuleID, getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<ModuleContext, Error>> {
+    public async getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>> {
         const getModuleInfoPromise: Promise<Result<GetModuleInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getModuleInfo(getModuleInfoArgs, (error: grpc_node.ServiceError | null, response?: GetModuleInfoResponse) => {
                 if (error === null) {
@@ -106,13 +101,12 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
                 }
             })
         });
-        const getModuleInfoResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
-        if (getModuleInfoResult.isErr()) {
-            return err(getModuleInfoResult.error);
+        const getModuleInfoResponseResult: Result<GetModuleInfoResponse, Error> = await getModuleInfoPromise;
+        if (getModuleInfoResponseResult.isErr()) {
+            return err(getModuleInfoResponseResult.error);
         }
 
-        const moduleCtx: ModuleContext = new ModuleContext(this.client, moduleId);
-        return ok(moduleCtx);
+        return ok(null);
     }
 
     public async registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>> {
@@ -316,7 +310,6 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         }
 
         const getServicesResponse = resultGetServices.value;
-
         return ok(getServicesResponse)
     }
 
@@ -341,7 +334,6 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         }
 
         const getModulesResponse = getModulesResult.value;
-
         return ok(getModulesResponse)
     }
 }

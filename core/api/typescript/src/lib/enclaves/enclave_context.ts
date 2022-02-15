@@ -92,11 +92,11 @@ export class EnclaveContext {
     public async loadModule(moduleId: ModuleID, image: string, serializedParams: string): Promise<Result<ModuleContext, Error>> {
         const loadModuleArgs: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
         
-        const loadModuleResult = await this.backend.loadModule(moduleId, loadModuleArgs)
+        const loadModuleResult = await this.backend.loadModule(loadModuleArgs)
         if(loadModuleResult.isErr()){
             return err(loadModuleResult.error)
         }
-        const moduleContext = loadModuleResult.value
+        const moduleContext:ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
         return ok(moduleContext)
     }
 
@@ -116,11 +116,12 @@ export class EnclaveContext {
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
         const getModuleInfoArgs: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
 
-        const getModuleContextResult = await this.backend.getModuleContext(moduleId, getModuleInfoArgs)
-        if(getModuleContextResult.isErr()){
-            return err(getModuleContextResult.error)
+        const getModuleInfotResult = await this.backend.getModuleInfo(getModuleInfoArgs)
+        if(getModuleInfotResult.isErr()){
+            return err(getModuleInfotResult.error)
         }
-        const moduleContext = getModuleContextResult.value
+        const moduleContext: ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
+
         return ok(moduleContext)
     }
 
