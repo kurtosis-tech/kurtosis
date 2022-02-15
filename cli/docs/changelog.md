@@ -1,5 +1,9 @@
 # TBD
 
+# 0.10.1
+### Fixes
+* Allow for 256-character labels
+
 # 0.10.0
 ### Breaking Changes
 * Upgraded to engine server 1.10.4, which makes name & label values compatible with Kubernetes
