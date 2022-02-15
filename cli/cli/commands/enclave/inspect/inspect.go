@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/enclave_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/prebuilt_command_components/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
@@ -45,7 +45,7 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 	"Kurtosis Modules":  printModules,
 }
 
-var EnclaveInspectCmd = &enclave_consuming_kurtosis_command.EnclaveConsumingKurtosisCommand{
+var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:       command_str_consts.EnclaveInspectCmdStr,
 	ShortDescription: "Lists detailed information about an enclave",
 	ShouldAcceptMultipleEnclaveIDs: shouldAcceptMultipleEnclaves,
