@@ -136,7 +136,7 @@ func validate(flags *kurtosis_command.ParsedFlags, args *kurtosis_command.Parsed
 	}
 
 	if _, found := getEnclavesResp.EnclaveInfo[enclaveId]; !found {
-		return stacktrace.NewError(err, "No enclave found with ID '%v'", enclaveId)
+		return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
 	}
 	return nil
 }
