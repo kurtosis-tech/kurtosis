@@ -64,6 +64,7 @@ func NewAPIContainerArgs(
 	didUserAcceptSendingMetrics bool,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
+		Version:                          version,
 		LogLevel:                         logLevel,
 		GrpcListenPortNum:                grpcListenPortNum,
 		GrpcProxyListenPortNum:           grpcProxyListenPortNum,
