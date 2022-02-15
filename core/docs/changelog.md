@@ -1,5 +1,7 @@
 # TBD
 
+# 1.39.1
+
 ### Features
 * Added Envoy Proxy to support gRPC-web
 
