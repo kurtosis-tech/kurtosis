@@ -2,6 +2,10 @@
 ### Fixes
 * Fixed several bugs that were causing product analytics events to get dropped for users who had opted in
 
+### Breaking Changes
+* Use engine version 1.11.0
+    * Users should upgrade to `kurtosis-engine-api-lib` 1.11.0
+
 # 0.10.1
 ### Fixes
 * Allow for 256-character labels
