@@ -1,6 +1,12 @@
 # TBD
+### Breaking Changes
+* Upgraded to Kurt Core 1.39.0, which will no properly report its own version
+
 ### Changes
 * Product analytic events are sent when the user attempts to make the action, rather than after the action succeeded, so that we're not dropping actions on error
+
+### Fixes
+* The metrics produced by the engine server now properly report their own version
 
 # 1.10.5
 ### Changes
