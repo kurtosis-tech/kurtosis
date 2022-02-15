@@ -1,5 +1,9 @@
 # TBD
 
+# 1.38.2
+### Changes
+* Upgraded to obj-attrs-schema-lib 0.7.2, which allows for labels of 256 characters in length
+
 # 1.38.1
 ### Changes
 * Upgrade `object-attributes-schema-lib` to 0.7.1
