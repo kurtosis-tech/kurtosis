@@ -43,7 +43,7 @@ var validTokens = []string{
 }
 
 func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -65,7 +65,7 @@ func TestMustGetCobraCommand_DuplicateArgsCausePanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_DuplicateFlagsCausePanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -100,7 +100,7 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 		},
 	}
 	for _, illegalFlag := range illegalFlagVariants {
-		kurtosisCmd := &KurtosisCommand{
+		kurtosisCmd := &LowlevelKurtosisCommand{
 			CommandStr:       "test",
 			ShortDescription: "Short description",
 			LongDescription:  "This is a very long description",
@@ -120,7 +120,7 @@ func TestMustGetCobraCommand_FlagsWithMismatchedDefaulValuesCausePanic(t *testin
 }
 
 func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -141,7 +141,7 @@ func TestMustGetCobraCommand_FlagWithTypeDoesntPanic(t *testing.T) {
 
 func TestMustGetCobraCommand_DuplicateFlagShorthandsPanic(t *testing.T) {
 	dupedShorthandValue := "x"
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -165,7 +165,7 @@ func TestMustGetCobraCommand_DuplicateFlagShorthandsPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -185,7 +185,7 @@ func TestMustGetCobraCommand_ShorthandsGreaterThanOneLetterPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_TestEmptyShorthandsDontTriggerShorthandValidation(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -209,7 +209,7 @@ func TestMustGetCobraCommand_TestEmptyShorthandsDontTriggerShorthandValidation(t
 }
 
 func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -228,7 +228,7 @@ func TestMustGetCobraCommand_EmptyArgKeyCausesPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_EmptyFlagKeyCausesPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -247,7 +247,7 @@ func TestMustGetCobraCommand_EmptyFlagKeyCausesPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -274,7 +274,7 @@ func TestMustGetCobraCommand_TwoOptionalArgumentsCausePanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -300,7 +300,7 @@ func TestMustGetCobraCommand_MiddleGreedyArgCausesPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_WorkingFlagDefaultValueChecking(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -326,7 +326,7 @@ func TestMustGetCobraCommand_WorkingFlagDefaultValueChecking(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -347,7 +347,7 @@ func TestMustGetCobraCommand_OptionalArgsWithNilDefaultPanic(t *testing.T) {
 }
 
 func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -368,7 +368,7 @@ func TestMustGetCobraCommand_RequiredArgWithNilDefaultDoesntPanic(t *testing.T) 
 }
 
 func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
@@ -390,7 +390,7 @@ func TestMustGetCobraCommand_OptionalNonGreedyArgWithWrongDefaultTypePanics(t *t
 }
 
 func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *testing.T) {
-	kurtosisCmd := &KurtosisCommand{
+	kurtosisCmd := &LowlevelKurtosisCommand{
 		CommandStr:       "test",
 		ShortDescription: "Short description",
 		LongDescription:  "This is a very long description",
