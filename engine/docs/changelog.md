@@ -1,5 +1,15 @@
 # TBD
 
+# 1.11.0
+### Breaking Changes
+* Upgraded to Kurt Core 1.39.0, which will no properly report its own version
+
+### Changes
+* Product analytic events are sent when the user attempts to make the action, rather than after the action succeeded, so that we're not dropping actions on error
+
+### Fixes
+* The metrics produced by the engine server now properly report their own version
+
 # 1.10.5
 ### Changes
 * Upgraded to object-attributes-schema-lib 0.7.2 and core 1.38.2 which allows for 256-char label values
