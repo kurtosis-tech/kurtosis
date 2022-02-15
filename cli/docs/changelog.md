@@ -1,6 +1,17 @@
 # TBD
 ### Features
 * `service shell` will first try to find & use `bash` before dropping down to `sh`
+* Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+* Added flags to `KurtosisCommand`
+* Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
+* Added tab-completion & enclave ID validation to `enclave rm` command
+
+### Changes
+* Switched `enclave rm` to use the new command framework
+* Switched `enclave rm` and `enclave inspect` to use the `NewEnclaveIDArg` component
+
+### Fixes
+* Made the error traces easier to read when `enclave rm` fails
 
 # 0.11.0
 ### Fixes
@@ -71,10 +82,6 @@
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
 * Added a "Debugging User Issues" section to the README
-* Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
-* Added flags to `KurtosisCommand`
-* Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
-* Added tab-completion & enclave ID validation to `enclave rm` command
 
 ### Changes
 * Upgraded the engine server to 1.9.1
@@ -82,13 +89,10 @@
 * Upgraded the metrics library to 0.1.2
 * Switched the `enclave inspect` to the new command framework
 * Cleaned up our Kurtosis-custom logic wrapping the Cobra commands
-* Switched `enclave rm` to use the new command framework
-* Switched `enclave rm` and `enclave inspect` to use the `NewEnclaveIDArg` component
 
 ### Fixes
 * Fix the Kurtosis completion
 * The CLI version mismatch warning messages are printed to STDERR so as not to interfere with any other command output (e.g. `completion`)
-* Made the error traces easier to read when `enclave rm` fails
 
 # 0.9.0
 ### Features
