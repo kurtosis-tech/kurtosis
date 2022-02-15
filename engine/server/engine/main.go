@@ -34,6 +34,11 @@ const (
 	shouldFlushMetricsClientQueueOnEachEvent = false
 )
 
+type doNothingMetricsClientCallback struct {}
+
+func (d doNothingMetricsClientCallback) Success() {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
+
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
 	logrus.SetFormatter(&logrus.TextFormatter{
@@ -79,12 +84,19 @@ func runMain () error {
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)
 
-	metricsClient, err := metrics_client.CreateMetricsClient(source.KurtosisEngineSource, engine_server_launcher.KurtosisEngineVersion, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, shouldFlushMetricsClientQueueOnEachEvent)
+	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisEngineSource,
+		serverArgs.ImageVersionTag,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		doNothingMetricsClientCallback{},
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
 	}
 	defer func() {
-		if err := metricsClient.Close(); err != nil {
+		if err := metricsClientCloseFunc(); err != nil {
 			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
 		}
 	}()

@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Product analytic events are sent when the user attempts to make the action, rather than after the action succeeded, so that we're not dropping actions on error
 
 # 1.10.5
 ### Changes
