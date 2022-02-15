@@ -22,6 +22,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -37,7 +39,14 @@ const (
 	failureExitCode = 1
 
 	grpcServerStopGracePeriod = 5 * time.Second
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
+
+type doNothingMetricsClientCallback struct{}
+
+func (d doNothingMetricsClientCallback) Success()          {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// NOTE: we'll want to change the ForceColors to false if we ever want structured logging
@@ -56,7 +65,7 @@ func main() {
 
 }
 
-func runMain () error {
+func runMain() error {
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve API container args from the environment")
@@ -92,12 +101,30 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
 
+	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisCoreSource,
+		serverArgs.Version,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		doNothingMetricsClientCallback{},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
+	}
+	defer func() {
+		if err := closeClientFunc(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
+
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		enclaveDataDir,
 		externalContainerStore,
 		serviceNetwork,
 		moduleStore,
+		metricsClient,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
@@ -107,7 +134,7 @@ func runMain () error {
 		kurtosis_core_rpc_api_bindings.RegisterApiContainerServiceServer(grpcServer, apiContainerService)
 	}
 	apiContainerServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.ListenPortNum,
+		serverArgs.GrpcListenPortNum,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			apiContainerServiceRegistrationFunc,
@@ -133,10 +160,10 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createServiceNetworkAndModuleStore(
-		dockerManager *docker_manager.DockerManager,
-		enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-		freeIpAddrTracker *lib.FreeIpAddrTracker,
-		args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
+	dockerManager *docker_manager.DockerManager,
+	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
+	freeIpAddrTracker *lib.FreeIpAddrTracker,
+	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
 	enclaveId := args.EnclaveId
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()
@@ -146,7 +173,7 @@ func createServiceNetworkAndModuleStore(
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
 	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred getting the files artifact cache")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
 
 	dockerNetworkId := args.NetworkId
@@ -155,7 +182,7 @@ func createServiceNetworkAndModuleStore(
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
 		"%v:%v",
 		args.ApiContainerIpAddr,
-		args.ListenPortNum,
+		args.GrpcListenPortNum,
 	)
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(

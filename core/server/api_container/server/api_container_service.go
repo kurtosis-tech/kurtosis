@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -43,9 +44,9 @@ const (
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and enclave container port protos
 var apiContainerPortProtoToEnclaveContainerPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]enclave_container_launcher.EnclaveContainerPortProtocol{
-	kurtosis_core_rpc_api_bindings.Port_TCP: enclave_container_launcher.EnclaveContainerPortProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_TCP:  enclave_container_launcher.EnclaveContainerPortProtocol_TCP,
 	kurtosis_core_rpc_api_bindings.Port_SCTP: enclave_container_launcher.EnclaveContainerPortProtocol_SCTP,
-	kurtosis_core_rpc_api_bindings.Port_UDP: enclave_container_launcher.EnclaveContainerPortProtocol_UDP,
+	kurtosis_core_rpc_api_bindings.Port_UDP:  enclave_container_launcher.EnclaveContainerPortProtocol_UDP,
 }
 
 type ApiContainerService struct {
@@ -61,6 +62,8 @@ type ApiContainerService struct {
 	moduleStore *module_store.ModuleStore
 
 	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
+
+	metricsClient client.MetricsClient
 }
 
 func NewApiContainerService(
@@ -68,12 +71,14 @@ func NewApiContainerService(
 	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
+	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		enclaveDataDir:         enclaveDirectory,
 		externalContainerStore: externalContainerStore,
 		serviceNetwork:         serviceNetwork,
 		moduleStore:            moduleStore,
+		metricsClient:          metricsClient,
 	}
 
 	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
@@ -114,6 +119,12 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 	moduleId := module_store_types.ModuleID(args.ModuleId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
+
+	if err := service.metricsClient.TrackLoadModule(args.ModuleId, image, serializedParams); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking load module event\n%v", err)
+	}
+
 	privateIpAddr, privateEnclaveContainerPort, publicIpAddr, publicEnclaveContainerPort, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
@@ -126,6 +137,7 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
 	}
+
 	result := binding_constructors.NewLoadModuleResponse(
 		privateIpAddr.String(),
 		privateApiPort,
@@ -137,19 +149,33 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 
 func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
 	moduleId := module_store_types.ModuleID(args.ModuleId)
+
+	if err := service.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking unload module event\n%v", err)
+	}
+
 	if err := service.moduleStore.UnloadModule(ctx, moduleId); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred unloading module '%v' from the network", moduleId)
 	}
+
 	return &emptypb.Empty{}, nil
 }
 
 func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
 	moduleId := module_store_types.ModuleID(args.ModuleId)
 	serializedParams := args.SerializedParams
+
+	if err := service.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking execute module event\n%v", err)
+	}
+
 	serializedResult, err := service.moduleStore.ExecuteModule(ctx, moduleId, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing module '%v' with serialized params '%v'", moduleId, serializedParams)
 	}
+
 	resp := &kurtosis_core_rpc_api_bindings.ExecuteModuleResponse{SerializedResult: serializedResult}
 	return resp, nil
 }
@@ -377,7 +403,7 @@ func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtos
 		)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
-		ExitCode: exitCode,
+		ExitCode:  exitCode,
 		LogOutput: logOutput,
 	}
 	return resp, nil
@@ -388,15 +414,15 @@ func (service ApiContainerService) WaitForHttpGetEndpointAvailability(ctx contex
 	serviceIdStr := args.ServiceId
 
 	if err := service.waitForEndpointAvailability(
-			serviceIdStr,
-			http.MethodGet,
-			args.Port,
-			args.Path,
-			args.InitialDelayMilliseconds,
-			args.Retries,
-			args.RetriesDelayMilliseconds,
-			"",
-			args.BodyText); err != nil {
+		serviceIdStr,
+		http.MethodGet,
+		args.Port,
+		args.Path,
+		args.InitialDelayMilliseconds,
+		args.Retries,
+		args.RetriesDelayMilliseconds,
+		"",
+		args.BodyText); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",
@@ -438,13 +464,13 @@ func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error){
+func (service ApiContainerService) GetServices(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 
 	serviceIDs := make(map[string]bool, len(service.serviceNetwork.GetServiceIDs()))
 
 	for serviceID, _ := range service.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
-		if _, ok := serviceIDs[serviceIDStr]; !ok{
+		if _, ok := serviceIDs[serviceIDStr]; !ok {
 			serviceIDs[serviceIDStr] = true
 		}
 	}
@@ -455,13 +481,13 @@ func (service ApiContainerService) GetServices(ctx context.Context, empty *empty
 	return resp, nil
 }
 
-func (service ApiContainerService) GetModules(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error){
+func (service ApiContainerService) GetModules(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetModulesResponse, error) {
 
 	allModuleIDs := make(map[string]bool, len(service.moduleStore.GetModules()))
 
 	for moduleID, _ := range service.moduleStore.GetModules() {
 		moduleIDStr := string(moduleID)
-		if _, ok := allModuleIDs[moduleIDStr]; !ok{
+		if _, ok := allModuleIDs[moduleIDStr]; !ok {
 			allModuleIDs[moduleIDStr] = true
 		}
 	}
@@ -535,19 +561,19 @@ func transformEnclaveContainerPortsMapToApiPortsMap(apiPorts map[string]*enclave
 }
 
 func (service ApiContainerService) waitForEndpointAvailability(
-		serviceIdStr string,
-		httpMethod string,
-		port uint32,
-		path string,
-		initialDelayMilliseconds uint32,
-		retries uint32,
-		retriesDelayMilliseconds uint32,
-		requestBody string,
-		bodyText string) error {
+	serviceIdStr string,
+	httpMethod string,
+	port uint32,
+	path string,
+	initialDelayMilliseconds uint32,
+	retries uint32,
+	retriesDelayMilliseconds uint32,
+	requestBody string,
+	bodyText string) error {
 
-	var(
+	var (
 		resp *http.Response
-		err error
+		err  error
 	)
 
 	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceIdStr))
@@ -560,8 +586,8 @@ func (service ApiContainerService) waitForEndpointAvailability(
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
 	for i := uint32(0); i < retries; i++ {
-		resp, err = makeHttpRequest(httpMethod, url ,requestBody)
-		if err == nil  {
+		resp, err = makeHttpRequest(httpMethod, url, requestBody)
+		if err == nil {
 			break
 		}
 		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
@@ -598,16 +624,16 @@ func (service ApiContainerService) waitForEndpointAvailability(
 	return nil
 }
 
-func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error){
+func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error) {
 	var (
 		resp *http.Response
-		err error
+		err  error
 	)
 
 	if httpMethod == http.MethodPost {
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
-	} else if httpMethod == http.MethodGet{
+	} else if httpMethod == http.MethodGet {
 		resp, err = http.Get(url)
 	} else {
 		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)

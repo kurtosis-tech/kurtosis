@@ -1,7 +1,56 @@
 # TBD
 
-# 1.36.12
+### Features
+* Added Envoy Proxy to support gRPC-web
 
+
+# 1.39.0
+### Breaking Changes
+* The API container now takes in a `version` arg so that it can accurately report its own version to the metrics client
+
+### Changes
+* Product analytics events are sent when the action is made, not after it succeeds, so that we don't drop actions
+
+### Fixes
+* Update `metrics-lib` to 0.2.1, which fixes a bug where `LoadModule` events would get dropped if they didn't have a tag
+
+# 1.38.2
+### Changes
+* Upgraded to obj-attrs-schema-lib 0.7.2, which allows for labels of 256 characters in length
+
+# 1.38.1
+### Changes
+* Upgrade `object-attributes-schema-lib` to 0.7.1
+
+# 1.38.0
+### Breaking Changes
+* Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `grpcListenPort` and `grpcProxyListenPort` and deleting the one named `listenPort`
+  * Users should add these two new arguments in every call instead of the old one named `listenPort`
+
+# 1.37.2
+### Fixes
+* Upgrade `object-attributes-schema-lib` to 0.6.1
+* fixes core with the port changes in the Launcher and the error checks for the validations added in `object-attributes-schema-lib`
+* changes `_` separator to `-`
+
+# 1.37.1
+### Changes
+* Add metrics client close call to flush the queue
+* Upgrade to `metrics-client-library` v0.1.2
+
+# 1.37.0
+### Features
+* Added metrics client to track module events (e.g.: when users load a module)
+
+### Breaking Changes
+* Change the `ApiContainerLauncher.LaunchWithDefaultVersion()` and `ApiContainerLauncher.LaunchWithCustomVersion()` methods API, adding two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
+* Change `ApiContainerService` constructor to now receive a new extra argument `metricsClient`
+  * Users should add this new argument in every call
+* Change `ApiContainerArgs` constructor, added two new arguments `metricsUserID` and `didUserAcceptSendingMetrics`
+  * Users should add these two new arguments in every call
+
+# 1.36.12
 ### Fixes
 * Fix `SoftPartitionConnection` class constructor bug upon `isValidPacketLossValue` value decision.
 
