@@ -125,7 +125,7 @@ func validate(flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	}
 
 	if _, found := getEnclavesResp.EnclaveInfo[enclaveId]; !found {
-		return stacktrace.Propagate(err, "No enclave found with ID '%v'", enclaveId)
+		return stacktrace.NewError("No enclave found with ID '%v'", enclaveId)
 	}
 	return nil
 }
