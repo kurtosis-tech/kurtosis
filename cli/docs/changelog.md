@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Add a test to ensure that new versions of the CLI don't break compatibility with enclaves started under an old version
 
 # 0.11.0
 ### Fixes

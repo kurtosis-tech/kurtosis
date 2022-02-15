@@ -179,6 +179,36 @@ jobs:
 
       # Finally, fail the job if the testsuite failed
       - run: "! [ -f /tmp/testsuite-failed ]"
+
+  # This test will install the currently-available version of Kurtosis, start an enclave, and then see if we can do some basic stuff
+  # with it using the newly-built version of Kurtosis
+  test_old_enclave_continuity:
+    executor: ubuntu_vm
+    steps:
+      - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+      # We don't send metrics to avoid polluting our logs
+      - run: kurtosis config init dont-send-metrics
+
+      # Start up an enclave with a module and some services inside
+      - run: kurtosis module exec --enclave-id test-enclave kurtosistech/datastore-army-module '{"numDatastores":2}'
+      - run: kurtosis engine stop
+
+      # Now use the new CLI & engine and ensure everything still works
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} enclave ls"
+      - run: "${KURTOSIS_BINPATH} enclave inspect" 
+      - run: "${KURTOSIS_BINPATH} enclave rm -f test-enclave"
+      - run: "${KURTOSIS_BINPATH} engine stop"
+
   # -- End build jobs ---------------------------------------
 
   # -- Artifact-publishing jobs --------------------------------
@@ -255,6 +285,16 @@ workflows:
                 - develop
                 - master
       - build_typescript_testsuite:
+          context:
+            - docker-user
+          requires:
+            - build_cli
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - test_old_enclave_continuity:
           context:
             - docker-user
           requires:
