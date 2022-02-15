@@ -1,4 +1,6 @@
 # TBD
+### Features
+* `service shell` will first try to find & use `bash` before dropping down to `sh`
 
 # 0.11.0
 ### Fixes

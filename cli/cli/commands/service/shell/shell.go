@@ -30,12 +30,20 @@ const (
 	enclaveIDArg                           = "enclave-id"
 	guidArg                                = "guid"
 	shouldShowStoppedUserServiceContainers = true
+
 )
 
 var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIDArg,
 	guidArg,
+}
+
+// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
+var commandToRun = []string{
+	"sh",
+	"-c",
+	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
 
 var ShellCmd = &cobra.Command{
@@ -105,7 +113,7 @@ func run(cmd *cobra.Command, args []string) error {
 		AttachStderr: true,
 		AttachStdout: true,
 		Detach:       false,
-		Cmd:          []string{"sh"},
+		Cmd:          commandToRun,
 	}
 
 	response, err := dockerClient.ContainerExecCreate(ctx, serviceContainer.GetId(), config)
