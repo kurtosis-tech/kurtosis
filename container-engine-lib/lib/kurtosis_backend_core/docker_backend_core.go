@@ -91,7 +91,7 @@ func (backendCore *KurtosisDockerBackendCore) CreateEngine(
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
 	imageOrgAndRepo string,
-	serializedEnvVars map[string]string,
+	envVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
@@ -160,7 +160,7 @@ func (backendCore *KurtosisDockerBackendCore) CreateEngine(
 		engineAttrs.GetName(),
 		targetNetworkId,
 	).WithEnvironmentVariables(
-		serializedEnvVars,
+		envVars,
 	).WithBindMounts(
 		bindMounts,
 	).WithUsedPorts(

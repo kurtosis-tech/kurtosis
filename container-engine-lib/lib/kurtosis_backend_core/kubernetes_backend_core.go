@@ -47,7 +47,7 @@ func (backendCore KurtosisKubernetesBackendCore) CreateEngine(
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
 	imageOrgAndRepo string,
-	serializedEnvVars map[string]string,
+	envVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
@@ -129,7 +129,7 @@ func (backendCore KurtosisKubernetesBackendCore) CreateEngine(
 	}
 
 	// creating deployment
-	_, err = backendCore.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, serializedEnvVars, engineAttrs.GetName())
+	_, err = backendCore.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred while creating the deployment with name '%s' in namespace '%s' with image '%s'", engineAttrs.GetName(), kurtosisEngineNamespace, containerImageAndTag)
 	}

@@ -35,7 +35,7 @@ type KurtosisBackendCore interface {
 		listenPortNum uint16,
 		engineDataDirpathOnHostMachine string,
 		containerImage string,
-		serializedEnvVars map[string]string,
+		envVars map[string]string,
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPortNum uint16,

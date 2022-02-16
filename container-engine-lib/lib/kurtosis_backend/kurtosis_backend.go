@@ -27,13 +27,13 @@ func (backend *KurtosisBackend) CreateEngine(
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
 	imageOrgAndRepo string,
-	serializedEnvVars map[string]string,
+	envVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultErr error,
 ) {
-	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, imageOrgAndRepo, serializedEnvVars)
+	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, imageOrgAndRepo, envVars)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(resultErr, "An error occurred while trying to create the kurtosis engine with publicIpAddr '%v' and publicPortNum '%v'", publicIpAddr, publicPortNum)
 	}
