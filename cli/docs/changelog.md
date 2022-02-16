@@ -6,6 +6,7 @@
 * Added flags to `KurtosisCommand`
 * Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
 * Added tab-completion & enclave ID validation to `enclave rm` command
+* Added a `EngineConsumingKurtosisCommand` to make it easier to write commands that use the engine
 
 ### Changes
 * Switched `enclave rm` to use the new command framework

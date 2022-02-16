@@ -1,10 +1,10 @@
-package kurtosis_command
+package lowlevel
 
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -19,10 +19,11 @@ const (
 	uint32Bits = 32
 )
 
+// LowlevelKurtosisCommand is the most configurable, lowest-level implementation of the KurtosisCommand interface
 // This is a struct intended to abstract away much of the details of creating a Cobra command that does what we want,
 //  so that Kurtosis devs can talk in higher-level notions
 // E.g. simply by providing the flags and args, the usage string will be automatically generated for the Kurtosis dev
-type KurtosisCommand struct {
+type LowlevelKurtosisCommand struct {
 	// The string for the command (e.g. "inspect" or "ls")
 	CommandStr string
 
@@ -51,10 +52,10 @@ type KurtosisCommand struct {
 	PostValidationAndRunFunc func(ctx context.Context)
 }
 
-// Gets a Cobra command represnting the KurtosisCommand
+// Gets a Cobra command represnting the LowlevelKurtosisCommand
 // This function is intended to be run in an init() (i.e. before the program runs any logic), so it will panic if
 //  any errors occur
-func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
+func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command {
 	// Verify no duplicate flag keys
 	usedFlagKeys := map[string]bool{}
 	for _, flagConfig := range kurtosisCmd.Flags {
