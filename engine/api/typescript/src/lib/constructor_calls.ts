@@ -4,7 +4,6 @@ import {
     DestroyEnclaveArgs,
     StopEnclaveArgs
 } from "../kurtosis_engine_rpc_api_bindings/engine_service_pb";
-import * as jspb from "google-protobuf";
 
 // // ====================================================================================================
 // //                                    Kurtosis Context

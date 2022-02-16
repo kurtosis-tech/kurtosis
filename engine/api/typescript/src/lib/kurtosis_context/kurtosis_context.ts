@@ -4,28 +4,30 @@ import * as grpc_node from "@grpc/grpc-js";
 import * as semver from "semver"
 import log from "loglevel"
 import * as jspb from "google-protobuf";
-import { ApiContainerServiceClientNode, ApiContainerServiceClientWeb, EnclaveContext } from "kurtosis-core-api-lib";
+import { EnclaveContext } from "kurtosis-core-api-lib";
+import { KurtosisContextBackend } from "./kurtosis_context_backend";
+import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
+import { GrpcWebKurtosisContextBackend } from "./grpc_web_kurtosis_context_backend";
+import { GrpcNodeKurtosisContextBackend } from "./grpc_node_kurtosis_context_backend";
+import { EngineServiceClient as EngineServiceClientWeb } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
+import { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
 import { 
-    GrpcWebKurtosisContextBackend, 
-} from "./kurtosis_context_backend_web";
-import { 
-    GrpcNodeKurtosisContextBackend, 
-} from "./kurtosis_context_backend_node";
-import {
-    EngineServiceClientNode,
-    EngineServiceClientWeb,
-    KURTOSIS_ENGINE_VERSION,
-    EnclaveAPIContainerStatus,
-    EnclaveContainersStatus,
-    EnclaveAPIContainerInfo,
-    EnclaveAPIContainerHostMachineInfo,
-    GetEngineInfoResponse,
-    CreateEnclaveArgs,
-    EnclaveInfo,
-    CreateEnclaveResponse,
-    GetEnclavesResponse
-} from "../../";
-import { newCreateEnclaveArgs } from "../constructor_calls";
+    CleanArgs,
+    CleanResponse,
+    CreateEnclaveArgs, 
+    CreateEnclaveResponse, 
+    DestroyEnclaveArgs, 
+    EnclaveAPIContainerHostMachineInfo, 
+    EnclaveAPIContainerInfo, 
+    EnclaveAPIContainerStatus, 
+    EnclaveContainersStatus, 
+    EnclaveInfo, 
+    GetEnclavesResponse, 
+    GetEngineInfoResponse, 
+    StopEnclaveArgs
+} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
+import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs } from "../constructor_calls";
+
 
 const LOCAL_HOST_IP_ADDRESS_STR: string = "http://localhost";
 
@@ -33,27 +35,17 @@ const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
 const API_CONTAINER_LOG_LEVEL: string = "info";
 
-export const DEFAULT_WEB_ENGINE_SERVER_PORT_NUM: number = 9711;
-export const DEFAULT_NODE_ENGINE_SERVER_PORT_NUM: number = 9710;
+export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
+export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
 
 type EnclaveID = string;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
-export interface KurtosisContextBackend {
-    getEngineInfo(): Promise<Result<GetEngineInfoResponse,Error>>
-    createEnclaveResponse(args: CreateEnclaveArgs): Promise<Result<CreateEnclaveResponse, Error>>
-    getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>>
-    stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>
-    destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>
-    clean( shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>
-    createApiClient(localhostIpAddress:string, apiContainerHostMachineInfo:EnclaveAPIContainerHostMachineInfo):Result<ApiContainerServiceClientWeb | ApiContainerServiceClientNode,Error>
-}
-
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 export class KurtosisContext {
-    private backend: KurtosisContextBackend
+    private readonly backend: KurtosisContextBackend
 
     constructor(backend: KurtosisContextBackend){
         this.backend = backend;
@@ -61,18 +53,20 @@ export class KurtosisContext {
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
-        const ifExecutionEnvIsNode: boolean = isNode
+        const isExecutionEnvNode: boolean = isNode
 
-        const kurtosisEnginePortNum: number = ifExecutionEnvIsNode ? DEFAULT_NODE_ENGINE_SERVER_PORT_NUM : DEFAULT_WEB_ENGINE_SERVER_PORT_NUM
+        const kurtosisEnginePortNum: number = isExecutionEnvNode ? DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM : DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM
         
         const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${kurtosisEnginePortNum}`;
 
         let engineClient: EngineServiceClientWeb | EngineServiceClientNode;
 
         try {
-            engineClient = ifExecutionEnvIsNode ?  
-                new EngineServiceClientNode(kurtosisEngineSocketStr, grpc_node.ChannelCredentials.createInsecure()) : 
-                new EngineServiceClientWeb(kurtosisEngineSocketStr)
+            if(isExecutionEnvNode){
+                engineClient = new EngineServiceClientNode(kurtosisEngineSocketStr, grpc_node.ChannelCredentials.createInsecure())
+            }else {
+                engineClient = new EngineServiceClientWeb(kurtosisEngineSocketStr)
+            }
         } catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -102,7 +96,6 @@ export class KurtosisContext {
     }
 
     public async createEnclave(enclaveId: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
-
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveId,
             DEFAULT_API_CONTAINER_VERSION_TAG,
@@ -169,15 +162,39 @@ export class KurtosisContext {
     }
 
     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
-        return this.backend.stopEnclave(enclaveId)
+        const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
+        const stopEnclaveResult = await this.backend.stopEnclave(stopEnclaveArgs)
+        if(stopEnclaveResult.isErr()){
+            return err(stopEnclaveResult.error)
+        }
+
+        return ok(null)
     }
 
     public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
-        return this.backend.destroyEnclave(enclaveId)
+        const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
+        const destroyEnclaveResult = await this.backend.destroyEnclave(destroyEnclaveArgs)
+        if(destroyEnclaveResult.isErr()){
+            return err(destroyEnclaveResult.error)
+        }
+
+        return ok(null)
     }
 
     public async clean(shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
-        return this.backend.clean(shouldCleanAll)
+        const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
+        const cleanResponseResult = await this.backend.clean(cleanArgs)
+        if(cleanResponseResult.isErr()){
+            return err(cleanResponseResult.error)
+        }
+        const cleanResponse: CleanResponse = cleanResponseResult.value
+
+        const result: Set<string> = new Set();
+        for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
+            result.add(enclaveID);
+        }
+
+        return ok(result)
     }
 
 

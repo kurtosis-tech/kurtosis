@@ -2,22 +2,19 @@ import * as grpc_node from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {err, ok, Result} from "neverthrow";
 import { ApiContainerServiceClientNode } from "kurtosis-core-api-lib";
-import {
-    EngineServiceClientNode,
-    CleanArgs,
-    CleanResponse,
-    CreateEnclaveArgs,
-    CreateEnclaveResponse,
-    DestroyEnclaveArgs,
-    EnclaveAPIContainerHostMachineInfo,
-    GetEnclavesResponse,
-    GetEngineInfoResponse,
-    StopEnclaveArgs
-} from "../../index";
-import {newCleanArgs, newDestroyEnclaveArgs, newStopEnclaveArgs} from "../constructor_calls";
-import { KurtosisContextBackend } from "./kurtosis_context";
-
-type EnclaveID = string;
+import { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
+import { KurtosisContextBackend } from "./kurtosis_context_backend";
+import { 
+    CleanArgs, 
+    CleanResponse, 
+    CreateEnclaveArgs, 
+    CreateEnclaveResponse, 
+    DestroyEnclaveArgs, 
+    EnclaveAPIContainerHostMachineInfo, 
+    GetEnclavesResponse, 
+    GetEngineInfoResponse, 
+    StopEnclaveArgs 
+} from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 
 export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
     private readonly client: EngineServiceClientNode
@@ -27,9 +24,8 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
     }
 
     public async getEngineInfo(): Promise<Result<GetEngineInfoResponse, Error>> {
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
         const getEngineInfoPromise: Promise<Result<GetEngineInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
-
             this.client.getEngineInfo(emptyArg, (error: grpc_node.ServiceError | null, response?: GetEngineInfoResponse) => {
                 if (error === null) {
                     if (!response) {
@@ -47,14 +43,12 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
             })
         });
 
-
         const getEngineInfoResult: Result<GetEngineInfoResponse, Error> = await getEngineInfoPromise;
         if (getEngineInfoResult.isErr()) {
             return err(getEngineInfoResult.error)
         }
 
         const engineInfoResponse: GetEngineInfoResponse = getEngineInfoResult.value;
-
         return ok(engineInfoResponse)
     }
 
@@ -79,16 +73,12 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
         }
 
         const enclaveResponse: CreateEnclaveResponse = createEnclaveResult.value;
-        
         return ok(enclaveResponse)
-
     }
 
-     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>> {
-        const args: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
-
+    public async stopEnclave(stopEnclaveArgs: StopEnclaveArgs): Promise<Result<null, Error>> {
         const stopEnclavePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.stopEnclave(args, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.stopEnclave(stopEnclaveArgs, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -104,11 +94,9 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
         return ok(null);
     }
 
-    public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>> {
-        const args: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
-
+    public async destroyEnclave(destroyEnclaveArgs: DestroyEnclaveArgs): Promise<Result<null, Error>> {
         const destroyEnclavePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.destroyEnclave(args, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.destroyEnclave(destroyEnclaveArgs, {}, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -124,10 +112,7 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
         return ok(null);
     }
 
-    public async clean( shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
-
-        const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
-
+    public async clean(cleanArgs: CleanArgs): Promise<Result<CleanResponse, Error>>{
         const cleanPromise: Promise<Result<CleanResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.clean(cleanArgs, (error: grpc_node.ServiceError | null, response?: CleanResponse) => {
                 if (error === null) {
@@ -147,38 +132,30 @@ export class GrpcNodeKurtosisContextBackend implements KurtosisContextBackend {
             return err(cleanResult.error)
         }
         const cleanResponse: CleanResponse = cleanResult.value;
-
-        const result: Set<string> = new Set();
-        for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
-            result.add(enclaveID);
-        }
-        return ok(result);
+        return ok(cleanResponse);
     }
 
     public createApiClient(localhostIpAddress:string, apiContainerHostMachineInfo:EnclaveAPIContainerHostMachineInfo):Result<ApiContainerServiceClientNode,Error>{
         const apiContainerHostMachineGrpcUrl: string = `${localhostIpAddress}:${apiContainerHostMachineInfo.getGrpcPortOnHostMachine()}`
 
         let apiContainerClient: ApiContainerServiceClientNode;
-        
         try {
             apiContainerClient = new ApiContainerServiceClientNode(apiContainerHostMachineGrpcUrl, grpc_node.ChannelCredentials.createInsecure());
-        } catch(exception) {
-            if (exception instanceof Error) {
-                return err(exception);
+        } catch(error) {
+            if (error instanceof Error) {
+                return err(error);
             }
             return err(new Error(
                 "An unknown exception value was thrown during creation of the API container client that" +
-                " wasn't an error: " + exception
+                " wasn't an error: " + error
             ));
         }
 
         return ok(apiContainerClient)
-
     }
 
     public async getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>>{
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
-
         const getEnclavesPromise: Promise<Result<GetEnclavesResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getEnclaves(emptyArg, (error: grpc_node.ServiceError | null, response?: GetEnclavesResponse) => {
                 if (error === null) {

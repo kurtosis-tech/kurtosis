@@ -43,9 +43,6 @@ const (
 
 	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(9711)
 
-	// TODO this will be updated later by Karen
-	apiContainerGRPPCListenPortNumInsideNetwork = uint16(7444)
-
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
 	//  a) the engine data directory is bind-mounted on the Docker host machine
