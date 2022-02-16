@@ -67,7 +67,7 @@ var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 	schema.PortProtcol_UDP:   "udp",
 }
 
-type KurtosisDockerBackendCore struct {
+type DockerKurtosisBackendCore struct {
 	// The logger that all log messages will be written to
 	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
 
@@ -76,15 +76,15 @@ type KurtosisDockerBackendCore struct {
 	objAttrsProvider schema.ObjectAttributesProvider
 }
 
-func NewDockerBackendCore(log *logrus.Logger, dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *KurtosisDockerBackendCore {
-	return &KurtosisDockerBackendCore{
+func NewDockerKurtosisBackendCore(log *logrus.Logger, dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *DockerKurtosisBackendCore {
+	return &DockerKurtosisBackendCore{
 		log:              log,
 		dockerManager:    dockerManager,
 		objAttrsProvider: objAttrsProvider,
 	}
 }
 
-func (backendCore *KurtosisDockerBackendCore) CreateEngine(
+func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
@@ -215,7 +215,7 @@ func (backendCore *KurtosisDockerBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
-func (backendCore *KurtosisDockerBackendCore) StopEngine(ctx context.Context) error {
+func (backendCore *DockerKurtosisBackendCore) StopEngine(ctx context.Context) error {
 	matchingEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		engineLabels,
@@ -263,7 +263,7 @@ func (backendCore *KurtosisDockerBackendCore) StopEngine(ctx context.Context) er
 	return nil
 }
 
-func (backendCore *KurtosisDockerBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := backendCore.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
@@ -271,7 +271,7 @@ func (backendCore *KurtosisDockerBackendCore) CleanStoppedEngines(ctx context.Co
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
-func (backendCore *KurtosisDockerBackendCore) GetEngineStatus(
+func (backendCore *DockerKurtosisBackendCore) GetEngineStatus(
 	ctx context.Context,
 ) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
 	runningEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
@@ -395,7 +395,7 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 	)
 }
 
-func (backendCore *KurtosisDockerBackendCore) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
+func (backendCore *DockerKurtosisBackendCore) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
 	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		searchLabels,

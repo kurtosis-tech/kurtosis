@@ -23,7 +23,7 @@ const (
 	zeroReplicas              = 0
 )
 
-type KurtosisKubernetesBackendCore struct {
+type KubernetesKurtosisBackendCore struct {
 	log *logrus.Logger
 
 	kubernetesManager *kubernetes_manager.KubernetesManager
@@ -31,8 +31,8 @@ type KurtosisKubernetesBackendCore struct {
 	objAttrsProvider schema.ObjectAttributesProvider
 }
 
-func NewKurtosisKubernetesBackendCore(log *logrus.Logger, k8sManager *kubernetes_manager.KubernetesManager, objAttrsProvider schema.ObjectAttributesProvider) *KurtosisKubernetesBackendCore {
-	return &KurtosisKubernetesBackendCore{
+func NewKubernetesKurtosisBackendCore(log *logrus.Logger, k8sManager *kubernetes_manager.KubernetesManager, objAttrsProvider schema.ObjectAttributesProvider) *KubernetesKurtosisBackendCore {
+	return &KubernetesKurtosisBackendCore{
 		log: log,
 
 		kubernetesManager: k8sManager,
@@ -40,7 +40,7 @@ func NewKurtosisKubernetesBackendCore(log *logrus.Logger, k8sManager *kubernetes
 	}
 }
 
-func (backendCore KurtosisKubernetesBackendCore) CreateEngine(
+func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
@@ -158,7 +158,7 @@ func (backendCore KurtosisKubernetesBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
-func (backendCore KurtosisKubernetesBackendCore) StopEngine(ctx context.Context) error {
+func (backendCore KubernetesKurtosisBackendCore) StopEngine(ctx context.Context) error {
 	err := backendCore.kubernetesManager.UpdateDeploymentReplicas(ctx, kurtosisEngineNamespace, engineLabels, int32(zeroReplicas))
 	if err != nil {
 		stacktrace.Propagate(err, "An error occurred while trying to stop the engine server with labels '%+v'", engineLabels)
@@ -167,10 +167,10 @@ func (backendCore KurtosisKubernetesBackendCore) StopEngine(ctx context.Context)
 	return nil
 }
 
-func (backendCore KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+func (backendCore KubernetesKurtosisBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	deploymentsList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to clean the the stopped engine containers with labels '%+v'", engineLabels)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to get the deployment with labels '%+v'", engineLabels)
 	}
 
 	successfullyDestroyedEngineNames := []string{}
@@ -178,7 +178,7 @@ func (backendCore KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context
 
 	if len(deploymentsList.Items) > 0 {
 		for _, deployment := range deploymentsList.Items {
-			if !backendCore.checkIfContainerisRunning(deployment) {
+			if !backendCore.checkIfContainerIsRunning(deployment) {
 				err = backendCore.cleanEngineServer(ctx, deployment.Name)
 				if err != nil {
 					removeEngineErrors = append(removeEngineErrors, err)
@@ -192,11 +192,11 @@ func (backendCore KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context
 	return successfullyDestroyedEngineNames, removeEngineErrors, nil
 }
 
-func (backendCore KurtosisKubernetesBackendCore) checkIfContainerisRunning(deployment v1.Deployment) bool {
+func (backendCore KubernetesKurtosisBackendCore) checkIfContainerIsRunning(deployment v1.Deployment) bool {
 	return *deployment.Spec.Replicas > 0
 }
 
-func (backendCore KurtosisKubernetesBackendCore) cleanEngineServer(ctx context.Context, name string) error {
+func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.Context, name string) error {
 	err := backendCore.kubernetesManager.RemoveDeployment(ctx, kurtosisEngineNamespace, name)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while trying to delete the deployment from the engine with name '%s'", name)
@@ -220,7 +220,7 @@ func (backendCore KurtosisKubernetesBackendCore) cleanEngineServer(ctx context.C
 	return nil
 }
 
-func (backendCore KurtosisKubernetesBackendCore) GetEngineStatus(
+func (backendCore KubernetesKurtosisBackendCore) GetEngineStatus(
 	ctx context.Context,
 ) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
 	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
