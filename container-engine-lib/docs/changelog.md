@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * Added KubernetesManager, KurtosisBackendCore Interface with implementations for both kubernetes and docker and the KurtosisBackend layer
+* Upgraded `object-attributes-schema-lib` to 0.7.2
 
 # 0.8.6
 ### Fixes
