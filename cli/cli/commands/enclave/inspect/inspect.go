@@ -54,7 +54,8 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:              command_str_consts.EnclaveInspectCmdStr,
-	ShortDescription:        "Lists detailed information about an enclave",
+	ShortDescription:        "Inspect an enclave",
+	LongDescription:         "List information about the enclave's status and contents",
 	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Args:                    []*args.ArgConfig{
