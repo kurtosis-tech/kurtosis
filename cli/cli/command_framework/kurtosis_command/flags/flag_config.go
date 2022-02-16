@@ -30,6 +30,7 @@ type FlagConfig struct {
 	Shorthand string
 
 	// Used for validating the flag
+	// If not set, this will default to FlagType_String
 	Type FlagType
 
 	// Default, serialized as a string, that will be displayed in the usage

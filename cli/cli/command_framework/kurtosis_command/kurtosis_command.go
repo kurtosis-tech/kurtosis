@@ -1,6 +1,7 @@
 package kurtosis_command
 
 import (
+	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/kurtosis_command/flags"
@@ -36,8 +37,18 @@ type KurtosisCommand struct {
 	// Order IS important here
 	Args []*args.ArgConfig
 
+	// Oftentimes, the validation logic and the run logic will require the same resources (e.g. a dockerClient, or
+	//  dockerManager, or engineClient, etc.) This function will run before both validation & run, so that you can
+	//  create resources and add them into the context that gets passed to the validation & run funcs
+	PreValidationAndRunFunc func(ctx context.Context) (context.Context, error)
+
 	// The actual logic that the command will run
-	RunFunc func(flags *flags.ParsedFlags, args *args.ParsedArgs) error
+	RunFunc func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error
+
+	// Function used to close resources opened in PreValidationAndRunFunc, which is guaranteed to run no matter the outcome
+	//  of validation or run
+	// This function should only be used for closing resources, and cannot change the return value of the command
+	PostValidationAndRunFunc func(ctx context.Context)
 }
 
 // Gets a Cobra command represnting the KurtosisCommand
@@ -62,6 +73,36 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 			))
 		}
 		usedFlagKeys[key] = true
+	}
+
+	// Verify shorthands are unique and, if they exist, only one letter
+	flagsByUsedShorthand := map[string]string{}
+	for _, flagConfig := range kurtosisCmd.Flags {
+		key := flagConfig.Key
+		shorthand := flagConfig.Shorthand
+		if len(shorthand) == 0 {
+			continue
+		}
+
+		if len(shorthand) != 1 {
+			panic(stacktrace.NewError(
+				"Arg '%v' for command '%v' declares shorthand '%v' that isn't exactly 1 letter",
+				key,
+				kurtosisCmd.CommandStr,
+				shorthand,
+			))
+		}
+
+		if preexistingFlagKey, found := flagsByUsedShorthand[flagConfig.Shorthand]; found {
+			panic(stacktrace.NewError(
+				"Arg '%v' for command '%v' declares shorthand '%v', but this shorthand is already used by flag '%v'",
+				key,
+				kurtosisCmd.CommandStr,
+				shorthand,
+				preexistingFlagKey,
+			))
+		}
+		flagsByUsedShorthand[shorthand] = key
 	}
 
 	// Verify no duplicate arg keys
@@ -103,10 +144,47 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		}
 	}
 
+	// Verify all optional args have default values that match their type
+	for _, argConfig := range kurtosisCmd.Args {
+		if !argConfig.IsOptional {
+			continue
+		}
+
+		key := argConfig.Key
+		if argConfig.DefaultValue == nil {
+			panic(stacktrace.NewError(
+				"Arg '%v for command '%v' is optional, but doesn't have a default value",
+				key,
+				kurtosisCmd.CommandStr,
+			))
+		}
+		if argConfig.IsGreedy {
+			_, ok := argConfig.DefaultValue.([]string)
+			if !ok {
+				panic(stacktrace.NewError(
+					"Greedy arg '%v for command '%v' is optional, but the default value isn't a string array",
+					key,
+					kurtosisCmd.CommandStr,
+				))
+			}
+		} else {
+			_, ok := argConfig.DefaultValue.(string)
+			if !ok {
+				panic(stacktrace.NewError(
+					"Non-greedy arg '%v for command '%v' is optional, but the default value isn't a string",
+					key,
+					kurtosisCmd.CommandStr,
+				))
+			}
+		}
+	}
+
 	// Based on digging through the Cobra source code, the toComplete string is theoretically the string that the user
 	//  is in the process of typing when they press TAB. However, in my tests on Bash, the shell will automatically
 	//  filter the results based off the partialStr without us needing to filter them ~ ktoday, 2022-02-02
 	getCompletionsFunc := func(cmd *cobra.Command, previousArgStrs []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		ctx := context.Background()
+
 		parsedFlags := flags.NewParsedFlags(cmd.Flags())
 
 		parsedArgs, argToComplete := args.ParseArgsForCompletion(kurtosisCmd.Args, previousArgStrs)
@@ -133,7 +211,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 
-		completions, err := argToComplete.CompletionsFunc(parsedFlags, parsedArgs)
+		completions, err := argToComplete.CompletionsFunc(ctx, parsedFlags, parsedArgs)
 		if err != nil {
 			// NOTE: We can't just use logrus because anything printed to STDOUT will be interpreted as a completion
 			// See:
@@ -166,18 +244,30 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 			return err
 		}
 
+		ctx := context.Background()
+		if kurtosisCmd.PreValidationAndRunFunc != nil {
+			newCtx, err := kurtosisCmd.PreValidationAndRunFunc(ctx)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred running the pre-validation-and-run function")
+			}
+			ctx = newCtx
+		}
+		if kurtosisCmd.PostValidationAndRunFunc != nil {
+			defer kurtosisCmd.PostValidationAndRunFunc(ctx)
+		}
+
 		// Validate all the args
 		for _, config := range kurtosisCmd.Args {
 			validationFunc := config.ValidationFunc
 			if validationFunc == nil {
 				continue
 			}
-			if err := validationFunc(parsedFlags, parsedArgs); err != nil {
+			if err := validationFunc(ctx, parsedFlags, parsedArgs); err != nil {
 				return stacktrace.Propagate(err, "An error occurred validating arg '%v'", config.Key)
 			}
 		}
 
-		if err := kurtosisCmd.RunFunc(parsedFlags, parsedArgs); err != nil {
+		if err := kurtosisCmd.RunFunc(ctx, parsedFlags, parsedArgs); err != nil {
 			return stacktrace.Propagate(err, "An error occurred running command '%v'", kurtosisCmd.CommandStr)
 		}
 
@@ -217,6 +307,7 @@ func (kurtosisCmd *KurtosisCommand) MustGetCobraCommand() *cobra.Command {
 		typeStr := flagConfig.Type.AsString()
 		defaultValueDoesntMatchType := false
 		switch typeStr {
+		case "":   // This is the case where the user doesn't fill out a flag type
 		case flags.FlagType_String.AsString():
 			// No validation needed because the default type is already string
 			resultFlags.StringP(
