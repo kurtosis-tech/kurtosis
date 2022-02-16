@@ -33,7 +33,7 @@ const LOCAL_HOST_IP_ADDRESS_STR: string = "http://localhost";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
-const API_CONTAINER_LOG_LEVEL: string = "info";
+const API_CONTAINER_LOG_LEVEL: string = "debug";
 
 export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
 export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;

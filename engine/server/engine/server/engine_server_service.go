@@ -48,6 +48,10 @@ func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *em
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
+	if err := service.metricsClient.TrackCreateEnclave(args.EnclaveId); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Errorf("An error occurred tracking create enclave event\n%v", err)
+	}
 
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
@@ -91,13 +95,14 @@ func (service *EngineServerService) GetEnclaves(ctx context.Context, _ *emptypb.
 
 func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.StopEnclaveArgs) (*emptypb.Empty, error) {
 	enclaveId := args.EnclaveId
-	if err := service.enclaveManager.StopEnclave(ctx, enclaveId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
-	}
 
 	if err := service.metricsClient.TrackStopEnclave(enclaveId); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking stop enclave event\n%v", err)
+	}
+
+	if err := service.enclaveManager.StopEnclave(ctx, enclaveId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
 	}
 
 	return &emptypb.Empty{}, nil
@@ -105,13 +110,14 @@ func (service *EngineServerService) StopEnclave(ctx context.Context, args *kurto
 
 func (service *EngineServerService) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	enclaveId := args.EnclaveId
-	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
-	}
 
 	if err := service.metricsClient.TrackDestroyEnclave(enclaveId); err != nil {
 		//We don't want to interrupt user's flow if something fails when tracking metrics
 		logrus.Errorf("An error occurred tracking destroy enclave event\n%v", err)
+	}
+
+	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveId); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with ID '%v':", args.EnclaveId)
 	}
 
 	return &emptypb.Empty{}, nil

@@ -598,9 +598,20 @@ func getEnclaveContainerInformation(
 func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[string]string, portID string) (*schema.PortSpec, error) {
 	serializedPortSpecsStr, found := apiContainerLabels[schema.PortSpecsLabel]
 	if found {
-		portSpecs, err := schema.DeserializePortSpecs(serializedPortSpecsStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing API container port spec string '%v'", serializedPortSpecsStr)
+		var portSpecs map[string]*schema.PortSpec
+		// TODO REMOVE THIS CHECK AFTER 2022-04-14, WEHN NOBODY WILL BE USING THE OLD PORT SPEC!
+		if strings.Contains(serializedPortSpecsStr, ":") {
+			preFeb2022PortSpecs, err := deserializePre2022_02_14PortSpec(serializedPortSpecsStr)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred deserializing pre-2022-02-14 API container port spec string '%v'", serializedPortSpecsStr)
+			}
+			portSpecs = preFeb2022PortSpecs
+		} else {
+			candidatePortSpecs, err := schema.DeserializePortSpecs(serializedPortSpecsStr)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred deserializing API container port spec string '%v'", serializedPortSpecsStr)
+			}
+			portSpecs = candidatePortSpecs
 		}
 		port, found := portSpecs[portID]
 		if !found {
@@ -624,6 +635,81 @@ func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[strin
 	}
 
 	return nil, stacktrace.NewError("Couldn't get the API container private port number using any of the known methods")
+}
+
+// TODO Remove this after 2022-04-14, when we're sure nobody will be using the old port spec anymore
+// This is the old way of deserializing ports, which is only here for backwards compatibility
+// WE SHOULD REMOVE THIS AFTER 2022-04-14!!!
+func deserializePre2022_02_14PortSpec(specsStr string) (map[string]*schema.PortSpec, error) {
+	const (
+		portIdAndInfoSeparator      = ":"
+		portNumAndProtocolSeparator = "/"
+		portSpecsSeparator          = ","
+
+		expectedNumPortIdAndSpecFragments      = 2
+		expectedNumPortNumAndProtocolFragments = 2
+		portUintBase                           = 10
+		portUintBits                           = 16
+
+		// The maximum number of bytes that a label value can be
+		// See https://github.com/docker/for-mac/issues/2208
+		maxLabelValueBytes = 65518
+	)
+
+	result := map[string]*schema.PortSpec{}
+	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
+	for _, portIdAndSpecStr := range portIdAndSpecStrs {
+		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
+		numPortIdAndSpecFragments := len(portIdAndSpecFragments)
+		if numPortIdAndSpecFragments != expectedNumPortIdAndSpecFragments {
+			return nil, stacktrace.NewError(
+				"Expected splitting port ID & spec string '%v' to yield %v fragments but got %v",
+				portIdAndSpecStr,
+				expectedNumPortIdAndSpecFragments,
+				numPortIdAndSpecFragments,
+			)
+		}
+		portId := portIdAndSpecFragments[0]
+		portSpecStr := portIdAndSpecFragments[1]
+
+		portNumAndProtocolFragments := strings.Split(portSpecStr, portNumAndProtocolSeparator)
+		numPortNumAndProtocolFragments := len(portNumAndProtocolFragments)
+		if numPortNumAndProtocolFragments != expectedNumPortNumAndProtocolFragments {
+			return nil, stacktrace.NewError(
+				"Expected splitting port num & protocol string '%v' to yield %v fragments but got %v",
+				portSpecStr,
+				expectedNumPortIdAndSpecFragments,
+				numPortIdAndSpecFragments,
+			)
+		}
+		portNumStr := portNumAndProtocolFragments[0]
+		portProtocolStr := portNumAndProtocolFragments[1]
+
+		portNumUint64, err := strconv.ParseUint(portNumStr, portUintBase, portUintBits)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred parsing port num string '%v' to uint with base %v and %v bits",
+				portNumStr,
+				portUintBase,
+				portUintBits,
+			)
+		}
+		portNumUint16 := uint16(portNumUint64)
+		portProtocol := schema.PortProtocol(portProtocolStr)
+
+		portSpec, err := schema.NewPortSpec(portNumUint16, portProtocol)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating port spec object from ID & spec string '%v'",
+				portIdAndSpecStr,
+			)
+		}
+
+		result[portId] = portSpec
+	}
+	return result, nil
 }
 
 func getApiContainerPrivatePortUsingPre2021_11_15Label(containerLabels map[string]string) (*schema.PortSpec, error) {
