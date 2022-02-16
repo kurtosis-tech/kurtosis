@@ -29,7 +29,7 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 		}
 		if _, found := validValues[value]; !found {
 			return stacktrace.NewError(
-				"Value for arg '%v' was '%v' must be in set {%v}",
+				"Value for arg '%v' was '%v', but must be in set {%v}",
 				argKey,
 				value,
 				strings.Join(sortedValidValues, ", "),
