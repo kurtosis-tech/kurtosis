@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kubernetes_manager"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -41,27 +40,27 @@ func NewKurtosisKubernetesBackendCore(log *logrus.Logger, k8sManager *kubernetes
 	}
 }
 
-func (kkb KurtosisKubernetesBackendCore) CreateEngine(
+func (backendCore KurtosisKubernetesBackendCore) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
-	containerImage string,
-	engineServerArgs *args.EngineServerArgs,
+	imageOrgAndRepo string,
+	serializedEnvVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultErr error,
 ) {
 	// getting the object attributes for the engine server
-	engineAttrs, err := kkb.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes deployment
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes deployment
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
 
 	// getting the object attributes for the engine server
-	engineAttrsForPod, err := kkb.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes pod
+	engineAttrsForPod, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum) // TODO we should probably create a new function for labels that make sense for kubernetes pod
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
@@ -72,28 +71,22 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 		return nil, 0, stacktrace.Propagate(err, "An error occurred creating the engine server args")
 	}
 
-	// getting the envVars for the engine server container
-	envVars, err := args.GetEnvFromArgs(engineServerArgs)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
-	}
-
 	containerImageAndTag := fmt.Sprintf(
 		"%v:%v",
-		containerImage,
+		imageOrgAndRepo,
 		imageVersionTag,
 	)
 
 	// checking if the kurtosis namespace already exists and creating it otherwise
-	kurtosisNamespaceList, err := kkb.kubernetesManager.GetNamespacesByLabels(ctx, engineLabels)
+	kurtosisNamespaceList, err := backendCore.kubernetesManager.GetNamespacesByLabels(ctx, engineLabels)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
-			"An error occurred when trying to get the kurtosis engine namespace by labels '%v'",
+			"An error occurred when trying to get the kurtosis engine namespace by labels '%+v'",
 			engineAttrs.GetLabels())
 	}
 	if len(kurtosisNamespaceList.Items) == 0 {
-		_, err = kkb.kubernetesManager.CreateNamespace(ctx, kurtosisEngineNamespace, engineLabels)
+		_, err = backendCore.kubernetesManager.CreateNamespace(ctx, kurtosisEngineNamespace, engineLabels)
 		if err != nil {
 			return nil, 0, stacktrace.Propagate(
 				err,
@@ -103,7 +96,7 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	}
 
 	// creating persistent volume
-	_, err = kkb.kubernetesManager.CreatePersistentVolume(ctx, engineAttrs.GetName(), engineAttrs.GetLabels(), defaultQuantity, engineServerArgs.EngineDataDirpathOnHostMachine, storageClass)
+	_, err = backendCore.kubernetesManager.CreatePersistentVolume(ctx, engineAttrs.GetName(), engineAttrs.GetLabels(), defaultQuantity, engineDataDirpathOnHostMachine, storageClass)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
@@ -112,7 +105,7 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	}
 
 	// creating persistent volume claim
-	_, err = kkb.kubernetesManager.CreatePersistentVolumeClaim(ctx, kurtosisEngineNamespace, engineAttrs.GetName(), engineAttrs.GetLabels(), defaultQuantity, storageClass)
+	_, err = backendCore.kubernetesManager.CreatePersistentVolumeClaim(ctx, kurtosisEngineNamespace, engineAttrs.GetName(), engineAttrs.GetLabels(), defaultQuantity, storageClass)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
@@ -140,13 +133,13 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	}
 
 	// creating deployment
-	_, err = kkb.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
+	_, err = backendCore.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, serializedEnvVars, engineAttrs.GetName())
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
 	// creating service
-	service, err := kkb.kubernetesManager.CreateService(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), externalServiceType, int32(listenPortNum), int32(listenPortNum))
+	service, err := backendCore.kubernetesManager.CreateService(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), externalServiceType, int32(listenPortNum), int32(listenPortNum))
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
@@ -169,19 +162,19 @@ func (kkb KurtosisKubernetesBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
-func (kkb KurtosisKubernetesBackendCore) StopEngine(ctx context.Context) error {
-	err := kkb.kubernetesManager.UpdateDeploymentReplicas(ctx, kurtosisEngineNamespace, engineLabels, int32(zeroReplicas))
+func (backendCore KurtosisKubernetesBackendCore) StopEngine(ctx context.Context) error {
+	err := backendCore.kubernetesManager.UpdateDeploymentReplicas(ctx, kurtosisEngineNamespace, engineLabels, int32(zeroReplicas))
 	if err != nil {
-		stacktrace.Propagate(err, "an error occurred while trying to stop the engine server with labels %v", engineLabels)
+		stacktrace.Propagate(err, "An error occurred while trying to stop the engine server with labels %v", engineLabels)
 	}
 
 	return nil
 }
 
-func (kkb KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
-	deploymentsList, err := kkb.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
+func (backendCore KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+	deploymentsList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "an error occurred while trying to clean the the stopped engine containers with labels %v", engineLabels)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to clean the the stopped engine containers with labels %+v", engineLabels)
 	}
 
 	successfullyDestroyedEngineNames := []string{}
@@ -189,8 +182,8 @@ func (kkb KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context.Context
 
 	if len(deploymentsList.Items) > 0 {
 		for _, deployment := range deploymentsList.Items {
-			if !kkb.checkIfContainerisRunning(deployment) {
-				err = kkb.cleanEngineServer(ctx, deployment.Name)
+			if !backendCore.checkIfContainerisRunning(deployment) {
+				err = backendCore.cleanEngineServer(ctx, deployment.Name)
 				if err != nil {
 					removeEngineErrors = append(removeEngineErrors, err)
 				} else {
@@ -203,38 +196,38 @@ func (kkb KurtosisKubernetesBackendCore) CleanStoppedEngines(ctx context.Context
 	return successfullyDestroyedEngineNames, removeEngineErrors, nil
 }
 
-func (kkb KurtosisKubernetesBackendCore) checkIfContainerisRunning(deployment v1.Deployment) bool {
+func (backendCore KurtosisKubernetesBackendCore) checkIfContainerisRunning(deployment v1.Deployment) bool {
 	return *deployment.Spec.Replicas > 0
 }
 
-func (kkb KurtosisKubernetesBackendCore) cleanEngineServer(ctx context.Context, name string) error {
-	err := kkb.kubernetesManager.RemoveDeployment(ctx, kurtosisEngineNamespace, name)
+func (backendCore KurtosisKubernetesBackendCore) cleanEngineServer(ctx context.Context, name string) error {
+	err := backendCore.kubernetesManager.RemoveDeployment(ctx, kurtosisEngineNamespace, name)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while trying to delete the deployment from the engine with name %s", name)
+		return stacktrace.Propagate(err, "An error occurred while trying to delete the deployment from the engine with name %s", name)
 	}
 
-	err = kkb.kubernetesManager.RemovePersistentVolumeClaim(ctx, kurtosisEngineNamespace, name)
+	err = backendCore.kubernetesManager.RemovePersistentVolumeClaim(ctx, kurtosisEngineNamespace, name)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while trying to delete the persistent volume claim from the engine with name %s", name)
+		return stacktrace.Propagate(err, "An error occurred while trying to delete the persistent volume claim from the engine with name %s", name)
 	}
 
-	err = kkb.kubernetesManager.RemovePersistentVolume(ctx, name)
+	err = backendCore.kubernetesManager.RemovePersistentVolume(ctx, name)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while trying to delete the persistent volume from the engine with name %s", name)
+		return stacktrace.Propagate(err, "An error occurred while trying to delete the persistent volume from the engine with name %s", name)
 	}
 
-	err = kkb.kubernetesManager.RemoveService(ctx, kurtosisEngineNamespace, name)
+	err = backendCore.kubernetesManager.RemoveService(ctx, kurtosisEngineNamespace, name)
 	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred while trying to delete the service from the engine with name %s", name)
+		return stacktrace.Propagate(err, "An error occurred while trying to delete the service from the engine with name %s", name)
 	}
 
 	return nil
 }
 
-func (kkb KurtosisKubernetesBackendCore) GetEngineStatus(
+func (backendCore KurtosisKubernetesBackendCore) GetEngineStatus(
 	ctx context.Context,
 ) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
-	deploymentList, err := kkb.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
+	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
 	if err != nil {
 		return "", nil, 0, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine deployments")
 	}
@@ -257,7 +250,7 @@ func (kkb KurtosisKubernetesBackendCore) GetEngineStatus(
 
 	engineDeployment := deployments[0]
 
-	service, err := kkb.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
+	service, err := backendCore.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
 
 	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
 

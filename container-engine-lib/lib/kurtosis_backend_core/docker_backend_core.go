@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	container_status_calculator "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers"
-	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -85,20 +84,20 @@ func NewDockerBackendCore(log *logrus.Logger, dockerManager *docker_manager.Dock
 	}
 }
 
-func (kdb *KurtosisDockerBackendCore) CreateEngine(
+func (backendCore *KurtosisDockerBackendCore) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
-	containerImage string,
-	engineServerArgs *args.EngineServerArgs,
+	imageOrgAndRepo string,
+	serializedEnvVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultErr error,
 ) {
-	matchingNetworks, err := kdb.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
+	matchingNetworks, err := backendCore.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
@@ -117,7 +116,7 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	engineAttrs, err := kdb.objAttrsProvider.ForEngineServer(listenPortNum)
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}
@@ -135,11 +134,6 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 		)
 	}
 
-	envVars, err := args.GetEnvFromArgs(engineServerArgs)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
-	}
-
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		enginePortObj: docker_manager.NewManualPublishingSpec(listenPortNum),
 	}
@@ -152,12 +146,12 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 
 	containerImageAndTag := fmt.Sprintf(
 		"%v:%v",
-		containerImage,
+		imageOrgAndRepo,
 		imageVersionTag,
 	)
 
 	// Best-effort pull attempt
-	if err = kdb.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+	if err = backendCore.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
 		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
 	}
 
@@ -166,7 +160,7 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 		engineAttrs.GetName(),
 		targetNetworkId,
 	).WithEnvironmentVariables(
-		envVars,
+		serializedEnvVars,
 	).WithBindMounts(
 		bindMounts,
 	).WithUsedPorts(
@@ -175,21 +169,21 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 		engineAttrs.GetLabels(),
 	).Build()
 
-	containerId, hostMachinePortBindings, err := kdb.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
 	}
 	shouldKillEngineContainer := true
 	defer func() {
 		if shouldKillEngineContainer {
-			if err := kdb.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf("Launching the engine server didn't complete successfully so we tried to kill the container we started, but doing so exited with an error:\n%v", err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill engine server with container ID '%v'!!!!!!", containerId)
 			}
 		}
 	}()
 
-	if err := waitForAvailability(ctx, kdb.dockerManager, containerId, listenPortNum); err != nil {
+	if err := waitForAvailability(ctx, backendCore.dockerManager, containerId, listenPortNum); err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
 	}
 
@@ -221,8 +215,8 @@ func (kdb *KurtosisDockerBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
-func (kdb *KurtosisDockerBackendCore) StopEngine(ctx context.Context) error {
-	matchingEngineContainers, err := kdb.dockerManager.GetContainersByLabels(
+func (backendCore *KurtosisDockerBackendCore) StopEngine(ctx context.Context) error {
+	matchingEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		engineLabels,
 		shouldGetStoppedContainersWhenCheckingForExistingEngines,
@@ -246,7 +240,7 @@ func (kdb *KurtosisDockerBackendCore) StopEngine(ctx context.Context) error {
 	for _, engineContainer := range matchingEngineContainers {
 		containerName := engineContainer.GetName()
 		containerId := engineContainer.GetId()
-		if err := kdb.dockerManager.StopContainer(ctx, containerId, engineStopTimeout); err != nil {
+		if err := backendCore.dockerManager.StopContainer(ctx, containerId, engineStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred stopping engine container '%v' with ID '%v'",
@@ -269,18 +263,18 @@ func (kdb *KurtosisDockerBackendCore) StopEngine(ctx context.Context) error {
 	return nil
 }
 
-func (kdb *KurtosisDockerBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
-	successfullyDestroyedContainerNames, containerDestructionErrors, err := kdb.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
+func (backendCore *KurtosisDockerBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+	successfullyDestroyedContainerNames, containerDestructionErrors, err := backendCore.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
 	}
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
-func (kkb *KurtosisDockerBackendCore) GetEngineStatus(
+func (backendCore *KurtosisDockerBackendCore) GetEngineStatus(
 	ctx context.Context,
 ) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
-	runningEngineContainers, err := kkb.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
+	runningEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
 		return "", nil, 0, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
@@ -328,6 +322,7 @@ func (kkb *KurtosisDockerBackendCore) GetEngineStatus(
 		return "", nil, 0, stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
 	}
 
+	// TODO This should be dynamic based on whether the KurtosisBackend is running inside, or outside, the container engine
 	hostMachineIpAddrStr := hostMachineEnginePortBinding.HostIP
 	hostMachineIp := net.ParseIP(hostMachineIpAddrStr)
 	if hostMachineIp == nil {
@@ -400,8 +395,8 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 	)
 }
 
-func (kdb *KurtosisDockerBackendCore) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
-	matchingContainers, err := kdb.dockerManager.GetContainersByLabels(
+func (backendCore *KurtosisDockerBackendCore) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
+	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		searchLabels,
 		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
@@ -433,7 +428,7 @@ func (kdb *KurtosisDockerBackendCore) cleanContainers(ctx context.Context, searc
 	for _, container := range containersToDestroy {
 		containerId := container.GetId()
 		containerName := container.GetName()
-		if err := kdb.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
 			removeContainerErrors = append(removeContainerErrors, wrappedErr)
 			continue

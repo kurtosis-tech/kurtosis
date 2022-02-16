@@ -7,6 +7,8 @@ import (
 	"net"
 )
 
+
+// these constants are here because they are being used for both kubernetes and docker backends core
 const (
 	// The location where the engine data directory (on the Docker host machine) will be bind-mounted
 	//  on the engine server
@@ -18,7 +20,6 @@ const (
 	shouldCleanRunningEngineContainers = false
 
 	EngineStatus_Stopped                                 = "STOPPED"
-	EngineStatus_Running                                 = "RUNNING"
 )
 
 var engineLabels = map[string]string{
@@ -26,7 +27,7 @@ var engineLabels = map[string]string{
 	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
-type KubernetesBackendCore interface {
+type KurtosisBackendCore interface {
 	CreateEngine(
 		ctx context.Context,
 		imageVersionTag string,
@@ -34,6 +35,7 @@ type KubernetesBackendCore interface {
 		listenPortNum uint16,
 		engineDataDirpathOnHostMachine string,
 		containerImage string,
+		serializedEnvVars map[string]string,
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPortNum uint16,

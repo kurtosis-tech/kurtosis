@@ -9,58 +9,59 @@ import (
 )
 
 type KurtosisBackend struct {
-	kurtosisBackendCore kurtosis_backend_core.KubernetesBackendCore
+	kurtosisBackendCore kurtosis_backend_core.KurtosisBackendCore
 	log                 *logrus.Logger
 }
 
-func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore kurtosis_backend_core.KubernetesBackendCore) *KurtosisBackend {
+func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore kurtosis_backend_core.KurtosisBackendCore) *KurtosisBackend {
 	return &KurtosisBackend{
 		log:                 log,
 		kurtosisBackendCore: kurtosisBackendCore,
 	}
 }
 
-func (kb *KurtosisBackend) CreateEngine(
+func (backend *KurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
-	containerImage string,
+	imageOrgAndRepo string,
+	serializedEnvVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultErr error,
 ) {
-	resultPublicIpAddr, resultPublicPortNum, resultErr = kb.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, containerImage)
-	if resultErr != nil {
-		return nil, 0, stacktrace.Propagate(resultErr, " an error ocurred while trying to create the kurtosis engine")
+	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, imageOrgAndRepo, serializedEnvVars)
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(resultErr, "An error occurred while trying to create the kurtosis engine")
 	}
-	return resultPublicIpAddr, resultPublicPortNum, resultErr
+	return publicIpAddr, publicPortNum, nil
 }
 
-func (kb *KurtosisBackend) StopEngine(ctx context.Context) error {
-	err := kb.kurtosisBackendCore.StopEngine(ctx)
+func (backend *KurtosisBackend) StopEngine(ctx context.Context) error {
+	err := backend.kurtosisBackendCore.StopEngine(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, " an error ocurred while trying to stop the kurtosis engine")
+		return stacktrace.Propagate(err, "An error occurred while trying to stop the kurtosis engine")
 	}
 	return nil
 }
 
-func (kb *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
-	engineNames, engineErrors, err := kb.kurtosisBackendCore.CleanStoppedEngines(ctx)
+func (backend *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+	engineNames, engineErrors, err := backend.kurtosisBackendCore.CleanStoppedEngines(ctx)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, " an error ocurred while trying to clean the kurtosis engines")
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to clean stopped Kurtosis engines")
 	}
 	return engineNames, engineErrors, nil
 }
 
-func (kb *KurtosisBackend) GetEngineStatus(
+func (backend *KurtosisBackend) GetEngineStatus(
 	ctx context.Context,
-) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
-	engineStatus, ipAddr, portNum, err = kb.kurtosisBackendCore.GetEngineStatus(ctx)
+) (resultEngineStatus string, resultPublicIpAddr net.IP, resultPortNum uint16, resultErr error) {
+	engineStatus, ipAddr, portNum, err := backend.kurtosisBackendCore.GetEngineStatus(ctx)
 	if err != nil {
-		return "", ipAddr, 0, stacktrace.Propagate(err, " an error ocurred while trying to get the engine status")
+		return "", ipAddr, 0, stacktrace.Propagate(err, "An error occurred while trying to get the engine status")
 	}
 	return engineStatus, ipAddr, portNum, nil
 }
