@@ -1,6 +1,6 @@
 import * as grpcWeb from 'grpc-web';
 
-import * as engine_service_pb from '../web/engine_service_pb';
+import * as engine_service_pb from './engine_service_pb';
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 
 

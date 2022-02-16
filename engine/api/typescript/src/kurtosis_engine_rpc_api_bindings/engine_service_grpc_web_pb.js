@@ -18,7 +18,7 @@ grpc.web = require('grpc-web');
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
 const proto = {};
-proto.engine_api = require('../web/engine_service_pb.d.ts');
+proto.engine_api = require('./engine_service_pb.js');
 
 /**
  * @param {string} hostname
