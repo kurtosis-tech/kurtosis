@@ -35,7 +35,7 @@ func (backend *KurtosisBackend) CreateEngine(
 ) {
 	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, imageOrgAndRepo, serializedEnvVars)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(resultErr, "An error occurred while trying to create the kurtosis engine")
+		return nil, 0, stacktrace.Propagate(resultErr, "An error occurred while trying to create the kurtosis engine with publicIpAddr '%v' and publicPortNum '%v'", publicIpAddr, publicPortNum)
 	}
 	return publicIpAddr, publicPortNum, nil
 }
