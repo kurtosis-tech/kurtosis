@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kubernetes_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -222,10 +223,10 @@ func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.C
 
 func (backendCore KubernetesKurtosisBackendCore) GetEngineStatus(
 	ctx context.Context,
-) (engineStatus string, ipAddr net.IP, portNum uint16, err error) {
+) (resultEngineStatus engine.EngineStatus, resultHostMachineIpAndPort *engine.HostMachineIpAndPort, resultEngineVersion string, resultErr error) {
 	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
 	if err != nil {
-		return "", nil, 0, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine deployments with labels '%+v' in namespace '%s'", engineLabels, kurtosisEngineNamespace)
+		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine deployments with labels '%+v' in namespace '%s'", engineLabels, kurtosisEngineNamespace)
 	}
 
 	var deployments []v1.Deployment
@@ -237,11 +238,11 @@ func (backendCore KubernetesKurtosisBackendCore) GetEngineStatus(
 
 	numRunningEngines := len(deployments)
 	if numRunningEngines > 1 {
-		return "", nil, 0, stacktrace.NewError("Cannot report engine status because we found '%v' running Kurtosis engines; this is very strange as there should never be more than one", numRunningEngines)
+		return "", nil, "", stacktrace.NewError("Cannot report engine status because we found '%v' running Kurtosis engines; this is very strange as there should never be more than one", numRunningEngines)
 	}
 
 	if numRunningEngines == 0 {
-		return EngineStatus_Stopped, nil, 0, nil
+		return engine.EngineStatus_Stopped, nil, "", nil
 	}
 
 	engineDeployment := deployments[0]
@@ -253,7 +254,7 @@ func (backendCore KubernetesKurtosisBackendCore) GetEngineStatus(
 	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
 	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
 	if err != nil {
-		return "", nil, 0, stacktrace.Propagate(
+		return "", nil, "", stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
@@ -263,5 +264,20 @@ func (backendCore KubernetesKurtosisBackendCore) GetEngineStatus(
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
 
-	return "", publicIpAddr, publicPortNumUint16, nil
+	runningEngineIpAndPort := &engine.HostMachineIpAndPort{
+		IpAddr:  publicIpAddr,
+		PortNum: publicPortNumUint16,
+	}
+	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
+	if err != nil {
+		return engine.EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
+	}
+	defer clientCloseFunc()
+
+	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
+	if err != nil {
+		return engine.EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
+	}
+
+	return engine.EngineStatus_Running, runningEngineIpAndPort, engineInfo.GetEngineVersion(), nil
 }

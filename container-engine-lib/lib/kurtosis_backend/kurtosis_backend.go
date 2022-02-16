@@ -3,6 +3,7 @@ package kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -58,10 +59,10 @@ func (backend *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]stri
 
 func (backend *KurtosisBackend) GetEngineStatus(
 	ctx context.Context,
-) (resultEngineStatus string, resultPublicIpAddr net.IP, resultPortNum uint16, resultErr error) {
-	engineStatus, ipAddr, portNum, err := backend.kurtosisBackendCore.GetEngineStatus(ctx)
+) (resultEngineStatus engine.EngineStatus, resultHostMachineIpAndPort *engine.HostMachineIpAndPort, resultEngineVersion string, resultErr error) {
+	engineStatus, hostMachineIpAndPort, engineVersion, err := backend.kurtosisBackendCore.GetEngineStatus(ctx)
 	if err != nil {
-		return "", ipAddr, 0, stacktrace.Propagate(err, "An error occurred while trying to get the engine status")
+		return "", nil, "", stacktrace.Propagate(err, "An error occurred while trying to get the engine status")
 	}
-	return engineStatus, ipAddr, portNum, nil
+	return engineStatus, hostMachineIpAndPort, engineVersion, nil
 }

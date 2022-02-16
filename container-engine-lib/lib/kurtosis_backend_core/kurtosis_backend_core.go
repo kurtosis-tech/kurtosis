@@ -2,11 +2,11 @@ package kurtosis_backend_core
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/sirupsen/logrus"
 	"net"
 )
-
 
 // these constants are here because they are being used for both kubernetes and docker backends core
 const (
@@ -18,12 +18,10 @@ const (
 	publicPortNumParsingUintBits = 16
 
 	shouldCleanRunningEngineContainers = false
-
-	EngineStatus_Stopped                                 = "STOPPED"
 )
 
 var engineLabels = map[string]string{
-	forever_constants.AppIDLabel: forever_constants.AppIDValue,
+	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
 	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
@@ -45,5 +43,5 @@ type KurtosisBackendCore interface {
 	CleanStoppedEngines(ctx context.Context) ([]string, []error, error)
 	GetEngineStatus(
 		ctx context.Context,
-	) (engineStatus string, ipAddr net.IP, portNum uint16, err error)
+	) (engineStatus engine.EngineStatus, hostMachineIpAndPort *engine.HostMachineIpAndPort, engineVersion string, err error)
 }
