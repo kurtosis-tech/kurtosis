@@ -144,9 +144,8 @@ func (cmd *EngineConsumingKurtosisCommand)  getRunFunc() func(context.Context, *
 		if err := cmd.RunFunc(ctx, dockerManager, engineClient, flags, args); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred calling the run function for command '%v' with short description '%v'; this is a bug in Kurtosis!",
+				"An error occurred calling the run function for command '%v'",
 				cmd.CommandStr,
-				cmd.ShortDescription,
 			)
 		}
 

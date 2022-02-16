@@ -56,6 +56,32 @@ type LowlevelKurtosisCommand struct {
 // This function is intended to be run in an init() (i.e. before the program runs any logic), so it will panic if
 //  any errors occur
 func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command {
+	// Verify basic things (e.g. command string & run function) are provided
+	if strings.TrimSpace(kurtosisCmd.CommandStr) == "" {
+		panic(stacktrace.NewError(
+			"A Kurtosis command must have a command string",
+		))
+	}
+	if strings.TrimSpace(kurtosisCmd.ShortDescription) == "" {
+		panic(stacktrace.NewError(
+			"A short description must be defined for command '%v'",
+			kurtosisCmd.CommandStr,
+		))
+	}
+	if strings.TrimSpace(kurtosisCmd.LongDescription) == "" {
+		panic(stacktrace.NewError(
+			"A long description must be defined for command '%v'",
+			kurtosisCmd.CommandStr,
+		))
+	}
+	if kurtosisCmd.RunFunc == nil {
+		panic(stacktrace.NewError(
+			"A run function must be defined for command '%v'",
+			kurtosisCmd.CommandStr,
+		))
+	}
+
+
 	// Verify no duplicate flag keys
 	usedFlagKeys := map[string]bool{}
 	for _, flagConfig := range kurtosisCmd.Flags {

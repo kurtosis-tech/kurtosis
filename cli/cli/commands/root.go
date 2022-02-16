@@ -91,7 +91,7 @@ func init() {
 	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(clean.CleanCmd)
+	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 }
 

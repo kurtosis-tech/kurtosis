@@ -18,6 +18,6 @@ var ConfigCmd = &cobra.Command{
 }
 
 func init() {
-	ConfigCmd.AddCommand(init_config.InitCmd)
+	ConfigCmd.AddCommand(init_config.InitCmd.MustGetCobraCommand())
 }
 
