@@ -7,7 +7,8 @@
 * Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
 * Added tab-completion & enclave ID validation to `enclave rm` command
 * Added a `EngineConsumingKurtosisCommand` to make it easier to write commands that use the engine
-* Ported `clean` to the new `KurtosisCommand` framework
+* Ported `clean` and `config init` to the new `KurtosisCommand` framework
+* Added a `SetSelectionArg` for easily creating arguments that choose from a set (with tab-complete, of course)
 
 ### Changes
 * Switched `enclave rm` to use the new command framework
