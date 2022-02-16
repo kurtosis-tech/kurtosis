@@ -1,6 +1,7 @@
 # TBD
 ### Features
 * `service shell` will first try to find & use `bash` before dropping down to `sh`
+* Add a test to ensure that new versions of the CLI don't break compatibility with enclaves started under an old version
 * Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
 * Added flags to `KurtosisCommand`
 * Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
