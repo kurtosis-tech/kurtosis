@@ -28,8 +28,7 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 			return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but didn't find one", argKey)
 		}
 		if _, found := validValues[value]; !found {
-			return stacktrace.Propagate(
-				err,
+			return stacktrace.NewError(
 				"Value for arg '%v' was '%v' must be in set {%v}",
 				argKey,
 				value,
