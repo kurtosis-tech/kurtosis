@@ -1,5 +1,7 @@
 # TBD
 
+# 1.39.2
+
 ### Fixes
 * Restore `ApiContainerServiceClient` export from TS lib index, in order not to break previous Kurtosis Engine versions
 
