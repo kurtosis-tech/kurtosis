@@ -1,4 +1,4 @@
-package kurtosis_command
+package args
 
 const (
 	arg1Key = "arg1"

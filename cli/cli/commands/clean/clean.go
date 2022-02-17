@@ -4,27 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/container_status_calculator"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"sort"
 	"strings"
 )
 
 const (
-	shouldCleanAllArgs = "all"
-
-	defaultShouldCleanAll = false
+	shouldCleanRunningEnclavesFlagKey = "all"
+	defaultShouldCleanRunningEnclaves = "false"
 
 	shouldCleanRunningEngineContainers = false
 
@@ -35,48 +32,43 @@ const (
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
+
+	dockerManagerCtxKey = "docker-manager"
+	engineClientCtxKey = "engine-client"
 )
 
-var CleanCmd = &cobra.Command{
-	Use:   command_str_consts.CleanCmdStr,
-	Short: "Cleans up Kurtosis leftover artifacts",
-	Long: fmt.Sprintf(
+var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:              command_str_consts.CleanCmdStr,
+	ShortDescription: "Cleans up Kurtosis leftover artifacts",
+	LongDescription: fmt.Sprintf(
 		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
-		shouldCleanAllArgs,
+		shouldCleanRunningEnclavesFlagKey,
 	),
-	RunE: run,
+	DockerManagerContextKey: dockerManagerCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       shouldCleanRunningEnclavesFlagKey,
+			Usage:     "If set, removes running enclaves as well",
+			Shorthand: "a",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldCleanRunningEnclaves,
+		},
+	},
+	RunFunc:                 run,
 }
 
-var shouldCleanAll bool
-
-func init() {
-	CleanCmd.Flags().BoolVarP(
-		&shouldCleanAll,
-		shouldCleanAllArgs,
-		"a",
-		defaultShouldCleanAll,
-		"If set, removes running enclaves as well",
-	)
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func run(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	shouldCleanAll, err := flags.GetBool(shouldCleanRunningEnclavesFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", shouldCleanAll)
 	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
 
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
@@ -86,7 +78,7 @@ func run(cmd *cobra.Command, args []string) error {
 		},
 		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
-			return cleanEnclaves(ctx, engineClient)
+			return cleanEnclaves(ctx, engineClient, shouldCleanAll)
 		},
 	}
 
@@ -142,7 +134,7 @@ func cleanStoppedEngineContainers(ctx context.Context, dockerManager *docker_man
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
-func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) ([]string, []error, error) {
+func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient, shouldCleanAll bool) ([]string, []error, error) {
 	cleanArgs := &kurtosis_engine_rpc_api_bindings.CleanArgs{ShouldCleanAll: shouldCleanAll}
 	cleanResp, err := engineClient.Clean(ctx, cleanArgs)
 	if err != nil {

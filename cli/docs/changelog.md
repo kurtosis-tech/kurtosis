@@ -1,5 +1,25 @@
 # TBD
 
+# 0.11.1
+### Features
+* `service shell` will first try to find & use `bash` before dropping down to `sh`
+* Add a test to ensure that new versions of the CLI don't break compatibility with enclaves started under an old version
+* Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+* Added flags to `KurtosisCommand`
+* Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
+* Added tab-completion & enclave ID validation to `enclave rm` command
+* Added a `EngineConsumingKurtosisCommand` to make it easier to write commands that use the engine
+* Ported `clean` and `config init` to the new `KurtosisCommand` framework
+* Added a `SetSelectionArg` for easily creating arguments that choose from a set (with tab-complete, of course)
+
+### Changes
+* Switched `enclave rm` to use the new command framework
+* Switched `enclave rm` and `enclave inspect` to use the `NewEnclaveIDArg` component
+
+### Fixes
+* Made the error traces easier to read when `enclave rm` fails
+* Made the `LowlevelKurtosisCommand` unit tests less likely to experience false negatives
+
 # 0.11.0
 ### Fixes
 * Fixed several bugs that were causing product analytics events to get dropped for users who had opted in
@@ -69,7 +89,6 @@
 ### Features
 * The enclave ID argument to `enclave inspect` is now tab-completable
 * Added a "Debugging User Issues" section to the README
-* Added a wrapper over the `CobraCmd` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
 
 ### Changes
 * Upgraded the engine server to 1.9.1

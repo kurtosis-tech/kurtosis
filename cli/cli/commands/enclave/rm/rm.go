@@ -4,73 +4,83 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"sort"
 	"strings"
 )
 
 const (
-	shouldForceRemoveArg = "force"
-	enclaveIdArg        = "enclave-id"
+	enclaveIdArgKey = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = true
 
-	defaultShouldForceRemove = false
+	shouldForceRemoveFlagKey = "force"
+	defaultShouldForceRemove = "false"
+
+	dockerManagerCtxKey = "docker-manager"
+	engineClientCtxKey = "engine-client"
 )
 
-var RmCmd = &cobra.Command{
-	Use:   command_str_consts.EnclaveRmCmdStr + " [flags] " + enclaveIdArg + " [" + enclaveIdArg + "...]",
-	DisableFlagsInUseLine: true,
-	Short: "Destroys the specified enclaves",
-	Long: "Destroys the specified enclaves, removing all resources associated with them",
-	RunE:  run,
+var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:              command_str_consts.EnclaveRmCmdStr,
+	ShortDescription:        "Destroys the specified enclaves",
+	LongDescription:         "Destroys the specified enclaves, removing all resources associated with them",
+	DockerManagerContextKey: dockerManagerCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       shouldForceRemoveFlagKey,
+			Usage:     "Deletes all enclaves, regardless of whether they're already stopped",
+			Shorthand: "f",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldForceRemove,
+		},
+	},
+	Args:                    []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+	},
+	RunFunc: run,
 }
 
-var shouldForceRemove bool
-
-func init() {
-	RmCmd.Flags().BoolVarP(
-		&shouldForceRemove,
-		shouldForceRemoveArg,
-		"f",
-		defaultShouldForceRemove,
-		"Deletes all enclaves, regardless of whether they're already stopped",
-	)
-
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	if len(args) == 0 {
-		return stacktrace.NewError("At least one enclave ID to remove must be provided")
+func run(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	enclaveIds, err := args.GetGreedyArg(enclaveIdArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
 	}
+
+	shouldForceRemove, err := flags.GetBool(shouldForceRemoveFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the force-removal flag value using key '%v'; this is a bug in Kurtosis!", shouldForceRemoveFlagKey)
+	}
+
+	logrus.Debugf("inputted enclave IDs: %+v", enclaveIds)
+
+	// Condense the enclave IDs down into a unique set, so we don't try to double-destroy an enclave
+	enclaveIdsToDestroy := getUniqueSortedEnclaveIDs(enclaveIds)
+
+	logrus.Debugf("Unique enclave IDs to destroy: %+v", enclaveIdsToDestroy)
 
 	logrus.Info("Destroying enclaves...")
-
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
-
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclaves to check that the ones to destroy are stopped")
@@ -78,9 +88,16 @@ func run(cmd *cobra.Command, args []string) error {
 	allEnclaveInfo := getEnclavesResp.EnclaveInfo
 
 	enclaveDestructionErrorStrs := []string{}
-	for _, enclaveId := range args {
-		if err := destroyEnclave(ctx, enclaveId, allEnclaveInfo, engineClient); err != nil {
-			enclaveDestructionErrorStrs = append(enclaveDestructionErrorStrs, err.Error())
+	for _, enclaveId := range enclaveIdsToDestroy {
+		if err := destroyEnclave(ctx, enclaveId, allEnclaveInfo, engineClient, shouldForceRemove); err != nil {
+			enclaveDestructionErrorStrs = append(
+				enclaveDestructionErrorStrs,
+				fmt.Sprintf(
+					">>>>>>>>>>>>>>>>> %v <<<<<<<<<<<<<<<<<\n%v",
+					enclaveId,
+					err.Error(),
+				),
+			)
 		}
 	}
 
@@ -100,7 +117,27 @@ func run(cmd *cobra.Command, args []string) error {
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func destroyEnclave(ctx context.Context, enclaveId string, allEnclaveInfo map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient) error {
+func getUniqueSortedEnclaveIDs(rawInput []string) []string {
+	uniqueEnclaveIds := map[string]bool{}
+	for _, inputId := range rawInput {
+		uniqueEnclaveIds[inputId] = true
+	}
+
+	result := []string{}
+	for inputId := range uniqueEnclaveIds {
+		result = append(result, inputId)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func destroyEnclave(
+	ctx context.Context,
+	enclaveId string,
+	allEnclaveInfo map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	shouldForceRemove bool,
+) error {
 	enclaveInfo, found := allEnclaveInfo[enclaveId]
 	if !found {
 		return stacktrace.NewError("No enclave '%v' exists", enclaveId)
@@ -122,7 +159,7 @@ func destroyEnclave(ctx context.Context, enclaveId string, allEnclaveInfo map[st
 			"Refusing to destroy enclave '%v' because its status is '%v'; to force its removal, rerun this command with the '%v' flag",
 			enclaveId,
 			enclaveStatus,
-			shouldForceRemoveArg,
+			shouldForceRemoveFlagKey,
 		)
 	}
 
