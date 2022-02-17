@@ -45,7 +45,7 @@ type KurtosisBackendCore interface {
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPortNum uint16,
-		isEngineStopped bool,
+		resultIsEngineStopped bool,
 		resultErr error,
 	)
 }
