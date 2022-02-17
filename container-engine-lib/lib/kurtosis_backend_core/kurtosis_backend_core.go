@@ -2,7 +2,6 @@ package kurtosis_backend_core
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -41,7 +40,12 @@ type KurtosisBackendCore interface {
 	)
 	StopEngine(ctx context.Context) error
 	CleanStoppedEngines(ctx context.Context) ([]string, []error, error)
-	GetEngineStatus(
+	GetEnginePublicIPAndPort(
 		ctx context.Context,
-	) (engineStatus engine.EngineStatus, hostMachineIpAndPort *engine.HostMachineIpAndPort, engineVersion string, err error)
+	) (
+		resultPublicIpAddr net.IP,
+		resultPublicPortNum uint16,
+		isEngineStopped bool,
+		err error,
+	)
 }

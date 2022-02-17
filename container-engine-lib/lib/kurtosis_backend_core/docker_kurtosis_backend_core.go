@@ -8,13 +8,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	container_status_calculator "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers/engine"
-	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"net"
 	"strconv"
 	"strings"
@@ -277,33 +273,38 @@ func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Co
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) GetEngineStatus(
+func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 	ctx context.Context,
-) (resultEngineStatus engine.EngineStatus, resultHostMachineIpAndPort *engine.HostMachineIpAndPort, engineVersion string, err error) {
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortNum uint16,
+	isEngineStopped bool,
+	err error,
+) {
 	runningEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {
-		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
+		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers")
 	}
 
 	numRunningEngineContainers := len(runningEngineContainers)
 	if numRunningEngineContainers > 1 {
-		return "", nil, "", stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
+		return nil, 0, false, stacktrace.NewError("Cannot report engine status because we found %v running Kurtosis engine containers; this is very strange as there should never be more than one", numRunningEngineContainers)
 	}
 	if numRunningEngineContainers == 0 {
-		return engine.EngineStatus_Stopped, nil, "", nil
+		return nil, 0, true, nil
 	}
 	engineContainer := runningEngineContainers[0]
 
 	currentlyRunningEngineContainerLabels := engineContainer.GetLabels()
 	objAttrPrivatePort, err := getPrivateEnginePort(currentlyRunningEngineContainerLabels)
 	if err != nil {
-		return "", nil, "", stacktrace.Propagate(err, "An error occurred getting the engine container's object attributes schema private port")
+		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting the engine container's object attributes schema private port")
 	}
 
 	privatePortObjAttrProto := objAttrPrivatePort.GetProtocol()
 	privatePortDockerProto, found := objAttrsSchemaPortProtosToDockerPortProtos[privatePortObjAttrProto]
 	if !found {
-		return "", nil, "", stacktrace.NewError(
+		return nil, 0, false, stacktrace.NewError(
 			"No Docker protocol was defined for obj attr proto '%v'; this is a bug in Kurtosis",
 			privatePortObjAttrProto,
 		)
@@ -315,7 +316,7 @@ func (backendCore *DockerKurtosisBackendCore) GetEngineStatus(
 		privatePortNumStr,
 	)
 	if err != nil {
-		return "", nil, "", stacktrace.Propagate(
+		return nil, 0, false, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine container Docker private port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
 			privatePortNumStr,
@@ -325,20 +326,20 @@ func (backendCore *DockerKurtosisBackendCore) GetEngineStatus(
 
 	hostMachineEnginePortBinding, found := engineContainer.GetHostPortBindings()[dockerPrivatePort]
 	if !found {
-		return "", nil, "", stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
+		return nil, 0, false, stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
 	}
 
 	// TODO This should be dynamic based on whether the KurtosisBackend is running inside, or outside, the container engine
 	hostMachineIpAddrStr := hostMachineEnginePortBinding.HostIP
 	hostMachineIp := net.ParseIP(hostMachineIpAddrStr)
 	if hostMachineIp == nil {
-		return "", nil, "", stacktrace.NewError("We got host machine IP '%v' for accessing the engine container, but it wasn't a valid IP", hostMachineIpAddrStr)
+		return nil, 0, false, stacktrace.NewError("We got host machine IP '%v' for accessing the engine container, but it wasn't a valid IP", hostMachineIpAddrStr)
 	}
 
 	hostMachinePortNumStr := hostMachineEnginePortBinding.HostPort
 	hostMachinePortNumUint64, err := strconv.ParseUint(hostMachinePortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
 	if err != nil {
-		return "", nil, "", stacktrace.Propagate(
+		return nil, 0, false, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine container host machine port num string '%v' using base '%v' and num bits '%v'",
 			hostMachinePortNumStr,
@@ -348,22 +349,7 @@ func (backendCore *DockerKurtosisBackendCore) GetEngineStatus(
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
 
-	runningEngineIpAndPort := &engine.HostMachineIpAndPort{
-		IpAddr:  hostMachineIp,
-		PortNum: hostMachinePortNumUint16,
-	}
-	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
-	if err != nil {
-		return engine.EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
-	}
-	defer clientCloseFunc()
-
-	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
-	if err != nil {
-		return engine.EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
-	}
-
-	return engine.EngineStatus_Running, runningEngineIpAndPort, engineInfo.GetEngineVersion(), nil
+	return hostMachineIp, hostMachinePortNumUint16, false, nil
 }
 
 // ====================================================================================================
@@ -512,31 +498,4 @@ func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[strin
 		)
 	}
 	return result, nil
-}
-func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *engine.HostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
-	url := fmt.Sprintf(
-		"%v:%v",
-		hostMachineIpAndPort.IpAddr.String(),
-		hostMachineIpAndPort.PortNum,
-	)
-	conn, err := grpc.Dial(url, grpc.WithInsecure())
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred dialling Kurtosis engine at URL '%v'", url)
-	}
-	engineClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
-	return engineClient, conn.Close, nil
-}
-
-func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_api_bindings.EngineServiceClient) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
-	ctxWithTimeout, cancelFunc := context.WithTimeout(ctx, waitForEngineResponseTimeout)
-	defer cancelFunc()
-	engineInfo, err := client.GetEngineInfo(ctxWithTimeout, &emptypb.Empty{}, grpc.WaitForReady(true))
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"Kurtosis engine server didn't return a response even with %v timeout",
-			waitForEngineResponseTimeout,
-		)
-	}
-	return engineInfo, nil
 }
