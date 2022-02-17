@@ -225,8 +225,8 @@ func (backendCore KubernetesKurtosisBackendCore) GetEnginePublicIPAndPort(
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
-	isEngineStopped bool,
-	err error,
+	resultIsEngineStopped bool,
+	resultErr error,
 ) {
 	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
 	if err != nil {

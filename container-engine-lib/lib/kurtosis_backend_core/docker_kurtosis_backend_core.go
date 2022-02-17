@@ -278,8 +278,8 @@ func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
-	isEngineStopped bool,
-	err error,
+	resultIsEngineStopped bool,
+	resultErr error,
 ) {
 	runningEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineLabels, shouldGetStoppedContainersWhenCheckingForExistingEngines)
 	if err != nil {

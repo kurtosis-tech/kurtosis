@@ -62,7 +62,7 @@ func (backend *KurtosisBackend) GetEnginePublicIPAndPort(
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultIsEngineStopped bool,
-	err error,
+	resultErr error,
 ) {
 	publicIpAddr, publicPortNum, isEngineStopped, err := backend.kurtosisBackendCore.GetEnginePublicIPAndPort(ctx)
 	if err != nil {
