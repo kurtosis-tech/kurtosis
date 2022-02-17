@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.1
 ### Features
 * `service shell` will first try to find & use `bash` before dropping down to `sh`
 * Add a test to ensure that new versions of the CLI don't break compatibility with enclaves started under an old version
