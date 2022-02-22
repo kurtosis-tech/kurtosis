@@ -1,4 +1,9 @@
 # TBD
+### Changes
+* Upgraded to the following, which contain dormant Kubernetes code:
+    * container-engine-lib 0.8.7
+    * core 1.39.3
+    * engine 1.11.1
 
 # 0.11.2
 ### Features
