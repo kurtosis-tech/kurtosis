@@ -29,7 +29,7 @@ const (
 	defaultApiContainerVersionTag = ""
 )
 
-var apiContainerLogLevel = logrus.InfoLevel
+var apiContainerLogLevel = logrus.DebugLevel
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 type KurtosisContext struct {

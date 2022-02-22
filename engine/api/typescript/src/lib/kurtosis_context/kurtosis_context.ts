@@ -29,7 +29,7 @@ const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
-const API_CONTAINER_LOG_LEVEL: string = "info";
+const API_CONTAINER_LOG_LEVEL: string = "debug";
 
 export const DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM: number = 9710;
 

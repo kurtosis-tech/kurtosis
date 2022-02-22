@@ -4,8 +4,10 @@ go 1.15
 
 require (
 	github.com/docker/go-connections v0.4.0
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20211116225347-a5bd1c49b423
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220222221450-857e15a05dbc
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220215113756-abe2c0a2dd75
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
+	golang.org/x/net v0.0.0-20210913180222-943fd674d43e // indirect
+	google.golang.org/grpc v1.40.0 // indirect
 )
