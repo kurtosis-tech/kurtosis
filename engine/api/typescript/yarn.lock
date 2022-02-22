@@ -104,6 +104,11 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.11.tgz#6ea7342dfb379ea1210835bada87b3c512120234"
   integrity sha512-KB0sixD67CeecHC33MYn+eYARkqTheIRNuu97y2XMjR7Wu3XibO1vaY6VBV6O/a89SPI81cEUIYT87UqUWlZNw==
 
+"@types/path-browserify@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/path-browserify/-/path-browserify-1.0.0.tgz#294ec6e88b6b0d340a3897b7120e5b393f16690e"
+  integrity sha512-XMCcyhSvxcch8b7rZAtFAaierBYdeHXVvg2iYnxOV0MCQHmPuRRmGZPFDRzPayxcGiiSL1Te9UIO+f3cuj0tfw==
+
 "@types/semver@^7.3.9":
   version "7.3.9"
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-7.3.9.tgz#152c6c20a7688c30b967ec1841d31ace569863fc"
@@ -378,6 +383,11 @@ growl@1.10.5:
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
 
+grpc-web@^1.3.0:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/grpc-web/-/grpc-web-1.3.1.tgz#6d8affe75a103790b7ad570824e765a1d6a418e4"
+  integrity sha512-VxyYEAGsatecAFY3xieRDzsuhm92yQBsJD7fd5Z3MY150hZWPwkrUWetzJ0QK5W0uym4+VedPQrei38wk0eIjQ==
+
 has-flag@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/has-flag/-/has-flag-4.0.0.tgz#944771fd9c81c81265c4d6941860da06bb59479b"
@@ -459,16 +469,19 @@ json5@^1.0.1:
   dependencies:
     minimist "^1.2.0"
 
-kurtosis-core-api-lib@1.39.0:
-  version "1.39.0"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.0.tgz#ea0ad2307562d6c3d2734d7ad8fac8e12b7b4a94"
-  integrity sha512-PXyBnXGzy8FZKsL8Fp2egBX3c0iCaIQA9TDUuoGVvgOGPXBtlqZTdQaRhooTPKG4LfuGM+3RkQnS40IQoLROsw==
+kurtosis-core-api-lib@1.39.3:
+  version "1.39.3"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.3.tgz#6ead5ff5643256e5b2fe425194d78b96df4f7d95"
+  integrity sha512-V21jAGJOirXU2rmq0ANK0oWbBU6APd7ZDOudm3BKPR7XNon6N5cwMPStkXmP9hVUDd2Sw+E+KBFerUUSQtvnjA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
+    "@types/path-browserify" "^1.0.0"
     google-protobuf "^3.19.1"
+    grpc-web "^1.3.0"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
+    path-browserify "^1.0.1"
 
 locate-path@^6.0.0:
   version "6.0.0"
@@ -606,6 +619,11 @@ p-locate@^5.0.0:
   integrity sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==
   dependencies:
     p-limit "^3.0.2"
+
+path-browserify@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/path-browserify/-/path-browserify-1.0.1.tgz#d98454a9c3753d5790860f16f68867b9e46be1fd"
+  integrity sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==
 
 path-exists@^4.0.0:
   version "4.0.0"
