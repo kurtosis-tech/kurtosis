@@ -2,18 +2,17 @@ package kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
 )
 
 type KurtosisBackend struct {
-	kurtosisBackendCore kurtosis_backend_core.KurtosisBackendCore
+	kurtosisBackendCore KurtosisBackendCore
 	log                 *logrus.Logger
 }
 
-func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore kurtosis_backend_core.KurtosisBackendCore) *KurtosisBackend {
+func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore KurtosisBackendCore) *KurtosisBackend {
 	return &KurtosisBackend{
 		log:                 log,
 		kurtosisBackendCore: kurtosisBackendCore,

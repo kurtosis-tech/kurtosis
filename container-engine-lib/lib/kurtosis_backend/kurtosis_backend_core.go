@@ -1,4 +1,4 @@
-package kurtosis_backend_core
+package kurtosis_backend
 
 import (
 	"context"

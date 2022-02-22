@@ -1,4 +1,4 @@
-package kurtosis_backend_core
+package docker
 
 import (
 	"bytes"
@@ -7,7 +7,9 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
 	container_status_calculator "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -29,10 +31,10 @@ const (
 	// The protocol string we use in the netstat command used to ensure the engine container is available
 	netstatWaitForAvailabilityPortProtocol = "tcp"
 
-	maxWaitForAvailabilityRetries         = 10
-	timeBetweenWaitForAvailabilityRetries = 1 * time.Second
+	maxWaitForEngineAvailabilityRetries         = 10
+	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 
-	availabilityWaitingExecCmdSuccessExitCode = 0
+	engineAvailabilityWaitingExecCmdSuccessExitCode = 0
 
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 
@@ -59,8 +61,16 @@ const (
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
 
+	shouldCleanRunningEngineContainers = false
+
 	waitForEngineResponseTimeout = 5 * time.Second
 )
+
+var engineLabels = map[string]string{
+	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
+	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
+	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
+}
 
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
 var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
@@ -143,7 +153,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
 		dockerSocketFilepath:           dockerSocketFilepath,
-		engineDataDirpathOnHostMachine: EngineDataDirpathOnEngineServerContainer,
+		engineDataDirpathOnHostMachine: kurtosis_backend.EngineDataDirpathOnEngineServerContainer,
 	}
 
 	containerImageAndTag := fmt.Sprintf(
@@ -201,14 +211,12 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	}
 
 	publicPortNumStr := hostMachineEnginePortBinding.HostPort
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
-			publicPortNumParsingBase,
-			publicPortNumParsingUintBits,
 		)
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
@@ -366,17 +374,17 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 		"-c",
 		commandStr,
 	}
-	for i := 0; i < maxWaitForAvailabilityRetries; i++ {
+	for i := 0; i < maxWaitForEngineAvailabilityRetries; i++ {
 		outputBuffer := &bytes.Buffer{}
 		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
 		if err == nil {
-			if exitCode == availabilityWaitingExecCmdSuccessExitCode {
+			if exitCode == engineAvailabilityWaitingExecCmdSuccessExitCode {
 				return nil
 			}
 			logrus.Debugf(
 				"Engine server availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
 				commandStr,
-				availabilityWaitingExecCmdSuccessExitCode,
+				engineAvailabilityWaitingExecCmdSuccessExitCode,
 				exitCode,
 				outputBuffer.String(),
 			)
@@ -389,16 +397,16 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 		}
 
 		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxWaitForAvailabilityRetries {
-			time.Sleep(timeBetweenWaitForAvailabilityRetries)
+		if i < maxWaitForEngineAvailabilityRetries {
+			time.Sleep(timeBetweenWaitForEngineAvailabilityRetries)
 		}
 	}
 
 	return stacktrace.NewError(
 		"The engine server didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
 		commandStr,
-		maxWaitForAvailabilityRetries,
-		timeBetweenWaitForAvailabilityRetries,
+		maxWaitForEngineAvailabilityRetries,
+		timeBetweenWaitForEngineAvailabilityRetries,
 	)
 }
 

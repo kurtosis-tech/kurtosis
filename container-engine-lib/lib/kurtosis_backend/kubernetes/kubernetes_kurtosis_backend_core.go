@@ -1,9 +1,11 @@
-package kurtosis_backend_core
+package kubernetes
 
 import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kubernetes_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -14,14 +16,26 @@ import (
 )
 
 const (
-	kurtosisEngineNamespace   = "kurtosis-namespace"
-	kurtosisEngineReplicas    = 1
-	storageClass              = "standard"
-	defaultQuantity           = "10Gi"
-	defaultHostPathInMinikube = "/host/data/engine-data"
-	externalServiceType       = "LoadBalancer"
-	zeroReplicas              = 0
+	kurtosisEngineNamespace    = "kurtosis-namespace"
+	numKurtosisEngineReplicas  = 1
+	storageClass               = "standard"
+	defaultQuantity            = "10Gi"
+	defaultHostPathInMinikube  = "/host/data/engine-data"
+	externalServiceType        = "LoadBalancer"
+	numReplicasToStopContainer = 0
+
+	// Engine container port number string parsing constants
+	hostMachinePortNumStrParsingBase = 10
+	hostMachinePortNumStrParsingBits = 16
+
+	shouldCleanRunningEngineContainers = false
 )
+
+var engineLabels = map[string]string{
+	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
+	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
+	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
+}
 
 type KubernetesKurtosisBackendCore struct {
 	log *logrus.Logger
@@ -124,12 +138,12 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	volumeMounts := []apiv1.VolumeMount{
 		{
 			Name:      engineAttrs.GetName(),
-			MountPath: EngineDataDirpathOnEngineServerContainer,
+			MountPath: kurtosis_backend.EngineDataDirpathOnEngineServerContainer,
 		},
 	}
 
 	// creating deployment
-	_, err = backendCore.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, kurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
+	_, err = backendCore.kubernetesManager.CreateDeployment(ctx, engineAttrs.GetName(), kurtosisEngineNamespace, engineAttrs.GetLabels(), engineAttrsForPod.GetLabels(), containerImageAndTag, numKurtosisEngineReplicas, volumes, volumeMounts, envVars, engineAttrs.GetName())
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred while creating the deployment with name '%s' in namespace '%s' with image '%s'", engineAttrs.GetName(), kurtosisEngineNamespace, containerImageAndTag)
 	}
@@ -143,14 +157,14 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
 
 	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
-			publicPortNumParsingBase,
-			publicPortNumParsingUintBits,
+			hostMachinePortNumStrParsingBase,
+			hostMachinePortNumStrParsingBits,
 		)
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
@@ -158,8 +172,63 @@ func (backendCore KubernetesKurtosisBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
+// TODO Replace with a GetEngine command to get information about the engine
+func (backendCore KubernetesKurtosisBackendCore) GetEnginePublicIPAndPort(
+	ctx context.Context,
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortNum uint16,
+	resultIsEngineStopped bool,
+	resultErr error,
+) {
+	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
+	if err != nil {
+		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine deployment with labels '%+v' in namespace '%s'", engineLabels, kurtosisEngineNamespace)
+	}
+
+	var deployments []v1.Deployment
+	for _, deployment := range deploymentList.Items {
+		if *deployment.Spec.Replicas > 0 {
+			deployments = append(deployments, deployment)
+		}
+	}
+
+	numRunningEngines := len(deployments)
+	if numRunningEngines > 1 {
+		return nil, 0, false, stacktrace.NewError("Cannot report engine status because we found '%v' running Kurtosis engines; this is very strange as there should never be more than one", numRunningEngines)
+	}
+
+	if numRunningEngines == 0 {
+		return nil, 0, true, nil
+	}
+
+	engineDeployment := deployments[0]
+
+	service, err := backendCore.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
+	if err != nil {
+		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine service with name '%s' in namespace '%s'", engineDeployment.Name, kurtosisEngineNamespace)
+	}
+
+	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
+
+	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
+	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	if err != nil {
+		return nil, 0, false, stacktrace.Propagate(
+			err,
+			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
+			publicPortNumStr,
+			hostMachinePortNumStrParsingBase,
+			hostMachinePortNumStrParsingBits,
+		)
+	}
+	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+
+	return publicIpAddr, publicPortNumUint16, false, nil
+}
+
 func (backendCore KubernetesKurtosisBackendCore) StopEngine(ctx context.Context) error {
-	err := backendCore.kubernetesManager.UpdateDeploymentReplicas(ctx, kurtosisEngineNamespace, engineLabels, int32(zeroReplicas))
+	err := backendCore.kubernetesManager.UpdateDeploymentReplicas(ctx, kurtosisEngineNamespace, engineLabels, int32(numReplicasToStopContainer))
 	if err != nil {
 		stacktrace.Propagate(err, "An error occurred while trying to stop the engine server with labels '%+v'", engineLabels)
 	}
@@ -218,58 +287,4 @@ func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.C
 	}
 
 	return nil
-}
-
-func (backendCore KubernetesKurtosisBackendCore) GetEnginePublicIPAndPort(
-	ctx context.Context,
-) (
-	resultPublicIpAddr net.IP,
-	resultPublicPortNum uint16,
-	resultIsEngineStopped bool,
-	resultErr error,
-) {
-	deploymentList, err := backendCore.kubernetesManager.GetDeploymentsByLabels(ctx, kurtosisEngineNamespace, engineLabels)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine deployment with labels '%+v' in namespace '%s'", engineLabels, kurtosisEngineNamespace)
-	}
-
-	var deployments []v1.Deployment
-	for _, deployment := range deploymentList.Items {
-		if *deployment.Spec.Replicas > 0 {
-			deployments = append(deployments, deployment)
-		}
-	}
-
-	numRunningEngines := len(deployments)
-	if numRunningEngines > 1 {
-		return nil, 0, false, stacktrace.NewError("Cannot report engine status because we found '%v' running Kurtosis engines; this is very strange as there should never be more than one", numRunningEngines)
-	}
-
-	if numRunningEngines == 0 {
-		return nil, 0, true, nil
-	}
-
-	engineDeployment := deployments[0]
-
-	service, err := backendCore.kubernetesManager.GetServiceByName(ctx, kurtosisEngineNamespace, engineDeployment.Name)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting Kurtosis engine service with name '%s' in namespace '%s'", engineDeployment.Name, kurtosisEngineNamespace)
-	}
-
-	publicIpAddr := net.ParseIP(service.Spec.ClusterIP)
-
-	publicPortNumStr := string(service.Spec.Ports[0].NodePort)
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
-			publicPortNumStr,
-			publicPortNumParsingBase,
-			publicPortNumParsingUintBits,
-		)
-	}
-	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-
-	return publicIpAddr, publicPortNumUint16, false, nil
 }
