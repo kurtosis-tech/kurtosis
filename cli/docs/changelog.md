@@ -1,5 +1,10 @@
 # TBD
 
+# 0.11.2
+### Features
+* Detect if the CLI is running in non-interactive mode (i.e., in CI) and error if the InteractiveConfigInitializer is run
+* Add a test to verify that the CLI fails in non-interactive mode
+
 # 0.11.1
 ### Features
 * `service shell` will first try to find & use `bash` before dropping down to `sh`

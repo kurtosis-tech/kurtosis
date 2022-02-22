@@ -101,6 +101,16 @@ jobs:
           root: .
           paths: 
             - "./<< pipeline.parameters.cli-dist-home-relative-dirpath >>"
+  verify_no_config_init_fails:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      # This should actually fail because we haven't 'init'd the config (which is requierd when running in non-interactive mode)
+      - run: "! ${KURTOSIS_BINPATH} engine start"
 
   build_golang_testsuite:
     executor: ubuntu_vm
@@ -300,6 +310,14 @@ workflows:
       - test_old_enclave_continuity:
           context:
             - docker-user
+          requires:
+            - build_cli
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - verify_no_config_init_fails:
           requires:
             - build_cli
           filters:
