@@ -5,16 +5,16 @@
 
 import { ok, err, Result } from "neverthrow";
 import log from "loglevel";
+import * as path_browserify from "path-browserify";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
-import * as path_browserify from "path-browserify"
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import type {
-    PartitionConnectionInfo, 
-    PartitionServices, 
-    Port, 
-    RemoveServiceArgs, 
-    RepartitionArgs, 
+import {
+    PartitionConnectionInfo,
+    PartitionServices,
+    Port,
+    RemoveServiceArgs,
+    RepartitionArgs,
     StartServiceArgs,
     PartitionConnections,
     LoadModuleArgs,
@@ -27,27 +27,26 @@ import type {
     WaitForHttpPostEndpointAvailabilityArgs,
     ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import * as apiContainerServiceWeb from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GrpcNodeEnclaveContextBackend } from "./grpc_node_enclave_context_backend";
 import { GrpcWebEnclaveContextBackend } from "./grpc_web_enclave_context_backend";
-import type { EnclaveContextBackend } from "./generic_enclave_context_backend";
+import { GenericEnclaveContextBackend } from "./generic_enclave_context_backend";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import { newExecuteBulkCommandsArgs,
-    newGetModuleInfoArgs, 
-    newGetServiceInfoArgs, 
-    newLoadModuleArgs, 
-    newPartitionConnections, 
-    newPartitionServices, 
-    newPort, 
-    newRegisterFilesArtifactsArgs, 
-    newRegisterServiceArgs, 
-    newRemoveServiceArgs, 
-    newRepartitionArgs, 
-    newStartServiceArgs, 
-    newUnloadModuleArgs, 
-    newWaitForHttpGetEndpointAvailabilityArgs, 
-    newWaitForHttpPostEndpointAvailabilityArgs 
+    newGetModuleInfoArgs,
+    newGetServiceInfoArgs,
+    newLoadModuleArgs,
+    newPartitionConnections,
+    newPartitionServices,
+    newPort,
+    newRegisterFilesArtifactsArgs,
+    newRegisterServiceArgs,
+    newRemoveServiceArgs,
+    newRepartitionArgs,
+    newStartServiceArgs,
+    newUnloadModuleArgs,
+    newWaitForHttpGetEndpointAvailabilityArgs,
+    newWaitForHttpPostEndpointAvailabilityArgs
 } from "../constructor_calls";
 import { ContainerConfig, FilesArtifactID } from "../services/container_config";
 import { ServiceID } from "../services/service";
@@ -70,20 +69,49 @@ const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
-    private readonly backend: EnclaveContextBackend
-
+    private readonly backend: GenericEnclaveContextBackend
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    constructor(client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode, enclaveId: EnclaveID, enclaveDataDirpath: string){
-        if(client instanceof ApiContainerServiceClientWeb){
-            this.backend = new GrpcWebEnclaveContextBackend(client, enclaveId)
-        }else{
-            this.backend = new GrpcNodeEnclaveContextBackend(client, enclaveId)
-        }
+    private constructor(backend: GenericEnclaveContextBackend, enclaveDataDirpath: string){
+        this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
     }
-   
+
+    public static async newEnclaveContext(
+        ipAddress: string,
+        apiContainerHostMachinePort: string,
+        enclaveId: string,
+        enclaveDataDirpath: string
+    ): Promise<Result<EnclaveContext, Error>> {
+
+        let genericEnclaveContextBackend: GenericEnclaveContextBackend
+        try {
+            if(isExecutionEnvNode){
+                const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
+                const apiContainerServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb")
+
+                const apiContainerHostMachineGrpcUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
+                const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerHostMachineGrpcUrl, grpc_node.credentials.createInsecure());
+                genericEnclaveContextBackend = new GrpcNodeEnclaveContextBackend(apiContainerClient, enclaveId)
+            }else{
+                const apiContainerHostMachineGrpcProxyUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
+                const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerHostMachineGrpcProxyUrl);
+                genericEnclaveContextBackend = new GrpcWebEnclaveContextBackend(apiContainerClient, enclaveId)
+            }
+        }catch(error) {
+            if (error instanceof Error) {
+                return err(error);
+            }
+            return err(new Error(
+                "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + error
+            ));
+        }
+
+        const enclaveContext = new EnclaveContext(genericEnclaveContextBackend, enclaveDataDirpath);
+        return ok(enclaveContext)
+    }
+
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getEnclaveId(): EnclaveID {
         return this.backend.getEnclaveId();
@@ -92,7 +120,7 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async loadModule(moduleId: ModuleID, image: string, serializedParams: string): Promise<Result<ModuleContext, Error>> {
         const loadModuleArgs: LoadModuleArgs = newLoadModuleArgs(moduleId, image, serializedParams);
-        
+
         const loadModuleResult = await this.backend.loadModule(loadModuleArgs)
         if(loadModuleResult.isErr()){
             return err(loadModuleResult.error)
@@ -168,84 +196,84 @@ export class EnclaveContext {
             containerConfigSupplier: (ipAddr: string, sharedDirectory: SharedPath) => Result<ContainerConfig, Error>
         ): Promise<Result<ServiceContext, Error>> {
 
-            log.trace("Registering new service ID with Kurtosis API...");
+        log.trace("Registering new service ID with Kurtosis API...");
 
-            const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
+        const registerServiceArgs: RegisterServiceArgs = newRegisterServiceArgs(serviceId, partitionId);
 
-            const registerServiceResponseResult = await this.backend.registerService(registerServiceArgs)
-            if(registerServiceResponseResult.isErr()){
-                return err(registerServiceResponseResult.error)
-            }
-    
-            const registerServiceResponse = registerServiceResponseResult.value
-    
-            log.trace("New service successfully registered with Kurtosis API");
-    
-            const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
-            const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
-    
-            const sharedDirectory = await this.getSharedDirectory(relativeServiceDirpath)
-    
-            log.trace("Generating container config object using the container config supplier...")
-            const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
-            if (containerConfigSupplierResult.isErr()){
-                return err(containerConfigSupplierResult.error);
-            }
-            const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
-            log.trace("Container config object successfully generated")
-    
-            log.trace("Creating files artifact ID str -> mount dirpaths map...");
-            const artifactIdStrToMountDirpath: Map<string, string> = new Map();
-            for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
-    
-                artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
-            }
-            log.trace("Successfully created files artifact ID str -> mount dirpaths map");
-    
-            log.trace("Starting new service with Kurtosis API...");
-            const privatePorts = containerConfig.usedPorts;
-            const privatePortsForApi: Map<string, Port> = new Map();
-            for (const [portId, portSpec] of privatePorts.entries()) {
-                const portSpecForApi: Port = newPort(
-                    portSpec.number,
-                    portSpec.protocol,
-                )
-                privatePortsForApi.set(portId, portSpecForApi);
-            }
-            const startServiceArgs: StartServiceArgs = newStartServiceArgs(
-                serviceId, 
-                containerConfig.image,
-                privatePortsForApi,
-                containerConfig.entrypointOverrideArgs,
-                containerConfig.cmdOverrideArgs,
-                containerConfig.environmentVariableOverrides,
-                SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
-                artifactIdStrToMountDirpath);
-    
-            const startServiceResponseResult = await this.backend.startService(startServiceArgs)
-            if(startServiceResponseResult.isErr()){
-                return err(startServiceResponseResult.error)
-            }
-    
-            const startServiceResponse = startServiceResponseResult.value
-    
-            log.trace("Successfully started service with Kurtosis API");
-    
-            const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
-                startServiceResponse.getPublicPortsMap(),
-            );
-    
-            const serviceContext: ServiceContext = new ServiceContext(
-                this.backend.getClient(),
-                serviceId,
-                sharedDirectory,
-                privateIpAddr,
-                privatePorts,
-                startServiceResponse.getPublicIpAddr(),
-                serviceCtxPublicPorts,
-            );
+        const registerServiceResponseResult = await this.backend.registerService(registerServiceArgs)
+        if(registerServiceResponseResult.isErr()){
+            return err(registerServiceResponseResult.error)
+        }
 
-            return ok(serviceContext)
+        const registerServiceResponse = registerServiceResponseResult.value
+
+        log.trace("New service successfully registered with Kurtosis API");
+
+        const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
+        const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
+
+        const sharedDirectory = await this.getSharedDirectory(relativeServiceDirpath)
+
+        log.trace("Generating container config object using the container config supplier...")
+        const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
+        if (containerConfigSupplierResult.isErr()){
+            return err(containerConfigSupplierResult.error);
+        }
+        const containerConfig: ContainerConfig = containerConfigSupplierResult.value;
+        log.trace("Container config object successfully generated")
+
+        log.trace("Creating files artifact ID str -> mount dirpaths map...");
+        const artifactIdStrToMountDirpath: Map<string, string> = new Map();
+        for (const [filesArtifactId, mountDirpath] of containerConfig.filesArtifactMountpoints.entries()) {
+
+            artifactIdStrToMountDirpath.set(String(filesArtifactId), mountDirpath);
+        }
+        log.trace("Successfully created files artifact ID str -> mount dirpaths map");
+
+        log.trace("Starting new service with Kurtosis API...");
+        const privatePorts = containerConfig.usedPorts;
+        const privatePortsForApi: Map<string, Port> = new Map();
+        for (const [portId, portSpec] of privatePorts.entries()) {
+            const portSpecForApi: Port = newPort(
+                portSpec.number,
+                portSpec.protocol,
+            )
+            privatePortsForApi.set(portId, portSpecForApi);
+        }
+        const startServiceArgs: StartServiceArgs = newStartServiceArgs(
+            serviceId,
+            containerConfig.image,
+            privatePortsForApi,
+            containerConfig.entrypointOverrideArgs,
+            containerConfig.cmdOverrideArgs,
+            containerConfig.environmentVariableOverrides,
+            SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT,
+            artifactIdStrToMountDirpath);
+
+        const startServiceResponseResult = await this.backend.startService(startServiceArgs)
+        if(startServiceResponseResult.isErr()){
+            return err(startServiceResponseResult.error)
+        }
+
+        const startServiceResponse = startServiceResponseResult.value
+
+        log.trace("Successfully started service with Kurtosis API");
+
+        const serviceCtxPublicPorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
+            startServiceResponse.getPublicPortsMap(),
+        );
+
+        const serviceContext: ServiceContext = new ServiceContext(
+            this.backend.getClient(),
+            serviceId,
+            sharedDirectory,
+            privateIpAddr,
+            privatePorts,
+            startServiceResponse.getPublicIpAddr(),
+            serviceCtxPublicPorts,
+        );
+
+        return ok(serviceContext)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -260,21 +288,21 @@ export class EnclaveContext {
         const serviceInfo = getServiceInfoResult.value
         if (serviceInfo.getPrivateIpAddr() === "") {
             return err(new Error(
-                "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
+                    "Kurtosis API reported an empty private IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
         if (serviceInfo.getPublicIpAddr() === "") {
             return err(new Error(
-                "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
-                ) 
+                    "Kurtosis API reported an empty public IP address for service " + serviceId +  " - this should never happen, and is a bug with Kurtosis!",
+                )
             );
         }
 
         const relativeServiceDirpath: string = serviceInfo.getRelativeServiceDirpath();
         if (relativeServiceDirpath === "") {
             return err(new Error(
-                "Kurtosis API reported an empty relative service directory path for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
+                    "Kurtosis API reported an empty relative service directory path for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
@@ -282,7 +310,7 @@ export class EnclaveContext {
         const enclaveDataDirMountDirpathOnSvcContainer: string = serviceInfo.getEnclaveDataDirMountDirpath();
         if (enclaveDataDirMountDirpathOnSvcContainer === "") {
             return err(new Error(
-                "Kurtosis API reported an empty enclave data dir mount dirpath for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
+                    "Kurtosis API reported an empty enclave data dir mount dirpath for service " + serviceId + " - this should never happen, and is a bug with Kurtosis!",
                 )
             );
         }
@@ -382,11 +410,11 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpGetEndpointAvailability(
             serviceId: ServiceID,
-            port: number, 
+            port: number,
             path: string,
-            initialDelayMilliseconds: number, 
-            retries: number, 
-            retriesDelayMilliseconds: number, 
+            initialDelayMilliseconds: number,
+            retries: number,
+            retriesDelayMilliseconds: number,
             bodyText: string
         ): Promise<Result<null, Error>> {
 
@@ -406,19 +434,20 @@ export class EnclaveContext {
         }
 
         const result = waitForHttpGetEndpointAvailabilityResult.value
-        return ok(result) 
+        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public async waitForHttpPostEndpointAvailability(
             serviceId: ServiceID,
-            port: number, 
+            port: number,
             path: string,
             requestBody: string,
-            initialDelayMilliseconds: number, 
-            retries: number, 
-            retriesDelayMilliseconds: number, 
-            bodyText: string): Promise<Result<null, Error>> {
+            initialDelayMilliseconds: number,
+            retries: number,
+            retriesDelayMilliseconds: number,
+            bodyText: string
+        ): Promise<Result<null, Error>> {
         const availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs = newWaitForHttpPostEndpointAvailabilityArgs(
             serviceId,
             port,
@@ -428,7 +457,7 @@ export class EnclaveContext {
             retries,
             retriesDelayMilliseconds,
             bodyText);
-                
+
         return this.backend.waitForHttpPostEndpointAvailability(availabilityArgs)
     }
 
@@ -490,6 +519,7 @@ export class EnclaveContext {
     //                                       Private helper functions
     // ====================================================================================================
     private async getSharedDirectory(relativeServiceDirpath: string): Promise<SharedPath> {
+
         let absFilepathOnThisContainer;
         let absFilepathOnServiceContainer;
         if(isExecutionEnvNode){

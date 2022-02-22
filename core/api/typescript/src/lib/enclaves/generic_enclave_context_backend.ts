@@ -1,29 +1,29 @@
 import { Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import type {
-    ExecuteBulkCommandsArgs, 
-    GetModuleInfoArgs, 
-    GetModulesResponse, 
-    GetServiceInfoArgs, 
-    GetServiceInfoResponse, 
-    GetServicesResponse, 
-    LoadModuleArgs, 
-    RegisterFilesArtifactsArgs, 
-    RegisterServiceArgs, 
-    RegisterServiceResponse, 
-    RemoveServiceArgs, 
-    RepartitionArgs, 
-    StartServiceArgs, 
-    StartServiceResponse, 
+import {
+    ExecuteBulkCommandsArgs,
+    GetModuleInfoArgs,
+    GetModulesResponse,
+    GetServiceInfoArgs,
+    GetServiceInfoResponse,
+    GetServicesResponse,
+    LoadModuleArgs,
+    RegisterFilesArtifactsArgs,
+    RegisterServiceArgs,
+    RegisterServiceResponse,
+    RemoveServiceArgs,
+    RepartitionArgs,
+    StartServiceArgs,
+    StartServiceResponse,
     UnloadModuleArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import type { EnclaveID } from "./enclave_context";
+import { EnclaveID } from "./enclave_context";
 
-export interface EnclaveContextBackend {
+export interface GenericEnclaveContextBackend {
     getClient(): ApiContainerServiceClientWeb | ApiContainerServiceClientNode
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>

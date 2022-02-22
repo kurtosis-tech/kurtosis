@@ -1,7 +1,7 @@
 import { ok, err, Result } from "neverthrow";
 import type { ServiceError } from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import type {
+import {
     RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
@@ -22,10 +22,10 @@ import type {
     GetModulesResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import type { EnclaveContextBackend } from "./generic_enclave_context_backend";
-import type { EnclaveID } from "./enclave_context";
+import { GenericEnclaveContextBackend } from "./generic_enclave_context_backend";
+import { EnclaveID } from "./enclave_context";
 
-export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
+export class GrpcNodeEnclaveContextBackend implements GenericEnclaveContextBackend {
 
     private readonly client: ApiContainerServiceClientNode;
     private readonly enclaveId: EnclaveID;
@@ -196,7 +196,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         }
         const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
 
-       return ok(getServiceInfoResponse)
+        return ok(getServiceInfoResponse)
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {
@@ -288,7 +288,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return ok(null);
     }
 
-    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {        
+    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {
         const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getServices(emptyArg, (error: ServiceError | null, response?: GetServicesResponse) => {
                 if (error === null) {
@@ -312,7 +312,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return ok(getServicesResponse)
     }
 
-    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {        
+    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {
         const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getModules(emptyArg, (error: ServiceError | null, response?: GetModulesResponse) => {
                 if (error === null) {
