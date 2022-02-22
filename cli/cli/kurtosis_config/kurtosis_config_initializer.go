@@ -5,8 +5,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 )
 
 const (
@@ -18,6 +21,16 @@ const (
 )
 
 func initInteractiveConfig() (*KurtosisConfig, error) {
+	// Check if we're actually running in interactive mode (i.e. STDIN is a terminal)
+	if !terminal.IsTerminal(int(os.Stdin.Fd())) {
+		return nil, stacktrace.NewError(
+			"The Kurtosis config isn't initialized we'd normally initialize it interactively here except STDIN isn't " +
+				"a terminal (indicating that this is probably running in CI) which means that you'll need to manually " +
+				"initialize the config using the instructions here: %v",
+			user_support_constants.CLISetupDocsUrl,
+		)
+	}
+
 	printMetricsPreface()
 
 	didUserAcceptSendingMetrics, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(metricsConsentPromptLabel, shouldSendMetricsDefaultValue)

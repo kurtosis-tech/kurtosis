@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Detect if the CLI is running in non-interactive mode (i.e., in CI) and error if the InteractiveConfigInitializer is run
 
 # 0.11.1
 ### Features
