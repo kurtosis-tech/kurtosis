@@ -23,7 +23,7 @@ func initInteractiveConfig() (*KurtosisConfig, error) {
 	// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal)
 	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
 		return nil, stacktrace.NewError(
-			"The Kurtosis config isn't initialized we'd normally initialize it interactively here except STDOUT isn't " +
+			"The Kurtosis config isn't initialized so we'd initialize it interactively here except STDOUT isn't " +
 				"a terminal (indicating that this is probably running in CI) which means that you'll need to manually " +
 				"initialize the config using the instructions here: %v",
 			user_support_constants.CLISetupDocsUrl,

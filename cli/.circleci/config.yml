@@ -124,7 +124,7 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
-      # - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
+      - run: "${KURTOSIS_BINPATH} config init dont-send-metrics"
       - run: "${KURTOSIS_BINPATH} engine start"
 
       # Run the testsuite, but don't fail the job immediately so that we can upload the enclave dump
