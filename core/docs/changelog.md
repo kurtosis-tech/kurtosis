@@ -1,12 +1,12 @@
 # TBD
+### Changes
+* Upgraded to container-engine-lib 0.8.7
 
 # 1.39.2
-
 ### Fixes
 * Restore `ApiContainerServiceClient` export from TS lib index, in order not to break previous Kurtosis Engine versions
 
 # 1.39.1
-
 ### Features
 * Added Envoy Proxy to support gRPC-web
 
