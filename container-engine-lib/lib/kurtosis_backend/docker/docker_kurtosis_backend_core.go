@@ -217,6 +217,8 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 			err,
 			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
 			publicPortNumStr,
+			hostMachinePortNumStrParsingBase,
+			hostMachinePortNumStrParsingBits,
 		)
 	}
 	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
