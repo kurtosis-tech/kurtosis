@@ -26,7 +26,6 @@ export class GrpcWebServiceContextBackend implements ServiceContextBackend {
                 }
             })
         });
-
         const execCommandResponseResult: Result<ExecCommandResponse, Error> = await execCommandPromise;
         if(execCommandResponseResult.isErr()){
             return err(execCommandResponseResult.error)
