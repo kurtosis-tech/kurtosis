@@ -1,5 +1,12 @@
 # TBD
 
+# 0.11.3
+### Changes
+* Upgraded to the following, which contain dormant Kubernetes code:
+    * container-engine-lib 0.8.7
+    * core 1.39.3
+    * engine 1.11.1
+
 # 0.11.2
 ### Features
 * Detect if the CLI is running in non-interactive mode (i.e., in CI) and error if the InteractiveConfigInitializer is run
