@@ -1,7 +1,7 @@
 import { ok, err, Result } from "neverthrow";
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import { 
+import type {
     RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
@@ -21,14 +21,13 @@ import {
     GetModuleInfoResponse,
     GetModulesResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import EnclaveContextBackend from "./enclave_context_backend";
-import { EnclaveID } from "./enclave_context";
+import type { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import type { EnclaveContextBackend } from "./generic_enclave_context_backend";
+import type { EnclaveID } from "./enclave_context";
 
 export class GrpcWebEnclaveContextBackend implements EnclaveContextBackend {
 
     private readonly client: ApiContainerServiceClientWeb;
-
     private readonly enclaveId: EnclaveID;
 
     constructor(client: ApiContainerServiceClientWeb, enclaveId: EnclaveID) {

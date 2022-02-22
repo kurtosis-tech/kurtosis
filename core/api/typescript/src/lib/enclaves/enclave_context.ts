@@ -5,10 +5,11 @@
 
 import { ok, err, Result } from "neverthrow";
 import log from "loglevel";
+import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
-import * as path from "path-browserify"
+import * as path_browserify from "path-browserify"
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import { 
+import type {
     PartitionConnectionInfo, 
     PartitionServices, 
     Port, 
@@ -27,12 +28,12 @@ import {
     ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GrpcNodeEnclaveContextBackend } from "./grpc_node_enclave_context_backend";
 import { GrpcWebEnclaveContextBackend } from "./grpc_web_enclave_context_backend";
-import EnclaveContextBackend from "./enclave_context_backend";
+import type { EnclaveContextBackend } from "./generic_enclave_context_backend";
 import { ModuleContext, ModuleID } from "../modules/module_context";
-import { newExecuteBulkCommandsArgs, 
+import { newExecuteBulkCommandsArgs,
     newGetModuleInfoArgs, 
     newGetServiceInfoArgs, 
     newLoadModuleArgs, 
@@ -183,7 +184,7 @@ export class EnclaveContext {
             const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
             const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
     
-            const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
+            const sharedDirectory = await this.getSharedDirectory(relativeServiceDirpath)
     
             log.trace("Generating container config object using the container config supplier...")
             const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
@@ -286,7 +287,7 @@ export class EnclaveContext {
             );
         }
 
-        const sharedDirectory: SharedPath = this.getSharedDirectory(relativeServiceDirpath)
+        const sharedDirectory: SharedPath = await this.getSharedDirectory(relativeServiceDirpath)
 
         const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getPrivatePortsMap(),
@@ -488,13 +489,19 @@ export class EnclaveContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private getSharedDirectory(relativeServiceDirpath: string): SharedPath {
-
-        const absFilepathOnThisContainer = path.join(this.enclaveDataDirpath, relativeServiceDirpath);
-        const absFilepathOnServiceContainer = path.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
+    private async getSharedDirectory(relativeServiceDirpath: string): Promise<SharedPath> {
+        let absFilepathOnThisContainer;
+        let absFilepathOnServiceContainer;
+        if(isExecutionEnvNode){
+            const path = await import( /* webpackIgnore: true */ "path")
+            absFilepathOnThisContainer = path.join(this.enclaveDataDirpath, relativeServiceDirpath);
+            absFilepathOnServiceContainer = path.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
+        }else{
+            absFilepathOnThisContainer = path_browserify.join(this.enclaveDataDirpath, relativeServiceDirpath);
+            absFilepathOnServiceContainer = path_browserify.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
+        }
 
         const sharedDirectory = new SharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer);
-
         return sharedDirectory;
     }
 

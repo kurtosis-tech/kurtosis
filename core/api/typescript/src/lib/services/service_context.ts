@@ -1,14 +1,14 @@
 import { err, ok, Result } from 'neverthrow';
-import { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { newExecCommandArgs } from '../constructor_calls';
-import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GrpcNodeServiceContextBackend } from './grpc_node_service_context_backend';
 import { GrpcWebServiceContextBackend } from './grpc_web_service_context_backend';
-import { PortSpec } from './port_spec';
-import { ServiceID } from './service';
-import { ServiceContextBackend } from './service_context_backend';
-import { SharedPath } from './shared_path';
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
+import type { PortSpec } from './port_spec';
+import type { ServiceID } from './service';
+import type { ServiceContextBackend } from './service_context_backend';
+import type { SharedPath } from './shared_path';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
@@ -85,7 +85,6 @@ export class ServiceContext {
         }
 
         const execCommandResponse = execCommandResponseResult.value
-
         return ok([execCommandResponse.getExitCode(), execCommandResponse.getLogOutput()]);
     }
 }

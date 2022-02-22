@@ -1,6 +1,6 @@
 import { Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import { 
+import type {
     ExecuteBulkCommandsArgs, 
     GetModuleInfoArgs, 
     GetModulesResponse, 
@@ -19,11 +19,11 @@ import {
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import { EnclaveID } from "./enclave_context";
+import type { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import type { EnclaveID } from "./enclave_context";
 
-export default interface EnclaveContextBackend {
+export interface EnclaveContextBackend {
     getClient(): ApiContainerServiceClientWeb | ApiContainerServiceClientNode
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>

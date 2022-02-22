@@ -1,4 +1,5 @@
-import * as path from "path"
+import * as path_browserify from "path-browserify"
+import { isNode as  isExecutionEnvNode} from "browser-or-node";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class SharedPath {
@@ -21,13 +22,20 @@ export class SharedPath {
         return this.absPathOnServiceContainer;
     }
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public getChildPath(pathElement: string): SharedPath {
-        const absPathOnThisContainer = path.join(this.absPathOnThisContainer, pathElement);
-
-        const absPathOnServiceContainer = path.join(this.absPathOnServiceContainer, pathElement);
+    public async getChildPath(pathElement: string): Promise<SharedPath> {
+        let absPathOnThisContainer;
+        let absPathOnServiceContainer;
+        
+        if(isExecutionEnvNode){
+            const path = await import( /* webpackIgnore: true */ "path")
+            absPathOnThisContainer = path.join(this.absPathOnThisContainer, pathElement);
+            absPathOnServiceContainer = path.join(this.absPathOnServiceContainer, pathElement);
+        }else{
+            absPathOnThisContainer = path_browserify.join(this.absPathOnThisContainer, pathElement);
+            absPathOnServiceContainer = path_browserify.join(this.absPathOnServiceContainer, pathElement);
+        }
 
         const sharedPath = new SharedPath(absPathOnThisContainer, absPathOnServiceContainer)
-
         return sharedPath
     }
 }

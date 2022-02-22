@@ -1,10 +1,11 @@
 import { ok, err, Result } from "neverthrow";
-import * as grpc_node from "@grpc/grpc-js";
-import { ModuleContextBackend } from "./module_context_backend";
-import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import type { ServiceError } from "@grpc/grpc-js";
+import type { ModuleContextBackend } from "./module_context_backend";
+import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
+import type { ExecuteModuleArgs, ExecuteModuleResponse } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
+
     private readonly client: ApiContainerServiceClientNode;
     
     constructor (client: ApiContainerServiceClientNode) {
@@ -13,7 +14,7 @@ export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
 
     public async execute(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>> {
         const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeModule(executeModuleArgs, (error: grpc_node.ServiceError | null, response?: ExecuteModuleResponse) => {
+            this.client.executeModule(executeModuleArgs, (error: ServiceError | null, response?: ExecuteModuleResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -29,8 +30,8 @@ export class GrpcNodeModuleContextBackend implements ModuleContextBackend{
         if (executeModuleResult.isErr()) {
             return err(executeModuleResult.error);
         }
-        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
 
+        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
         return ok(executeModuleResponse);
     }
 }
