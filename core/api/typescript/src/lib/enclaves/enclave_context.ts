@@ -8,7 +8,7 @@ import log from "loglevel";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import {
+import type {
     PartitionConnectionInfo,
     PartitionServices,
     Port,
@@ -28,7 +28,7 @@ import {
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
-import { GenericApiContainerClient } from "./generic_api_container_client";
+import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import { 
     newExecuteBulkCommandsArgs,
@@ -47,13 +47,13 @@ import {
     newWaitForHttpGetEndpointAvailabilityArgs,
     newWaitForHttpPostEndpointAvailabilityArgs
 } from "../constructor_calls";
-import { ContainerConfig, FilesArtifactID } from "../services/container_config";
-import { ServiceID } from "../services/service";
+import type { ContainerConfig, FilesArtifactID } from "../services/container_config";
+import type { ServiceID } from "../services/service";
 import { SharedPath } from "../services/shared_path";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
-import { GenericPathJoiner } from "./generic_path_joiner";
-import { PartitionConnection } from "./partition_connection";
+import type { GenericPathJoiner } from "./generic_path_joiner";
+import type { PartitionConnection } from "./partition_connection";
 
 export type EnclaveID = string;
 export type PartitionID = string;
