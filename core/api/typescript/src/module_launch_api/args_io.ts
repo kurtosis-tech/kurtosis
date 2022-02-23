@@ -1,10 +1,8 @@
-
-// All module containers accept exactly one environment variable, which contains the serialized params that
-
-import log = require("loglevel");
+import log from "loglevel";
 import { err, ok, Result } from "neverthrow";
 import { ModuleContainerArgs } from "./module_container_args";
 
+// All module containers accept exactly one environment variable, which contains the serialized params that
 // dictate how the module container ought to behave
 const SERIALIZED_ARGS_ENV_VAR = "SERIALIZED_ARGS";
 const JAVASCRIPT_STRING_VAR_TYPE = "string";

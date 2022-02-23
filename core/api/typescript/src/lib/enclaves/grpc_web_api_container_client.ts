@@ -1,7 +1,7 @@
 import { ok, err, Result } from "neverthrow";
-import * as grpc_node from "@grpc/grpc-js";
+import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
-import { 
+import {
     RegisterFilesArtifactsArgs,
     RegisterServiceArgs,
     RegisterServiceResponse,
@@ -20,33 +20,32 @@ import {
     GetModuleInfoArgs,
     GetModuleInfoResponse,
     GetModulesResponse,
+    ExecuteModuleArgs,
+    ExecuteModuleResponse,
+    ExecCommandArgs,
+    ExecCommandResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-import EnclaveContextBackend from "./enclave_context_backend";
+import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
+import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveID } from "./enclave_context";
 
-export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
+export class GrpcWebApiContainerClient implements GenericApiContainerClient {
 
-    private readonly client: ApiContainerServiceClientNode;
-
+    private readonly client: ApiContainerServiceClientWeb;
     private readonly enclaveId: EnclaveID;
 
-    constructor(client: ApiContainerServiceClientNode, enclaveId: EnclaveID) {
+    constructor(client: ApiContainerServiceClientWeb, enclaveId: EnclaveID) {
         this.client = client;
         this.enclaveId = enclaveId;
     }
 
-    public getClient():ApiContainerServiceClientNode{
-        return this.client
-    }
-
-    public getEnclaveId(): EnclaveID {
+    public getEnclaveId():EnclaveID {
         return this.enclaveId;
     }
 
     public async loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>> {
         const loadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.loadModule(loadModuleArgs, (error: grpc_node.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+            this.client.loadModule(loadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -68,7 +67,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>> {
         const unloadModulePromise: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unloadModule(unloadModuleArgs, (error: grpc_node.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+            this.client.unloadModule(unloadModuleArgs, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -85,12 +84,13 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         if (unloadModuleResult.isErr()) {
             return err(unloadModuleResult.error);
         }
+
         return ok(null);
     }
 
     public async getModuleInfo(getModuleInfoArgs: GetModuleInfoArgs): Promise<Result<null, Error>> {
         const getModuleInfoPromise: Promise<Result<GetModuleInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModuleInfo(getModuleInfoArgs, (error: grpc_node.ServiceError | null, response?: GetModuleInfoResponse) => {
+            this.client.getModuleInfo(getModuleInfoArgs, {}, (error: grpc_web.RpcError | null, response?: GetModuleInfoResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -111,7 +111,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async registerFilesArtifacts(registerFilesArtifactsArgs: RegisterFilesArtifactsArgs): Promise<Result<null,Error>> {
         const promiseRegisterFilesArtifacts: Promise<Result<google_protobuf_empty_pb.Empty, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerFilesArtifacts(registerFilesArtifactsArgs, (error: grpc_node.ServiceError | null, response?: google_protobuf_empty_pb.Empty) => {
+            this.client.registerFilesArtifacts(registerFilesArtifactsArgs, {}, (error: grpc_web.RpcError | null, response?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -133,7 +133,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async registerService(registerServiceArgs: RegisterServiceArgs): Promise<Result<RegisterServiceResponse, Error>>{
         const registerServicePromise: Promise<Result<RegisterServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.registerService(registerServiceArgs, (error: grpc_node.ServiceError | null, response?: RegisterServiceResponse) => {
+            this.client.registerService(registerServiceArgs, {}, (error: grpc_web.RpcError | null, response?: RegisterServiceResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -149,14 +149,14 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         if (registerServicePromiseResult.isErr()) {
             return err(registerServicePromiseResult.error);
         }
-        const registerServiceResponse = registerServicePromiseResult.value;
 
+        const registerServiceResponse = registerServicePromiseResult.value;
         return ok(registerServiceResponse)
     }
 
     public async startService(startServiceArgs: StartServiceArgs): Promise<Result<StartServiceResponse, Error>>{
         const promiseStartService: Promise<Result<StartServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.startService(startServiceArgs, (error: grpc_node.ServiceError | null, response?: StartServiceResponse) => {
+            this.client.startService(startServiceArgs, {}, (error: grpc_web.RpcError | null, response?: StartServiceResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -172,14 +172,14 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         if (resultStartService.isErr()) {
             return err(resultStartService.error);
         }
-        const startServiceResponse: StartServiceResponse = resultStartService.value;
 
+        const startServiceResponse: StartServiceResponse = resultStartService.value;
         return ok(startServiceResponse)
     }
 
     public async getServiceInfo(getServiceInfoArgs: GetServiceInfoArgs): Promise<Result<GetServiceInfoResponse, Error>> {
         const promiseGetServiceInfo: Promise<Result<GetServiceInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServiceInfo(getServiceInfoArgs, (error: grpc_node.ServiceError | null, response?: GetServiceInfoResponse) => {
+            this.client.getServiceInfo(getServiceInfoArgs, {}, (error: grpc_web.RpcError | null, response?: GetServiceInfoResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -195,14 +195,14 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         if (resultGetServiceInfo.isErr()) {
             return err(resultGetServiceInfo.error);
         }
-        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
 
-       return ok(getServiceInfoResponse)
+        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
+        return ok(getServiceInfoResponse)
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<null, Error>> {
         const removeServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.removeService(args, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -219,7 +219,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>> {
         const promiseRepartition: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.repartition(repartitionArgs, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.repartition(repartitionArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -237,7 +237,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>> {
         const promiseWaitForHttpGetEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.waitForHttpGetEndpointAvailability(availabilityArgs, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.waitForHttpGetEndpointAvailability(availabilityArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -255,7 +255,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>> {
         const promiseWaitForHttpPostEndpointAvailability: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.waitForHttpPostEndpointAvailability(availabilityArgs, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.waitForHttpPostEndpointAvailability(availabilityArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -273,7 +273,7 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
     public async executeBulkCommands(executeBulkCommandsArgs: ExecuteBulkCommandsArgs): Promise<Result<null, Error>> {
         const promiseExecuteBulkCommands: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeBulkCommands(executeBulkCommandsArgs, (error: grpc_node.ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
+            this.client.executeBulkCommands(executeBulkCommandsArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
                 if (error === null) {
                     resolve(ok(null));
                 } else {
@@ -289,9 +289,9 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return ok(null);
     }
 
-    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {        
+    public async getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>> {
         const promiseGetServices: Promise<Result<GetServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getServices(emptyArg, (error: grpc_node.ServiceError | null, response?: GetServicesResponse) => {
+            this.client.getServices(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetServicesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -313,9 +313,9 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
         return ok(getServicesResponse)
     }
 
-    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {        
+    public async getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>> {
         const getModulesPromise: Promise<Result<GetModulesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.getModules(emptyArg, (error: grpc_node.ServiceError | null, response?: GetModulesResponse) => {
+            this.client.getModules(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetModulesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -335,5 +335,51 @@ export class GrpcNodeEnclaveContextBackend implements EnclaveContextBackend {
 
         const getModulesResponse = getModulesResult.value;
         return ok(getModulesResponse)
+    }
+
+    public async executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>> {
+        const executeModulePromise: Promise<Result<ExecuteModuleResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.executeModule(executeModuleArgs, {}, (error: grpc_web.RpcError | null, response?: ExecuteModuleResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const executeModuleResult: Result<ExecuteModuleResponse, Error> = await executeModulePromise;
+        if (executeModuleResult.isErr()) {
+            return err(executeModuleResult.error);
+        }
+        
+        const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
+        return ok(executeModuleResponse);
+    }
+
+    public async execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>> {
+        const execCommandPromise: Promise<Result<ExecCommandResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.execCommand(execCommandArgs, {}, (error: grpc_web.RpcError | null, response?: ExecCommandResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+        const execCommandResponseResult: Result<ExecCommandResponse, Error> = await execCommandPromise;
+        if(execCommandResponseResult.isErr()){
+            return err(execCommandResponseResult.error)
+        }
+
+        const execCommandResponse = execCommandResponseResult.value
+        return ok(execCommandResponse)
     }
 }

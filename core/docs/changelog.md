@@ -1,5 +1,8 @@
 # TBD
 
+### Features
+* Hid 'grpc-js' and 'path' lib from Web environment
+
 # 1.39.3
 ### Changes
 * Upgraded to container-engine-lib 0.8.7
