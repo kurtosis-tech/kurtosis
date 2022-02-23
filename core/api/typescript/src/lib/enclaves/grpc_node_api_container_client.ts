@@ -148,8 +148,8 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         if (registerServicePromiseResult.isErr()) {
             return err(registerServicePromiseResult.error);
         }
-        const registerServiceResponse = registerServicePromiseResult.value;
 
+        const registerServiceResponse = registerServicePromiseResult.value;
         return ok(registerServiceResponse)
     }
 
@@ -171,8 +171,8 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         if (resultStartService.isErr()) {
             return err(resultStartService.error);
         }
-        const startServiceResponse: StartServiceResponse = resultStartService.value;
 
+        const startServiceResponse: StartServiceResponse = resultStartService.value;
         return ok(startServiceResponse)
     }
 
@@ -194,8 +194,8 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         if (resultGetServiceInfo.isErr()) {
             return err(resultGetServiceInfo.error);
         }
-        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
 
+        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
         return ok(getServiceInfoResponse)
     }
 
@@ -213,6 +213,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         if (resultRemoveService.isErr()) {
             return err(resultRemoveService.error);
         }
+        
         return ok(null);
     }
 

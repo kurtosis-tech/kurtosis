@@ -1,8 +1,7 @@
 # TBD
 
 ### Features
-* Refactored 'grpc-js' lib, in order to hide it from Web environment
-
+* Hid 'grpc-js' and 'path' lib from Web environment
 
 # 1.39.3
 ### Changes

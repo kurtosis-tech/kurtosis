@@ -84,6 +84,7 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         if (unloadModuleResult.isErr()) {
             return err(unloadModuleResult.error);
         }
+
         return ok(null);
     }
 
@@ -148,8 +149,8 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         if (registerServicePromiseResult.isErr()) {
             return err(registerServicePromiseResult.error);
         }
-        const registerServiceResponse = registerServicePromiseResult.value;
 
+        const registerServiceResponse = registerServicePromiseResult.value;
         return ok(registerServiceResponse)
     }
 
@@ -171,8 +172,8 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         if (resultStartService.isErr()) {
             return err(resultStartService.error);
         }
-        const startServiceResponse: StartServiceResponse = resultStartService.value;
 
+        const startServiceResponse: StartServiceResponse = resultStartService.value;
         return ok(startServiceResponse)
     }
 
@@ -194,8 +195,8 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         if (resultGetServiceInfo.isErr()) {
             return err(resultGetServiceInfo.error);
         }
-        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
 
+        const getServiceInfoResponse: GetServiceInfoResponse = resultGetServiceInfo.value;
         return ok(getServiceInfoResponse)
     }
 
@@ -354,8 +355,8 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         if (executeModuleResult.isErr()) {
             return err(executeModuleResult.error);
         }
+        
         const executeModuleResponse: ExecuteModuleResponse = executeModuleResult.value;
-
         return ok(executeModuleResponse);
     }
 

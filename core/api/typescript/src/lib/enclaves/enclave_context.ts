@@ -32,7 +32,8 @@ import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
-import { newExecuteBulkCommandsArgs,
+import { 
+    newExecuteBulkCommandsArgs,
     newGetModuleInfoArgs,
     newGetServiceInfoArgs,
     newLoadModuleArgs,
@@ -53,10 +54,10 @@ import { ServiceID } from "../services/service";
 import { SharedPath } from "../services/shared_path";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
-import { PartitionConnection } from "./partition_connection";
 import { PathJoiner } from "./path_joiner";
 import { NodePathJoiner } from "./node_path_joiner";
 import { WebPathJoiner } from "./web_path_joiner";
+import { PartitionConnection } from "./partition_connection";
 
 export type EnclaveID = string;
 export type PartitionID = string;
@@ -72,9 +73,9 @@ const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
+    private readonly pathJoiner: PathJoiner
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
-    private readonly pathJoiner: PathJoiner
 
     private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: PathJoiner){
         this.backend = backend;
