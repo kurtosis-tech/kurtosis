@@ -87,7 +87,7 @@ export class EnclaveContext {
         ): Promise<Result<EnclaveContext, Error>> {
 
         if(isExecutionEnvNode){
-            return err(new Error("It seems you'are trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
+            return err(new Error("It seems you're trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
         }
 
         let genericApiContainerClient: GenericApiContainerClient
@@ -120,7 +120,7 @@ export class EnclaveContext {
         ): Promise<Result<EnclaveContext, Error>> {
 
         if(!isExecutionEnvNode){
-            return err(new Error("It seems you'are trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
+            return err(new Error("It seems you're trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
         }
 
         let genericApiContainerClient: GenericApiContainerClient
