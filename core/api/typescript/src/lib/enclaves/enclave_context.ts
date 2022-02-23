@@ -80,11 +80,12 @@ export class EnclaveContext {
     }
 
     public static async newGrpcWebEnclaveContext(
-        ipAddress: string,
-        apiContainerGrpcProxyPortNum: number,
-        enclaveId: string,
-        enclaveDataDirpath: string
-    ): Promise<Result<EnclaveContext, Error>> {
+            ipAddress: string,
+            apiContainerGrpcProxyPortNum: number,
+            enclaveId: string,
+            enclaveDataDirpath: string
+        ): Promise<Result<EnclaveContext, Error>> {
+
         if(isExecutionEnvNode){
             return err(new Error("It seems you'are trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
         }
@@ -106,18 +107,18 @@ export class EnclaveContext {
                 "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + error
             ));
         }
-
         
         const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
         return ok(enclaveContext)
     }
 
     public static async newGrpcNodeEnclaveContext(
-        ipAddress: string,
-        apiContainerGrpcPortNum: number,
-        enclaveId: string,
-        enclaveDataDirpath: string
-    ): Promise<Result<EnclaveContext, Error>> {
+            ipAddress: string,
+            apiContainerGrpcPortNum: number,
+            enclaveId: string,
+            enclaveDataDirpath: string
+        ): Promise<Result<EnclaveContext, Error>> {
+
         if(!isExecutionEnvNode){
             return err(new Error("It seems you'are trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
         }
@@ -159,6 +160,7 @@ export class EnclaveContext {
         if(loadModuleResult.isErr()){
             return err(loadModuleResult.error)
         }
+        
         const moduleContext:ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleContext)
     }
@@ -171,6 +173,7 @@ export class EnclaveContext {
         if(unloadModuleResult.isErr()){
             return err(unloadModuleResult.error)
         }
+
         const result = unloadModuleResult.value
         return ok(result)
     }
@@ -183,8 +186,8 @@ export class EnclaveContext {
         if(getModuleInfoResult.isErr()){
             return err(getModuleInfoResult.error)
         }
-        const moduleContext: ModuleContext = new ModuleContext(this.backend, moduleId);
 
+        const moduleContext: ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleContext)
     }
 
@@ -387,7 +390,6 @@ export class EnclaveContext {
         log.debug("Successfully removed service ID " + serviceId);
 
         return ok(null)
-
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
@@ -505,7 +507,6 @@ export class EnclaveContext {
         }
 
         const result = executeBulkCommandsResult.value
-
         return ok(result)
     }
 
