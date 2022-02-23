@@ -1,5 +1,7 @@
 # TBD
 
+# 1.39.4
+
 ### Features
 * Hid 'grpc-js' and 'path' lib from Web environment
 
