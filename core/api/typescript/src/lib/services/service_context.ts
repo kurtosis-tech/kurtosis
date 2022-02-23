@@ -1,19 +1,15 @@
 import { err, ok, Result } from 'neverthrow';
 import { newExecCommandArgs } from '../constructor_calls';
-import { GrpcNodeServiceContextBackend } from './grpc_node_service_context_backend';
-import { GrpcWebServiceContextBackend } from './grpc_web_service_context_backend';
-import { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
 import type { ServiceID } from './service';
-import type { ServiceContextBackend } from './service_context_backend';
 import type { SharedPath } from './shared_path';
+import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class ServiceContext {
 
-    private readonly backend: ServiceContextBackend
+    private readonly client: GenericApiContainerClient
     private readonly serviceId: ServiceID
     private readonly sharedDirectory: SharedPath
     private readonly privateIpAddress: string
@@ -22,7 +18,7 @@ export class ServiceContext {
     private readonly publicPorts: Map<string, PortSpec>
 
     constructor(
-        client: ApiContainerServiceClientWeb | ApiContainerServiceClientNode,
+        client: GenericApiContainerClient,
         serviceId: ServiceID,
         sharedDirectory: SharedPath,
         privateIpAddress: string,
@@ -31,12 +27,7 @@ export class ServiceContext {
         publicPorts: Map<string, PortSpec>
         ){
 
-        if(client instanceof ApiContainerServiceClientWeb){
-            this.backend = new GrpcWebServiceContextBackend(client)
-        }else{
-            this.backend = new GrpcNodeServiceContextBackend(client)
-        }
-
+        this.client = client
         this.serviceId = serviceId
         this.sharedDirectory = sharedDirectory
         this.privateIpAddress = privateIpAddress
@@ -79,7 +70,7 @@ export class ServiceContext {
     public async execCommand(command: string[], ): Promise<Result<[number, string], Error>> {
         const execCommandArgs: ExecCommandArgs = newExecCommandArgs(this.serviceId, command);
 
-        const execCommandResponseResult = await this.backend.execCommand(execCommandArgs)
+        const execCommandResponseResult = await this.client.execCommand(execCommandArgs)
         if(execCommandResponseResult.isErr()){
             return err(execCommandResponseResult.error)
         }

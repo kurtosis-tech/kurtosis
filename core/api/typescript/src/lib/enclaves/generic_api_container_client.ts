@@ -1,7 +1,16 @@
+/*
+ * Copyright (c) 2022 - present Kurtosis Technologies Inc.
+ * All Rights Reserved.
+ */
+
 import { Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
+    ExecCommandArgs,
+    ExecCommandResponse,
     ExecuteBulkCommandsArgs,
+    ExecuteModuleArgs,
+    ExecuteModuleResponse,
     GetModuleInfoArgs,
     GetModulesResponse,
     GetServiceInfoArgs,
@@ -19,12 +28,9 @@ import {
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import type { ApiContainerServiceClient as ApiContainerServiceClientWeb } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { EnclaveID } from "./enclave_context";
 
-export interface GenericEnclaveContextBackend {
-    getClient(): ApiContainerServiceClientWeb | ApiContainerServiceClientNode
+export interface GenericApiContainerClient {
     getEnclaveId(): EnclaveID
     loadModule(loadModuleArgs: LoadModuleArgs): Promise<Result<null, Error>>
     unloadModule(unloadModuleArgs: UnloadModuleArgs): Promise<Result<null,Error>>
@@ -40,4 +46,6 @@ export interface GenericEnclaveContextBackend {
     executeBulkCommands(executeBulkCommandsArgs: ExecuteBulkCommandsArgs): Promise<Result<null, Error>>
     getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>>
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
+    executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>
+    execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
 }

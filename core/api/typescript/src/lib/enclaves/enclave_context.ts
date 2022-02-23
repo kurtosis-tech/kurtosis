@@ -28,9 +28,9 @@ import {
     ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as apiContainerServiceWeb from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-import { GrpcNodeEnclaveContextBackend } from "./grpc_node_enclave_context_backend";
-import { GrpcWebEnclaveContextBackend } from "./grpc_web_enclave_context_backend";
-import { GenericEnclaveContextBackend } from "./generic_enclave_context_backend";
+import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
+import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
+import { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import { newExecuteBulkCommandsArgs,
     newGetModuleInfoArgs,
@@ -54,9 +54,11 @@ import { SharedPath } from "../services/shared_path";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
 import { PartitionConnection } from "./partition_connection";
+import { PathJoiner } from "./path_joiner";
+import { NodePathJoiner } from "./node_path_joiner";
+import { WebPathJoiner } from "./web_path_joiner";
 
 export type EnclaveID = string;
-
 export type PartitionID = string;
 
 // This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
@@ -69,13 +71,15 @@ const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class EnclaveContext {
 
-    private readonly backend: GenericEnclaveContextBackend
+    private readonly backend: GenericApiContainerClient
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
+    private readonly pathJoiner: PathJoiner
 
-    private constructor(backend: GenericEnclaveContextBackend, enclaveDataDirpath: string){
+    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: PathJoiner){
         this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
+        this.pathJoiner = pathJoiner;
     }
 
     public static async newEnclaveContext(
@@ -85,19 +89,25 @@ export class EnclaveContext {
         enclaveDataDirpath: string
     ): Promise<Result<EnclaveContext, Error>> {
 
-        let genericEnclaveContextBackend: GenericEnclaveContextBackend
+        let genericEnclaveContextBackend: GenericApiContainerClient
+        let pathJoiner;
         try {
             if(isExecutionEnvNode){
+                const path = await import( /* webpackIgnore: true */ "path")
                 const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
                 const apiContainerServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb")
 
                 const apiContainerHostMachineGrpcUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
                 const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerHostMachineGrpcUrl, grpc_node.credentials.createInsecure());
-                genericEnclaveContextBackend = new GrpcNodeEnclaveContextBackend(apiContainerClient, enclaveId)
+                genericEnclaveContextBackend = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
+
+                pathJoiner = new NodePathJoiner(path)
             }else{
                 const apiContainerHostMachineGrpcProxyUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
                 const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerHostMachineGrpcProxyUrl);
-                genericEnclaveContextBackend = new GrpcWebEnclaveContextBackend(apiContainerClient, enclaveId)
+                genericEnclaveContextBackend = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
+
+                pathJoiner = new WebPathJoiner(path_browserify)
             }
         }catch(error) {
             if (error instanceof Error) {
@@ -108,7 +118,7 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericEnclaveContextBackend, enclaveDataDirpath);
+        const enclaveContext = new EnclaveContext(genericEnclaveContextBackend, enclaveDataDirpath, pathJoiner);
         return ok(enclaveContext)
     }
 
@@ -125,7 +135,7 @@ export class EnclaveContext {
         if(loadModuleResult.isErr()){
             return err(loadModuleResult.error)
         }
-        const moduleContext:ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
+        const moduleContext:ModuleContext = new ModuleContext(this.backend, moduleId);
         return ok(moduleContext)
     }
 
@@ -145,11 +155,11 @@ export class EnclaveContext {
     public async getModuleContext(moduleId: ModuleID): Promise<Result<ModuleContext, Error>> {
         const getModuleInfoArgs: GetModuleInfoArgs = newGetModuleInfoArgs(moduleId);
 
-        const getModuleInfotResult = await this.backend.getModuleInfo(getModuleInfoArgs)
-        if(getModuleInfotResult.isErr()){
-            return err(getModuleInfotResult.error)
+        const getModuleInfoResult = await this.backend.getModuleInfo(getModuleInfoArgs)
+        if(getModuleInfoResult.isErr()){
+            return err(getModuleInfoResult.error)
         }
-        const moduleContext: ModuleContext = new ModuleContext(this.backend.getClient(), moduleId);
+        const moduleContext: ModuleContext = new ModuleContext(this.backend, moduleId);
 
         return ok(moduleContext)
     }
@@ -212,7 +222,7 @@ export class EnclaveContext {
         const privateIpAddr: string = registerServiceResponse.getPrivateIpAddr();
         const relativeServiceDirpath: string = registerServiceResponse.getRelativeServiceDirpath();
 
-        const sharedDirectory = await this.getSharedDirectory(relativeServiceDirpath)
+        const sharedDirectory = this.getSharedDirectory(relativeServiceDirpath)
 
         log.trace("Generating container config object using the container config supplier...")
         const containerConfigSupplierResult: Result<ContainerConfig, Error> = containerConfigSupplier(privateIpAddr, sharedDirectory);
@@ -264,7 +274,7 @@ export class EnclaveContext {
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
-            this.backend.getClient(),
+            this.backend,
             serviceId,
             sharedDirectory,
             privateIpAddr,
@@ -315,7 +325,7 @@ export class EnclaveContext {
             );
         }
 
-        const sharedDirectory: SharedPath = await this.getSharedDirectory(relativeServiceDirpath)
+        const sharedDirectory: SharedPath = this.getSharedDirectory(relativeServiceDirpath)
 
         const serviceCtxPrivatePorts: Map<string, PortSpec> = EnclaveContext.convertApiPortsToServiceContextPorts(
             serviceInfo.getPrivatePortsMap(),
@@ -325,7 +335,7 @@ export class EnclaveContext {
         );
 
         const serviceContext: ServiceContext = new ServiceContext(
-            this.backend.getClient(),
+            this.backend,
             serviceId,
             sharedDirectory,
             serviceInfo.getPrivateIpAddr(),
@@ -515,23 +525,16 @@ export class EnclaveContext {
         return ok(moduleIds)
     }
 
+
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private async getSharedDirectory(relativeServiceDirpath: string): Promise<SharedPath> {
+    private getSharedDirectory(relativeServiceDirpath: string): SharedPath {
 
-        let absFilepathOnThisContainer;
-        let absFilepathOnServiceContainer;
-        if(isExecutionEnvNode){
-            const path = await import( /* webpackIgnore: true */ "path")
-            absFilepathOnThisContainer = path.join(this.enclaveDataDirpath, relativeServiceDirpath);
-            absFilepathOnServiceContainer = path.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
-        }else{
-            absFilepathOnThisContainer = path_browserify.join(this.enclaveDataDirpath, relativeServiceDirpath);
-            absFilepathOnServiceContainer = path_browserify.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
-        }
+        const absFilepathOnThisContainer = this.pathJoiner.join(this.enclaveDataDirpath, relativeServiceDirpath);
+        const absFilepathOnServiceContainer = this.pathJoiner.join(SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT, relativeServiceDirpath);
 
-        const sharedDirectory = new SharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer);
+        const sharedDirectory = new SharedPath(absFilepathOnThisContainer, absFilepathOnServiceContainer, this.pathJoiner);
         return sharedDirectory;
     }
 

@@ -1,5 +1,4 @@
-import * as path_browserify from "path-browserify"
-import { isNode as  isExecutionEnvNode} from "browser-or-node";
+import { PathJoiner } from "../enclaves/path_joiner";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class SharedPath {
@@ -8,10 +7,12 @@ export class SharedPath {
     private readonly absPathOnThisContainer: string
     //Absolute path in the service container
     private readonly absPathOnServiceContainer: string
+    private readonly pathJoiner: PathJoiner;
 
-    constructor (absPathOnThisContainer: string, absPathOnServiceContainer: string) {
+    constructor (absPathOnThisContainer: string, absPathOnServiceContainer: string, pathJoiner: PathJoiner) {
         this.absPathOnThisContainer = absPathOnThisContainer;
         this.absPathOnServiceContainer = absPathOnServiceContainer;
+        this.pathJoiner = pathJoiner
     }
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
     public getAbsPathOnThisContainer(): string {
@@ -22,20 +23,11 @@ export class SharedPath {
         return this.absPathOnServiceContainer;
     }
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async getChildPath(pathElement: string): Promise<SharedPath> {
-        let absPathOnThisContainer;
-        let absPathOnServiceContainer;
-        
-        if(isExecutionEnvNode){
-            const path = await import( /* webpackIgnore: true */ "path")
-            absPathOnThisContainer = path.join(this.absPathOnThisContainer, pathElement);
-            absPathOnServiceContainer = path.join(this.absPathOnServiceContainer, pathElement);
-        }else{
-            absPathOnThisContainer = path_browserify.join(this.absPathOnThisContainer, pathElement);
-            absPathOnServiceContainer = path_browserify.join(this.absPathOnServiceContainer, pathElement);
-        }
+    public getChildPath(pathElement: string): SharedPath {
+        const absPathOnThisContainer = this.pathJoiner.join(this.absPathOnThisContainer, pathElement);
+        const absPathOnServiceContainer = this.pathJoiner.join(this.absPathOnServiceContainer, pathElement);
 
-        const sharedPath = new SharedPath(absPathOnThisContainer, absPathOnServiceContainer)
+        const sharedPath = new SharedPath(absPathOnThisContainer, absPathOnServiceContainer, this.pathJoiner)
         return sharedPath
     }
 }
