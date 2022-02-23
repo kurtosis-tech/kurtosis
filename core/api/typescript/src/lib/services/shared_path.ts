@@ -1,4 +1,4 @@
-import { PathJoiner } from "../enclaves/path_joiner";
+import type { GenericPathJoiner } from "../enclaves/generic_path_joiner";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 export class SharedPath {
@@ -7,9 +7,9 @@ export class SharedPath {
     private readonly absPathOnThisContainer: string
     //Absolute path in the service container
     private readonly absPathOnServiceContainer: string
-    private readonly pathJoiner: PathJoiner;
+    private readonly pathJoiner: GenericPathJoiner;
 
-    constructor (absPathOnThisContainer: string, absPathOnServiceContainer: string, pathJoiner: PathJoiner) {
+    constructor (absPathOnThisContainer: string, absPathOnServiceContainer: string, pathJoiner: GenericPathJoiner) {
         this.absPathOnThisContainer = absPathOnThisContainer;
         this.absPathOnServiceContainer = absPathOnServiceContainer;
         this.pathJoiner = pathJoiner

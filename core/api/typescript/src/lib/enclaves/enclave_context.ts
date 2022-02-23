@@ -5,7 +5,6 @@
 
 import { ok, err, Result } from "neverthrow";
 import log from "loglevel";
-import * as path_browserify from "path-browserify";
 import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
@@ -27,7 +26,6 @@ import {
     WaitForHttpPostEndpointAvailabilityArgs,
     ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import * as apiContainerServiceWeb from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -54,9 +52,7 @@ import { ServiceID } from "../services/service";
 import { SharedPath } from "../services/shared_path";
 import { ServiceContext } from "../services/service_context";
 import { PortProtocol, PortSpec } from "../services/port_spec";
-import { PathJoiner } from "./path_joiner";
-import { NodePathJoiner } from "./node_path_joiner";
-import { WebPathJoiner } from "./web_path_joiner";
+import { GenericPathJoiner } from "./generic_path_joiner";
 import { PartitionConnection } from "./partition_connection";
 
 export type EnclaveID = string;
@@ -73,43 +69,35 @@ const SERVICE_ENCLAVE_DATA_DIR_MOUNTPOINT: string = "/kurtosis-enclave-data";
 export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
-    private readonly pathJoiner: PathJoiner
+    private readonly pathJoiner: GenericPathJoiner
     // The location on the filesystem where this code is running where the enclave data dir exists
     private readonly enclaveDataDirpath: string;
 
-    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: PathJoiner){
+    private constructor(backend: GenericApiContainerClient, enclaveDataDirpath: string, pathJoiner: GenericPathJoiner){
         this.backend = backend;
         this.enclaveDataDirpath = enclaveDataDirpath;
         this.pathJoiner = pathJoiner;
     }
 
-    public static async newEnclaveContext(
+    public static async newGrpcWebEnclaveContext(
         ipAddress: string,
-        apiContainerHostMachinePort: string,
+        apiContainerGrpcProxyPortNum: number,
         enclaveId: string,
         enclaveDataDirpath: string
     ): Promise<Result<EnclaveContext, Error>> {
+        if(isExecutionEnvNode){
+            return err(new Error("It seems you'are trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
+        }
 
-        let genericEnclaveContextBackend: GenericApiContainerClient
-        let pathJoiner;
+        let genericApiContainerClient: GenericApiContainerClient
+        let pathJoiner: GenericPathJoiner
         try {
-            if(isExecutionEnvNode){
-                const path = await import( /* webpackIgnore: true */ "path")
-                const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
-                const apiContainerServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb")
+            pathJoiner = await import("path-browserify")
+            const apiContainerServiceWeb = await import("../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb")
 
-                const apiContainerHostMachineGrpcUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
-                const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerHostMachineGrpcUrl, grpc_node.credentials.createInsecure());
-                genericEnclaveContextBackend = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
-
-                pathJoiner = new NodePathJoiner(path)
-            }else{
-                const apiContainerHostMachineGrpcProxyUrl: string = `${ipAddress}:${apiContainerHostMachinePort}`
-                const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerHostMachineGrpcProxyUrl);
-                genericEnclaveContextBackend = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
-
-                pathJoiner = new WebPathJoiner(path_browserify)
-            }
+            const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
+            const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
+            genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveId)
         }catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -119,7 +107,42 @@ export class EnclaveContext {
             ));
         }
 
-        const enclaveContext = new EnclaveContext(genericEnclaveContextBackend, enclaveDataDirpath, pathJoiner);
+        
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
+        return ok(enclaveContext)
+    }
+
+    public static async newGrpcNodeEnclaveContext(
+        ipAddress: string,
+        apiContainerGrpcPortNum: number,
+        enclaveId: string,
+        enclaveDataDirpath: string
+    ): Promise<Result<EnclaveContext, Error>> {
+        if(!isExecutionEnvNode){
+            return err(new Error("It seems you'are trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
+        }
+
+        let genericApiContainerClient: GenericApiContainerClient
+        let pathJoiner: GenericPathJoiner
+        try {
+            pathJoiner = await import( /* webpackIgnore: true */ "path")
+            const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
+            const apiContainerServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb")
+
+            const apiContainerGrpcUrl: string = `${ipAddress}:${apiContainerGrpcPortNum}`
+            const apiContainerClient = new apiContainerServiceNode.ApiContainerServiceClient(apiContainerGrpcUrl, grpc_node.credentials.createInsecure());
+            genericApiContainerClient = new GrpcNodeApiContainerClient(apiContainerClient, enclaveId)
+
+        }catch(error) {
+            if (error instanceof Error) {
+                return err(error);
+            }
+            return err(new Error(
+                "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + error
+            ));
+        }
+
+        const enclaveContext = new EnclaveContext(genericApiContainerClient, enclaveDataDirpath, pathJoiner);
         return ok(enclaveContext)
     }
 
