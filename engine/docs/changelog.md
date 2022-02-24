@@ -1,6 +1,9 @@
 # TBD
+
+# 1.11.1
 ### Changes
 * Kurtosis enclaves created via `KurtosisContext.CreateEnclave` default to the debug loglevel
+* Upgrade to container-engine-lib 0.8.7 which contains dormant Kubernetes code
 
 # 1.11.0
 ### Breaking Changes
