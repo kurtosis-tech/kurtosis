@@ -33,10 +33,8 @@ class BulkCommandSerializer {
         try {
             bytes = JSON.stringify(toSerialize);
         } catch (jsonErr) {
-            // Sadly, we have to do this because there's no great way to enforce the caught thing being an error
-            // See: https://stackoverflow.com/questions/30469261/checking-for-typeof-error-in-js
-            if (jsonErr && jsonErr.stack && jsonErr.message) {
-                return err(jsonErr as Error);
+            if(jsonErr instanceof Error){
+                return err(jsonErr);
             }
             return err(new Error("Stringify-ing SerializableBulkCommandsDocument object threw an exception, but " +
                 "it's not an Error so we can't report any more information than this"));
