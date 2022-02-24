@@ -1,35 +1,32 @@
-import {err, ok, Result} from "neverthrow";
-import { isNode } from "browser-or-node";
-import * as grpc_node from "@grpc/grpc-js";
-import * as semver from "semver"
 import log from "loglevel"
+import * as semver from "semver"
 import * as jspb from "google-protobuf";
+import {err, ok, Result} from "neverthrow";
+import { isNode as isExecutionEnvNode} from "browser-or-node";
 import { EnclaveContext } from "kurtosis-core-api-lib";
-import { KurtosisContextBackend } from "./kurtosis_context_backend";
+import { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
 import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
 import { GrpcWebKurtosisContextBackend } from "./grpc_web_kurtosis_context_backend";
 import { GrpcNodeKurtosisContextBackend } from "./grpc_node_kurtosis_context_backend";
-import { EngineServiceClient as EngineServiceClientWeb } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
-import { EngineServiceClient as EngineServiceClientNode } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
-import { 
+import * as engineServiceWeb from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
+import {
     CleanArgs,
     CleanResponse,
-    CreateEnclaveArgs, 
-    CreateEnclaveResponse, 
-    DestroyEnclaveArgs, 
-    EnclaveAPIContainerHostMachineInfo, 
-    EnclaveAPIContainerInfo, 
-    EnclaveAPIContainerStatus, 
-    EnclaveContainersStatus, 
-    EnclaveInfo, 
-    GetEnclavesResponse, 
-    GetEngineInfoResponse, 
+    CreateEnclaveArgs,
+    CreateEnclaveResponse,
+    DestroyEnclaveArgs,
+    EnclaveAPIContainerHostMachineInfo,
+    EnclaveAPIContainerInfo,
+    EnclaveAPIContainerStatus,
+    EnclaveContainersStatus,
+    EnclaveInfo,
+    GetEnclavesResponse,
+    GetEngineInfoResponse,
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs } from "../constructor_calls";
 
-
-const LOCAL_HOST_IP_ADDRESS_STR: string = "http://localhost";
+const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
@@ -45,27 +42,32 @@ const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 export class KurtosisContext {
-    private readonly backend: KurtosisContextBackend
+    private readonly backend: GenericKurtosisContextBackend
 
-    constructor(backend: KurtosisContextBackend){
+    constructor(backend: GenericKurtosisContextBackend){
         this.backend = backend;
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
-    public static async newKurtosisContextFromLocalEngine(): Promise<Result<KurtosisContext, Error>>{
-        const isExecutionEnvNode: boolean = isNode
-
+    public static async newKurtosisContextFromLocalEngine():Promise<Result<KurtosisContext, Error>>  {
         const kurtosisEnginePortNum: number = isExecutionEnvNode ? DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM : DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM
-        
+
         const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${kurtosisEnginePortNum}`;
 
-        let engineClient: EngineServiceClientWeb | EngineServiceClientNode;
-
+        let genericKurtosisContextBackend: GenericKurtosisContextBackend
         try {
             if(isExecutionEnvNode){
-                engineClient = new EngineServiceClientNode(kurtosisEngineSocketStr, grpc_node.ChannelCredentials.createInsecure())
+                const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
+                const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
+
+                const grpcCredential = grpc_node.credentials.createInsecure()
+
+                const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpcCredential)
+                genericKurtosisContextBackend = new GrpcNodeKurtosisContextBackend(engineServiceClientNode)
+
             }else {
-                engineClient = new EngineServiceClientWeb(kurtosisEngineSocketStr)
+                const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
+                genericKurtosisContextBackend = new GrpcWebKurtosisContextBackend(engineServiceClientWeb)
             }
         } catch(error) {
             if (error instanceof Error) {
@@ -76,22 +78,12 @@ export class KurtosisContext {
             ));
         }
 
-        let kurtosisContextBackend: KurtosisContextBackend
-
-        if(engineClient instanceof EngineServiceClientNode){
-            kurtosisContextBackend = new GrpcNodeKurtosisContextBackend(engineClient)
-        }else{
-            kurtosisContextBackend = new GrpcWebKurtosisContextBackend(engineClient)
-        }
-
-        const getEngineInfoResult = await this.getEngineInfo(kurtosisContextBackend)
-
+        const getEngineInfoResult = await this.getEngineInfo(genericKurtosisContextBackend)
         if(getEngineInfoResult.isErr()){
             return err(getEngineInfoResult.error)
         }
 
-        const kurtosisContext = new KurtosisContext(kurtosisContextBackend)
-
+        const kurtosisContext = new KurtosisContext(genericKurtosisContextBackend)
         return ok(kurtosisContext)
     }
 
@@ -105,7 +97,6 @@ export class KurtosisContext {
         );
 
         const getEnclaveResponseResult = await this.backend.createEnclaveResponse(enclaveArgs)
-
         if(getEnclaveResponseResult.isErr()){
             return err(getEnclaveResponseResult.error)
         }
@@ -118,7 +109,7 @@ export class KurtosisContext {
                 "this is a bug on this library" ))
         }
 
-        const newEnclaveContextResult: Result<EnclaveContext, Error> = this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(enclaveInfo);
         if (newEnclaveContextResult.isErr()) {
             return err(new Error(`An error occurred creating an enclave context from a newly-created enclave; this should never happen`))
         }
@@ -140,7 +131,7 @@ export class KurtosisContext {
         if (maybeEnclaveInfo === undefined) {
             return err(new Error(`No enclave with ID '${enclaveId}' found`))
         }
-        const newEnclaveContextResult: Result<EnclaveContext, Error> = this.newEnclaveContextFromEnclaveInfo(maybeEnclaveInfo);
+        const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(maybeEnclaveInfo);
         if (newEnclaveContextResult.isErr()) {
             return err(newEnclaveContextResult.error);
         }
@@ -201,8 +192,8 @@ export class KurtosisContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private static async getEngineInfo(kurtosisContextBackend: KurtosisContextBackend): Promise<Result<null, Error>>{
-        const getEngineInfoResult = await kurtosisContextBackend.getEngineInfo()
+    private static async getEngineInfo(genericKurtosisContext: GenericKurtosisContextBackend): Promise<Result<null, Error>>{
+        const getEngineInfoResult = await genericKurtosisContext.getEngineInfo()
 
         if(getEngineInfoResult.isErr()){
             return err(getEngineInfoResult.error)
@@ -229,7 +220,7 @@ export class KurtosisContext {
             const libraryEngineMajorVersion = semver.major(libraryEngineSemver)
             const libraryEngineMinorVersion = semver.minor(libraryEngineSemver)
 
-            const doApiVersionsMatch: boolean = libraryEngineMajorVersion == runningEngineMajorVersion && libraryEngineMinorVersion == runningEngineMinorVersion
+            const doApiVersionsMatch: boolean = libraryEngineMajorVersion === runningEngineMajorVersion && libraryEngineMinorVersion === runningEngineMinorVersion
             if (!doApiVersionsMatch) {
                 return err(new Error(
                     `An API version mismatch was detected between the running engine version ${runningEngineSemver.version} and the engine version the library expects, ${libraryEngineSemver.version}; you should use the version of this library that corresponds to the running engine version`
@@ -240,7 +231,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    private newEnclaveContextFromEnclaveInfo(enclaveInfo: EnclaveInfo): Result<EnclaveContext, Error> {
+    private async newEnclaveContextFromEnclaveInfo(enclaveInfo: EnclaveInfo): Promise<Result<EnclaveContext, Error>> {
         const enclaveContainersStatus = enclaveInfo.getContainersStatus()
         if (enclaveContainersStatus !== EnclaveContainersStatus.ENCLAVECONTAINERSSTATUS_RUNNING) {
             return err(new Error(`Enclave containers status was '${enclaveContainersStatus}', but we can't create an enclave context from a non-running enclave`))
@@ -260,19 +251,30 @@ export class KurtosisContext {
             return err(new Error(`API container was listed as running, but no API container host machine info exists`))
         }
 
-        const createApiClientResult = this.backend.createApiClient(LOCAL_HOST_IP_ADDRESS_STR, apiContainerHostMachineInfo)
+        const apiContainerHostMachinePort: string = isExecutionEnvNode ? `${apiContainerHostMachineInfo.getGrpcPortOnHostMachine()}` : `${apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine()}`
 
-        if(createApiClientResult.isErr()){
-            return err(createApiClientResult.error)
+        let newEnclaveContextResult: Result<EnclaveContext, Error>
+        try{
+            newEnclaveContextResult = await EnclaveContext.newEnclaveContext(
+                LOCAL_HOST_IP_ADDRESS_STR,
+                apiContainerHostMachinePort,
+                enclaveInfo.getEnclaveId(),
+                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
+            )
+        }catch(error){
+            if(error instanceof Error){
+                return err(error)
+            }else{
+                return err(new Error(
+                    "An unknown exception value was thrown during creation of the Enclave context that wasn't an error: " + error
+                ))
+            }
+        }
+        if(newEnclaveContextResult.isErr()){
+            return err(newEnclaveContextResult.error)
         }
 
-        const apiContainerClient = createApiClientResult.value
-
-        const result: EnclaveContext = new EnclaveContext(
-            apiContainerClient,
-            enclaveInfo.getEnclaveId(),
-            enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
-        )
-        return ok(result);
+        const newEnclaveContext = newEnclaveContextResult.value
+        return ok(newEnclaveContext);
     }
 }

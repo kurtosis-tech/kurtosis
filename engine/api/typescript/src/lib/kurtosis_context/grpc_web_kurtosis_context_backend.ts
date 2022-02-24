@@ -1,22 +1,20 @@
 import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {err, ok, Result} from "neverthrow";
-import { ApiContainerServiceClientWeb } from "kurtosis-core-api-lib";
-import { EngineServiceClient as EngineServiceClientWeb } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
-import { KurtosisContextBackend } from "./kurtosis_context_backend";
-import { 
-    CleanArgs, 
-    CleanResponse, 
-    CreateEnclaveArgs, 
-    CreateEnclaveResponse, 
-    DestroyEnclaveArgs, 
-    EnclaveAPIContainerHostMachineInfo, 
-    GetEnclavesResponse, 
-    GetEngineInfoResponse, 
-    StopEnclaveArgs 
+import type { EngineServiceClient as EngineServiceClientWeb } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
+import { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
+import {
+    CleanArgs,
+    CleanResponse,
+    CreateEnclaveArgs,
+    CreateEnclaveResponse,
+    DestroyEnclaveArgs,
+    GetEnclavesResponse,
+    GetEngineInfoResponse,
+    StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 
-export class GrpcWebKurtosisContextBackend implements KurtosisContextBackend {
+export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBackend {
     private readonly client: EngineServiceClientWeb
 
     constructor(client: EngineServiceClientWeb){
@@ -133,25 +131,6 @@ export class GrpcWebKurtosisContextBackend implements KurtosisContextBackend {
         }
         const cleanResponse: CleanResponse = cleanResult.value;
         return ok(cleanResponse);
-    }
-
-    public createApiClient(localhostIpAddress:string, apiContainerHostMachineInfo:EnclaveAPIContainerHostMachineInfo):Result<ApiContainerServiceClientWeb,Error>{
-        const apiContainerHostMachineGrpcProxyUrl: string = `${localhostIpAddress}:${apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine()}`
-
-        let apiContainerClient: ApiContainerServiceClientWeb;
-        try {
-            apiContainerClient = new ApiContainerServiceClientWeb(apiContainerHostMachineGrpcProxyUrl);
-        } catch(error) {
-            if (error instanceof Error) {
-                return err(error);
-            }
-            return err(new Error(
-                "An unknown exception value was thrown during creation of the API container client that" +
-                " wasn't an error: " + error
-            ));
-        }
-
-        return ok(apiContainerClient)
     }
 
     public async getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>>{
