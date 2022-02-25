@@ -2,8 +2,8 @@ import * as grpc_web from "grpc-web";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {err, ok, Result} from "neverthrow";
 import type { EngineServiceClient as EngineServiceClientWeb } from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
-import { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
-import {
+import type { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
+import type {
     CleanArgs,
     CleanResponse,
     CreateEnclaveArgs,
@@ -23,6 +23,7 @@ export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBack
 
     public async getEngineInfo(): Promise<Result<GetEngineInfoResponse,Error>> {
         const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+
         const getEngineInfoPromise: Promise<Result<GetEngineInfoResponse, Error>> = new Promise((resolve, _unusedReject) => {
             this.client.getEngineInfo(emptyArg, {}, (error: grpc_web.RpcError | null, response?: GetEngineInfoResponse) => {
                 if (error === null) {
@@ -84,6 +85,7 @@ export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBack
                 }
             })
         });
+
         const stopEnclaveResult: Result<null, Error> = await stopEnclavePromise;
         if (stopEnclaveResult.isErr()) {
             return err(stopEnclaveResult.error);
@@ -102,6 +104,7 @@ export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBack
                 }
             })
         });
+
         const destroyEnclaveResult: Result<null, Error> = await destroyEnclavePromise;
         if (destroyEnclaveResult.isErr()) {
             return err(destroyEnclaveResult.error);
@@ -125,10 +128,12 @@ export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBack
                 }
             })
         });
+
         const cleanResult: Result<CleanResponse, Error> = await cleanPromise;
         if (cleanResult.isErr()) {
             return err(cleanResult.error)
         }
+
         const cleanResponse: CleanResponse = cleanResult.value;
         return ok(cleanResponse);
     }
@@ -148,6 +153,7 @@ export class GrpcWebKurtosisContextBackend implements GenericKurtosisContextBack
                 }
             })
         });
+        
         const getEnclavesResponseResult: Result<GetEnclavesResponse, Error> = await getEnclavesPromise;
         if (getEnclavesResponseResult.isErr()) {
             return err(getEnclavesResponseResult.error)

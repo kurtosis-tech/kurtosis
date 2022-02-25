@@ -3,12 +3,11 @@ import * as semver from "semver"
 import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
-import { EnclaveContext } from "kurtosis-core-api-lib";
+import { EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
 import { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
 import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
 import { GrpcWebKurtosisContextBackend } from "./grpc_web_kurtosis_context_backend";
 import { GrpcNodeKurtosisContextBackend } from "./grpc_node_kurtosis_context_backend";
-import * as engineServiceWeb from "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb";
 import {
     CleanArgs,
     CleanResponse,
@@ -26,7 +25,10 @@ import {
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs } from "../constructor_calls";
 
-const LOCAL_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
+//It seems that gRPC web vs gRPC node read/access differently localhost. 
+//'0.0.0.0' works in Node, but doesn't work in Web and viceversa.
+const LOCAL_NODE_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
+const LOCAL_WEB_HOST_IP_ADDRESS_STR: string = "http://localhost";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
@@ -34,8 +36,6 @@ const API_CONTAINER_LOG_LEVEL: string = "debug";
 
 export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
 export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
-
-type EnclaveID = string;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
@@ -50,9 +50,9 @@ export class KurtosisContext {
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static async newKurtosisContextFromLocalEngine():Promise<Result<KurtosisContext, Error>>  {
-        const kurtosisEnginePortNum: number = isExecutionEnvNode ? DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM : DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM
-
-        const kurtosisEngineSocketStr: string = `${LOCAL_HOST_IP_ADDRESS_STR}:${kurtosisEnginePortNum}`;
+        const kurtosisEngineSocketStr: string = isExecutionEnvNode ? 
+            `${LOCAL_NODE_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}` : 
+            `${LOCAL_WEB_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
 
         let genericKurtosisContextBackend: GenericKurtosisContextBackend
         try {
@@ -60,12 +60,11 @@ export class KurtosisContext {
                 const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
                 const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
-                const grpcCredential = grpc_node.credentials.createInsecure()
-
-                const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpcCredential)
+                const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
                 genericKurtosisContextBackend = new GrpcNodeKurtosisContextBackend(engineServiceClientNode)
-
             }else {
+                const engineServiceWeb = await import("../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb")
+
                 const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
                 genericKurtosisContextBackend = new GrpcWebKurtosisContextBackend(engineServiceClientWeb)
             }
@@ -102,7 +101,6 @@ export class KurtosisContext {
         }
 
         const enclaveResponse: CreateEnclaveResponse = getEnclaveResponseResult.value;
-
         const enclaveInfo: EnclaveInfo | undefined = enclaveResponse.getEnclaveInfo();
         if (enclaveInfo === undefined) {
             return err(new Error("An error occurred creating enclave with ID " + enclaveId + " enclaveInfo is undefined; " +
@@ -115,7 +113,6 @@ export class KurtosisContext {
         }
 
         const enclaveContext = newEnclaveContextResult.value
-
         return ok(enclaveContext);
     }
 
@@ -131,10 +128,12 @@ export class KurtosisContext {
         if (maybeEnclaveInfo === undefined) {
             return err(new Error(`No enclave with ID '${enclaveId}' found`))
         }
+
         const newEnclaveContextResult: Result<EnclaveContext, Error> = await this.newEnclaveContextFromEnclaveInfo(maybeEnclaveInfo);
         if (newEnclaveContextResult.isErr()) {
             return err(newEnclaveContextResult.error);
         }
+
         return ok(newEnclaveContextResult.value);
     }
 
@@ -143,12 +142,13 @@ export class KurtosisContext {
         if (getEnclavesResponseResult.isErr()) {
             return err(getEnclavesResponseResult.error);
         }
-        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
 
+        const getEnclavesResponse: GetEnclavesResponse = getEnclavesResponseResult.value;
         const enclaves: Set<EnclaveID> = new Set();
         for (let enclaveId of getEnclavesResponse.getEnclaveInfoMap().keys()) {
             enclaves.add(enclaveId);
         }
+
         return ok(enclaves);
     }
 
@@ -178,8 +178,8 @@ export class KurtosisContext {
         if(cleanResponseResult.isErr()){
             return err(cleanResponseResult.error)
         }
-        const cleanResponse: CleanResponse = cleanResponseResult.value
 
+        const cleanResponse: CleanResponse = cleanResponseResult.value
         const result: Set<string> = new Set();
         for (let enclaveID of cleanResponse.getRemovedEnclaveIdsMap().keys()) {
             result.add(enclaveID);
@@ -246,21 +246,29 @@ export class KurtosisContext {
         if (apiContainerInfo === undefined) {
             return err(new Error(`API container was listed as running, but no API container info exists`))
         }
+
         const apiContainerHostMachineInfo: EnclaveAPIContainerHostMachineInfo | undefined = enclaveInfo.getApiContainerHostMachineInfo()
         if (apiContainerHostMachineInfo === undefined) {
             return err(new Error(`API container was listed as running, but no API container host machine info exists`))
         }
 
-        const apiContainerHostMachinePort: string = isExecutionEnvNode ? `${apiContainerHostMachineInfo.getGrpcPortOnHostMachine()}` : `${apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine()}`
-
         let newEnclaveContextResult: Result<EnclaveContext, Error>
         try{
-            newEnclaveContextResult = await EnclaveContext.newEnclaveContext(
-                LOCAL_HOST_IP_ADDRESS_STR,
-                apiContainerHostMachinePort,
-                enclaveInfo.getEnclaveId(),
-                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
-            )
+            if(isExecutionEnvNode){
+                newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
+                    LOCAL_NODE_HOST_IP_ADDRESS_STR,
+                    apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
+                    enclaveInfo.getEnclaveId(),
+                    enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
+                    )
+            }else{
+                newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
+                    LOCAL_WEB_HOST_IP_ADDRESS_STR,
+                    apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
+                    enclaveInfo.getEnclaveId(),
+                    enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
+                )
+            }
         }catch(error){
             if(error instanceof Error){
                 return err(error)
