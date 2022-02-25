@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.4
 ### Features
 * Added a `config path` command to print the path to the Kurtosis config file
 * Added a `--force` flag to `config init` to allow users to ignore the interactive confirmation prompt (useful for running in CI)
