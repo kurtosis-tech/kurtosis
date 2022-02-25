@@ -1,5 +1,9 @@
 # TBD
 
+### Features
+
+* Added GenericEngineClient interface to abstract grpc-web vs grpc-js Typescript backends
+
 # 1.11.1
 ### Changes
 * Kurtosis enclaves created via `KurtosisContext.CreateEnclave` default to the debug loglevel
@@ -26,10 +30,6 @@
 # 1.10.3
 ### Fixes
 * Don't break on old port spec (`portId:1234/TCP`)
-
-### Features
-* Added envoy proxy to support grpc-web calls from GUI
-* Added Kurt Context Interface
 
 # 1.10.2
 ### Fixes
