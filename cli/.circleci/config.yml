@@ -220,8 +220,6 @@ jobs:
           at: "<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>"
       - run: |
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
-      # This should actually fail because we haven't 'init'd the config (which is requierd when running in non-interactive mode)
-      - run: "! ${KURTOSIS_BINPATH} engine start"
       - run: |
           function test_config_init_is_required() {
             if ${KURTOSIS_BINPATH} engine status; then

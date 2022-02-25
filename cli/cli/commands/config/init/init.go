@@ -7,12 +7,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mattn/go-isatty"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 const (
@@ -88,7 +87,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if doesKurtosisConfigAlreadyExists && !shouldForceInitConfig {
 		// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal) before displaying
 		//  the interactive prompt
-		if !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())) {
+		if !interactive_terminal_decider.IsInteractiveTerminal() {
 			return stacktrace.NewError(
 				"The Kurtosis config already exists and the '%v' flags wasn't specified so this is where we'd normally ask for " +
 					"a confirmation to overwrite the config, except STDOUT isn't a terminal (indicating that this is probably " +
