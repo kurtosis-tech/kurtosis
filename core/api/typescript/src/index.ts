@@ -30,14 +30,6 @@ export { newExecCommandArgs, newLoadModuleArgs, newRegisterFilesArtifactsArgs, n
 export { ModuleContainerArgs } from "./module_launch_api/module_container_args";
 export { getArgsFromEnv } from "./module_launch_api/args_io";
 
-// TODO: Refactor ApiContainerServiceClient outside of this file. Basically we need to hide it from the user.
-// Kurtosis Core RPC API Bindings
-export type { ApiContainerServiceClient as ApiContainerServiceClientNode} from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-export type { ApiContainerServiceClient as ApiContainerServiceClientWeb} from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb";
-
-//TODO: Remove this line after Engine supports gRPC web
-export type { ApiContainerServiceClient } from "./kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
-
 export { PartitionConnections } from "./kurtosis_core_rpc_api_bindings/api_container_service_pb";
 export type { IExecutableModuleServiceServer } from "./kurtosis_core_rpc_api_bindings/executable_module_service_grpc_pb";
 export { ExecuteArgs, ExecuteResponse } from "./kurtosis_core_rpc_api_bindings/executable_module_service_pb";
