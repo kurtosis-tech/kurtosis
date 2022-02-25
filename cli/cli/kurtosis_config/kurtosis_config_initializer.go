@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/mattn/go-isatty"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -21,7 +22,7 @@ const (
 
 func initInteractiveConfig() (*KurtosisConfig, error) {
 	// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal)
-	if fileInfo, _ := os.Stdout.Stat(); (fileInfo.Mode() & os.ModeCharDevice) != 0 {
+	if !(isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())) {
 		return nil, stacktrace.NewError(
 			"The Kurtosis config isn't initialized so we'd initialize it interactively here except STDOUT isn't " +
 				"a terminal (indicating that this is probably running in CI) which means that you'll need to manually " +

@@ -5,6 +5,9 @@
 * If the user does end up trying to `config init` in a non-interactive shell when the config already exists, throw an error with informative information
 * Added CI checks to ensure that double-init'ing the config without `force` fails, and with `force` succeeds
 
+### Fixes
+* Fixed a bug with determining if the terminal is a TTY
+
 # 0.11.3
 ### Changes
 * Upgraded to the following, which contain dormant Kubernetes code:
