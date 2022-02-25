@@ -32,7 +32,7 @@ class BulkCommandSerializer {
         let bytes: string;
         try {
             bytes = JSON.stringify(toSerialize);
-        } catch (jsonErr) {
+        } catch (jsonErr: any) {
             // Sadly, we have to do this because there's no great way to enforce the caught thing being an error
             // See: https://stackoverflow.com/questions/30469261/checking-for-typeof-error-in-js
             if (jsonErr && jsonErr.stack && jsonErr.message) {
