@@ -1,5 +1,7 @@
 # TBD
 
+# 1.39.5
+
 ### Fixes
 * Refactored TS types for gRPC Web implementation
 
