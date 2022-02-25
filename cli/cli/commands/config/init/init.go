@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/interactive_terminal_decider"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
@@ -15,6 +16,9 @@ import (
 
 const (
 	acceptSendingMetricsArgKey = "accept-sending-metrics"
+
+	shouldForceInitFlagKey          = "force"
+	defaultShouldForceInitFlagValue = "false"
 
 	overrideConfigPromptLabel = "The Kurtosis Config is already created; do you want to override it?"
 
@@ -38,6 +42,15 @@ var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 			validAcceptSendingMetricsArgValues,
 		),
 	},
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       shouldForceInitFlagKey,
+			Usage:     "If the config is already initialized, ignores the overwrite confirmation prompt",
+			Shorthand: "f",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldForceInitFlagValue,
+		},
+	},
 	RunFunc:                  run,
 }
 
@@ -45,6 +58,11 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	didUserAcceptSendingMetricsStr, err := args.GetNonGreedyArg(acceptSendingMetricsArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but none was found; this is a bug in Kurtosis!", acceptSendingMetricsArgKey)
+	}
+
+	shouldForceInitConfig, err := flags.GetBool(shouldForceInitFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for flag '%v' but none was found; this is a bug in Kurtosis", shouldForceInitFlagKey)
 	}
 
 	// We get validation for free by virtue of the KurtosisCommand framework
@@ -66,13 +84,26 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking if Kurtosis config already exists")
 	}
-	if doesKurtosisConfigAlreadyExists {
+	if doesKurtosisConfigAlreadyExists && !shouldForceInitConfig {
+		// Check if we're actually running in interactive mode (i.e. STDOUT is a terminal) before displaying
+		//  the interactive prompt
+		if !interactive_terminal_decider.IsInteractiveTerminal() {
+			return stacktrace.NewError(
+				"The Kurtosis config already exists and the '%v' flags wasn't specified so this is where we'd normally ask for " +
+					"a confirmation to overwrite the config, except STDOUT isn't a terminal (indicating that this is probably " +
+					"running in CI so interactive confirmation isn't possible). If an already-initialized config is expected and " +
+					"you want to force-overwrite it non-interactively, you can add the '%v' flag to this command.",
+				shouldForceInitFlagKey,
+				shouldForceInitFlagKey,
+			)
+		}
+
 		shouldOverrideKurtosisConfig, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(overrideConfigPromptLabel, false)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred displaying confirmation prompt")
+			return stacktrace.Propagate(err, "An error occurred displaying the confirmation prompt to confirm if the user wants to overwrite an already-existing config")
 		}
 		if !shouldOverrideKurtosisConfig {
-			logrus.Infof("Skipping overriding Kurtosis config")
+			logrus.Infof("Skipping overwriting Kurtosis config")
 			return nil
 		}
 	}
