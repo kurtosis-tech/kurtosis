@@ -10,7 +10,7 @@ import {
     StopEnclaveArgs
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 
-export interface GenericKurtosisContextBackend {
+export interface GenericEngineClient {
     getEngineInfo(): Promise<Result<GetEngineInfoResponse,Error>>
     createEnclaveResponse(args: CreateEnclaveArgs): Promise<Result<CreateEnclaveResponse, Error>>
     getEnclavesResponse(): Promise<Result<GetEnclavesResponse, Error>>

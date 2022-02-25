@@ -4,10 +4,10 @@ import * as jspb from "google-protobuf";
 import {err, ok, Result} from "neverthrow";
 import { isNode as isExecutionEnvNode} from "browser-or-node";
 import { EnclaveContext, EnclaveID } from "kurtosis-core-api-lib";
-import { GenericKurtosisContextBackend } from "./generic_kurtosis_context_backend";
+import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_ENGINE_VERSION } from "../../kurtosis_engine_version/kurtosis_engine_version";
-import { GrpcWebKurtosisContextBackend } from "./grpc_web_kurtosis_context_backend";
-import { GrpcNodeKurtosisContextBackend } from "./grpc_node_kurtosis_context_backend";
+import { GrpcWebEngineClient } from "./grpc_web_engine_client";
+import { GrpcNodeEngineClient } from "./grpc_node_engine_client";
 import {
     CleanArgs,
     CleanResponse,
@@ -28,7 +28,7 @@ import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEncla
 //It seems that gRPC web vs gRPC node read/access differently localhost. 
 //'0.0.0.0' works in Node, but doesn't work in Web and viceversa.
 const LOCAL_NODE_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
-const LOCAL_WEB_HOST_IP_ADDRESS_STR: string = "http://localhost";
+const LOCAL_HOST: string = "localhost";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
@@ -42,31 +42,29 @@ const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 export class KurtosisContext {
-    private readonly backend: GenericKurtosisContextBackend
+    private readonly backend: GenericEngineClient
 
-    constructor(backend: GenericKurtosisContextBackend){
+    constructor(backend: GenericEngineClient){
         this.backend = backend;
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static async newKurtosisContextFromLocalEngine():Promise<Result<KurtosisContext, Error>>  {
-        const kurtosisEngineSocketStr: string = isExecutionEnvNode ? 
-            `${LOCAL_NODE_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}` : 
-            `${LOCAL_WEB_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
-
-        let genericKurtosisContextBackend: GenericKurtosisContextBackend
+        let genericKurtosisContextBackend: GenericEngineClient
         try {
             if(isExecutionEnvNode){
                 const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
                 const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
+                const kurtosisEngineSocketStr: string = `${LOCAL_NODE_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
-                genericKurtosisContextBackend = new GrpcNodeKurtosisContextBackend(engineServiceClientNode)
+                genericKurtosisContextBackend = new GrpcNodeEngineClient(engineServiceClientNode)
             }else {
                 const engineServiceWeb = await import("../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb")
 
+                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOST}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
-                genericKurtosisContextBackend = new GrpcWebKurtosisContextBackend(engineServiceClientWeb)
+                genericKurtosisContextBackend = new GrpcWebEngineClient(engineServiceClientWeb)
             }
         } catch(error) {
             if (error instanceof Error) {
@@ -192,7 +190,7 @@ export class KurtosisContext {
     // ====================================================================================================
     //                                       Private helper functions
     // ====================================================================================================
-    private static async getEngineInfo(genericKurtosisContext: GenericKurtosisContextBackend): Promise<Result<null, Error>>{
+    private static async getEngineInfo(genericKurtosisContext: GenericEngineClient): Promise<Result<null, Error>>{
         const getEngineInfoResult = await genericKurtosisContext.getEngineInfo()
 
         if(getEngineInfoResult.isErr()){
@@ -263,7 +261,7 @@ export class KurtosisContext {
                     )
             }else{
                 newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
-                    LOCAL_WEB_HOST_IP_ADDRESS_STR,
+                    LOCAL_HOST,
                     apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
                     enclaveInfo.getEnclaveId(),
                     enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
