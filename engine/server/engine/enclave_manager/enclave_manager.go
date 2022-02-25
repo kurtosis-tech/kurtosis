@@ -3,6 +3,15 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+	"path"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
@@ -14,14 +23,6 @@ import (
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net"
-	"os"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 const (
@@ -38,10 +39,9 @@ const (
 
 	allEnclavesDirname = "enclaves"
 
-	apiContainerListenPortNumInsideNetwork = uint16(7443)
+	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
-	// TODO this will be updated later by Karen
-	apiContainerGRPPCListenPortNumInsideNetwork = uint16(7444)
+	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
 
 	// NOTE: It's very important that all directories created inside the engine data directory are created with 0777
 	//  permissions, because:
@@ -129,10 +129,10 @@ func NewEnclaveManager(
 //  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-// If blank, will use the default
+	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-// TODO put in coreApiVersion as a param here!
+	// TODO put in coreApiVersion as a param here!
 	enclaveId string,
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool,
@@ -228,17 +228,18 @@ func (manager *EnclaveManager) CreateEnclave(
 	)
 	var apiContainerId string
 	var apiContainerPublicIpAddr net.IP
-	var apiContainerPublicPort *enclave_container_launcher.EnclaveContainerPort
+	var apiContainerGrpcPublicPort *enclave_container_launcher.EnclaveContainerPort
+	var apiContainerGrpcProxyPublicPort *enclave_container_launcher.EnclaveContainerPort
 	var launchApiContainerErr error
 	if apiContainerImageVersionTag == "" {
-		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, _, launchApiContainerErr = apiContainerLauncher.LaunchWithDefaultVersion(
+		apiContainerId, apiContainerPublicIpAddr, apiContainerGrpcPublicPort, apiContainerGrpcProxyPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithDefaultVersion(
 			setupCtx,
 			apiContainerLogLevel,
 			enclaveId,
 			networkId,
 			networkIpAndMask.String(),
-			apiContainerListenPortNumInsideNetwork,
-			apiContainerGRPPCListenPortNumInsideNetwork,
+			apiContainerListenGrpcPortNumInsideNetwork,
+			apiContainerListenGrpcProxyPortNumInsideNetwork,
 			gatewayIp,
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
@@ -247,15 +248,15 @@ func (manager *EnclaveManager) CreateEnclave(
 			didUserAcceptSendingMetrics,
 		)
 	} else {
-		apiContainerId, apiContainerPublicIpAddr, apiContainerPublicPort, _, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
+		apiContainerId, apiContainerPublicIpAddr, apiContainerGrpcPublicPort, apiContainerGrpcProxyPublicPort, launchApiContainerErr = apiContainerLauncher.LaunchWithCustomVersion(
 			setupCtx,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveId,
 			networkId,
 			networkIpAndMask.String(),
-			apiContainerListenPortNumInsideNetwork,
-			apiContainerGRPPCListenPortNumInsideNetwork,
+			apiContainerListenGrpcPortNumInsideNetwork,
+			apiContainerListenGrpcProxyPortNumInsideNetwork,
 			gatewayIp,
 			apiContainerPrivateIpAddr,
 			isPartitioningEnabled,
@@ -285,13 +286,15 @@ func (manager *EnclaveManager) CreateEnclave(
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-			ContainerId:       apiContainerId,
-			IpInsideEnclave:   apiContainerPrivateIpAddr.String(),
-			PortInsideEnclave: uint32(apiContainerListenPortNumInsideNetwork),
+			ContainerId:                apiContainerId,
+			IpInsideEnclave:            apiContainerPrivateIpAddr.String(),
+			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
+			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:   apiContainerPublicIpAddr.String(),
-			PortOnHostMachine: uint32(apiContainerPublicPort.GetNumber()),
+			IpOnHostMachine:            apiContainerPublicIpAddr.String(),
+			GrpcPortOnHostMachine:      uint32(apiContainerGrpcPublicPort.GetNumber()),
+			GrpcProxyPortOnHostMachine: uint32(apiContainerGrpcProxyPublicPort.GetNumber()),
 		},
 		EnclaveDataDirpathOnHostMachine: enclaveDataDirpathOnHostMachine,
 	}
@@ -488,60 +491,102 @@ func getEnclaveContainerInformation(
 				)
 			}
 
-			apiContainerObjAttrPrivatePort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels)
+			apiContainerObjAttrPrivateGrpcPort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCPortID)
 			if err != nil {
-				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container private port")
+				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container grpc private port")
+			}
+
+			apiContainerObjAttrPrivateGrpcProxyPort, err := getApiContainerPrivatePortUsingAllKnownMethods(containerLabels, schema.KurtosisInternalContainerGRPCProxyPortID)
+			if err != nil {
+				return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container grpc-proxy private port")
 			}
 
 			resultApiContainerInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-				ContainerId:       enclaveContainer.GetId(),
-				IpInsideEnclave:   apiContainerIpInsideNetwork,
-				PortInsideEnclave: uint32(apiContainerObjAttrPrivatePort.GetNumber()),
+				ContainerId:                enclaveContainer.GetId(),
+				IpInsideEnclave:            apiContainerIpInsideNetwork,
+				GrpcPortInsideEnclave:      uint32(apiContainerObjAttrPrivateGrpcPort.GetNumber()),
+				GrpcProxyPortInsideEnclave: uint32(apiContainerObjAttrPrivateGrpcProxyPort.GetNumber()),
 			}
 
 			// We only get host machine info if the container is running
 			if isEnclaveContainerRunning {
-				apiContainerPrivatePortObjAttrProto := apiContainerObjAttrPrivatePort.GetProtocol()
-				apiContainerPrivatePortDockerProto, foundDockerProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivatePortObjAttrProto]
+				apiContainerPrivateGrpcPortObjAttrProto := apiContainerObjAttrPrivateGrpcPort.GetProtocol()
+				apiContainerPrivateGrpcPortDockerProto, foundDockerProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivateGrpcPortObjAttrProto]
 				if !foundDockerProto {
 					return 0, 0, nil, nil, stacktrace.NewError(
 						"No Docker protocol was defined for obj attr proto '%v'; this is a bug in Kurtosis",
-						apiContainerPrivatePortObjAttrProto,
+						apiContainerPrivateGrpcPortObjAttrProto,
 					)
 				}
 
-				apiContainerPrivatePortNumStr := fmt.Sprintf("%v", apiContainerObjAttrPrivatePort.GetNumber())
-				apiContainerDockerPrivatePort, createDockerPrivatePortErr := nat.NewPort(
-					apiContainerPrivatePortDockerProto,
-					apiContainerPrivatePortNumStr,
+				apiContainerPrivateGrpcPortNumStr := fmt.Sprintf("%v", apiContainerObjAttrPrivateGrpcPort.GetNumber())
+				apiContainerDockerPrivateGrpcPort, createDockerPrivateGrpcPortErr := nat.NewPort(
+					apiContainerPrivateGrpcPortDockerProto,
+					apiContainerPrivateGrpcPortNumStr,
 				)
-				if createDockerPrivatePortErr != nil {
+				if createDockerPrivateGrpcPortErr != nil {
 					return 0, 0, nil, nil, stacktrace.Propagate(
-						createDockerPrivatePortErr,
-						"An error occurred creating the API container Docker private port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
-						apiContainerPrivatePortNumStr,
-						apiContainerPrivatePortDockerProto,
+						createDockerPrivateGrpcPortErr,
+						"An error occurred creating the API container Docker private grpc port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
+						apiContainerPrivateGrpcPortNumStr,
+						apiContainerPrivateGrpcPortDockerProto,
+					)
+				}
+
+				apiContainerPrivateGrpcProxyPortObjAttrProto := apiContainerObjAttrPrivateGrpcProxyPort.GetProtocol()
+				apiContainerPrivateGrpcProxyPortDockerProto, foundDockerGrpcProxyProto := objAttrsSchemaPortProtosToDockerPortProtos[apiContainerPrivateGrpcProxyPortObjAttrProto]
+				if !foundDockerGrpcProxyProto {
+					return 0, 0, nil, nil, stacktrace.NewError(
+						"No Docker protocol was defined for obj attr proto '%v'; this is a bug in Kurtosis",
+						apiContainerPrivateGrpcProxyPortObjAttrProto,
+					)
+				}
+				apiContainerPrivateGrpcProxyPortNumStr := fmt.Sprintf("%v", apiContainerObjAttrPrivateGrpcProxyPort.GetNumber())
+				apiContainerDockerPrivateGrpcProxyPort, createDockerPrivateGrpcProxyPortErr := nat.NewPort(
+					apiContainerPrivateGrpcProxyPortDockerProto,
+					apiContainerPrivateGrpcProxyPortNumStr,
+				)
+				if createDockerPrivateGrpcProxyPortErr != nil {
+					return 0, 0, nil, nil, stacktrace.Propagate(
+						createDockerPrivateGrpcProxyPortErr,
+						"An error occurred creating the API container Docker private grpc-proxy port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
+						apiContainerPrivateGrpcProxyPortNumStr,
+						apiContainerPrivateGrpcProxyPortDockerProto,
 					)
 				}
 
 				allApiContainerPublicPortBindings := enclaveContainer.GetHostPortBindings()
-				apiContainerPublicPortBinding, foundApiContainerPublicPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivatePort]
-				if !foundApiContainerPublicPortBinding {
+				apiContainerPublicGrpcPortBinding, foundApiContainerPublicGrpcPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivateGrpcPort]
+				if !foundApiContainerPublicGrpcPortBinding {
 					return 0, 0, nil, nil, stacktrace.NewError(
 						"No host machine port binding was found for API container Docker port '%v'; this is a bug in Kurtosis!",
-						apiContainerDockerPrivatePort,
+						apiContainerDockerPrivateGrpcPort,
+					)
+				}
+				apiContainerPublicGrpcProxyPortBinding, foundApiContainerPublicGrpcProxyPortBinding := allApiContainerPublicPortBindings[apiContainerDockerPrivateGrpcProxyPort]
+				if !foundApiContainerPublicGrpcProxyPortBinding {
+					return 0, 0, nil, nil, stacktrace.NewError(
+						"No host machine port binding was found for API container Docker port '%v'; this is a bug in Kurtosis!",
+						apiContainerDockerPrivateGrpcProxyPort,
 					)
 				}
 
-				apiContainerPublicPortNumStr := apiContainerPublicPortBinding.HostPort
-				apiContainerPublicPortNumUint16, err := parseHostMachinePortNumStrToUint16(apiContainerPublicPortNumStr)
+				apiContainerPublicGrpcPortNumStr := apiContainerPublicGrpcPortBinding.HostPort
+				apiContainerPublicGrpcPortNumUint16, err := parseHostMachinePortNumStrToUint16(apiContainerPublicGrpcPortNumStr)
 				if err != nil {
-					return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred converting the API container public port string '%v' to uint16", apiContainerPublicPortNumStr)
+					return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred converting the API container public port string '%v' to uint16", apiContainerPublicGrpcPortNumStr)
+				}
+
+				apiContainerPublicGrpcProxyPortNumStr := apiContainerPublicGrpcProxyPortBinding.HostPort
+				apiContainerPublicGrpcProxyPortNumUint16, err := parseHostMachinePortNumStrToUint16(apiContainerPublicGrpcProxyPortNumStr)
+				if err != nil {
+					return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred converting the API container public port string '%v' to uint16", apiContainerPublicGrpcProxyPortNumStr)
 				}
 
 				resultApiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-					IpOnHostMachine:   apiContainerPublicPortBinding.HostIP,
-					PortOnHostMachine: uint32(apiContainerPublicPortNumUint16),
+					IpOnHostMachine:            apiContainerPublicGrpcPortBinding.HostIP,
+					GrpcPortOnHostMachine:      uint32(apiContainerPublicGrpcPortNumUint16),
+					GrpcProxyPortOnHostMachine: uint32(apiContainerPublicGrpcProxyPortNumUint16),
 				}
 			}
 		}
@@ -550,7 +595,7 @@ func getEnclaveContainerInformation(
 	return resultContainersStatus, resultApiContainerStatus, resultApiContainerInfo, resultApiContainerHostMachineInfo, nil
 }
 
-func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[string]string) (*schema.PortSpec, error) {
+func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[string]string, portID string) (*schema.PortSpec, error) {
 	serializedPortSpecsStr, found := apiContainerLabels[schema.PortSpecsLabel]
 	if found {
 		var portSpecs map[string]*schema.PortSpec
@@ -568,8 +613,7 @@ func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[strin
 			}
 			portSpecs = candidatePortSpecs
 		}
-
-		port, found := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
+		port, found := portSpecs[portID]
 		if !found {
 			return nil, stacktrace.NewError("Didn't find expected API container port ID '%v' in the port specs map", schema.KurtosisInternalContainerGRPCPortID)
 		}
@@ -598,14 +642,14 @@ func getApiContainerPrivatePortUsingAllKnownMethods(apiContainerLabels map[strin
 // WE SHOULD REMOVE THIS AFTER 2022-04-14!!!
 func deserializePre2022_02_14PortSpec(specsStr string) (map[string]*schema.PortSpec, error) {
 	const (
-		portIdAndInfoSeparator = ":"
+		portIdAndInfoSeparator      = ":"
 		portNumAndProtocolSeparator = "/"
-		portSpecsSeparator = ","
+		portSpecsSeparator          = ","
 
 		expectedNumPortIdAndSpecFragments      = 2
 		expectedNumPortNumAndProtocolFragments = 2
-		portUintBase = 10
-		portUintBits = 16
+		portUintBase                           = 10
+		portUintBits                           = 16
 
 		// The maximum number of bytes that a label value can be
 		// See https://github.com/docker/for-mac/issues/2208

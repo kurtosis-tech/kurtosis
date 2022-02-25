@@ -23,7 +23,9 @@ const (
 
 	shouldPublishAllPorts = true
 
-	DefaultKurtosisEngineServerPortNum = uint16(9710)
+	DefaultKurtosisEngineServerGrpcPortNum = uint16(9710)
+
+	DefaultKurtosisEngineServerGrpcProxyPortNum = uint16(9711)
 
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
@@ -40,7 +42,7 @@ type KurtosisContext struct {
 // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
 func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	ctx := context.Background()
-	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultKurtosisEngineServerPortNum)
+	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultKurtosisEngineServerGrpcPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
 	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithInsecure())
@@ -248,7 +250,7 @@ func newEnclaveContextFromEnclaveInfo(
 	apiContainerHostMachineUrl := fmt.Sprintf(
 		"%v:%v",
 		apiContainerHostMachineInfo.IpOnHostMachine,
-		apiContainerHostMachineInfo.PortOnHostMachine,
+		apiContainerHostMachineInfo.GrpcPortOnHostMachine,
 	)
 	// TODO SECURITY: use HTTPS!
 	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithInsecure())

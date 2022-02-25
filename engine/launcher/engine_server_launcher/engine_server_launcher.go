@@ -9,15 +9,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
-	"strconv"
-	"time"
 )
 
 const (
@@ -34,7 +35,9 @@ const (
 
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
 	// This is the Docker constant indicating a TCP port
-	engineContainerDockerPortProtocol = "tcp"
+	grpcPortProtocol = "tcp"
+
+	grpcProxyPortProtocol = "tcp"
 
 	// The protocol string we use in the netstat command used to ensure the engine container is available
 	netstatWaitForAvailabilityPortProtocol = "tcp"
@@ -65,20 +68,23 @@ func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAtt
 func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
-	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
-	resultPublicPortNum uint16,
+	resultPublicGrpcPortNum uint16,
+	// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
 	resultErr error,
 ) {
-	publicIpAddr, publicPortNum, err := launcher.LaunchWithCustomVersion(
+	publicIpAddr, publicGrpcPortNum, err := launcher.LaunchWithCustomVersion(
 		ctx,
 		KurtosisEngineVersion,
 		logLevel,
-		listenPortNum,
+		grpcListenPortNum,
+		grpcProxyListenPortNum,
 		engineDataDirpathOnHostMachine,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
@@ -86,20 +92,21 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", KurtosisEngineVersion)
 	}
-	return publicIpAddr, publicPortNum, nil
+	return publicIpAddr, publicGrpcPortNum, nil
 }
 
 func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
-	listenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
+	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	engineDataDirpathOnHostMachine string,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (
 	resultPublicIpAddr net.IP,
-	resultPublicPortNum uint16,
+	resultPublicGrpcPortNum uint16,
 	resultErr error,
 ) {
 	matchingNetworks, err := launcher.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
@@ -121,26 +128,40 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(listenPortNum)
+	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(grpcListenPortNum, grpcProxyListenPortNum)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
+		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using grpc port num '%v' and grpc-proxy port num '%v'", grpcListenPortNum, grpcProxyListenPortNum)
 	}
 
-	enginePortObj, err := nat.NewPort(
-		engineContainerDockerPortProtocol,
-		fmt.Sprintf("%v", listenPortNum),
+	grpcPortObj, err := nat.NewPort(
+		grpcPortProtocol,
+		fmt.Sprintf("%v", grpcListenPortNum),
 	)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(
 			err,
 			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
-			listenPortNum,
-			engineContainerDockerPortProtocol,
+			grpcListenPortNum,
+			grpcPortProtocol,
+		)
+	}
+
+	grpcProxyPortObj, err := nat.NewPort(
+		grpcProxyPortProtocol,
+		fmt.Sprintf("%v", grpcProxyListenPortNum),
+	)
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(
+			err,
+			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's grpc-proxy port",
+			grpcProxyListenPortNum,
+			grpcProxyPortProtocol,
 		)
 	}
 
 	argsObj, err := args.NewEngineServerArgs(
-		listenPortNum,
+		grpcListenPortNum,
+		grpcProxyListenPortNum,
 		logLevel.String(),
 		imageVersionTag,
 		engineDataDirpathOnHostMachine,
@@ -157,7 +178,8 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		enginePortObj: docker_manager.NewManualPublishingSpec(listenPortNum),
+		grpcPortObj:      docker_manager.NewManualPublishingSpec(grpcListenPortNum),
+		grpcProxyPortObj: docker_manager.NewManualPublishingSpec(grpcProxyListenPortNum),
 	}
 
 	bindMounts := map[string]string{
@@ -205,11 +227,15 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		}
 	}()
 
-	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, listenPortNum); err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcListenPortNum); err != nil {
+		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcListenPortNum)
 	}
 
-	hostMachineEnginePortBinding, found := hostMachinePortBindings[enginePortObj]
+	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcProxyListenPortNum); err != nil {
+		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcProxyListenPortNum)
+	}
+
+	hostMachineEnginePortBinding, found := hostMachinePortBindings[grpcPortObj]
 	if !found {
 		return nil, 0, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
 	}
@@ -255,7 +281,7 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 		outputBuffer := &bytes.Buffer{}
 		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
 		if err == nil {
-			if (exitCode == availabilityWaitingExecCmdSuccessExitCode) {
+			if exitCode == availabilityWaitingExecCmdSuccessExitCode {
 				return nil
 			}
 			logrus.Debugf(

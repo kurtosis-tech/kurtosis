@@ -1,7 +1,7 @@
 // Own Version
 export { KURTOSIS_ENGINE_VERSION } from "./kurtosis_engine_version/kurtosis_engine_version";
 
-export { KurtosisContext, DEFAULT_KURTOSIS_ENGINE_SERVER_PORT_NUM } from "./lib/kurtosis_context/kurtosis_context";
+// TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
+export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./lib/kurtosis_context/kurtosis_context";
 
-// RPC API bindings
-export { EngineServiceClient } from "./kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb";
+export { EnclaveAPIContainerHostMachineInfo } from "./kurtosis_engine_rpc_api_bindings/engine_service_pb"
