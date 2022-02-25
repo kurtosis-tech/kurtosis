@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added a `config path` command to print the path to the Kurtosis config file
+* Added a `--force` flag to `config init` to allow users to ignore the interactive confirmation prompt (useful for running in CI)
+* If the user does end up trying to `config init` in a non-interactive shell when the config already exists, throw an error with informative information
+* Added CI checks to ensure that double-init'ing the config without `force` fails, and with `force` succeeds
 
 # 0.11.3
 ### Changes

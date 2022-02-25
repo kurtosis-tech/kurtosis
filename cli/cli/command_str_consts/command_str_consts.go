@@ -34,6 +34,7 @@ const (
 		ShellCmdStr = "shell"
 	ConfigCmdStr = "config"
 		InitCmdStr = "init"
+		PathCmdStr = "path"
 	VersionCmdStr = "version"
 )
 
