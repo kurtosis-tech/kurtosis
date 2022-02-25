@@ -9,6 +9,7 @@ LICENSE
 *.md
 
 docs
+scripts
 
 .dockerignore
 Dockerfile

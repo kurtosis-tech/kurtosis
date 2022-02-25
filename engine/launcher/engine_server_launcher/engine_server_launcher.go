@@ -76,6 +76,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortNum uint16,
+	// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
 	resultErr error,
 ) {
 	publicIpAddr, publicGrpcPortNum, err := launcher.LaunchWithCustomVersion(
@@ -127,9 +128,9 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(grpcListenPortNum)
+	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(grpcListenPortNum, grpcProxyListenPortNum)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", grpcListenPortNum)
+		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using grpc port num '%v' and grpc-proxy port num '%v'", grpcListenPortNum, grpcProxyListenPortNum)
 	}
 
 	grpcPortObj, err := nat.NewPort(

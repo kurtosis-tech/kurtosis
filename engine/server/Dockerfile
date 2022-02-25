@@ -8,12 +8,6 @@ ENV ENVOY_UID=0
 
 WORKDIR /run
 
-COPY ./build/kurtosis-engine .
-COPY ./scripts/run-engine-and-envoy.sh .
+COPY ./build/kurtosis-engine ./run-engine-and-envoy.sh ./
 
-RUN chmod +x run-engine-and-envoy.sh
-
-
-
-CMD ./run-engine-and-envoy.sh
-    
+CMD bash ./run-engine-and-envoy.sh

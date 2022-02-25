@@ -31,8 +31,11 @@ function run-envoy-proxy() {
 
 for command_to_run in "${COMMANDS_TO_RUN[@]}"; do
     "${command_to_run}" &
-    PIDS_TO_WAIT_FOR+=("${!}")
+    command_pid="${!}"
+    PIDS_TO_WAIT_FOR+=("${command_pid}")
+    echo "Launched command '${command_to_run}' with PID '${command_pid}'"
 done
+
 
 function cleanup() {
   echo "cleaning up before exiting..."
@@ -44,12 +47,20 @@ function cleanup() {
 
 trap 'echo signal received!; cleanup' SIGINT SIGTERM
 
+did_errors_occur="false"
+
 for pid in "${PIDS_TO_WAIT_FOR[@]}"; do
     if wait "${pid}"; then
         echo "PID '${pid}' exited successfully"
     else
+        did_errors_occur="true"
         echo "PID '${pid}' errored"
     fi
 done
 
-echo "Finished running Kurtosis engine & Envoy proxy"
+if "${did_errors_occur}"; then
+    echo "Error: One or more errors occurred running the Kurtosis Engine container & Envoy proxy" >&2
+    exit 1
+fi
+
+echo "The Kurtosis Engine container & Envoy proxy finished successfully"

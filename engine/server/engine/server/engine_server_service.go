@@ -72,11 +72,6 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with ID '%v'", args.EnclaveId)
 	}
 
-	if err := service.metricsClient.TrackCreateEnclave(enclaveInfo.EnclaveId); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Errorf("An error occurred tracking create enclave event\n%v", err)
-	}
-
 	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
 		EnclaveInfo: enclaveInfo,
 	}

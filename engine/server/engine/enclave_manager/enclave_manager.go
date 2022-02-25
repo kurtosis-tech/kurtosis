@@ -549,7 +549,7 @@ func getEnclaveContainerInformation(
 				if createDockerPrivateGrpcProxyPortErr != nil {
 					return 0, 0, nil, nil, stacktrace.Propagate(
 						createDockerPrivateGrpcProxyPortErr,
-						"An error occurred creating the API container Docker private grpc port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
+						"An error occurred creating the API container Docker private grpc-proxy port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
 						apiContainerPrivateGrpcProxyPortNumStr,
 						apiContainerPrivateGrpcProxyPortDockerProto,
 					)

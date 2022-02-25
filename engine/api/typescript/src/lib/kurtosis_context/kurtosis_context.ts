@@ -25,10 +25,7 @@ import {
 } from "../../kurtosis_engine_rpc_api_bindings/engine_service_pb";
 import { newCleanArgs, newCreateEnclaveArgs, newDestroyEnclaveArgs, newStopEnclaveArgs } from "../constructor_calls";
 
-//It seems that gRPC web vs gRPC node read/access differently localhost. 
-//'0.0.0.0' works in Node, but doesn't work in Web and viceversa.
-const LOCAL_NODE_HOST_IP_ADDRESS_STR: string = "0.0.0.0";
-const LOCAL_HOST: string = "localhost";
+const LOCAL_HOSTNAME: string = "localhost";
 
 const SHOULD_PUBLISH_ALL_PORTS: boolean = true;
 
@@ -42,29 +39,37 @@ const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
 export class KurtosisContext {
-    private readonly backend: GenericEngineClient
+    private readonly client: GenericEngineClient
 
-    constructor(backend: GenericEngineClient){
-        this.backend = backend;
+    constructor(client: GenericEngineClient){
+        this.client = client;
     }
 
     // Attempts to create a KurtosisContext connected to a Kurtosis engine running locally
     public static async newKurtosisContextFromLocalEngine():Promise<Result<KurtosisContext, Error>>  {
-        let genericKurtosisContextBackend: GenericEngineClient
+        let genericEngineClient: GenericEngineClient
         try {
             if(isExecutionEnvNode){
+
+                //These imports are dynamically imported here, otherwise compiling in Web environment fails for 2 reasons:
+                // 1. "@grpc/grpc-js" could ONLY be run in Node environment(because of it's own dependencies). So importing it on top of the file will break compilation.
+                // 2. WebPack compiler intents to check the libs no matter if those are behind IF statement. Which also break. That's why /* webpackIgnore: true */, avoid checkings.
+
+                // 'engine_service_grpc_pb' has it's own "@grpc/grpc-js" import, that's why we import it dynamically also.
+
                 const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
                 const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
-                const kurtosisEngineSocketStr: string = `${LOCAL_NODE_HOST_IP_ADDRESS_STR}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
+                const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
-                genericKurtosisContextBackend = new GrpcNodeEngineClient(engineServiceClientNode)
+                genericEngineClient = new GrpcNodeEngineClient(engineServiceClientNode)
             }else {
+                // For the symmetricity purpose, we import 'engine_service_grpc_web_pb' here. But this wouldn't affect anything if imported normally.
                 const engineServiceWeb = await import("../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb")
 
-                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOST}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
+                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOSTNAME}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
                 const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
-                genericKurtosisContextBackend = new GrpcWebEngineClient(engineServiceClientWeb)
+                genericEngineClient = new GrpcWebEngineClient(engineServiceClientWeb)
             }
         } catch(error) {
             if (error instanceof Error) {
@@ -75,15 +80,16 @@ export class KurtosisContext {
             ));
         }
 
-        const getEngineInfoResult = await this.getEngineInfo(genericKurtosisContextBackend)
+        const getEngineInfoResult = await this.getEngineInfo(genericEngineClient)
         if(getEngineInfoResult.isErr()){
             return err(getEngineInfoResult.error)
         }
 
-        const kurtosisContext = new KurtosisContext(genericKurtosisContextBackend)
+        const kurtosisContext = new KurtosisContext(genericEngineClient)
         return ok(kurtosisContext)
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async createEnclave(enclaveId: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveId,
@@ -93,7 +99,7 @@ export class KurtosisContext {
             SHOULD_PUBLISH_ALL_PORTS,
         );
 
-        const getEnclaveResponseResult = await this.backend.createEnclaveResponse(enclaveArgs)
+        const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
         if(getEnclaveResponseResult.isErr()){
             return err(getEnclaveResponseResult.error)
         }
@@ -114,8 +120,9 @@ export class KurtosisContext {
         return ok(enclaveContext);
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaveContext(enclaveId: EnclaveID): Promise<Result<EnclaveContext, Error>> {
-        const getEnclavesResponseResult = await this.backend.getEnclavesResponse();
+        const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
             return err(getEnclavesResponseResult.error);
         }
@@ -135,8 +142,9 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async getEnclaves(): Promise<Result<Set<EnclaveID>, Error>>{
-        const getEnclavesResponseResult = await this.backend.getEnclavesResponse();
+        const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
             return err(getEnclavesResponseResult.error);
         }
@@ -150,9 +158,10 @@ export class KurtosisContext {
         return ok(enclaves);
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async stopEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveId)
-        const stopEnclaveResult = await this.backend.stopEnclave(stopEnclaveArgs)
+        const stopEnclaveResult = await this.client.stopEnclave(stopEnclaveArgs)
         if(stopEnclaveResult.isErr()){
             return err(stopEnclaveResult.error)
         }
@@ -160,9 +169,10 @@ export class KurtosisContext {
         return ok(null)
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async destroyEnclave(enclaveId: EnclaveID): Promise<Result<null, Error>>{
         const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveId);
-        const destroyEnclaveResult = await this.backend.destroyEnclave(destroyEnclaveArgs)
+        const destroyEnclaveResult = await this.client.destroyEnclave(destroyEnclaveArgs)
         if(destroyEnclaveResult.isErr()){
             return err(destroyEnclaveResult.error)
         }
@@ -170,9 +180,10 @@ export class KurtosisContext {
         return ok(null)
     }
 
+    // Docs available at https://docs.kurtosistech.com/kurtosis-engine-server/lib-documentation
     public async clean(shouldCleanAll : boolean): Promise<Result<Set<string>, Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
-        const cleanResponseResult = await this.backend.clean(cleanArgs)
+        const cleanResponseResult = await this.client.clean(cleanArgs)
         if(cleanResponseResult.isErr()){
             return err(cleanResponseResult.error)
         }
@@ -251,30 +262,20 @@ export class KurtosisContext {
         }
 
         let newEnclaveContextResult: Result<EnclaveContext, Error>
-        try{
-            if(isExecutionEnvNode){
-                newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
-                    LOCAL_NODE_HOST_IP_ADDRESS_STR,
-                    apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
-                    enclaveInfo.getEnclaveId(),
-                    enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
-                    )
-            }else{
-                newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
-                    LOCAL_HOST,
-                    apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
-                    enclaveInfo.getEnclaveId(),
-                    enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
+        if(isExecutionEnvNode){
+            newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
+                LOCAL_HOSTNAME,
+                apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
+                enclaveInfo.getEnclaveId(),
+                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
                 )
-            }
-        }catch(error){
-            if(error instanceof Error){
-                return err(error)
-            }else{
-                return err(new Error(
-                    "An unknown exception value was thrown during creation of the Enclave context that wasn't an error: " + error
-                ))
-            }
+        }else{
+            newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
+                LOCAL_HOSTNAME,
+                apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
+                enclaveInfo.getEnclaveId(),
+                enclaveInfo.getEnclaveDataDirpathOnHostMachine(),
+            )
         }
         if(newEnclaveContextResult.isErr()){
             return err(newEnclaveContextResult.error)
