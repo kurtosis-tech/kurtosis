@@ -14,8 +14,8 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220222221450-857e15a05dbc
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220223232234-5ea13d1d6a58 // indirect
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220223232107-a8934889bf2b
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220225172622-1f2d9a28d5a7 // indirect
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220225172557-8a2e6a201e3e
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
