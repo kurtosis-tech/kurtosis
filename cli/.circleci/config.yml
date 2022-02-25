@@ -248,17 +248,18 @@ jobs:
             fi
           }
 
-          had_errors="false"
+          all_tests_succeeded="true"
           for test_func in test_config_init_is_required test_double_config_init_without_force_fails test_double_config_init_with_force_succeeds; do
             # Reset test state
             rm -f "$("${KURTOSIS_BINPATH}" config path)"
 
-            if ! test_func; then
+            if ! "${test_func}"; then
               echo "Error: Expected test function '${test_func}' to succeed but it failed" >&2
-              had_errors="true"
+              all_tests_succeeded="false"
             fi
           done
-          "${had_errors}"
+
+          "${all_tests_succeeded}"
 
   # -- End build jobs ---------------------------------------
 
