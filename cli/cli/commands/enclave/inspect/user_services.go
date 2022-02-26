@@ -16,6 +16,8 @@ const (
 	userServiceIDColHeader                                      = "ID"
 	userServiceHostMachinePortBindingsColHeader                 = "LocalPortBindings"
 	shouldShowStoppedContainersWhenGettingUserServiceContainers = true
+
+	noUserServiceHostPortBindingsPlaceholder = "<none>"
 )
 
 func printUserServices(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
@@ -42,7 +44,7 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 		}
 
 		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
-		firstHostPortBindingStr := ""
+		firstHostPortBindingStr := noUserServiceHostPortBindingsPlaceholder
 		if hostPortBindingsStrings != nil {
 			firstHostPortBindingStr = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]

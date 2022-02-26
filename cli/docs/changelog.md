@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* When a service doesn't have any ports, `<none>` will be printed instead of emptystring to make it clearer that the service has no ports
 
 # 0.11.4
 ### Features
