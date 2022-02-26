@@ -2,6 +2,7 @@ package kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -25,27 +26,30 @@ var engineLabels = map[string]string{
 }
 
 type KurtosisBackendCore interface {
+	// Creates an engine with the given parameters
 	CreateEngine(
 		ctx context.Context,
+		imageOrgAndRepo string,
 		imageVersionTag string,
 		logLevel logrus.Level,
 		listenPortNum uint16,
 		engineDataDirpathOnHostMachine string,
-		containerImage string,
 		envVars map[string]string,
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPortNum uint16,
 		resultErr error,
 	)
-	StopEngine(ctx context.Context) error
-	CleanStoppedEngines(ctx context.Context) ([]string, []error, error)
-	GetEnginePublicIPAndPort(
+
+	// Gets engines using the given filters
+	GetEngines(
 		ctx context.Context,
-	) (
-		resultPublicIpAddr net.IP,
-		resultPublicPortNum uint16,
-		resultIsEngineStopped bool,
-		resultErr error,
-	)
+		filters *engine.GetEnginesFilters,
+	) (map[string]*engine.Engine, error)
+
+	// Stops the engines with the given IDs
+	StopEngines(ctx context.Context, ids map[string]bool) error
+
+	// Destroys the engines with the given IDs, regardless of if they're running or not
+	DestroyEngines(ctx context.Context, ids map[string]bool) error
 }

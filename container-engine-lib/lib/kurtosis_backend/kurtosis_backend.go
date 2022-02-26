@@ -2,6 +2,7 @@ package kurtosis_backend
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -21,32 +22,65 @@ func NewKurtosisBackend(log *logrus.Logger, kurtosisBackendCore KurtosisBackendC
 
 func (backend *KurtosisBackend) CreateEngine(
 	ctx context.Context,
+	imageOrgAndRepo string,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
-	imageOrgAndRepo string,
 	envVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortNum uint16,
 	resultErr error,
 ) {
-	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(ctx, imageVersionTag, logLevel, listenPortNum, engineDataDirpathOnHostMachine, imageOrgAndRepo, envVars)
+	publicIpAddr, publicPortNum, err := backend.kurtosisBackendCore.CreateEngine(
+		ctx,
+		imageOrgAndRepo,
+		imageVersionTag,
+		logLevel,
+		listenPortNum,
+		engineDataDirpathOnHostMachine,
+		envVars,
+	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(resultErr, "An error occurred while trying to create the kurtosis engine with publicIpAddr '%v' and publicPortNum '%v'", publicIpAddr, publicPortNum)
+		return nil, 0, stacktrace.Propagate(
+			err,
+			"An error occurred trying to create a Kurtosis engine using image '%v' with tag '%v'",
+			imageOrgAndRepo,
+			imageVersionTag,
+		)
 	}
 	return publicIpAddr, publicPortNum, nil
 }
 
-func (backend *KurtosisBackend) StopEngine(ctx context.Context) error {
-	err := backend.kurtosisBackendCore.StopEngine(ctx)
+// Gets data about engines matching the given filters
+func (backend *KurtosisBackend) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
+	engines, err := backend.kurtosisBackendCore.GetEngines(ctx, filters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while trying to stop the kurtosis engine")
+		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters: %+v", filters)
+	}
+	return engines, nil
+}
+
+// TODO take in the ID of an engine to stop
+func (backend *KurtosisBackend) StopEngines(ctx context.Context, ids map[string]bool) error {
+	err := backend.kurtosisBackendCore.StopEngines(ctx, ids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to stop engines with IDs: %+v", ids)
 	}
 	return nil
 }
 
+func (backend *KurtosisBackend) DestroyEngines(ctx context.Context, ids map[string]bool) error {
+	err := backend.kurtosisBackendCore.DestroyEngines(ctx, ids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to destroy engines with IDs: %+v", ids)
+	}
+	return nil
+
+}
+
+/*
 func (backend *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	engineNames, engineErrors, err := backend.kurtosisBackendCore.CleanStoppedEngines(ctx)
 	if err != nil {
@@ -55,6 +89,9 @@ func (backend *KurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]stri
 	return engineNames, engineErrors, nil
 }
 
+ */
+
+/*
 func (backend *KurtosisBackend) GetEnginePublicIPAndPort(
 	ctx context.Context,
 ) (
@@ -69,3 +106,5 @@ func (backend *KurtosisBackend) GetEnginePublicIPAndPort(
 	}
 	return publicIpAddr, publicPortNum, isEngineStopped, nil
 }
+
+ */
