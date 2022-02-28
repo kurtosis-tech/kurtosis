@@ -15,7 +15,9 @@ const (
 
 	latestCLIReleaseVersionCacheFilename = "latest-cli-release-version-cache"
 
-	cacheFileForTests = "tests-content"
+	metricsUserIDFilename = "metrics-user-id"
+
+	userSendMetricsElection = "user-send-metrics-election"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
@@ -41,6 +43,24 @@ func GetKurtosisConfigYAMLFilepath() (string, error) {
 	return kurtosisConfigYAMLFilepath, nil
 }
 
+func GetMetricsUserIdFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(metricsUserIDFilename)
+	filepath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return filepath, nil
+}
+
+func GetUserSendMetricsElectionFilepath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForXDG(userSendMetricsElection)
+	filepath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the user-send-metrics-election filepath from relative path '%v'", xdgRelFilepath)
+	}
+	return filepath, nil
+}
+
 // TODO Plug this into the 'test' auth framework in a different PR
 func GetSessionCacheFilepath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForXDG(sessionCacheFilename)
@@ -58,15 +78,6 @@ func GetLatestCLIReleaseVersionCacheFilepath() (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred getting the latest release version cache filepath from relative path '%v'", xdgRelFilepath)
 	}
 	return latestCLIReleaseVersionCacheFilepath, nil
-}
-
-func GetCacheFileForTest() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(cacheFileForTests)
-	cacheFileForTestFilepath, err := xdg.CacheFile(xdgRelFilepath)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the cache file for test filepath from relative path '%v'", xdgRelFilepath)
-	}
-	return cacheFileForTestFilepath, nil
 }
 
 // ====================================================================================================

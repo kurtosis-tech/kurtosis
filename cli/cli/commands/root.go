@@ -7,8 +7,8 @@ package commands
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/clean"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
@@ -20,7 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_cli_version"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,7 +35,8 @@ import (
 )
 
 const (
-	logLevelStrArg = "cli-log-level"
+	// !!! WARNING !!!! If you change the name of this flag, make sure to update it in the "Debugging User Issues" section of the README!!!
+	cliLogLevelStrFlag = "cli-log-level"
 
 	latestReleaseOnGitHubURL   = "https://api.github.com/repos/kurtosis-tech/kurtosis-cli-release-artifacts/releases/latest"
 	acceptHttpHeaderKey        = "Accept"
@@ -45,13 +48,15 @@ const (
 
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
-	latestCLIReleaseCacheFileContentSeparator       = ";"
+	latestCLIReleaseCacheFileContentSeparator               = ";"
 	latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile = 0755
-	latestCLIReleaseCacheFileExpirationHours        = 24
-	latestCLIReleaseCacheFileContentColumnsAmount   = 2
-	latestCLIReleaseCacheFileContentDateIndex       = 0
-	latestCLIReleaseCacheFileContentVersionIndex    = 1
-	latestCLIReleaseCacheFileCreationDateTimeFormat = time.RFC3339
+	latestCLIReleaseCacheFileExpirationHours                = 24
+	latestCLIReleaseCacheFileContentColumnsAmount           = 2
+	latestCLIReleaseCacheFileContentDateIndex               = 0
+	latestCLIReleaseCacheFileContentVersionIndex            = 1
+	latestCLIReleaseCacheFileCreationDateTimeFormat         = time.RFC3339
+
+	getLatestCLIReleaseCacheFilePermissions os.FileMode = 0644
 )
 
 type GitHubReleaseReponse struct {
@@ -62,8 +67,7 @@ var logLevelStr string
 var defaultLogLevelStr = logrus.InfoLevel.String()
 
 var RootCmd = &cobra.Command{
-	// Leaving out the "use" will auto-use os.Args[0]
-	Use:   "",
+	Use:   command_str_consts.KurtosisCmdStr,
 	Short: "A CLI for interacting with the Kurtosis engine",
 
 	// Cobra will print usage whenever _any_ error occurs, including ones we throw in Kurtosis
@@ -75,7 +79,7 @@ var RootCmd = &cobra.Command{
 func init() {
 	RootCmd.PersistentFlags().StringVar(
 		&logLevelStr,
-		logLevelStrArg,
+		cliLogLevelStrFlag,
 		defaultLogLevelStr,
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
@@ -87,7 +91,7 @@ func init() {
 	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(clean.CleanCmd)
+	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 }
 
@@ -99,7 +103,13 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred setting up CLI logs")
 	}
 
-	checkCLIVersion()
+	checkCLIVersion(cmd)
+
+	//It is necessary to try track this metric on every execution to have at least one successful deliver
+	if err := user_send_metrics_election.SendAnyBackloggedUserMetricsElectionEvent(); err != nil {
+		//We don't want to interrupt users flow if something fails when tracking metrics
+		logrus.Debugf("An error occurred tracking user consent to send metrics election\n%v",err)
+	}
 
 	return nil
 }
@@ -114,7 +124,14 @@ func setupCLILogs(cmd *cobra.Command) error {
 	return nil
 }
 
-func checkCLIVersion() {
+func checkCLIVersion(cmd *cobra.Command) {
+	// We temporarily set the logrus output to STDERR so that only these version warning messages get sent there
+	// This is so that if you're running a command that actually prints output (e.g. 'completion', to generate completions)
+	//  then this version check message doesn't show up in the output and potentially mess things up
+	currentOut := logrus.StandardLogger().Out
+	logrus.SetOutput(cmd.ErrOrStderr())
+	defer logrus.SetOutput(currentOut)
+
 	isLatestVersion, latestVersion, err := isLatestCLIVersion()
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
@@ -127,7 +144,6 @@ func checkCLIVersion() {
 		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
 		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", upgradeCLIInstructionsDocsPageURL)
 	}
-	return
 }
 
 func isLatestCLIVersion() (bool, string, error) {
@@ -232,22 +248,14 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 }
 
 func saveLatestCLIReleaseVersionInCacheFile(filepath, latestReleaseVersion string) error {
-	cacheFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred opening the '%v' file", filepath)
-	}
-	defer func() {
-		if err := cacheFile.Close(); err != nil {
-			logrus.Warnf("We tried to close the latest release CLI version cache file, but doing so threw an error:\n%v", err)
-		}
-	}()
 
 	now := time.Now()
 	cacheCreationDateString := now.Format(latestCLIReleaseCacheFileCreationDateTimeFormat)
 	content := strings.Join([]string{cacheCreationDateString, latestReleaseVersion}, latestCLIReleaseCacheFileContentSeparator)
+	fileContent := []byte(content)
 
 	logrus.Debugf("Saving content '%v' in cache file...", content)
-	if _, err := fmt.Fprintf(cacheFile, "%s", content); err != nil {
+	if err := ioutil.WriteFile(filepath, fileContent, getLatestCLIReleaseCacheFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving content '%v' in latest release version cache file", content)
 	}
 	logrus.Debugf("Content successfully saved in cache file")
@@ -307,6 +315,16 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 		return "", nil
 	}
 
-
 	return latestReleaseVersion, nil
+}
+
+func getKurtosisConfig() (*kurtosis_config.KurtosisConfig, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing config")
+	}
+	return kurtosisConfig, nil
 }

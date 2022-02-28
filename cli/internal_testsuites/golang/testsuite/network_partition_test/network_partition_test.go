@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	testName = "network-partition-test"
+	testName = "network-partition"
 	isPartitioningEnabled = true
 
 	apiPartitionId       enclaves.PartitionID = "api"

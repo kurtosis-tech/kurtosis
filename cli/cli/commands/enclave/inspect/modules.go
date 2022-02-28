@@ -13,6 +13,8 @@ const (
 	moduleGUIDColHeader                                    = "GUID"
 	moduleHostMachinePortBindingsColHeader                 = "LocalPortBindings"
 	shouldShowStoppedContainersWhenGettingModuleContainers = true
+
+	noModuleHostPortBindingsPlaceholder = "<none>"
 )
 
 func printModules(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
@@ -35,7 +37,7 @@ func printModules(ctx context.Context, dockerManager *docker_manager.DockerManag
 		}
 		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
 
-		firstHostPortBindingStr := ""
+		firstHostPortBindingStr := noModuleHostPortBindingsPlaceholder
 		if hostPortBindingsStrings != nil {
 			firstHostPortBindingStr = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]

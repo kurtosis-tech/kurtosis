@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -108,7 +109,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveContainers, err := dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldGetStoppedContainers)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk")
+		return stacktrace.Propagate(
+			err,
+			"An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk",
+			enclaveId,
+		 )
 	}
 
 	// Create output directory
@@ -116,7 +121,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.NewError("Cannot create output directory at '%v'; directory already exists", enclaveOutputDirpath)
 	}
 	if err := os.Mkdir(enclaveOutputDirpath, createdDirPerms); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'")
+		return stacktrace.Propagate(err, "An error occurred creating output directory at '%v'", enclaveOutputDirpath)
 	}
 
 	workerPool := workerpool.New(numContainersToDumpAtOnce)
@@ -125,16 +130,30 @@ func run(cmd *cobra.Command, args []string) error {
 		containerName := container.GetName()
 		containerId := container.GetId()
 		logrus.Debugf("Submitting job to dump info about container with name '%v' and ID '%v'", containerName, containerId)
-		workerPool.Submit(func() {
-			if err := dumpContainerInfo(ctx, dockerClient, enclaveOutputDirpath, containerName, containerId); err != nil {
-				resultErrsChan <- stacktrace.Propagate(
-					err,
-					"An error occurred dumping container info for container with name '%v' and ID '%v'",
-					container.GetName(),
-					container.GetId(),
-				)
-			}
-		})
+
+		/*
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		It's VERY important that the actual `func()` job function get created inside a helper function!!
+		This is because variables declared inside for-loops are created BY REFERENCE rather than by-value, which
+			means that if we inline the `func() {....}` creation here then all the job functions would get a REFERENCE to
+			any variables they'd use.
+		This means that by the time the job functions were run in the worker pool (long after the for-loop finished)
+			then all the job functions would be using a reference from the last iteration of the for-loop.
+
+		For more info, see the "Variables declared in for loops are passed by reference" section of:
+			https://www.calhoun.io/gotchas-and-common-mistakes-with-closures-in-go/ for more details
+		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		*/
+		jobToSubmit := createDumpContainerJob(
+			ctx,
+			dockerClient,
+			enclaveOutputDirpath,
+			resultErrsChan,
+			containerName,
+			containerId,
+		)
+
+		workerPool.Submit(jobToSubmit)
 	}
 	workerPool.StopWait()
 	close(resultErrsChan)
@@ -163,6 +182,26 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func createDumpContainerJob(
+	ctx context.Context,
+	dockerClient *client.Client,
+	enclaveOutputDirpath string,
+	resultErrsChan chan error,
+	containerName string,
+	containerId string,
+) func() {
+	return func() {
+		if err := dumpContainerInfo(ctx, dockerClient, enclaveOutputDirpath, containerName, containerId); err != nil {
+			resultErrsChan <- stacktrace.Propagate(
+				err,
+				"An error occurred dumping container info for container with name '%v' and ID '%v'",
+				containerName,
+				containerId,
+			)
+		}
+	}
+}
+
 func dumpContainerInfo(
 	ctx context.Context,
 	dockerClient *client.Client,
@@ -188,7 +227,7 @@ func dumpContainerInfo(
 		containerId,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred inspecting container with ID '%v'", containerId)
 	}
 	jsonSerializedInspectResultBytes, err := json.MarshalIndent(inspectResult, containerSpecJsonSerializationPrefix, containerSpecJsonSerializationIndent)
 	if err != nil {
@@ -217,7 +256,7 @@ func dumpContainerInfo(
 		},
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'")
+		return stacktrace.Propagate(err, "An error occurred getting the logs for container with ID '%v'", containerId)
 	}
 	defer containerLogsReadCloser.Close()
 	logsOutputFilepath := path.Join(containerOutputDirpath, containerLogsFilename)
@@ -231,14 +270,31 @@ func dumpContainerInfo(
 			containerId,
 		)
 	}
-	if _, err := stdcopy.StdCopy(logsOutputFp, logsOutputFp, containerLogsReadCloser); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred copying the Docker container logs stream for container with name '%v' and ID '%v' to file '%v'",
-			containerName,
-			containerId,
-			logsOutputFilepath,
-		)
+
+	// TODO Figure out a way to abstract this!!! This check-if-the-container-is-TTY-and-use-io.Copy-if-so-and-stdcopy-if-not
+	//  is copied straight from the Docker CLI, but it REALLY sucks that a Kurtosis dev magically needs to know that that's what
+	//  they have to do if they want to read container logs
+	// If we don't have this, reading the logs from REPL container breaks
+	if inspectResult.Config.Tty {
+		if _, err := io.Copy(logsOutputFp, containerLogsReadCloser); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the TTY container logs stream to file '%v' for container with name '%v' and ID '%v'",
+				logsOutputFilepath,
+				containerName,
+				containerId,
+			)
+		}
+	} else {
+		if _, err := stdcopy.StdCopy(logsOutputFp, logsOutputFp, containerLogsReadCloser); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the non-TTY container logs stream to file '%v' for container with name '%v' and ID '%v'",
+				logsOutputFilepath,
+				containerName,
+				containerId,
+			)
+		}
 	}
 
 	return nil

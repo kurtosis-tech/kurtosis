@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	testName = "bulk-command-execution-test"
+	testName = "bulk-command-execution"
 	isPartitioningEnabled = true
 
 	dockerGettingStartedImage = "docker/getting-started"

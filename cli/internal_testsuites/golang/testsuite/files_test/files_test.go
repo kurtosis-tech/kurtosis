@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	testName = "files-test"
+	testName = "files"
 	isPartitioningEnabled = false
 
 	dockerImage                    = "alpine:3.12.4"

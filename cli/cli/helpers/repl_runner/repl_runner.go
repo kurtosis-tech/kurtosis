@@ -3,6 +3,12 @@ package repl_runner
 import (
 	"context"
 	"fmt"
+	"io"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
@@ -13,11 +19,6 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"net"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -104,7 +105,10 @@ func RunREPL(
 
 	interactiveReplGuid := getReplGUID()
 
-	replAttrs, _ := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	replAttrs, err := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred when trying to get the repl attributes for the interactiveReplGuid '%s'", interactiveReplGuid)
+	}
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := replAttrs.GetName()
@@ -120,7 +124,7 @@ func RunREPL(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
 		repl_consts.KurtosisSocketEnvVar:          kurtosisApiContainerSocket,
-		repl_consts.EnclaveIdEnvVar: enclaveId,
+		repl_consts.EnclaveIdEnvVar:               enclaveId,
 		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(
 		bindMounts,
@@ -185,8 +189,6 @@ func RunREPL(
 
 	return nil
 }
-
-
 
 func getReplGUID() string {
 	now := time.Now()

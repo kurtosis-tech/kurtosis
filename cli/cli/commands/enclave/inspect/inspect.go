@@ -8,19 +8,18 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"sort"
 	"strings"
@@ -28,7 +27,9 @@ import (
 )
 
 const (
-	enclaveIdArg = "enclave-id"
+	enclaveIdArgKey = "enclave-id"
+	isEnclaveIdArgOptional = false
+	isEnclaveIdArgGreedy = false
 
 	enclaveIdTitleName          = "Enclave ID"
 	enclaveDataDirpathTitleName = "Data Directory"
@@ -39,12 +40,11 @@ const (
 	headerWidthChars = 100
 	headerPadChar    = "="
 
+	dockerManagerCtxKey = "docker-manager"
+	engineClientCtxKey = "engine-client"
+
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
-
-var positionalArgs = []string{
-	enclaveIdArg,
-}
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error{
 	"Interactive REPLs": printInteractiveRepls,
@@ -52,41 +52,34 @@ var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerMana
 	"Kurtosis Modules":  printModules,
 }
 
-var InspectCmd = &cobra.Command{
-	Use:                   command_str_consts.EnclaveInspectCmdStr + " [flags] " + strings.Join(positionalArgs, " "),
-	DisableFlagsInUseLine: true,
-	Short:                 "Lists detailed information about an enclave",
-	RunE:                  run,
+var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:              command_str_consts.EnclaveInspectCmdStr,
+	ShortDescription:        "Inspect an enclave",
+	LongDescription:         "List information about the enclave's status and contents",
+	DockerManagerContextKey: dockerManagerCtxKey,
+	EngineClientContextKey:  engineClientCtxKey,
+	Args:                    []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIDArg(
+			enclaveIdArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
+	},
+	RunFunc:                 run,
 }
 
-func init() {
-}
-
-func run(cmd *cobra.Command, args []string) error {
-	ctx := context.Background()
-
-	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
+func run(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs,
+) error {
+	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
 	}
-	enclaveId := parsedPositionalArgs[enclaveIdArg]
-
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
-
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
-	}
-	defer closeClientFunc()
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {

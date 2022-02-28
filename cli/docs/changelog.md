@@ -1,6 +1,166 @@
 # TBD
+### Changes
+* When a service doesn't have any ports, `<none>` will be printed instead of emptystring to make it clearer that the service has no ports
+
+# 0.11.4
+### Features
+* Added a `config path` command to print the path to the Kurtosis config file
+* Added a `--force` flag to `config init` to allow users to ignore the interactive confirmation prompt (useful for running in CI)
+* If the user does end up trying to `config init` in a non-interactive shell when the config already exists, throw an error with informative information
+* Added CI checks to ensure that double-init'ing the config without `force` fails, and with `force` succeeds
+
+### Fixes
+* Fixed a bug with determining if the terminal is a TTY
+
+# 0.11.3
+### Changes
+* Upgraded to the following, which contain dormant Kubernetes code:
+    * container-engine-lib 0.8.7
+    * core 1.39.3
+    * engine 1.11.1
+
+# 0.11.2
+### Features
+* Detect if the CLI is running in non-interactive mode (i.e., in CI) and error if the InteractiveConfigInitializer is run
+* Add a test to verify that the CLI fails in non-interactive mode
+
+# 0.11.1
+### Features
+* `service shell` will first try to find & use `bash` before dropping down to `sh`
+* Add a test to ensure that new versions of the CLI don't break compatibility with enclaves started under an old version
+* Added a `KurtosisCommand` wrapper over the `cobra.Command` objects that we're using to create CLI commands, so that we have a centralized place to add autocompletion
+* Added flags to `KurtosisCommand`
+* Added a `NewEnclaveIDArg` generator for building enclave ID args with tab-completion and validation out-of-the-box
+* Added tab-completion & enclave ID validation to `enclave rm` command
+* Added a `EngineConsumingKurtosisCommand` to make it easier to write commands that use the engine
+* Ported `clean` and `config init` to the new `KurtosisCommand` framework
+* Added a `SetSelectionArg` for easily creating arguments that choose from a set (with tab-complete, of course)
+
+### Changes
+* Switched `enclave rm` to use the new command framework
+* Switched `enclave rm` and `enclave inspect` to use the `NewEnclaveIDArg` component
+
+### Fixes
+* Made the error traces easier to read when `enclave rm` fails
+* Made the `LowlevelKurtosisCommand` unit tests less likely to experience false negatives
+
+# 0.11.0
+### Fixes
+* Fixed several bugs that were causing product analytics events to get dropped for users who had opted in
+
+### Breaking Changes
+* Use engine version 1.11.0
+    * Users should upgrade to `kurtosis-engine-api-lib` 1.11.0
+
+# 0.10.1
+### Fixes
+* Allow for 256-character labels
+
+# 0.10.0
+### Breaking Changes
+* Upgraded to engine server 1.10.4, which makes name & label values compatible with Kubernetes
+    * **Enclave IDs, service IDs, and module IDs must now conform to the regex `^[a-z0-9][-a-z0-9.]*[a-z0-9]$`**
+* The `--kurtosis-log-level` flag to set the API container's log level has been renamed to `--api-container-log-level` for the following commands:
+    * `enclave new`
+    * `module exec`
+    * `sandbox`
+* The `--kurtosis-log-level` flag no longer exists for the `enclave ls` command
+    * Users should use `--cli-log-level` instead
+
+### Changes
+* The engine & API containers will log at `debug` level by default, to better help us debug issues that are hard to reproduce
+* Upgraded the engine server to 1.10.0
+* Upgraded the kurtosis core to 1.38.0
+* Upgraded the object-attributes-schema-lib to 0.7.0
+* Changed the generated kurtosis enclave name to lower case
+* Changed constants/vars in tests
+
+### Fixes
+* Fixed an issue where `setupCLILogs` was accidentally setting the logrus output to STDOUT rather than the Cobra command output
+* Removed several `logrus.SetLevel`s that were overriding the CLI log level set using `--cli-log-level`
+* Fixed a bug where trying to destroy an enclave whose ID was a subset of another enclave ID would fail
+* CLI `build.sh` wasn't calling `go test`
+* Fixed multiple log messages & `stacktrace.Propagate`s that didn't have formatstr variables
+* Fixed broken `DuplicateFlagsCausePanic` unit test
+
+# 0.9.4
+### Features
+* Added the functionality to execute retries when sending user-metrics-consent-election fails
+
+### Changes
+* Upgraded the metrics library to 0.2.0
+
+### Fixes
+* Fix `network_soft_partition_test` in Golang and Typescript internal testsuite
+* Fix typo in metrics consent message
+
+# 0.9.3
+### Fixes
+* Fix and error in CLI release version cache file generation
+
+# 0.9.2
+### Fixes
+* Fixed a bug with `engine restart` using `stacktrace.Propagate` incorrectly
+* The yes/no prompt now displays valid options
+
+### Removals
+* On further review, removed the big long metrics paragraph from the `config init` helptext; this likely isn't going to land well
+
+### Changes
+* Be more explicit in our explanation to users about product analytics metrics
+
+# 0.9.1
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+* Added a "Debugging User Issues" section to the README
+
+### Changes
+* Upgraded the engine server to 1.9.1
+* Upgraded the kurtosis core to 1.37.1
+* Upgraded the metrics library to 0.1.2
+* Switched the `enclave inspect` to the new command framework
+* Cleaned up our Kurtosis-custom logic wrapping the Cobra commands
+
+### Fixes
+* Fix the Kurtosis completion
+* The CLI version mismatch warning messages are printed to STDERR so as not to interfere with any other command output (e.g. `completion`)
+
+# 0.9.0
+### Features
+* Added `MetricsUserIDStore` which generates a hashed user ID based on OS configuration, and saves the ID in a file to use it in future runs of the CLI
+* Pass two new arguments `metricsUserdID` and `shouldSendMetrics` to the `EngineServerService.Launcher`
+* Track if user consent sending metrics to improve the product
+
+### Breaking Changes
+* Required the user to make an election about whether to send product analytic metrics
+  * **Users using Kurtosis in CI will need to initialize the configuration as part of their CI steps [using these instructions](https://docs.kurtosistech.com/running-in-ci.html)**
+  * Users will need to run `kurtosis engine restart` after upgrading to this version of the CLI
+  * Engine API users (e.g. in tests) will need to update to `kurtosis-engine-api-lib` 1.9.0
+
+### Changes
+* Upgraded the kurtosis core to 1.37.0
+
+# 0.8.11
+### Features
+* The enclave ID argument to `enclave inspect` is now tab-completable
+
+### Fixes
+* Fix the Kurtosis completion
+
+# 0.8.10
+### Features
+* `enclave inspect` now also prints the service ID in addition to the GUID
+* Add the `-f` flag to `service logs` to allow users to keep following logs
+
+### Fixes
+* `enclave stop` and `enclave rm` require at least one enclave ID
+* Turned down the parallelism of the Golang & Typescript testsuites to 2 (from 4), so that we're less likely to face test timeouts (both on local machine & CI)
+
+# 0.8.9
 ### Fixes
 * Set the Typescript internal tests' timeouts to 3m to match Golang
+* Fixed an issue where a failure to dump a container's logs on `enclave dump` would incorrectly report that the issue was with a different container
+* Fixed `enclave dump` breaking if a REPL container is present
 
 # 0.8.8
 ### Features

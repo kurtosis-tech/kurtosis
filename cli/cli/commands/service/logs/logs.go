@@ -7,32 +7,31 @@ package logs
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
 	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"io"
 	"strings"
 )
 
 const (
-	kurtosisLogLevelArg = "kurtosis-log-level"
+	shouldFollowLogsFlag = "follow"
 	enclaveIdArg        = "enclave-id"
 	guidArg             = "guid"
 
 	shouldShowStoppedUserServiceContainers = true
-	shouldFollowContainerLogs              = false
+
+	defaultShouldFollowLogs = false
 )
 
-var defaultKurtosisLogLevel = logrus.InfoLevel.String()
 var positionalArgs = []string{
 	enclaveIdArg,
 	guidArg,
@@ -45,30 +44,20 @@ var LogsCmd = &cobra.Command{
 	RunE:                  run,
 }
 
-var kurtosisLogLevelStr string
+var shouldFollowLogs bool
 
 func init() {
-	LogsCmd.Flags().StringVarP(
-		&kurtosisLogLevelStr,
-		kurtosisLogLevelArg,
-		"l",
-		defaultKurtosisLogLevel,
-		fmt.Sprintf(
-			"The log level that Kurtosis itself should log at (%v)",
-			strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|"),
-		),
+	LogsCmd.Flags().BoolVarP(
+		&shouldFollowLogs,
+		shouldFollowLogsFlag,
+		"f",
+		defaultShouldFollowLogs,
+		"Continues to follow the logs until stopped",
 	)
-
 }
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-
-	kurtosisLogLevel, err := logrus.ParseLevel(kurtosisLogLevelStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing Kurtosis loglevel string '%v' to a log level object", kurtosisLogLevelStr)
-	}
-	logrus.SetLevel(kurtosisLogLevel)
 
 	parsedPositionalArgs, err := positional_arg_parser.ParsePositionalArgsAndRejectEmptyStrings(positionalArgs, args)
 	if err != nil {
@@ -117,16 +106,42 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	serviceContainer := containersWithSearchedGUID[0]
+	serviceContainerId := serviceContainer.GetId()
 
-	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainer.GetId(), shouldFollowContainerLogs)
+	// TODO vvvvvvvvvvvv Abstract everything below this point into KurtosisBackend when it's ready!!!! vvvvvvvvvvvvv
+	inspectResult, err := dockerClient.ContainerInspect(ctx, serviceContainerId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred inspecting service container with ID '%v' to determine if it's running a TTY or not", serviceContainerId)
+	}
+
+	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, serviceContainerId, shouldFollowLogs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service logs for container with ID '%v'", serviceContainer.GetId())
 	}
 	defer readCloserLogs.Close()
 
-	if _, err = stdcopy.StdCopy(logrus.StandardLogger().Out, logrus.StandardLogger().Out, readCloserLogs); err != nil {
-		return stacktrace.Propagate(err, "An error occurred copying the container logs to STDOUT")
+	// TODO This is already copied from 'enclave dump'; this logic should be centralized
+	// If we don't have this, reading the logs from REPL container breaks
+	stdout := logrus.StandardLogger().Out
+	if inspectResult.Config.Tty {
+		if _, err := io.Copy(stdout, readCloserLogs); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the TTY container logs stream to STDOUT for container with ID '%v'",
+				serviceContainerId,
+			)
+		}
+	} else {
+		if _, err := stdcopy.StdCopy(stdout, stdout, readCloserLogs); err != nil {
+			return stacktrace.Propagate(
+				err,
+				"An error occurred copying the non-TTY container logs stream to STDOUT for container with name '%v' and ID '%v'",
+				serviceContainer.GetName(),
+				serviceContainerId,
+			)
+		}
 	}
+	// TODO ^^^^^^^^^^^^ Abstract everything below this point into KurtosisBackend when it's ready!!!! ^^^^^^^^^^^^^^^^
 
 	return nil
 }

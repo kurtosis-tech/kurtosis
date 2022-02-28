@@ -8,7 +8,7 @@ import * as grpc from "@grpc/grpc-js"
 import { createEnclave } from "../../test_helpers/enclave_setup";
 import { createDatastoreClient, waitForHealthy } from "../../test_helpers/test_helpers";
 
-const TEST_NAME = "module-test"
+const TEST_NAME = "module"
 const IS_PARTITIONING_ENABLED = false
 
 const TEST_MODULE_IMAGE = "kurtosistech/datastore-army-module:0.2.0"
