@@ -89,7 +89,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveId)
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachineGrpcPort, apicHostMachineGrpcProxyPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred validating that the enclave was running")
 	}
@@ -101,7 +101,8 @@ func run(cmd *cobra.Command, args []string) error {
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
 		enclaveInfo.GetApiContainerInfo().GetGrpcPortInsideEnclave(),
 		apicHostMachineIp,
-		apicHostMachinePort,
+		apicHostMachineGrpcPort,
+		apicHostMachineGrpcProxyPort,
 		jsReplImage,
 		dockerManager,
 		enclaveObjAttrsProvider,

@@ -129,7 +129,7 @@ func run(cmd *cobra.Command, args []string) error {
 			}
 		}
 	}()
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachineGrpcPort, apicHostMachineGrpcProxyPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "Cannot create sandbox; an error occurred verifying enclave liveness")
 	}
@@ -146,7 +146,8 @@ func run(cmd *cobra.Command, args []string) error {
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
 		enclaveInfo.GetApiContainerInfo().GetGrpcPortInsideEnclave(),
 		apicHostMachineIp,
-		apicHostMachinePort,
+		apicHostMachineGrpcPort,
+		apicHostMachineGrpcProxyPort,
 		jsReplImage,
 		dockerManager,
 		enclaveObjAttrsProvider,

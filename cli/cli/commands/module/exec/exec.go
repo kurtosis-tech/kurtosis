@@ -205,26 +205,40 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 	logrus.Infof("Enclave '%v' created successfully", enclaveId)
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachineGrpcPort, apicHostMachineGrpcProxyPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
 	}
 
-	apiContainerHostUrl := fmt.Sprintf(
+	apiContainerHostGrpcProxyUrl := fmt.Sprintf(
 		"%v:%v",
 		apicHostMachineIp,
-		apicHostMachinePort,
+		apicHostMachineGrpcProxyPort,
 	)
-	conn, err := grpc.Dial(apiContainerHostUrl, grpc.WithInsecure())
-	if err != nil {
+	if _, err := grpc.Dial(apiContainerHostGrpcProxyUrl, grpc.WithInsecure()); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred connecting to the API container at '%v' in enclave '%v'",
-			apiContainerHostUrl,
+			"An error occurred connecting to the API container grpc proxy port at '%v' in enclave '%v'",
+			apiContainerHostGrpcProxyUrl,
 			enclaveId,
 		)
 	}
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+
+	apiContainerHostGrpcUrl := fmt.Sprintf(
+		"%v:%v",
+		apicHostMachineIp,
+		apicHostMachineGrpcPort,
+	)
+	grpcConn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
+			apiContainerHostGrpcUrl,
+			enclaveId,
+		)
+	}
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(grpcConn)
 
 	logrus.Infof(
 		"Loading module '%v' with load params '%v'...",

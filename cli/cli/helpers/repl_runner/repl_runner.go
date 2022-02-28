@@ -43,23 +43,35 @@ func RunREPL(
 	apiContainerIpInsideEnclave string,
 	apiContainerPortInsideEnclave uint32,
 	apiContainerIpOnHostMachine string,
-	apiContainerPortOnHostMachine uint32,
+	apiContainerGrpcPortOnHostMachine uint32,
+	apiContainerGrpcProxyPortOnHostMachine uint32,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider,
 ) error {
-	apiContainerUrlOnHostMachine := fmt.Sprintf(
+
+	apiContainerGrpcProxyUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
 		apiContainerIpOnHostMachine,
-		apiContainerPortOnHostMachine,
+		apiContainerGrpcProxyPortOnHostMachine,
 	)
-
-	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
+	grpcProxyConn, err := grpc.Dial(apiContainerGrpcProxyUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine port binding")
+		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine grpc proxy port binding")
 	}
-	defer conn.Close()
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+	defer grpcProxyConn.Close()
+
+	apiContainerGrpcUrlOnHostMachine := fmt.Sprintf(
+		"%v:%v",
+		apiContainerIpOnHostMachine,
+		apiContainerGrpcPortOnHostMachine,
+	)
+	grpcConn, err := grpc.Dial(apiContainerGrpcUrlOnHostMachine, grpc.WithInsecure())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine grpc port binding")
+	}
+	defer grpcConn.Close()
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(grpcConn)
 
 	startRegistrationResp, err := apiContainerClient.StartExternalContainerRegistration(context.Background(), &emptypb.Empty{})
 	if err != nil {
@@ -123,8 +135,8 @@ func RunREPL(
 	).WithStaticIP(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
-		repl_consts.KurtosisSocketEnvVar:          kurtosisApiContainerSocket,
-		repl_consts.EnclaveIdEnvVar:               enclaveId,
+		repl_consts.KurtosisSocketEnvVar: kurtosisApiContainerSocket,
+		repl_consts.EnclaveIdEnvVar: enclaveId,
 		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(
 		bindMounts,

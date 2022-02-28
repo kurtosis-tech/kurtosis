@@ -1,4 +1,9 @@
 # TBD
+
+### Features
+* Bumped latest version of 'object-schema-lib', 'kurtosis-core' and 'kurtosis-engine'
+* Code refactored according to the latest gRPC web feature
+
 ### Changes
 * When a service doesn't have any ports, `<none>` will be printed instead of emptystring to make it clearer that the service has no ports
 
