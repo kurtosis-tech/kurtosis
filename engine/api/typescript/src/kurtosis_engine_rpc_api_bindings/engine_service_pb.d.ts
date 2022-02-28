@@ -1,18 +1,15 @@
-// package: engine_api
-// file: engine_service.proto
+import * as jspb from 'google-protobuf'
 
-import * as jspb from "google-protobuf";
-import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
+
 
 export class GetEngineInfoResponse extends jspb.Message {
   getEngineVersion(): string;
-  setEngineVersion(value: string): void;
+  setEngineVersion(value: string): GetEngineInfoResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetEngineInfoResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetEngineInfoResponse): GetEngineInfoResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetEngineInfoResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetEngineInfoResponse;
   static deserializeBinaryFromReader(message: GetEngineInfoResponse, reader: jspb.BinaryReader): GetEngineInfoResponse;
@@ -26,25 +23,23 @@ export namespace GetEngineInfoResponse {
 
 export class CreateEnclaveArgs extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): void;
+  setEnclaveId(value: string): CreateEnclaveArgs;
 
   getApiContainerVersionTag(): string;
-  setApiContainerVersionTag(value: string): void;
+  setApiContainerVersionTag(value: string): CreateEnclaveArgs;
 
   getApiContainerLogLevel(): string;
-  setApiContainerLogLevel(value: string): void;
+  setApiContainerLogLevel(value: string): CreateEnclaveArgs;
 
   getIsPartitioningEnabled(): boolean;
-  setIsPartitioningEnabled(value: boolean): void;
+  setIsPartitioningEnabled(value: boolean): CreateEnclaveArgs;
 
   getShouldPublishAllPorts(): boolean;
-  setShouldPublishAllPorts(value: boolean): void;
+  setShouldPublishAllPorts(value: boolean): CreateEnclaveArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: CreateEnclaveArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): CreateEnclaveArgs;
   static deserializeBinaryFromReader(message: CreateEnclaveArgs, reader: jspb.BinaryReader): CreateEnclaveArgs;
@@ -61,16 +56,14 @@ export namespace CreateEnclaveArgs {
 }
 
 export class CreateEnclaveResponse extends jspb.Message {
-  hasEnclaveInfo(): boolean;
-  clearEnclaveInfo(): void;
   getEnclaveInfo(): EnclaveInfo | undefined;
-  setEnclaveInfo(value?: EnclaveInfo): void;
+  setEnclaveInfo(value?: EnclaveInfo): CreateEnclaveResponse;
+  hasEnclaveInfo(): boolean;
+  clearEnclaveInfo(): CreateEnclaveResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveResponse.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveResponse): CreateEnclaveResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: CreateEnclaveResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): CreateEnclaveResponse;
   static deserializeBinaryFromReader(message: CreateEnclaveResponse, reader: jspb.BinaryReader): CreateEnclaveResponse;
@@ -84,19 +77,20 @@ export namespace CreateEnclaveResponse {
 
 export class EnclaveAPIContainerInfo extends jspb.Message {
   getContainerId(): string;
-  setContainerId(value: string): void;
+  setContainerId(value: string): EnclaveAPIContainerInfo;
 
   getIpInsideEnclave(): string;
-  setIpInsideEnclave(value: string): void;
+  setIpInsideEnclave(value: string): EnclaveAPIContainerInfo;
 
-  getPortInsideEnclave(): number;
-  setPortInsideEnclave(value: number): void;
+  getGrpcPortInsideEnclave(): number;
+  setGrpcPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
+
+  getGrpcProxyPortInsideEnclave(): number;
+  setGrpcProxyPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveAPIContainerInfo): EnclaveAPIContainerInfo.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: EnclaveAPIContainerInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): EnclaveAPIContainerInfo;
   static deserializeBinaryFromReader(message: EnclaveAPIContainerInfo, reader: jspb.BinaryReader): EnclaveAPIContainerInfo;
@@ -106,22 +100,24 @@ export namespace EnclaveAPIContainerInfo {
   export type AsObject = {
     containerId: string,
     ipInsideEnclave: string,
-    portInsideEnclave: number,
+    grpcPortInsideEnclave: number,
+    grpcProxyPortInsideEnclave: number,
   }
 }
 
 export class EnclaveAPIContainerHostMachineInfo extends jspb.Message {
   getIpOnHostMachine(): string;
-  setIpOnHostMachine(value: string): void;
+  setIpOnHostMachine(value: string): EnclaveAPIContainerHostMachineInfo;
 
-  getPortOnHostMachine(): number;
-  setPortOnHostMachine(value: number): void;
+  getGrpcPortOnHostMachine(): number;
+  setGrpcPortOnHostMachine(value: number): EnclaveAPIContainerHostMachineInfo;
+
+  getGrpcProxyPortOnHostMachine(): number;
+  setGrpcProxyPortOnHostMachine(value: number): EnclaveAPIContainerHostMachineInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerHostMachineInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveAPIContainerHostMachineInfo): EnclaveAPIContainerHostMachineInfo.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: EnclaveAPIContainerHostMachineInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): EnclaveAPIContainerHostMachineInfo;
   static deserializeBinaryFromReader(message: EnclaveAPIContainerHostMachineInfo, reader: jspb.BinaryReader): EnclaveAPIContainerHostMachineInfo;
@@ -130,44 +126,43 @@ export class EnclaveAPIContainerHostMachineInfo extends jspb.Message {
 export namespace EnclaveAPIContainerHostMachineInfo {
   export type AsObject = {
     ipOnHostMachine: string,
-    portOnHostMachine: number,
+    grpcPortOnHostMachine: number,
+    grpcProxyPortOnHostMachine: number,
   }
 }
 
 export class EnclaveInfo extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): void;
+  setEnclaveId(value: string): EnclaveInfo;
 
   getNetworkId(): string;
-  setNetworkId(value: string): void;
+  setNetworkId(value: string): EnclaveInfo;
 
   getNetworkCidr(): string;
-  setNetworkCidr(value: string): void;
+  setNetworkCidr(value: string): EnclaveInfo;
 
-  getContainersStatus(): EnclaveContainersStatusMap[keyof EnclaveContainersStatusMap];
-  setContainersStatus(value: EnclaveContainersStatusMap[keyof EnclaveContainersStatusMap]): void;
+  getContainersStatus(): EnclaveContainersStatus;
+  setContainersStatus(value: EnclaveContainersStatus): EnclaveInfo;
 
-  getApiContainerStatus(): EnclaveAPIContainerStatusMap[keyof EnclaveAPIContainerStatusMap];
-  setApiContainerStatus(value: EnclaveAPIContainerStatusMap[keyof EnclaveAPIContainerStatusMap]): void;
+  getApiContainerStatus(): EnclaveAPIContainerStatus;
+  setApiContainerStatus(value: EnclaveAPIContainerStatus): EnclaveInfo;
 
-  hasApiContainerInfo(): boolean;
-  clearApiContainerInfo(): void;
   getApiContainerInfo(): EnclaveAPIContainerInfo | undefined;
-  setApiContainerInfo(value?: EnclaveAPIContainerInfo): void;
+  setApiContainerInfo(value?: EnclaveAPIContainerInfo): EnclaveInfo;
+  hasApiContainerInfo(): boolean;
+  clearApiContainerInfo(): EnclaveInfo;
 
-  hasApiContainerHostMachineInfo(): boolean;
-  clearApiContainerHostMachineInfo(): void;
   getApiContainerHostMachineInfo(): EnclaveAPIContainerHostMachineInfo | undefined;
-  setApiContainerHostMachineInfo(value?: EnclaveAPIContainerHostMachineInfo): void;
+  setApiContainerHostMachineInfo(value?: EnclaveAPIContainerHostMachineInfo): EnclaveInfo;
+  hasApiContainerHostMachineInfo(): boolean;
+  clearApiContainerHostMachineInfo(): EnclaveInfo;
 
   getEnclaveDataDirpathOnHostMachine(): string;
-  setEnclaveDataDirpathOnHostMachine(value: string): void;
+  setEnclaveDataDirpathOnHostMachine(value: string): EnclaveInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveInfo): EnclaveInfo.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: EnclaveInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): EnclaveInfo;
   static deserializeBinaryFromReader(message: EnclaveInfo, reader: jspb.BinaryReader): EnclaveInfo;
@@ -178,8 +173,8 @@ export namespace EnclaveInfo {
     enclaveId: string,
     networkId: string,
     networkCidr: string,
-    containersStatus: EnclaveContainersStatusMap[keyof EnclaveContainersStatusMap],
-    apiContainerStatus: EnclaveAPIContainerStatusMap[keyof EnclaveAPIContainerStatusMap],
+    containersStatus: EnclaveContainersStatus,
+    apiContainerStatus: EnclaveAPIContainerStatus,
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
     enclaveDataDirpathOnHostMachine: string,
@@ -188,12 +183,11 @@ export namespace EnclaveInfo {
 
 export class GetEnclavesResponse extends jspb.Message {
   getEnclaveInfoMap(): jspb.Map<string, EnclaveInfo>;
-  clearEnclaveInfoMap(): void;
+  clearEnclaveInfoMap(): GetEnclavesResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetEnclavesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetEnclavesResponse): GetEnclavesResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetEnclavesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetEnclavesResponse;
   static deserializeBinaryFromReader(message: GetEnclavesResponse, reader: jspb.BinaryReader): GetEnclavesResponse;
@@ -207,13 +201,11 @@ export namespace GetEnclavesResponse {
 
 export class StopEnclaveArgs extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): void;
+  setEnclaveId(value: string): StopEnclaveArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StopEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StopEnclaveArgs): StopEnclaveArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StopEnclaveArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StopEnclaveArgs;
   static deserializeBinaryFromReader(message: StopEnclaveArgs, reader: jspb.BinaryReader): StopEnclaveArgs;
@@ -227,13 +219,11 @@ export namespace StopEnclaveArgs {
 
 export class DestroyEnclaveArgs extends jspb.Message {
   getEnclaveId(): string;
-  setEnclaveId(value: string): void;
+  setEnclaveId(value: string): DestroyEnclaveArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DestroyEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: DestroyEnclaveArgs): DestroyEnclaveArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: DestroyEnclaveArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): DestroyEnclaveArgs;
   static deserializeBinaryFromReader(message: DestroyEnclaveArgs, reader: jspb.BinaryReader): DestroyEnclaveArgs;
@@ -247,13 +237,11 @@ export namespace DestroyEnclaveArgs {
 
 export class CleanArgs extends jspb.Message {
   getShouldCleanAll(): boolean;
-  setShouldCleanAll(value: boolean): void;
+  setShouldCleanAll(value: boolean): CleanArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CleanArgs): CleanArgs.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: CleanArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): CleanArgs;
   static deserializeBinaryFromReader(message: CleanArgs, reader: jspb.BinaryReader): CleanArgs;
@@ -267,12 +255,11 @@ export namespace CleanArgs {
 
 export class CleanResponse extends jspb.Message {
   getRemovedEnclaveIdsMap(): jspb.Map<string, boolean>;
-  clearRemovedEnclaveIdsMap(): void;
+  clearRemovedEnclaveIdsMap(): CleanResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanResponse.AsObject;
   static toObject(includeInstance: boolean, msg: CleanResponse): CleanResponse.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: CleanResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): CleanResponse;
   static deserializeBinaryFromReader(message: CleanResponse, reader: jspb.BinaryReader): CleanResponse;
@@ -284,19 +271,13 @@ export namespace CleanResponse {
   }
 }
 
-export interface EnclaveContainersStatusMap {
-  ENCLAVECONTAINERSSTATUS_EMPTY: 0;
-  ENCLAVECONTAINERSSTATUS_RUNNING: 1;
-  ENCLAVECONTAINERSSTATUS_STOPPED: 2;
+export enum EnclaveContainersStatus { 
+  ENCLAVECONTAINERSSTATUS_EMPTY = 0,
+  ENCLAVECONTAINERSSTATUS_RUNNING = 1,
+  ENCLAVECONTAINERSSTATUS_STOPPED = 2,
 }
-
-export const EnclaveContainersStatus: EnclaveContainersStatusMap;
-
-export interface EnclaveAPIContainerStatusMap {
-  ENCLAVEAPICONTAINERSTATUS_NONEXISTENT: 0;
-  ENCLAVEAPICONTAINERSTATUS_RUNNING: 1;
-  ENCLAVEAPICONTAINERSTATUS_STOPPED: 2;
+export enum EnclaveAPIContainerStatus { 
+  ENCLAVEAPICONTAINERSTATUS_NONEXISTENT = 0,
+  ENCLAVEAPICONTAINERSTATUS_RUNNING = 1,
+  ENCLAVEAPICONTAINERSTATUS_STOPPED = 2,
 }
-
-export const EnclaveAPIContainerStatus: EnclaveAPIContainerStatusMap;
-

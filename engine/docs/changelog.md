@@ -1,5 +1,11 @@
 # TBD
 
+# 1.11.2
+
+### Features
+
+* Added GenericEngineClient interface to abstract grpc-web vs grpc-js Typescript backends
+
 # 1.11.1
 ### Changes
 * Kurtosis enclaves created via `KurtosisContext.CreateEnclave` default to the debug loglevel

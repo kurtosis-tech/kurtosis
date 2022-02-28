@@ -184,6 +184,11 @@ braces@~3.0.2:
   dependencies:
     fill-range "^7.0.1"
 
+browser-or-node@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/browser-or-node/-/browser-or-node-2.0.0.tgz#808ea90282a670931cdc0ea98166538a50dd0d89"
+  integrity sha512-3Lrks/Okgof+/cRguUNG+qRXSeq79SO3hY4QrXJayJofwJwHiGC0qi99uDjsfTwULUFSr1OGVsBkdIkygKjTUA==
+
 browser-stdout@1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/browser-stdout/-/browser-stdout-1.3.1.tgz#baa559ee14ced73452229bad7326467c61fabd60"
@@ -374,9 +379,9 @@ google-protobuf@^3.17.3:
   integrity sha512-cDqSamZ8rGs+pOzhIsBte7wpezUKg/sggeptDWN5odhnRY/eDLa5VWLeNeQvcfiqjS3yUwgM+6OePCJMB7aWZA==
 
 google-protobuf@^3.19.1:
-  version "3.19.1"
-  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.19.1.tgz#5af5390e8206c446d8f49febaffd4b7f4ac28f41"
-  integrity sha512-Isv1RlNC+IzZzilcxnlVSf+JvuhxmY7DaxYCBy+zPS9XVuJRtlTTIXR9hnZ1YL1MMusJn/7eSy2swCzZIomQSg==
+  version "3.19.4"
+  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.19.4.tgz#8d32c3e34be9250956f28c0fb90955d13f311888"
+  integrity sha512-OIPNCxsG2lkIvf+P5FNfJ/Km95CsXOBecS9ZcAU6m2Rq3svc0Apl9nB3GMDNKfQ9asNv4KjyAqGwPQFrVle3Yg==
 
 growl@1.10.5:
   version "1.10.5"
@@ -469,14 +474,15 @@ json5@^1.0.1:
   dependencies:
     minimist "^1.2.0"
 
-kurtosis-core-api-lib@1.39.3:
-  version "1.39.3"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.3.tgz#6ead5ff5643256e5b2fe425194d78b96df4f7d95"
-  integrity sha512-V21jAGJOirXU2rmq0ANK0oWbBU6APd7ZDOudm3BKPR7XNon6N5cwMPStkXmP9hVUDd2Sw+E+KBFerUUSQtvnjA==
+kurtosis-core-api-lib@1.39.6:
+  version "1.39.6"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.6.tgz#1f8263342ffcaf5f83e46cfeba862ac3a8abfc68"
+  integrity sha512-YBeddnZxfN5O5Al9qYo5v/C6Vb9sawcV9ygevXPqAQ1oXfw/qXVMRxhSkXYwzxtS9hlpZocHICwacbiDVGprHA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
     "@types/path-browserify" "^1.0.0"
+    browser-or-node "^2.0.0"
     google-protobuf "^3.19.1"
     grpc-web "^1.3.0"
     loglevel "^1.7.1"
