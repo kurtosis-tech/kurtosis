@@ -1,5 +1,7 @@
 # TBD
 
+# 1.11.2
+
 ### Features
 
 * Added GenericEngineClient interface to abstract grpc-web vs grpc-js Typescript backends
