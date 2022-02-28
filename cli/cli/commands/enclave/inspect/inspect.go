@@ -113,7 +113,7 @@ func run(cmd *cobra.Command, args []string) error {
 		apiContainerHostPortInfoStr := fmt.Sprintf(
 			"%v:%v",
 			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetPortOnHostMachine(),
+			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
 		)
 		keyValuePrinter.AddPair(apiContainerHostPortTitle, apiContainerHostPortInfoStr)
 	}

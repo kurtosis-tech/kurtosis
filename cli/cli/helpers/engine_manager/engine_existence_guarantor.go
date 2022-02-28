@@ -122,7 +122,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 		hostMachineIpAddr, hostMachinePortNum, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithDefaultVersion(
 			guarantor.ctx,
 			guarantor.logLevel,
-			kurtosis_context.DefaultKurtosisEngineServerPortNum,
+			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
+			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			engineDataDirpath,
 		)
 	} else {
@@ -130,7 +131,8 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.ctx,
 			guarantor.imageVersionTag,
 			guarantor.logLevel,
-			kurtosis_context.DefaultKurtosisEngineServerPortNum,
+			kurtosis_context.DefaultKurtosisEngineServerGrpcPortNum,
+			kurtosis_context.DefaultKurtosisEngineServerGrpcProxyPortNum,
 			engineDataDirpath,
 		)
 	}

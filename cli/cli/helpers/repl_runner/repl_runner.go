@@ -104,7 +104,7 @@ func RunREPL(
 
 	interactiveReplGuid := getReplGUID()
 
-	replAttrs := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
+	replAttrs, _ := enclaveObjAttrsProvider.ForInteractiveREPLContainer(interactiveReplGuid)
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := replAttrs.GetName()

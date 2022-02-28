@@ -99,7 +99,7 @@ func run(cmd *cobra.Command, args []string) error {
 		enclaveInfo.GetEnclaveId(),
 		enclaveInfo.GetNetworkId(),
 		enclaveInfo.GetApiContainerInfo().GetIpInsideEnclave(),
-		enclaveInfo.GetApiContainerInfo().GetPortInsideEnclave(),
+		enclaveInfo.GetApiContainerInfo().GetGrpcPortInsideEnclave(),
 		apicHostMachineIp,
 		apicHostMachinePort,
 		jsReplImage,
