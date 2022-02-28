@@ -19,11 +19,11 @@ require (
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220225195659-c0f0bb9d4073
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220228142627-543c391cd0dc
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220228142555-b0591fc923e6
-	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
+	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-isatty v0.0.14
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
