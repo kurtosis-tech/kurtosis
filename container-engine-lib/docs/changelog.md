@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added the `KurtosisDockerDriver` struct with methods that don't do anything 
 
 # 0.8.7
 ### Features
