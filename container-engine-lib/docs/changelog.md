@@ -1,5 +1,9 @@
 # TBD
 
+# 0.8.8
+### Features
+* Added the `KurtosisDockerDriver` struct with methods that don't do anything 
+
 # 0.8.7
 ### Features
 * Added KubernetesManager, KurtosisBackendCore Interface with implementations for both kubernetes and docker and the KurtosisBackend layer
