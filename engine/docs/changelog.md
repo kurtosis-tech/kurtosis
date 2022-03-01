@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Changed `engine-server-launcher` to use generic `KurtosisBackend` instead of `DockerManager`
 
 # 1.11.3
 ### Changes

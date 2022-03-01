@@ -6,17 +6,12 @@
 package engine_server_launcher
 
 import (
-	"bytes"
 	"context"
-	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"net"
-	"strconv"
 	"time"
 
-	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -56,13 +51,11 @@ const (
 )
 
 type EngineServerLauncher struct {
-	dockerManager *docker_manager.DockerManager
-
-	objAttrsProvider schema.ObjectAttributesProvider
+	kurtosisBackend backend_interface.KurtosisBackend
 }
 
-func NewEngineServerLauncher(dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *EngineServerLauncher {
-	return &EngineServerLauncher{dockerManager: dockerManager, objAttrsProvider: objAttrsProvider}
+func NewEngineServerLauncher(kurtosisBackend backend_interface.KurtosisBackend) *EngineServerLauncher {
+	return &EngineServerLauncher{kurtosisBackend: kurtosisBackend}
 }
 
 func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
@@ -109,56 +102,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	resultPublicGrpcPortNum uint16,
 	resultErr error,
 ) {
-	matchingNetworks, err := launcher.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(
-			err,
-			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			networkToStartEngineContainerIn,
-		)
-	}
-	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
-		return nil, 0, stacktrace.NewError(
-			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			networkToStartEngineContainerIn,
-			numMatchingNetworks,
-		)
-	}
-	targetNetwork := matchingNetworks[0]
-	targetNetworkId := targetNetwork.GetId()
-
-	engineAttrs, err := launcher.objAttrsProvider.ForEngineServer(grpcListenPortNum, grpcProxyListenPortNum)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using grpc port num '%v' and grpc-proxy port num '%v'", grpcListenPortNum, grpcProxyListenPortNum)
-	}
-
-	grpcPortObj, err := nat.NewPort(
-		grpcPortProtocol,
-		fmt.Sprintf("%v", grpcListenPortNum),
-	)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(
-			err,
-			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
-			grpcListenPortNum,
-			grpcPortProtocol,
-		)
-	}
-
-	grpcProxyPortObj, err := nat.NewPort(
-		grpcProxyPortProtocol,
-		fmt.Sprintf("%v", grpcProxyListenPortNum),
-	)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(
-			err,
-			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's grpc-proxy port",
-			grpcProxyListenPortNum,
-			grpcProxyPortProtocol,
-		)
-	}
-
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		grpcProxyListenPortNum,
@@ -177,138 +120,9 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		return nil, 0, stacktrace.Propagate(err, "An error occurred generating the engine server's environment variables")
 	}
 
-	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		grpcPortObj:      docker_manager.NewManualPublishingSpec(grpcListenPortNum),
-		grpcProxyPortObj: docker_manager.NewManualPublishingSpec(grpcProxyListenPortNum),
-	}
-
-	bindMounts := map[string]string{
-		// Necessary so that the engine server can interact with the Docker engine
-		dockerSocketFilepath:           dockerSocketFilepath,
-		engineDataDirpathOnHostMachine: EngineDataDirpathOnEngineServerContainer,
-	}
-
-	containerImageAndTag := fmt.Sprintf(
-		"%v:%v",
-		containerImage,
-		imageVersionTag,
-	)
-
-	// Best-effort pull attempt
-	if err = launcher.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
-		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
-	}
-
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		containerImageAndTag,
-		engineAttrs.GetName(),
-		targetNetworkId,
-	).WithEnvironmentVariables(
-		envVars,
-	).WithBindMounts(
-		bindMounts,
-	).WithUsedPorts(
-		usedPorts,
-	).WithLabels(
-		engineAttrs.GetLabels(),
-	).Build()
-
-	containerId, hostMachinePortBindings, err := launcher.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	engine, err := launcher.kurtosisBackend.CreateEngine(ctx, containerImage, imageVersionTag, grpcListenPortNum, grpcProxyListenPortNum, engineDataDirpathOnHostMachine, envVars)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
+		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%v'", envVars)
 	}
-	shouldKillEngineContainer := true
-	defer func() {
-		if shouldKillEngineContainer {
-			if err := launcher.dockerManager.KillContainer(context.Background(), containerId); err != nil {
-				logrus.Errorf("Launching the engine server didn't complete successfully so we tried to kill the container we started, but doing so exited with an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill engine server with container ID '%v'!!!!!!", containerId)
-			}
-		}
-	}()
-
-	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcListenPortNum); err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcListenPortNum)
-	}
-
-	if err := waitForAvailability(ctx, launcher.dockerManager, containerId, grpcProxyListenPortNum); err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available on port '%v'", grpcProxyListenPortNum)
-	}
-
-	hostMachineEnginePortBinding, found := hostMachinePortBindings[grpcPortObj]
-	if !found {
-		return nil, 0, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
-	}
-
-	publicIpAddrStr := hostMachineEnginePortBinding.HostIP
-	publicIpAddr := net.ParseIP(publicIpAddrStr)
-	if publicIpAddr == nil {
-		return nil, 0, stacktrace.NewError("The engine server's port was reported to be bound on host machine interface IP '%v', but this is not a valid IP string", publicIpAddrStr)
-	}
-
-	publicPortNumStr := hostMachineEnginePortBinding.HostPort
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, publicPortNumParsingBase, publicPortNumParsingUintBits)
-	if err != nil {
-		return nil, 0, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
-			publicPortNumStr,
-			publicPortNumParsingBase,
-			publicPortNumParsingUintBits,
-		)
-	}
-	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-
-	shouldKillEngineContainer = false
-	return publicIpAddr, publicPortNumUint16, nil
-}
-
-// ====================================================================================================
-//                                     Private Helper Methods
-// ====================================================================================================
-func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
-	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		netstatWaitForAvailabilityPortProtocol,
-		listenPortNum,
-	)
-	execCmd := []string{
-		"sh",
-		"-c",
-		commandStr,
-	}
-	for i := 0; i < maxWaitForAvailabilityRetries; i++ {
-		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
-		if err == nil {
-			if exitCode == availabilityWaitingExecCmdSuccessExitCode {
-				return nil
-			}
-			logrus.Debugf(
-				"Engine server availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
-				commandStr,
-				availabilityWaitingExecCmdSuccessExitCode,
-				exitCode,
-				outputBuffer.String(),
-			)
-		} else {
-			logrus.Debugf(
-				"Engine server availability-waiting command '%v' experienced a Docker error:\n%v",
-				commandStr,
-				err,
-			)
-		}
-
-		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxWaitForAvailabilityRetries {
-			time.Sleep(timeBetweenWaitForAvailabilityRetries)
-		}
-	}
-
-	return stacktrace.NewError(
-		"The engine server didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
-		commandStr,
-		maxWaitForAvailabilityRetries,
-		timeBetweenWaitForAvailabilityRetries,
-	)
+	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort().GetNumber(), nil
 }
