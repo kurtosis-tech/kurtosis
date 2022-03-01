@@ -7,6 +7,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -84,14 +85,14 @@ type DockerKurtosisBackendCore struct {
 
 	dockerManager *docker_manager.DockerManager
 
-	objAttrsProvider schema.ObjectAttributesProvider
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 }
 
-func NewDockerKurtosisBackendCore(log *logrus.Logger, dockerManager *docker_manager.DockerManager, objAttrsProvider schema.ObjectAttributesProvider) *DockerKurtosisBackendCore {
+func NewDockerKurtosisBackendCore(log *logrus.Logger, dockerManager *docker_manager.DockerManager) *DockerKurtosisBackendCore {
 	return &DockerKurtosisBackendCore{
 		log:              log,
 		dockerManager:    dockerManager,
-		objAttrsProvider: objAttrsProvider,
+		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
 }
 
@@ -100,7 +101,8 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	logLevel logrus.Level,
-	listenPortNum uint16,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
 	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
@@ -128,7 +130,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	targetNetworkId := targetNetwork.GetId()
 
 	// TODO add an extra engine UUID key!!!
-	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum)
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(grpcPortNum, grpcProxyPortNum)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
 	}

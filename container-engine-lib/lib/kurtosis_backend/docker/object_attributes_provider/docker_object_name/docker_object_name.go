@@ -1,4 +1,4 @@
-package docker
+package docker_object_name
 
 import (
 	"github.com/kurtosis-tech/stacktrace"

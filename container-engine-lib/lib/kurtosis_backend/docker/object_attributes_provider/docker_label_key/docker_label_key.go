@@ -1,4 +1,4 @@
-package docker
+package docker_label_key
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
@@ -9,6 +9,8 @@ const (
 	dockerLabelKeyRegexStr = "^[a-z0-9-.]+$"
 )
 var dockerLabelKeyRegex = regexp.MustCompile(dockerLabelKeyRegexStr)
+
+// TODO MAKE THIS AN INTERFACE????
 
 // Represents a Docker label that is guaranteed to be valid for the Docker engine
 // NOTE: This is a struct-based enum

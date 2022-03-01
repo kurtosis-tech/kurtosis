@@ -1,8 +1,12 @@
-package schema
+package object_attributes_provider
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
 	"time"
@@ -10,39 +14,40 @@ import (
 
 const (
 	engineServerNamePrefix                   = "kurtosis-engine"
-	engineServerPortProtocol                 = PortProtocol_TCP
-	metadataAcquisitionContainerNameFragment = "metadata-acquisition"
+	engineServerPortProtocol                 = port_spec.PortProtocol_TCP
 )
 
-type ObjectAttributesProvider interface {
-	ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (ObjectAttributes, error)
-	ForEnclave(enclaveId string) EnclaveObjectAttributesProvider
+type DockerObjectAttributesProvider interface {
+	ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error)
+	// ForEnclave(enclaveId string) EnclaveObjectAttributesProvider
 }
 
-// Entrypoint to get this version of the schema
-func GetObjectAttributesProvider() ObjectAttributesProvider {
-	return newObjectAttributesProviderImpl()
+func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
+	return newDockerObjectAttributesProviderImpl()
 }
 
 // Private so it can't be instantiated
-type objectAttributesProviderImpl struct{}
-
-func newObjectAttributesProviderImpl() *objectAttributesProviderImpl {
-	return &objectAttributesProviderImpl{}
+type dockerObjectAttributesProviderImpl struct{}
+func newDockerObjectAttributesProviderImpl() *dockerObjectAttributesProviderImpl {
+	return &dockerObjectAttributesProviderImpl{}
 }
 
-func (provider *objectAttributesProviderImpl) ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (ObjectAttributes, error) {
+func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error) {
 	containerStartTimeUnixSecs := time.Now().Unix()
 	containerStartTimeStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
-	name := strings.Join(
+	nameStr := strings.Join(
 		[]string{
 			engineServerNamePrefix,
 			containerStartTimeStr,
 		},
 		objectNameElementSeparator,
 	)
+	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
 
-	grpcPortSpec, err := NewPortSpec(grpcListenPortNum, engineServerPortProtocol)
+	grpcPortSpec, err := port_spec.NewPortSpec(grpcListenPortNum, engineServerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -52,7 +57,7 @@ func (provider *objectAttributesProviderImpl) ForEngineServer(grpcListenPortNum 
 		)
 	}
 
-	grpcProxyPortSpec, err := NewPortSpec(grpcProxyListenPortNum, engineServerPortProtocol)
+	grpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyListenPortNum, engineServerPortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -62,21 +67,21 @@ func (provider *objectAttributesProviderImpl) ForEngineServer(grpcListenPortNum 
 		)
 	}
 
-	usedPorts := map[string]*PortSpec{
-		KurtosisInternalContainerGRPCPortID: grpcPortSpec,
-		KurtosisInternalContainerGRPCProxyPortID: grpcProxyPortSpec,
+	usedPorts := map[string]*port_spec.PortSpec{
+		kurtosisInternalContainerGrpcPortId: grpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortId: grpcProxyPortSpec,
 	}
-	serializedPortsSpec, err := SerializePortSpecs(usedPorts)
+	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred serializing the following engine server ports object to a string for storing in the ports label: %+v", usedPorts)
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following engine server ports to a string for storing in the ports label: %+v", usedPorts)
 	}
 
-	labels := map[string]string{
-		forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
-		PortSpecsLabel:                       serializedPortsSpec,
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		ContainerTypeLabelKey: EngineContainerTypeLabelValue,
+		PortSpecsLabelKey:     serializedPortsSpec,
 	}
 
-	objectAttributes, err := newObjectAttributesImpl(name, labels)
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
 	}
@@ -84,6 +89,10 @@ func (provider *objectAttributesProviderImpl) ForEngineServer(grpcListenPortNum 
 	return objectAttributes, nil
 }
 
-func (provider *objectAttributesProviderImpl) ForEnclave(enclaveId string) EnclaveObjectAttributesProvider {
+// TODO Fix this!
+/*
+func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId string) EnclaveObjectAttributesProvider {
 	return newEnclaveObjectAttributesProviderImpl(enclaveId)
 }
+
+ */

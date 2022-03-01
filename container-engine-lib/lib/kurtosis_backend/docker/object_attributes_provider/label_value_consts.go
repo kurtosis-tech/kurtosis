@@ -1,4 +1,8 @@
-package docker
+package object_attributes_provider
+
+import "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+
+
 
 const (
 	// TODO MOVE TO FOREVER CONSTANTS!!
@@ -21,6 +25,6 @@ const (
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	kurtosisInternalContainerGrpcProxyPortId = "grpc-proxy"
 )
-var AppIDLabelValue = MustCreateNewDockerLabelValue(appIdLabelValueStr)
+var AppIDLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 
-var EngineContainerTypeLabelValue = MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
+var EngineContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)

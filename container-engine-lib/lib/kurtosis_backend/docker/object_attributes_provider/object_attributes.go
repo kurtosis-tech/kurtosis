@@ -1,47 +1,53 @@
-package schema
+package object_attributes_provider
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_key"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_object_name"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
 // Encapsulates the attributes that a Docker object in the Kurtosis ecosystem can have
 type DockerObjectAttributes interface {
-	GetName() string
-	GetLabels() map[string]string
+	GetName() *docker_object_name.DockerObjectName
+	GetLabels() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue
 }
 
 // Private so this can't be instantiated
 type dockerObjectAttributesImpl struct {
-	name         string
-	customLabels map[string]string
+	name         *docker_object_name.DockerObjectName
+	customLabels map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue
 }
 
-func newDockerObjectAttributesImpl(name *docker.DockerObjectName, customLabels map[*docker.DockerLabelKey]*docker.DockerLabelValue) (*dockerObjectAttributesImpl, error) {
-	for key, value := range customLabels {
-		if err := validateLabelKey(key); err != nil {
-			return nil, stacktrace.Propagate(err, "The label key '%s' for value '%s' is invalid", key, value)
-		}
-		if err := validateLabelValue(value); err != nil {
-			return nil, stacktrace.Propagate(err, "The label value '%s' for key '%s' is invalid", value, key)
+func newDockerObjectAttributesImpl(name *docker_object_name.DockerObjectName, customLabels map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue) (*dockerObjectAttributesImpl, error) {
+	globalLabelsStrs := map[string]string{}
+	for globalKey, globalValue := range GlobalLabels {
+		globalLabelsStrs[globalKey.GetString()] = globalValue.GetString()
+	}
+	for customKey, customValue := range customLabels {
+		if _, found := globalLabelsStrs[customKey.GetString()]; found {
+			return nil, stacktrace.NewError("Custom label with key '%v' and value '%v' collides with global label with the same key", customKey.GetString(), customValue.GetString())
 		}
 	}
 
-	return &objectAttributesImpl{name: name, customLabels: customLabels}, nil
+	return &dockerObjectAttributesImpl{
+		name:         name,
+		customLabels: customLabels,
+	}, nil
 }
 
-func (attrs *dockerObjectAttributesImpl) GetName() string {
+func (attrs *dockerObjectAttributesImpl) GetName() *docker_object_name.DockerObjectName {
 	return attrs.name
 }
 
-func (attrs *dockerObjectAttributesImpl) GetLabels() map[*docker.DockerLabelKey]*docker.DockerLabelValue {
-	result := map[string]string{}
+func (attrs *dockerObjectAttributesImpl) GetLabels() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
+	result := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{}
 	for key, value := range attrs.customLabels {
 		result[key] = value
 	}
-	// NOTE: If a custom label collides with a base label, the base label wins
-	for key, value := range forever_constants.ForeverLabels {
+	// We're guaranteed that the global label string keys won't collide with the custom labels due to the validation
+	// we do at construction time
+	for key, value := range GlobalLabels {
 		result[key] = value
 	}
 	return result

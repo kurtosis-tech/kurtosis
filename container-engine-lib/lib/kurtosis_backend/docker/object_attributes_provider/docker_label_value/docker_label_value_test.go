@@ -1,4 +1,4 @@
-package docker
+package docker_label_value
 
 // TODO ensure a valid label value works
 

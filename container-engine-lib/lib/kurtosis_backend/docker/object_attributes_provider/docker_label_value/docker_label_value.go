@@ -1,4 +1,4 @@
-package docker
+package docker_label_value
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
