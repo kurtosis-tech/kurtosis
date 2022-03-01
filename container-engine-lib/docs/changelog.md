@@ -1,4 +1,15 @@
 # TBD
+### Changes
+* Switched from fairly-specific engine methods on `KurtosisBackend` to generic CRUD methods (`CreateEngine`, `GetEngines`, etc.)
+
+### Removals
+* Removed the `KurtosisXXXDrivers` classes, as we're going to use `KurtosisBackend` as the external-facing API instead
+
+### Breaking Changes
+* Removed the `KurtosisXXXDrivers` classes
+    * Users should use the `KurtosisBackend` struct instead
+* Changed the API of `KurtosisBackend` to have generic CRUD methods for engines
+    * Users should adapt their previous uses of specific methods (like `Clean`) to instead use these generic CRUD APIs
 
 # 0.8.8
 ### Features
