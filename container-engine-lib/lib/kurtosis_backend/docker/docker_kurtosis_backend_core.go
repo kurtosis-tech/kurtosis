@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -21,6 +21,11 @@ import (
 
 const (
 	dockerSocketFilepath = "/var/run/docker.sock"
+
+	// The Docker API's default is to return just containers whose status is "running"
+	// However, we'd rather do our own filtering on what "running" means (because, e.g., "restarting"
+	// should also be considered as running)
+	shouldFetchAllContainersWhenRetrievingContainers = true
 
 	nameOfNetworkToStartEngineContainerIn = "bridge"
 
@@ -70,18 +75,28 @@ const (
 	waitForEngineResponseTimeout = 5 * time.Second
 )
 
-var engineLabels = map[string]string{
-	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
-	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
-	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
+// This maps a Docker container's status to a binary "is the container considered running?" determiner
+// Its completeness is enforced via unit test
+var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
+	types.ContainerStatus_Paused: false,
+	types.ContainerStatus_Restarting: true,
+	types.ContainerStatus_Running: true,
+	types.ContainerStatus_Removing: true,
+	types.ContainerStatus_Dead: false,
+	types.ContainerStatus_Created: false,
+	types.ContainerStatus_Exited: false,
 }
 
+// TODO REPLACE THIS WITH A DEPENDENCE ON THE PORT_PROTOCOL FROM PORT_SPEC
+/*
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
 var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 	schema.PortProtocol_TCP:  "tcp",
 	schema.PortProtocol_SCTP: "sctp",
 	schema.PortProtcol_UDP:   "udp",
 }
+
+ */
 
 type DockerKurtosisBackendCore struct {
 	// The logger that all log messages will be written to
@@ -302,9 +317,64 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 }
 
 func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
-	// TODO Implement this!!
-	// backendCore.dockerManager.GetContainersByLabels()
-	panic("Implement this!!!")
+	searchLabels := map[string]string{
+		// TODO extract this into somewhere better so we're ALWAYS getting containers using the Kurtosis label and nothing else????
+		object_attributes_provider.AppIDLabelKey.GetString(): object_attributes_provider.AppIDLabelValue.GetString(),
+	}
+	containersMatchingLabels, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", searchLabels)
+	}
+
+	_, shouldReturnStoppedContainers := filters.Statuses[engine.EngineStatus_Stopped]
+	_, shouldReturnRunningContainers := filters.Statuses[engine.EngineStatus_Stopped]
+
+	containersMatchingLabelsAndStatuses := []*types.Container{}
+	for _, matchingContainer := range containersMatchingLabels {
+		containerStatus := matchingContainer.GetStatus()
+		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return nil, stacktrace.NewError("No is-running designation found for container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+		}
+		if isContainerRunning && shouldReturnRunningContainers {
+			containersMatchingLabelsAndStatuses = append(containersMatchingLabelsAndStatuses, matchingContainer)
+		}
+		if !isContainerRunning && shouldReturnStoppedContainers {
+			containersMatchingLabelsAndStatuses = append(containersMatchingLabelsAndStatuses, matchingContainer)
+		}
+	}
+
+	result := map[string]*engine.Engine{}
+	for _, matchingContainer := range containersMatchingLabelsAndStatuses {
+		labels := matchingContainer.GetLabels()
+		engineGuid, found := labels[object_attributes_provider.GUIDLabelKey.GetString()]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Expected a '%v' label on engine container with ID '%v', but none was found",
+				object_attributes_provider.GUIDLabelKey.GetString(),
+				matchingContainer.GetId(),
+			)
+		}
+
+		containerStatus := matchingContainer.GetStatus()
+		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return nil, stacktrace.NewError("No is-running classification found for container status '%v'; this is a bug in Kurtosis", containerStatus.String())
+		}
+
+		var engineStatus engine.EngineStatus
+		if isContainerRunning {
+			engineStatus = engine.EngineStatus_Running
+		} else {
+			engineStatus = engine.EngineStatus_Stopped
+		}
+
+		engine := engine.NewEngine(engineGuid, engineStatus)
+	}
+
+	return containersMatchingLabelsAndStatuses, nil
 }
 
 func (backendCore *DockerKurtosisBackendCore) StopEngines(ctx context.Context, ids map[string]bool) error {

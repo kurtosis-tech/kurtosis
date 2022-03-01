@@ -1,33 +1,14 @@
 package types
 
-import "github.com/kurtosis-tech/stacktrace"
-
-type ContainerStatus string
-
+//go:generate go run github.com/dmarkham/enumer -transform=lower -trimprefix=ContainerStatus_ -type=ContainerStatus
+type ContainerStatus int
 const (
-	Paused     ContainerStatus = "paused"
-	Restarting ContainerStatus = "restarting"
-	Running    ContainerStatus = "running"
-	Removing   ContainerStatus = "removing"
-	Dead       ContainerStatus = "dead"
-	Created    ContainerStatus = "created"
-	Exited     ContainerStatus = "exited"
+	// The names, as lowercase correspond to the Docker API values!
+	ContainerStatus_Paused     ContainerStatus = iota
+	ContainerStatus_Restarting
+	ContainerStatus_Running
+	ContainerStatus_Removing
+	ContainerStatus_Dead
+	ContainerStatus_Created
+	ContainerStatus_Exited
 )
-
-var allContainerStatusesSet = map[ContainerStatus]bool{
-	Paused:     true,
-	Restarting: true,
-	Running:    true,
-	Removing:   true,
-	Dead:       true,
-	Created:    true,
-	Exited:     true,
-}
-
-func GetContainerStatusFromString(containerStatusStr string) (ContainerStatus, error) {
-	containerStatus := ContainerStatus(containerStatusStr)
-	if _, found := allContainerStatusesSet[containerStatus]; !found {
-		return "", stacktrace.NewError("No container status matches string '%v'", containerStatusStr)
-	}
-	return containerStatus, nil
-}
