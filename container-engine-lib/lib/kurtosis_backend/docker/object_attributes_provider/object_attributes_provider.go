@@ -1,7 +1,6 @@
 package object_attributes_provider
 
 import (
-	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_object_name"
@@ -9,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
-	"time"
 )
 
 const (
@@ -18,7 +16,7 @@ const (
 )
 
 type DockerObjectAttributesProvider interface {
-	ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error)
+	ForEngineServer(id string, grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error)
 	// ForEnclave(enclaveId string) EnclaveObjectAttributesProvider
 }
 
@@ -32,19 +30,27 @@ func newDockerObjectAttributesProviderImpl() *dockerObjectAttributesProviderImpl
 	return &dockerObjectAttributesProviderImpl{}
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error) {
-	containerStartTimeUnixSecs := time.Now().Unix()
-	containerStartTimeStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
+func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(id string, grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error) {
+
 	nameStr := strings.Join(
 		[]string{
 			engineServerNamePrefix,
-			containerStartTimeStr,
+			id,
 		},
 		objectNameElementSeparator,
 	)
 	name, err := docker_object_name.CreateNewDockerObjectName(nameStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", nameStr)
+	}
+
+	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine ID Docker label from string '%v'", id)
+	}
+	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", id)
 	}
 
 	grpcPortSpec, err := port_spec.NewPortSpec(grpcListenPortNum, engineServerPortProtocol)
@@ -79,6 +85,8 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(grpcListenPo
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		ContainerTypeLabelKey: EngineContainerTypeLabelValue,
 		PortSpecsLabelKey:     serializedPortsSpec,
+		IDLabelKey: idLabelValue,
+		GUIDLabelKey: guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

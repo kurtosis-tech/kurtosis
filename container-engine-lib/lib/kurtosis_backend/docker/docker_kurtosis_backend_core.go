@@ -22,11 +22,15 @@ import (
 const (
 	dockerSocketFilepath = "/var/run/docker.sock"
 
-	networkToStartEngineContainerIn = "bridge"
+	nameOfNetworkToStartEngineContainerIn = "bridge"
 
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
-	// This is the Docker constant indicating a TCP port
-	engineContainerDockerPortProtocol = "tcp"
+	// This is the Docker constant indicating a TCP port (because Docker doesn't have an enum for this sadly)
+	engineGrpcPortDockerProtocol = "tcp"
+
+	// The proxy for the engine's gRPC port also MUST listen on TCP
+	// This is the Docker constant indicating a TCP port (because Docker doesn't have an enum for this sadly)
+	engineGrpcProxyPortDockerProtocol = "tcp"
 
 	// The protocol string we use in the netstat command used to ensure the engine container is available
 	netstatWaitForAvailabilityPortProtocol = "tcp"
@@ -100,56 +104,77 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
-	logLevel logrus.Level,
 	grpcPortNum uint16,
 	grpcProxyPortNum uint16,
 	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
-	resultPublicIpAddr net.IP,
-	resultPublicPortNum uint16,
-	resultErr error,
+	*engine.Engine,
+	error,
 ) {
-	matchingNetworks, err := backendCore.dockerManager.GetNetworksByName(ctx, networkToStartEngineContainerIn)
+	matchingNetworks, err := backendCore.dockerManager.GetNetworksByName(ctx, nameOfNetworkToStartEngineContainerIn)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred getting networks matching the network we want to start the engine in, '%v'",
-			networkToStartEngineContainerIn,
+			nameOfNetworkToStartEngineContainerIn,
 		)
 	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 && numMatchingNetworks > 1 {
-		return nil, 0, stacktrace.NewError(
+		return nil, stacktrace.NewError(
 			"Expected exactly one network matching the name of the network that we want to start the engine in, '%v', but got %v",
-			networkToStartEngineContainerIn,
+			nameOfNetworkToStartEngineContainerIn,
 			numMatchingNetworks,
 		)
 	}
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
-	// TODO add an extra engine UUID key!!!
-	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(grpcPortNum, grpcProxyPortNum)
+	containerStartTimeUnixSecs := time.Now().Unix()
+	engineIdStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
+
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(engineIdStr, grpcPortNum, grpcProxyPortNum)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the engine server container attributes using id '%v', grpc port num '%v', and " +
+				"grpc proxy port num '%v'",
+			engineIdStr,
+			grpcPortNum,
+			grpcProxyPortNum,
+		)
 	}
 
-	enginePortObj, err := nat.NewPort(
-		engineContainerDockerPortProtocol,
-		fmt.Sprintf("%v", listenPortNum),
+	grpcPortObj, err := nat.NewPort(
+		engineGrpcPortDockerProtocol,
+		fmt.Sprintf("%v", grpcPortNum),
 	)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating a port object with port num '%v' and protocol '%v' to represent the engine's port",
-			listenPortNum,
-			engineContainerDockerPortProtocol,
+			"An error occurred creating a port object with port num '%v' and Docker protocol '%v' to represent the engine's grpc port",
+			grpcPortNum,
+			engineGrpcPortDockerProtocol,
+		)
+	}
+
+	grpcProxyPortObj, err := nat.NewPort(
+		engineGrpcProxyPortDockerProtocol,
+		fmt.Sprintf("%v", grpcProxyPortNum),
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a port object with port num '%v' and Docker protocol '%v' to represent the engine's grpc proxy port",
+			grpcProxyPortNum,
+			engineGrpcProxyPortDockerProtocol,
 		)
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		enginePortObj: docker_manager.NewManualPublishingSpec(listenPortNum),
+		grpcPortObj: docker_manager.NewManualPublishingSpec(grpcPortNum),
+		grpcProxyPortObj: docker_manager.NewManualPublishingSpec(grpcProxyPortNum),
 	}
 
 	bindMounts := map[string]string{
@@ -164,6 +189,11 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		imageVersionTag,
 	)
 
+	labelStrs := map[string]string{}
+	for labelKey, labelValue := range engineAttrs.GetLabels() {
+		labelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
 	// Best-effort pull attempt
 	if err = backendCore.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
 		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
@@ -171,7 +201,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
-		engineAttrs.GetName(),
+		engineAttrs.GetName().GetString(),
 		targetNetworkId,
 	).WithEnvironmentVariables(
 		envVars,
@@ -180,12 +210,12 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
-		engineAttrs.GetLabels(),
+		labelStrs,
 	).Build()
 
 	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
+		return nil, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")
 	}
 	shouldKillEngineContainer := true
 	defer func() {
@@ -197,36 +227,78 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		}
 	}()
 
-	if err := waitForAvailability(ctx, backendCore.dockerManager, containerId, listenPortNum); err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred waiting for the engine server to become available")
+	if err := waitForAvailability(ctx, backendCore.dockerManager, containerId, grpcPortNum); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
 	}
 
-	hostMachineEnginePortBinding, found := hostMachinePortBindings[enginePortObj]
+	if err := waitForAvailability(ctx, backendCore.dockerManager, containerId, grpcProxyPortNum); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc proxy port to become available")
+	}
+
+	hostMachineEngineGrpcPortBinding, found := hostMachinePortBindings[grpcPortObj]
 	if !found {
-		return nil, 0, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding was found")
+		return nil, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding for the grpc port was found")
 	}
 
-	publicIpAddrStr := hostMachineEnginePortBinding.HostIP
+	hostMachineEngineGrpcProxyPortBinding, found := hostMachinePortBindings[grpcProxyPortObj]
+	if !found {
+		return nil, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding for the grpc proxy port was found")
+	}
+
+	publicGrpcIpAddrStr := hostMachineEngineGrpcPortBinding.HostIP
+	publicGrpcProxyIpAddrStr := hostMachineEngineGrpcProxyPortBinding.HostIP
+	if publicGrpcIpAddrStr != publicGrpcProxyIpAddrStr {
+		return nil, stacktrace.NewError(
+			"Expected public IP address '%v' for the grpc port to be the same as public IP address '%v' for " +
+				"the grpc proxy port, but they were different",
+
+			publicGrpcIpAddrStr,
+			publicGrpcProxyIpAddrStr,
+		)
+	}
+
+	publicIpAddrStr := publicGrpcIpAddrStr
 	publicIpAddr := net.ParseIP(publicIpAddrStr)
 	if publicIpAddr == nil {
-		return nil, 0, stacktrace.NewError("The engine server's port was reported to be bound on host machine interface IP '%v', but this is not a valid IP string", publicIpAddrStr)
+		return nil, stacktrace.NewError("The engine server's port was reported to be bound on host machine interface IP '%v', but this is not a valid IP string", publicIpAddrStr)
 	}
 
-	publicPortNumStr := hostMachineEnginePortBinding.HostPort
-	publicPortNumUint64, err := strconv.ParseUint(publicPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	publicGrpcPortNumStr := hostMachineEngineGrpcPortBinding.HostPort
+	publicGrpcPortNumUint64, err := strconv.ParseUint(publicGrpcPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred parsing engine server public port string '%v' using base '%v' and uint bits '%v'",
-			publicPortNumStr,
+			"An error occurred parsing engine server grpc public port string '%v' using base '%v' and uint bits '%v'",
+			publicGrpcPortNumStr,
 			hostMachinePortNumStrParsingBase,
 			hostMachinePortNumStrParsingBits,
 		)
 	}
-	publicPortNumUint16 := uint16(publicPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+	publicGrpcPortNumUint16 := uint16(publicGrpcPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+
+	publicGrpcProxyPortNumStr := hostMachineEngineGrpcProxyPortBinding.HostPort
+	publicGrpcProxyPortNumUint64, err := strconv.ParseUint(publicGrpcProxyPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred parsing engine server grpc proxy public port string '%v' using base '%v' and uint bits '%v'",
+			publicGrpcProxyPortNumStr,
+			hostMachinePortNumStrParsingBase,
+			hostMachinePortNumStrParsingBits,
+		)
+	}
+	publicGrpcProxyPortNumUint16 := uint16(publicGrpcProxyPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+
+	result := engine.NewEngine(
+		engineIdStr,
+		engine.EngineStatus_Running,
+		publicIpAddr,
+		publicGrpcPortNumUint16,
+		publicGrpcProxyPortNumUint16,
+	)
 
 	shouldKillEngineContainer = false
-	return publicIpAddr, publicPortNumUint16, nil
+	return result, nil
 }
 
 func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
