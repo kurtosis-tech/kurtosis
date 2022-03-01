@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
-	container_status_calculator "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend_core/helpers"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -98,11 +97,11 @@ func NewDockerKurtosisBackendCore(log *logrus.Logger, dockerManager *docker_mana
 
 func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	ctx context.Context,
+	imageOrgAndRepo string,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	listenPortNum uint16,
 	engineDataDirpathOnHostMachine string,
-	imageOrgAndRepo string,
 	envVars map[string]string,
 ) (
 	resultPublicIpAddr net.IP,
@@ -128,6 +127,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	targetNetwork := matchingNetworks[0]
 	targetNetworkId := targetNetwork.GetId()
 
+	// TODO add an extra engine UUID key!!!
 	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(listenPortNum)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err, "An error occurred getting the engine server container attributes using port num '%v'", listenPortNum)
@@ -227,7 +227,13 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	return publicIpAddr, publicPortNumUint16, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) StopEngine(ctx context.Context) error {
+func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
+	// TODO Implement this!!
+	// backendCore.dockerManager.GetContainersByLabels()
+	panic("Implement this!!!")
+}
+
+func (backendCore *DockerKurtosisBackendCore) StopEngines(ctx context.Context, ids map[string]bool) error {
 	matchingEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		engineLabels,
@@ -275,6 +281,57 @@ func (backendCore *DockerKurtosisBackendCore) StopEngine(ctx context.Context) er
 	return nil
 }
 
+func (backendCore *DockerKurtosisBackendCore) DestroyEngines(ctx context.Context, ids map[string]bool) error {
+	// TODO implement this!!!
+	panic("Implement this!!")
+
+	/*
+	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(
+		ctx,
+		searchLabels,
+		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
+	}
+
+	containersToDestroy := []*types.Container{}
+	for _, container := range matchingContainers {
+		containerName := container.GetName()
+		containerStatus := container.GetStatus()
+		if shouldKillRunningContainers {
+			containersToDestroy = append(containersToDestroy, container)
+			continue
+		}
+
+		isRunning, err := container_status_calculator.IsContainerRunning(containerStatus)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
+		}
+		if !isRunning {
+			containersToDestroy = append(containersToDestroy, container)
+		}
+	}
+
+	successfullyDestroyedContainerNames := []string{}
+	removeContainerErrors := []error{}
+	for _, container := range containersToDestroy {
+		containerId := container.GetId()
+		containerName := container.GetName()
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
+			removeContainerErrors = append(removeContainerErrors, wrappedErr)
+			continue
+		}
+		successfullyDestroyedContainerNames = append(successfullyDestroyedContainerNames, containerName)
+	}
+
+	return successfullyDestroyedContainerNames, removeContainerErrors, nil
+
+	 */
+}
+
+/*
 func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := backendCore.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
@@ -282,6 +339,8 @@ func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Co
 	}
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
+
+ */
 
 func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 	ctx context.Context,
@@ -410,51 +469,6 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 		maxWaitForEngineAvailabilityRetries,
 		timeBetweenWaitForEngineAvailabilityRetries,
 	)
-}
-
-func (backendCore *DockerKurtosisBackendCore) cleanContainers(ctx context.Context, searchLabels map[string]string, shouldKillRunningContainers bool) ([]string, []error, error) {
-	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(
-		ctx,
-		searchLabels,
-		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
-	)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
-	}
-
-	containersToDestroy := []*types.Container{}
-	for _, container := range matchingContainers {
-		containerName := container.GetName()
-		containerStatus := container.GetStatus()
-		if shouldKillRunningContainers {
-			containersToDestroy = append(containersToDestroy, container)
-			continue
-		}
-
-		isRunning, err := container_status_calculator.IsContainerRunning(containerStatus)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
-		}
-		if !isRunning {
-			containersToDestroy = append(containersToDestroy, container)
-		}
-	}
-
-	successfullyDestroyedContainerNames := []string{}
-	removeContainerErrors := []error{}
-	for _, container := range containersToDestroy {
-		containerId := container.GetId()
-		containerName := container.GetName()
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
-			removeContainerErrors = append(removeContainerErrors, wrappedErr)
-			continue
-		}
-		successfullyDestroyedContainerNames = append(successfullyDestroyedContainerNames, containerName)
-	}
-
-	return successfullyDestroyedContainerNames, removeContainerErrors, nil
-
 }
 
 func getPrivateEnginePort(containerLabels map[string]string) (*schema.PortSpec, error) {

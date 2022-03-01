@@ -8,6 +8,7 @@ import (
 	"net"
 )
 
+// TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
 type KurtosisBackend struct {
 	kurtosisBackendCore KurtosisBackendCore
 	log                 *logrus.Logger
@@ -53,7 +54,7 @@ func (backend *KurtosisBackend) CreateEngine(
 	return publicIpAddr, publicPortNum, nil
 }
 
-// Gets data about engines matching the given filters
+// Gets point-in-time data about engines matching the given filters
 func (backend *KurtosisBackend) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
 	engines, err := backend.kurtosisBackendCore.GetEngines(ctx, filters)
 	if err != nil {
@@ -62,7 +63,6 @@ func (backend *KurtosisBackend) GetEngines(ctx context.Context, filters *engine.
 	return engines, nil
 }
 
-// TODO take in the ID of an engine to stop
 func (backend *KurtosisBackend) StopEngines(ctx context.Context, ids map[string]bool) error {
 	err := backend.kurtosisBackendCore.StopEngines(ctx, ids)
 	if err != nil {
@@ -77,7 +77,6 @@ func (backend *KurtosisBackend) DestroyEngines(ctx context.Context, ids map[stri
 		return stacktrace.Propagate(err, "An error occurred while trying to destroy engines with IDs: %+v", ids)
 	}
 	return nil
-
 }
 
 /*
