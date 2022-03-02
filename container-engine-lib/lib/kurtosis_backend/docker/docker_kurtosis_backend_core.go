@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -87,16 +88,12 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Exited: false,
 }
 
-// TODO REPLACE THIS WITH A DEPENDENCE ON THE PORT_PROTOCOL FROM PORT_SPEC
-/*
-// Unfortunately, Docker doesn't have constants for the protocols it supports declared
-var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
-	schema.PortProtocol_TCP:  "tcp",
-	schema.PortProtocol_SCTP: "sctp",
-	schema.PortProtcol_UDP:   "udp",
+// Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
+var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
+	port_spec.PortProtocol_TCP:  "tcp",
+	port_spec.PortProtocol_SCTP: "sctp",
+	port_spec.PortProtocol_UDP:   "udp",
 }
-
- */
 
 type DockerKurtosisBackendCore struct {
 	// The logger that all log messages will be written to
@@ -326,58 +323,37 @@ func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, fi
 		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", searchLabels)
 	}
 
-	_, shouldReturnStoppedContainers := filters.Statuses[engine.EngineStatus_Stopped]
-	_, shouldReturnRunningContainers := filters.Statuses[engine.EngineStatus_Stopped]
-
-	containersMatchingLabelsAndStatuses := []*types.Container{}
+	allMatchingEngines := map[string]*engine.Engine{}
 	for _, matchingContainer := range containersMatchingLabels {
-		containerStatus := matchingContainer.GetStatus()
-		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
-		if !found {
-			// This should never happen because we enforce completeness in a unit test
-			return nil, stacktrace.NewError("No is-running designation found for container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+		engineObj, err := getEngineObjectFromContainerInfo(
+			matchingContainer.GetId(),
+			matchingContainer.GetLabels(),
+			matchingContainer.GetStatus(),
+			matchingContainer.GetHostPortBindings(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an engine object", matchingContainer.GetId())
 		}
-		if isContainerRunning && shouldReturnRunningContainers {
-			containersMatchingLabelsAndStatuses = append(containersMatchingLabelsAndStatuses, matchingContainer)
-		}
-		if !isContainerRunning && shouldReturnStoppedContainers {
-			containersMatchingLabelsAndStatuses = append(containersMatchingLabelsAndStatuses, matchingContainer)
+		allMatchingEngines[engineObj.GetID()] = engineObj
+	}
+
+	allEnginesMatchingStatus := map[string]*engine.Engine{}
+	for engineId, engineObj := range allMatchingEngines {
+		engineStatus := engineObj.GetStatus()
+		if _, found := filters.Statuses[engineStatus]; found {
+			allEnginesMatchingStatus[engineId] = engineObj
 		}
 	}
 
-	result := map[string]*engine.Engine{}
-	for _, matchingContainer := range containersMatchingLabelsAndStatuses {
-		labels := matchingContainer.GetLabels()
-		engineGuid, found := labels[object_attributes_provider.GUIDLabelKey.GetString()]
-		if !found {
-			return nil, stacktrace.NewError(
-				"Expected a '%v' label on engine container with ID '%v', but none was found",
-				object_attributes_provider.GUIDLabelKey.GetString(),
-				matchingContainer.GetId(),
-			)
-		}
-
-		containerStatus := matchingContainer.GetStatus()
-		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
-		if !found {
-			// This should never happen because we enforce completeness in a unit test
-			return nil, stacktrace.NewError("No is-running classification found for container status '%v'; this is a bug in Kurtosis", containerStatus.String())
-		}
-
-		var engineStatus engine.EngineStatus
-		if isContainerRunning {
-			engineStatus = engine.EngineStatus_Running
-		} else {
-			engineStatus = engine.EngineStatus_Stopped
-		}
-
-		engine := engine.NewEngine(engineGuid, engineStatus)
-	}
-
-	return containersMatchingLabelsAndStatuses, nil
+	return allEnginesMatchingStatus, nil
 }
 
 func (backendCore *DockerKurtosisBackendCore) StopEngines(ctx context.Context, ids map[string]bool) error {
+
+
+
+
+
 	matchingEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(
 		ctx,
 		engineLabels,
@@ -484,7 +460,6 @@ func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Co
 	return successfullyDestroyedContainerNames, containerDestructionErrors, nil
 }
 
- */
 
 func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 	ctx context.Context,
@@ -509,61 +484,8 @@ func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 	engineContainer := runningEngineContainers[0]
 
 	currentlyRunningEngineContainerLabels := engineContainer.GetLabels()
-	objAttrPrivatePort, err := getPrivateEnginePort(currentlyRunningEngineContainerLabels)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(err, "An error occurred getting the engine container's object attributes schema private port")
-	}
-
-	privatePortObjAttrProto := objAttrPrivatePort.GetProtocol()
-	privatePortDockerProto, found := objAttrsSchemaPortProtosToDockerPortProtos[privatePortObjAttrProto]
-	if !found {
-		return nil, 0, false, stacktrace.NewError(
-			"No Docker protocol was defined for obj attr proto '%v'; this is a bug in Kurtosis",
-			privatePortObjAttrProto,
-		)
-	}
-
-	privatePortNumStr := fmt.Sprintf("%v", objAttrPrivatePort.GetNumber())
-	dockerPrivatePort, err := nat.NewPort(
-		privatePortDockerProto,
-		privatePortNumStr,
-	)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(
-			err,
-			"An error occurred creating the engine container Docker private port object from port number '%v' and protocol '%v', which is necessary for getting its host machine port bindings",
-			privatePortNumStr,
-			privatePortDockerProto,
-		)
-	}
-
-	hostMachineEnginePortBinding, found := engineContainer.GetHostPortBindings()[dockerPrivatePort]
-	if !found {
-		return nil, 0, false, stacktrace.NewError("Found a Kurtosis engine server container, but it didn't have a host machine port binding - this is likely a Kurtosis bug")
-	}
-
-	// TODO This should be dynamic based on whether the KurtosisBackend is running inside, or outside, the container engine
-	hostMachineIpAddrStr := hostMachineEnginePortBinding.HostIP
-	hostMachineIp := net.ParseIP(hostMachineIpAddrStr)
-	if hostMachineIp == nil {
-		return nil, 0, false, stacktrace.NewError("We got host machine IP '%v' for accessing the engine container, but it wasn't a valid IP", hostMachineIpAddrStr)
-	}
-
-	hostMachinePortNumStr := hostMachineEnginePortBinding.HostPort
-	hostMachinePortNumUint64, err := strconv.ParseUint(hostMachinePortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
-	if err != nil {
-		return nil, 0, false, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine container host machine port num string '%v' using base '%v' and num bits '%v'",
-			hostMachinePortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
-		)
-	}
-	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-
-	return hostMachineIp, hostMachinePortNumUint16, false, nil
 }
+*/
 
 // ====================================================================================================
 //                                     Private Helper Methods
@@ -615,14 +537,157 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 	)
 }
 
-func getPrivateEnginePort(containerLabels map[string]string) (*schema.PortSpec, error) {
-	serializedPortSpecs, found := containerLabels[schema.PortSpecsLabel]
+func getEngineObjectFromContainerInfo(
+	containerId string,
+	labels map[string]string,
+	containerStatus types.ContainerStatus,
+	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
+) (*engine.Engine, error) {
+	engineGuid, found := labels[object_attributes_provider.GUIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError(
+			"Expected a '%v' label on engine container with ID '%v', but none was found",
+			object_attributes_provider.GUIDLabelKey.GetString(),
+			containerId,
+		)
+	}
+
+	privateGrpcPortSpec, privateGrpcProxyPortSpec, err := getPrivateEnginePorts(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine container's private port specs from container '%v' with labels: %+v", containerId, labels)
+	}
+
+	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return nil, stacktrace.NewError("No is-running designation found for engine container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+	}
+	var engineStatus engine.EngineStatus
+	if isContainerRunning {
+		engineStatus = engine.EngineStatus_Running
+	} else {
+		engineStatus = engine.EngineStatus_Stopped
+	}
+
+	var publicIpAddr net.IP
+	var publicGrpcPortSpec *port_spec.PortSpec
+	var publicGrpcProxyPortSpec *port_spec.PortSpec
+	if engineStatus == engine.EngineStatus_Running {
+		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortSpecFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
+		}
+		publicGrpcPortSpec = candidatePublicGrpcPortSpec
+
+		publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := getPublicPortSpecFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
+		}
+		publicGrpcProxyPortSpec = candidatePublicGrpcProxyPortSpec
+
+		if publicGrpcPortIpAddr.String() != publicGrpcProxyPortIpAddr.String() {
+			return nil, stacktrace.NewError(
+				"Expected the engine's grpc port public IP address '%v' and grpc-proxy port public IP address '%v' to be the same, but they were different",
+				publicGrpcPortIpAddr.String(),
+				publicGrpcProxyPortIpAddr.String(),
+			)
+		}
+		publicIpAddr = publicGrpcPortIpAddr
+	}
+
+	result := engine.NewEngine(
+		engineGuid,
+		engineStatus,
+		publicIpAddr,
+		publicGrpcPortSpec,
+		publicGrpcProxyPortSpec,
+	)
+
+	return result, nil
+}
+
+func getPublicPortSpecFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
+	resultPublicIpAddr net.IP,
+	resultPublicPortSpec *port_spec.PortSpec,
+	resultErr error,
+) {
+	portNum := privatePortSpec.GetNumber()
+
+	// Convert port spec protocol -> Docker protocol string
+	portSpecProto := privatePortSpec.GetProtocol()
+	privatePortDockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No Docker protocol was defined for port spec proto '%v'; this is a bug in Kurtosis",
+			portSpecProto.String(),
+		)
+	}
+
+	privatePortNumStr := fmt.Sprintf("%v", portNum)
+	dockerPrivatePort, err := nat.NewPort(
+		privatePortDockerProto,
+		privatePortNumStr,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Docker private port object from port number '%v' and protocol '%v', which is necessary for getting the corresponding host machine port bindings",
+			privatePortNumStr,
+			privatePortDockerProto,
+		)
+	}
+
+	hostMachinePortBinding, found := allHostMachinePortBindings[dockerPrivatePort]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No host machine port binding was specified for Docker port '%v' which corresponds to port spec with num '%v' and protocol '%v'",
+			dockerPrivatePort,
+			portNum,
+			portSpecProto.String(),
+		)
+	}
+
+	hostMachineIpAddrStr := hostMachinePortBinding.HostIP
+	hostMachineIp := net.ParseIP(hostMachineIpAddrStr)
+	if hostMachineIp == nil {
+		return nil, nil, stacktrace.NewError(
+			"Found host machine IP string '%v' for port spec with number '%v' and protocol '%v', but it wasn't a valid IP",
+
+			hostMachineIpAddrStr)
+	}
+
+	hostMachinePortNumStr := hostMachinePortBinding.HostPort
+	hostMachinePortNumUint64, err := strconv.ParseUint(hostMachinePortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(
+			err,
+			"An error occurred parsing engine container host machine port num string '%v' using base '%v' and num bits '%v'",
+			hostMachinePortNumStr,
+			hostMachinePortNumStrParsingBase,
+			hostMachinePortNumStrParsingBits,
+		)
+	}
+	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, portSpecProto.String())
+	}
+
+	return hostMachineIp, publicPortSpec, nil
+}
+
+func getPrivateEnginePorts(containerLabels map[string]string) (
+	resultGrpcPortSpec *port_spec.PortSpec,
+	resultGrpcProxyPortSpec *port_spec.PortSpec,
+	resultErr error,
+) {
+	serializedPortSpecs, found := containerLabels[object_attributes_provider.PortSpecsLabelKey.GetString()]
 	if found {
 		portSpecs, err := schema.DeserializePortSpecs(serializedPortSpecs)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
 		}
-		portSpec, foundInternalPortId := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
+		grpcPortSpec, foundInternalPortId := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
 		if !foundInternalPortId {
 			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
 		}

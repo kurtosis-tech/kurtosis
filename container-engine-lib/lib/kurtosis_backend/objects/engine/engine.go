@@ -1,6 +1,9 @@
 package engine
 
-import "net"
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
+	"net"
+)
 
 // Object that represents POINT-IN-TIME information about an engine server
 // Store this object and continue to reference it at your own risk!!!
@@ -11,13 +14,14 @@ type Engine struct {
 	status EngineStatus
 
 	// Public (i.e. external to Kurtosis) information about the engine
+	// This information will be nil if the engine isn't running
 	publicIpAddr net.IP
-	publicGrpcPortNum uint16
-	publicGrpcProxyPortNum uint16
+	publicGrpcPort *port_spec.PortSpec
+	publicGrpcProxyPort *port_spec.PortSpec
 }
 
-func NewEngine(id string, status EngineStatus, publicIpAddr net.IP, publicGrpcPortNum uint16, publicGrpcProxyPortNum uint16) *Engine {
-	return &Engine{id: id, status: status, publicIpAddr: publicIpAddr, publicGrpcPortNum: publicGrpcPortNum, publicGrpcProxyPortNum: publicGrpcProxyPortNum}
+func NewEngine(id string, status EngineStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
+	return &Engine{id: id, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
 }
 
 func (engine *Engine) GetID() string {
@@ -29,9 +33,9 @@ func (engine *Engine) GetStatus() EngineStatus {
 func (engine *Engine) GetPublicIPAddress() net.IP {
 	return engine.publicIpAddr
 }
-func (engine *Engine) GetPublicGRPCPortNum() uint16 {
-	return engine.publicGrpcPortNum
+func (engine *Engine) GetPublicGRPCPort() *port_spec.PortSpec {
+	return engine.publicGrpcPort
 }
-func (engine *Engine) GetPublicGRPCProxyPortNum() uint16 {
-	return engine.publicGrpcProxyPortNum
+func (engine *Engine) GetPublicGRPCProxyPortNum() *port_spec.PortSpec {
+	return engine.publicGrpcProxyPort
 }
