@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.5
 ### Features
 * Added a `--with-partitioning` flag to the `sandbox` command for turning on network partitioning
 
