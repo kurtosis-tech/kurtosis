@@ -14,6 +14,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -187,9 +189,12 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
 	}
 
+	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
+	/*
 	if err := waitForEnginePortAvailability(ctx, backendCore.dockerManager, containerId, grpcProxyPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc proxy port to become available")
 	}
+	 */
 
 	result, err := getEngineObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {
@@ -349,38 +354,47 @@ func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_ma
 
 // Gets engines matching the search filters, indexed by their container ID
 func (backendCore *DockerKurtosisBackendCore) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
-	searchLabels := map[string]string{
-		// TODO extract this into somewhere better so we're ALWAYS getting containers using the Kurtosis label and nothing else????
+	engineContainerSearchLabels := map[string]string{
 		object_attributes_provider.AppIDLabelKey.GetString(): object_attributes_provider.AppIDLabelValue.GetString(),
+		object_attributes_provider.ContainerTypeLabelKey.GetString(): object_attributes_provider.EngineContainerTypeLabelValue.GetString(),
+		// NOTE: we do NOT use the engine ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
-	containersMatchingLabels, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	allEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", searchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", engineContainerSearchLabels)
 	}
 
 	allMatchingEngines := map[string]*engine.Engine{}
-	for _, matchingContainer := range containersMatchingLabels {
-		containerId := matchingContainer.GetId()
+	for _, engineContainer := range allEngineContainers {
+		containerId := engineContainer.GetId()
 		engineObj, err := getEngineObjectFromContainerInfo(
 			containerId,
-			matchingContainer.GetLabels(),
-			matchingContainer.GetStatus(),
-			matchingContainer.GetHostPortBindings(),
+			engineContainer.GetLabels(),
+			engineContainer.GetStatus(),
+			engineContainer.GetHostPortBindings(),
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an engine object", matchingContainer.GetId())
+			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an engine object", engineContainer.GetId())
 		}
+
+		// If the ID filter is specified, drop engines not matching it
+		if filters.IDs != nil && len(filters.IDs) > 0 {
+			if _, found := filters.IDs[engineObj.GetID()]; !found {
+				continue
+			}
+		}
+
+		// If status filter is specified, drop engines not matching it
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[engineObj.GetStatus()]; !found {
+				continue
+			}
+		}
+
 		allMatchingEngines[containerId] = engineObj
 	}
 
-	allEnginesMatchingStatus := map[string]*engine.Engine{}
-	for containerId, engineObj := range allMatchingEngines {
-		engineStatus := engineObj.GetStatus()
-		if _, found := filters.Statuses[engineStatus]; found {
-			allEnginesMatchingStatus[containerId] = engineObj
-		}
-	}
-	return allEnginesMatchingStatus, nil
+	return allMatchingEngines, nil
 }
 
 func getEngineObjectFromContainerInfo(
@@ -391,11 +405,19 @@ func getEngineObjectFromContainerInfo(
 ) (*engine.Engine, error) {
 	engineGuid, found := labels[object_attributes_provider.GUIDLabelKey.GetString()]
 	if !found {
+		// TODO Delete this after 2022-05-02 when we're confident there won't be any engines running
+		//  without the engine ID label!
+		engineGuid = containerId
+
+		// TODO Uncomment this error after 2022-05-02 when we're confident there won't be any engines
+		//  running without the engine ID label!
+		/*
 		return nil, stacktrace.NewError(
 			"Expected a '%v' label on engine container with ID '%v', but none was found",
 			object_attributes_provider.GUIDLabelKey.GetString(),
 			containerId,
 		)
+		 */
 	}
 
 	privateGrpcPortSpec, privateGrpcProxyPortSpec, err := getPrivateEnginePorts(labels)
@@ -425,18 +447,21 @@ func getEngineObjectFromContainerInfo(
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
 
-		publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
-		}
-		publicGrpcProxyPortSpec = candidatePublicGrpcProxyPortSpec
+		// TODO REMOVE THIS CONDITIONAL AFTER 2022-05-03 WHEN WE'RE CONFIDENT NOBODY IS USING ENGINES WITHOUT A PROXY
+		if privateGrpcProxyPortSpec != nil {
+			publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
+			}
+			publicGrpcProxyPortSpec = candidatePublicGrpcProxyPortSpec
 
-		if publicGrpcPortIpAddr.String() != publicGrpcProxyPortIpAddr.String() {
-			return nil, stacktrace.NewError(
-				"Expected the engine's grpc port public IP address '%v' and grpc-proxy port public IP address '%v' to be the same, but they were different",
-				publicGrpcPortIpAddr.String(),
-				publicGrpcProxyPortIpAddr.String(),
-			)
+			if publicGrpcPortIpAddr.String() != publicGrpcProxyPortIpAddr.String() {
+				return nil, stacktrace.NewError(
+					"Expected the engine's grpc port public IP address '%v' and grpc-proxy port public IP address '%v' to be the same, but they were different",
+					publicGrpcPortIpAddr.String(),
+					publicGrpcProxyPortIpAddr.String(),
+				)
+			}
 		}
 		publicIpAddr = publicGrpcPortIpAddr
 	}
@@ -464,15 +489,97 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
+		// TODO AFTER 2022-05-02 SWITCH THIS TO A PLAIN ERROR WHEN WE'RE SURE NOBODY WILL BE USING THE OLD PORT SPEC STRING!
+		oldPortSpecs, err := deserialize_pre_2022_03_02_PortSpecs(serializedPortSpecs)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v' even when trying the old method", serializedPortSpecs)
+		}
+		portSpecs = oldPortSpecs
 	}
+
 	grpcPortSpec, foundGrpcPort := portSpecs[kurtosisInternalContainerGrpcPortId]
 	if !foundGrpcPort {
 		return nil, nil, stacktrace.NewError("No engine grpc port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcPortId)
 	}
+
 	grpcProxyPortSpec, foundGrpcProxyPort := portSpecs[kurtosisInternalContainerGrpcProxyPortId]
 	if !foundGrpcProxyPort {
-		return nil, nil, stacktrace.NewError("No engine grpc-proxy port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcProxyPortId)
+		// TODO AFTER 2022-05-02 SWITCH THIS TO AN ERROR WHEN WE'RE SURE NOBODY WILL HAVE AN ENGINE WITHOUT THE PROXY
+		grpcProxyPortSpec = nil
+		// return nil, nil, stacktrace.NewError("No engine grpc-proxy port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcProxyPortId)
 	}
+
 	return grpcPortSpec, grpcProxyPortSpec, nil
+}
+
+// TODO DELETE THIS AFTER 2022-05-02, WHEN WE'RE CONFIDENT NO ENGINES WILL BE USING THE OLD PORT SPEC!
+func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
+	const (
+		portIdAndInfoSeparator      = "."
+		portNumAndProtocolSeparator = "-"
+		portSpecsSeparator          = "_"
+
+		expectedNumPortIdAndSpecFragments      = 2
+		expectedNumPortNumAndProtocolFragments = 2
+		portUintBase                           = 10
+		portUintBits                           = 16
+	)
+
+	result := map[string]*port_spec.PortSpec{}
+	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
+	for _, portIdAndSpecStr := range portIdAndSpecStrs {
+		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
+		numPortIdAndSpecFragments := len(portIdAndSpecFragments)
+		if numPortIdAndSpecFragments != expectedNumPortIdAndSpecFragments {
+			return nil, stacktrace.NewError(
+				"Expected splitting port ID & spec string '%v' to yield %v fragments but got %v",
+				portIdAndSpecStr,
+				expectedNumPortIdAndSpecFragments,
+				numPortIdAndSpecFragments,
+			)
+		}
+		portId := portIdAndSpecFragments[0]
+		portSpecStr := portIdAndSpecFragments[1]
+
+		portNumAndProtocolFragments := strings.Split(portSpecStr, portNumAndProtocolSeparator)
+		numPortNumAndProtocolFragments := len(portNumAndProtocolFragments)
+		if numPortNumAndProtocolFragments != expectedNumPortNumAndProtocolFragments {
+			return nil, stacktrace.NewError(
+				"Expected splitting port num & protocol string '%v' to yield %v fragments but got %v",
+				portSpecStr,
+				expectedNumPortIdAndSpecFragments,
+				numPortIdAndSpecFragments,
+			)
+		}
+		portNumStr := portNumAndProtocolFragments[0]
+		portProtocolStr := portNumAndProtocolFragments[1]
+
+		portNumUint64, err := strconv.ParseUint(portNumStr, portUintBase, portUintBits)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred parsing port num string '%v' to uint with base %v and %v bits",
+				portNumStr,
+				portUintBase,
+				portUintBits,
+			)
+		}
+		portNumUint16 := uint16(portNumUint64)
+		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
+		}
+
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating port spec object from ID & spec string '%v'",
+				portIdAndSpecStr,
+			)
+		}
+
+		result[portId] = portSpec
+	}
+	return result, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
@@ -55,18 +54,16 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 }
 
 type DockerKurtosisBackendCore struct {
-	// The logger that all log messages will be written to
-	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
-
 	dockerManager *docker_manager.DockerManager
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 }
 
-func NewDockerKurtosisBackendCore(log *logrus.Logger, dockerManager *docker_manager.DockerManager) *DockerKurtosisBackendCore {
+func NewDockerKurtosisBackendCore(
+	dockerManager *docker_manager.DockerManager,
+) *DockerKurtosisBackendCore {
 	return &DockerKurtosisBackendCore{
-		log:              log,
-		dockerManager:    dockerManager,
+		dockerManager: dockerManager,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
 }
