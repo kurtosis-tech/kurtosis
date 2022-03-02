@@ -21,7 +21,7 @@ import (
 const (
 	apiContainerVersionArg   = "api-container-version"
 	apiContainerLogLevelArg  = "api-container-log-level"
-	isPartitioningEnabledArg = "partition-enabled"
+	isPartitioningEnabledArg = "with-partitioning"
 
 	defaultIsPartitioningEnabled = false
 	shouldPublishPorts = true
@@ -60,7 +60,7 @@ func init() {
 		isPartitioningEnabledArg,
 		"p",
 		defaultIsPartitioningEnabled,
-		"Enable network partition functionality (repartitioning won't work if this is set to false)",
+		"Enable network partitioning functionality (repartitioning won't work if this is set to false)",
 	)
 }
 
