@@ -1,6 +1,8 @@
 # TBD
 ### Changes
 * Switched from fairly-specific engine methods on `KurtosisBackend` to generic CRUD methods (`CreateEngine`, `GetEngines`, etc.)
+* Pull the `ForEngineServer` method into this repo, rather than relying on obj-attrs-schema-lib, since the name/label determination really makes sense next to the DockerKurtosisBackend
+* Commented out the `KubernetesKurtosisBackend` until we can revisit it in the future
 
 ### Removals
 * Removed the `KurtosisXXXDrivers` classes, as we're going to use `KurtosisBackend` as the external-facing API instead

@@ -1,18 +1,7 @@
 package kubernetes
 
 import (
-	"context"
-	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/apps/v1"
-	apiv1 "k8s.io/api/core/v1"
-	"net"
-	"strconv"
 )
 
 const (
@@ -37,6 +26,7 @@ var engineLabels = map[string]string{
 	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
+/*
 type KubernetesKurtosisBackendCore struct {
 	log *logrus.Logger
 
@@ -288,3 +278,5 @@ func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.C
 
 	return nil
 }
+
+ */

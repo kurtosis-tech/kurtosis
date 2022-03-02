@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	dockerObjectNameRegexStr = "^[a-zA-Z0-9_-.]+$"
+	dockerObjectNameRegexStr = "^[a-zA-Z0-9-._]+$"
 )
 var dockerObjectNameRegex = regexp.MustCompile(dockerObjectNameRegexStr)
 
