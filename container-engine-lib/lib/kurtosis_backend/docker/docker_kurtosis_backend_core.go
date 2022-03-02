@@ -48,6 +48,15 @@ const (
 
 	engineStopTimeout = 10 * time.Second
 
+	// The ID of the GRPC port for Kurtosis-internal containers (e.g. API container, engine, modules, etc.) which will
+	//  be stored in the port spec label
+	kurtosisInternalContainerGrpcPortId = "grpc"
+
+	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
+	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
+	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
+	kurtosisInternalContainerGrpcProxyPortId = "grpcProxy"
+
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
 	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
@@ -137,19 +146,6 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	containerStartTimeUnixSecs := time.Now().Unix()
 	engineIdStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
 
-	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(engineIdStr, grpcPortNum, grpcProxyPortNum)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting the engine server container attributes using id '%v', grpc port num '%v', and " +
-				"grpc proxy port num '%v'",
-			engineIdStr,
-			grpcPortNum,
-			grpcProxyPortNum,
-		)
-	}
-
-	/*
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, enginePortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -169,6 +165,24 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		)
 	}
 
+	engineAttrs, err := backendCore.objAttrsProvider.ForEngineServer(
+		engineIdStr,
+		kurtosisInternalContainerGrpcPortId,
+		privateGrpcPortSpec,
+		kurtosisInternalContainerGrpcProxyPortId,
+		privateGrpcProxyPortSpec,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the engine server container attributes using id '%v', grpc port num '%v', and " +
+				"grpc proxy port num '%v'",
+			engineIdStr,
+			grpcPortNum,
+			grpcProxyPortNum,
+		)
+	}
+
 	privateGrpcDockerPort, err := transformPortSpecToDockerPort(privateGrpcPortSpec)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
@@ -177,7 +191,6 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc proxy port spec to a Docker port")
 	}
-	*/
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
@@ -325,7 +338,7 @@ func (backendCore *DockerKurtosisBackendCore) StopEngines(
 
 func (backendCore *DockerKurtosisBackendCore) DestroyEngines(
 	ctx context.Context,
-	filters *engine.GetEnginesFilters
+	filters *engine.GetEnginesFilters,
 ) (
 	map[string]error,
 	error,
@@ -678,7 +691,11 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
 		}
-		grpcPortSpec, foundInternalPortId := portSpecs[schema.KurtosisInternalContainerGRPCPortID]
+		grpcPortSpec, foundInternalPortId := portSpecs[kurtosisInternalContainerGrpcPortId]
+		if !foundInternalPortId {
+			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
+		}
+		grpcProxyPortSpec, foundInternalPortId := portSpecs[kurtosisInternalContainerGrpcProxyPortId]
 		if !foundInternalPortId {
 			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
 		}

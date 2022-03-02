@@ -12,11 +12,16 @@ import (
 
 const (
 	engineServerNamePrefix                   = "kurtosis-engine"
-	engineServerPortProtocol                 = port_spec.PortProtocol_TCP
 )
 
 type DockerObjectAttributesProvider interface {
-	ForEngineServer(id string, grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error)
+	ForEngineServer(
+		id string,
+		grpcPortId string,
+		grpcPortSpec *port_spec.PortSpec,
+		grpcProxyPortId string,
+		grpcProxyPortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
 	// ForEnclave(enclaveId string) EnclaveObjectAttributesProvider
 }
 
@@ -30,7 +35,13 @@ func newDockerObjectAttributesProviderImpl() *dockerObjectAttributesProviderImpl
 	return &dockerObjectAttributesProviderImpl{}
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(id string, grpcListenPortNum uint16, grpcProxyListenPortNum uint16) (DockerObjectAttributes, error) {
+func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
+	id string,
+	grpcPortId string,
+	grpcPortSpec *port_spec.PortSpec,
+	grpcProxyPortId string,
+	grpcProxyPortSpec *port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
 
 	nameStr := strings.Join(
 		[]string{
@@ -53,29 +64,9 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(id string, g
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine GUID Docker label from string '%v'", id)
 	}
 
-	grpcPortSpec, err := port_spec.NewPortSpec(grpcListenPortNum, engineServerPortProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating grpc port spec object from num '%v' and protocol '%v'",
-			grpcListenPortNum,
-			engineServerPortProtocol,
-		)
-	}
-
-	grpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyListenPortNum, engineServerPortProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating grpc-proxy port spec object from num '%v' and protocol '%v'",
-			grpcProxyListenPortNum,
-			engineServerPortProtocol,
-		)
-	}
-
 	usedPorts := map[string]*port_spec.PortSpec{
-		kurtosisInternalContainerGrpcPortId: grpcPortSpec,
-		kurtosisInternalContainerGrpcProxyPortId: grpcProxyPortSpec,
+		grpcPortId: grpcPortSpec,
+		grpcProxyPortId: grpcProxyPortSpec,
 	}
 	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {
