@@ -41,14 +41,20 @@ type KurtosisBackendCore interface {
 		resultErr error,
 	)
 
-	// Gets engines using the given filters
+	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
 	GetEngines(
 		ctx context.Context,
 		filters *engine.GetEnginesFilters,
 	) (map[string]*engine.Engine, error)
 
 	// Stops the engines with the given IDs
-	StopEngines(ctx context.Context, ids map[string]bool) error
+	StopEngines(
+		ctx context.Context,
+		ids map[string]bool,
+	) (
+		map[string]error, // Contains one engine ID key per engine we tried to stop, with the (potentially nil) error from attemping to do so
+		error, // Represents an error before attempting to stop the engines
+	)
 
 	// Destroys the engines with the given IDs, regardless of if they're running or not
 	DestroyEngines(ctx context.Context, ids map[string]bool) error

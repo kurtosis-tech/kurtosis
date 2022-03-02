@@ -3,6 +3,7 @@ package docker
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
@@ -30,15 +31,12 @@ const (
 
 	nameOfNetworkToStartEngineContainerIn = "bridge"
 
-	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
-	// This is the Docker constant indicating a TCP port (because Docker doesn't have an enum for this sadly)
-	engineGrpcPortDockerProtocol = "tcp"
+	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
+	// means that its grpc-proxy must listen on TCP
+	enginePortProtocol          = port_spec.PortProtocol_TCP
 
-	// The proxy for the engine's gRPC port also MUST listen on TCP
-	// This is the Docker constant indicating a TCP port (because Docker doesn't have an enum for this sadly)
-	engineGrpcProxyPortDockerProtocol = "tcp"
-
-	// The protocol string we use in the netstat command used to ensure the engine container is available
+	// The protocol string we use in the netstat command used to ensure the engine container's grpc & grpc-proxy
+	// ports are available
 	netstatWaitForAvailabilityPortProtocol = "tcp"
 
 	maxWaitForEngineAvailabilityRetries         = 10
@@ -48,10 +46,7 @@ const (
 
 	shouldGetStoppedContainersWhenCheckingForExistingEngines = false
 
-	engineStopTimeout = 30 * time.Second
-
-	// Obviously yes
-	shouldFetchStoppedContainersWhenDestroyingStoppedContainers = true
+	engineStopTimeout = 10 * time.Second
 
 	// --------------------------- Old port parsing constants ------------------------------------
 	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
@@ -70,10 +65,6 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
-
-	shouldCleanRunningEngineContainers = false
-
-	waitForEngineResponseTimeout = 5 * time.Second
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
@@ -158,35 +149,39 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		)
 	}
 
-	grpcPortObj, err := nat.NewPort(
-		engineGrpcPortDockerProtocol,
-		fmt.Sprintf("%v", grpcPortNum),
-	)
+	/*
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, enginePortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating a port object with port num '%v' and Docker protocol '%v' to represent the engine's grpc port",
+			"An error occurred creating the engine's private grpc port spec object using number '%v' and protocol '%v'",
 			grpcPortNum,
-			engineGrpcPortDockerProtocol,
+			enginePortProtocol.String(),
+		)
+	}
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, enginePortProtocol)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the engine's private grpc proxy port spec object using number '%v' and protocol '%v'",
+			grpcProxyPortNum,
+			enginePortProtocol.String(),
 		)
 	}
 
-	grpcProxyPortObj, err := nat.NewPort(
-		engineGrpcProxyPortDockerProtocol,
-		fmt.Sprintf("%v", grpcProxyPortNum),
-	)
+	privateGrpcDockerPort, err := transformPortSpecToDockerPort(privateGrpcPortSpec)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a port object with port num '%v' and Docker protocol '%v' to represent the engine's grpc proxy port",
-			grpcProxyPortNum,
-			engineGrpcProxyPortDockerProtocol,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
+	privateGrpcProxyDockerPort, err := transformPortSpecToDockerPort(privateGrpcProxyPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc proxy port spec to a Docker port")
+	}
+	*/
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		grpcPortObj: docker_manager.NewManualPublishingSpec(grpcPortNum),
-		grpcProxyPortObj: docker_manager.NewManualPublishingSpec(grpcProxyPortNum),
+		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
+		privateGrpcProxyDockerPort: docker_manager.NewManualPublishingSpec(grpcProxyPortNum),
 	}
 
 	bindMounts := map[string]string{
@@ -232,6 +227,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	shouldKillEngineContainer := true
 	defer func() {
 		if shouldKillEngineContainer {
+			// We kill the container, rather than destroyign it, to leave debugging information around
 			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf("Launching the engine server didn't complete successfully so we tried to kill the container we started, but doing so exited with an error:\n%v", err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill engine server with container ID '%v'!!!!!!", containerId)
@@ -247,208 +243,109 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc proxy port to become available")
 	}
 
-	hostMachineEngineGrpcPortBinding, found := hostMachinePortBindings[grpcPortObj]
-	if !found {
-		return nil, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding for the grpc port was found")
+	result, err := getEngineObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with ID '%v'", containerId)
 	}
 
-	hostMachineEngineGrpcProxyPortBinding, found := hostMachinePortBindings[grpcProxyPortObj]
-	if !found {
-		return nil, stacktrace.NewError("The Kurtosis engine server started successfully, but no host machine port binding for the grpc proxy port was found")
+	/*
+	publicGrpcIpAddr, publicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, hostMachinePortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine's public port binding info from the host machine port bindings")
+	}
+	publicGrpcProxyIpAddr, publicGrpcProxyPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, hostMachinePortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine's public grpc proxy port binding info from the host machine port bindings")
 	}
 
-	publicGrpcIpAddrStr := hostMachineEngineGrpcPortBinding.HostIP
-	publicGrpcProxyIpAddrStr := hostMachineEngineGrpcProxyPortBinding.HostIP
+	publicGrpcIpAddrStr := publicGrpcIpAddr.String()
+	publicGrpcProxyIpAddrStr := publicGrpcProxyIpAddr.String()
 	if publicGrpcIpAddrStr != publicGrpcProxyIpAddrStr {
 		return nil, stacktrace.NewError(
 			"Expected public IP address '%v' for the grpc port to be the same as public IP address '%v' for " +
 				"the grpc proxy port, but they were different",
-
 			publicGrpcIpAddrStr,
 			publicGrpcProxyIpAddrStr,
 		)
 	}
-
-	publicIpAddrStr := publicGrpcIpAddrStr
-	publicIpAddr := net.ParseIP(publicIpAddrStr)
-	if publicIpAddr == nil {
-		return nil, stacktrace.NewError("The engine server's port was reported to be bound on host machine interface IP '%v', but this is not a valid IP string", publicIpAddrStr)
-	}
-
-	publicGrpcPortNumStr := hostMachineEngineGrpcPortBinding.HostPort
-	publicGrpcPortNumUint64, err := strconv.ParseUint(publicGrpcPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine server grpc public port string '%v' using base '%v' and uint bits '%v'",
-			publicGrpcPortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
-		)
-	}
-	publicGrpcPortNumUint16 := uint16(publicGrpcPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
-
-	publicGrpcProxyPortNumStr := hostMachineEngineGrpcProxyPortBinding.HostPort
-	publicGrpcProxyPortNumUint64, err := strconv.ParseUint(publicGrpcProxyPortNumStr, hostMachinePortNumStrParsingBase, hostMachinePortNumStrParsingBits)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred parsing engine server grpc proxy public port string '%v' using base '%v' and uint bits '%v'",
-			publicGrpcProxyPortNumStr,
-			hostMachinePortNumStrParsingBase,
-			hostMachinePortNumStrParsingBits,
-		)
-	}
-	publicGrpcProxyPortNumUint16 := uint16(publicGrpcProxyPortNumUint64) // Safe to do because we pass the requisite number of bits into the parse command
+	publicIpAddr := publicGrpcIpAddr
 
 	result := engine.NewEngine(
 		engineIdStr,
 		engine.EngineStatus_Running,
 		publicIpAddr,
-		publicGrpcPortNumUint16,
-		publicGrpcProxyPortNumUint16,
+		publicGrpcPortSpec,
+		publicGrpcProxyPortSpec,
 	)
+
+	 */
 
 	shouldKillEngineContainer = false
 	return result, nil
 }
 
 func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
-	searchLabels := map[string]string{
-		// TODO extract this into somewhere better so we're ALWAYS getting containers using the Kurtosis label and nothing else????
-		object_attributes_provider.AppIDLabelKey.GetString(): object_attributes_provider.AppIDLabelValue.GetString(),
-	}
-	containersMatchingLabels, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", searchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	allMatchingEngines := map[string]*engine.Engine{}
-	for _, matchingContainer := range containersMatchingLabels {
-		engineObj, err := getEngineObjectFromContainerInfo(
-			matchingContainer.GetId(),
-			matchingContainer.GetLabels(),
-			matchingContainer.GetStatus(),
-			matchingContainer.GetHostPortBindings(),
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an engine object", matchingContainer.GetId())
-		}
-		allMatchingEngines[engineObj.GetID()] = engineObj
+	matchingEnginesByEngineId := map[string]*engine.Engine{}
+	for _, engineObj := range matchingEnginesByContainerId {
+		matchingEnginesByEngineId[engineObj.GetID()] = engineObj
 	}
 
-	allEnginesMatchingStatus := map[string]*engine.Engine{}
-	for engineId, engineObj := range allMatchingEngines {
-		engineStatus := engineObj.GetStatus()
-		if _, found := filters.Statuses[engineStatus]; found {
-			allEnginesMatchingStatus[engineId] = engineObj
-		}
-	}
-
-	return allEnginesMatchingStatus, nil
+	return matchingEnginesByEngineId, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) StopEngines(ctx context.Context, ids map[string]bool) error {
-
-
-
-
-
-	matchingEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(
-		ctx,
-		engineLabels,
-		shouldGetStoppedContainersWhenCheckingForExistingEngines,
-	)
+func (backendCore *DockerKurtosisBackendCore) StopEngines(
+	ctx context.Context,
+	filters *engine.GetEnginesFilters,
+) (
+	map[string]error,
+	error,
+) {
+	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Kurtosis engine containers, which we need to check for existing engines")
+		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	numMatchingEngineContainers := len(matchingEngineContainers)
-	if numMatchingEngineContainers == 0 {
-		return nil
-	}
-	if numMatchingEngineContainers > 1 {
-		logrus.Warnf(
-			"Found %v Kurtosis engine containers, which is strange because there should never be more than 1 engine container; all will be stopped",
-			numMatchingEngineContainers,
-		)
-	}
-
-	engineStopErrorStrs := []string{}
-	for _, engineContainer := range matchingEngineContainers {
-		containerName := engineContainer.GetName()
-		containerId := engineContainer.GetId()
+	engineStopErrorsByEngineId := map[string]error{}
+	for containerId, engineObj := range matchingEnginesByContainerId {
+		engineId := engineObj.GetID()
 		if err := backendCore.dockerManager.StopContainer(ctx, containerId, engineStopTimeout); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred stopping engine container '%v' with ID '%v'",
-				containerName,
-				containerId,
-			)
-			engineStopErrorStrs = append(engineStopErrorStrs, wrappedErr.Error())
+			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping engine '%v' with container ID '%v'", engineId, containerId)
+			engineStopErrorsByEngineId[engineId] = wrappedErr
+		} else {
+			engineStopErrorsByEngineId[engineId] = nil
 		}
 	}
-
-	if len(engineStopErrorStrs) > 0 {
-		return stacktrace.NewError(
-			"One or more errors occurred stopping the engine(s):\n%v",
-			strings.Join(
-				engineStopErrorStrs,
-				"\n\n",
-			),
-		)
-	}
-	return nil
+	return engineStopErrorsByEngineId, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) DestroyEngines(ctx context.Context, ids map[string]bool) error {
-	// TODO implement this!!!
-	panic("Implement this!!")
-
-	/*
-	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(
-		ctx,
-		searchLabels,
-		shouldFetchStoppedContainersWhenDestroyingStoppedContainers,
-	)
+func (backendCore *DockerKurtosisBackendCore) DestroyEngines(
+	ctx context.Context,
+	filters *engine.GetEnginesFilters
+) (
+	map[string]error,
+	error,
+) {
+	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting containers matching labels '%+v'", searchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	containersToDestroy := []*types.Container{}
-	for _, container := range matchingContainers {
-		containerName := container.GetName()
-		containerStatus := container.GetStatus()
-		if shouldKillRunningContainers {
-			containersToDestroy = append(containersToDestroy, container)
-			continue
-		}
-
-		isRunning, err := container_status_calculator.IsContainerRunning(containerStatus)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
-		}
-		if !isRunning {
-			containersToDestroy = append(containersToDestroy, container)
-		}
-	}
-
-	successfullyDestroyedContainerNames := []string{}
-	removeContainerErrors := []error{}
-	for _, container := range containersToDestroy {
-		containerId := container.GetId()
-		containerName := container.GetName()
+	engineDestroyErrorsByEngineId := map[string]error{}
+	for containerId, engineObj := range matchingEnginesByContainerId {
+		engineId := engineObj.GetID()
 		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing stopped container '%v'", containerName)
-			removeContainerErrors = append(removeContainerErrors, wrappedErr)
-			continue
+			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine '%v' with container ID '%v'", engineId, containerId)
+			engineDestroyErrorsByEngineId[engineId] = wrappedErr
+		} else {
+			engineDestroyErrorsByEngineId[engineId] = nil
 		}
-		successfullyDestroyedContainerNames = append(successfullyDestroyedContainerNames, containerName)
 	}
-
-	return successfullyDestroyedContainerNames, removeContainerErrors, nil
-
-	 */
+	return engineDestroyErrorsByEngineId, nil
 }
 
 /*
@@ -490,6 +387,64 @@ func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
+func transformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
+	portSpecProto := portSpec.GetProtocol()
+	dockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
+	if !found {
+		// This should never happen because we enforce completeness via a unit test
+		return "", stacktrace.NewError("Expected a Docker port protocol for port spec protocol '%v' but none was found; this is a bug in Kurtosis!", portSpecProto.String())
+	}
+
+	portSpecNum := portSpec.GetNumber()
+	dockerPort, err := nat.NewPort(
+		dockerProto,
+		fmt.Sprintf("%v", portSpecNum),
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker port object using port num '%v' and Docker protocol '%v'",
+			portSpecNum,
+			dockerProto,
+		)
+	}
+	return dockerPort, nil
+}
+
+// TODO MOVE THIS TO WHOMEVER CALLS KURTOSISBACKEND
+// This is a helper function that will take multiple errors, each identified by an ID, and format them together
+// If no errors are returned, this function returns nil
+func buildCombinedError(errorsById map[string]error, titleStr string) error {
+	allErrorStrs := []string{}
+	for errorId, stopErr := range errorsById {
+		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
+			"%v\n" +
+			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
+		errorStr := fmt.Sprintf(
+			errorFormatStr,
+			strings.ToUpper(titleStr),
+			errorId,
+			stopErr.Error(),
+			strings.ToUpper(titleStr),
+			errorId,
+		)
+		allErrorStrs = append(allErrorStrs, errorStr)
+	}
+
+	if len(allErrorStrs) > 0 {
+		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
+		// attaching stack information for this method (which simply combines errors) just isn't useful. The
+		// expected behaviour is that the caller of this function will use stacktrace.Propagate
+		return errors.New(strings.Join(
+			allErrorStrs,
+			"\n\n",
+		))
+	}
+
+	return nil
+}
+
+
 func waitForAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
 	commandStr := fmt.Sprintf(
 		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
@@ -537,6 +492,42 @@ func waitForAvailability(ctx context.Context, dockerManager *docker_manager.Dock
 	)
 }
 
+// Gets engines matching the search filters, indexed by their container ID
+func (backendCore *DockerKurtosisBackendCore) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
+	searchLabels := map[string]string{
+		// TODO extract this into somewhere better so we're ALWAYS getting containers using the Kurtosis label and nothing else????
+		object_attributes_provider.AppIDLabelKey.GetString(): object_attributes_provider.AppIDLabelValue.GetString(),
+	}
+	containersMatchingLabels, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", searchLabels)
+	}
+
+	allMatchingEngines := map[string]*engine.Engine{}
+	for _, matchingContainer := range containersMatchingLabels {
+		containerId := matchingContainer.GetId()
+		engineObj, err := getEngineObjectFromContainerInfo(
+			containerId,
+			matchingContainer.GetLabels(),
+			matchingContainer.GetStatus(),
+			matchingContainer.GetHostPortBindings(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an engine object", matchingContainer.GetId())
+		}
+		allMatchingEngines[containerId] = engineObj
+	}
+
+	allEnginesMatchingStatus := map[string]*engine.Engine{}
+	for containerId, engineObj := range allMatchingEngines {
+		engineStatus := engineObj.GetStatus()
+		if _, found := filters.Statuses[engineStatus]; found {
+			allEnginesMatchingStatus[containerId] = engineObj
+		}
+	}
+	return allEnginesMatchingStatus, nil
+}
+
 func getEngineObjectFromContainerInfo(
 	containerId string,
 	labels map[string]string,
@@ -573,13 +564,13 @@ func getEngineObjectFromContainerInfo(
 	var publicGrpcPortSpec *port_spec.PortSpec
 	var publicGrpcProxyPortSpec *port_spec.PortSpec
 	if engineStatus == engine.EngineStatus_Running {
-		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortSpecFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
+		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
 
-		publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := getPublicPortSpecFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
+		publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
 		}
@@ -606,7 +597,7 @@ func getEngineObjectFromContainerInfo(
 	return result, nil
 }
 
-func getPublicPortSpecFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
+func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
