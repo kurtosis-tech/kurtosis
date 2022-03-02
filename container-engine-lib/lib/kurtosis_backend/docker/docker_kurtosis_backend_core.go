@@ -10,9 +10,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -56,20 +56,6 @@ const (
 	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
 	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
 	kurtosisInternalContainerGrpcProxyPortId = "grpcProxy"
-
-	// --------------------------- Old port parsing constants ------------------------------------
-	// These are the old labels that the API container used to use before 2021-11-15 for declaring its port num protocol
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with the old label
-	pre2021_11_15_portNum   = uint16(9710)
-	pre2021_11_15_portProto = schema.PortProtocol_TCP
-
-	// These are the old labels that the API container used to use before 2021-12-02 for declaring its port num protocol
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with the old label
-	pre2021_12_02_portNumLabel    = "com.kurtosistech.port-number"
-	pre2021_12_02_portNumBase     = 10
-	pre2021_12_02_portNumUintBits = 16
-	pre2021_12_02_portProtocol    = schema.PortProtocol_TCP
-	// --------------------------- Old port parsing constants ------------------------------------
 
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
@@ -686,57 +672,21 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 	resultErr error,
 ) {
 	serializedPortSpecs, found := containerLabels[object_attributes_provider.PortSpecsLabelKey.GetString()]
-	if found {
-		portSpecs, err := schema.DeserializePortSpecs(serializedPortSpecs)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
-		}
-		grpcPortSpec, foundInternalPortId := portSpecs[kurtosisInternalContainerGrpcPortId]
-		if !foundInternalPortId {
-			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
-		}
-		grpcProxyPortSpec, foundInternalPortId := portSpecs[kurtosisInternalContainerGrpcProxyPortId]
-		if !foundInternalPortId {
-			return nil, stacktrace.NewError("No Kurtosis-internal port ID '%v' found in the engine server port specs", schema.KurtosisInternalContainerGRPCPortID)
-		}
-		return portSpec, nil
-	}
-
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	pre2021_12_02Port, err := getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels)
-	if err == nil {
-		return pre2021_12_02Port, nil
-	} else {
-		logrus.Debugf("An error occurred getting the engine container private port num using the pre-2021-12-02 label: %v", err)
-	}
-
-	// We can get rid of this after 2022-05-15, when we're confident no users will be running API containers with this label
-	pre2021_11_15Port, err := schema.NewPortSpec(pre2021_11_15_portNum, pre2021_11_15_portProto)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Couldn't create engine private port spec using pre-2021-11-15 constants")
-	}
-	return pre2021_11_15Port, nil
-}
-
-func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[string]string) (*schema.PortSpec, error) {
-	// We can get rid of this after 2022-06-02, when we're confident no users will be running API containers with this label
-	portNumStr, found := containerLabels[pre2021_12_02_portNumLabel]
 	if !found {
-		return nil, stacktrace.NewError("Couldn't get engine container private port using the pre-2021-12-02 label '%v' because it doesn't exist", pre2021_12_02_portNumLabel)
+		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", object_attributes_provider.PortSpecsLabelKey.GetString())
 	}
-	portNumUint64, err := strconv.ParseUint(portNumStr, pre2021_12_02_portNumBase, pre2021_12_02_portNumUintBits)
+
+	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred parsing pre-2021-12-02 private port num string '%v' to a uint16", portNumStr)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing engine server port spec string '%v'", serializedPortSpecs)
 	}
-	portNumUint16 := uint16(portNumUint64) // Safe to do because we pass in the number of bits to the ParseUint call above
-	result, err := schema.NewPortSpec(portNumUint16, pre2021_12_02_portProtocol)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a new port spec using pre-2021-12-02 port num '%v' and protocol '%v'",
-			portNumUint16,
-			pre2021_12_02_portProtocol,
-		)
+	grpcPortSpec, foundGrpcPort := portSpecs[kurtosisInternalContainerGrpcPortId]
+	if !foundGrpcPort {
+		return nil, nil, stacktrace.NewError("No engine grpc port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcPortId)
 	}
-	return result, nil
+	grpcProxyPortSpec, foundGrpcProxyPort := portSpecs[kurtosisInternalContainerGrpcProxyPortId]
+	if !foundGrpcProxyPort {
+		return nil, nil, stacktrace.NewError("No engine grpc-proxy port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcProxyPortId)
+	}
+	return grpcPortSpec, grpcProxyPortSpec, nil
 }
