@@ -29,7 +29,9 @@ import (
 const (
 	shouldPublishPorts = true
 
-	isPartitioningEnabled = true
+	isPartitioningEnabledArg = "with-partitioning"
+
+	defaultIsPartitioningEnabled = false
 
 	apiContainerVersionArg  = "api-container-version"
 	apiContainerLogLevelArg = "api-container-log-level"
@@ -46,6 +48,7 @@ var SandboxCmd = &cobra.Command{
 var apiContainerLogLevelStr string
 var apiContainerVersion string
 var jsReplImage string
+var isPartitioningEnabled bool
 
 
 func init() {
@@ -73,6 +76,13 @@ func init() {
 		"r",
 		defaults.DefaultJavascriptReplImage,
 		"The image of the Javascript REPL to connect to the enclave with",
+	)
+
+	SandboxCmd.Flags().BoolVar(
+		&isPartitioningEnabled,
+		isPartitioningEnabledArg,
+		defaultIsPartitioningEnabled,
+		"If set to true, allows network partitioning simulation to be done",
 	)
 }
 
