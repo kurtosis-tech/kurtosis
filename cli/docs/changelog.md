@@ -1,5 +1,13 @@
 # TBD
 
+# 0.11.5
+### Features
+* Added a `--with-partitioning` flag to the `sandbox` command for turning on network partitioning
+
+### Changes
+* When a service doesn't have any ports, `<none>` will be printed instead of emptystring to make it clearer that the service has no ports
+* Leave network partitioning off by default for the `sandbox` command
+
 # 0.11.4
 ### Features
 * Added a `config path` command to print the path to the Kurtosis config file
