@@ -122,7 +122,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 
 	engine, err := launcher.kurtosisBackend.CreateEngine(ctx, containerImage, imageVersionTag, grpcListenPortNum, grpcProxyListenPortNum, engineDataDirpathOnHostMachine, envVars)
 	if err != nil {
-		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%v'", envVars)
+		return nil, 0, stacktrace.Propagate(err, "An error occurred launching the engine server container with environment variables '%+v'", envVars)
 	}
 	return engine.GetPublicIPAddress(), engine.GetPublicGRPCPort().GetNumber(), nil
 }
