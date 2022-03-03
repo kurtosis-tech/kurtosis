@@ -34,7 +34,7 @@ This manager is used on a per-test basis. Because tests can run in parallel, but
 each test's logs in a single block, we need to have a separate logger per test. As such, this class takes in a
 logrus.Logger, and *all log messages should be sent through this logger rather than the systemwide logger!!!*
 
-No logrus.Info, logrus.Debug, etc. calls should happen in this file - only manager.log.Info, manager.log.Debug, etc.!
+No logrus.Info, logrus.Debug, etc. calls should happen in this file - only logrus.Info, logrus.Debug, etc.!
 
 WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
  */
@@ -115,9 +115,6 @@ DockerManager
 A handle to interacting with the Docker environment running a test.
  */
 type DockerManager struct {
-	// The logger that all log messages will be written to
-	log *logrus.Logger // NOTE: This log should be used for all log statements - the system-wide logger should NOT be used!
-
 	// The underlying Docker client that will be used to modify the Docker environment
 	dockerClient        *client.Client
 }
@@ -130,9 +127,8 @@ Args:
 	log: The logger that this Docker manager will write all its log messages to.
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func NewDockerManager(log *logrus.Logger, dockerClient *client.Client) *DockerManager {
+func NewDockerManager(dockerClient *client.Client) *DockerManager {
 	return &DockerManager{
-		log: log,
 		dockerClient:        dockerClient,
 	}
 }
@@ -374,20 +370,20 @@ func (manager DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	manager.log.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
 	imageExistsLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image %v", dockerImage)
 	}
-	manager.log.Tracef("Is image available locally?: %v", imageExistsLocally)
+	logrus.Tracef("Is image available locally?: %v", imageExistsLocally)
 
 	if !imageExistsLocally {
-		manager.log.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.PullImage(ctx, dockerImage)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Failed to pull Docker image %v from remote image repository", dockerImage)
 		}
-		manager.log.Tracef("Image successfully pulled from remote to local")
+		logrus.Tracef("Image successfully pulled from remote to local")
 	}
 
 	idFilterArgs := filters.NewArgs(filters.KeyValuePair{
@@ -448,7 +444,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			dockerImage,
 		)
 	}
-	manager.log.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
+	logrus.Debugf("Created container with ID '%v' from image '%v'", containerId, dockerImage)
 
 	// If the user doesn't provide an IP, the Docker network will auto-assign one
 	if args.staticIp != nil {
@@ -469,9 +465,9 @@ func (manager DockerManager) CreateAndStartContainer(
 	defer func() {
 		if !functionFinishedSuccessfully {
 			if err := manager.KillContainer(ctx, containerId); err != nil {
-				manager.log.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
-				fmt.Fprintln(manager.log.Out, err)
-				manager.log.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
+				logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
+				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
 			}
 		}
 	}()
@@ -503,7 +499,7 @@ func (manager DockerManager) CreateAndStartContainer(
 			publishedPortsSet[containerPort] = true
 		}
 	}
-	manager.log.Tracef("Published ports set: %+v", publishedPortsSet)
+	logrus.Tracef("Published ports set: %+v", publishedPortsSet)
 
 	// If the user wanted their ports exposed, Docker will have auto-assigned the ports to ports in the ephemeral range
 	//  on the host. We need to look up what those ports are so we can return report them back to the user.
@@ -513,7 +509,7 @@ func (manager DockerManager) CreateAndStartContainer(
 		// Thanks to https://github.com/moby/moby/issues/42860, we have to retry several times to get the host port bindings
 		//  from Docker
 		for i := 0; i < maxNumHostPortBindingChecks; i++ {
-			manager.log.Tracef("Trying to get host machine port bindings (%v previous attempts)...", i)
+			logrus.Tracef("Trying to get host machine port bindings (%v previous attempts)...", i)
 			containerInspectResp, err := manager.dockerClient.ContainerInspect(ctx, containerId)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(
@@ -523,7 +519,7 @@ func (manager DockerManager) CreateAndStartContainer(
 					numPublishedPorts,
 				)
 			}
-			manager.log.Tracef("Container inspect response: %+v", containerInspectResp)
+			logrus.Tracef("Container inspect response: %+v", containerInspectResp)
 			networkSettings := containerInspectResp.NetworkSettings
 			if networkSettings == nil {
 				return "", nil, stacktrace.NewError(
@@ -532,7 +528,7 @@ func (manager DockerManager) CreateAndStartContainer(
 					containerId,
 				)
 			}
-			manager.log.Tracef("Network settings: %+v", networkSettings)
+			logrus.Tracef("Network settings: %+v", networkSettings)
 			allInterfaceHostPortBindings := networkSettings.Ports
 			if allInterfaceHostPortBindings == nil {
 				return "", nil, stacktrace.NewError(
@@ -541,7 +537,7 @@ func (manager DockerManager) CreateAndStartContainer(
 					containerId,
 				)
 			}
-			manager.log.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
+			logrus.Tracef("Network settings -> ports: %+v", allInterfaceHostPortBindings)
 
 			// This is "candidate" because if Docker is missing ports, it may end up as empty or half-filled (which we won't accept)
 			candidatePortBindingsOnExpectedInterface := manager.getHostPortBindingsFromDockerPortMap(publishedPortsSet, allInterfaceHostPortBindings)
@@ -780,7 +776,7 @@ ConnectContainerToNetwork
 Connects the container with the given container ID to the network with the given network ID, using the given IP address
 */
 func (manager DockerManager) ConnectContainerToNetwork(ctx context.Context, networkId string, containerId string, staticIpAddr net.IP, alias string) (err error) {
-	manager.log.Tracef(
+	logrus.Tracef(
 		"Connecting container ID %v to network ID %v using static IP %v",
 		containerId,
 		networkId,
@@ -844,7 +840,7 @@ func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels m
 }
 
 func (manager DockerManager) PullImage(context context.Context, imageName string) (err error) {
-	manager.log.Infof("Pulling image '%s'...", imageName)
+	logrus.Infof("Pulling image '%s'...", imageName)
 	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
@@ -929,7 +925,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		bindsList = append(bindsList, volumeName + ":" + containerFilepath)
 	}
 
-	manager.log.Debugf("Binds: %v", bindsList)
+	logrus.Debugf("Binds: %v", bindsList)
 
 	portMap := nat.PortMap{}
 	for containerPort, publishSpec := range usedPortsWithPublishSpec {
@@ -1033,20 +1029,20 @@ func (manager *DockerManager) getHostPortBindingsFromDockerPortMap(usedPortsSet 
 		// Skip ports that aren't a part of the usedPorts set, so that the portBindings
 		//  result will have a 1:1 mapping
 		if _, found := usedPortsSet[port]; !found {
-			manager.log.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
+			logrus.Tracef("Port '%v' isn't in used port set, so we're skipping looking for a host port binding for it", port)
 			continue
 		}
 
 		foundHostPortBinding := false
 		for _, interfaceBinding := range allInterfaceBindings {
-			manager.log.Tracef(
+			logrus.Tracef(
 				"Examining interface binding with host IP '%v' and port '%v' for port '%v'...",
 				interfaceBinding.HostIP,
 				interfaceBinding.HostPort,
 				port,
 			)
 			if interfaceBinding.HostIP == expectedHostIp {
-				manager.log.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
+				logrus.Tracef("Interface binding matched expected host IP '%v'; registering binding", expectedHostIp)
 				result[port] = &nat.PortBinding{
 					HostIP:   hostPortBindingInterfaceForUserConsumption,
 					HostPort: interfaceBinding.HostPort,
