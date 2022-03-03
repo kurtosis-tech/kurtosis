@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/martian/log"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
