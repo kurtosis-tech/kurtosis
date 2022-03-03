@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Changed `launcher` to use generic `KurtosisBackend` instead of `DockerManager`
+
 ### Fixes
 * Upgraded core & container-engine-lib dependencies to fix bug where Docker containers in the `removing` state were counted as running
 * Don't treat containers in the `removing` state as running
