@@ -50,7 +50,7 @@ const (
 //                                     Engine CRUD Methods
 // ====================================================================================================
 
-func (backendCore *DockerKurtosisBackendCore) CreateEngine(
+func (backendCore *DockerKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
 	imageVersionTag string,
@@ -206,7 +206,7 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 	return result, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
+func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
 	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
@@ -220,7 +220,7 @@ func (backendCore *DockerKurtosisBackendCore) GetEngines(ctx context.Context, fi
 	return matchingEnginesByEngineId, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) StopEngines(
+func (backendCore *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.GetEnginesFilters,
 ) (
@@ -247,7 +247,7 @@ func (backendCore *DockerKurtosisBackendCore) StopEngines(
 	return successIds, errorIds, nil
 }
 
-func (backendCore *DockerKurtosisBackendCore) DestroyEngines(
+func (backendCore *DockerKurtosisBackend) DestroyEngines(
 	ctx context.Context,
 	filters *engine.GetEnginesFilters,
 ) (
@@ -326,7 +326,7 @@ func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_ma
 }
 
 // Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackendCore) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
+func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),

@@ -53,16 +53,16 @@ var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
 	port_spec.PortProtocol_UDP:   "udp",
 }
 
-type DockerKurtosisBackendCore struct {
+type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 }
 
-func NewDockerKurtosisBackendCore(
+func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
-) *DockerKurtosisBackendCore {
-	return &DockerKurtosisBackendCore{
+) *DockerKurtosisBackend {
+	return &DockerKurtosisBackend{
 		dockerManager: dockerManager,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
@@ -71,7 +71,7 @@ func NewDockerKurtosisBackendCore(
 // Engine methods in separate file
 
 /*
-func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
+func (backendCore *DockerKurtosisBackend) CleanStoppedEngines(ctx context.Context) ([]string, []error, error) {
 	successfullyDestroyedContainerNames, containerDestructionErrors, err := backendCore.cleanContainers(ctx, engineLabels, shouldCleanRunningEngineContainers)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred cleaning stopped Kurtosis engine containers")
@@ -80,7 +80,7 @@ func (backendCore *DockerKurtosisBackendCore) CleanStoppedEngines(ctx context.Co
 }
 
 
-func (backendCore *DockerKurtosisBackendCore) GetEnginePublicIPAndPort(
+func (backendCore *DockerKurtosisBackend) GetEnginePublicIPAndPort(
 	ctx context.Context,
 ) (
 	resultPublicIpAddr net.IP,
