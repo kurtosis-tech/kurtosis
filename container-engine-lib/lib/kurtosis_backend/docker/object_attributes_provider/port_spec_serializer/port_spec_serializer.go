@@ -97,10 +97,6 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_val
 	return result, nil
 }
 
-// TODO This is public so that users that look up containers by label and need to deserialize the port spec (e.g. the CLI or engine server)
-//  can do so, but this is ugly because users just magically have to know that this function exists - really, we should refactor this library
-//  so that the user only interacts with high-level objects (e.g. APIContainer, EnclaveNetwork, etc.) and all the de/serialization happens
-//  hidden away inside this library
 func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
 	result := map[string]*port_spec.PortSpec{}
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
