@@ -27,7 +27,7 @@ func TestEdgeCases(t *testing.T) {
 }
 
 func TestTooLongValue(t *testing.T) {
-	invalidLabel := strings.Repeat("a", maxLabelValueBytes+ 1)
+	invalidLabel := strings.Repeat("a", maxLabelValueBytes + 1)
 	_, err := CreateNewDockerLabelValue(invalidLabel)
 	require.Error(t, err)
 }

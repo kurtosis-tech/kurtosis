@@ -4,6 +4,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backends/docker"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backends/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backends/metrics_reporting"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -18,7 +19,9 @@ func GetLocalDockerKurtosisBackend() (KurtosisBackend, error) {
 
 	dockerKurtosisBackend := docker.NewDockerKurtosisBackend(dockerManager)
 
-	return dockerKurtosisBackend, nil
+	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
+
+	return wrappedBackend, nil
 }
 
 // TODO Kubernetes

@@ -3,7 +3,7 @@ package metrics_reporting
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
-	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -16,7 +16,7 @@ func NewMetricsReportingKurtosisBackend(underlying lib.KurtosisBackend) *Metrics
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, engineDataDirpathOnHostMachine string, envVars map[string]string) (*engine2.Engine, error) {
+func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, engineDataDirpathOnHostMachine string, envVars map[string]string) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, engineDataDirpathOnHostMachine, envVars)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine using image '%v' with tag '%v'", imageOrgAndRepo, imageVersionTag)
@@ -25,7 +25,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context
 }
 
 // Gets point-in-time data about engines matching the given filters
-func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
+func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engines, err := backend.underlying.GetEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters: %+v", filters)
@@ -33,7 +33,7 @@ func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, 
 	return engines, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context, filters *engine2.EngineFilters) (
+func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context, filters *engine.EngineFilters) (
 	successfulIds map[string]bool,
 	failedIds map[string]error,
 	resultErr error,
@@ -45,7 +45,7 @@ func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context,
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine2.EngineFilters) (
+func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine.EngineFilters) (
 	successfulIds map[string]bool,
 	failedIds map[string]error,
 	resultErr error,

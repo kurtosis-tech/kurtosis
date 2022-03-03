@@ -16,7 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
-	types3 "github.com/kurtosis-tech/container-engine-lib/lib/backends/docker/docker_manager/types"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backends/docker/docker_manager/types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -26,18 +26,6 @@ import (
 	"strings"
 	"time"
 )
-
-/*
-WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-
-This manager is used on a per-test basis. Because tests can run in parallel, but we need to pretty-print
-each test's logs in a single block, we need to have a separate logger per test. As such, this class takes in a
-logrus.Logger, and *all log messages should be sent through this logger rather than the systemwide logger!!!*
-
-No logrus.Info, logrus.Debug, etc. calls should happen in this file - only logrus.Info, logrus.Debug, etc.!
-
-WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
- */
 
 const (
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
@@ -124,7 +112,6 @@ NewDockerManager
 Creates a new Docker manager for manipulating the Docker engine using the given client.
 
 Args:
-	log: The logger that this Docker manager will write all its log messages to.
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
 func NewDockerManager(dockerClient *client.Client) *DockerManager {
@@ -188,7 +175,7 @@ GetNetworksByName
 Returns Network list matching the given name (if any).
  */
 // TODO Combine with GetNetworksByLabel using a search filter builder
-func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*types3.Network, error) {
+func (manager DockerManager) GetNetworksByName(ctx context.Context, name string) ([]*docker_manager_types.Network, error) {
 	nameSearchArgs := filters.NewArgs(filters.KeyValuePair{
 		Key:   networkNameSearchFilterKey,
 		Value: name,
@@ -210,7 +197,7 @@ func (manager DockerManager) GetNetworksByName(ctx context.Context, name string)
 GetNetworksByLabels
 Gets networks matching the given labels
  */
-func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*types3.Network, error) {
+func (manager DockerManager) GetNetworksByLabels(ctx context.Context, labels map[string]string) ([]*docker_manager_types.Network, error) {
 	labelsSearchArgs := getLabelsFilterArgs(networkLabelSearchFilterKey, labels)
 	dockerNetworks, err := manager.getNetworksByFilterArgs(ctx, labelsSearchArgs)
 	if err != nil {
@@ -830,7 +817,7 @@ func (manager DockerManager) GetContainerIdsByName(ctx context.Context, nameStr 
 	return result, nil
 }
 
-func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*types3.Container, error) {
+func (manager DockerManager) GetContainersByLabels(ctx context.Context, labels map[string]string, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	labelsFilterList := getLabelsFilterArgs(containerLabelSearchFilterKey, labels)
 	result, err := manager.getContainersByFilterArgs(ctx, labelsFilterList, shouldShowStoppedContainers)
 	if err != nil {
@@ -1061,7 +1048,7 @@ func (manager *DockerManager) getHostPortBindingsFromDockerPortMap(usedPortsSet 
 	return result
 }
 
-func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*types3.Container, error) {
+func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
 		Filters: filterArgs,
 		All:     shouldShowStoppedContainers,
@@ -1078,8 +1065,8 @@ func (manager DockerManager) getContainersByFilterArgs(ctx context.Context, filt
 	return containers, nil
 }
 
-func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*types3.Container, error) {
-	containers := make([]*types3.Container, 0, len(dockerContainers))
+func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*docker_manager_types.Container, error) {
+	containers := make([]*docker_manager_types.Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		container, err := newContainerFromDockerContainer(dockerContainer)
 		if err != nil {
@@ -1090,7 +1077,7 @@ func newContainersListFromDockerContainersList(dockerContainers []types.Containe
 	return containers, nil
 }
 
-func newContainerFromDockerContainer(dockerContainer types.Container) (*types3.Container, error) {
+func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_manager_types.Container, error) {
 	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State)
@@ -1101,7 +1088,7 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*types3.C
 	}
 	containerHostPortBindings := getHostPortBindingsFromContainerPortsList(dockerContainer.Ports)
 
-	newContainer := types3.NewContainer(
+	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
 		containerName,
 		dockerContainer.Labels,
@@ -1111,8 +1098,8 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*types3.C
 	return newContainer, nil
 }
 
-func getContainerStatusByDockerContainerState(dockerContainerState string) (types3.ContainerStatus, error ){
-	containerStatus, err := types3.ContainerStatusString(dockerContainerState)
+func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error ){
+	containerStatus, err := docker_manager_types.ContainerStatusString(dockerContainerState)
 	if err != nil {
 		return 0, stacktrace.NewError("No container status matches Docker container state '%v'; this is a bug in Kurtosis", dockerContainerState)
 	}
@@ -1162,8 +1149,8 @@ func getLabelsFilterArgs(searchFilterKey string, labels map[string]string) filte
 	return labelsFilterList
 }
 
-func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*types3.Network, error) {
-	networks := []*types3.Network{}
+func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource) ([]*docker_manager_types.Network, error) {
+	networks := []*docker_manager_types.Network{}
 
 	for _, dockerNetwork := range dockerNetworks {
 		network, err := newNetworkFromDockerNetwork(dockerNetwork)
@@ -1176,7 +1163,7 @@ func newNetworkListFromDockerNetworkList(dockerNetworks []types.NetworkResource)
 	return networks, nil
 }
 
-func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*types3.Network, error) {
+func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_manager_types.Network, error) {
 	if len(dockerNetwork.IPAM.Config) == 0 {
 		return nil, stacktrace.NewError("Kurtosis Docker network with ID %v does not contains any IPAM config.", dockerNetwork.ID)
 	}
@@ -1191,7 +1178,7 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*types3.N
 		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
 	}
 
-	network := types3.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
 
 	return network, nil
 }
