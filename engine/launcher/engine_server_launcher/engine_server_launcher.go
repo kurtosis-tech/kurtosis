@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/docker/go-connections/nat"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
@@ -23,7 +23,7 @@ import (
 
 const (
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
-	KurtosisEngineVersion = "1.11.2"
+	KurtosisEngineVersion = "1.11.3"
 	// !!!!!!!!!!!!!!!!!! DO NOT MODIFY THIS! IT WILL BE UPDATED AUTOMATICALLY DURING THE RELEASE PROCESS !!!!!!!!!!!!!!!
 
 	// TODO This should come from the same logic that builds the server image!!!!!

@@ -1,9 +1,11 @@
 # TBD
 
+# 1.11.3
+### Changes
+* Upgrade to container-engine-lib 0.9.0
+
 # 1.11.2
-
 ### Features
-
 * Added GenericEngineClient interface to abstract grpc-web vs grpc-js Typescript backends
 
 # 1.11.1
