@@ -1,5 +1,9 @@
 # TBD
 
+# 1.39.8
+### Fixes
+* Use container-engine-lib 0.9.1 to fix a bug where Docker containers in the `removing` status were counted as running
+
 # 1.39.7
 ### Changes
 * Use container-engine-lib 0.9.0
