@@ -8,7 +8,7 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
