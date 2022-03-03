@@ -43,7 +43,9 @@ const (
 
 	engineAvailabilityWaitingExecCmdSuccessExitCode = 0
 
-	engineStopTimeout = 10 * time.Second
+	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
+	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
+	engineStopTimeout = 1 * time.Second
 )
 
 // ====================================================================================================
@@ -178,10 +180,14 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	shouldKillEngineContainer := true
 	defer func() {
 		if shouldKillEngineContainer {
-			// We kill the container, rather than destroyign it, to leave debugging information around
 			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
-				logrus.Errorf("Launching the engine server didn't complete successfully so we tried to kill the container we started, but doing so exited with an error:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill engine server with container ID '%v'!!!!!!", containerId)
+				logrus.Errorf(
+					"Launching the engine server with ID '%v' and container ID '%v' didn't complete successfully so we " +
+						"tried to kill the container we started, but doing so exited with an error:\n%v",
+					engineIdStr,
+					containerId,
+					err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop engine server with ID '%v'!!!!!!", engineIdStr)
 			}
 		}
 	}()

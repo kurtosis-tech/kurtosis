@@ -1,9 +1,5 @@
 package kubernetes
 
-import (
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-)
-
 const (
 	kurtosisEngineNamespace    = "kurtosis-namespace"
 	numKurtosisEngineReplicas  = 1
@@ -20,13 +16,13 @@ const (
 	shouldCleanRunningEngineContainers = false
 )
 
+/*
 var engineLabels = map[string]string{
 	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
 	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
 	forever_constants.ContainerTypeLabel: forever_constants.ContainerType_EngineServer,
 }
 
-/*
 type KubernetesKurtosisBackendCore struct {
 	log *logrus.Logger
 
