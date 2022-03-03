@@ -1,5 +1,9 @@
 # TBD
 
+# 0.9.1
+### Fixes
+* Fixed container `removing` state erroneously counting as running
+
 # 0.9.0
 ### Changes
 * Switched from fairly-specific engine methods on `KurtosisBackend` to generic CRUD methods (`CreateEngine`, `GetEngines`, etc.)
