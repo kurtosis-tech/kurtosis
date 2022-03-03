@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/backends/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 )

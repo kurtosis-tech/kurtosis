@@ -1,8 +1,8 @@
-package lib
+package backend_interface
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/objects/engine"
+	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 )
 
 type KurtosisBackend interface {
@@ -16,17 +16,17 @@ type KurtosisBackend interface {
 		engineDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
-		*engine.Engine,
+		*engine2.Engine,
 		error,
 	)
 
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
-	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error)
+	GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error)
 
 	// Stops the engines with the given IDs
 	StopEngines(
 		ctx context.Context,
-		filters *engine.EngineFilters,
+		filters *engine2.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
@@ -36,7 +36,7 @@ type KurtosisBackend interface {
 	// Destroys the engines with the given IDs, regardless of if they're running or not
 	DestroyEngines(
 		ctx context.Context,
-		filters *engine.EngineFilters,
+		filters *engine2.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error

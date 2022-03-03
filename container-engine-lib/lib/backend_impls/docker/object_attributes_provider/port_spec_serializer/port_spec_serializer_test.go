@@ -1,7 +1,7 @@
 package port_spec_serializer
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/objects/port_spec"
+	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
@@ -10,17 +10,17 @@ import (
 func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"
 	port1Num := uint16(23)
-	port1Protocol := port_spec.PortProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec2.PortProtocol_TCP
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := uint16(45)
-	port2Protocol := port_spec.PortProtocol_TCP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec2.PortProtocol_TCP
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec.PortSpec{
+	input := map[string]*port_spec2.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -51,11 +51,11 @@ func TestDisallowedCharsSerialization(t *testing.T) {
 	for disallowedChar := range disallowedPortIdChars {
 		portId := "ohyeah" + disallowedChar
 		portNum := uint16(45)
-		portProtocol := port_spec.PortProtocol_TCP
-		portSpec, err := port_spec.NewPortSpec(portNum, portProtocol)
+		portProtocol := port_spec2.PortProtocol_TCP
+		portSpec, err := port_spec2.NewPortSpec(portNum, portProtocol)
 		require.NoError(t, err, "An unexpected error occurred creating port spec for port with ID '%v'", portId)
 
-		ports := map[string]*port_spec.PortSpec{
+		ports := map[string]*port_spec2.PortSpec{
 			portId: portSpec,
 		}
 
@@ -69,17 +69,17 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec.PortProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec2.PortProtocol_TCP
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec.PortProtocol_UDP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec2.PortProtocol_UDP
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec.PortSpec{
+	input := map[string]*port_spec2.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -93,17 +93,17 @@ func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {
 
 	port1Id := "port1"
 	port1Num := dupedPortNum
-	port1Protocol := port_spec.PortProtocol_TCP
-	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol)
+	port1Protocol := port_spec2.PortProtocol_TCP
+	port1Spec, err := port_spec2.NewPortSpec(port1Num, port1Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
 
 	port2Id := "port2"
 	port2Num := dupedPortNum
-	port2Protocol := port_spec.PortProtocol_TCP
-	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol)
+	port2Protocol := port_spec2.PortProtocol_TCP
+	port2Spec, err := port_spec2.NewPortSpec(port2Num, port2Protocol)
 	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
 
-	input := map[string]*port_spec.PortSpec{
+	input := map[string]*port_spec2.PortSpec{
 		port1Id: port1Spec,
 		port2Id: port2Spec,
 	}
@@ -143,7 +143,7 @@ func TestInvalidProtocolDeserialization(t *testing.T) {
 }
 
 func TestNoPortProtosHaveDisallowedChars(t *testing.T) {
-	for _, portProtoStr := range port_spec.PortProtocolStrings() {
+	for _, portProtoStr := range port_spec2.PortProtocolStrings() {
 		for illegalPortProtocolStr := range disallowedPortIdChars {
 			require.False(t, strings.Contains(portProtoStr, illegalPortProtocolStr))
 		}

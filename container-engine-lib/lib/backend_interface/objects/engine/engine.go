@@ -1,7 +1,7 @@
 package engine
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
 
