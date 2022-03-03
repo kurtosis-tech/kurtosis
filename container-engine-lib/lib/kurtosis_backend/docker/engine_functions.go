@@ -7,7 +7,8 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
@@ -355,8 +356,8 @@ func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_ma
 // Gets engines matching the search filters, indexed by their container ID
 func (backendCore *DockerKurtosisBackendCore) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.GetEnginesFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
-		object_attributes_provider.AppIDLabelKey.GetString(): object_attributes_provider.AppIDLabelValue.GetString(),
-		object_attributes_provider.ContainerTypeLabelKey.GetString(): object_attributes_provider.EngineContainerTypeLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),
 		// NOTE: we do NOT use the engine ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
 	allEngineContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, engineContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
@@ -403,7 +404,7 @@ func getEngineObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
 ) (*engine.Engine, error) {
-	engineGuid, found := labels[object_attributes_provider.GUIDLabelKey.GetString()]
+	engineGuid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
 	if !found {
 		// TODO Delete this after 2022-05-02 when we're confident there won't be any engines running
 		//  without the engine ID label!
@@ -482,9 +483,9 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	serializedPortSpecs, found := containerLabels[object_attributes_provider.PortSpecsLabelKey.GetString()]
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", object_attributes_provider.PortSpecsLabelKey.GetString())
+		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
 	}
 
 	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
