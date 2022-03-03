@@ -1,6 +1,6 @@
 package engine
 
-type GetEnginesFilters struct {
+type EngineFilters struct {
 	// Disjunctive set of engine IDs to find engines for
 	// If nil or empty, will match all IDs
 	IDs map[string]bool

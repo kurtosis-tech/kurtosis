@@ -25,7 +25,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context
 }
 
 // Gets point-in-time data about engines matching the given filters
-func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.GetEnginesFilters) (map[string]*engine2.Engine, error) {
+func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
 	engines, err := backend.underlying.GetEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters: %+v", filters)
@@ -33,7 +33,7 @@ func (backend *MetricsReportingKurtosisBackend) GetEngines(ctx context.Context, 
 	return engines, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context, filters *engine2.GetEnginesFilters) (
+func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context, filters *engine2.EngineFilters) (
 	successfulIds map[string]bool,
 	failedIds map[string]error,
 	resultErr error,
@@ -45,7 +45,7 @@ func (backend *MetricsReportingKurtosisBackend) StopEngines(ctx context.Context,
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine2.GetEnginesFilters) (
+func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine2.EngineFilters) (
 	successfulIds map[string]bool,
 	failedIds map[string]error,
 	resultErr error,

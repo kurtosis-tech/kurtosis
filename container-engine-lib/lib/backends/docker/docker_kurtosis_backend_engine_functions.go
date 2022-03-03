@@ -212,7 +212,7 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	return result, nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.GetEnginesFilters) (map[string]*engine2.Engine, error) {
+func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
 	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
@@ -228,7 +228,7 @@ func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filter
 
 func (backendCore *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
-	filters *engine2.GetEnginesFilters,
+	filters *engine2.EngineFilters,
 ) (
 	successfulEngineIds map[string]bool,
 	erroredEngineIds map[string]error,
@@ -255,7 +255,7 @@ func (backendCore *DockerKurtosisBackend) StopEngines(
 
 func (backendCore *DockerKurtosisBackend) DestroyEngines(
 	ctx context.Context,
-	filters *engine2.GetEnginesFilters,
+	filters *engine2.EngineFilters,
 ) (
 	successfulEngineIds map[string]bool,
 	erroredEngineIds map[string]error,
@@ -332,7 +332,7 @@ func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_ma
 }
 
 // Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine2.GetEnginesFilters) (map[string]*engine2.Engine, error) {
+func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),
