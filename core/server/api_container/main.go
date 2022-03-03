@@ -8,7 +8,7 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
@@ -155,7 +155,7 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 		return nil, stacktrace.Propagate(err, "Could not initialize a Docker client from the environment")
 	}
 
-	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager := docker_manager.NewDockerManager(dockerClient)
 	return dockerManager, nil
 }
 
