@@ -9,7 +9,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"

@@ -1,18 +1,17 @@
 # TBD
+### Changes
+* Use container-engine-lib 0.9.0
 
 # 1.39.6
-
 ### Features
 * Bumped 'object-attributes-schema' 0.8.0
 
 
 # 1.39.5
-
 ### Fixes
 * Refactored TS types for gRPC Web implementation
 
 # 1.39.4
-
 ### Features
 * Hid 'grpc-js' and 'path' lib from Web environment
 
