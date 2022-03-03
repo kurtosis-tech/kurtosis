@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed container `removing` state erroneously counting as running
 
 # 0.9.0
 ### Changes
