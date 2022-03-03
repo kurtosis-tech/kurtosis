@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/engine"
 )
 
-type KurtosisBackendCore interface {
+type KurtosisBackend interface {
 	// Creates an engine with the given parameters
 	CreateEngine(
 		ctx context.Context,

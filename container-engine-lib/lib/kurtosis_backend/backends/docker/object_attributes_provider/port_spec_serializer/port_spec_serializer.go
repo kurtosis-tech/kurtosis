@@ -2,7 +2,7 @@ package port_spec_serializer
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/backends/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"

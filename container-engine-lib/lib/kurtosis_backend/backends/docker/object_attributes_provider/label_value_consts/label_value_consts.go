@@ -1,6 +1,8 @@
 package label_value_consts
 
-import "github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/backends/docker/object_attributes_provider/docker_label_value"
+)
 
 
 

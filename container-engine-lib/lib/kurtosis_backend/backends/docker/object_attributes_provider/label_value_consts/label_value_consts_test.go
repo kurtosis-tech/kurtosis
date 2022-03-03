@@ -1,18 +1,18 @@
 package label_value_consts
 
 import (
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/backends/docker/object_attributes_provider/docker_label_value"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 var labelValueStrsToEnsure = map[string]string{
-	appIdLabelValueStr: "kurtosis",
+	appIdLabelValueStr:               "kurtosis",
 	engineContainerTypeLabelValueStr: "kurtosis-engine",
 }
 
 var labelValuesToEnsure = map[*docker_label_value.DockerLabelValue]string{
-	AppIDLabelValue: "kurtosis",
+	AppIDLabelValue:               "kurtosis",
 	EngineContainerTypeLabelValue: "kurtosis-engine",
 }
 

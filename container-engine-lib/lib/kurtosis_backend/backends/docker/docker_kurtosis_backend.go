@@ -6,7 +6,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/backends/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -63,7 +63,7 @@ func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
 ) *DockerKurtosisBackend {
 	return &DockerKurtosisBackend{
-		dockerManager: dockerManager,
+		dockerManager:    dockerManager,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
 }
