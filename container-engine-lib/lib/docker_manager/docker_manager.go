@@ -1108,9 +1108,9 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 }
 
 func getContainerStatusByDockerContainerState(dockerContainerState string) (docker_manager_types.ContainerStatus, error ){
-	containerStatus, err := docker_manager_types.GetContainerStatusFromString(dockerContainerState)
+	containerStatus, err := docker_manager_types.ContainerStatusString(dockerContainerState)
 	if err != nil {
-		return "", stacktrace.NewError("No container status matches Docker container state '%v'", dockerContainerState)
+		return 0, stacktrace.NewError("No container status matches Docker container state '%v'; this is a bug in Kurtosis", dockerContainerState)
 	}
 
 	return containerStatus, nil

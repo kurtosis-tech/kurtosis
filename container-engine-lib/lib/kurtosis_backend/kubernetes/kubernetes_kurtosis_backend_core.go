@@ -1,20 +1,5 @@
 package kubernetes
 
-import (
-	"context"
-	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kubernetes_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	v1 "k8s.io/api/apps/v1"
-	apiv1 "k8s.io/api/core/v1"
-	"net"
-	"strconv"
-)
-
 const (
 	kurtosisEngineNamespace    = "kurtosis-namespace"
 	numKurtosisEngineReplicas  = 1
@@ -31,6 +16,7 @@ const (
 	shouldCleanRunningEngineContainers = false
 )
 
+/*
 var engineLabels = map[string]string{
 	// TODO don't use a shared place for both Docker & Kubernetes for this; each backend should have its own labels
 	forever_constants.AppIDLabel:         forever_constants.AppIDValue,
@@ -288,3 +274,5 @@ func (backendCore KubernetesKurtosisBackendCore) cleanEngineServer(ctx context.C
 
 	return nil
 }
+
+ */
