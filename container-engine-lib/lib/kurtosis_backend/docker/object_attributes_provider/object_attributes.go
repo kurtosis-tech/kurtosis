@@ -4,8 +4,16 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/stacktrace"
 )
+
+// Labels that get attached to EVERY Kurtosis object
+var globalLabels = map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+	label_key_consts.AppIDLabelKey: label_value_consts.AppIDLabelValue,
+	// TODO container engine lib version??
+}
 
 // Encapsulates the attributes that a Docker object in the Kurtosis ecosystem can have
 type DockerObjectAttributes interface {
@@ -21,7 +29,7 @@ type dockerObjectAttributesImpl struct {
 
 func newDockerObjectAttributesImpl(name *docker_object_name.DockerObjectName, customLabels map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue) (*dockerObjectAttributesImpl, error) {
 	globalLabelsStrs := map[string]string{}
-	for globalKey, globalValue := range GlobalLabels {
+	for globalKey, globalValue := range globalLabels {
 		globalLabelsStrs[globalKey.GetString()] = globalValue.GetString()
 	}
 	for customKey, customValue := range customLabels {
@@ -47,7 +55,7 @@ func (attrs *dockerObjectAttributesImpl) GetLabels() map[*docker_label_key.Docke
 	}
 	// We're guaranteed that the global label string keys won't collide with the custom labels due to the validation
 	// we do at construction time
-	for key, value := range GlobalLabels {
+	for key, value := range globalLabels {
 		result[key] = value
 	}
 	return result

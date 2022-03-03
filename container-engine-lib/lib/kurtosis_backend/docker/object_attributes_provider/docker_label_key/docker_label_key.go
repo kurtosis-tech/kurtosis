@@ -7,13 +7,13 @@ import (
 
 const (
 	dockerLabelKeyRegexStr = "^[a-z0-9-.]+$"
+
+	// It doesn't seem Docker actually has a label key length limit, but we implement one of our own for practicality
+	maxLabelLength = 256
 )
 var dockerLabelKeyRegex = regexp.MustCompile(dockerLabelKeyRegexStr)
 
-// TODO MAKE THIS AN INTERFACE????
-
 // Represents a Docker label that is guaranteed to be valid for the Docker engine
-// NOTE: This is a struct-based enum
 type DockerLabelKey struct {
 	value string
 }
@@ -29,6 +29,9 @@ func MustCreateNewDockerLabelKey(str string) *DockerLabelKey {
 func CreateNewDockerLabelKey(str string) (*DockerLabelKey, error) {
 	if !dockerLabelKeyRegex.MatchString(str) {
 		return nil, stacktrace.NewError("Label key string '%v' doesn't match Docker label key regex '%v'", str, dockerLabelKeyRegexStr)
+	}
+	if len(str) > maxLabelLength {
+		return nil, stacktrace.NewError("Label key string '%v' is longer than max label key length '%v'", str, maxLabelLength)
 	}
 	return &DockerLabelKey{value: str}, nil
 }

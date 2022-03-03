@@ -4,6 +4,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/docker_object_name"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/kurtosis_backend/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -74,10 +76,10 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		ContainerTypeLabelKey: EngineContainerTypeLabelValue,
-		PortSpecsLabelKey:     serializedPortsSpec,
-		IDLabelKey: idLabelValue,
-		GUIDLabelKey: guidLabelValue,
+		label_key_consts.ContainerTypeLabelKey: label_value_consts.EngineContainerTypeLabelValue,
+		label_key_consts.PortSpecsLabelKey:     serializedPortsSpec,
+		label_key_consts.IDLabelKey:            idLabelValue,
+		label_key_consts.GUIDLabelKey:          guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
