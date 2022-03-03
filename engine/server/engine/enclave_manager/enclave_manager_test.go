@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"fmt"
 	"github.com/blang/semver"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/stretchr/testify/require"
@@ -10,7 +11,6 @@ import (
 )
 
 const (
-
 	// !!!!!! BEFORE YOU UPDATE THIS CONSTANT TO FIX THE TEST, ADD A "BREAKING CHANGE" SECTION IN THE CHANGELOG !!!!!!
 	// Explanation:
 	//  * A breaking API change in Kurt Core must also yield a breaking API change in the engine server, since the
@@ -48,5 +48,12 @@ func TestOneToOneMappingBetweenObjAttrProtosAndDockerProtos(t *testing.T) {
 		preexistingObjAttrProto, found := seenDockerProtos[dockerProto]
 		require.False(t, found, "Docker proto '%v' is already in use by obj attr proto '%v'", dockerProto, preexistingObjAttrProto)
 		seenDockerProtos[dockerProto] = objAttrProto
+	}
+}
+
+func TestIsContainerRunningDeterminerCompleteness(t *testing.T) {
+	for _, containerStatus := range types.ContainerStatusValues() {
+		_, found := isContainerRunningDeterminer[containerStatus]
+		require.True(t, found, "No is-container-running determination provided for container status '%v'", containerStatus.String())
 	}
 }
