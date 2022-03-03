@@ -71,10 +71,7 @@ func runMain () error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
+	dockerManager := docker_manager.NewDockerManager(dockerClient)
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveManager := enclave_manager.NewEnclaveManager(

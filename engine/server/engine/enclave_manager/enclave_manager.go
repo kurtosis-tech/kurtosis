@@ -82,6 +82,18 @@ const (
 	shouldFetchStoppedContainersWhenDestroyingStoppedContainers = true
 )
 
+// TODO Move this to the KurtosisBackend to calculate!!
+// Completeness enforced via unit test
+var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
+	types.ContainerStatus_Paused: false,
+	types.ContainerStatus_Restarting: true,
+	types.ContainerStatus_Running: true,
+	types.ContainerStatus_Removing: true,
+	types.ContainerStatus_Dead: false,
+	types.ContainerStatus_Created: false,
+	types.ContainerStatus_Exited: false,
+}
+
 // Unfortunately, Docker doesn't have constants for the protocols it supports declared
 var objAttrsSchemaPortProtosToDockerPortProtos = map[schema.PortProtocol]string{
 	schema.PortProtocol_TCP:  "tcp",
@@ -464,7 +476,7 @@ func getEnclaveContainerInformation(
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo = nil
 	for _, enclaveContainer := range allEnclaveContainers {
 		containerStatus := enclaveContainer.GetStatus()
-		isEnclaveContainerRunning := containerStatus == types.Running || containerStatus == types.Restarting
+		isEnclaveContainerRunning := containerStatus == types.ContainerStatus_Running || containerStatus == types.ContainerStatus_Restarting || containerStatus == types.ContainerStatus_Removing
 		if isEnclaveContainerRunning {
 			resultContainersStatus = kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING
 		}
@@ -966,16 +978,15 @@ func (manager *EnclaveManager) cleanContainers(ctx context.Context, searchLabels
 
 	containersToDestroy := []*types.Container{}
 	for _, container := range matchingContainers {
-		containerName := container.GetName()
 		containerStatus := container.GetStatus()
 		if shouldKillRunningContainers {
 			containersToDestroy = append(containersToDestroy, container)
 			continue
 		}
 
-		isRunning, err := isContainerRunning(containerStatus)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred determining if container '%v' with status '%v' is running", containerName, containerStatus)
+		isRunning, found := isContainerRunningDeterminer[containerStatus]
+		if !found {
+			return nil, nil, stacktrace.NewError("Expected to find an is-running determination for container status '%v', but none was found; this is a bug in Kurtosis", containerStatus.String())
 		}
 		if !isRunning {
 			containersToDestroy = append(containersToDestroy, container)
@@ -996,18 +1007,6 @@ func (manager *EnclaveManager) cleanContainers(ctx context.Context, searchLabels
 	}
 
 	return successfullyDestroyedContainerNames, removeContainerErrors, nil
-}
-
-func isContainerRunning(status types.ContainerStatus) (bool, error) {
-	switch status {
-	case types.Running, types.Restarting:
-		return true, nil
-	case types.Paused, types.Removing, types.Dead, types.Created, types.Exited:
-		return false, nil
-	default:
-		return false, stacktrace.NewError("Unrecognized container status '%v'; this is a bug in Kurtosis", status)
-
-	}
 }
 
 // NOTE: We no longer have Kurtosis testsuites, so this can be removed after 2022-05-15 when we're confident no user will have metadata-acquiring testsuites in their Kurtosis engine anymore
