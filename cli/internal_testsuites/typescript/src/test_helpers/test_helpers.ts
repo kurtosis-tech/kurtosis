@@ -11,8 +11,6 @@ import {
 } from "kurtosis-core-api-lib";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
-import { DatastoreServiceClient } from "example-datastore-server-api-lib/build/datastore_rpc_api_bindings/datastore_service_grpc_pb"
-import { ExampleAPIServerServiceClient } from "example-api-server-api-lib/build/example_api_server_rpc_api_bindings/example_api_server_grpc_pb"
 import { err, ok, Result } from "neverthrow";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import * as grpc from "@grpc/grpc-js";
@@ -47,7 +45,7 @@ const API_PORT_SPEC = new PortSpec(
 export async function addDatastoreService(serviceId: ServiceID, enclaveContext: EnclaveContext):
     Promise<Result<{
         serviceContext: ServiceContext;
-        client: datastoreApi.DatastoreServiceClient;
+        client: datastoreApi.DatastoreServiceClientNode;
         clientCloseFunction: () => void;
     },Error>> {
     
@@ -83,9 +81,9 @@ export async function addDatastoreService(serviceId: ServiceID, enclaveContext: 
     return ok({ serviceContext, client, clientCloseFunction });
 };
 
-export function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClient; clientCloseFunction: () => void } {
+export function createDatastoreClient(ipAddr: string, portNum: number): { client: datastoreApi.DatastoreServiceClientNode; clientCloseFunction: () => void } {
     const url = `${ipAddr}:${portNum}`;
-    const client = new DatastoreServiceClient(url, grpc.credentials.createInsecure());
+    const client = new datastoreApi.DatastoreServiceClientNode(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
     return { client, clientCloseFunction }
@@ -94,7 +92,7 @@ export function createDatastoreClient(ipAddr: string, portNum: number): { client
 export async function addAPIService( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
     Promise<Result<{
         serviceContext: ServiceContext;
-        client: serverApi.ExampleAPIServerServiceClient;
+        client: serverApi.ExampleAPIServerServiceClientNode;
         clientCloseFunction: () => void;
     }, Error>> {
   
@@ -113,7 +111,7 @@ export async function addAPIService( serviceId: ServiceID, enclaveContext: Encla
 export async function addAPIServiceToPartition( serviceId: ServiceID, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string, partitionId: PartitionID):
     Promise<Result<{
         serviceContext: ServiceContext;
-        client: serverApi.ExampleAPIServerServiceClient;
+        client: serverApi.ExampleAPIServerServiceClientNode;
         clientCloseFunction: () => void;
     },Error>> {
   
@@ -130,7 +128,7 @@ export async function addAPIServiceToPartition( serviceId: ServiceID, enclaveCon
     }
   
     const url = `${serviceContext.getMaybePublicIPAddress()}:${publicPort.number}`;
-    const client = new ExampleAPIServerServiceClient(url, grpc.credentials.createInsecure());
+    const client = new serverApi.ExampleAPIServerServiceClientNode(url, grpc.credentials.createInsecure());
     const clientCloseFunction = () => client.close();
 
     const waitForHealthyResult = await waitForHealthy(client, API_WAIT_FOR_STARTUP_MAX_POLLS, API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS)
@@ -144,7 +142,7 @@ export async function addAPIServiceToPartition( serviceId: ServiceID, enclaveCon
 };
 
 export async function waitForHealthy(
-  client: datastoreApi.DatastoreServiceClient | serverApi.ExampleAPIServerServiceClient,
+  client: datastoreApi.DatastoreServiceClientNode | serverApi.ExampleAPIServerServiceClientNode,
   retries: number,
   retriesDelayMilliseconds: number
 ): Promise<Result<null, Error>> {
