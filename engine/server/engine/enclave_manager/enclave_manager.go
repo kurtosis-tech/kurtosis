@@ -88,7 +88,7 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 	types.ContainerStatus_Paused: false,
 	types.ContainerStatus_Restarting: true,
 	types.ContainerStatus_Running: true,
-	types.ContainerStatus_Removing: true,
+	types.ContainerStatus_Removing: false,
 	types.ContainerStatus_Dead: false,
 	types.ContainerStatus_Created: false,
 	types.ContainerStatus_Exited: false,
