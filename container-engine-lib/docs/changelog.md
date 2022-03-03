@@ -1,4 +1,6 @@
 # TBD
+
+# 0.9.0
 ### Changes
 * Switched from fairly-specific engine methods on `KurtosisBackend` to generic CRUD methods (`CreateEngine`, `GetEngines`, etc.)
 * Pull the `ForEngineServer` method into this repo, rather than relying on obj-attrs-schema-lib, since the name/label determination really makes sense next to the DockerKurtosisBackend
