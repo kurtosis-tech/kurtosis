@@ -28,8 +28,9 @@ type KurtosisBackendCore interface {
 		ctx context.Context,
 		filters *engine.GetEnginesFilters,
 	) (
-		map[string]error, // Contains one engine ID key per engine we tried to stop, with the (potentially nil) error from attemping to do so
-		error, // Represents an error before attempting to stop the engines
+		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
+		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines with the given IDs, regardless of if they're running or not
@@ -37,7 +38,8 @@ type KurtosisBackendCore interface {
 		ctx context.Context,
 		filters *engine.GetEnginesFilters,
 	) (
-		map[string]error, // Contains one engine ID key per engine we tried to destroy, with the (potentially nil) error from attemping to do so
-		error, // Represents an error before attempting to destroy the engines
+		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
+		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 }

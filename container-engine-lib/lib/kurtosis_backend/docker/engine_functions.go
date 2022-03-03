@@ -202,38 +202,6 @@ func (backendCore *DockerKurtosisBackendCore) CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with ID '%v'", containerId)
 	}
 
-	/*
-		publicGrpcIpAddr, publicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, hostMachinePortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the engine's public port binding info from the host machine port bindings")
-		}
-		publicGrpcProxyIpAddr, publicGrpcProxyPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, hostMachinePortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting the engine's public grpc proxy port binding info from the host machine port bindings")
-		}
-
-		publicGrpcIpAddrStr := publicGrpcIpAddr.String()
-		publicGrpcProxyIpAddrStr := publicGrpcProxyIpAddr.String()
-		if publicGrpcIpAddrStr != publicGrpcProxyIpAddrStr {
-			return nil, stacktrace.NewError(
-				"Expected public IP address '%v' for the grpc port to be the same as public IP address '%v' for " +
-					"the grpc proxy port, but they were different",
-				publicGrpcIpAddrStr,
-				publicGrpcProxyIpAddrStr,
-			)
-		}
-		publicIpAddr := publicGrpcIpAddr
-
-		result := engine.NewEngine(
-			engineIdStr,
-			engine.EngineStatus_Running,
-			publicIpAddr,
-			publicGrpcPortSpec,
-			publicGrpcProxyPortSpec,
-		)
-
-	*/
-
 	shouldKillEngineContainer = false
 	return result, nil
 }
@@ -256,50 +224,54 @@ func (backendCore *DockerKurtosisBackendCore) StopEngines(
 	ctx context.Context,
 	filters *engine.GetEnginesFilters,
 ) (
-	map[string]error,
-	error,
+	successfulEngineIds map[string]bool,
+	erroredEngineIds map[string]error,
+	resultErr error,
 ) {
 	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	engineStopErrorsByEngineId := map[string]error{}
+	successIds := map[string]bool{}
+	errorIds := map[string]error{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
 		engineId := engineObj.GetID()
 		if err := backendCore.dockerManager.StopContainer(ctx, containerId, engineStopTimeout); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred stopping engine '%v' with container ID '%v'", engineId, containerId)
-			engineStopErrorsByEngineId[engineId] = wrappedErr
+			errorIds[engineId] = wrappedErr
 		} else {
-			engineStopErrorsByEngineId[engineId] = nil
+			successIds[engineId] = true
 		}
 	}
-	return engineStopErrorsByEngineId, nil
+	return successIds, errorIds, nil
 }
 
 func (backendCore *DockerKurtosisBackendCore) DestroyEngines(
 	ctx context.Context,
 	filters *engine.GetEnginesFilters,
 ) (
-	map[string]error,
-	error,
+	successfulEngineIds map[string]bool,
+	erroredEngineIds map[string]error,
+	resultErr error,
 ) {
 	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	engineDestroyErrorsByEngineId := map[string]error{}
+	successIds := map[string]bool{}
+	errorIds := map[string]error{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
 		engineId := engineObj.GetID()
 		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(err, "An error occurred removing engine '%v' with container ID '%v'", engineId, containerId)
-			engineDestroyErrorsByEngineId[engineId] = wrappedErr
+			errorIds[engineId] = wrappedErr
 		} else {
-			engineDestroyErrorsByEngineId[engineId] = nil
+			successIds[engineId] = true
 		}
 	}
-	return engineDestroyErrorsByEngineId, nil
+	return successIds, errorIds, nil
 }
 
 
