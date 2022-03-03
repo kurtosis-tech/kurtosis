@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Upgraded core & container-engine-lib dependencies to fix bug where Docker containers in the `removing` state were counted as running
 
 # 1.11.3
 ### Changes
