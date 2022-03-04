@@ -2,7 +2,7 @@ package backend_interface
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 )
 
@@ -47,24 +47,54 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
+	// Creates an enclave with the given enclave ID
+	CreateEnclave(
+		ctx context.Context,
+		enclaveId string,
+	) (
+		*enclave.Enclave,
+		error,
+	)
+
+	// Gets enclaves matching the given filters
+	GetEnclaves(
+		ctx context.Context,
+		filters *enclave.EnclaveFilters,
+	) (
+		map[string]*enclave.Enclave,
+		error,
+	)
+
+	// TODO MAYYYYYYYBE DumpEnclaves?
+
+	// Stops enclaves matching the given filters
+	StopEnclaves(
+		ctx context.Context,
+		filters *enclave.EnclaveFilters,
+	) (
+		successfulEnclaveIds map[string]bool,
+		erroredEnclaveIds map[string]error,
+		resultErr error,
+	)
+
+	// Destroys enclaves matching the given filters
+	DestroyEnclaves(
+		ctx context.Context,
+		filters *enclave.EnclaveFilters,
+	) (
+		successfulEnclaveIds map[string]bool,
+		erroredEnclaveIds map[string]error,
+		resultErr error,
+	)
+
+	/*
 	CreateAPIContainer(
 	) (
 		*api_container.APIContainer,
 		error,
 	)
 
-
-
-
-	// TODO CreateEnclave
-
-	// TODO GetEnclaves
-
-	// TODO StopEnclaves
-
-	// TODO DestroyEnclaves
-
-	// TODO MAYYYYYYYBE DumpEnclaves?
+	 */
 
 	// TODO CreateRepl
 
