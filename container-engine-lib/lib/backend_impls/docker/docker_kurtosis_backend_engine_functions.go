@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -180,6 +181,8 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	shouldKillEngineContainer := true
 	defer func() {
 		if shouldKillEngineContainer {
+			// NOTE: We use the background context here so that the kill will still go off even if the reason for
+			// the failure was the original context being cancelled
 			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
 					"Launching the engine server with ID '%v' and container ID '%v' didn't complete successfully so we " +
@@ -409,17 +412,17 @@ func getEngineObjectFromContainerInfo(
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for engine container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
-	var engineStatus engine2.EngineStatus
+	var engineStatus container_status.ContainerStatus
 	if isContainerRunning {
-		engineStatus = engine2.EngineStatus_Running
+		engineStatus = container_status.ContainerStatus_Running
 	} else {
-		engineStatus = engine2.EngineStatus_Stopped
+		engineStatus = container_status.ContainerStatus_Stopped
 	}
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec2.PortSpec
 	var publicGrpcProxyPortSpec *port_spec2.PortSpec
-	if engineStatus == engine2.EngineStatus_Running {
+	if engineStatus == container_status.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")

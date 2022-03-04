@@ -2,7 +2,8 @@ package backend_interface
 
 import (
 	"context"
-	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -19,17 +20,17 @@ type KurtosisBackend interface {
 		engineDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
-		*engine2.Engine,
+		*engine.Engine,
 		error,
 	)
 
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
-	GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error)
+	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error)
 
 	// Stops the engines with the given IDs
 	StopEngines(
 		ctx context.Context,
-		filters *engine2.EngineFilters,
+		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
@@ -39,12 +40,21 @@ type KurtosisBackend interface {
 	// Destroys the engines with the given IDs, regardless of if they're running or not
 	DestroyEngines(
 		ctx context.Context,
-		filters *engine2.EngineFilters,
+		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
+
+	CreateAPIContainer(
+	) (
+		*api_container.APIContainer,
+		error,
+	)
+
+
+
 
 	// TODO CreateEnclave
 

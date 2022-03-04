@@ -23,6 +23,11 @@ const (
 	guidLabelKeyStr = labelNamespaceStr + "guid"
 
 	portSpecsLabelKeyStr = labelNamespaceStr + "ports"
+
+	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
+
+	// TODO Remove this and instead use container domain names so we're not dependent on static IPs!
+	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
 )
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
@@ -37,3 +42,5 @@ var ContainerTypeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(contain
 var IDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeyStr)
 var GUIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
 var PortSpecsLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
+var EnclaveIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
+var PrivateIPLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
