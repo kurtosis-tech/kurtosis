@@ -27,7 +27,7 @@ type KurtosisBackend interface {
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
 	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error)
 
-	// Stops the engines with the given IDs
+	// Stops the engines matching the given filters
 	StopEngines(
 		ctx context.Context,
 		filters *engine.EngineFilters,
@@ -37,7 +37,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
-	// Destroys the engines with the given IDs, regardless of if they're running or not
+	// Destroys the engines matching the given filters, regardless of if they're running or not
 	DestroyEngines(
 		ctx context.Context,
 		filters *engine.EngineFilters,
@@ -86,11 +86,11 @@ type KurtosisBackend interface {
 
 	// TODO GetUserServices
 
-	// TODO StopUserServices
-
-	// TODO DestroyUserServices
-
 	// TODO GetUserServiceLogs
 
+	// TODO StopUserServices
+
 	// TODO GetShellOnUserService
+
+	// TODO DestroyUserServices
 }
