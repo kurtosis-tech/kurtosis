@@ -5,6 +5,9 @@ import (
 	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 )
 
+// KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
+// The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
+// the underlying container engine?"
 type KurtosisBackend interface {
 	// Creates an engine with the given parameters
 	CreateEngine(
@@ -42,4 +45,42 @@ type KurtosisBackend interface {
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
+
+	// TODO CreateEnclave
+
+	// TODO GetEnclaves
+
+	// TODO StopEnclaves
+
+	// TODO DestroyEnclaves
+
+	// TODO MAYYYYYYYBE DumpEnclaves?
+
+	// TODO CreateRepl
+
+	// TODO AttachToRepl
+
+	// TODO GetRepls
+
+	// TODO StopRepl
+
+	// TODO DestroyRepl
+
+	// TODO RunReplExecCommand
+
+	// TODO CreateModule
+
+	// TODO DestroyModule
+
+	// TODO CreateUserService
+
+	// TODO GetUserServices
+
+	// TODO StopUserServices
+
+	// TODO DestroyUserServices
+
+	// TODO GetUserServiceLogs
+
+	// TODO GetShellOnUserService
 }
