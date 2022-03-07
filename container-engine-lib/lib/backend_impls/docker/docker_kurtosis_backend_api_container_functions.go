@@ -1,13 +1,6 @@
 package docker
 
-import (
-	"context"
-	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-)
-
+/*
 func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	enclaveId string,
@@ -140,3 +133,4 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	shouldKillContainer = false
 	return containerId, publicIpAddr, publicGrpcPort, publicGrpcProxyPort, nil
 }
+ */

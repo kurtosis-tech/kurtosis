@@ -3,6 +3,7 @@ package metrics_reporting
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -53,6 +54,38 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 	successes, failures, err := backend.underlying.DestroyEngines(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying engines using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveId string) (*enclave.Enclave, error) {
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v'", enclaveId)
+	}
+	return result, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[string]*enclave.Enclave, error) {
+	results, err := backend.underlying.GetEnclaves(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves using filters: %+v", filters)
+	}
+	return results, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+	successes, failures, err := backend.underlying.StopEnclaves(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+	successes, failures, err := backend.underlying.DestroyEnclaves(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves using filters: %+v", filters)
 	}
 	return successes, failures, nil
 }
