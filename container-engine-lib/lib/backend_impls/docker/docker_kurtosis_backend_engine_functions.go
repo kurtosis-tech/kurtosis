@@ -11,8 +11,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
-	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
-	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -33,7 +33,7 @@ const (
 
 	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
-	enginePortProtocol          = port_spec2.PortProtocol_TCP
+	enginePortProtocol          = port_spec.PortProtocol_TCP
 
 	// The protocol string we use in the netstat command used to ensure the engine container's grpc & grpc-proxy
 	// ports are available
@@ -62,7 +62,7 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	engineDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (
-	*engine2.Engine,
+	*engine.Engine,
 	error,
 ) {
 	matchingNetworks, err := backendCore.dockerManager.GetNetworksByName(ctx, nameOfNetworkToStartEngineContainerIn)
@@ -87,7 +87,7 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	containerStartTimeUnixSecs := time.Now().Unix()
 	engineIdStr := fmt.Sprintf("%v", containerStartTimeUnixSecs)
 
-	privateGrpcPortSpec, err := port_spec2.NewPortSpec(grpcPortNum, enginePortProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, enginePortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -96,7 +96,7 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 			enginePortProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec2.NewPortSpec(grpcProxyPortNum, enginePortProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, enginePortProtocol)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -215,13 +215,13 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	return result, nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
+func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	matchingEnginesByEngineId := map[string]*engine2.Engine{}
+	matchingEnginesByEngineId := map[string]*engine.Engine{}
 	for _, engineObj := range matchingEnginesByContainerId {
 		matchingEnginesByEngineId[engineObj.GetID()] = engineObj
 	}
@@ -231,7 +231,7 @@ func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filter
 
 func (backendCore *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
-	filters *engine2.EngineFilters,
+	filters *engine.EngineFilters,
 ) (
 	successfulEngineIds map[string]bool,
 	erroredEngineIds map[string]error,
@@ -258,7 +258,7 @@ func (backendCore *DockerKurtosisBackend) StopEngines(
 
 func (backendCore *DockerKurtosisBackend) DestroyEngines(
 	ctx context.Context,
-	filters *engine2.EngineFilters,
+	filters *engine.EngineFilters,
 ) (
 	successfulEngineIds map[string]bool,
 	erroredEngineIds map[string]error,
@@ -335,7 +335,7 @@ func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_ma
 }
 
 // Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error) {
+func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),
@@ -346,7 +346,7 @@ func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx co
 		return nil, stacktrace.Propagate(err, "An error occurred fetching engine containers using labels: %+v", engineContainerSearchLabels)
 	}
 
-	allMatchingEngines := map[string]*engine2.Engine{}
+	allMatchingEngines := map[string]*engine.Engine{}
 	for _, engineContainer := range allEngineContainers {
 		containerId := engineContainer.GetId()
 		engineObj, err := getEngineObjectFromContainerInfo(
@@ -384,7 +384,7 @@ func getEngineObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-) (*engine2.Engine, error) {
+) (*engine.Engine, error) {
 	engineGuid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
 	if !found {
 		// TODO Delete this after 2022-05-02 when we're confident there won't be any engines running
@@ -420,8 +420,8 @@ func getEngineObjectFromContainerInfo(
 	}
 
 	var publicIpAddr net.IP
-	var publicGrpcPortSpec *port_spec2.PortSpec
-	var publicGrpcProxyPortSpec *port_spec2.PortSpec
+	var publicGrpcPortSpec *port_spec.PortSpec
+	var publicGrpcProxyPortSpec *port_spec.PortSpec
 	if engineStatus == container_status.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := getPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
@@ -448,7 +448,7 @@ func getEngineObjectFromContainerInfo(
 		publicIpAddr = publicGrpcPortIpAddr
 	}
 
-	result := engine2.NewEngine(
+	result := engine.NewEngine(
 		engineGuid,
 		engineStatus,
 		publicIpAddr,
@@ -460,8 +460,8 @@ func getEngineObjectFromContainerInfo(
 }
 
 func getPrivateEnginePorts(containerLabels map[string]string) (
-	resultGrpcPortSpec *port_spec2.PortSpec,
-	resultGrpcProxyPortSpec *port_spec2.PortSpec,
+	resultGrpcPortSpec *port_spec.PortSpec,
+	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
@@ -495,7 +495,7 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 }
 
 // TODO DELETE THIS AFTER 2022-05-02, WHEN WE'RE CONFIDENT NO ENGINES WILL BE USING THE OLD PORT SPEC!
-func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spec2.PortSpec, error) {
+func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
 	const (
 		portIdAndInfoSeparator      = "."
 		portNumAndProtocolSeparator = "-"
@@ -507,7 +507,7 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 		portUintBits                           = 16
 	)
 
-	result := map[string]*port_spec2.PortSpec{}
+	result := map[string]*port_spec.PortSpec{}
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
 	for _, portIdAndSpecStr := range portIdAndSpecStrs {
 		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
@@ -547,12 +547,12 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 			)
 		}
 		portNumUint16 := uint16(portNumUint64)
-		portProtocol, err := port_spec2.PortProtocolString(portProtocolStr)
+		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec2.NewPortSpec(portNumUint16, portProtocol)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
