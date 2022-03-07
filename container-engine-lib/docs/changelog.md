@@ -1,4 +1,6 @@
 # TBD
+
+# 0.10.0
 ### Features
 * Created a generic `ContainerStatus` object in the `KurtosisBackend` API for representing the state of containers
 * Added enclave CRUD commands to `KurtosisBackend`
