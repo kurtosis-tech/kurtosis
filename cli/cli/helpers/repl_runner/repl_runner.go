@@ -3,6 +3,12 @@ package repl_runner
 import (
 	"context"
 	"fmt"
+	"io"
+	"net"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
@@ -13,11 +19,6 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"net"
-	"os"
-	"strconv"
-	"time"
 )
 
 const (
@@ -42,20 +43,20 @@ func RunREPL(
 	apiContainerIpInsideEnclave string,
 	apiContainerPortInsideEnclave uint32,
 	apiContainerIpOnHostMachine string,
-	apiContainerPortOnHostMachine uint32,
+	apiContainerGrpcPortOnHostMachine uint32,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider,
 ) error {
-	apiContainerUrlOnHostMachine := fmt.Sprintf(
+
+	apiContainerGrpcUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
 		apiContainerIpOnHostMachine,
-		apiContainerPortOnHostMachine,
+		apiContainerGrpcPortOnHostMachine,
 	)
-
-	conn, err := grpc.Dial(apiContainerUrlOnHostMachine, grpc.WithInsecure())
+	conn, err := grpc.Dial(apiContainerGrpcUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine port binding")
+		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine grpc port binding")
 	}
 	defer conn.Close()
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
@@ -122,7 +123,7 @@ func RunREPL(
 	).WithStaticIP(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
-		repl_consts.KurtosisSocketEnvVar:          kurtosisApiContainerSocket,
+		repl_consts.KurtosisSocketEnvVar: kurtosisApiContainerSocket,
 		repl_consts.EnclaveIdEnvVar: enclaveId,
 		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(
@@ -188,8 +189,6 @@ func RunREPL(
 
 	return nil
 }
-
-
 
 func getReplGUID() string {
 	now := time.Now()
