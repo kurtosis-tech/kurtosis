@@ -3,6 +3,7 @@ package backend_interface
 import (
 	"context"
 	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 )
 
 type KurtosisBackend interface {
@@ -42,4 +43,7 @@ type KurtosisBackend interface {
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
+
+	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
+	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
 }
