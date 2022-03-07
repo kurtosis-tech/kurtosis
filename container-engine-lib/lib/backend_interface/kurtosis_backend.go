@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"net"
 )
 
@@ -90,6 +91,14 @@ type KurtosisBackend interface {
 		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
 		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
 		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	)(
+		resultErr error,
+	)
+
+	// Register some file artifacts that the service will be using then
+	RegisterUserServiceFileArtifacts(
+		ctx context.Context,
+		fileArtifactsUrls map[service.FilesArtifactID]string,
 	)(
 		resultErr error,
 	)
