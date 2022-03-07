@@ -1,4 +1,11 @@
 # TBD
+### Features
+* Created a generic `ContainerStatus` object in the `KurtosisBackend` API for representing the state of containers
+* Added enclave CRUD commands to `KurtosisBackend`
+
+### Breaking Changes
+* The `Engine` object's status will now be a `ContainerStatus`, rather than `EngineStatus`
+    * Users should migrate to the new version
 
 # 0.9.1
 ### Fixes

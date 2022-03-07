@@ -1,5 +1,7 @@
 package types
 
+// TODO Make this private once nobody outside container-engine-lib uses DockerManager directly!
+
 //go:generate go run github.com/dmarkham/enumer -transform=lower -trimprefix=ContainerStatus_ -type=ContainerStatus
 type ContainerStatus int
 const (
