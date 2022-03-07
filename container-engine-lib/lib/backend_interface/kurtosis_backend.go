@@ -78,6 +78,22 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Wait for succesful http endpoint response which can be used to check if the service is available
+	WaitForHttpEndpointInUserServiceIsAvailable (
+		ctx context.Context,
+		serviceId string,
+		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
+		port uint32, //The port of the service to check. For instance 8080
+		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
+		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
+		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
+		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
+		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	)(
+		resultErr error,
+	)
+
 	// Repartition the Enclave network defining which services will be on each part
 	CreateRepartition(
 		ctx context.Context,
