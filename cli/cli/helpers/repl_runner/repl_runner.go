@@ -44,7 +44,6 @@ func RunREPL(
 	apiContainerPortInsideEnclave uint32,
 	apiContainerIpOnHostMachine string,
 	apiContainerGrpcPortOnHostMachine uint32,
-	apiContainerGrpcProxyPortOnHostMachine uint32,
 	javascriptReplImage string,
 	dockerManager *docker_manager.DockerManager,
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider,
