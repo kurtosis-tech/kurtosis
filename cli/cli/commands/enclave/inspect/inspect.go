@@ -35,7 +35,8 @@ const (
 	enclaveDataDirpathTitleName = "Data Directory"
 	enclaveStatusTitleName      = "Enclave Status"
 	apiContainerStatusTitleName = "API Container Status"
-	apiContainerHostPortTitle   = "API Container Host Port"
+	apiContainerHostGrpcPortTitle   = "API Container Host Grpc Port"
+	apiContainerHostGrpcProxyPortTitle   = "API Container Host Grpc Proxy Port"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
@@ -103,12 +104,18 @@ func run(
 	keyValuePrinter.AddPair(apiContainerStatusTitleName, enclaveApiContainerStatus.String())
 	if enclaveApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
 		apiContainerHostInfo := enclaveInfo.GetApiContainerHostMachineInfo()
-		apiContainerHostPortInfoStr := fmt.Sprintf(
+		apiContainerHostGrpcPortInfoStr := fmt.Sprintf(
 			"%v:%v",
 			apiContainerHostInfo.GetIpOnHostMachine(),
-			apiContainerHostInfo.GetPortOnHostMachine(),
+			apiContainerHostInfo.GetGrpcPortOnHostMachine(),
 		)
-		keyValuePrinter.AddPair(apiContainerHostPortTitle, apiContainerHostPortInfoStr)
+		apiContainerHostGrpcProxyPortInfoStr := fmt.Sprintf(
+			"%v:%v",
+			apiContainerHostInfo.GetIpOnHostMachine(),
+			apiContainerHostInfo.GetGrpcProxyPortOnHostMachine(),
+		)
+		keyValuePrinter.AddPair(apiContainerHostGrpcPortTitle, apiContainerHostGrpcPortInfoStr)
+		keyValuePrinter.AddPair(apiContainerHostGrpcProxyPortTitle, apiContainerHostGrpcProxyPortInfoStr)
 	}
 	keyValuePrinter.Print()
 	fmt.Fprintln(logrus.StandardLogger().Out, "")

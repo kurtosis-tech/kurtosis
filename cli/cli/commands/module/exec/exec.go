@@ -205,22 +205,22 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 	logrus.Infof("Enclave '%v' created successfully", enclaveId)
 
-	apicHostMachineIp, apicHostMachinePort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
+	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred verifying that the enclave was running")
 	}
 
-	apiContainerHostUrl := fmt.Sprintf(
+	apiContainerHostGrpcUrl := fmt.Sprintf(
 		"%v:%v",
 		apicHostMachineIp,
-		apicHostMachinePort,
+		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.Dial(apiContainerHostUrl, grpc.WithInsecure())
+	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred connecting to the API container at '%v' in enclave '%v'",
-			apiContainerHostUrl,
+			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
+			apiContainerHostGrpcUrl,
 			enclaveId,
 		)
 	}

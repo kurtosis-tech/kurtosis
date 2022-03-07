@@ -46,7 +46,7 @@ test("Test basic data store and API", async () => {
             log.info("Adding API service...")
             const apiClientServiceResult: Result<{
                 serviceContext: ServiceContext;
-                client: apiServerApi.ExampleAPIServerServiceClient;
+                client: apiServerApi.ExampleAPIServerServiceClientNode;
                 clientCloseFunction: () => void;
             }, Error> = await addAPIService(API_SERVICE_ID, enclaveContext, datastoreServiceContext.getPrivateIPAddress())
             
