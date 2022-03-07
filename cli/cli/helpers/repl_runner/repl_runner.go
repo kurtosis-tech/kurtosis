@@ -50,28 +50,17 @@ func RunREPL(
 	enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider,
 ) error {
 
-	apiContainerGrpcProxyUrlOnHostMachine := fmt.Sprintf(
-		"%v:%v",
-		apiContainerIpOnHostMachine,
-		apiContainerGrpcProxyPortOnHostMachine,
-	)
-	grpcProxyConn, err := grpc.Dial(apiContainerGrpcProxyUrlOnHostMachine, grpc.WithInsecure())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine grpc proxy port binding")
-	}
-	defer grpcProxyConn.Close()
-
 	apiContainerGrpcUrlOnHostMachine := fmt.Sprintf(
 		"%v:%v",
 		apiContainerIpOnHostMachine,
 		apiContainerGrpcPortOnHostMachine,
 	)
-	grpcConn, err := grpc.Dial(apiContainerGrpcUrlOnHostMachine, grpc.WithInsecure())
+	conn, err := grpc.Dial(apiContainerGrpcUrlOnHostMachine, grpc.WithInsecure())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred dialling the API container via its host machine grpc port binding")
 	}
-	defer grpcConn.Close()
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(grpcConn)
+	defer conn.Close()
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	startRegistrationResp, err := apiContainerClient.StartExternalContainerRegistration(context.Background(), &emptypb.Empty{})
 	if err != nil {
