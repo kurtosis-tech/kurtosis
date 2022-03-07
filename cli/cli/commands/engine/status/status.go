@@ -2,17 +2,14 @@ package status
 
 import (
 	"context"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-const (
-)
+const ()
 
 var StatusCmd = &cobra.Command{
 	Use:   command_str_consts.EngineStatusCmdStr,
@@ -27,16 +24,11 @@ func init() {
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
-
-	engineManager := engine_manager.NewEngineManager(dockerManager)
+	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 	status, _, maybeApiVersion, err := engineManager.GetEngineStatus(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis engine status")

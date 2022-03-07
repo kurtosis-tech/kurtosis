@@ -9,8 +9,8 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
@@ -66,12 +66,12 @@ func run(cmd *cobra.Command, args []string) error {
 	enclaveId := parsedPositionalArgs[enclaveIdArg]
 	guid := parsedPositionalArgs[guidArg]
 
+	// TODO Once KurtosisBackend can print logs
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
 		dockerClient,
 	)
 

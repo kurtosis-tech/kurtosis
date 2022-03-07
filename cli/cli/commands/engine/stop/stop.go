@@ -2,8 +2,7 @@ package stop
 
 import (
 	"context"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/stacktrace"
@@ -11,11 +10,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var StopCmd = &cobra.Command{
 	Use:   command_str_consts.EngineStopCmdStr,
 	Short: "Stops the Kurtosis engine",
-	Long: "Stops the Kurtosis engine, doing nothing if no engine is running",
+	Long:  "Stops the Kurtosis engine, doing nothing if no engine is running",
 	RunE:  run,
 }
 
@@ -28,16 +26,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	logrus.Infof("Stopping Kurtosis engine...")
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
-	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
-		dockerClient,
-	)
+	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
 
-	engineManager := engine_manager.NewEngineManager(dockerManager)
 	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
 	}

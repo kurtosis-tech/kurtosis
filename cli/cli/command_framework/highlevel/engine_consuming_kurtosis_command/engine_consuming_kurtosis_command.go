@@ -3,14 +3,14 @@ package engine_consuming_kurtosis_command
 import (
 	"context"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -78,11 +78,11 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 	}
 
 	lowlevelCmd := &lowlevel.LowlevelKurtosisCommand{
-		CommandStr:       cmd.CommandStr,
-		ShortDescription: cmd.ShortDescription,
-		LongDescription:  cmd.LongDescription,
-		Flags:            cmd.Flags,
-		Args:             cmd.Args,
+		CommandStr:               cmd.CommandStr,
+		ShortDescription:         cmd.ShortDescription,
+		LongDescription:          cmd.LongDescription,
+		Flags:                    cmd.Flags,
+		Args:                     cmd.Args,
 		PreValidationAndRunFunc:  cmd.getSetupFunc(),
 		RunFunc:                  cmd.getRunFunc(),
 		PostValidationAndRunFunc: cmd.getTeardownFunc(),
@@ -99,15 +99,21 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the Docker client")
 		}
+
+		// TODO get rid of this once we have all operations flowing through the KurtosisBackend!!
 		dockerManager := docker_manager.NewDockerManager(
-			logrus.StandardLogger(),
 			dockerClient,
 		)
+
 		result = context.WithValue(result, cmd.DockerManagerContextKey, dockerManager)
 
-		engineManager := engine_manager.NewEngineManager(dockerManager)
-		objAttrsProvider := schema.GetObjectAttributesProvider()
-		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
+		kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		}
+		engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+
+		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 		}
@@ -118,7 +124,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	}
 }
 
-func (cmd *EngineConsumingKurtosisCommand)  getRunFunc() func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
+func (cmd *EngineConsumingKurtosisCommand) getRunFunc() func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	// Do the gruntwork necessary to give a Kurtosis dev the Docker manager & engine client without them
 	// needing to think about how they should get it
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
