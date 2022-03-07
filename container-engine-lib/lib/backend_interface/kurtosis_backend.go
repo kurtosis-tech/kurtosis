@@ -4,6 +4,8 @@ import (
 	"context"
 	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"net"
 )
 
 type KurtosisBackend interface {
@@ -46,4 +48,22 @@ type KurtosisBackend interface {
 
 	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
 	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
+
+	// Creates a user service inside an enclave with the given configuration
+	CreateUserService(
+		ctx context.Context,
+		id string,
+		containerImageName string,
+		privatePorts []*port_spec.PortSpec,
+		entrypointArgs []string,
+		cmdArgs []string,
+		envVars map[string]string,
+		enclaveDataDirMntDirpath string,
+		filesArtifactMountDirpaths map[string]string,
+    )(
+		maybePublicIpAddr net.IP, // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
+		publicPorts map[string]*port_spec.PortSpec, //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+		resultErr error,
+	)
+
 }
