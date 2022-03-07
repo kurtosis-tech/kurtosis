@@ -66,4 +66,15 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Executes a shell command inside an user service instance indenfified by its ID
+	RunUserServiceExecCommand (
+		ctx context.Context,
+		serviceId string,
+		commandArgs []string,
+	)(
+		exitCode int32,
+		output string,
+		resultErr error,
+	)
+
 }
