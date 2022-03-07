@@ -1,5 +1,7 @@
 # TBD
 
+# 0.11.6
+
 ### Features
 * Bumped latest version of 'object-schema-lib', 'kurtosis-core' and 'kurtosis-engine'
 * Code refactored according to the latest gRPC web feature
