@@ -24,7 +24,7 @@ type DockerObjectAttributesProvider interface {
 		grpcProxyPortId string,
 		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	// ForEnclave(enclaveId string) EnclaveObjectAttributesProvider
+	ForEnclave(enclaveId string) (DockerEnclaveObjectAttributesProvider, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -90,10 +90,10 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	return objectAttributes, nil
 }
 
-// TODO Fix this!
-/*
-func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId string) EnclaveObjectAttributesProvider {
-	return newEnclaveObjectAttributesProviderImpl(enclaveId)
+func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveIdStr string) (DockerEnclaveObjectAttributesProvider, error) {
+	enclaveIdLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveIdStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveIdStr)
+	}
+	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
 }
-
- */

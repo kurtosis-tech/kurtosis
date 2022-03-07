@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
@@ -11,7 +12,7 @@ type Engine struct {
 	// Will always be filled out
 	id string
 
-	status EngineStatus
+	status container_status.ContainerStatus
 
 	// Public (i.e. external to Kurtosis) information about the engine
 	// This information will be nil if the engine isn't running
@@ -20,14 +21,14 @@ type Engine struct {
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
-func NewEngine(id string, status EngineStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
+func NewEngine(id string, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
 	return &Engine{id: id, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
 }
 
 func (engine *Engine) GetID() string {
 	return engine.id
 }
-func (engine *Engine) GetStatus() EngineStatus {
+func (engine *Engine) GetStatus() container_status.ContainerStatus {
 	return engine.status
 }
 func (engine *Engine) GetPublicIPAddress() net.IP {
