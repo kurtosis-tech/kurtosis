@@ -55,10 +55,10 @@ github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a
 github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318/go.mod h1:HI+M5KdzhZ165JPV7vQvldNNE8m86ZIeg86PzwS6cqs=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6 h1:0LRCDs1zd30kFyEVdapKnVHuq9gdMNzpLQ6glahob9k=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220225195659-c0f0bb9d4073 h1:h2ooC0qiwzM3R8/zxsPK648NOlcSnJdexV7yw1j2WmA=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220225195659-c0f0bb9d4073/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220228142627-543c391cd0dc h1:SZbTrL7iZWCHMB2S75tZ9tGLPToXTTegbdn+MtHiG+o=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220228142627-543c391cd0dc/go.mod h1:PlX0Hl23LeArNk5LchlimgwPcSPBWvvNfoTAWEDVn9I=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220303202839-baff1c261f2a h1:OYBrxHUs6jFgXkRq87T+GYpOlBO6TC5q4ehp53Oeu+0=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220303202839-baff1c261f2a/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220303230505-20b87baa9b3c h1:WLM54au4jpLkPJZvzPmLeSqfFj9CvZckqUbvzsLx6yc=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220303230505-20b87baa9b3c/go.mod h1:bWE+wVbQ2XPKy8yNftmjxpakaCJPvLz6UDZYubp4AFs=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

@@ -9,7 +9,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/gammazero/workerpool"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
@@ -75,18 +76,22 @@ func run(cmd *cobra.Command, args []string) error {
 	enclaveId := parsedPositionalArgs[enclaveIdArg]
 	enclaveOutputDirpath := parsedPositionalArgs[outputDirpathArg]
 
+	// TODO REMOVE THIS ONCE EVERYTHING FLOWS THROUGH THE KURTOSISBACKEND!!
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
 		dockerClient,
 	)
 
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+	}
+	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -113,7 +118,7 @@ func run(cmd *cobra.Command, args []string) error {
 			err,
 			"An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk",
 			enclaveId,
-		 )
+		)
 	}
 
 	// Create output directory
@@ -132,17 +137,17 @@ func run(cmd *cobra.Command, args []string) error {
 		logrus.Debugf("Submitting job to dump info about container with name '%v' and ID '%v'", containerName, containerId)
 
 		/*
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		It's VERY important that the actual `func()` job function get created inside a helper function!!
-		This is because variables declared inside for-loops are created BY REFERENCE rather than by-value, which
-			means that if we inline the `func() {....}` creation here then all the job functions would get a REFERENCE to
-			any variables they'd use.
-		This means that by the time the job functions were run in the worker pool (long after the for-loop finished)
-			then all the job functions would be using a reference from the last iteration of the for-loop.
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			It's VERY important that the actual `func()` job function get created inside a helper function!!
+			This is because variables declared inside for-loops are created BY REFERENCE rather than by-value, which
+				means that if we inline the `func() {....}` creation here then all the job functions would get a REFERENCE to
+				any variables they'd use.
+			This means that by the time the job functions were run in the worker pool (long after the for-loop finished)
+				then all the job functions would be using a reference from the last iteration of the for-loop.
 
-		For more info, see the "Variables declared in for loops are passed by reference" section of:
-			https://www.calhoun.io/gotchas-and-common-mistakes-with-closures-in-go/ for more details
-		!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			For more info, see the "Variables declared in for loops are passed by reference" section of:
+				https://www.calhoun.io/gotchas-and-common-mistakes-with-closures-in-go/ for more details
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		*/
 		jobToSubmit := createDumpContainerJob(
 			ctx,

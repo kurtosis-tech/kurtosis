@@ -3,7 +3,8 @@ package new
 import (
 	"context"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
@@ -20,8 +21,8 @@ import (
 )
 
 const (
-	enclaveIDArg           = "enclave-id"
-	imageArg               = "image"
+	enclaveIDArg = "enclave-id"
+	imageArg     = "image"
 )
 
 var positionalArgs = []string{
@@ -52,12 +53,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	ctx := context.Background()
 
+	// TODO Remove this when the KurtosisBackend handles everything!!!
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 	dockerManager := docker_manager.NewDockerManager(
-		logrus.StandardLogger(),
 		dockerClient,
 	)
 
@@ -69,9 +70,12 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(context.Background(), dockerManager, jsReplImage)
 
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+	}
+	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
@@ -79,7 +83,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	response, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err,"An error occurred getting enclaves")
+		return stacktrace.Propagate(err, "An error occurred getting enclaves")
 	}
 	enclaveInfoMap := response.GetEnclaveInfo()
 	enclaveInfo, found := enclaveInfoMap[enclaveId]
@@ -87,6 +91,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred finding enclave with ID '%v' on enclave info map '%+v'", enclaveId, enclaveInfoMap)
 	}
 
+	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveId)
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)

@@ -11,8 +11,9 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
-	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
@@ -40,9 +41,9 @@ import (
 const (
 	loadParamsStrArg         = "load-params"
 	executeParamsStrArg      = "execute-params"
-	apiContainerVersionArg  = "api-container-version"
-	apiContainerLogLevelArg = "api-container-log-level"
-	moduleImageArg          = "module-image"
+	apiContainerVersionArg   = "api-container-version"
+	apiContainerLogLevelArg  = "api-container-log-level"
+	moduleImageArg           = "module-image"
 	enclaveIdArg             = "enclave-id"
 	isPartitioningEnabledArg = "with-partitioning"
 
@@ -139,11 +140,12 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	moduleImage := parsedPositionalArgs[moduleImageArg]
 
+	// TODO REMOVE THIS WHEN THE KurtosisBackend HANDLES EVERYTHING!
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
-	dockerManager := docker_manager.NewDockerManager(logrus.StandardLogger(), dockerClient)
+	dockerManager := docker_manager.NewDockerManager(dockerClient)
 
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
@@ -169,9 +171,12 @@ func run(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	engineManager := engine_manager.NewEngineManager(dockerManager)
-	objAttrsProvider := schema.GetObjectAttributesProvider()
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+	}
+	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}
