@@ -8,8 +8,8 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -27,22 +27,22 @@ import (
 )
 
 const (
-	enclaveIdArgKey        = "enclave-id"
+	enclaveIdArgKey = "enclave-id"
 	isEnclaveIdArgOptional = false
-	isEnclaveIdArgGreedy   = false
+	isEnclaveIdArgGreedy = false
 
-	enclaveIdTitleName                 = "Enclave ID"
-	enclaveDataDirpathTitleName        = "Data Directory"
-	enclaveStatusTitleName             = "Enclave Status"
-	apiContainerStatusTitleName        = "API Container Status"
-	apiContainerHostGrpcPortTitle      = "API Container Host GRPC Port"
-	apiContainerHostGrpcProxyPortTitle = "API Container Host GRPC Proxy Port"
+	enclaveIdTitleName          = "Enclave ID"
+	enclaveDataDirpathTitleName = "Data Directory"
+	enclaveStatusTitleName      = "Enclave Status"
+	apiContainerStatusTitleName = "API Container Status"
+	apiContainerHostGrpcPortTitle   = "API Container Host Grpc Port"
+	apiContainerHostGrpcProxyPortTitle   = "API Container Host Grpc Proxy Port"
 
 	headerWidthChars = 100
 	headerPadChar    = "="
 
 	dockerManagerCtxKey = "docker-manager"
-	engineClientCtxKey  = "engine-client"
+	engineClientCtxKey = "engine-client"
 
 	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
@@ -59,7 +59,7 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	LongDescription:         "List information about the enclave's status and contents",
 	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
-	Args: []*args.ArgConfig{
+	Args:                    []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
 			enclaveIdArgKey,
 			engineClientCtxKey,
@@ -67,7 +67,7 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 			isEnclaveIdArgGreedy,
 		),
 	},
-	RunFunc: run,
+	RunFunc:                 run,
 }
 
 func run(

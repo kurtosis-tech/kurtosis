@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/docker/docker/client"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -16,14 +18,14 @@ import (
 )
 
 const (
-	enclaveIdArg = "enclave-id"
+	enclaveIdArg        = "enclave-id"
 )
 
 var StopCmd = &cobra.Command{
-	Use:                   command_str_consts.EnclaveStopCmdStr + " [flags] " + enclaveIdArg + " [" + enclaveIdArg + "...]",
+	Use:   command_str_consts.EnclaveStopCmdStr + " [flags] " + enclaveIdArg + " [" + enclaveIdArg + "...]",
 	DisableFlagsInUseLine: true,
-	Short:                 "Stops the specified enclaves",
-	RunE:                  run,
+	Short: "Stops the specified enclaves",
+	RunE:  run,
 }
 
 func init() {
@@ -38,12 +40,17 @@ func run(cmd *cobra.Command, args []string) error {
 
 	logrus.Info("Stopping enclaves...")
 
-	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
-	engineManager := engine_manager.NewEngineManager(kurtosisBackend)
-	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
+	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
+		dockerClient,
+	)
+	engineManager := engine_manager.NewEngineManager(dockerManager)
+	objAttrsProvider := schema.GetObjectAttributesProvider()
+	engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, objAttrsProvider, defaults.DefaultEngineLogLevel)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 	}

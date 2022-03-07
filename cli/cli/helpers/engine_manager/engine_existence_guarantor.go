@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
+	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -23,7 +24,6 @@ const (
 
 	engineDataDirPermBits = 0755
 )
-
 var engineRestartCmd = fmt.Sprintf(
 	"%v %v %v",
 	command_str_consts.KurtosisCmdStr,
@@ -40,7 +40,9 @@ type engineExistenceGuarantor struct {
 	// Host machine IP:port of the maybe-started, maybe-not engine (will only be present if the engine status isn't "stopped")
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort
 
-	kurtosisBackend backend_interface.KurtosisBackend
+	dockerManager *docker_manager.DockerManager
+
+	objAttrsProvider schema.ObjectAttributesProvider
 
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
@@ -60,14 +62,16 @@ type engineExistenceGuarantor struct {
 func newEngineExistenceGuarantorWithDefaultVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
-	kurtosisBackend backend_interface.KurtosisBackend,
+	dockerManager *docker_manager.DockerManager,
+	objAttrsProvider schema.ObjectAttributesProvider,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
 		preVisitingMaybeHostMachineIpAndPort,
-		kurtosisBackend,
+		dockerManager,
+		objAttrsProvider,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
@@ -77,7 +81,8 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 func newEngineExistenceGuarantorWithCustomVersion(
 	ctx context.Context,
 	preVisitingMaybeHostMachineIpAndPort *hostMachineIpAndPort,
-	kurtosisBackend backend_interface.KurtosisBackend,
+	dockerManager *docker_manager.DockerManager,
+	objAttrsProvider schema.ObjectAttributesProvider,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
@@ -85,8 +90,9 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	return &engineExistenceGuarantor{
 		ctx:                                   ctx,
 		preVisitingMaybeHostMachineIpAndPort:  preVisitingMaybeHostMachineIpAndPort,
-		kurtosisBackend:                       kurtosisBackend,
-		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
+		dockerManager:                         dockerManager,
+		objAttrsProvider:                      objAttrsProvider,
+		engineServerLauncher:                  engine_server_launcher.NewEngineServerLauncher(dockerManager, objAttrsProvider),
 		imageVersionTag:                       imageVersionTag,
 		logLevel:                              logLevel,
 		maybeCurrentlyRunningEngineVersionTag: maybeCurrentlyRunningEngineVersionTag,
@@ -172,8 +178,8 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 		command_str_consts.EngineStartCmdStr,
 	)
 	return stacktrace.NewError(
-		"We couldn't guarantee that a Kurtosis engine is running because we found a running engine container whose server isn't "+
-			"responding; because this is a strange state, we don't automatically try to correct the problem so you'll want to manually "+
+		"We couldn't guarantee that a Kurtosis engine is running because we found a running engine container whose server isn't " +
+			"responding; because this is a strange state, we don't automatically try to correct the problem so you'll want to manually " +
 			" restart the server by running '%v'",
 		remediationCmd,
 	)
@@ -197,7 +203,7 @@ func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 	//  restart their engine server
 	if !doApiVersionsMatch {
 		logrus.Errorf(
-			"The engine server API version that the CLI expects, '%v', doesn't match the running engine server API version, '%v'; this would cause broken functionality so "+
+			"The engine server API version that the CLI expects, '%v', doesn't match the running engine server API version, '%v'; this would cause broken functionality so " +
 				"you'll need to restart the engine to get the correct version by running '%v'",
 			fmt.Sprintf("%v.%v", cliEngineMajorVersion, cliEngineMinorVersion),
 			fmt.Sprintf("%v.%v", runningEngineMajorVersion, runningEngineMinorVersion),

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/repl_consts"
@@ -51,12 +51,12 @@ func run(cmd *cobra.Command, args []string) error {
 	replGuid := parsedPositionalArgs[replGuidArg]
 	packageIdentifier := parsedPositionalArgs[packageIdentifierArg]
 
-	// TODO Remove once KurtosisBackend can run exec commands on REPL containers
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
 	dockerManager := docker_manager.NewDockerManager(
+		logrus.StandardLogger(),
 		dockerClient,
 	)
 

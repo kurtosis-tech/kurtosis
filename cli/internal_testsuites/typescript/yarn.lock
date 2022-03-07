@@ -1981,10 +1981,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-kurtosis-core-api-lib@1.39.8:
-  version "1.39.8"
-  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.8.tgz#1b60ab0e3b7ac3f8b922dfb75f4fc965905d82b6"
-  integrity sha512-9Nfspw3W92i1nPlgPKjSebizO7iiz9zBZQ6ExXlxZp++uhE+yMXFrWd1V5axJlNMq5H2/6eYFeeQd62KVK6Emg==
+kurtosis-core-api-lib@1.39.6:
+  version "1.39.6"
+  resolved "https://registry.yarnpkg.com/kurtosis-core-api-lib/-/kurtosis-core-api-lib-1.39.6.tgz#1f8263342ffcaf5f83e46cfeba862ac3a8abfc68"
+  integrity sha512-YBeddnZxfN5O5Al9qYo5v/C6Vb9sawcV9ygevXPqAQ1oXfw/qXVMRxhSkXYwzxtS9hlpZocHICwacbiDVGprHA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/google-protobuf" "^3.15.5"
@@ -1996,17 +1996,17 @@ kurtosis-core-api-lib@1.39.8:
     neverthrow "^4.2.2"
     path-browserify "^1.0.1"
 
-kurtosis-engine-api-lib@1.11.4:
-  version "1.11.4"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.11.4.tgz#c4f990006cfac2be57283bb905078fa02aa2a05a"
-  integrity sha512-dY9W9T33+1357W6vsX/S1nt82UPhNmOYg/6t2ssyyGfGziwAjlYU4/1Ex/d4fI08cubBrGQxeD0Wr96X+0YLHQ==
+kurtosis-engine-api-lib@1.11.2:
+  version "1.11.2"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.11.2.tgz#be027645f2cd8a9651830bd2432286b867092fe1"
+  integrity sha512-KvW8FRunwZSW8fGXea1dN/QbcafBNn4O6D3gj9Z4gkqCnjMlcy9U8pXf4mnFCmXSWxWPsz88z/qhJIMWldP7JA==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"
     browser-or-node "^2.0.0"
     google-protobuf "^3.17.3"
     grpc-web "^1.3.0"
-    kurtosis-core-api-lib "1.39.8"
+    kurtosis-core-api-lib "1.39.6"
     loglevel "^1.7.1"
     neverthrow "^4.2.2"
     semver "^7.3.5"

@@ -1,8 +1,5 @@
 # TBD
 
-### Features
-* Updated engine_manager to use kurtosis_backend instead of docker_manager
-
 # 0.11.6
 
 ### Features
