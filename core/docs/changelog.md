@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Upgraded to container-engine-lib 0.10.1, which has enclave & API container CRUD functions
 
 # 1.39.8
 ### Fixes
