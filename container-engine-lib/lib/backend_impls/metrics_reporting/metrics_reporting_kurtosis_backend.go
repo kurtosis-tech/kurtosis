@@ -3,8 +3,10 @@ package metrics_reporting
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -86,6 +88,61 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Cont
 	successes, failures, err := backend.underlying.DestroyEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
+	ctx context.Context,
+	image string,
+	grpcPortId string,
+	grpcPortSpec *port_spec.PortSpec,
+	grpcProxyPortId string,
+	grpcProxyPortSpec *port_spec.PortSpec,
+	enclaveDataDirpathOnHostMachine string,
+	envVars map[string]string,
+) (*api_container.APIContainer, error) {
+	result, err := backend.underlying.CreateAPIContainer(
+		ctx,
+		image,
+		grpcPortId,
+		grpcPortSpec,
+		grpcProxyPortId,
+		grpcProxyPortSpec,
+		enclaveDataDirpathOnHostMachine,
+		envVars,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating an API container from image '%v' with envvars: %+v",
+			image,
+			envVars,
+		)
+	}
+	return result, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+	results, err := backend.underlying.GetAPIContainers(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters: %+v", filters)
+	}
+	return results, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping API containers using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
 	}
 	return successes, failures, nil
 }
