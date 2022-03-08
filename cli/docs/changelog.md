@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.7
 ### Features
 * Upgraded container-engine-lib, core, and engine-server to allow for the new API container & enclave CRUD function stubs
 
