@@ -1,4 +1,6 @@
 # TBD
+
+# 0.10.1
 ### Features
 * Added API container CRUD stubs to `KurtosisBackend`
 
