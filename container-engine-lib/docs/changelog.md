@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added `UserService` methods, `Modules` methods and `CreateRepartition` method in `KurtosisBackend` interface
+* Studding out methods for `UserService`, `Modules` and `CreateRepartition` into Docker implementation
 
 # 0.9.1
 ### Fixes

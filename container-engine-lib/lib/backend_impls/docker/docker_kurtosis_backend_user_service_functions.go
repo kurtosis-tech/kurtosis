@@ -65,10 +65,10 @@ func (backendCore *DockerKurtosisBackend) WaitForHttpEndpointInUserServiceIsAvai
 	port uint32,
 	path string,
 	requestBody string,
+	bodyText string,
 	initialDelayMilliseconds uint32,
 	retries uint32,
 	retriesDelayMilliseconds uint32,
-	bodyText string,
 )(
 	resultErr error,
 ) {

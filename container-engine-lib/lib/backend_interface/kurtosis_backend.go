@@ -66,7 +66,7 @@ type KurtosisBackend interface {
 	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
 	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
 
-	// Destroys the modules with the given filter, regardless of if they're running or not
+	// Destroys the modules with the given filters, regardless of if they're running or not
 	DestroyModules(
 		ctx context.Context,
 		filters *module.ModuleFilters,
@@ -118,10 +118,10 @@ type KurtosisBackend interface {
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
+		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
 		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
 		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
-		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 	)(
 		resultErr error,
 	)

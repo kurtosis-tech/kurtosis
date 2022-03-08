@@ -153,10 +153,16 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		return nil, nil,
 		stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service with ID '%v' using image '%v' with private ports '%+v' with entry point args",
+			"An error occurred creating the user service with ID '%v' using image '%v' with private ports '%+v' with entry point args '%+v', command args '%+v', environment vars '%+v', enclave data mount dirpath '%v' and file artifacts mount dirpath '%v'",
 			id,
 			containerImageName,
-			privatePorts)
+			privatePorts,
+			entrypointArgs,
+			cmdArgs,
+			envVars,
+			enclaveDataDirMntDirpath,
+			filesArtifactMountDirpaths,
+			)
 	}
 	return publicIpAddr, publicPort, nil
 }
@@ -217,10 +223,10 @@ func (backend *MetricsReportingKurtosisBackend) WaitForHttpEndpointInUserService
 	port uint32,
 	path string,
 	requestBody string,
+	bodyText string,
 	initialDelayMilliseconds uint32,
 	retries uint32,
 	retriesDelayMilliseconds uint32,
-	bodyText string,
 )(
 	resultErr error,
 ) {
@@ -231,15 +237,14 @@ func (backend *MetricsReportingKurtosisBackend) WaitForHttpEndpointInUserService
 		port,
 		path,
 		requestBody,
+		bodyText,
 		initialDelayMilliseconds,
 		retries,
 		retriesDelayMilliseconds,
-		bodyText,
-
 		); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' of service ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
+			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' from service with ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
 			path,
 			port,
 			requestBody,
@@ -260,7 +265,7 @@ func (backend *MetricsReportingKurtosisBackend) RegisterUserServiceFileArtifacts
 	resultErr error,
 ) {
 	if err := backend.underlying.RegisterUserServiceFileArtifacts(ctx, serviceId, fileArtifactsUrls); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering user service file artifacts for user service with ID '%v' and file artifact urls '%+v'", serviceId, fileArtifactsUrls)
+		return stacktrace.Propagate(err, "An error occurred registering user service file artifacts with urls '%+v' for user service with ID '%v'", fileArtifactsUrls, serviceId)
 	}
 	return nil
 }
