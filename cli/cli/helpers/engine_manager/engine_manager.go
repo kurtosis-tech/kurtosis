@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
@@ -268,8 +269,8 @@ func getApiContainerPrivatePortUsingPre2021_12_02Label(containerLabels map[strin
 // getRunningEnginesFilter returns a filter for engines with status engine.EngineStatus_Running
 func getRunningEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
-		Statuses: map[engine.EngineStatus]bool{
-			engine.EngineStatus_Running: true,
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Running: true,
 		},
 	}
 }
