@@ -1,17 +1,23 @@
 package docker
 
-/*
-func (backend *DockerKurtosisBackend) CreateAPIContainer(
+import (
+	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+)
+
+func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
-	enclaveId string,
-	imageVersionTag string,
+	image string,
 	grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
 	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
-) {
+) (*api_container.APIContainer, error) {
+	/*
 	objAttrs, err := backend.objAttrsProvider.ForEngineServer()
 
 	objAttrsSupplier := func(enclaveObjAttrsProvider schema.EnclaveObjectAttributesProvider) (schema.ObjectAttributes, error) {
@@ -132,5 +138,21 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	shouldKillContainer = false
 	return containerId, publicIpAddr, publicGrpcPort, publicGrpcProxyPort, nil
+	*/
+	panic("implement me")
 }
- */
+
+func (backendCore *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (backendCore *DockerKurtosisBackend) StopAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (backendCore *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+	//TODO implement me
+	panic("implement me")
+}

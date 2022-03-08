@@ -2,8 +2,10 @@ package backend_interface
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -87,14 +89,50 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	/*
 	CreateAPIContainer(
+		ctx context.Context,
+		image string,
+		grpcPortId string,
+		grpcPortSpec *port_spec.PortSpec,
+		grpcProxyPortId string,
+		grpcProxyPortSpec *port_spec.PortSpec,
+		enclaveDataDirpathOnHostMachine string,	// TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
+		envVars map[string]string,
 	) (
 		*api_container.APIContainer,
 		error,
 	)
 
-	 */
+	GetAPIContainers(
+		ctx context.Context,
+		filters *api_container.APIContainerFilters,
+	) (
+		// Matching API containers, keyed by their enclave ID
+		map[string]*api_container.APIContainer,
+		error,
+	)
+
+	// Stops API containers matching the given filters
+	StopAPIContainers(
+		ctx context.Context,
+		filters *enclave.EnclaveFilters,
+	) (
+		// Successful & errored API containers are keyed by their enclave ID
+		successApiContainerIds map[string]bool,
+		erroredApiContainerIds map[string]error,
+		resultErr error,
+	)
+
+	// Stops API containers matching the given filters
+	DestroyAPIContainers(
+		ctx context.Context,
+		filters *enclave.EnclaveFilters,
+	) (
+		// Successful & errored API containers are keyed by their enclave ID
+		successApiContainerIds map[string]bool,
+		erroredApiContainerIds map[string]error,
+		resultErr error,
+	)
 
 	// TODO CreateRepl
 

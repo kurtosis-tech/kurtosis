@@ -1,5 +1,9 @@
 # TBD
 
+# 0.10.1
+### Features
+* Added API container CRUD stubs to `KurtosisBackend`
+
 # 0.10.0
 ### Features
 * Created a generic `ContainerStatus` object in the `KurtosisBackend` API for representing the state of containers
