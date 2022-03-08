@@ -1,5 +1,12 @@
 # TBD
 
+# 0.11.7
+### Features
+* Upgraded container-engine-lib, core, and engine-server to allow for the new API container & enclave CRUD function stubs
+
+### Features
+* Updated engine_manager to use kurtosis_backend instead of docker_manager
+
 # 0.11.6
 
 ### Features
