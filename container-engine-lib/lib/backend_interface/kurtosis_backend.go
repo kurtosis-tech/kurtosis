@@ -2,11 +2,12 @@ package backend_interface
 
 import (
 	"context"
-	engine2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"io"
 	"net"
 )
 
@@ -21,17 +22,17 @@ type KurtosisBackend interface {
 		engineDataDirpathOnHostMachine string,
 		envVars map[string]string,
 	) (
-		*engine2.Engine,
+		*engine.Engine,
 		error,
 	)
 
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine ID
-	GetEngines(ctx context.Context, filters *engine2.EngineFilters) (map[string]*engine2.Engine, error)
+	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error)
 
 	// Stops the engines with the given IDs
 	StopEngines(
 		ctx context.Context,
-		filters *engine2.EngineFilters,
+		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
@@ -41,15 +42,39 @@ type KurtosisBackend interface {
 	// Destroys the engines with the given IDs, regardless of if they're running or not
 	DestroyEngines(
 		ctx context.Context,
-		filters *engine2.EngineFilters,
+		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
 		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the engines
 	)
 
+	// Create a module from a container image with serialized params
+	CreateModule(
+		ctx context.Context,
+		id string,
+		containerImageName string,
+		serializedParams string,
+	)(
+		privateIp net.IP,
+		privatePort *port_spec.PortSpec,
+		publicIp net.IP,
+		publicPort *port_spec.PortSpec,
+		resultErr error,
+	)
+
 	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
 	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
+
+	// Destroys the modules with the given filter, regardless of if they're running or not
+	DestroyModules(
+		ctx context.Context,
+		filters *module.ModuleFilters,
+	) (
+		successfulModuleIds map[string]bool, // "set" of module IDs that were successfully destroyed
+		erroredModuleIds map[string]error, // "set" of module IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
+	)
 
 	// Creates a user service inside an enclave with the given configuration
 	CreateUserService(
@@ -67,6 +92,12 @@ type KurtosisBackend interface {
 		publicPorts map[string]*port_spec.PortSpec, //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 		resultErr error,
 	)
+
+	// Gets user services using the given filters, returning a map of matched user services identified by their ID
+	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[string]*service.Service, error)
+
+	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
+	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[string]io.ReadCloser, error)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommand (
@@ -98,7 +129,26 @@ type KurtosisBackend interface {
 	// Register some file artifacts that the service will be using then
 	RegisterUserServiceFileArtifacts(
 		ctx context.Context,
+		serviceId string,
 		fileArtifactsUrls map[service.FilesArtifactID]string,
+	)(
+		resultErr error,
+	)
+
+	// Stop user services using the given filters,
+	StopUserServices(
+		ctx context.Context,
+		filters *service.ServiceFilters,
+	)(
+		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully stopped
+		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when stopping, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
+	)
+
+	// Get an interactive shell to execute commands in an user service
+	GetShellOnUserService(
+		ctx context.Context,
+		userServiceId string,
 	)(
 		resultErr error,
 	)
