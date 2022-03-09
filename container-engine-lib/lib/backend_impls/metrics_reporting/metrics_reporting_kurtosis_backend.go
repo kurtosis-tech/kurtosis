@@ -6,8 +6,13 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"io"
+	"net"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -92,6 +97,43 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Cont
 	return successes, failures, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) RegisterFileArtifacts(
+	ctx context.Context,
+	fileArtifactsUrls map[service.FilesArtifactID]string,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.RegisterFileArtifacts(ctx, fileArtifactsUrls); err != nil {
+		return stacktrace.Propagate(err, "An error occurred registering file artifacts with urls '%+v'", fileArtifactsUrls)
+	}
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
+	ctx context.Context,
+	partitions []*partition.Partition,
+	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
+	newDefaultConnection partition.PartitionConnection,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.CreateRepartition(
+		ctx,
+		partitions,
+		newPartitionConnections,
+		newDefaultConnection,
+	); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating repartition with partitions '%+v', partition connections '%+v' and default connection '%+v'",
+			partitions,
+			newPartitionConnections,
+			newDefaultConnection,
+		)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
@@ -143,6 +185,243 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+
+func (backend *MetricsReportingKurtosisBackend) CreateModule(
+	ctx context.Context,
+	id string,
+	containerImageName string,
+	serializedParams string,
+)(
+	resultPrivateIp net.IP,
+	resultPrivatePort *port_spec.PortSpec,
+	resultPublicIp net.IP,
+	resultPublicPort *port_spec.PortSpec,
+	resultErr error,
+) {
+	privateIp, privatePort, publicIp, publicPort, err := backend.underlying.CreateModule(
+		ctx,
+		id,
+		containerImageName,
+		serializedParams,
+		)
+	if err != nil {
+		return nil, nil, nil, nil,
+		stacktrace.Propagate(
+			err,
+			"An error occurred creating module with ID '%v', container image name '%v' and serialized params '%+v'",
+			id,
+			containerImageName,
+			serializedParams)
+	}
+
+	return privateIp, privatePort, publicIp, publicPort, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetModules(
+	ctx context.Context,
+	filters *module.ModuleFilters,
+)(
+	map[string]*module.Module,
+	error,
+) {
+	modules, err := backend.underlying.GetModules(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting modules using filters: %+v", filters)
+	}
+	return modules, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyModules(
+	ctx context.Context,
+	filters *module.ModuleFilters,
+)(
+	successfulModuleIds map[string]bool,
+	erroredModuleIds map[string]error,
+	resultErr error,
+) {
+	successes, failures, err := backend.underlying.DestroyModules(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying modules using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateUserService(
+	ctx context.Context,
+	id string,
+	containerImageName string,
+	privatePorts []*port_spec.PortSpec,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
+	enclaveDataDirMntDirpath string,
+	filesArtifactMountDirpaths map[string]string,
+)(
+	maybePublicIpAddr net.IP,
+	publicPorts map[string]*port_spec.PortSpec,
+	resultErr error,
+) {
+	publicIpAddr, publicPort, err := backend.underlying.CreateUserService(
+		ctx,
+		id,
+		containerImageName,
+		privatePorts,
+		entrypointArgs,
+		cmdArgs,
+		envVars,
+		enclaveDataDirMntDirpath,
+		filesArtifactMountDirpaths,
+		)
+	if err != nil {
+		return nil, nil,
+		stacktrace.Propagate(
+			err,
+			"An error occurred creating the user service with ID '%v' using image '%v' with private ports '%+v' with entry point args '%+v', command args '%+v', environment vars '%+v', enclave data mount dirpath '%v' and file artifacts mount dirpath '%v'",
+			id,
+			containerImageName,
+			privatePorts,
+			entrypointArgs,
+			cmdArgs,
+			envVars,
+			enclaveDataDirMntDirpath,
+			filesArtifactMountDirpaths,
+			)
+	}
+	return publicIpAddr, publicPort, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetUserServices(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+)(
+	map[string]*service.Service,
+	error,
+){
+	services, err := backend.underlying.GetUserServices(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
+	}
+	return services, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+)(
+	map[string]io.ReadCloser,
+	error,
+) {
+	userServiceLogs, err := backend.underlying.GetUserServiceLogs(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
+	}
+	return userServiceLogs, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
+	ctx context.Context,
+	serviceId string,
+	commandArgs []string,
+)(
+	resultExitCode int32,
+	resultOutput string,
+	resultErr error,
+) {
+	exitCode, output, err := backend.underlying.RunUserServiceExecCommand(ctx, serviceId, commandArgs)
+	if err != nil {
+		return 0, "", stacktrace.Propagate(
+			err,
+			"An error occurred running user service exec command with user service ID '%v' and command args '%+v'",
+			serviceId,
+			commandArgs,
+			)
+	}
+	return exitCode, output, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
+	ctx context.Context,
+	serviceId string,
+	httpMethod string,
+	port uint32,
+	path string,
+	requestBody string,
+	bodyText string,
+	initialDelayMilliseconds uint32,
+	retries uint32,
+	retriesDelayMilliseconds uint32,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.WaitForUserServiceHttpEndpointAvailability(
+		ctx,
+		serviceId,
+		httpMethod,
+		port,
+		path,
+		requestBody,
+		bodyText,
+		initialDelayMilliseconds,
+		retries,
+		retriesDelayMilliseconds,
+		); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' from service with ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
+			path,
+			port,
+			requestBody,
+			bodyText,
+			serviceId,
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
+	ctx context.Context,
+	userServiceId string,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.GetShellOnUserService(ctx, userServiceId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting shell on user service with ID '%v'", userServiceId)
+	}
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopUserServices(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+)(
+	successfulUserServiceIds map[string]bool,
+	erroredUserServiceIds map[string]error,
+	resultErr error,
+) {
+	successes, failures, err := backend.underlying.StopUserServices(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+)(
+	successfulUserServiceIds map[string]bool,
+	erroredUserServiceIds map[string]error,
+	resultErr error,
+) {
+	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
 	return successes, failures, nil
 }
