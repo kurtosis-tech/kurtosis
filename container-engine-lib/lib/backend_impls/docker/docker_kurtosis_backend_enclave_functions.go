@@ -227,7 +227,70 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	erroredEnclaveIds map[string]error,
 	resultErr error,
 ) {
-	panic("Implement me")
+	// Stop containers
+	successfulEnclaveIds, erroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters '%v'", filters)
+	}
+
+	// Remove containers
+	for enclaveId := range successfulEnclaveIds {
+		_, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
+		if err != nil {
+			delete(successfulEnclaveIds, enclaveId)
+			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+			continue
+		}
+
+		removeContainerErrorStrs := []string{}
+		for _, container := range containers {
+			containerName := container.GetName()
+			containerId := container.GetId()
+			if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+				wrappedErr := stacktrace.Propagate(
+					err,
+					"An error occurred removing container '%v' with ID '%v'",
+					containerName,
+					containerId,
+				)
+				removeContainerErrorStrs = append(
+					removeContainerErrorStrs,
+					wrappedErr.Error(),
+				)
+			}
+		}
+
+		if len(removeContainerErrorStrs) > 0 {
+			delete(successfulEnclaveIds, enclaveId)
+			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+				"An error occurred removing one or more containers in enclave '%v':\n%v",
+				enclaveId,
+				strings.Join(
+					removeContainerErrorStrs,
+					"\n\n",
+				),
+			)
+		}
+	}
+
+	// Remove the networks
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, successfulEnclaveIds)
+	if err != nil {
+		return successfulEnclaveIds, erroredEnclaveIds, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", successfulEnclaveIds)
+	}
+	if len(networks) == 0 {
+		return successfulEnclaveIds, erroredEnclaveIds, stacktrace.Propagate(err, "No Enclave was founded with some of these IDs '%+v'", successfulEnclaveIds)
+	}
+
+	for _, network := range networks {
+		if err := backend.dockerManager.RemoveNetwork(ctx, network.GetId()); err != nil {
+			enclaveId := network.GetName()
+			delete(successfulEnclaveIds, enclaveId)
+			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+		}
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 // ====================================================================================================
