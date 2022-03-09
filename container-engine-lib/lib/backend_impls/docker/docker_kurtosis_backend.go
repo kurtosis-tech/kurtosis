@@ -6,6 +6,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -56,14 +57,19 @@ var portSpecProtosToDockerPortProtos = map[port_spec2.PortProtocol]string{
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
+	dockerNetworkAllocator docker_network_allocator.DockerNetworkAllocator
+
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
+
 }
 
 func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
+	dockerNetworkAllocator docker_network_allocator.DockerNetworkAllocator,
 ) *DockerKurtosisBackend {
 	return &DockerKurtosisBackend{
 		dockerManager:    dockerManager,
+		dockerNetworkAllocator: dockerNetworkAllocator,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
 }

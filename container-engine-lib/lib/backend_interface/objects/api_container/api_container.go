@@ -20,3 +20,27 @@ type APIContainer struct {
 	publicGrpcPort *port_spec.PortSpec
 	publicGrpcProxyPort *port_spec.PortSpec
 }
+
+func NewAPIContainer(enclaveId string, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *APIContainer {
+	return &APIContainer{enclaveId: enclaveId, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
+}
+
+func (apiContainer *APIContainer) GetEnclaveId() string {
+	return apiContainer.enclaveId
+}
+
+func (apiContainer *APIContainer) GetStatus() container_status.ContainerStatus {
+	return apiContainer.status
+}
+
+func (apiContainer *APIContainer) GetPublicIpAddr() net.IP {
+	return apiContainer.publicIpAddr
+}
+
+func (apiContainer *APIContainer) GetPublicGrpcPort() *port_spec.PortSpec {
+	return apiContainer.publicGrpcPort
+}
+
+func (apiContainer *APIContainer) GetPublicGrpcProxyPort() *port_spec.PortSpec {
+	return apiContainer.publicGrpcProxyPort
+}
