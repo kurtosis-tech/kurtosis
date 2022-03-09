@@ -58,7 +58,7 @@ func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
 	panic("Implement me")
 }
 
-func (backendCore *DockerKurtosisBackend) WaitForHttpEndpointInUserServiceIsAvailable (
+func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
 	serviceId string,
 	httpMethod string,
@@ -75,16 +75,6 @@ func (backendCore *DockerKurtosisBackend) WaitForHttpEndpointInUserServiceIsAvai
 	panic("Implement me")
 }
 
-func (backendCore *DockerKurtosisBackend) RegisterUserServiceFileArtifacts(
-	ctx context.Context,
-	serviceId string,
-	fileArtifactsUrls map[service.FilesArtifactID]string,
-)(
-	resultErr error,
-) {
-	panic("Implement me")
-}
-
 func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
 	userServiceId string,
@@ -95,6 +85,17 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 }
 
 func (backendCore *DockerKurtosisBackend) StopUserServices(
+	ctx context.Context,
+	filters *service.ServiceFilters,
+)(
+	successfulUserServiceIds map[string]bool,
+	erroredUserServiceIds map[string]error,
+	resultErr error,
+) {
+	panic("Implement me")
+}
+
+func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(

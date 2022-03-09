@@ -94,6 +94,24 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Register some file artifacts which can be used for the enclave's services and modules
+	RegisterFileArtifacts(
+		ctx context.Context,
+		fileArtifactsUrls map[service.FilesArtifactID]string,
+	)(
+		resultErr error,
+	)
+
+	// Repartition the Enclave network defining which services will be on each part
+	CreateRepartition(
+		ctx context.Context,
+		partitions []*partition.Partition,
+		newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
+		newDefaultConnection partition.PartitionConnection,
+	)(
+		resultErr error,
+	)
+
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
@@ -201,7 +219,7 @@ type KurtosisBackend interface {
 	)
 
 	// Wait for succesful http endpoint response which can be used to check if the service is available
-	WaitForHttpEndpointInUserServiceIsAvailable (
+	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
 		serviceId string,
 		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
@@ -216,15 +234,6 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Register some file artifacts that the service will be using then
-	RegisterUserServiceFileArtifacts(
-		ctx context.Context,
-		serviceId string,
-		fileArtifactsUrls map[service.FilesArtifactID]string,
-	)(
-		resultErr error,
-	)
-
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
@@ -235,20 +244,20 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// Destroy user services using the given filters,
+	DestroyUserServices(
+		ctx context.Context,
+		filters *service.ServiceFilters,
+	)(
+		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully destroyed
+		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when destroying, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
+	)
+
 	// Get an interactive shell to execute commands in an user service
 	GetShellOnUserService(
 		ctx context.Context,
 		userServiceId string,
-	)(
-		resultErr error,
-	)
-
-	// Repartition the Enclave network defining which services will be on each part
-	CreateRepartition(
-		ctx context.Context,
-		partitions []*partition.Partition,
-		newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-		newDefaultConnection partition.PartitionConnection,
 	)(
 		resultErr error,
 	)

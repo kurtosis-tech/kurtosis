@@ -97,6 +97,43 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Cont
 	return successes, failures, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) RegisterFileArtifacts(
+	ctx context.Context,
+	fileArtifactsUrls map[service.FilesArtifactID]string,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.RegisterFileArtifacts(ctx, fileArtifactsUrls); err != nil {
+		return stacktrace.Propagate(err, "An error occurred registering file artifacts with urls '%+v'", fileArtifactsUrls)
+	}
+	return nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
+	ctx context.Context,
+	partitions []*partition.Partition,
+	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
+	newDefaultConnection partition.PartitionConnection,
+)(
+	resultErr error,
+) {
+	if err := backend.underlying.CreateRepartition(
+		ctx,
+		partitions,
+		newPartitionConnections,
+		newDefaultConnection,
+	); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred creating repartition with partitions '%+v', partition connections '%+v' and default connection '%+v'",
+			partitions,
+			newPartitionConnections,
+			newDefaultConnection,
+		)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
@@ -306,7 +343,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 	return exitCode, output, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) WaitForHttpEndpointInUserServiceIsAvailable (
+func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
 	serviceId string,
 	httpMethod string,
@@ -320,7 +357,7 @@ func (backend *MetricsReportingKurtosisBackend) WaitForHttpEndpointInUserService
 )(
 	resultErr error,
 ) {
-	if err := backend.underlying.WaitForHttpEndpointInUserServiceIsAvailable(
+	if err := backend.underlying.WaitForUserServiceHttpEndpointAvailability(
 		ctx,
 		serviceId,
 		httpMethod,
@@ -347,15 +384,14 @@ func (backend *MetricsReportingKurtosisBackend) WaitForHttpEndpointInUserService
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterUserServiceFileArtifacts(
+func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
-	serviceId string,
-	fileArtifactsUrls map[service.FilesArtifactID]string,
+	userServiceId string,
 )(
 	resultErr error,
 ) {
-	if err := backend.underlying.RegisterUserServiceFileArtifacts(ctx, serviceId, fileArtifactsUrls); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering user service file artifacts with urls '%+v' for user service with ID '%v'", fileArtifactsUrls, serviceId)
+	if err := backend.underlying.GetShellOnUserService(ctx, userServiceId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting shell on user service with ID '%v'", userServiceId)
 	}
 	return nil
 }
@@ -375,39 +411,17 @@ func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
+func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
-	userServiceId string,
+	filters *service.ServiceFilters,
 )(
+	successfulUserServiceIds map[string]bool,
+	erroredUserServiceIds map[string]error,
 	resultErr error,
 ) {
-	if err := backend.underlying.GetShellOnUserService(ctx, userServiceId); err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting shell on user service with ID '%v'", userServiceId)
+	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
-	return nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
-	ctx context.Context,
-	partitions []*partition.Partition,
-	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-	newDefaultConnection partition.PartitionConnection,
-)(
-	resultErr error,
-) {
-	if err := backend.underlying.CreateRepartition(
-		ctx,
-		partitions,
-		newPartitionConnections,
-		newDefaultConnection,
-		); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating repartition with partitions '%+v', partition connections '%+v' and default connection '%+v'",
-			partitions,
-			newPartitionConnections,
-			newDefaultConnection,
-			)
-	}
-	return nil
+	return successes, failures, nil
 }

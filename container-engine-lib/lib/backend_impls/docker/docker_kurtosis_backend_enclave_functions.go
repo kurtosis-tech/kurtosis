@@ -3,6 +3,8 @@ package docker
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 )
 
 func (backend *DockerKurtosisBackend) CreateEnclave(
@@ -47,6 +49,27 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 ) (
 	successfulEnclaveIds map[string]bool,
 	erroredEnclaveIds map[string]error,
+	resultErr error,
+) {
+	panic("Implement me")
+}
+
+// Register file artifacts using the provided URLs
+func (backend *DockerKurtosisBackend) RegisterFileArtifacts(
+	ctx context.Context,
+	fileArtifactsUrls map[service.FilesArtifactID]string,
+)(
+	resultErr error,
+) {
+	panic("Implement me")
+}
+
+func (backendCore *DockerKurtosisBackend) CreateRepartition(
+	ctx context.Context,
+	partitions []*partition.Partition,
+	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
+	newDefaultConnection partition.PartitionConnection,
+)(
 	resultErr error,
 ) {
 	panic("Implement me")
