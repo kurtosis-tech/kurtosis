@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Expose information of an `APIContainer` object
 
 # 0.10.1
 ### Features
