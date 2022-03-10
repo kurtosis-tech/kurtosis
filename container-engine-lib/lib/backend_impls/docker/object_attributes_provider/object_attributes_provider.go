@@ -95,5 +95,6 @@ func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveIdStr stri
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveIdStr)
 	}
+
 	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
 }

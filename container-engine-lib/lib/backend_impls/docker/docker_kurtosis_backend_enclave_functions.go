@@ -20,6 +20,7 @@ const (
 func (backend *DockerKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveId string,
+	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
 	error,
@@ -38,7 +39,9 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with name '%v'", enclaveId)
 	}
-	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork()
+
+	isNetworkDestroyed := false
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(isPartitioningEnabled, isNetworkDestroyed)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
 	}

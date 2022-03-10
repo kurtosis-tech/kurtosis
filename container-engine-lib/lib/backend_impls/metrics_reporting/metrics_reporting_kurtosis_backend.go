@@ -64,10 +64,14 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveId string) (*enclave.Enclave, error) {
-	result, err := backend.underlying.CreateEnclave(ctx, enclaveId)
+func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
+	ctx context.Context,
+	enclaveId string,
+	isPartitioningEnabled bool,
+)(*enclave.Enclave, error) {
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v' and is-partitioning-enabled value '%v'", enclaveId, isPartitioningEnabled)
 	}
 	return result, nil
 }

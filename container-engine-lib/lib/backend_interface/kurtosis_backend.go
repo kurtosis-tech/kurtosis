@@ -57,6 +57,7 @@ type KurtosisBackend interface {
 	CreateEnclave(
 		ctx context.Context,
 		enclaveId string,
+		isPartitioningEnabled bool,
 	) (
 		*enclave.Enclave,
 		error,

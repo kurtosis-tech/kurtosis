@@ -28,7 +28,7 @@ const (
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
-	ForEnclaveNetwork() (DockerObjectAttributes, error)
+	ForEnclaveNetwork(isPartitioningEnabled bool, isNetworkDestroyed bool) (DockerObjectAttributes, error)
 	ForApiContainer(
 		ipAddr net.IP,
 		privateGrpcPortId string,
@@ -49,11 +49,15 @@ type dockerEnclaveObjectAttributesProviderImpl struct {
 	enclaveId *docker_label_value.DockerLabelValue
 }
 
-func newDockerEnclaveObjectAttributesProviderImpl(enclaveId *docker_label_value.DockerLabelValue) *dockerEnclaveObjectAttributesProviderImpl {
-	return &dockerEnclaveObjectAttributesProviderImpl{enclaveId: enclaveId}
+func newDockerEnclaveObjectAttributesProviderImpl(
+	enclaveId *docker_label_value.DockerLabelValue,
+) *dockerEnclaveObjectAttributesProviderImpl {
+	return &dockerEnclaveObjectAttributesProviderImpl{
+		enclaveId: enclaveId,
+	}
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork() (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(isPartitioningEnabled bool, isNetworkDestroyed bool) (DockerObjectAttributes, error) {
 	enclaveIdStr := provider.enclaveId.GetString()
 	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
 	if err != nil {
@@ -61,6 +65,16 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork() (
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
+
+	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledLabelValue
+	if isPartitioningEnabled {
+		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledLabelValue
+	}
+
+	isNetworkDestroyedLabelValue := label_value_consts.NetworkIsNotDestroyed
+
+	labels[label_key_consts.IsNetworkPartitioningEnabledLabelKey] = isPartitioningEnabledLabelValue
+	labels[label_key_consts.IsNetworkDestroyedLabelKey] = isNetworkDestroyedLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
