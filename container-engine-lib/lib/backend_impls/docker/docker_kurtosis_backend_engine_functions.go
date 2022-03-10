@@ -155,11 +155,6 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
-		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
-	}
-
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),
@@ -173,6 +168,11 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 	).WithLabels(
 		labelStrs,
 	).Build()
+
+	// Best-effort pull attempt
+	if err = backendCore.dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
+	}
 
 	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

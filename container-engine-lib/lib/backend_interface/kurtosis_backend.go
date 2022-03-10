@@ -12,6 +12,9 @@ import (
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
 type KurtosisBackend interface {
+	// Attempts to pull the image from remote to locally, overwriting the local if it exists
+	PullImage(image string) error
+
 	// Creates an engine with the given parameters
 	CreateEngine(
 		ctx context.Context,
