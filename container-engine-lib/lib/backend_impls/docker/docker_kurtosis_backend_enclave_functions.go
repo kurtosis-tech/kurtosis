@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -293,16 +292,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	}
 
 	return successfulEnclaveIds, erroredEnclaveIds, nil
-}
-
-// Register file artifacts using the provided URLs
-func (backend *DockerKurtosisBackend) RegisterFileArtifacts(
-	ctx context.Context,
-	fileArtifactsUrls map[service.FilesArtifactID]string,
-)(
-	resultErr error,
-) {
-	panic("Implement me")
 }
 
 // Repartition the enclave network

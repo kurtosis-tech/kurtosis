@@ -94,14 +94,6 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Register some file artifacts which can be used for the enclave's services and modules
-	RegisterFileArtifacts(
-		ctx context.Context,
-		fileArtifactsUrls map[service.FilesArtifactID]string,
-	)(
-		resultErr error,
-	)
-
 	// Repartition the Enclave network defining which services will be on each part
 	CreateRepartition(
 		ctx context.Context,
