@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -97,26 +96,23 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Cont
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
+func (backend *MetricsReportingKurtosisBackend) RepartitionEnclave(
 	ctx context.Context,
-	partitions []*partition.Partition,
-	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-	newDefaultConnection partition.PartitionConnection,
+	enclaveId string,
+	servicesConnections map[service.ServiceID]map[service.ServiceID]enclave.NetworkConnection,
 )(
 	resultErr error,
 ) {
-	if err := backend.underlying.CreateRepartition(
+	if err := backend.underlying.RepartitionEnclave(
 		ctx,
-		partitions,
-		newPartitionConnections,
-		newDefaultConnection,
+		enclaveId,
+		servicesConnections,
 	); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred creating repartition with partitions '%+v', partition connections '%+v' and default connection '%+v'",
-			partitions,
-			newPartitionConnections,
-			newDefaultConnection,
+			"An error occurred creating repartition with servicesConnections '%+v' for enclave with ID '%v'",
+			servicesConnections,
+			enclaveId,
 		)
 	}
 	return nil

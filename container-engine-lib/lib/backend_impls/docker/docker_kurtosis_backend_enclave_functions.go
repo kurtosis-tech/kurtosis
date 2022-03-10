@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -107,14 +107,10 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 		}
 
-		for expectedEnclaveStatus := range filters.Statuses {
-			if enclaveStatus == expectedEnclaveStatus {
-				enclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
-				result[enclaveId] = enclave
-				break
-			}
+		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+			enclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
+			result[enclaveId] = enclave
 		}
-
 	}
 
 	return result, nil
@@ -149,71 +145,70 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 			continue
 		}
 
-		for expectedEnclaveStatus := range filters.Statuses {
-			if enclaveStatus == expectedEnclaveStatus {
-				logrus.Debugf("Containers in enclave '%v' that will be stopped: %+v", enclaveId, containers)
+		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
 
-				// TODO Parallelize for perf
-				containerKillErrorStrs := []string{}
-				for _, container := range containers {
-					containerId := container.GetId()
-					containerName := container.GetName()
-					if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
-						wrappedContainerKillErr := stacktrace.Propagate(
-							err,
-							"An error occurred killing container '%v' with ID '%v'",
-							containerName,
-							containerId,
-						)
-						containerKillErrorStrs = append(
-							containerKillErrorStrs,
-							wrappedContainerKillErr.Error(),
-						)
-					}
-				}
+			logrus.Debugf("Containers in enclave '%v' that will be stopped: %+v", enclaveId, containers)
 
-				if len(containerKillErrorStrs) > 0 {
-					errorStr := strings.Join(containerKillErrorStrs, "\n\n")
-					erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-						"One or more errors occurred killing the containers in enclave '%v':\n%v",
-						enclaveId,
-						errorStr,
+			// TODO Parallelize for perf
+			containerKillErrorStrs := []string{}
+			for _, container := range containers {
+				containerId := container.GetId()
+				containerName := container.GetName()
+				if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
+					wrappedContainerKillErr := stacktrace.Propagate(
+						err,
+						"An error occurred killing container '%v' with ID '%v'",
+						containerName,
+						containerId,
 					)
-					break
-				}
-
-				// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
-				//  before we return
-				containerWaitErrorStrs := []string{}
-				for _, container := range containers {
-					containerName := container.GetName()
-					containerId := container.GetId()
-					if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
-						wrappedContainerWaitErr := stacktrace.Propagate(
-							err,
-							"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
-							containerName,
-							containerId,
-						)
-						containerWaitErrorStrs = append(
-							containerWaitErrorStrs,
-							wrappedContainerWaitErr.Error(),
-						)
-					}
-				}
-
-				if len(containerWaitErrorStrs) > 0 {
-					errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
-					erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-						"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
-						enclaveId,
-						errorStr,
+					containerKillErrorStrs = append(
+						containerKillErrorStrs,
+						wrappedContainerKillErr.Error(),
 					)
 				}
-
-				successfulEnclaveIds[enclaveId] = true
-				break
 			}
+
+			if len(containerKillErrorStrs) > 0 {
+				errorStr := strings.Join(containerKillErrorStrs, "\n\n")
+				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+					"One or more errors occurred killing the containers in enclave '%v':\n%v",
+					enclaveId,
+					errorStr,
+				)
+				continue
+			}
+
+			// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
+			//  before we return
+			containerWaitErrorStrs := []string{}
+			for _, container := range containers {
+				containerName := container.GetName()
+				containerId := container.GetId()
+				if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
+					wrappedContainerWaitErr := stacktrace.Propagate(
+						err,
+						"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
+						containerName,
+						containerId,
+					)
+					containerWaitErrorStrs = append(
+						containerWaitErrorStrs,
+						wrappedContainerWaitErr.Error(),
+					)
+				}
+			}
+
+			if len(containerWaitErrorStrs) > 0 {
+				errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
+				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+					"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
+					enclaveId,
+					errorStr,
+				)
+				continue
+			}
+
+			successfulEnclaveIds[enclaveId] = true
 		}
 	}
 	return successfulEnclaveIds, erroredEnclaveIds, nil
@@ -295,12 +290,11 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 }
 
 // Repartition the enclave network
-func (backendCore *DockerKurtosisBackend) CreateRepartition(
+func (backendCore *DockerKurtosisBackend) RepartitionEnclave(
 	ctx context.Context,
-	partitions []*partition.Partition,
-	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-	newDefaultConnection partition.PartitionConnection,
-)(
+	enclaveId string,
+	servicesConnections map[service.ServiceID]map[service.ServiceID]enclave.NetworkConnection,
+) (
 	resultErr error,
 ) {
 	panic("Implement me")
@@ -370,7 +364,7 @@ func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 ) {
 	allEnclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
-		return  0, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
+		return 0, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
 	if len(allEnclaveContainers) == 0 {
 		return enclave.EnclaveStatus_Empty, nil, nil
@@ -402,3 +396,11 @@ func (backend *DockerKurtosisBackend) getEnclaveContainers(
 	return containers, nil
 }
 
+func isEnclaveStatusInEnclaveFilters(enclaveStatus enclave.EnclaveStatus, filters *enclave.EnclaveFilters) bool {
+	for expectedEnclaveStatus := range filters.Statuses {
+		if enclaveStatus == expectedEnclaveStatus {
+			return true
+		}
+	}
+	return false
+}

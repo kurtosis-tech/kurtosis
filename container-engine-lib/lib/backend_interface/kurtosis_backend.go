@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
@@ -95,11 +94,10 @@ type KurtosisBackend interface {
 	)
 
 	// Repartition the Enclave network defining which services will be on each part
-	CreateRepartition(
+	RepartitionEnclave(
 		ctx context.Context,
-		partitions []*partition.Partition,
-		newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-		newDefaultConnection partition.PartitionConnection,
+		enclaveId string,
+		servicesConnections map[service.ServiceID]map[service.ServiceID]enclave.NetworkConnection,
 	)(
 		resultErr error,
 	)

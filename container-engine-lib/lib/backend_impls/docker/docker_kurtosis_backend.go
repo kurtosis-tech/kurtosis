@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strconv"
@@ -48,25 +48,22 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 }
 
 // Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
-var portSpecProtosToDockerPortProtos = map[port_spec2.PortProtocol]string{
-	port_spec2.PortProtocol_TCP:  "tcp",
-	port_spec2.PortProtocol_SCTP: "sctp",
-	port_spec2.PortProtocol_UDP:  "udp",
+var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
+	port_spec.PortProtocol_TCP:  "tcp",
+	port_spec.PortProtocol_SCTP: "sctp",
+	port_spec.PortProtocol_UDP:  "udp",
 }
 
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
-	dockerNetworkAllocator docker_network_allocator.DockerNetworkAllocator
+	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
 
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
-
 }
 
-func NewDockerKurtosisBackend(
-	dockerManager *docker_manager.DockerManager,
-	dockerNetworkAllocator docker_network_allocator.DockerNetworkAllocator,
-) *DockerKurtosisBackend {
+func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *DockerKurtosisBackend {
+	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
 		dockerManager:    dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
@@ -115,7 +112,7 @@ func (backendCore *DockerKurtosisBackend) GetEnginePublicIPAndPort(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func transformPortSpecToDockerPort(portSpec *port_spec2.PortSpec) (nat.Port, error) {
+func transformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	portSpecProto := portSpec.GetProtocol()
 	dockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
 	if !found {
@@ -173,9 +170,9 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 }
 
 
-func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec2.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
+func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
-	resultPublicPortSpec *port_spec2.PortSpec,
+	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	portNum := privatePortSpec.GetNumber()
@@ -237,7 +234,7 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec2.PortSpe
 		)
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-	publicPortSpec, err := port_spec2.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, portSpecProto.String())
 	}
