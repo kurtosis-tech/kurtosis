@@ -9,7 +9,8 @@ import (
 
 func (backendCore *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
-	id string,
+	id service.ServiceID,
+	guid service.ServiceGUID,
 	containerImageName string,
 	privatePorts []*port_spec.PortSpec,
 	entrypointArgs []string,
@@ -28,7 +29,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	map[string]*service.Service,
+	map[service.ServiceGUID]*service.Service,
 	error,
 ){
 	panic("Implement me")
@@ -38,7 +39,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	map[string]io.ReadCloser,
+	map[service.ServiceGUID]io.ReadCloser,
 	error,
 ){
 	panic("Implement me")
@@ -46,7 +47,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 
 func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
 	ctx context.Context,
-	serviceId string,
+	serviceGUID service.ServiceGUID,
 	commandArgs []string,
 )(
 	exitCode int32,
@@ -58,7 +59,7 @@ func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
 
 func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
-	serviceId string,
+	serviceGUID service.ServiceGUID,
 	httpMethod string,
 	port uint32,
 	path string,
@@ -75,7 +76,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 
 func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
-	userServiceId string,
+	serviceGUID service.ServiceGUID,
 )(
 	resultErr error,
 ) {
@@ -86,8 +87,8 @@ func (backendCore *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[string]bool,
-	erroredUserServiceIds map[string]error,
+	successfulUserServiceIds map[service.ServiceGUID]bool,
+	erroredUserServiceIds map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	panic("Implement me")
@@ -97,8 +98,8 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[string]bool,
-	erroredUserServiceIds map[string]error,
+	successfulUserServiceIds map[service.ServiceGUID]bool,
+	erroredUserServiceIds map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	panic("Implement me")

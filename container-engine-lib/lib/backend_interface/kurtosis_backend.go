@@ -175,7 +175,8 @@ type KurtosisBackend interface {
 	// Creates a user service inside an enclave with the given configuration
 	CreateUserService(
 		ctx context.Context,
-		id string,
+		id service.ServiceID,
+		guid service.ServiceGUID,
 		containerImageName string,
 		privatePorts []*port_spec.PortSpec,
 		entrypointArgs []string,
@@ -189,15 +190,15 @@ type KurtosisBackend interface {
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their ID
-	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[string]*service.Service, error)
+	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]*service.Service, error)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
-	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[string]io.ReadCloser, error)
+	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]io.ReadCloser, error)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommand (
 		ctx context.Context,
-		serviceId string,
+		serviceGUID service.ServiceGUID,
 		commandArgs []string,
 	)(
 		exitCode int32,
@@ -208,7 +209,7 @@ type KurtosisBackend interface {
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
-		serviceId string,
+		serviceGUID service.ServiceGUID,
 		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
@@ -221,13 +222,21 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Get an interactive shell to execute commands in an user service
+	GetShellOnUserService(
+		ctx context.Context,
+		serviceGUID service.ServiceGUID,
+	)(
+		resultErr error,
+	)
+
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully stopped
-		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when stopping, with the error
+		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully stopped
+		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -236,17 +245,9 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully destroyed
-		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when destroying, with the error
+		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed
+		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
-	)
-
-	// Get an interactive shell to execute commands in an user service
-	GetShellOnUserService(
-		ctx context.Context,
-		userServiceId string,
-	)(
-		resultErr error,
 	)
 
 	// TODO CreateRepl
