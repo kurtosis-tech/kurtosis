@@ -97,18 +97,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Cont
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RegisterFileArtifacts(
-	ctx context.Context,
-	fileArtifactsUrls map[service.FilesArtifactID]string,
-)(
-	resultErr error,
-) {
-	if err := backend.underlying.RegisterFileArtifacts(ctx, fileArtifactsUrls); err != nil {
-		return stacktrace.Propagate(err, "An error occurred registering file artifacts with urls '%+v'", fileArtifactsUrls)
-	}
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
 	ctx context.Context,
 	partitions []*partition.Partition,
