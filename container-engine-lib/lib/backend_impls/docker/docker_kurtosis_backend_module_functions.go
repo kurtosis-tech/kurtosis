@@ -3,8 +3,6 @@ package docker
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"net"
 )
 
 func (backendCore *DockerKurtosisBackend) CreateModule(
@@ -13,10 +11,7 @@ func (backendCore *DockerKurtosisBackend) CreateModule(
 	containerImageName string,
 	serializedParams string,
 )(
-	privateIp net.IP,
-	privatePort *port_spec.PortSpec,
-	publicIp net.IP,
-	publicPort *port_spec.PortSpec,
+	newModule *module.Module,
 	resultErr error,
 ) {
 	panic("Implement me")

@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
-	"net"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -184,20 +183,17 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	containerImageName string,
 	serializedParams string,
 )(
-	resultPrivateIp net.IP,
-	resultPrivatePort *port_spec.PortSpec,
-	resultPublicIp net.IP,
-	resultPublicPort *port_spec.PortSpec,
+	newModule *module.Module,
 	resultErr error,
 ) {
-	privateIp, privatePort, publicIp, publicPort, err := backend.underlying.CreateModule(
+	module, err := backend.underlying.CreateModule(
 		ctx,
 		id,
 		containerImageName,
 		serializedParams,
 		)
 	if err != nil {
-		return nil, nil, nil, nil,
+		return nil,
 		stacktrace.Propagate(
 			err,
 			"An error occurred creating module with ID '%v', container image name '%v' and serialized params '%+v'",
@@ -206,7 +202,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 			serializedParams)
 	}
 
-	return privateIp, privatePort, publicIp, publicPort, nil
+	return module, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetModules(
@@ -249,11 +245,10 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	enclaveDataDirMntDirpath string,
 	filesArtifactMountDirpaths map[string]string,
 )(
-	maybePublicIpAddr net.IP,
-	publicPorts map[string]*port_spec.PortSpec,
+	newUserService *service.Service,
 	resultErr error,
 ) {
-	publicIpAddr, publicPort, err := backend.underlying.CreateUserService(
+	userService, err := backend.underlying.CreateUserService(
 		ctx,
 		id,
 		containerImageName,
@@ -265,7 +260,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		filesArtifactMountDirpaths,
 		)
 	if err != nil {
-		return nil, nil,
+		return nil,
 		stacktrace.Propagate(
 			err,
 			"An error occurred creating the user service with ID '%v' using image '%v' with private ports '%+v' with entry point args '%+v', command args '%+v', environment vars '%+v', enclave data mount dirpath '%v' and file artifacts mount dirpath '%v'",
@@ -279,7 +274,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 			filesArtifactMountDirpaths,
 			)
 	}
-	return publicIpAddr, publicPort, nil
+	return userService, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServices(

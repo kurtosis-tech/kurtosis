@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
-	"net"
 )
 
 func (backendCore *DockerKurtosisBackend) CreateUserService(
@@ -19,8 +18,7 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 	enclaveDataDirMntDirpath string,
 	filesArtifactMountDirpaths map[string]string,
 )(
-	maybePublicIpAddr net.IP,
-	publicPorts map[string]*port_spec.PortSpec,
+	newUserService *service.Service,
 	resultErr error,
 ){
 	panic("Implement me")

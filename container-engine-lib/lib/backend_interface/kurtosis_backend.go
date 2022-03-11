@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
-	"net"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -156,10 +155,7 @@ type KurtosisBackend interface {
 		containerImageName string,
 		serializedParams string,
 	)(
-		privateIp net.IP,
-		privatePort *port_spec.PortSpec,
-		publicIp net.IP,
-		publicPort *port_spec.PortSpec,
+		newModule *module.Module,
 		resultErr error,
 	)
 
@@ -188,8 +184,7 @@ type KurtosisBackend interface {
 		enclaveDataDirMntDirpath string,
 		filesArtifactMountDirpaths map[string]string,
     )(
-		maybePublicIpAddr net.IP, // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
-		publicPorts map[string]*port_spec.PortSpec, //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+		newUserService *service.Service,
 		resultErr error,
 	)
 
