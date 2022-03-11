@@ -5,22 +5,30 @@ import (
 	"net"
 )
 
+type ModuleID string
+type ModuleGUID string
+
 // Object that represents POINT-IN-TIME information about a Kurtosis Module
 // Store this object and continue to reference it at your own risk!!!
 type Module struct {
-	id string
+	id ModuleID
+	guid ModuleGUID
 	privateIp net.IP
 	privatePort *port_spec.PortSpec
 	publicIp net.IP
 	publicPort *port_spec.PortSpec
 }
 
-func NewModule(id string, privateIp net.IP, privatePort *port_spec.PortSpec, publicIp net.IP, publicPort *port_spec.PortSpec) *Module {
-	return &Module{id: id, privateIp: privateIp, privatePort: privatePort, publicIp: publicIp, publicPort: publicPort}
+func NewModule(id ModuleID, guid ModuleGUID, privateIp net.IP, privatePort *port_spec.PortSpec, publicIp net.IP, publicPort *port_spec.PortSpec) *Module {
+	return &Module{id: id, guid: guid, privateIp: privateIp, privatePort: privatePort, publicIp: publicIp, publicPort: publicPort}
 }
 
-func (module *Module) GetID() string {
+func (module *Module) GetID() ModuleID {
 	return module.id
+}
+
+func (module *Module) GetGUID() ModuleGUID {
+	return module.guid
 }
 
 func (module *Module) GetPrivateIp() net.IP {

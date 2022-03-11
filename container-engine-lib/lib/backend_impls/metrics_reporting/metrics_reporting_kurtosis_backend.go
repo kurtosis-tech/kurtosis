@@ -179,7 +179,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 
 func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	ctx context.Context,
-	id string,
+	id module.ModuleID,
+	guid module.ModuleGUID,
 	containerImageName string,
 	serializedParams string,
 )(
@@ -189,6 +190,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	module, err := backend.underlying.CreateModule(
 		ctx,
 		id,
+		guid,
 		containerImageName,
 		serializedParams,
 		)
@@ -196,8 +198,9 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		return nil,
 		stacktrace.Propagate(
 			err,
-			"An error occurred creating module with ID '%v', container image name '%v' and serialized params '%+v'",
+			"An error occurred creating module with ID '%v', GUID '%v', container image name '%v' and serialized params '%+v'",
 			id,
+			guid,
 			containerImageName,
 			serializedParams)
 	}
@@ -223,8 +226,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 )(
-	successfulModuleIds map[string]bool,
-	erroredModuleIds map[string]error,
+	successfulModuleIds map[module.ModuleGUID]bool,
+	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyModules(ctx, filters)

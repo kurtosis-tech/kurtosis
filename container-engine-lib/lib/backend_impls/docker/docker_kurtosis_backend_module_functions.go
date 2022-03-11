@@ -7,7 +7,8 @@ import (
 
 func (backendCore *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
-	id string,
+	id module.ModuleID,
+	guid module.ModuleGUID,
 	containerImageName string,
 	serializedParams string,
 )(
@@ -31,8 +32,8 @@ func (backendCore *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 ) (
-	successfulModuleIds map[string]bool,
-	erroredModuleIds map[string]error,
+	successfulModuleIds map[module.ModuleGUID]bool,
+	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
 	panic("Implement me")

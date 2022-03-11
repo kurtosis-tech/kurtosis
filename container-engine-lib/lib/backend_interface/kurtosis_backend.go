@@ -151,7 +151,8 @@ type KurtosisBackend interface {
 	// Create a module from a container image with serialized params
 	CreateModule(
 		ctx context.Context,
-		id string,
+		id module.ModuleID,
+		guid module.ModuleGUID,
 		containerImageName string,
 		serializedParams string,
 	)(
@@ -167,8 +168,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *module.ModuleFilters,
 	) (
-		successfulModuleIds map[string]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[string]error, // "set" of module IDs that errored when destroying, with the error
+		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 

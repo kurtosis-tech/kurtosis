@@ -1,7 +1,7 @@
 package module
 
 type ModuleFilters struct {
-	// Disjunctive set of module IDs to find modules for
-	// If nil or empty, will match all IDs
-	IDs map[string]bool
+	// Disjunctive set of module GUIDs to find modules for
+	// If nil or empty, will match all GUIDs
+	GUIDs map[ModuleGUID]bool
 }
