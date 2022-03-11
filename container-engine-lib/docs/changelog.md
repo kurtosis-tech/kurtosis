@@ -2,6 +2,7 @@
 ### Features
 * Added `UserService` methods, `Modules` methods and `CreateRepartition` method in `KurtosisBackend` interface
 * Stubbing out methods for `UserService`, `Modules` and `CreateRepartition` into Docker implementation
+* Expose information of an `APIContainer` object
 
 # 0.10.1
 ### Features
