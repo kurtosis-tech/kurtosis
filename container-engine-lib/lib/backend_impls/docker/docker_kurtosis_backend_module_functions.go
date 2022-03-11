@@ -3,20 +3,16 @@ package docker
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"net"
 )
 
 func (backendCore *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
-	id string,
+	id module.ModuleID,
+	guid module.ModuleGUID,
 	containerImageName string,
 	serializedParams string,
 )(
-	privateIp net.IP,
-	privatePort *port_spec.PortSpec,
-	publicIp net.IP,
-	publicPort *port_spec.PortSpec,
+	newModule *module.Module,
 	resultErr error,
 ) {
 	panic("Implement me")
@@ -36,8 +32,8 @@ func (backendCore *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 ) (
-	successfulModuleIds map[string]bool,
-	erroredModuleIds map[string]error,
+	successfulModuleIds map[module.ModuleGUID]bool,
+	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
 	panic("Implement me")

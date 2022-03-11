@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
-	"net"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -151,14 +150,12 @@ type KurtosisBackend interface {
 	// Create a module from a container image with serialized params
 	CreateModule(
 		ctx context.Context,
-		id string,
+		id module.ModuleID,
+		guid module.ModuleGUID,
 		containerImageName string,
 		serializedParams string,
 	)(
-		privateIp net.IP,
-		privatePort *port_spec.PortSpec,
-		publicIp net.IP,
-		publicPort *port_spec.PortSpec,
+		newModule *module.Module,
 		resultErr error,
 	)
 
@@ -170,15 +167,16 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *module.ModuleFilters,
 	) (
-		successfulModuleIds map[string]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[string]error, // "set" of module IDs that errored when destroying, with the error
+		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the modules
 	)
 
 	// Creates a user service inside an enclave with the given configuration
 	CreateUserService(
 		ctx context.Context,
-		id string,
+		id service.ServiceID,
+		guid service.ServiceGUID,
 		containerImageName string,
 		privatePorts []*port_spec.PortSpec,
 		entrypointArgs []string,
@@ -187,21 +185,20 @@ type KurtosisBackend interface {
 		enclaveDataDirMntDirpath string,
 		filesArtifactMountDirpaths map[string]string,
     )(
-		maybePublicIpAddr net.IP, // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
-		publicPorts map[string]*port_spec.PortSpec, //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
+		newUserService *service.Service,
 		resultErr error,
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their ID
-	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[string]*service.Service, error)
+	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]*service.Service, error)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
-	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[string]io.ReadCloser, error)
+	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]io.ReadCloser, error)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommand (
 		ctx context.Context,
-		serviceId string,
+		serviceGUID service.ServiceGUID,
 		commandArgs []string,
 	)(
 		exitCode int32,
@@ -212,7 +209,7 @@ type KurtosisBackend interface {
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
-		serviceId string,
+		serviceGUID service.ServiceGUID,
 		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
@@ -225,13 +222,21 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Get an interactive shell to execute commands in an user service
+	GetShellOnUserService(
+		ctx context.Context,
+		serviceGUID service.ServiceGUID,
+	)(
+		resultErr error,
+	)
+
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully stopped
-		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when stopping, with the error
+		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully stopped
+		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -240,17 +245,9 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[string]bool, // "set" of user service IDs that were successfully destroyed
-		erroredUserServiceIds map[string]error, // "set" of user service IDs that errored when destroying, with the error
+		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed
+		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
-	)
-
-	// Get an interactive shell to execute commands in an user service
-	GetShellOnUserService(
-		ctx context.Context,
-		userServiceId string,
-	)(
-		resultErr error,
 	)
 
 	// TODO CreateRepl
