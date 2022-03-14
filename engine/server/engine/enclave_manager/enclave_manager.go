@@ -322,14 +322,21 @@ func (manager *EnclaveManager) GetEnclaves(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.getEnclavesWithoutMutex(ctx)
+	enclaves, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclaves without the mutex")
+	}
+	return enclaves, nil
 }
 
 func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.stopEnclaveWithoutMutex(ctx, enclaveId)
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
+	}
+	return nil
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
@@ -337,7 +344,10 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId str
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.destroyEnclaveWithoutMutex(ctx, enclaveId)
+	if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the enclave without the mutex")
+	}
+	return nil
 }
 
 func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (map[string]bool, error) {
@@ -984,6 +994,14 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
 func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
+			enclaveId,
+		)
+	}
+
 	_, errs, resultErr := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveIdFilter(enclaveId))
 	// Handle any err thrown by the backend
 	enclaveDestroyErrs := []string{}
