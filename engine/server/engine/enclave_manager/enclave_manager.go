@@ -977,7 +977,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 ) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error thrown retrieving running enclaves")
+		return nil, stacktrace.Propagate(err, "Error thrown retrieving enclaves")
 	}
 
 	result := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
