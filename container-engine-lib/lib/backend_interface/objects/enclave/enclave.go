@@ -24,7 +24,7 @@ func NewEnclave(id EnclaveID, status EnclaveStatus, networkID string, networkCID
 	return &Enclave{id: id, status: status, networkID: networkID, networkCIDR: networkCIDR, networkGatewayIp: networkGatewayIp, networkIpAddrTracker: networkIpAddrTracker}
 }
 
-func (enclave *Enclave) GetID() string {
+func (enclave *Enclave) GetID() EnclaveID {
 	return enclave.id
 }
 
