@@ -65,7 +65,7 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 
 func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
 	ctx context.Context,
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
 )(*enclave.Enclave, error) {
 	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
@@ -75,7 +75,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[string]*enclave.Enclave, error) {
+func (backend *MetricsReportingKurtosisBackend) GetEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	map[enclave.EnclaveID]*enclave.Enclave,
+	error,
+){
 	results, err := backend.underlying.GetEnclaves(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves using filters: %+v", filters)
@@ -83,7 +89,14 @@ func (backend *MetricsReportingKurtosisBackend) GetEnclaves(ctx context.Context,
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	successfulEnclaveIds map[enclave.EnclaveID]bool,
+	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
+){
 	successes, failures, err := backend.underlying.StopEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters: %+v", filters)
@@ -91,34 +104,19 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(ctx context.Context
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	successfulEnclaveIds map[enclave.EnclaveID]bool,
+	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
+) {
 	successes, failures, err := backend.underlying.DestroyEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves using filters: %+v", filters)
 	}
 	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) RepartitionEnclave(
-	ctx context.Context,
-	enclaveId string,
-	servicesConnections map[service.ServiceID]map[service.ServiceID]enclave.NetworkConnection,
-)(
-	resultErr error,
-) {
-	if err := backend.underlying.RepartitionEnclave(
-		ctx,
-		enclaveId,
-		servicesConnections,
-	); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating repartition with servicesConnections '%+v' for enclave with ID '%v'",
-			servicesConnections,
-			enclaveId,
-		)
-	}
-	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(

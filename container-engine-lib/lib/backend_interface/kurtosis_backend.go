@@ -55,7 +55,7 @@ type KurtosisBackend interface {
 	// Creates an enclave with the given enclave ID
 	CreateEnclave(
 		ctx context.Context,
-		enclaveId string,
+		enclaveId enclave.EnclaveID,
 		isPartitioningEnabled bool,
 	) (
 		*enclave.Enclave,
@@ -67,7 +67,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		map[string]*enclave.Enclave,
+		map[enclave.EnclaveID]*enclave.Enclave,
 		error,
 	)
 
@@ -78,8 +78,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		successfulEnclaveIds map[string]bool,
-		erroredEnclaveIds map[string]error,
+		successfulEnclaveIds map[enclave.EnclaveID]bool,
+		erroredEnclaveIds map[enclave.EnclaveID]error,
 		resultErr error,
 	)
 
@@ -88,19 +88,11 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *enclave.EnclaveFilters,
 	) (
-		successfulEnclaveIds map[string]bool,
-		erroredEnclaveIds map[string]error,
+		successfulEnclaveIds map[enclave.EnclaveID]bool,
+		erroredEnclaveIds map[enclave.EnclaveID]error,
 		resultErr error,
 	)
 
-	// Repartition the Enclave network defining which services will be on each part
-	RepartitionEnclave(
-		ctx context.Context,
-		enclaveId string,
-		servicesConnections map[service.ServiceID]map[service.ServiceID]enclave.NetworkConnection,
-	)(
-		resultErr error,
-	)
 
 	CreateAPIContainer(
 		ctx context.Context,
