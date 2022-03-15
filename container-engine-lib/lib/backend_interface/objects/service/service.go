@@ -13,6 +13,7 @@ type ServiceGUID string
 type Service struct {
 	id ServiceID
 	guid ServiceGUID
+	enclaveId enclave.
 	maybePublicIpAddr net.IP // The ip exposed in the host machine. Will be nil if the service doesn't declare any private ports
 	publicPorts map[string]*port_spec.PortSpec //Mapping of port-used-by-service -> port-on-the-host-machine where the user can make requests to the port to access the port. If a used port doesn't have a host port bound, then the value will be nil.
 }

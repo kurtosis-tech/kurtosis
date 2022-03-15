@@ -1,12 +1,14 @@
 package enclave
 
 import (
-	"net"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"net"
 )
 
+type EnclaveID string
+
 type Enclave struct {
-	id string
+	id EnclaveID
 	status EnclaveStatus
 	//TODO REMOVE THIS WHEN WE ALL DOCKER LOGIC IS ABSTRACTED IN THE BACKEND
 	networkID string
@@ -18,7 +20,7 @@ type Enclave struct {
 	networkIpAddrTracker *lib.FreeIpAddrTracker
 }
 
-func NewEnclave(id string, status EnclaveStatus, networkID string, networkCIDR string, networkGatewayIp net.IP, networkIpAddrTracker *lib.FreeIpAddrTracker) *Enclave {
+func NewEnclave(id EnclaveID, status EnclaveStatus, networkID string, networkCIDR string, networkGatewayIp net.IP, networkIpAddrTracker *lib.FreeIpAddrTracker) *Enclave {
 	return &Enclave{id: id, status: status, networkID: networkID, networkCIDR: networkCIDR, networkGatewayIp: networkGatewayIp, networkIpAddrTracker: networkIpAddrTracker}
 }
 
