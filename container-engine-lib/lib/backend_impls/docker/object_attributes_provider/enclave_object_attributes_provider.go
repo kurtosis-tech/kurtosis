@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -38,7 +39,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	// ForInteractiveREPLContainer(interactiveReplGuid string) (DockerObjectAttributes,error)
 	// ForUserServiceContainer(serviceID string, serviceGUID string, privatePorts map[string]*PortSpec) (DockerObjectAttributes, error)
-	// ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo string) (DockerObjectAttributes, error)
+	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForModuleContainer(moduleID string, moduleGUID string, privatePortNum uint16) (DockerObjectAttributes, error)
@@ -95,7 +96,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
-			provider.enclaveId.GetString(),
 			apiContainerNameSuffix,
 		},
 	)
@@ -139,6 +139,36 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject(
+		[]string{
+			networkingSidecarContainerNameFragment,
+			string(serviceGUIDSidecarAttachedTo),
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
+	}
+
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceGUIDSidecarAttachedTo))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
+}
 
 // ====================================================================================================
 //                                      Private Helper Functions
@@ -167,13 +197,18 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	}
 }
 
-/*
-func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error){
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.GUIDLabelKey] = guid
-	return labels
+	dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(guid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred trying to create a new Docker label value for '%v'", guid)
+	}
+	labels[label_key_consts.GUIDLabelKey] = dockerLabelValue
+	return labels, nil
 }
 
+/*
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	labels := provider.getLabelsForEnclaveObjectWithGUID(guid)
 	labels[label_key_consts.IDLabelKey] = id

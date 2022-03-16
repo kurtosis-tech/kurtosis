@@ -234,7 +234,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 
 	// Remove containers
 	for enclaveId := range successfulEnclaveIds {
-		_, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
+		containers, err := backend.getEnclaveContainers(ctx, enclaveId)
 		if err != nil {
 			delete(successfulEnclaveIds, enclaveId)
 			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
