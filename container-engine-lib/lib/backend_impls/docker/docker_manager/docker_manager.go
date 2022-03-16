@@ -1088,12 +1088,23 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 	}
 	containerHostPortBindings := getHostPortBindingsFromContainerPortsList(dockerContainer.Ports)
 
+	networkIpAddresses := map[string]net.IP{}
+
+	if dockerContainer.NetworkSettings != nil {
+		for networkId, endpointSettings := range dockerContainer.NetworkSettings.Networks {
+			ipAddressStr := endpointSettings.IPAddress
+			ip := net.ParseIP(ipAddressStr)
+			networkIpAddresses[networkId] = ip
+		}
+	}
+
 	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
 		containerName,
 		dockerContainer.Labels,
 		containerStatus,
-		containerHostPortBindings)
+		containerHostPortBindings,
+		networkIpAddresses)
 
 	return newContainer, nil
 }

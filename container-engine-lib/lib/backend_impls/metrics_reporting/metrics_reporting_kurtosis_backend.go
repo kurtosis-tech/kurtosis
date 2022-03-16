@@ -7,10 +7,12 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
+	"net"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -411,4 +413,65 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
 	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+)(
+	*networking_sidecar.NetworkingSidecar,
+	error,
+){
+	networkingSidecar, err := backend.underlying.CreateNetworkingSidecar(ctx, enclaveId, serviceGuid, ipAddr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for user service with GUID in enclave with ID '%v'", serviceGuid, enclaveId)
+	}
+	return networkingSidecar, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
+	ctx context.Context,
+	filters *networking_sidecar.NetworkingSidecarFilters,
+)(
+	map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
+	error,
+) {
+	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars using filters '%+v'", filters)
+	}
+	return networkingSidecars, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarsExecCommand(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
+)(
+	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
+	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+	resultErr error,
+){
+	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.RunNetworkingSidecarsExecCommand(ctx, enclaveId, networkingSidecarsCommands)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with ID '%v'", networkingSidecarsCommands, enclaveId)
+	}
+	return successfulSidecarGuids, erroredSidecarGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
+	ctx context.Context,
+	filters *networking_sidecar.NetworkingSidecarFilters,
+)(
+	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
+	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+	resultErr error,
+){
+	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.StopNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filters '%+v'", filters)
+	}
+	return successfulSidecarGuids, erroredSidecarGuids, nil
 }

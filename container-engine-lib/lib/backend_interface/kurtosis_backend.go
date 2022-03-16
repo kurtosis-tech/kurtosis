@@ -6,9 +6,11 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
+	"net"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -151,7 +153,7 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
+	// Gets modules using the given filters, returning a map of matched modules identified by their module GUID
 	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
@@ -181,7 +183,7 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Gets user services using the given filters, returning a map of matched user services identified by their ID
+	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
 	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]*service.Service, error)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
@@ -240,6 +242,57 @@ type KurtosisBackend interface {
 		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed
 		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
+	)
+
+	//Create a user service's  networking sidecar inside enclave
+	CreateNetworkingSidecar(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	)(
+		*networking_sidecar.NetworkingSidecar,
+		error,
+	)
+
+	// Gets networking sidecars using the given filters, returning a map of matched networking sidecars identified by their GUID
+	GetNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
+		error,
+	)
+
+	//Executes shell commands inside a networking sidecar instance indenfified by its GUID
+	RunNetworkingSidecarsExecCommand(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
+	)(
+		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
+		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		resultErr error,
+	)
+
+	// Stop networking sidecars using the given filters,
+	StopNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
+		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		resultErr error,
+	)
+
+	// Destroy networking sidecars using the given filters,
+	DestroyNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
+		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		resultErr error,
 	)
 
 	// TODO CreateRepl
