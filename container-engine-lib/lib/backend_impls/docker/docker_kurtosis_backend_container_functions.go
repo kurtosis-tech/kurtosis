@@ -107,7 +107,7 @@ func (backend *DockerKurtosisBackend) removeContainer(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) removedContainers(
+func (backend *DockerKurtosisBackend) removeContainers(
 	ctx context.Context,
 	containers []*types.Container,
 )(

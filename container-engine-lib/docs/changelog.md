@@ -6,6 +6,8 @@
 * Implemented the methods: `CreateEnclave`, `GetEnclaves`, `StopEnclaves` and `DestroyEnclaves` in `DockerKurtosisBackend`
 * Added `IsNetworkPartitioningEnabledLabelKey` label key constant
 * Added `NetworkPartitioningEnabledLabelValue` and `NetworkPartitioningDisabledLabelValue` label value constants
+* Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarsExecCommand`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
+* Added `UserServiceContainerTypeLabelValue` and `NetworkingSidecarContainerTypeLabelValue` label key constants
 
 # 0.10.1
 ### Features

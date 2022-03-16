@@ -212,7 +212,7 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 			continue
 		}
 
-		if _, erroredContainers := backend.removedContainers(ctx, containers); len(erroredContainers) > 0 {
+		if _, erroredContainers := backend.removeContainers(ctx, containers); len(erroredContainers) > 0 {
 			removeContainerErrorStrs := []string{}
 			for _, err = range erroredContainers{
 				removeContainerErrorStrs = append(removeContainerErrorStrs, err.Error())
