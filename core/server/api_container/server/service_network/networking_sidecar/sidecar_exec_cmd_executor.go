@@ -1,21 +1,16 @@
 /*
- * Copyright (c) 2021 - present Kurtosis Technologies Inc.
+ * Copyright (c) 2022 - present Kurtosis Technologies Inc.
  * All Rights Reserved.
  */
 
 package networking_sidecar
 
 import (
-	"bytes"
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"io"
-)
-
-const (
-	succesfulExecCmdExitCode = 0
 )
 
 // ==========================================================================================
@@ -23,57 +18,47 @@ const (
 // ==========================================================================================
 // Extracted as an interface for testing
 type sidecarExecCmdExecutor interface {
-	exec(ctx context.Context, unwrappedCmd []string) error
+	exec(ctx context.Context, cmd []string) error
 }
 
 // ==========================================================================================
 //                                  Implementation
 // ==========================================================================================
-// The API for the NetworkingSidecar class run exec commands against the actual Docker container that backs it
-// This is a separate class because NetworkingSidecar shouldn't know about the underlying DockerManager used to run
-//  the exec commands; it should be transparent to NetworkingSidecar
+// The API for the NetworkingSidecar class run exec commands against the Kurtosis Backend
+// This is a separate class because NetworkingSidecar we need to create also a mock to test purpose
 type standardSidecarExecCmdExecutor struct {
-	dockerManager *docker_manager.DockerManager
+	kurtosisBackend backend_interface.KurtosisBackend
 
-	// Container ID of the sidecar container in which exec commands should run
-	sidecarContainerId string
+	// GUID of the networking sidecar in which exec commands should run
+	networkingSidecarGuid networking_sidecar.NetworkingSidecarGUID
 
-	shWrappingCmd func([]string) []string
+	enclaveId enclave.EnclaveID
 }
 
-func newStandardSidecarExecCmdExecutor(dockerManager *docker_manager.DockerManager, sidecarContainerId string, shWrappingCmd func([]string) []string) *standardSidecarExecCmdExecutor {
-	return &standardSidecarExecCmdExecutor{dockerManager: dockerManager, sidecarContainerId: sidecarContainerId, shWrappingCmd: shWrappingCmd}
+func newStandardSidecarExecCmdExecutor(kurtosisBackend backend_interface.KurtosisBackend, networkingSidecarGuid networking_sidecar.NetworkingSidecarGUID, enclaveId enclave.EnclaveID) *standardSidecarExecCmdExecutor {
+	return &standardSidecarExecCmdExecutor{kurtosisBackend: kurtosisBackend, networkingSidecarGuid: networkingSidecarGuid, enclaveId: enclaveId}
 }
 
+func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, cmd []string) error {
 
+	var (
+		networkingSidecarCommands = map[networking_sidecar.NetworkingSidecarGUID][]string{
+			executor.networkingSidecarGuid: cmd,
+		}
+	)
 
-func (executor standardSidecarExecCmdExecutor) exec(ctx context.Context, unwrappedCmd []string) error {
-	shWrappedCmd := executor.shWrappingCmd(unwrappedCmd)
-
-	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := executor.dockerManager.RunExecCommand(
-			ctx,
-			executor.sidecarContainerId,
-			shWrappedCmd,
-			execOutputBuf)
-	if err != nil || exitCode != succesfulExecCmdExitCode {
-		logrus.Errorf("------------------ Exec command output for command '%v' --------------------", shWrappedCmd)
-		if _, err := io.Copy(logrus.StandardLogger().Out, execOutputBuf); err != nil {
-			logrus.Errorf("An error occurred printing the exec logs: %v", err)
-		}
-		logrus.Errorf("------------------ END Exec command output for command '%v' --------------------", shWrappedCmd)
-		var resultErr error
-		if err != nil {
-			resultErr = stacktrace.Propagate(err, "An error occurred running exec command '%v'", shWrappedCmd)
-		}
-		if exitCode != succesfulExecCmdExitCode {
-			resultErr = stacktrace.NewError(
-				"Expected exit code '%v' when running exec command '%v', but got exit code '%v' instead",
-				succesfulExecCmdExitCode,
-				shWrappedCmd,
-				exitCode)
-		}
-		return resultErr
+	_, erroredNetworkingSidecars, err := executor.kurtosisBackend.RunNetworkingSidecarsExecCommand(
+		ctx,
+		executor.enclaveId,
+		networkingSidecarCommands,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.networkingSidecarGuid)
 	}
+	if len(erroredNetworkingSidecars) > 0 {
+		sidecarError := erroredNetworkingSidecars[executor.networkingSidecarGuid]
+		return stacktrace.Propagate(sidecarError, "An error occurred running exec command in networking sidecar with GUID '%v'", executor.networkingSidecarGuid)
+	}
+
 	return nil
 }

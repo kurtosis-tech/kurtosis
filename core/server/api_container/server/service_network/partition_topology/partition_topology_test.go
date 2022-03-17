@@ -45,7 +45,7 @@ func BenchmarkHugeNetworkSinglePartitionGetServicePacketLossConfigurationsByServ
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := topology.GetServicePacketLossConfigurationsByServiceID(); err != nil {
+		if _, err := topology.GetServicePacketLossConfigurationsByServiceGUID(); err != nil {
 			b.Fatal(stacktrace.Propagate(err, "An error occurred getting the sevice packet loss configuration by service ID"))
 		}
 	}
@@ -118,7 +118,7 @@ func BenchmarkHugeNetworkPathologicalPartitioningGetServicePacketLossConfigurati
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := topology.GetServicePacketLossConfigurationsByServiceID(); err != nil {
+		if _, err := topology.GetServicePacketLossConfigurationsByServiceGUID(); err != nil {
 			b.Fatal(stacktrace.Propagate(err, "An error occurred getting the packet loss configuration map"))
 		}
 	}
@@ -498,7 +498,7 @@ func repartition(
 }
 
 func getServicePacketLossConfigurationsByServiceIDMap(t *testing.T, topology *PartitionTopology) map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32 {
-	servicePacketLossConfigurationByServiceID, err := topology.GetServicePacketLossConfigurationsByServiceID()
+	servicePacketLossConfigurationByServiceID, err := topology.GetServicePacketLossConfigurationsByServiceGUID()
 	if err != nil {
 		t.Fatal(stacktrace.Propagate(err, "An error occurred getting service packet loss configuration by service id"))
 	}

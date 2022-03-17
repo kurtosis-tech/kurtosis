@@ -7,41 +7,21 @@ package networking_sidecar
 
 import (
 	"context"
-	"strings"
-
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 )
-
-const (
-	networkingSidecarImageName = "kurtosistech/iproute2"
-)
-
-// We sleep forever because all the commands this container will run will be executed
-//  via Docker exec
-var sidecarContainerCommand = []string{
-	"sleep", "infinity",
-}
-
-// Embeds the given command in a call to whichever shell is native to the image, so that a command with things
-//  like '&&' will get executed as expected
-var sidecarContainerShWrapper = func(unwrappedCmd []string) []string {
-	return []string{
-		"sh",
-		"-c",
-		strings.Join(unwrappedCmd, " "),
-	}
-}
 
 // ==========================================================================================
 //                                        Interface
 // ==========================================================================================
 type NetworkingSidecarManager interface {
-	Add(ctx context.Context, serviceId service_network_types.ServiceGUID, serviceContainerId string) (NetworkingSidecar, error)
-	Remove(ctx context.Context, sidecar NetworkingSidecar) error
+	Add(ctx context.Context, serviceId service.ServiceGUID) (NetworkingSidecarWrapper, error)
+	Remove(ctx context.Context, sidecar NetworkingSidecarWrapper) error
 }
 
 // ==========================================================================================
@@ -53,24 +33,24 @@ type NetworkingSidecarManager interface {
 //  only one change at a time is run on a given sidecar container!!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type StandardNetworkingSidecarManager struct {
-	dockerManager *docker_manager.DockerManager
+	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	dockerNetworkId string
+	enclaveId enclave.EnclaveID
 }
 
-func NewStandardNetworkingSidecarManager(dockerManager *docker_manager.DockerManager, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, dockerNetworkId string) *StandardNetworkingSidecarManager {
-	return &StandardNetworkingSidecarManager{dockerManager: dockerManager, enclaveObjAttrProvider: enclaveObjAttrProvider, freeIpAddrTracker: freeIpAddrTracker, dockerNetworkId: dockerNetworkId}
+func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.KurtosisBackend, enclaveObjAttrProvider schema.EnclaveObjectAttributesProvider, freeIpAddrTracker *lib.FreeIpAddrTracker, enclaveId enclave.EnclaveID) *StandardNetworkingSidecarManager {
+	return &StandardNetworkingSidecarManager{kurtosisBackend: kurtosisBackend, enclaveObjAttrProvider: enclaveObjAttrProvider, freeIpAddrTracker: freeIpAddrTracker, enclaveId: enclaveId}
 }
 
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Add(
 	ctx context.Context,
-	serviceGUID service_network_types.ServiceGUID,
-	serviceContainerId string) (NetworkingSidecar, error) {
+	serviceGUID service.ServiceGUID) (NetworkingSidecarWrapper, error) {
+
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -79,64 +59,43 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			serviceGUID)
 	}
 
-	containerAttrs, err := manager.enclaveObjAttrProvider.ForNetworkingSidecarContainer(string(serviceGUID))
+	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId,serviceGUID, sidecarIp)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the attributes for the networking sidecar attached to service with GUID '%v'", serviceGUID)
-	}
-	containerName := containerAttrs.GetName()
-	containerLabels := containerAttrs.GetLabels()
-	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
-		networkingSidecarImageName,
-		containerName,
-		manager.dockerNetworkId,
-	).WithAlias(
-		containerName,
-	).WithStaticIP(
-		sidecarIp,
-	).WithAddedCapabilities(map[docker_manager.ContainerCapability]bool{
-		docker_manager.NetAdmin: true,
-	}).WithNetworkMode(
-		docker_manager.NewContainerNetworkMode(serviceContainerId),
-	).WithCmdArgs(
-		sidecarContainerCommand,
-	).WithLabels(
-		containerLabels,
-	).Build()
-	sidecarContainerId, _, err := manager.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred starting the sidecar container attached to service with GUID '%v'",
-			serviceGUID,
-		)
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveId)
 	}
 
 	execCmdExecutor := newStandardSidecarExecCmdExecutor(
-		manager.dockerManager,
-		sidecarContainerId,
-		sidecarContainerShWrapper)
+		manager.kurtosisBackend,
+		networkingSidecar.GetGuid(),
+		networkingSidecar.GetEnclaveId())
 
-	sidecarContainer := NewStandardNetworkingSidecar(
-		serviceGUID,
-		sidecarContainerId,
-		sidecarIp,
-		*execCmdExecutor,
-	)
+	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(manager.kurtosisBackend, networkingSidecar, execCmdExecutor)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with GUID '%v'", networkingSidecar.GetGuid())
+	}
 
-	return sidecarContainer, nil
+	return networkingSidecarWrapper, nil
 }
 
 func (manager *StandardNetworkingSidecarManager) Remove(
 	ctx context.Context,
-	sidecar NetworkingSidecar) error {
-	sidecarContainerId := sidecar.GetContainerID()
-	sidecarIp := sidecar.GetIPAddr()
-	if err := manager.dockerManager.KillContainer(ctx, sidecarContainerId); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred stopping the sidecar with container ID '%v'",
-			sidecarContainerId)
+	networkingSidecarWrapper NetworkingSidecarWrapper) error {
+
+	filters := &networking_sidecar.NetworkingSidecarFilters{
+		GUIDs: map[networking_sidecar.NetworkingSidecarGUID]bool{
+			networkingSidecarWrapper.GetGUID(): true,
+		},
 	}
-	manager.freeIpAddrTracker.ReleaseIpAddr(sidecarIp)
+
+	_, erroredNetworkingSidecars, err := manager.kurtosisBackend.StopNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filter '%+v'", filters)
+	}
+	if len(erroredNetworkingSidecars) > 0 {
+		sidecarError := erroredNetworkingSidecars[networkingSidecarWrapper.GetGUID()]
+		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarWrapper.GetGUID())
+	}
+
+	manager.freeIpAddrTracker.ReleaseIpAddr(networkingSidecarWrapper.GetIPAddr())
 	return nil
 }

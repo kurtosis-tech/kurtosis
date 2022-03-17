@@ -32,7 +32,7 @@ func TestDestroyReleasesIp(t *testing.T) {
 	assert.Nil(t, err)
 
 	mockExecCmdExecutor := newMockSidecarExecCmdExecutor()
-	sidecar := NewStandardNetworkingSidecar(
+	sidecar := NewStandardNetworkingSidecarWrapper(
 		"test-service-id",
 		"test-container-id",
 		ip,

@@ -7,6 +7,7 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -21,7 +22,7 @@ type ServiceNetwork interface {
 	*/
 	Repartition(
 		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet,
+		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceGUID]bool,
 		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection,
 	) error

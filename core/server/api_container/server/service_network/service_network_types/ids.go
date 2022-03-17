@@ -5,6 +5,7 @@
 
 package service_network_types
 
+//TODO this should be removed and we should use service.ServiceID from container-engine-lib instead
 type ServiceID string
 
 // This is the Service Global Unique Identifier necessary to identify the service's container and
@@ -13,6 +14,7 @@ type ServiceID string
 //Kurt Interactive and stopped, and then a new service with the same ID is loaded the names of
 //the containers would collide if they have the ServiceID as the name, but using the ServiceGUID
 //avoid this collision
+//TODO this should be removed and we should use service.ServiceGUID from container-engine-lib instead
 type ServiceGUID string
 
 type PartitionID string

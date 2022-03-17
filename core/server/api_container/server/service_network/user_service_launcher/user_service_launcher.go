@@ -126,27 +126,22 @@ func (launcher UserServiceLauncher) Launch(
 		return userServiceContainerAttrs, nil
 	}
 
-	usedArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
-	for artifactIdStr := range filesArtifactIdsToMountpoints {
-		artifactId := files_artifact.FilesArtifactID(artifactIdStr)
+	usedArtifactIdSet := map[string]bool{}
+	for artifactId := range filesArtifactIdsToMountpoints {
 		usedArtifactIdSet[artifactId] = true
 	}
 
-	//TODO we should remove this var when whe replace `service_network_types.ServiceGUID` with `service.ServiceGUID`
-	//TODO in all this project
-	adaptedServiceGuid := service.ServiceGUID(serviceGUID)
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, adaptedServiceGuid, usedArtifactIdSet)
+	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
 	artifactVolumeMounts := map[string]string{}
-	for artifactIdStr, mountpoint := range filesArtifactIdsToMountpoints {
-		artifactId := files_artifact.FilesArtifactID(artifactIdStr)
-		artifactVolumeName, found := artifactIdsToVolumes[artifactId]
+	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
+		artifactVolume, found := artifactIdsToVolumes[artifactId]
 		if !found {
 			return "", nil, nil, stacktrace.NewError(
 				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the " +
@@ -154,8 +149,7 @@ func (launcher UserServiceLauncher) Launch(
 				artifactId,
 			)
 		}
-		artifactVolumeNameStr := string(artifactVolumeName)
-		artifactVolumeMounts[artifactVolumeNameStr] = mountpoint
+		artifactVolumeMounts[artifactVolume] = mountpoint
 	}
 
 	containerId, publicIpAddr, publicPorts, err := launcher.enclaveContainerLauncher.Launch(

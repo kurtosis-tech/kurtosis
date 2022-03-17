@@ -23,11 +23,11 @@ func TestUpdateTrafficControl(t *testing.T) {
 	numServices := 10
 	ctx := context.Background()
 
-	sidecars := map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{}
-	mockSidecars := map[service_network_types.ServiceID]*networking_sidecar.MockNetworkingSidecar{}
+	sidecars := map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecarWrapper{}
+	mockSidecars := map[service_network_types.ServiceID]*networking_sidecar.MockNetworkingSidecarWrapper{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		sidecar := networking_sidecar.NewMockNetworkingSidecar()
+		sidecar := networking_sidecar.NewMockNetworkingSidecarWrapper()
 		sidecars[serviceId] = sidecar
 		mockSidecars[serviceId] = sidecar
 	}

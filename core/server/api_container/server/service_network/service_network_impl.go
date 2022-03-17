@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
@@ -33,7 +34,7 @@ const (
 
 // Information that gets created with a service's registration
 type serviceRegistrationInfo struct {
-	serviceGUID      service_network_types.ServiceGUID
+	serviceGUID      service.ServiceGUID
 	privateIpAddr    net.IP
 	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
@@ -70,6 +71,7 @@ type ServiceNetworkImpl struct {
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
+	//TODO it must be replaced with kurtosisBackend after all functionality will be implemented
 	dockerManager *docker_manager.DockerManager
 
 	dockerNetworkId string
@@ -80,12 +82,14 @@ type ServiceNetworkImpl struct {
 
 	topology *partition_topology.PartitionTopology
 
+	serviceGUIDsToIDs map[service.ServiceGUID]service_network_types.ServiceID
+
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo
 	serviceRunInfo          map[service_network_types.ServiceID]serviceRunInfo
 
-	networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar
+	networkingSidecars map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 }
@@ -112,9 +116,10 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
+		serviceGUIDsToIDs: 		  map[service.ServiceGUID]service_network_types.ServiceID{},
 		serviceRegistrationInfo:  map[service_network_types.ServiceID]serviceRegistrationInfo{},
 		serviceRunInfo:           map[service_network_types.ServiceID]serviceRunInfo{},
-		networkingSidecars:       map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar{},
+		networkingSidecars:       map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
 }
@@ -124,7 +129,7 @@ Completely repartitions the network, throwing away the old topology
 */
 func (network *ServiceNetworkImpl) Repartition(
 		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]*service_network_types.ServiceIDSet,
+		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceGUID]bool,
 		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 		newDefaultConnection partition_topology.PartitionConnection) error {
 	network.mutex.Lock()
@@ -141,14 +146,14 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
-	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+	servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating the qdisc configuration to match the target service packet loss configurations after repartitioning")
+	if err := network.updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceGUID); err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
 }
@@ -196,33 +201,35 @@ func (network ServiceNetworkImpl) RegisterService(
 	}()
 	logrus.Debugf("Giving service '%v' IP '%v'", serviceId, ip.String())
 
-	serviceGUID := newServiceGUID(serviceId)
+	serviceGuid := newServiceGUID(serviceId)
 
-	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGUID)
+	serviceDirectory, err := network.enclaveDataDir.GetServiceDirectory(serviceGuid)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGUID)
+		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGuid)
 	}
 
 	serviceRegistrationInfo := serviceRegistrationInfo{
-		serviceGUID:      serviceGUID,
+		serviceGUID:      serviceGuid,
 		privateIpAddr:    ip,
 		serviceDirectory: serviceDirectory,
 	}
 
 	network.serviceRegistrationInfo[serviceId] = serviceRegistrationInfo
+	network.serviceGUIDsToIDs[serviceGuid] = serviceId
 	shouldUndoRegistrationInfoAdd := true
 	defer func() {
 		// If an error occurs, the service ID won't be used so we need to delete it from the map
 		if shouldUndoRegistrationInfoAdd {
 			delete(network.serviceRegistrationInfo, serviceId)
+			delete(network.serviceGUIDsToIDs, serviceGuid)
 		}
 	}()
 
-	if err := network.topology.AddService(serviceId, partitionId); err != nil {
+	if err := network.topology.AddService(serviceGuid, partitionId); err != nil {
 		return nil, "", stacktrace.Propagate(
 			err,
-			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
-			serviceId,
+			"An error occurred adding service with GUID '%v' to partition '%v' in the topology",
+			serviceGuid,
 			partitionId)
 	}
 
@@ -279,22 +286,22 @@ func (network *ServiceNetworkImpl) StartService(
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it.
 	if network.isPartitioningEnabled {
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 				" to know what packet loss updates to apply on the new node")
 		}
 
-		servicesPacketLossConfigurationsWithoutNewNode := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{}
-		for serviceInTopologyId, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceID {
-			if serviceId == serviceInTopologyId {
+		servicesPacketLossConfigurationsWithoutNewNode := map[service.ServiceGUID]map[service.ServiceGUID]float32{}
+		for serviceGuidInTopology, otherServicesPacketLossConfigs := range servicePacketLossConfigurationsByServiceGUID {
+			if serviceGuid == serviceGuidInTopology {
 				continue
 			}
-			servicesPacketLossConfigurationsWithoutNewNode[serviceInTopologyId] = otherServicesPacketLossConfigs
+			servicesPacketLossConfigurationsWithoutNewNode[serviceGuidInTopology] = otherServicesPacketLossConfigs
 		}
 
-		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the qdisc configuration of all the other services "+
+		if err := network.updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the traffic control configuration of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
 	}
@@ -315,7 +322,7 @@ func (network *ServiceNetworkImpl) StartService(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the user service container")
+			"An error occurred creating the user service")
 	}
 	runInfo := serviceRunInfo{
 		containerId:              serviceContainerId,
@@ -327,29 +334,29 @@ func (network *ServiceNetworkImpl) StartService(
 	network.serviceRunInfo[serviceId] = runInfo
 
 	if network.isPartitioningEnabled {
-		sidecar, err := network.networkingSidecarManager.Add(ctx, registrationInfo.serviceGUID, serviceContainerId)
+		sidecar, err := network.networkingSidecarManager.Add(ctx, registrationInfo.serviceGUID)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar container")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
-		network.networkingSidecars[serviceId] = sidecar
+		network.networkingSidecars[registrationInfo.serviceGUID] = sidecar
 
 		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created sidecar container traffic control qdisc configuration")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
 		}
 
-		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
-		//  Getting packet loss configuration by service ID not an expensive call
-		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		// TODO Getting packet loss configuration by service GUID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
+		//  Getting packet loss configuration by service GUID not an expensive call
+		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
 				" to know what packet loss updates to apply on the new node")
 		}
-		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
-		updatesToApply := map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32{
-			serviceId: newNodeServicePacketLossConfiguration,
+		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceGUID[registrationInfo.serviceGUID]
+		updatesToApply := map[service.ServiceGUID]map[service.ServiceGUID]float32{
+			registrationInfo.serviceGUID: newNodeServicePacketLossConfiguration,
 		}
-		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the qdisc configuration on the new node to partition it "+
+		if err := network.updateTrafficControlConfiguration(ctx, updatesToApply); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
 	}
@@ -468,12 +475,14 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		ctx context.Context,
 		serviceId service_network_types.ServiceID,
 		containerStopTimeout time.Duration) error {
+
 	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceId]
 	if !foundRegistrationInfo {
 		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
 	}
-	network.topology.RemoveService(serviceId)
+	network.topology.RemoveService(registrationInfo.serviceGUID)
 	delete(network.serviceRegistrationInfo, serviceId)
+	delete(network.serviceGUIDsToIDs, registrationInfo.serviceGUID)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
@@ -496,7 +505,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
-	sidecar, foundSidecar := network.networkingSidecars[serviceId]
+	sidecar, foundSidecar := network.networkingSidecars[registrationInfo.serviceGUID]
 	if network.isPartitioningEnabled && foundSidecar {
 		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
 		//  clear the now-removed service's IP because:
@@ -506,8 +515,8 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
 			return stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with ID '%v'", serviceId)
 		}
-		delete(network.networkingSidecars, serviceId)
-		logrus.Debugf("Successfully removed sidecar attached to service with ID '%v'", serviceId)
+		delete(network.networkingSidecars, registrationInfo.serviceGUID)
+		logrus.Debugf("Successfully removed sidecar attached to service with GUID '%v'", registrationInfo.serviceGUID)
 	}
 
 	return nil
@@ -518,47 +527,48 @@ Updates the traffic control configuration of the services with the given IDs to 
 
 NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
-func updateTrafficControlConfiguration(
+func (network *ServiceNetworkImpl) updateTrafficControlConfiguration(
 		ctx context.Context,
-		targetServicePacketLossConfigs map[service_network_types.ServiceID]map[service_network_types.ServiceID]float32,
-		serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
-		networkingSidecars map[service_network_types.ServiceID]networking_sidecar.NetworkingSidecar) error {
+		targetServicePacketLossConfigs map[service.ServiceGUID]map[service.ServiceGUID]float32) error {
+
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 
-	for serviceId, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
+	for serviceGuid, allOtherServicesPacketLossConfigurations := range targetServicePacketLossConfigs {
 		allPacketLossPercentageForIpAddresses := map[string]float32{}
-		for otherServiceId, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
+		for otherServiceGuid, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
 
-			infoForService, found := serviceRegistrationInfo[otherServiceId]
+			otherServiceId := network.serviceGUIDsToIDs[otherServiceGuid]
+
+			infoForService, found := network.serviceRegistrationInfo[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
-					"Service with ID '%v' needs to add packet loos configuration for service with ID '%v', but the latter "+
+					"Service with GUID '%v' needs to add packet loos configuration for service with GUID '%v', but the latter "+
 						"doesn't have service registration info (i.e. an IP) associated with it",
-					serviceId,
-					otherServiceId)
+					serviceGuid,
+					otherServiceGuid)
 			}
 
 			allPacketLossPercentageForIpAddresses[infoForService.privateIpAddr.String()] = otherServicePacketLossPercentage
 		}
 
-		sidecar, found := networkingSidecars[serviceId]
+		sidecar, found := network.networkingSidecars[serviceGuid]
 		if !found {
 			return stacktrace.NewError(
-				"Need to update qdisc configuration of service with ID '%v', but the service doesn't have a sidecar",
-				serviceId)
+				"Need to update qdisc configuration of service with GUID '%v', but the service doesn't have a sidecar",
+				serviceGuid)
 		}
 
 		if err := sidecar.UpdateTrafficControl(ctx, allPacketLossPercentageForIpAddresses); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred updating the qdisc configuration for service '%v'",
-				serviceId)
+				serviceGuid)
 		}
 	}
 	return nil
 }
 
-func newServiceGUID(serviceID service_network_types.ServiceID) service_network_types.ServiceGUID {
+func newServiceGUID(serviceID service_network_types.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
-	return service_network_types.ServiceGUID(string(serviceID) + "-" + suffix)
+	return service.ServiceGUID(string(serviceID) + "-" + suffix)
 }
