@@ -109,7 +109,7 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 
 	networkingSidecarGuid := networking_sidecar.NetworkingSidecarGUID(serviceGuid)
 
-	networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid, ipAddr)
+	networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid, ipAddr, enclaveId)
 
 	return networkingSidecar, nil
 
@@ -122,9 +122,10 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 	map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
+	enclaveId := filters.EnclaveId
 
 	enclaveIDs := map[enclave.EnclaveID]bool{
-		filters.EnclaveId: true,
+		enclaveId: true,
 	}
 
 	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
@@ -139,14 +140,14 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 		return nil, stacktrace.NewError(
 			"Found %v networks matching name '%v' when we expected just one - this is likely a bug in Kurtosis!",
 			numMatchingNetworks,
-			filters.EnclaveId,
+			enclaveId,
 		)
 	}
 	enclaveNetwork := networks[0]
 
-	enclaveContainers, err := backend.getEnclaveContainers(ctx, filters.EnclaveId)
+	enclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", filters.EnclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 	}
 
 	networkingSidecarContainers:= getNetworkingSidecarContainersFromContainerListByGUIDs(enclaveContainers, filters.GUIDs)
@@ -158,7 +159,7 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 			return nil, stacktrace.Propagate(err, "Networking sidecar container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", networkingSidecarContainer.GetId(), enclaveNetwork.GetId())
 		}
 
-		networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid,ip)
+		networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid, ip, enclaveId)
 
 		networkingSidecars[networkingSidecarGuid] = networkingSidecar
 	}
