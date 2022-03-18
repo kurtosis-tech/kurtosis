@@ -8,7 +8,6 @@ package networking_sidecar
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -89,8 +88,6 @@ type filterID string
 type StandardNetworkingSidecarWrapper struct {
 	mutex *sync.Mutex
 
-	kurtosisBackend backend_interface.KurtosisBackend
-
 	networkingSidecar *networking_sidecar.NetworkingSidecar
 
 	// Tracks which of the main qdiscs (qdiscA and qdiscB) is the primary qdisc, so we know
@@ -102,7 +99,6 @@ type StandardNetworkingSidecarWrapper struct {
 }
 
 func NewStandardNetworkingSidecarWrapper(
-	kurtosisBackend backend_interface.KurtosisBackend,
 	networkingSidecar *networking_sidecar.NetworkingSidecar,
 	execCmdExecutor sidecarExecCmdExecutor,
 )(
@@ -115,7 +111,6 @@ func NewStandardNetworkingSidecarWrapper(
 
 	return &StandardNetworkingSidecarWrapper{
 		mutex:             &sync.Mutex{},
-		kurtosisBackend:   kurtosisBackend,
 		networkingSidecar: networkingSidecar,
 		qdiscInUse: undefinedQdiscId,
 		execCmdExecutor: execCmdExecutor,
@@ -137,28 +132,12 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl
 		return nil
 	}
 
-	var (
-		networkingSidecarGuid = sidecarWrapper.networkingSidecar.GetGuid()
-		enclaveId             = sidecarWrapper.networkingSidecar.GetEnclaveId()
-		initCmd               = generateTcInitCmd()
-		cmdDescription        = "tc init"
-	)
+	initCmd := generateTcInitCmd()
 
-	networkingSidecarCommands := map[networking_sidecar.NetworkingSidecarGUID][]string{
-		networkingSidecarGuid: initCmd,
-	}
+	cmdDescription := "tc init"
 
-	_, erroredNetworkingSidecars, err := sidecarWrapper.kurtosisBackend.RunNetworkingSidecarsExecCommand(
-		ctx,
-		sidecarWrapper.networkingSidecar.GetEnclaveId(),
-		networkingSidecarCommands,
-	)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred running networking sidecar command '%v' in enclave with ID '%v'", cmdDescription, enclaveId)
-	}
-	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError := erroredNetworkingSidecars[networkingSidecarGuid]
-		return stacktrace.Propagate(sidecarError, "An error occurred running networking sidecar commands '%v' in networking sidecar with GUID '%v'", cmdDescription, networkingSidecarGuid)
+	if err := sidecarWrapper.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
+		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetGUID())
 	}
 
 	sidecarWrapper.qdiscInUse = initialKurtosisQdiscId
@@ -518,7 +497,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx 
 			cmdDescription)
 	}
 
-	logrus.Infof("Successfully executed %+v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetGUID())
+	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetGUID())
 
 	return nil
 }

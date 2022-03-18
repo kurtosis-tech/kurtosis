@@ -118,24 +118,24 @@ func TestInitializeTrafficControl(t *testing.T) {
 func TestInitializeTrafficControl_AlreadyInitialized(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
-	err := sidecar.GenerateInitializeTrafficControlCmds(ctx)
+	err := sidecar.InitializeTrafficControl(ctx)
 	require.Nil(t, err, "Traffic control already initialized")
 }
 
 func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Blocking partition
 	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
 
-	err := sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
 
@@ -145,7 +145,7 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.
 	//Unblocking partition
 	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
 
-	err = sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
 	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -157,14 +157,14 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenUnblockIt(t *testing.
 func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Soft partition
 	allUserServicePacketLossConfigurations := getAllUserServicePacketLossConfigurationsForSoftPartition()
 
-	err := sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurations)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
 
@@ -174,7 +174,7 @@ func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) 
 	//Unblocking partition
 	allUserServicePacketLossConfigurationsForUnblockedPartition := getAllUserServicePacketLossConfigurationsForUnblockedPartition()
 
-	err = sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
+	err = sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForUnblockedPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for unblocked partition")
 	require.Equal(t, initialKurtosisQdiscId, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -186,14 +186,14 @@ func TestUpdateTrafficControl_CreateSoftPartitionAndThenUnblockIt(t *testing.T) 
 func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = initialKurtosisQdiscId
 
 	//Blocking partition
 	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
 
-	err := sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
 	require.Equal(t, qdiscBID, sidecar.qdiscInUse)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for blocked partition")
 	require.Equal(t, 1, len(execCmdExecutor.commands))
@@ -204,7 +204,7 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *test
 	//Unblocking partition
 	allUserServicePacketLossConfigurationsForSoftPartition := getAllUserServicePacketLossConfigurationsForSoftPartition()
 
-	err = sidecar.GenerateUpdateTrafficControlCmds(context.Background(), allUserServicePacketLossConfigurationsForSoftPartition)
+	err = sidecar.UpdateTrafficControl(context.Background(), allUserServicePacketLossConfigurationsForSoftPartition)
 	require.NoError(t, err, "An error occurred updating qdisc configuration for soft partition")
 	require.Equal(t, qdiscAID, sidecar.qdiscInUse)
 	require.Equal(t, 2, len(execCmdExecutor.commands))
@@ -216,25 +216,25 @@ func TestUpdateTrafficControl_CreateBlockedPartitionAndThenSoftPartition(t *test
 func TestUpdateTrafficControl_UndefinedQdiscInUseError(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 
 	//Execution
 	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
-	err := sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
 	require.Error(t, err, "Expected undefined qdisc id in use error")
 }
 
 func TestUpdateTrafficControl_UnrecognizedPrimaryQdiscIdError(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, _ := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 	sidecar.qdiscInUse = "1:"
 
 	//Execution
 	allUserServicePacketLossConfigurationsForBlockedPartition := getAllUserServicePacketLossConfigurationsForBlockedPartition()
-	err := sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
+	err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurationsForBlockedPartition)
 	require.Error(t, err, "Expected unrecognized primary qdisc id error")
 }
 
@@ -301,12 +301,14 @@ func TestNewClassId_QdiscBChildren(t *testing.T) {
 func TestConcurrencySafety(t *testing.T) {
 	//Initial state
 	ctx := context.Background()
-	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor()
+	sidecar, execCmdExecutor := createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t)
 	require.Empty(t, sidecar.qdiscInUse)
 
 	numProcesses := 2
 
-	sidecar.GenerateInitializeTrafficControlCmds(ctx)
+	err := sidecar.InitializeTrafficControl(ctx)
+
+	require.NoErrorf(t, err, "An error occurred initiliazing traffic control")
 
 	execCmdExecutor.setBlocked(true)
 
@@ -316,7 +318,8 @@ func TestConcurrencySafety(t *testing.T) {
 		allUserServicePacketLossConfigurations := map[string]float32{}
 		allUserServicePacketLossConfigurations[ip.String()] = packetLossPercentageValueForBlockedPartitions
 		go func() {
-			sidecar.GenerateUpdateTrafficControlCmds(ctx, allUserServicePacketLossConfigurations)
+			err := sidecar.UpdateTrafficControl(ctx, allUserServicePacketLossConfigurations)
+			require.NoErrorf(t, err, "An error occurred updating traffic control")
 		}()
 		time.Sleep(5 * time.Millisecond)  // Make sure they enter the sidecar in proper order
 	}
@@ -377,15 +380,15 @@ func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*
 		testNetworkinSidecarIP,
 		testEnclaveID)
 
+
 	sidecar, err := NewStandardNetworkingSidecarWrapper(
-		nil,
 		networkingSidecar,
 		execCmdExecutor,
 		)
 
 	require.NoErrorf(t, err, "An error occurred creating standard networking sidecar wrapper with mocked exec command executor")
 
-	return sidecar, nil
+	return sidecar, execCmdExecutor
 }
 
 func mergeCommandsInOneLine(commands []string) string {

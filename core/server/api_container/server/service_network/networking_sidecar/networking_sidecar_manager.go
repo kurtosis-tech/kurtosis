@@ -69,7 +69,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		networkingSidecar.GetGuid(),
 		networkingSidecar.GetEnclaveId())
 
-	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(manager.kurtosisBackend, networkingSidecar, execCmdExecutor)
+	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with GUID '%v'", networkingSidecar.GetGuid())
 	}

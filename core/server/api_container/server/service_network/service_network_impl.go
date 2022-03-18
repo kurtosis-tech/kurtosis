@@ -29,7 +29,6 @@ import (
 const (
 	defaultPartitionId                                    service_network_types.PartitionID = "default"
 	startingDefaultConnectionPacketLossValue                                                = 0
-	unblockedPartitionConnectionPacketLossPercentageValue float32                           = 0
 )
 
 // Information that gets created with a service's registration
@@ -152,7 +151,7 @@ func (network *ServiceNetworkImpl) Repartition(
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	if err := network.updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceGUID); err != nil {
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceGUID, network.serviceRegistrationInfo, network.networkingSidecars, network.serviceGUIDsToIDs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -300,7 +299,7 @@ func (network *ServiceNetworkImpl) StartService(
 			servicesPacketLossConfigurationsWithoutNewNode[serviceGuidInTopology] = otherServicesPacketLossConfigs
 		}
 
-		if err := network.updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, servicesPacketLossConfigurationsWithoutNewNode, network.serviceRegistrationInfo, network.networkingSidecars, network.serviceGUIDsToIDs); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred updating the traffic control configuration of all the other services "+
 				"before adding the node, meaning that the node wouldn't actually start in a partition")
 		}
@@ -355,7 +354,7 @@ func (network *ServiceNetworkImpl) StartService(
 		updatesToApply := map[service.ServiceGUID]map[service.ServiceGUID]float32{
 			registrationInfo.serviceGUID: newNodeServicePacketLossConfiguration,
 		}
-		if err := network.updateTrafficControlConfiguration(ctx, updatesToApply); err != nil {
+		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars, network.serviceGUIDsToIDs); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
 				"off from other nodes")
 		}
@@ -527,9 +526,12 @@ Updates the traffic control configuration of the services with the given IDs to 
 
 NOTE: This is not thread-safe, so it must be within a function that locks mutex!
 */
-func (network *ServiceNetworkImpl) updateTrafficControlConfiguration(
-		ctx context.Context,
-		targetServicePacketLossConfigs map[service.ServiceGUID]map[service.ServiceGUID]float32) error {
+func updateTrafficControlConfiguration(
+	ctx context.Context,
+	targetServicePacketLossConfigs map[service.ServiceGUID]map[service.ServiceGUID]float32,
+	serviceRegistrationInfo map[service_network_types.ServiceID]serviceRegistrationInfo,
+	networkingSidecars map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper,
+	serviceGUIDsToIDs map[service.ServiceGUID]service_network_types.ServiceID) error {
 
 	// TODO PERF: Run the container updates in parallel, with the container being modified being the most important
 
@@ -537,9 +539,9 @@ func (network *ServiceNetworkImpl) updateTrafficControlConfiguration(
 		allPacketLossPercentageForIpAddresses := map[string]float32{}
 		for otherServiceGuid, otherServicePacketLossPercentage := range allOtherServicesPacketLossConfigurations {
 
-			otherServiceId := network.serviceGUIDsToIDs[otherServiceGuid]
+			otherServiceId := serviceGUIDsToIDs[otherServiceGuid]
 
-			infoForService, found := network.serviceRegistrationInfo[otherServiceId]
+			infoForService, found := serviceRegistrationInfo[otherServiceId]
 			if !found {
 				return stacktrace.NewError(
 					"Service with GUID '%v' needs to add packet loos configuration for service with GUID '%v', but the latter "+
@@ -551,7 +553,7 @@ func (network *ServiceNetworkImpl) updateTrafficControlConfiguration(
 			allPacketLossPercentageForIpAddresses[infoForService.privateIpAddr.String()] = otherServicePacketLossPercentage
 		}
 
-		sidecar, found := network.networkingSidecars[serviceGuid]
+		sidecar, found := networkingSidecars[serviceGuid]
 		if !found {
 			return stacktrace.NewError(
 				"Need to update qdisc configuration of service with GUID '%v', but the service doesn't have a sidecar",
