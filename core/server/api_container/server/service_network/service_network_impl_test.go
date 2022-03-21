@@ -38,12 +38,12 @@ func TestUpdateTrafficControl(t *testing.T) {
 		mockSidecars[serviceGUID] = sidecar
 	}
 
-	registrationInfo := map[service_network_types.ServiceID]serviceRegistrationInfo{}
+	registrationInfo := map[service.ServiceGUID]serviceRegistrationInfo{}
 	for i := 0; i < numServices; i++ {
 		serviceId := testServiceIdFromInt(i)
-		serviceGUID := serviceIDsToGUIDs[serviceId]
+		serviceGuid := serviceIDsToGUIDs[serviceId]
 		ip := testIpFromInt(i)
-		registrationInfo[serviceId] = serviceRegistrationInfo{serviceGUID: serviceGUID, privateIpAddr: ip}
+		registrationInfo[serviceGuid] = serviceRegistrationInfo{privateIpAddr: ip}
 	}
 
 	// Creates the pathological "line" of connections, where each service can only see the services adjacent
@@ -63,7 +63,7 @@ func TestUpdateTrafficControl(t *testing.T) {
 	}
 
 
-	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrationInfo, sidecars, serviceGUIDsToIDs))
+	require.Nil(t, updateTrafficControlConfiguration(ctx, targetServicePacketLossConfigs, registrationInfo, sidecars))
 
 	// Verify that each service got told to block exactly the right things
 	for i := 0; i < numServices; i++ {

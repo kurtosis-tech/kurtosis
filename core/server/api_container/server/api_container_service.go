@@ -296,13 +296,13 @@ func (service ApiContainerService) RemoveService(ctx context.Context, args *kurt
 
 func (service ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[service_network_types.PartitionID]*service_network_types.ServiceIDSet{}
+	partitionServices := map[service_network_types.PartitionID]map[service_network_types.ServiceID]bool{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
 		partitionId := service_network_types.PartitionID(partitionIdStr)
-		serviceIdSet := service_network_types.NewServiceIDSet()
+		serviceIdSet := map[service_network_types.ServiceID]bool{}
 		for serviceIdStr := range servicesInPartition.ServiceIdSet {
 			serviceId := service_network_types.ServiceID(serviceIdStr)
-			serviceIdSet.AddElem(serviceId)
+			serviceIdSet[serviceId] = true
 		}
 		partitionServices[partitionId] = serviceIdSet
 	}
@@ -421,7 +421,7 @@ func (service ApiContainerService) GetServices(ctx context.Context, empty *empty
 
 	serviceIDs := make(map[string]bool, len(service.serviceNetwork.GetServiceIDs()))
 
-	for serviceID, _ := range service.serviceNetwork.GetServiceIDs() {
+	for serviceID := range service.serviceNetwork.GetServiceIDs() {
 		serviceIDStr := string(serviceID)
 		if _, ok := serviceIDs[serviceIDStr]; !ok {
 			serviceIDs[serviceIDStr] = true
