@@ -163,7 +163,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	// Check for existing enclave with Id
-	foundEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getEnclaveIdFilter(enclaveId))
+	foundEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with ID '%v'", enclaveId)
 	}
@@ -172,22 +172,22 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// Create Enclave with kurtosisBackend
-	enclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId)
+	createdEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occured creating enclave with id `%v`", enclaveId)
 	}
 	shouldDestroyEnclave := true
 	defer func() {
 		if shouldDestroyEnclave {
-			_, errs, resultErr := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveIdFilter(enclaveId));
-			genericErrorStrFmt := "Expected to be able to cleanup the enclave '%v', but an error was thrown:\n'%v'"
-			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API container for enclave '%v'!!!!!!\""
-			for enclaveId, err := range errs {
+			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId));
+			genericErrorStrFmt := "Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v"
+			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
+			for enclaveId, err := range destroyEnclaveErrs {
 				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
-			if resultErr != nil {
-				logrus.Errorf(genericErrorStrFmt, enclaveId, resultErr)
+			if err != nil {
+				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
 		}
@@ -247,6 +247,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			}
 		}
 	}()
+
 	logrus.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
 	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
 	//  container which will only be started after the testsuite container
@@ -262,11 +263,15 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
 		enclaveId,
+		// Get networkId for Enclave
 		networkId,
+		// Get networkIpAndMask Enclave
 		networkIpAndMask.String(),
 		apiContainerListenGrpcPortNumInsideNetwork,
 		apiContainerListenGrpcProxyPortNumInsideNetwork,
+		// Get GatewayIp Address for created enclave
 		gatewayIp,
+		// Get IP address for the API container we created
 		apiContainerPrivateIpAddr,
 		isPartitioningEnabled,
 		enclaveDataDirpathOnHostMachine,
@@ -287,7 +292,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-		EnclaveId:          enclave.GetID(),
+		EnclaveId:          createdEnclave.GetID(),
 		NetworkId:          networkId,
 		NetworkCidr:        networkIpAndMask.String(),
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
@@ -360,11 +365,6 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
 		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
 			return manager.cleanEnclaves(ctx, shouldCleanAll)
-		},
-		metadataAcquisitionTestsuitePhaseTitle: func() ([]string, []error, error) {
-			// TODO: Refactor to use backend
-			// Currently, docker_manager is used to find and delete the associated containers
-			return manager.cleanMetadataAcquisitionTestsuites(ctx, shouldCleanAll)
 		},
 	}
 
@@ -800,31 +800,30 @@ func parseHostMachinePortNumStrToUint16(input string) (uint16, error) {
 // Both StopEnclave and DestroyEnclave need to be able to stop enclaves, but both have a mutex guard. Because Go mutexes
 //  aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
 func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
-	_, errs, resultErr := manager.kurtosisBackend.StopEnclaves(ctx, getEnclaveIdFilter(enclaveId))
+	_, enclaveStopErrs, err := manager.kurtosisBackend.StopEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
+	if err != nil {
+		return stacktrace.Propagate(err, "Attempted to stop enclave '%v' but the backend threw an error", enclaveId)
+	}
 	// Handle any err thrown by the backend
-	enclaveStopErrs := []string{}
-	for enclaveId, err := range errs {
+	enclaveStopErrStrings := []string{}
+	for enclaveId, err := range enclaveStopErrs {
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred stopping Enclave `%v'",
 				enclaveId,
 			)
-			enclaveStopErrs = append(enclaveStopErrs, wrappedErr.Error())
+			enclaveStopErrStrings = append(enclaveStopErrStrings, wrappedErr.Error())
 		}
 	}
-	if len(enclaveStopErrs) > 0 {
+	if len(enclaveStopErrStrings) > 0 {
 		return stacktrace.NewError(
-			"One or more errors occurred stopping the enclaves(s):\n%v",
+			"One or more errors occurred stopping the enclave(s):\n%v",
 			strings.Join(
-				enclaveStopErrs,
+				enclaveStopErrStrings,
 				"\n\n",
 			))
 	}
-	if resultErr != nil {
-		return stacktrace.Propagate(resultErr, "Attempted to stop enclave '%v' but the backend threw an error", enclaveId)
-	}
-
 	return nil
 }
 
@@ -1002,29 +1001,29 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 		)
 	}
 
-	_, errs, resultErr := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveIdFilter(enclaveId))
+	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
+	if err != nil {
+		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
+	}
 	// Handle any err thrown by the backend
-	enclaveDestroyErrs := []string{}
-	for enclaveId, err := range errs {
+	enclaveDestroyErrStrings := []string{}
+	for enclaveId, err := range enclaveDestroyErrs {
 		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred destroying Enclave `%v'",
 				enclaveId,
 			)
-			enclaveDestroyErrs = append(enclaveDestroyErrs, wrappedErr.Error())
+			enclaveDestroyErrStrings = append(enclaveDestroyErrStrings, wrappedErr.Error())
 		}
 	}
 	if len(enclaveDestroyErrs) > 0 {
 		return stacktrace.NewError(
-			"One or more errors occurred destroying the enclaves(s):\n%v",
+			"One or more errors occurred destroying the enclave(s):\n%v",
 			strings.Join(
-				enclaveDestroyErrs,
+				enclaveDestroyErrStrings,
 				"\n\n",
 			))
-	}
-	if resultErr != nil {
-		return stacktrace.Propagate(resultErr, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
 	}
 
 	return nil
@@ -1067,7 +1066,7 @@ func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	}
 }
 
-func getEnclaveIdFilter(enclaveId string) *enclave.EnclaveFilters {
+func getEnclaveByEnclaveIdFilter(enclaveId string) *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		IDs: map[string]bool{enclaveId: true},
 	}
@@ -1108,7 +1107,7 @@ func launchApiContainerWithDockerManager(
 		dockerManager,
 	)
 	if apiContainerImageVersionTag != "" {
-		 return apiContainerLauncher.LaunchWithCustomVersion(
+		containerId, publicIpAddr, grpcPort, grpcProxyPort, err := apiContainerLauncher.LaunchWithCustomVersion(
 			ctx,
 			apiContainerImageVersionTag,
 			logLevel,
@@ -1124,8 +1123,13 @@ func launchApiContainerWithDockerManager(
 			metricsUserID,
 			didUserAcceptSendingMetrics,
 		)
+		if err != nil {
+			return "", nil, nil, nil,
+			stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveId, apiContainerImageVersionTag)
+		}
+		return containerId, publicIpAddr, grpcPort, grpcProxyPort, nil
 	}
-	return apiContainerLauncher.LaunchWithDefaultVersion(
+	containerId, publicIpAddr, grpcPort, grpcProxyPort, err := apiContainerLauncher.LaunchWithDefaultVersion(
 		ctx,
 		logLevel,
 		enclaveId,
@@ -1140,6 +1144,11 @@ func launchApiContainerWithDockerManager(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
+	if err != nil {
+		return "", nil, nil, nil,
+		stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveId)
+	}
+	return containerId, publicIpAddr, grpcPort, grpcProxyPort, nil
 }
 
 func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enclave *enclave.Enclave) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -1147,9 +1156,12 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	// TODO Use kurtosis_backend to determine API container information
 	_, apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := getEnclaveContainerInformation(ctx, manager.dockerManager, enclaveId)
 	if err != nil {
-
+		return nil, stacktrace.Propagate(err, "Expected to be able to get information on the API container of enclave '%v', instead an error occurred.", enclaveId)
 	}
 	enclaveContainersStatus, err := getEnclaveContainersStatusFromEnclaveStatus(enclave.GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get EnclaveContainersStatus from the enclave status of enclave '%v', but an error occurred", enclaveId)
+	}
 	enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo {
 		EnclaveId:          enclave.GetID(),
