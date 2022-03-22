@@ -8,6 +8,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -240,4 +242,14 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	}
 
 	return hostMachineIp, publicPortSpec, nil
+}
+
+func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
+	labels := network.GetLabels()
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
+	}
+	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
+	return enclaveId, nil
 }

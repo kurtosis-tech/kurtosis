@@ -36,5 +36,3 @@ var EngineContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelV
 var APIContainerContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
 var NetworkPartitioningEnabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
 var NetworkPartitioningDisabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
-var NetworkDestroyed = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
-var NetworkIsNotDestroyed = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
