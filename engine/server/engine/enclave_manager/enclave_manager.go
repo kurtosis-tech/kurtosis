@@ -151,7 +151,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
 	// TODO put in coreApiVersion as a param here!
-	enclaveId string,
+	enclaveIdStr string,
 	isPartitioningEnabled bool,
 	shouldPublishAllPorts bool,
 	metricsUserID string,
@@ -160,8 +160,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
-
 	// Check for existing enclave with Id
 	foundEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
@@ -172,7 +172,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	}
 
 	// Create Enclave with kurtosisBackend
-	createdEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId)
+	createdEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveId, isPartitioningEnabled)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occured creating enclave with id `%v`", enclaveId)
 	}
@@ -217,44 +217,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	//TODO Move network code into kurtosis_backend
-	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveId)
-	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
-	}
-	enclaveNetworkName := enclaveNetworkAttrs.GetName()
-	enclaveNetworkLabels := enclaveNetworkAttrs.GetLabels()
-	logrus.Debugf("Creating Docker network for enclave '%v'...", enclaveId)
-	networkId, networkIpAndMask, gatewayIp, freeIpAddrTracker, err := manager.dockerNetworkAllocator.CreateNewNetwork(
-		setupCtx,
-		enclaveNetworkName,
-		enclaveNetworkLabels,
-	)
-	if err != nil {
-		// TODO If the user Ctrl-C's while the CreateNetwork call is ongoing then the CreateNetwork will error saying
-		//  that the Context was cancelled as expected, but *the Docker engine will still create the network*!!! We'll
-		//  need to parse the log message for the string "context canceled" and, if found, do another search for
-		//  networks with our network name and delete them
-		return nil, stacktrace.Propagate(err, "An error occurred allocating a new network for enclave '%v'", enclaveId)
-	}
-	shouldDeleteNetwork := true
-	defer func() {
-		if shouldDeleteNetwork {
-			if err := manager.dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
-				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:", networkId)
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
-			}
-		}
-	}()
+	enclaveObjAttrsProvider := manager.objAttrsProvider.ForEnclave(enclaveIdStr)
 
-	logrus.Debugf("Docker network '%v' created successfully with ID '%v' and subnet CIDR '%v'", enclaveId, networkId, networkIpAndMask.String())
-	// We need to create the IP addresses for BOTH containers because the testsuite needs to know the IP of the API
-	//  container which will only be started after the testsuite container
-	apiContainerPrivateIpAddr, err := freeIpAddrTracker.GetFreeIpAddr()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting an IP for the Kurtosis API container")
-	}
+	networkId := createdEnclave.GetNetworkID()
+	gatewayIp := createdEnclave.GetNetworkGatewayIp()
+	networkCidr := createdEnclave.GetNetworkCIDR()
+
+	enclaveNetworkIpAddrTracker := createdEnclave.GetNetworkIpAddrTracker()
+	apiContainerPrivateIpAddr, err := enclaveNetworkIpAddrTracker.GetFreeIpAddr()
 
 	//TODO: Refactor api_container_launcher to use kurtosis_backend
 	apiContainerId, apiContainerPublicIpAddr, apiContainerGrpcPublicPort, apiContainerGrpcProxyPublicPort, launchApiContainerErr := launchApiContainerWithDockerManager(setupCtx,
@@ -262,11 +232,10 @@ func (manager *EnclaveManager) CreateEnclave(
 		enclaveObjAttrsProvider,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
-		enclaveId,
+		enclaveIdStr,
 		// Get networkId for Enclave
 		networkId,
-		// Get networkIpAndMask Enclave
-		networkIpAndMask.String(),
+		networkCidr,
 		apiContainerListenGrpcPortNumInsideNetwork,
 		apiContainerListenGrpcProxyPortNumInsideNetwork,
 		// Get GatewayIp Address for created enclave
@@ -292,9 +261,9 @@ func (manager *EnclaveManager) CreateEnclave(
 	}()
 
 	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-		EnclaveId:          createdEnclave.GetID(),
+		EnclaveId:          enclaveIdStr,
 		NetworkId:          networkId,
-		NetworkCidr:        networkIpAndMask.String(),
+		NetworkCidr:        networkCidr,
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
@@ -314,7 +283,6 @@ func (manager *EnclaveManager) CreateEnclave(
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
 	shouldDestroyEnclave = false
 	shouldDeleteEnclaveDataDir = false
-	shouldDeleteNetwork = false
 	shouldStopApiContainer = false
 	return result, nil
 }
@@ -323,7 +291,7 @@ func (manager *EnclaveManager) CreateEnclave(
 //  is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) GetEnclaves(
 	ctx context.Context,
-) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+) (map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
@@ -334,10 +302,11 @@ func (manager *EnclaveManager) GetEnclaves(
 	return enclaves, nil
 }
 
-func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string) error {
+func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveIdStr string) error {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveId)
 	}
@@ -345,10 +314,11 @@ func (manager *EnclaveManager) StopEnclave(ctx context.Context, enclaveId string
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveId string) error {
+func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdStr string) error {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 	if err := manager.destroyEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying the enclave without the mutex")
 	}
@@ -448,7 +418,7 @@ func (manager *EnclaveManager) getEnclaveNetwork(ctx context.Context, enclaveId 
 func getEnclaveContainerInformation(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 ) (
 	kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus,
 	kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus,
@@ -456,7 +426,7 @@ func getEnclaveContainerInformation(
 	*kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo,
 	error,
 ) {
-	allEnclaveContainers, err := getEnclaveContainers(ctx, dockerManager, enclaveId)
+	allEnclaveContainers, err := getEnclaveContainers(ctx, dockerManager, string(enclaveId))
 	if err != nil {
 		return 0, 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
@@ -799,7 +769,7 @@ func parseHostMachinePortNumStrToUint16(input string) (uint16, error) {
 
 // Both StopEnclave and DestroyEnclave need to be able to stop enclaves, but both have a mutex guard. Because Go mutexes
 //  aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
-func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
+func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
 	_, enclaveStopErrs, err := manager.kurtosisBackend.StopEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to stop enclave '%v' but the backend threw an error", enclaveId)
@@ -864,15 +834,16 @@ func (manager *EnclaveManager) getAllEnclavesDirpaths() (onHostMachine string, o
 	return
 }
 
-func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId string) (onHostMachine string, onEngineContainer string) {
+func (manager *EnclaveManager) getEnclaveDataDirpath(enclaveId enclave.EnclaveID) (onHostMachine string, onEngineContainer string) {
+	enclaveIdStr := string(enclaveId)
 	allEnclavesOnHostMachine, allEnclavesOnEngineContainer := manager.getAllEnclavesDirpaths()
 	onHostMachine = path.Join(
 		allEnclavesOnHostMachine,
-		enclaveId,
+		enclaveIdStr,
 	)
 	onEngineContainer = path.Join(
 		allEnclavesOnEngineContainer,
-		enclaveId,
+		enclaveIdStr,
 	)
 	return
 }
@@ -883,8 +854,8 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclaves to determine which need to be cleaned up")
 	}
 
-	enclaveIdsToDestroy := []string{}
-	enclaveIdsToNotDestroy := []string{}
+	enclaveIdsToDestroy := []enclave.EnclaveID{}
+	enclaveIdsToNotDestroy := []enclave.EnclaveID{}
 	for enclaveId, enclaveInfo := range enclaves {
 		enclaveStatus := enclaveInfo.ContainersStatus
 		if shouldCleanAll || enclaveStatus == kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_STOPPED {
@@ -902,7 +873,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 			enclaveDestructionErrors = append(enclaveDestructionErrors, wrappedErr)
 			continue
 		}
-		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, enclaveId)
+		successfullyDestroyedEnclaveIds = append(successfullyDestroyedEnclaveIds, string(enclaveId))
 	}
 
 	// TODO: use kurtosis_backend to clean up enclave data on disk
@@ -973,13 +944,13 @@ func (manager *EnclaveManager) cleanMetadataAcquisitionTestsuites(ctx context.Co
 
 func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	ctx context.Context,
-) (map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+) (map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error thrown retrieving enclaves")
 	}
 
-	result := map[string]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
+	result := map[enclave.EnclaveID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclave := range enclaves {
 		enclaveInfo, err := manager.getEnclaveInfoForEnclave(ctx, enclave)
 		if err != nil {
@@ -992,7 +963,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
+func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
 	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -1030,20 +1001,21 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 }
 
 // Gets rid of dangling folders
-func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []string) error {
+func (manager *EnclaveManager) deleteDanglingDirectories(enclaveIdsToNotDestroy []enclave.EnclaveID) error {
 	_, allEnclavesDirpathOnEngineContainer := manager.getAllEnclavesDirpaths()
 	fileInfos, err := ioutil.ReadDir(allEnclavesDirpathOnEngineContainer)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while reading the directory '%v' ", allEnclavesDirpathOnEngineContainer)
 	}
 
-	enclaves := map[string]bool{}
+	enclaves := map[enclave.EnclaveID]bool{}
 	for _, enclaveId := range enclaveIdsToNotDestroy {
 		enclaves[enclaveId] = true
 	}
 
 	for _, fileInfo := range fileInfos {
-		_, ok := enclaves[fileInfo.Name()]
+		enclaveIdFromFileInfoName := enclave.EnclaveID(fileInfo.Name())
+		_, ok := enclaves[enclaveIdFromFileInfoName]
 		if fileInfo.IsDir() && !ok {
 			folderPath := path.Join(allEnclavesDirpathOnEngineContainer, fileInfo.Name())
 			if removeErr := os.RemoveAll(folderPath); removeErr != nil {
@@ -1066,9 +1038,11 @@ func getAllEnclavesFilter() *enclave.EnclaveFilters {
 	}
 }
 
-func getEnclaveByEnclaveIdFilter(enclaveId string) *enclave.EnclaveFilters {
+func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
-		IDs: map[string]bool{enclaveId: true},
+		IDs: map[enclave.EnclaveID]bool {
+			enclaveId: true,
+		},
 	}
 }
 
@@ -1153,6 +1127,7 @@ func launchApiContainerWithDockerManager(
 
 func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enclave *enclave.Enclave) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	enclaveId := enclave.GetID()
+	enclaveIdStr := string(enclaveId)
 	// TODO Use kurtosis_backend to determine API container information
 	_, apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := getEnclaveContainerInformation(ctx, manager.dockerManager, enclaveId)
 	if err != nil {
@@ -1164,7 +1139,7 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 	}
 	enclaveDataDirpathOnHostMachine, _ := manager.getEnclaveDataDirpath(enclaveId)
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo {
-		EnclaveId:          enclave.GetID(),
+		EnclaveId:          enclaveIdStr,
 		ContainersStatus:   enclaveContainersStatus,
 		ApiContainerStatus: apiContainerStatus,
 		ApiContainerInfo: apiContainerInfo,
@@ -1184,6 +1159,6 @@ func getEnclaveContainersStatusFromEnclaveStatus(status enclave.EnclaveStatus) (
 		return kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING, nil
 	default:
 		// EnclaveContainersStatus is of type int32, cannot convert nil to int32 returning -1
-		return -1, stacktrace.NewError("Unrecognized enclave status '%v'; this is a bug in Kurtosis", status)
+		return -1, stacktrace.NewError("Unrecognized enclave status '%v'; this is a bug in Kurtosis", status.String())
 	}
 }

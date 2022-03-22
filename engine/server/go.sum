@@ -429,6 +429,9 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20220308120154-5a34daa0625a
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220308120154-5a34daa0625a/go.mod h1:vLUzJgett6ITr4U1OS79YVPfQ5z3H/lwMtPeBREkLF4=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220311142823-bdc0a9bf4801 h1:m9PPkY8WadO9jYAl5myiIvkcjfP8w5WSqrWTRoTFrro=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220311142823-bdc0a9bf4801/go.mod h1:vLUzJgett6ITr4U1OS79YVPfQ5z3H/lwMtPeBREkLF4=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220315202208-82245546978c h1:35kTfIUJC5uU9vhxnuIKzXF+ptw+TZeVp6H5br0Zktw=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220315202208-82245546978c/go.mod h1:GF9CxWGs0slHwhP5nSkhGdPeNKtW3ZA5RO/M78xKOyk=
+github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e h1:CDNMjCNCvvCPSpoakxYZ3IHjBsxo9rLiMyjgvPYL87Q=
 github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220303202839-baff1c261f2a/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
