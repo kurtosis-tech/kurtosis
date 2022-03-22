@@ -261,6 +261,29 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
+	enclaveIDs := map[enclave.EnclaveID]bool{
+		enclaveId: true,
+	}
+
+	enclaveNetworksFound, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
+	}
+	numMatchingNetworks := len(enclaveNetworksFound)
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.Propagate(err, "No network was found for enclave with ID '%v'; it should never happens, it's a bug in Kurtosis", enclaveId)
+	}
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching enclave ID '%v', but got %v",
+			enclaveId,
+			numMatchingNetworks,
+		)
+	}
+	return  enclaveNetworksFound[0], nil
+}
+
 func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
 	enclaveNetworks := []*types.Network{}
 	if len(enclaveIds) == 0 {

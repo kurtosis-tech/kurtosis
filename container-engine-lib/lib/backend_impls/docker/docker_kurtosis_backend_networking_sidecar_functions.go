@@ -35,9 +35,9 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 	error,
 ){
 	// Get the Docker network ID where we'll start the new sidecar container
-	enclaveNetwork, _, err := backendCore.getEnclaveNetwork(ctx, enclaveId)
+	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Docker network by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
 	enclaveStatus, enclaveContainers, err := backendCore.getEnclaveStatusAndContainers(ctx, enclaveId)
@@ -112,9 +112,9 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 ) {
 	enclaveId := filters.EnclaveId
 
-	enclaveNetwork, _, err := backend.getEnclaveNetwork(ctx, enclaveId)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Docker network by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
 	enclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)

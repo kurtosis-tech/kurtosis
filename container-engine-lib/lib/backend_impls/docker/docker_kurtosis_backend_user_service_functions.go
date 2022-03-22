@@ -51,9 +51,9 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	enclaveNetwork, _, err := backendCore.getEnclaveNetwork(ctx, enclaveId)
+	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting Docker network by enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
 	usedPorts, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
