@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -32,12 +31,11 @@ const (
 )
 
 type ApiContainerLauncher struct {
-	enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher
-	kurtosisBackend          backend_interface.KurtosisBackend
+	kurtosisBackend backend_interface.KurtosisBackend
 }
 
-func NewApiContainerLauncher(enclaveContainerLauncher *enclave_container_launcher.EnclaveContainerLauncher, kurtosisBackend backend_interface.KurtosisBackend) *ApiContainerLauncher {
-	return &ApiContainerLauncher{enclaveContainerLauncher: enclaveContainerLauncher, kurtosisBackend: kurtosisBackend}
+func NewApiContainerLauncher(kurtosisBackend backend_interface.KurtosisBackend) *ApiContainerLauncher {
+	return &ApiContainerLauncher{kurtosisBackend: kurtosisBackend}
 }
 
 func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
