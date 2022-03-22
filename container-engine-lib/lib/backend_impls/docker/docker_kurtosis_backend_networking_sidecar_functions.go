@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -36,21 +35,10 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 	error,
 ){
 	// Get the Docker network ID where we'll start the new sidecar container
-	networkLabels := map[string]string{
-		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
-	}
-	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, networkLabels)
+	enclaveNetwork, _, err := backendCore.getEnclaveNetwork(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting docker networks by labels '%+v'", networkLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker network by enclave ID '%v'", enclaveId)
 	}
-	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
-	}
-	if numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError("Found '%v' enclave networks with ID '%v', which shouldn't happen", numMatchingNetworks, enclaveId)
-	}
-	enclaveNetwork := matchingNetworks[0]
 
 	enclaveStatus, enclaveContainers, err := backendCore.getEnclaveStatusAndContainers(ctx, enclaveId)
 	if err != nil {
@@ -124,26 +112,10 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 ) {
 	enclaveId := filters.EnclaveId
 
-	enclaveIDs := map[enclave.EnclaveID]bool{
-		enclaveId: true,
-	}
-
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	enclaveNetwork, _, err := backend.getEnclaveNetwork(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", enclaveIDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker network by enclave ID '%v'", enclaveId)
 	}
-	numMatchingNetworks := len(networks)
-	if numMatchingNetworks == 0 {
-		return nil, stacktrace.Propagate(err, "No Enclave was founded with some of these IDs '%+v'", enclaveIDs)
-	}
-	if numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError(
-			"Found %v networks matching name '%v' when we expected just one - this is likely a bug in Kurtosis!",
-			numMatchingNetworks,
-			enclaveId,
-		)
-	}
-	enclaveNetwork := networks[0]
 
 	enclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {

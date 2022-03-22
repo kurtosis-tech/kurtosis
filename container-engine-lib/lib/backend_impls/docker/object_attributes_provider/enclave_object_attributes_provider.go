@@ -38,7 +38,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	// ForInteractiveREPLContainer(interactiveReplGuid string) (DockerObjectAttributes,error)
-	// ForUserServiceContainer(serviceID string, serviceGUID string, privatePorts map[string]*PortSpec) (DockerObjectAttributes, error)
+	ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
@@ -139,6 +139,45 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	return objectAttributes, nil
 }
 
+func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject(
+		[]string{
+			userServiceContainerNameFragment,
+			string(serviceGUID),
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the user service Docker container name object")
+	}
+
+	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service ports object to a string for storing in the ports label: %+v", privatePorts)
+	}
+
+	serviceIdStr := string(serviceID)
+	serviceGuidStr := string(serviceGUID)
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
+	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
+}
+
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
@@ -208,13 +247,19 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	return labels, nil
 }
 
-/*
-func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
-	labels := provider.getLabelsForEnclaveObjectWithGUID(guid)
-	labels[label_key_consts.IDLabelKey] = id
-	return labels
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
+	}
+	dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred trying to create a new Docker label value for '%v'", id)
+	}
+	labels[label_key_consts.IDLabelKey] = dockerLabelValue
+	return labels, nil
 }
-*/
 
 func getLabelKeyValuesAsStrings(labels map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue) map[string]string {
 	result := map[string]string{}

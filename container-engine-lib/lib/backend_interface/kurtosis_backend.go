@@ -95,7 +95,6 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
@@ -172,11 +171,13 @@ type KurtosisBackend interface {
 		id service.ServiceID,
 		guid service.ServiceGUID,
 		containerImageName string,
-		privatePorts []*port_spec.PortSpec,
+		enclaveId enclave.EnclaveID,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		enclaveDataDirMntDirpath string,
+		enclaveDataDirpathOnHostMachine string,
 		filesArtifactMountDirpaths map[string]string,
     )(
 		newUserService *service.Service,

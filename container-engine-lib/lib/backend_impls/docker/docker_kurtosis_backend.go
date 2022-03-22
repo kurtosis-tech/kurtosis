@@ -33,6 +33,11 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
+
+	uninitializedPublicIpAddrStrValue = ""
+
+	dockerContainerPortNumUintBase = 10
+	dockerContainerPortNumUintBits = 16
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
@@ -240,4 +245,112 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	}
 
 	return hostMachineIp, publicPortSpec, nil
+}
+
+func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
+	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
+	portIdsForDockerPortObjs := map[nat.Port]string{}
+	for portId, portSpec := range privatePorts {
+		dockerPort, err := transformPortSpecToDockerPort(portSpec)
+		if err != nil {
+			return nil, nil,  stacktrace.Propagate(err, "An error occurred transforming the '%+v' port spec to a Docker port", portSpec)
+		}
+		publishSpecs[dockerPort] =  docker_manager.NewManualPublishingSpec(portSpec.GetNumber())
+
+		if preexistingPortId, found := portIdsForDockerPortObjs[dockerPort]; found {
+			return nil, nil, stacktrace.NewError(
+				"Port '%v' declares Docker port spec '%v', but this port spec is already in use by port '%v'",
+				portId,
+				dockerPort,
+				preexistingPortId,
+			)
+		}
+		portIdsForDockerPortObjs[dockerPort] = portId
+
+	}
+	return publishSpecs, portIdsForDockerPortObjs, nil
+}
+
+// condensePublicNetworkInfoFromHostMachineBindings
+// Condenses declared private port bindings and the host machine port bindings returned by the container engine lib into:
+//  1) a single host machine IP address
+//  2) a map of private port binding IDs -> public ports
+// An error is thrown if there are multiple host machine IP addresses
+func condensePublicNetworkInfoFromHostMachineBindings(
+	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
+	privatePorts map[string]*port_spec.PortSpec,
+	portIdsForDockerPortObjs map[nat.Port]string,
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPorts map[string]*port_spec.PortSpec,
+	resultErr error,
+) {
+	if len(hostMachinePortBindings) == 0 {
+		return nil, nil, stacktrace.NewError("Cannot condense public network info if no host machine port bindings are provided")
+	}
+
+	publicIpAddrStr := uninitializedPublicIpAddrStrValue
+	publicPorts := map[string]*port_spec.PortSpec{}
+	for dockerPortObj, hostPortBinding := range hostMachinePortBindings {
+		portId, found := portIdsForDockerPortObjs[dockerPortObj]
+		if !found {
+			// If the container engine reports a host port binding that wasn't declared in the input used-ports object, ignore it
+			// This could happen if a port is declared in the Dockerfile
+			continue
+		}
+
+		privatePort, found := privatePorts[portId]
+		if !found {
+			return nil,  nil, stacktrace.NewError(
+				"The container engine returned a host machine port binding for Docker port spec '%v', but this port spec didn't correspond to any port ID; this is very likely a bug in Kurtosis",
+				dockerPortObj,
+			)
+		}
+
+		hostIpAddr := hostPortBinding.HostIP
+		if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+			publicIpAddrStr = hostIpAddr
+		} else if publicIpAddrStr != hostIpAddr {
+			return nil, nil, stacktrace.NewError(
+				"A public IP address '%v' was already declared for the service, but Docker port object '%v' declares a different public IP address '%v'",
+				publicIpAddrStr,
+				dockerPortObj,
+				hostIpAddr,
+			)
+		}
+
+		hostPortStr := hostPortBinding.HostPort
+		hostPortUint64, err := strconv.ParseUint(hostPortStr, dockerContainerPortNumUintBase, dockerContainerPortNumUintBits)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred parsing host machine port string '%v' into a uint with %v bits and base %v",
+				hostPortStr,
+				dockerContainerPortNumUintBits,
+				dockerContainerPortNumUintBase,
+			)
+		}
+		hostPortUint16 := uint16(hostPortUint64) // Safe to do because our ParseUint declares the expected number of bits
+		portProtocol := privatePort.GetProtocol()
+
+		portSpec, err := port_spec.NewPortSpec(hostPortUint16, portProtocol)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating a new public port spec object using number '%v' and protocol '%v'",
+				hostPortUint16,
+				portProtocol,
+			)
+		}
+
+		publicPorts[portId] = portSpec
+	}
+	if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+		return nil, nil, stacktrace.NewError("No public IP address string was retrieved from host port bindings: %+v", hostMachinePortBindings)
+	}
+	publicIpAddr := net.ParseIP(publicIpAddrStr)
+	if publicIpAddr == nil {
+		return nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
+	}
+	return publicIpAddr, publicPorts, nil
 }

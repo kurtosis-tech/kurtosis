@@ -242,11 +242,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	id service.ServiceID,
 	guid service.ServiceGUID,
 	containerImageName string,
-	privatePorts []*port_spec.PortSpec,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirMntDirpath string,
+	enclaveDataDirpathOnHostMachine string,
 	filesArtifactMountDirpaths map[string]string,
 )(
 	newUserService *service.Service,
@@ -257,11 +259,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		id,
 		guid,
 		containerImageName,
+		enclaveId,
+		ipAddr,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		enclaveDataDirMntDirpath,
+		enclaveDataDirpathOnHostMachine,
 		filesArtifactMountDirpaths,
 		)
 	if err != nil {
@@ -276,7 +280,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			enclaveDataDirMntDirpath,
+			enclaveDataDirpathOnHostMachine,
 			filesArtifactMountDirpaths,
 			)
 	}
