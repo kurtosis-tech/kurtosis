@@ -103,7 +103,7 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 
 }
 
-func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
+func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -112,12 +112,12 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 ) {
 	enclaveId := filters.EnclaveId
 
-	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	enclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 	}
@@ -139,7 +139,7 @@ func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 	return networkingSidecars, nil
 }
 
-func (backend *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
+func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
@@ -148,7 +148,7 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
 	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
 	resultErr error,
 ){
-	enclaveContainers, err := backend.getEnclaveContainers(ctx, enclaveId)
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 	}
@@ -167,7 +167,7 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
 
 		execOutputBuf := &bytes.Buffer{}
 
-		exitCode, err := backend.dockerManager.RunExecCommand(
+		exitCode, err := backendCore.dockerManager.RunExecCommand(
 			ctx,
 			networkingSidecarContainer.GetId(),
 			networkingSidecarShWrappedCmd,
@@ -198,7 +198,7 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
 	return successfulSidecarGuids, erroredSidecarGuids, nil
 }
 
-func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
+func (backendCore *DockerKurtosisBackend) StopNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -207,7 +207,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	resultErr error,
 ) {
 
-	enclaveContainers, err := backend.getEnclaveContainers(ctx, filters.EnclaveId)
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, filters.EnclaveId)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", filters.EnclaveId)
 	}
@@ -215,7 +215,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	networkingSidecarContainers:= getNetworkingSidecarContainersFromContainerListByGUIDs(enclaveContainers, filters.GUIDs)
 
 	for networkingSidecarGuid, networkingSidecarContainer := range networkingSidecarContainers {
-		if err := backend.killContainerAndWaitForExit(ctx, networkingSidecarContainer); err != nil {
+		if err := backendCore.killContainerAndWaitForExit(ctx, networkingSidecarContainer); err != nil {
 			erroredSidecarGuids[networkingSidecarGuid] = err
 			continue
 		}
@@ -225,7 +225,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	return successfulSidecarGuids, erroredSidecarGuids, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
+func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -233,7 +233,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
 	resultErr error,
 ) {
-	enclaveContainers, err := backend.getEnclaveContainers(ctx, filters.EnclaveId)
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, filters.EnclaveId)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", filters.EnclaveId)
 	}
@@ -241,7 +241,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	networkingSidecarContainers:= getNetworkingSidecarContainersFromContainerListByGUIDs(enclaveContainers, filters.GUIDs)
 
 	for networkingSidecarGuid, networkingSidecarContainer := range networkingSidecarContainers {
-		if err := backend.removeContainer(ctx, networkingSidecarContainer); err != nil {
+		if err := backendCore.removeContainer(ctx, networkingSidecarContainer); err != nil {
 			erroredSidecarGuids[networkingSidecarGuid] = err
 			continue
 		}

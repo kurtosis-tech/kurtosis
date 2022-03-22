@@ -185,7 +185,14 @@ type KurtosisBackend interface {
 	)
 
 	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
-	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]*service.Service, error)
+	GetUserServices(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		filters *service.ServiceFilters,
+	)(
+		map[service.ServiceGUID]*service.Service,
+		error,
+	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
 	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]io.ReadCloser, error)

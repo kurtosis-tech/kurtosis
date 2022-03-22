@@ -289,12 +289,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	map[service.ServiceGUID]*service.Service,
 	error,
 ){
-	services, err := backend.underlying.GetUserServices(ctx, filters)
+	services, err := backend.underlying.GetUserServices(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
 	}

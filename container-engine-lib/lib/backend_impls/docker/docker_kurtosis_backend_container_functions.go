@@ -12,13 +12,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (backend *DockerKurtosisBackend) killContainerAndWaitForExit(
+func (backendCore *DockerKurtosisBackend) killContainerAndWaitForExit(
 	ctx context.Context,
 	container *types.Container,
 ) error {
 	containerId := container.GetId()
 	containerName := container.GetName()
-	if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
+	if err := backendCore.dockerManager.KillContainer(ctx, containerId); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred killing container '%v' with ID '%v'",
@@ -26,7 +26,7 @@ func (backend *DockerKurtosisBackend) killContainerAndWaitForExit(
 			containerId,
 		)
 	}
-	if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
+	if _, err := backendCore.dockerManager.WaitForExit(ctx, containerId); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred waiting for container '%v' with ID '%v' to exit after killing it",
@@ -38,7 +38,7 @@ func (backend *DockerKurtosisBackend) killContainerAndWaitForExit(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) killContainers(
+func (backendCore *DockerKurtosisBackend) killContainers(
 	ctx context.Context,
 	containers []*types.Container,
 )(
@@ -49,7 +49,7 @@ func (backend *DockerKurtosisBackend) killContainers(
 	// TODO Parallelize for perf
 	for _, container := range containers {
 		containerId := container.GetId()
-		if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
+		if err := backendCore.dockerManager.KillContainer(ctx, containerId); err != nil {
 			containerError :=  stacktrace.Propagate(
 				err,
 				"An error occurred killing container '%v' with ID '%v'",
@@ -65,7 +65,7 @@ func (backend *DockerKurtosisBackend) killContainers(
 	return successfulContainers, erroredContainers
 }
 
-func (backend *DockerKurtosisBackend) waitForExitContainers(
+func (backendCore *DockerKurtosisBackend) waitForExitContainers(
 	ctx context.Context,
 	containers []*types.Container,
 )(
@@ -75,7 +75,7 @@ func (backend *DockerKurtosisBackend) waitForExitContainers(
 	// TODO Parallelize for perf
 	for _, container := range containers {
 		containerId := container.GetId()
-		if _, err := backend.dockerManager.WaitForExit(ctx, containerId); err != nil {
+		if _, err := backendCore.dockerManager.WaitForExit(ctx, containerId); err != nil {
 			containerError := stacktrace.Propagate(
 				err,
 				"An error occurred waiting for container '%v' with ID '%v' to exit",
@@ -91,12 +91,12 @@ func (backend *DockerKurtosisBackend) waitForExitContainers(
 	return successfulContainers, erroredContainers
 }
 
-func (backend *DockerKurtosisBackend) removeContainer(
+func (backendCore *DockerKurtosisBackend) removeContainer(
 	ctx context.Context,
 	container *types.Container) error {
 
 	containerId := container.GetId()
-	if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+	if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred removing container '%v' with ID '%v'",
@@ -107,7 +107,7 @@ func (backend *DockerKurtosisBackend) removeContainer(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) removeContainers(
+func (backendCore *DockerKurtosisBackend) removeContainers(
 	ctx context.Context,
 	containers []*types.Container,
 )(
@@ -117,7 +117,7 @@ func (backend *DockerKurtosisBackend) removeContainers(
 	// TODO Parallelize for perf
 	for _, container := range containers {
 		containerId := container.GetId()
-		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			containerError := stacktrace.Propagate(
 				err,
 				"An error occurred removing container '%v' with ID '%v'",
@@ -152,6 +152,24 @@ func getNetworkingSidecarContainersFromContainerListByGUIDs(
 	return networkingSidecarContainers
 }
 
+func getUserServiceContainersFromContainerListByGUIDs(
+	containers []*types.Container,
+	guids map[service.ServiceGUID]bool,
+) map[service.ServiceGUID]*types.Container {
+
+	userServiceContainers := map[service.ServiceGUID]*types.Container{}
+	for _, container := range containers {
+		if isUserServiceContainer(container) {
+			for userServiceGuid := range guids {
+				if hasUserServiceGuidLabel(container, userServiceGuid){
+					userServiceContainers[userServiceGuid] = container
+				}
+			}
+		}
+	}
+	return userServiceContainers
+}
+
 func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
 	containers []*types.Container,
 	enclaveId enclave.EnclaveID,
@@ -163,6 +181,20 @@ func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
 		}
 	}
 	return nil
+}
+
+func getServiceIdFromContainer(container *types.Container) (service.ServiceID, error) {
+	if !isUserServiceContainer(container) {
+		return "", stacktrace.NewError("Can not possible to get service ID from container with ID '%v' because it's not a user service container", container.GetId())
+	}
+	labels := container.GetLabels()
+	serviceIdLabelValue, found := labels[label_key_consts.IDLabelKey.GetString()]
+	if !found {
+		return "",  stacktrace.NewError("Expected to find container's label with key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+	}
+	serviceId := service.ServiceID(serviceIdLabelValue)
+
+	return serviceId, nil
 }
 
 func isUserServiceContainer(container *types.Container) bool {

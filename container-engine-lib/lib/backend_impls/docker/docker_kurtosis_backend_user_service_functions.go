@@ -123,12 +123,36 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 
 func (backendCore *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	map[service.ServiceGUID]*service.Service,
 	error,
 ){
-	panic("Implement me")
+
+	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+	}
+
+	userServiceContainers := getUserServiceContainersFromContainerListByGUIDs(enclaveContainers, filters.GUIDs)
+
+	userServices := map[service.ServiceGUID]*service.Service{}
+	for guid, container := range userServiceContainers {
+		id, err := getServiceIdFromContainer(container)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting service ID from container with ID '%v'", container.GetId())
+		}
+
+		service := service.NewService(id, guid, enclaveId)
+		userServices[guid] = service
+	}
+
 }
 
 func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
