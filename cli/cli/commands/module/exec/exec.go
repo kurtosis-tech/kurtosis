@@ -31,6 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"net"
 	"regexp"
@@ -53,8 +54,6 @@ const (
 	defaultIsPartitioningEnabled = false
 
 	shouldPublishAllPorts = true
-
-	moduleId = "my-module"
 
 	allowedEnclaveIdCharsRegexStr = `^[-A-Za-z0-9.]{1,63}$`
 
@@ -149,10 +148,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
-	logrus.Info("Creating enclave for the module to execute inside...")
+	imageNameWithUnixTimestamp := getImageNameWithUnixTimestamp(moduleImage)
+
 	enclaveId := userRequestedEnclaveId
 	if enclaveId == defaultEnclaveId {
-		enclaveId = getEnclaveId(moduleImage)
+		enclaveId = imageNameWithUnixTimestamp
 	}
 	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
 	if err != nil {
@@ -182,33 +182,43 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer closeClientFunc()
 
-	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-		EnclaveId:              enclaveId,
-		ApiContainerVersionTag: apiContainerVersion,
-		ApiContainerLogLevel:   apiContainerLogLevelStr,
-		IsPartitioningEnabled:  isPartitioningEnabled,
-		ShouldPublishAllPorts:  shouldPublishAllPorts,
-	}
-
-	response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the existing enclaves")
 	}
-	enclaveInfo := response.GetEnclaveInfo()
 
-	completedSuccessfully := false
-	defer func() {
-		if !completedSuccessfully {
-			logrus.Warnf(
-				"NOTE: Even though the module didn't complete successfully, we've left the enclave running so you can continue to debug; to stop this enclave and free its resources, run '%v %v %v %v'",
-				command_str_consts.KurtosisCmdStr,
-				command_str_consts.EnclaveCmdStr,
-				command_str_consts.EnclaveStopCmdStr,
-				enclaveId,
-			)
+	enclaveInfo, foundExistingEnclave := getEnclavesResp.EnclaveInfo[enclaveId]
+	// If no enclave with the requested ID exists, create it
+	didModuleExecutionCompleteSuccessfully := false
+	if !foundExistingEnclave {
+		logrus.Infof("Creating enclave '%v' for the module to execute inside...", enclaveId)
+		createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+			EnclaveId:              enclaveId,
+			ApiContainerVersionTag: apiContainerVersion,
+			ApiContainerLogLevel:   apiContainerLogLevelStr,
+			IsPartitioningEnabled:  isPartitioningEnabled,
+			ShouldPublishAllPorts:  shouldPublishAllPorts,
 		}
-	}()
-	logrus.Infof("Enclave '%v' created successfully", enclaveId)
+
+		response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
+		}
+		didModuleExecutionCompleteSuccessfully = true
+		defer func() {
+			if !didModuleExecutionCompleteSuccessfully {
+				logrus.Warnf(
+					"NOTE: Even though the module execution didn't complete successfully, we've left the enclave we've created running so you can continue to debug; to stop this enclave and free its resources, run '%v %v %v %v'",
+					command_str_consts.KurtosisCmdStr,
+					command_str_consts.EnclaveCmdStr,
+					command_str_consts.EnclaveStopCmdStr,
+					enclaveId,
+				)
+			}
+		}()
+		enclaveInfo = response.GetEnclaveInfo()
+		logrus.Infof("Enclave '%v' created successfully", enclaveId)
+	}
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
 	if err != nil {
@@ -229,17 +239,30 @@ func run(cmd *cobra.Command, args []string) error {
 			enclaveId,
 		)
 	}
+	defer func() {
+		conn.Close()
+	}()
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 
 	logrus.Infof(
-		"Loading module '%v' with load params '%v'...",
+		"Loading module '%v' with load params '%v' inside enclave '%v'...",
 		moduleImage,
 		loadParamsStr,
+		enclaveId,
 	)
+	moduleId := imageNameWithUnixTimestamp
 	loadModuleArgs := binding_constructors.NewLoadModuleArgs(moduleId, moduleImage, loadParamsStr)
 	if _, err := apiContainerClient.LoadModule(ctx, loadModuleArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred loading the module with image '%v'", moduleImage)
 	}
+	defer func() {
+		if !didModuleExecutionCompleteSuccessfully {
+			 logrus.Warnf(
+				 "Module execution didn't complete successfully; we've left the module and the services it started inside enclave '%v' for debugging",
+				 enclaveId,
+			 )
+		}
+	}()
 	logrus.Info("Module loaded successfully")
 
 	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
@@ -278,14 +301,14 @@ func run(cmd *cobra.Command, args []string) error {
 		executeModuleResult.SerializedResult,
 	)
 
-	completedSuccessfully = true
+	didModuleExecutionCompleteSuccessfully = true
 	return nil
 }
 
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
-func getEnclaveId(moduleImage string) string {
+func getImageNameWithUnixTimestamp(moduleImage string) string {
 	enclaveId := execution_ids.GetExecutionID()
 	parsedModuleImage, err := reference.Parse(moduleImage)
 	if err != nil {
