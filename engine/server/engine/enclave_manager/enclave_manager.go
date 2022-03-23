@@ -134,11 +134,12 @@ func (manager *EnclaveManager) CreateEnclave(
 			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId));
 			genericErrorStrFmt := "Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v"
 			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
-			for enclaveId, err := range destroyEnclaveErrs {
+			if err != nil {
 				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
+				return
 			}
-			if err != nil {
+			for enclaveId, err := range destroyEnclaveErrs {
 				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
@@ -199,11 +200,12 @@ func (manager *EnclaveManager) CreateEnclave(
 			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId))
 			genericErrorStrFmt := "Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v"
 			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API Container for enclave '%v'!!!!!!"
-			for enclaveId, err := range destroyApiContainerErrs {
+			if err != nil {
 				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
+				return
 			}
-			if err != nil {
+			for enclaveId, err := range destroyApiContainerErrs {
 				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
