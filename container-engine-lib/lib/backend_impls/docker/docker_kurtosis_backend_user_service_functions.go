@@ -191,28 +191,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ){
-
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
-	}
-
-	var readCloserLogs io.ReadCloser
-	for userServiceGuid, container := range userServiceContainers {
-		readCloserLogs, err = backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID and container ID '%v'", userServiceGuid, container.GetId())
-		}
-
-	}
-	defer func() {
-		if readCloserLogs != nil {
-			readCloserLogs.Close()
-		}
-	}()
-
-
-
+	panic("Implement me")
 }
 
 func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
@@ -255,22 +234,59 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 
 func (backendCore *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ) {
-	panic("Implement me")
+	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	erroredUserServiceGuids := map[service.ServiceGUID]error{}
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+	}
+
+	for userServiceGuid, userServiceContainer := range userServiceContainers {
+		if err := backendCore.killContainerAndWaitForExit(ctx, userServiceContainer); err != nil {
+			erroredUserServiceGuids[userServiceGuid] = err
+			continue
+		}
+		successfulUserServiceGuids[userServiceGuid] = true
+	}
+
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ) {
-	panic("Implement me")
+	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	erroredUserServiceGuids := map[service.ServiceGUID]error{}
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+	}
+
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking-sidecar-containers by enclave ID '%v' and networking sidecar GUIDs '%+v'", enclaveId, filters.GUIDs)
+	}
+
+	for userServiceGuid, userServiceContainer := range userServiceContainers {
+		if err := backendCore.removeContainer(ctx, userServiceContainer); err != nil {
+			erroredUserServiceGuids[userServiceGuid] = err
+			continue
+		}
+		successfulUserServiceGuids[userServiceGuid] = true
+	}
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }

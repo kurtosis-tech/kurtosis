@@ -244,6 +244,7 @@ type KurtosisBackend interface {
 	// Stop user services using the given filters,
 	StopUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	)(
 		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully stopped
@@ -254,6 +255,7 @@ type KurtosisBackend interface {
 	// Destroy user services using the given filters,
 	DestroyUserServices(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	)(
 		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed

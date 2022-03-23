@@ -187,7 +187,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	newModule *module.Module,
 	resultErr error,
 ) {
-	module, err := backend.underlying.CreateModule(
+	newModule, err := backend.underlying.CreateModule(
 		ctx,
 		id,
 		guid,
@@ -205,7 +205,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 			serializedParams)
 	}
 
-	return module, nil
+	return newModule, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetModules(
@@ -395,30 +395,32 @@ func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	successfulUserServiceIds map[service.ServiceGUID]bool,
 	erroredUserServiceIds map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.StopUserServices(ctx, filters)
+	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services using filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services of enclave with ID '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	successfulUserServiceIds map[service.ServiceGUID]bool,
 	erroredUserServiceIds map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
+	successes, failures, err := backend.underlying.DestroyUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services of enclave with ID '%v' using filters: %+v", enclaveId, filters)
 	}
 	return successes, failures, nil
 }
