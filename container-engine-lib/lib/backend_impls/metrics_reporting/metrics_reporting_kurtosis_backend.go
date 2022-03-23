@@ -305,6 +305,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 )(
@@ -312,9 +313,9 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, filters, shouldFollowLogs)
+	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return userServiceLogs, erroredUserServices, nil
 }

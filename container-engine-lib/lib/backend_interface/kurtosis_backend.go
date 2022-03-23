@@ -198,6 +198,7 @@ type KurtosisBackend interface {
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
 	GetUserServiceLogs(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
 	)(
