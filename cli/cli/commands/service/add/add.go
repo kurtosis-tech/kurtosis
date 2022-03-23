@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
@@ -62,7 +63,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 	ShortDescription:        "Adds a service to an enclave",
 	LongDescription:         fmt.Sprintf(
 		"Adds a new service with the given parameters to the given enclave (NOTE: any instances of " +
-			"the '%v' string in the CMD args will be replaced with the container's IP address inside the enclave)",
+			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
 		serviceIpAddrReplaceKeyword,
 	),
 	DockerManagerContextKey: dockerManagerCtxKey,
@@ -92,7 +93,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key: entrypointBinaryFlagKey,
 			Usage:     fmt.Sprintf(
 				"ENTRYPOINT binary that will be used when running the container, overriding the " +
-					"image's default ENTRYPOINT (NOTE: any instances of the '%v' string will be " +
+					"image's default ENTRYPOINT (NOTE: any instances of the string '%v' will be " +
 					"replaced with the container's IP address inside the enclave)",
 				serviceIpAddrReplaceKeyword,
 			),
@@ -104,8 +105,8 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Key:       envvarsFlagKey,
 			Usage:     fmt.Sprintf(
 				"String containing environment variables that will be set when running the container, in " +
-					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the '%v' string will " +
-					"be replaced with the container's IP address inside the enclave)",
+					"the form \"KEY1%vVALUE1%vKEY2%vVALUE2\" (NOTE: any instances of the string '%v' in values " +
+					"will be replaced with the container's IP address inside the enclave)",
 				envvarKeyValueDelimiter,
 				envvarDeclarationsDelimiter,
 				envvarKeyValueDelimiter,
@@ -222,6 +223,7 @@ func run(
 	} else {
 		fmt.Println("Port Bindings: <none defined>")
 	}
+	keyValuePrinter := output_printers.NewKeyValuePrinter()
 	for portId, privatePortSpec := range privatePorts {
 		publicPortSpec, found := publicPorts[portId]
 		if !found {
@@ -230,16 +232,19 @@ func run(
 
 		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_Protocol(publicPortSpec.GetProtocol())
 		protocolStr := strings.ToLower(apiProtocolEnum.String())
-		portLine := fmt.Sprintf(
-			"   %v: %v/%v -> %v:%v",
-			portId,
+		portBindingInfo := fmt.Sprintf(
+			"%v/%v -> %v:%v",
 			privatePortSpec.GetNumber(),
 			protocolStr,
 			publicIpAddr,
 			publicPortSpec.GetNumber(),
 		)
-		fmt.Println(portLine)
+		keyValuePrinter.AddPair(
+			fmt.Sprintf("   %v", portId),
+			portBindingInfo,
+		)
 	}
+	keyValuePrinter.Print()
 
 	return nil
 }
@@ -309,7 +314,6 @@ func getContainerConfigSupplier(
 			ipReplacedEnvvars[key] = newValue
 		}
 
-		// TODO do IP replacement
 		resultBuilder := services.NewContainerConfigBuilder(image)
 		if len(ipReplacedCmdArgs) > 0 {
 			resultBuilder.WithCmdOverride(ipReplacedCmdArgs)
