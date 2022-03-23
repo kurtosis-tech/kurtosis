@@ -361,7 +361,6 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 			enclaveId, numOfFoundApiContainers)
 	}
 	apiContainer := getFirstApiContainerFromMap(enclaveApiContainers)
-	apiContainer.GetStatus()
 	resultApiContainerStatus, err := getApiContainerStatusFromContainerStatus(apiContainer.GetStatus())
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
