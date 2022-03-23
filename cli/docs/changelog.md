@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed break in the `sandbox` command when we switched to the newer `EnclaveContext.newGrpcNodeEnclaveContext` function
 
 # 0.11.7
 ### Features

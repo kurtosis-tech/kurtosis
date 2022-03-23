@@ -110,7 +110,6 @@ func RunREPL(
 		return stacktrace.Propagate(err, "An error occurred when trying to get the repl attributes for the interactiveReplGuid '%s'", interactiveReplGuid)
 	}
 
-	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainerIpInsideEnclave, apiContainerPortInsideEnclave)
 	containerName := replAttrs.GetName()
 	labels := replAttrs.GetLabels()
 	// TODO Replace all this with a call to the engine server!!!
@@ -123,7 +122,8 @@ func RunREPL(
 	).WithStaticIP(
 		replContainerIpAddr,
 	).WithEnvironmentVariables(map[string]string{
-		repl_consts.KurtosisSocketEnvVar: kurtosisApiContainerSocket,
+		repl_consts.KurtosisAPIContainerIPEnvVar: apiContainerIpInsideEnclave,
+		repl_consts.KurtosisAPIContainerPortEnvVar: fmt.Sprintf("%v", apiContainerPortInsideEnclave),
 		repl_consts.EnclaveIdEnvVar: enclaveId,
 		repl_consts.EnclaveDataMountDirpathEnvVar: enclaveDataDirMountpointOnReplContainer,
 	}).WithBindMounts(

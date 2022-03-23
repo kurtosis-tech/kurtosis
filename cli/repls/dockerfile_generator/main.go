@@ -29,7 +29,8 @@ type TemplateData struct {
 	KurtosisCoreVersion           string
 	PackageInstallationDirpath    string
 	InstalledPackagesDirpath      string
-	KurtosisAPISocketEnvVar       string
+	KurtosisAPIContainerIPEnvVar  string
+	KurtosisAPIContainerPortEnvVar string
 	EnclaveIDEnvVar               string
 	EnclaveDataMountDirpathEnvVar string
 }
@@ -79,7 +80,8 @@ func runMain() error {
 		KurtosisCoreVersion:           api_container_launcher.DefaultVersion,
 		PackageInstallationDirpath:    packageInstallationDirpath,
 		InstalledPackagesDirpath:      installedPackagesDirpath,
-		KurtosisAPISocketEnvVar:       repl_consts.KurtosisSocketEnvVar,
+		KurtosisAPIContainerIPEnvVar: repl_consts.KurtosisAPIContainerIPEnvVar,
+		KurtosisAPIContainerPortEnvVar: repl_consts.KurtosisAPIContainerPortEnvVar,
 		EnclaveIDEnvVar:               repl_consts.EnclaveIdEnvVar,
 		EnclaveDataMountDirpathEnvVar: repl_consts.EnclaveDataMountDirpathEnvVar,
 	}
