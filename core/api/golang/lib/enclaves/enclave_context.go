@@ -56,6 +56,8 @@ type EnclaveContext struct {
 /*
 Creates a new EnclaveContext object with the given parameters.
 */
+// TODO Migrate this to take in API container IP & API container GRPC port num, to match the (better) way that
+//  Typescript does it, so that the user doesn't have to figure out how to instantiate the ApiContainerServiceClient on their own!
 func NewEnclaveContext(
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient,
 	enclaveId EnclaveID,
@@ -75,9 +77,9 @@ func (enclaveCtx *EnclaveContext) GetEnclaveID() EnclaveID {
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) LoadModule(
-		moduleId modules.ModuleID,
-		image string,
-		serializedParams string) (*modules.ModuleContext, error) {
+	moduleId modules.ModuleID,
+	image string,
+	serializedParams string) (*modules.ModuleContext, error) {
 	args := binding_constructors.NewLoadModuleArgs(string(moduleId), image, serializedParams)
 
 	// We proxy calls to execute modules via the API container, so actually no need to use the response here
@@ -128,9 +130,9 @@ func (enclaveCtx *EnclaveContext) RegisterFilesArtifacts(filesArtifactUrls map[s
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddService(
-		serviceId services.ServiceID,
-		containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
-	) (*services.ServiceContext, error) {
+	serviceId services.ServiceID,
+	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+) (*services.ServiceContext, error) {
 
 	serviceContext, err := enclaveCtx.AddServiceToPartition(
 		serviceId,
@@ -146,10 +148,10 @@ func (enclaveCtx *EnclaveContext) AddService(
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) AddServiceToPartition(
-		serviceId services.ServiceID,
-		partitionID PartitionID,
-		containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
-		) (*services.ServiceContext, error) {
+	serviceId services.ServiceID,
+	partitionID PartitionID,
+	containerConfigSupplier func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error),
+) (*services.ServiceContext, error) {
 
 	ctx := context.Background()
 
@@ -422,7 +424,7 @@ func (enclaveCtx *EnclaveContext) ExecuteBulkCommands(bulkCommandsJson string) e
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error){
+func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error) {
 	response, err := enclaveCtx.client.GetServices(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the service IDs in the enclave")
@@ -432,7 +434,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, er
 
 	for key, _ := range response.GetServiceIds() {
 		serviceId := services.ServiceID(key)
-		if _, ok := serviceIds[serviceId]; !ok{
+		if _, ok := serviceIds[serviceId]; !ok {
 			serviceIds[serviceId] = true
 		}
 	}
@@ -441,7 +443,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, er
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error){
+func (enclaveCtx *EnclaveContext) GetModules() (map[modules.ModuleID]bool, error) {
 	response, err := enclaveCtx.client.GetModules(context.Background(), &emptypb.Empty{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the IDs of the modules in the enclave")
