@@ -191,7 +191,26 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ){
-	panic("Implement me")
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+	}
+
+	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
+	erroredUserServices := map[service.ServiceGUID]error{}
+
+	var readCloserLogs io.ReadCloser
+	for userServiceGuid, container := range userServiceContainers {
+		readCloserLogs, err = backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+		if err != nil {
+			serviceError := stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID and container ID '%v'", userServiceGuid, container.GetId())
+			erroredUserServices[userServiceGuid] = serviceError
+			continue
+		}
+		successfulUserServicesLogs[userServiceGuid] = readCloserLogs
+	}
+
+	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
 func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
