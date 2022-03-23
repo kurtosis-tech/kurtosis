@@ -32,6 +32,7 @@ const (
 	ServiceCmdStr = "service"
 		ServiceAddCmdStr = "add"
 		ServiceLogsCmdStr = "logs"
+		ServiceRmCmdStr = "rm"
 		ShellCmdStr = "shell"
 	ConfigCmdStr = "config"
 		InitCmdStr = "init"
