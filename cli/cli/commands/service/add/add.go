@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"strconv"
 	"strings"
 )
 
@@ -41,6 +42,8 @@ const (
 	portIdSpecDelimiter     = "="
 	portNumberProtocolDelimiter = "/"
 	portDeclarationsDelimiter = ","
+	portNumberUintParsingBase = 10
+	portNumberUintParsingBits = 16
 
 	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey  = "engine-client"
@@ -50,9 +53,6 @@ const (
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
 	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
-
-	// Each port declaration should be PORTID=SPEC which means we should have two components to each declaration
-	expectedNumberIdSpecComponentsInPortDeclaration = 2
 )
 
 var defaultPortProtocolStr = strings.ToLower(kurtosis_core_rpc_api_bindings.Port_TCP.String())
@@ -168,7 +168,12 @@ func run(
 
 	envvarsStr, err := flags.GetString(envvarsFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", entrypointBinaryFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the env vars string using key '%v'", envvarsFlagKey)
+	}
+
+	portsStr, err := flags.GetString(portsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
 	}
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
@@ -186,7 +191,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
 
-	containerConfigSupplier, err := getContainerConfigSupplier(image, cmdArgs, entrypointStr, envvarsStr)
+	containerConfigSupplier, err := getContainerConfigSupplier(image, portsStr, cmdArgs, entrypointStr, envvarsStr)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -203,6 +208,40 @@ func run(
 		services.ServiceID(serviceId),
 		containerConfigSupplier,
 	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding service '%v' to enclave '%v'", serviceId, enclaveId)
+	}
+
+	privatePorts := serviceCtx.GetPrivatePorts()
+	publicPorts := serviceCtx.GetPublicPorts()
+	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
+
+	fmt.Println(fmt.Sprintf("Service ID: %v", serviceId))
+	if len(privatePorts) > 0 {
+		fmt.Println("Ports Bindings:")
+	} else {
+		fmt.Println("Port Bindings: <none defined>")
+	}
+	for portId, privatePortSpec := range privatePorts {
+		publicPortSpec, found := publicPorts[portId]
+		if !found {
+			return stacktrace.NewError("Found private port with ID '%v' that doesn't correspond to any public port; this is a bug in Kurtosis!", portId)
+		}
+
+		apiProtocolEnum := kurtosis_core_rpc_api_bindings.Port_Protocol(publicPortSpec.GetProtocol())
+		protocolStr := strings.ToLower(apiProtocolEnum.String())
+		portLine := fmt.Sprintf(
+			"   %v: %v/%v -> %v:%v",
+			portId,
+			privatePortSpec.GetNumber(),
+			protocolStr,
+			publicIpAddr,
+			publicPortSpec.GetNumber(),
+		)
+		fmt.Println(portLine)
+	}
+
+	return nil
 }
 
 // TODO TODO REMOVE ALL THIS WHEN NewEnclaveContext CAN JUST TAKE IN IP ADDR & PORT NUM!!!
@@ -240,6 +279,7 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 
 func getContainerConfigSupplier(
 	image string,
+	portsStr string,
 	cmdArgs []string,
 	entrypoint string,
 	envvarsStr string,
@@ -247,6 +287,11 @@ func getContainerConfigSupplier(
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing environment variables string '%v'", envvarsStr)
+	}
+
+	ports, err := parsePortsStr(portsStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred parsing ports string '%v'", portsStr)
 	}
 
 	return func(ipAddr string, sharedDirectory *services.SharedPath) (*services.ContainerConfig, error) {
@@ -274,6 +319,9 @@ func getContainerConfigSupplier(
 		}
 		if len(ipReplacedEnvvars) > 0 {
 			resultBuilder.WithEnvironmentVariableOverrides(ipReplacedEnvvars)
+		}
+		if len(ports) > 0 {
+			resultBuilder.WithUsedPorts(ports)
 		}
 
 		return resultBuilder.Build(), nil
@@ -321,8 +369,8 @@ func parseEnvVarsStr(envvarsStr string) (map[string]string, error) {
 // Parses a string in the form PORTID1=1234,PORTID2=5678/udp
 // An empty string will result in an empty map
 // Empty strings will be skipped (e.g. ',,,' will result in an empty map)
-func parsePortsStr(portsStr string) (map[string]string, error) {
-	result := map[string]string{}
+func parsePortsStr(portsStr string) (map[string]*services.PortSpec, error) {
+	result := map[string]*services.PortSpec{}
 	if portsStr == "" {
 		return result, nil
 	}
@@ -334,24 +382,75 @@ func parsePortsStr(portsStr string) (map[string]string, error) {
 		}
 
 		portIdSpecComponents := strings.Split(portDeclarationStr, portIdSpecDelimiter)
-		if len(portIdSpecComponents) != expectedNumberKeyValueComponentsInEnvvarDeclaration {
+		if len(portIdSpecComponents) != 2 {
 			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, portIdSpecDelimiter)
 		}
 		portId := portIdSpecComponents[0]
 		specStr := portIdSpecComponents[1]
+		if len(strings.TrimSpace(portId)) == 0 {
+			return nil, stacktrace.NewError("Port declaration with spec string '%v' has an empty port ID", specStr)
+		}
+		portSpec, err := parsePortSpecStr(specStr)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred parsing port spec string '%v' for port with ID '%v'", specStr, portId)
+		}
 
-		preexistingValue, found := result[portId]
-		if found {
+		if _, found := result[portId]; found {
 			return nil, stacktrace.NewError(
-				"Cannot declare environment variable '%v' assigned to specStr '%v' because the portId has previously been assigned to specStr '%v'",
+				"Cannot define port '%v' with spec '%v' because it is already defined",
 				portId,
 				specStr,
-				preexistingValue,
 			)
 		}
 
-		result[portId] = specStr
+		result[portId] = portSpec
 	}
 
 	return result, nil
+}
+
+func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
+	if len(strings.TrimSpace(specStr)) == 0 {
+		return nil, stacktrace.NewError("Cannot parse empty spec string")
+	}
+
+	portSpecComponents := strings.Split(specStr, portNumberProtocolDelimiter)
+	if len(portSpecComponents) == 0 {
+		// Not sure how this would even happen
+		return nil, stacktrace.NewError("Port spec string '%v' was split into 0 components, which should never happen", specStr)
+	}
+	numPortSpecComponents := len(portSpecComponents)
+	if numPortSpecComponents > 2 {
+		return nil, stacktrace.NewError(
+			"Port spec string '%v' was split on delimiter '%v' into '%v' components, which indicates too many delimiters",
+			specStr,
+			portNumberProtocolDelimiter,
+			numPortSpecComponents,
+		)
+	}
+	portNumberStr := portSpecComponents[0]
+	portProtocolStr := defaultPortProtocolStr
+	if numPortSpecComponents > 1 {
+		portProtocolStr = portSpecComponents[1]
+	}
+
+	portNumberUint64, err := strconv.ParseUint(portNumberStr, portNumberUintParsingBase, portNumberUintParsingBits)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred parsing port number string '%v' with base '%v' and bits '%v'",
+			portNumberStr,
+			portNumberUintParsingBase,
+			portNumberUintParsingBits,
+		)
+	}
+	portNumberUint16 := uint16(portNumberUint64)
+
+	portProtocolEnumInt, found := kurtosis_core_rpc_api_bindings.Port_Protocol_value[strings.ToUpper(portProtocolStr)]
+	if !found {
+		return nil, stacktrace.NewError("Unrecognized port protocol '%v'", portProtocolStr)
+	}
+	portProtocol := services.PortProtocol(portProtocolEnumInt)
+
+	return services.NewPortSpec(portNumberUint16, portProtocol), nil
 }
