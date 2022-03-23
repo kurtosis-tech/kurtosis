@@ -26,27 +26,54 @@ type APIContainer struct {
 	publicGrpcProxyPort *port_spec.PortSpec
 }
 
+func NewAPIContainer(
+	enclaveId string,
+	status container_status.ContainerStatus,
+	privateIpAddr net.IP,
+	privateGrpcPort *port_spec.PortSpec,
+	privateGrpcProxyPort *port_spec.PortSpec,
+	publicIpAddr net.IP,
+	publicGrpcPort *port_spec.PortSpec,
+	publicGrpcProxyPort *port_spec.PortSpec) *APIContainer {
+	return &APIContainer{
+		enclaveId: enclaveId,
+		status: status,
+		privateIpAddr: privateIpAddr,
+		privateGrpcPort: privateGrpcPort,
+		privateGrpcProxyPort: privateGrpcProxyPort,
+		publicIpAddr: publicIpAddr,
+		publicGrpcPort: publicGrpcPort,
+		publicGrpcProxyPort: publicGrpcProxyPort}
+}
+
 func (apiContainer *APIContainer) GetEnclaveID() string {
 	return apiContainer.enclaveId
 }
+
 func (apiContainer *APIContainer) GetStatus() container_status.ContainerStatus {
 	return apiContainer.status
 }
+
 func (apiContainer *APIContainer) GetPrivateIPAddress() net.IP {
 	return apiContainer.privateIpAddr
 }
+
 func (apiContainer *APIContainer) GetPrivateGRPCPort() *port_spec.PortSpec {
 	return apiContainer.privateGrpcPort
 }
+
 func (apiContainer *APIContainer) GetPrivateGRPCProxyPort() *port_spec.PortSpec {
 	return apiContainer.privateGrpcPort
 }
+
 func (apiContainer *APIContainer) GetPublicIPAddress() net.IP {
 	return apiContainer.publicIpAddr
 }
+
 func (apiContainer *APIContainer) GetPublicGRPCPort() *port_spec.PortSpec {
 	return apiContainer.publicGrpcPort
 }
+
 func (apiContainer *APIContainer) GetPublicGRPCProxyPort() *port_spec.PortSpec {
 	return apiContainer.publicGrpcPort
 }

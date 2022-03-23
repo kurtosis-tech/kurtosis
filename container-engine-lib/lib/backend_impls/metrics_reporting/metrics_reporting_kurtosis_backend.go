@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/partition"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -64,15 +63,25 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEngines(ctx context.Conte
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveId string) (*enclave.Enclave, error) {
-	result, err := backend.underlying.CreateEnclave(ctx, enclaveId)
+func (backend *MetricsReportingKurtosisBackend) CreateEnclave(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	isPartitioningEnabled bool,
+)(*enclave.Enclave, error) {
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveId, isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with ID '%v' and is-partitioning-enabled value '%v'", enclaveId, isPartitioningEnabled)
 	}
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[string]*enclave.Enclave, error) {
+func (backend *MetricsReportingKurtosisBackend) GetEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	map[enclave.EnclaveID]*enclave.Enclave,
+	error,
+){
 	results, err := backend.underlying.GetEnclaves(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves using filters: %+v", filters)
@@ -80,7 +89,14 @@ func (backend *MetricsReportingKurtosisBackend) GetEnclaves(ctx context.Context,
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	successfulEnclaveIds map[enclave.EnclaveID]bool,
+	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
+){
 	successes, failures, err := backend.underlying.StopEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters: %+v", filters)
@@ -88,37 +104,19 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(ctx context.Context
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[string]bool, erroredEnclaveIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
+	ctx context.Context,
+	filters *enclave.EnclaveFilters,
+)(
+	successfulEnclaveIds map[enclave.EnclaveID]bool,
+	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
+) {
 	successes, failures, err := backend.underlying.DestroyEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves using filters: %+v", filters)
 	}
 	return successes, failures, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateRepartition(
-	ctx context.Context,
-	partitions []*partition.Partition,
-	newPartitionConnections map[partition.PartitionConnectionID]partition.PartitionConnection,
-	newDefaultConnection partition.PartitionConnection,
-)(
-	resultErr error,
-) {
-	if err := backend.underlying.CreateRepartition(
-		ctx,
-		partitions,
-		newPartitionConnections,
-		newDefaultConnection,
-	); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating repartition with partitions '%+v', partition connections '%+v' and default connection '%+v'",
-			partitions,
-			newPartitionConnections,
-			newDefaultConnection,
-		)
-	}
-	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
