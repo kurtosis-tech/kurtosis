@@ -293,27 +293,30 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	filters *service.ServiceFilters,
 )(
 	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]error,
 	error,
 ){
-	services, err := backend.underlying.GetUserServices(ctx, enclaveId, filters)
+	services, erroredServices, err := backend.underlying.GetUserServices(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
 	}
-	return services, nil
+	return services, erroredServices, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
 )(
 	map[service.ServiceGUID]io.ReadCloser,
+	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServiceLogs, err := backend.underlying.GetUserServiceLogs(ctx, filters)
+	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
 	}
-	return userServiceLogs, nil
+	return userServiceLogs, erroredUserServices, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
@@ -438,14 +441,15 @@ func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
 
 func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
 	map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
-	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, filters)
+	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return networkingSidecars, nil
 }
@@ -468,30 +472,32 @@ func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarsExecCommand
 
 func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
 	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
 	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
 	resultErr error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.StopNetworkingSidecars(ctx, filters)
+	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.StopNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return successfulSidecarGuids, erroredSidecarGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
 	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
 	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
 	resultErr error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, filters)
+	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
 	return successfulSidecarGuids, erroredSidecarGuids, nil
 }

@@ -135,15 +135,21 @@ func (backendCore *DockerKurtosisBackend) removeContainers(
 	return successfulContainers, erroredContainers
 }
 
-func getNetworkingSidecarContainersFromContainerListByGUIDs(
-	containers []*types.Container,
-	guids map[networking_sidecar.NetworkingSidecarGUID]bool,
-) map[networking_sidecar.NetworkingSidecarGUID]*types.Container {
+func (backendCore *DockerKurtosisBackend) getNetworkingSidecarContainersByEnclaveIdAndNetworkingSidecarGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	networkingSidecarGUIDs map[networking_sidecar.NetworkingSidecarGUID]bool,
+) (map[networking_sidecar.NetworkingSidecarGUID]*types.Container, error) {
+
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+	}
 
 	networkingSidecarContainers := map[networking_sidecar.NetworkingSidecarGUID]*types.Container{}
-	for _, container := range containers {
+	for _, container := range enclaveContainers {
 		if isNetworkingSidecarContainer(container) {
-			for networkingSidecarGuid := range guids {
+			for networkingSidecarGuid := range networkingSidecarGUIDs {
 				userServiceGuid := service.ServiceGUID(networkingSidecarGuid)
 				if hasUserServiceGuidLabel(container, userServiceGuid){
 					networkingSidecarContainers[networkingSidecarGuid] = container
@@ -151,25 +157,31 @@ func getNetworkingSidecarContainersFromContainerListByGUIDs(
 			}
 		}
 	}
-	return networkingSidecarContainers
+	return networkingSidecarContainers, nil
 }
 
-func getUserServiceContainersFromContainerListByGUIDs(
-	containers []*types.Container,
-	guids map[service.ServiceGUID]bool,
-) map[service.ServiceGUID]*types.Container {
+func (backendCore *DockerKurtosisBackend) getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuids map[service.ServiceGUID]bool,
+) (map[service.ServiceGUID]*types.Container, error) {
+
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+	}
 
 	userServiceContainers := map[service.ServiceGUID]*types.Container{}
-	for _, container := range containers {
+	for _, container := range enclaveContainers {
 		if isUserServiceContainer(container) {
-			for userServiceGuid := range guids {
+			for userServiceGuid := range userServiceGuids {
 				if hasUserServiceGuidLabel(container, userServiceGuid){
 					userServiceContainers[userServiceGuid] = container
 				}
 			}
 		}
 	}
-	return userServiceContainers
+	return userServiceContainers, nil
 }
 
 func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(

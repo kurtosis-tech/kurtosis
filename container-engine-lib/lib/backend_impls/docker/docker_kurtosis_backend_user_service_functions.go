@@ -127,31 +127,37 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 	filters *service.ServiceFilters,
 )(
 	map[service.ServiceGUID]*service.Service,
+	map[service.ServiceGUID]error,
 	error,
 ){
 
-	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
 	}
 
-	userServiceContainers := getUserServiceContainersFromContainerListByGUIDs(enclaveContainers, filters.GUIDs)
-
-	userServices := map[service.ServiceGUID]*service.Service{}
+	successfulUserServices := map[service.ServiceGUID]*service.Service{}
+	erroredUserServices := map[service.ServiceGUID]error{}
 	for guid, container := range userServiceContainers {
 		id, err := getServiceIdFromContainer(container)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting service ID from container with ID '%v'", container.GetId())
+			serviceError := stacktrace.Propagate(err, "An error occurred getting service ID from container with ID '%v'", container.GetId())
+			erroredUserServices[guid] = serviceError
+			continue
 		}
 
 		privatePorts, err := getPrivatePortsFromContainerLabels(container.GetLabels())
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container labels '%+v'", container.GetLabels())
+			serviceError := stacktrace.Propagate(err, "An error occurred getting port specs from container labels '%+v'", container.GetLabels())
+			erroredUserServices[guid] = serviceError
+			continue
 		}
 
 		_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+			serviceError := stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+			erroredUserServices[guid] = serviceError
+			continue
 		}
 
 		var maybePublicIpAddr net.IP = nil
@@ -163,24 +169,50 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 				portIdsForDockerPortObjs,
 			)
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+				serviceError := stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+				erroredUserServices[guid] = serviceError
+				continue
 			}
 		}
 
 		service := service.NewService(id, guid, enclaveId, maybePublicIpAddr, publicPorts)
-		userServices[guid] = service
+		successfulUserServices[guid] = service
 	}
-	return userServices, nil
+	return successfulUserServices, erroredUserServices, nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
 )(
 	map[service.ServiceGUID]io.ReadCloser,
+	map[service.ServiceGUID]error,
 	error,
 ){
-	panic("Implement me")
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+	}
+
+	var readCloserLogs io.ReadCloser
+	for userServiceGuid, container := range userServiceContainers {
+		readCloserLogs, err = backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID and container ID '%v'", userServiceGuid, container.GetId())
+		}
+
+	}
+	defer func() {
+		if readCloserLogs != nil {
+			readCloserLogs.Close()
+		}
+	}()
+
+
+
 }
 
 func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (

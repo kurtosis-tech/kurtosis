@@ -190,12 +190,21 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	)(
-		map[service.ServiceGUID]*service.Service,
-		error,
+		successfulUserServices map[service.ServiceGUID]*service.Service,
+		erroredUserServiceIds map[service.ServiceGUID]error,
+		resultError error,
 	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
-	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]io.ReadCloser, error)
+	GetUserServiceLogs(
+		ctx context.Context,
+		filters *service.ServiceFilters,
+		shouldFollowLogs bool,
+	)(
+		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
+		erroredUserServiceIds map[service.ServiceGUID]error,
+		resultError error,
+	)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommand (
@@ -266,6 +275,7 @@ type KurtosisBackend interface {
 	// Gets networking sidecars using the given filters, returning a map of matched networking sidecars identified by their GUID
 	GetNetworkingSidecars(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
@@ -286,6 +296,7 @@ type KurtosisBackend interface {
 	// Stop networking sidecars using the given filters,
 	StopNetworkingSidecars(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
@@ -296,6 +307,7 @@ type KurtosisBackend interface {
 	// Destroy networking sidecars using the given filters,
 	DestroyNetworkingSidecars(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
