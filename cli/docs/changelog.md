@@ -1,4 +1,7 @@
 # TBD
+### Features
+* Added the `service add` command for adding a service to an enclave
+* Added the `service rm` command for removing services from an enclave
 
 # 0.11.8
 ### Fixes
