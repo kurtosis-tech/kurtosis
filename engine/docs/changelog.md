@@ -1,4 +1,6 @@
 # TBD
+* Updated enclave_manager to use kurtosis_backend for enclave operations
+* Removed cleanMetadataAcquisitionTestsuites from enclave_manager
 
 # 1.11.5
 ### Features
