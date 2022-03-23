@@ -98,11 +98,11 @@ func run(cmd *cobra.Command, args []string) error {
 
 	if containers == nil || len(containers) == 0 {
 		logrus.Errorf("No service containers found for enclave with ID '%v'", enclaveID)
-		return stacktrace.NewError("No service containers found for enclave with ID '%v'", enclaveID)
+		return stacktrace.NewError("No service containers found for service with GUID '%v' in enclave '%v'", guid, enclaveID)
 	}
 
 	if len(containers) > 1 {
-		return stacktrace.NewError("Only one container with enclave-id '%v' and GUID '%v' should exist but there are '%v' containers with these properties", enclaveID, guid, len(containers))
+		return stacktrace.NewError("Only one container with enclave ID '%v' and GUID '%v' should exist but found '%v' containers with these properties", enclaveID, guid, len(containers))
 	}
 
 	serviceContainer := containers[0]
