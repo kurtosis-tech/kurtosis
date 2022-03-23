@@ -203,7 +203,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	for userServiceGuid, container := range userServiceContainers {
 		readCloserLogs, err = backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
 		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID and container ID '%v'", userServiceGuid, container.GetId())
+			serviceError := stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID '%v' and container ID '%v'", userServiceGuid, container.GetId())
 			erroredUserServices[userServiceGuid] = serviceError
 			continue
 		}
