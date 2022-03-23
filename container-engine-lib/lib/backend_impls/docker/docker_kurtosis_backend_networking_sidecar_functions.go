@@ -126,12 +126,12 @@ func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
 
 	networkingSidecars := map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar{}
 	for networkingSidecarGuid, networkingSidecarContainer := range networkingSidecarContainers {
-		ip, found := networkingSidecarContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
+		privateIpAddr, found := networkingSidecarContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
 		if !found {
 			return nil, stacktrace.Propagate(err, "Networking sidecar container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", networkingSidecarContainer.GetId(), enclaveNetwork.GetId())
 		}
 
-		networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid, ip, enclaveId)
+		networkingSidecar := networking_sidecar.NewNetworkingSidecar(networkingSidecarGuid, privateIpAddr, enclaveId)
 
 		networkingSidecars[networkingSidecarGuid] = networkingSidecar
 	}

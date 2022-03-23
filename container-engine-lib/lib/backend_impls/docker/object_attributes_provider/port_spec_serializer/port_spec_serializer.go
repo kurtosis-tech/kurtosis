@@ -3,7 +3,7 @@ package port_spec_serializer
 import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
-	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strconv"
 	"strings"
@@ -33,7 +33,7 @@ var disallowedPortIdChars = map[string]bool{
 
 // NOTE: We use a custom serialization format here (rather than, e.g., JSON) because there's a max label value size
 //  so brevity is important here
-func SerializePortSpecs(ports map[string]*port_spec2.PortSpec) (*docker_label_value.DockerLabelValue, error) {
+func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_value.DockerLabelValue, error) {
 	portIdAndSpecStrs := []string{}
 	usedPortSpecStrs := map[string]string{}
 	for portId, portSpec := range ports {
@@ -97,8 +97,8 @@ func SerializePortSpecs(ports map[string]*port_spec2.PortSpec) (*docker_label_va
 	return result, nil
 }
 
-func DeserializePortSpecs(specsStr string) (map[string]*port_spec2.PortSpec, error) {
-	result := map[string]*port_spec2.PortSpec{}
+func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, error) {
+	result := map[string]*port_spec.PortSpec{}
 	portIdAndSpecStrs := strings.Split(specsStr, portSpecsSeparator)
 	for _, portIdAndSpecStr := range portIdAndSpecStrs {
 		portIdAndSpecFragments := strings.Split(portIdAndSpecStr, portIdAndInfoSeparator)
@@ -138,12 +138,12 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec2.PortSpec, err
 			)
 		}
 		portNumUint16 := uint16(portNumUint64)
-		portProtocol, err := port_spec2.PortProtocolString(portProtocolStr)
+		portProtocol, err := port_spec.PortProtocolString(portProtocolStr)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		portSpec, err := port_spec2.NewPortSpec(portNumUint16, portProtocol)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,

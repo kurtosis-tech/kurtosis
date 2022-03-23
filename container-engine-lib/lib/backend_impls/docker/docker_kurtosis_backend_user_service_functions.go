@@ -130,11 +130,6 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 	error,
 ){
 
-	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
-	}
-
 	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
@@ -149,10 +144,33 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 			return nil, stacktrace.Propagate(err, "An error occurred getting service ID from container with ID '%v'", container.GetId())
 		}
 
-		service := service.NewService(id, guid, enclaveId)
+		privatePorts, err := getPrivatePortsFromContainerLabels(container.GetLabels())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container labels '%+v'", container.GetLabels())
+		}
+
+		_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+		}
+
+		var maybePublicIpAddr net.IP = nil
+		publicPorts := map[string]*port_spec.PortSpec{}
+		if len(privatePorts) > 0 {
+			maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
+				container.GetHostPortBindings(),
+				privatePorts,
+				portIdsForDockerPortObjs,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+			}
+		}
+
+		service := service.NewService(id, guid, enclaveId, maybePublicIpAddr, publicPorts)
 		userServices[guid] = service
 	}
-
+	return userServices, nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(

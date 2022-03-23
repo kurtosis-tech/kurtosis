@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -464,19 +463,10 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
-	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
-	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
-	}
 
-	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	portSpecs, err := getPrivatePortsFromContainerLabels(containerLabels)
 	if err != nil {
-		// TODO AFTER 2022-05-02 SWITCH THIS TO A PLAIN ERROR WHEN WE'RE SURE NOBODY WILL BE USING THE OLD PORT SPEC STRING!
-		oldPortSpecs, err := deserialize_pre_2022_03_02_PortSpecs(serializedPortSpecs)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v' even when trying the old method", serializedPortSpecs)
-		}
-		portSpecs = oldPortSpecs
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting port specs from container labels '%+v'", containerLabels)
 	}
 
 	grpcPortSpec, foundGrpcPort := portSpecs[kurtosisInternalContainerGrpcPortId]
@@ -488,6 +478,7 @@ func getPrivateEnginePorts(containerLabels map[string]string) (
 	if !foundGrpcProxyPort {
 		// TODO AFTER 2022-05-02 SWITCH THIS TO AN ERROR WHEN WE'RE SURE NOBODY WILL HAVE AN ENGINE WITHOUT THE PROXY
 		grpcProxyPortSpec = nil
+		//TODO is this commented return sentence ok?
 		// return nil, nil, stacktrace.NewError("No engine grpc-proxy port with ID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcProxyPortId)
 	}
 
