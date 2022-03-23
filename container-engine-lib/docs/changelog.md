@@ -8,7 +8,12 @@
 * Added `NetworkPartitioningEnabledLabelValue` and `NetworkPartitioningDisabledLabelValue` label value constants
 * Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarsExecCommand`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
 * Added `UserServiceContainerTypeLabelValue` and `NetworkingSidecarContainerTypeLabelValue` label key constants
-* Created `MockKurtosisBackend` for testing
+* Implemented the methods: `CreateUserService`, `GetUserServices`, `StopUserServices` and `DestroyUserServices` in `DockerKurtosisBackend`
+* Added `NetworkingSidecarContainerTypeLabelValue` label value constant
+
+### Breaking Changes
+* Added `networksIPAdrresses` in `Container` struct to store the different container ip addresses established on its Docker networks
+  * Users should add this new field on every `NewContainer` call
 
 # 0.10.1
 ### Features
