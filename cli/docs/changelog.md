@@ -1,5 +1,12 @@
 # TBD
 
+# 0.11.9
+### Features
+* Added the `service add` command for adding a service to an enclave
+* Added the `service rm` command for removing services from an enclave
+* Added an `--id` flag to `enclave new` to allow setting the new enclave's ID
+* Users can now provide an existing enclave to the `--enclave-id` parameter of `module exec` to exec the module in an existing enclave, rather than creating a new one
+
 # 0.11.8
 ### Fixes
 * Fixed break in the `sandbox` command when we switched to the newer `EnclaveContext.newGrpcNodeEnclaveContext` function
