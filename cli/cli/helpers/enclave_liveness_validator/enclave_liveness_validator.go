@@ -5,8 +5,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-// TODO Get rid of this when we merge the API container & engine server, so that we don't have these weird states of "enclave exists
-//  but API container isn't running"
 // Validates the enclave has a running API container, and returns the host machine IP & port for connecting to it
 func ValidateEnclaveLiveness(enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (string, uint32, error) {
 	if enclaveInfo.ContainersStatus != kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING {

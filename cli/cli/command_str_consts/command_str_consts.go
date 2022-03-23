@@ -30,6 +30,7 @@ const (
 		ReplInspectCmdStr = "inspect"
 	SandboxCmdStr = "sandbox"
 	ServiceCmdStr = "service"
+		ServiceAddCmdStr = "add"
 		ServiceLogsCmdStr = "logs"
 		ShellCmdStr = "shell"
 	ConfigCmdStr = "config"

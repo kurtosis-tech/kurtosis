@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added the `service add` command for adding a service to an enclave
 
 # 0.11.7
 ### Features
