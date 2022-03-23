@@ -2,7 +2,8 @@ package repl_consts
 
 type ReplType string
 const (
-	KurtosisSocketEnvVar          = "KURTOSIS_API_SOCKET"
+	KurtosisAPIContainerIPEnvVar  = "KURTOSIS_API_IP"
+	KurtosisAPIContainerPortEnvVar  = "KURTOSIS_API_PORT"
 	EnclaveIdEnvVar               = "ENCLAVE_ID"
 	EnclaveDataMountDirpathEnvVar = "ENCLAVE_DATA_DIR_MOUNTPOINT"
 

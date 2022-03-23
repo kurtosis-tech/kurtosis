@@ -13,8 +13,17 @@ ENV NODE_PATH="{{ .InstalledPackagesDirpath }}"
 #  the old callback syntax to load Kurtosis (not a big deal though)
 CMD node -i --experimental-repl-await -e " \
     let kurtosisCore = require(\"kurtosis-core-api-lib\"); \
-    let grpc = require(\"@grpc/grpc-js\"); \
     let enclaveCtx; \
-    const client = new kurtosisCore.ApiContainerServiceClient(\"${{ "{" }}{{ .KurtosisAPISocketEnvVar }}{{ "}" }}\", grpc.credentials.createInsecure()); \
-    enclaveCtx = new kurtosisCore.EnclaveContext(client, \"${{ "{" }}{{ .EnclaveIDEnvVar }}{{ "}" }}\", \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\"); \
+    kurtosisCore.EnclaveContext.newGrpcNodeEnclaveContext( \
+        \"${{ "{" }}{{ .KurtosisAPIContainerIPEnvVar }}{{ "}" }}\", \
+        ${{ "{" }}{{ .KurtosisAPIContainerPortEnvVar }}{{ "}" }}, \
+        \"${{ "{" }}{{ .EnclaveIDEnvVar }}{{ "}" }}\", \
+        \"${{ "{" }}{{ .EnclaveDataMountDirpathEnvVar }}{{ "}" }}\" \
+    ).then(newEnclaveCtxResp => { \
+        if (newEnclaveCtxResp.isErr()) { \
+            console.log(newEnclaveCtxResp.error); \
+            process.exit(1); \
+        } \
+        enclaveCtx = newEnclaveCtxResp.value; \
+    }); \
 "
