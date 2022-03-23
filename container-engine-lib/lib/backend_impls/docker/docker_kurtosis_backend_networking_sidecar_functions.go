@@ -142,10 +142,12 @@ func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarsExecCommand(
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[networking_sidecar.NetworkingSidecarGUID]bool,
+	map[networking_sidecar.NetworkingSidecarGUID]error,
+	error,
 ){
+	successfulSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]bool{}
+	erroredSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]error{}
 
 	networkingSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]bool{}
 	for networkingSidecarGuid := range networkingSidecarsCommands {
@@ -200,12 +202,16 @@ func (backendCore *DockerKurtosisBackend) StopNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[networking_sidecar.NetworkingSidecarGUID]bool,
+	map[networking_sidecar.NetworkingSidecarGUID]error,
+	error,
 ) {
 
+	successfulSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]bool{}
+	erroredSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]error{}
+
 	networkingSidecarContainers, err := backendCore.getNetworkingSidecarContainersByEnclaveIdAndNetworkingSidecarGUIDs(ctx, enclaveId, filters.GUIDs)
+
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking-sidecar-containers by enclave ID '%v' and networking sidecar GUIDs '%+v'", enclaveId, filters.GUIDs)
 	}
@@ -226,11 +232,15 @@ func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[networking_sidecar.NetworkingSidecarGUID]bool,
+	map[networking_sidecar.NetworkingSidecarGUID]error,
+	error,
 ) {
+	successfulSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]bool{}
+	erroredSidecarGuids := map[networking_sidecar.NetworkingSidecarGUID]error{}
+
 	networkingSidecarContainers, err := backendCore.getNetworkingSidecarContainersByEnclaveIdAndNetworkingSidecarGUIDs(ctx, enclaveId, filters.GUIDs)
+
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking-sidecar-containers by enclave ID '%v' and networking sidecar GUIDs '%+v'", enclaveId, filters.GUIDs)
 	}

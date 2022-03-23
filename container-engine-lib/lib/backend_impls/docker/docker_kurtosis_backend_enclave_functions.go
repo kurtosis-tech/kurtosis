@@ -76,7 +76,9 @@ func (backendCore *DockerKurtosisBackend) CreateEnclave(
 		if shouldDeleteNetwork {
 			if err := backendCore.dockerManager.RemoveNetwork(teardownCtx, networkId); err != nil {
 				logrus.Errorf("Creating the enclave didn't complete successfully, so we tried to delete network '%v' that we created but an error was thrown:", networkId)
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
+				if _, err := fmt.Fprintln(logrus.StandardLogger().Out, err); err != nil {
+					logrus.Errorf("And error occurred trying to print the remove network error")
+				}
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove network with ID '%v'!!!!!!!", networkId)
 			}
 		}
@@ -117,8 +119,8 @@ func (backendCore *DockerKurtosisBackend) GetEnclaves(
 
 		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
 			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
-			enclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
-			result[enclaveId] = enclave
+			newEnclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
+			result[enclaveId] = newEnclave
 		}
 	}
 
@@ -219,6 +221,7 @@ func (backendCore *DockerKurtosisBackend) DestroyEnclaves(
 	// Remove containers
 	for enclaveId := range resultSuccessfulEnclaveIds {
 		_, containers, err := backendCore.getEnclaveStatusAndContainers(ctx, enclaveId)
+
 		if err != nil {
 			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 			continue
@@ -226,7 +229,7 @@ func (backendCore *DockerKurtosisBackend) DestroyEnclaves(
 
 		if _, erroredContainers := backendCore.removeContainers(ctx, containers); len(erroredContainers) > 0 {
 			removeContainerErrorStrs := []string{}
-			for _, err = range erroredContainers {
+			for _, err := range erroredContainers {
 				removeContainerErrorStrs = append(removeContainerErrorStrs, err.Error())
 			}
 			errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
@@ -237,6 +240,7 @@ func (backendCore *DockerKurtosisBackend) DestroyEnclaves(
 				errorStr,
 			)
 		}
+
 		successfulEnclaveIds[enclaveId] = true
 	}
 
