@@ -2,6 +2,7 @@
 ### Features
 * Added the `service add` command for adding a service to an enclave
 * Added the `service rm` command for removing services from an enclave
+* Added an `--id` flag to `enclave new` to allow setting the new enclave's ID
 
 # 0.11.8
 ### Fixes
