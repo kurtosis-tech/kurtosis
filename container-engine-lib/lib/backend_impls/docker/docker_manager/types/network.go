@@ -6,10 +6,11 @@ type Network struct {
 	name      string
 	id        string
 	ipAndMask *net.IPNet
+	labels           map[string]string
 }
 
-func NewNetwork(name string, id string, ipAndMask *net.IPNet) *Network {
-	return &Network{name: name, id: id, ipAndMask: ipAndMask}
+func NewNetwork(name string, id string, ipAndMask *net.IPNet, labels map[string]string) *Network {
+	return &Network{name: name, id: id, ipAndMask: ipAndMask, labels: labels}
 }
 
 func (n Network) GetName() string {
@@ -22,4 +23,8 @@ func (n Network) GetId() string {
 
 func (n Network) GetIpAndMask() *net.IPNet {
 	return n.ipAndMask
+}
+
+func (c Network) GetLabels() map[string]string {
+	return c.labels
 }

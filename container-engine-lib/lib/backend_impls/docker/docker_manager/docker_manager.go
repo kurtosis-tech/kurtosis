@@ -1189,7 +1189,7 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
 	}
 
-	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask, dockerNetwork.Labels)
 
 	return network, nil
 }

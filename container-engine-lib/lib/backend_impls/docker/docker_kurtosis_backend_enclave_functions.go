@@ -26,22 +26,26 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 ) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
-	_, found, err := backend.getEnclaveNetwork(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for networks with name '%v', which is necessary to ensure that our enclave doesn't exist yet", enclaveId)
+	enclaveIDs := map[enclave.EnclaveID]bool{
+		enclaveId: true,
 	}
-	if found {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveId)
+
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for networks with ID '%v', which is necessary to ensure that our enclave doesn't exist yet", enclaveId)
+	}
+	if len(networks) > 0 {
+		return nil, stacktrace.NewError("Cannot create enclave with ID '%v' because an enclave with ID '%v' already exists", enclaveId, enclaveId)
 	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with name '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to generate an object attributes provider for the enclave with ID '%v'", enclaveId)
 	}
 
 	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(isPartitioningEnabled)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with name '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveId)
 	}
 
 	enclaveNetworkName := enclaveNetworkAttrs.GetName()
@@ -101,8 +105,10 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	result := map[enclave.EnclaveID]*enclave.Enclave{}
 
 	for _, network := range networks {
-		networkName := network.GetName()
-		enclaveId := enclave.EnclaveID(networkName)
+		enclaveId, err := getEnclaveIdFromNetwork(network)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'", network)
+		}
 
 		enclaveStatus, _, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
 		if err != nil {
@@ -110,6 +116,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		}
 
 		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
 			enclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
 			result[enclaveId] = enclave
 		}
@@ -135,12 +142,14 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
 	}
 	if len(networks) == 0 {
-		return nil, nil, stacktrace.Propagate(err, "No Enclave was founded with some of these IDs '%+v'", filters.IDs)
+		return nil, nil, stacktrace.Propagate(err, "No Enclave was found with IDs '%+v'", filters.IDs)
 	}
 
 	for _, network := range networks {
-		networkName := network.GetName()
-		enclaveId := enclave.EnclaveID(networkName)
+		enclaveId, err := getEnclaveIdFromNetwork(network)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'", network)
+		}
 
 		enclaveStatus, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
 		if err != nil {
@@ -198,16 +207,19 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	resultErr error,
 ) {
 	// Stop containers
-	successfulEnclaveIds, erroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
+	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping enclaves using filters '%v'", filters)
 	}
 
+	for enclaveId, err := range resultErroredEnclaveIds {
+		erroredEnclaveIds[enclaveId] = err
+	}
+
 	// Remove containers
-	for enclaveId := range successfulEnclaveIds {
-		containers, err := backend.getEnclaveContainers(ctx, enclaveId)
+	for enclaveId := range resultSuccessfulEnclaveIds {
+		_, containers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
 		if err != nil {
-			delete(successfulEnclaveIds, enclaveId)
 			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 			continue
 		}
@@ -218,22 +230,23 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 				removeContainerErrorStrs = append(removeContainerErrorStrs, err.Error())
 			}
 			errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
-			delete(successfulEnclaveIds, enclaveId)
-			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-				"An error occurred removing one or more containers in enclave '%v':\n%v",
-				enclaveId,
-				errorStr,
-			)
+
+			if len(removeContainerErrorStrs) > 0 {
+				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+					"An error occurred removing one or more containers in enclave '%v':\n%v",
+					enclaveId,
+					errorStr,
+				)
+			}
 		}
+
+		successfulEnclaveIds[enclaveId] = true
 	}
 
 	// Remove the networks
 	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, successfulEnclaveIds)
 	if err != nil {
 		return successfulEnclaveIds, erroredEnclaveIds, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", successfulEnclaveIds)
-	}
-	if len(networks) == 0 {
-		return successfulEnclaveIds, erroredEnclaveIds, stacktrace.Propagate(err, "No Enclave was founded with some of these IDs '%+v'", successfulEnclaveIds)
 	}
 
 	for _, network := range networks {
@@ -251,55 +264,55 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
+	func (backendCore *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
+		enclaveIDs := map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		}
+
+		enclaveNetworksFound, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
+		}
+		numMatchingNetworks := len(enclaveNetworksFound)
+		if numMatchingNetworks == 0 {
+			return nil, stacktrace.Propagate(err, "No network was found for enclave with ID '%v'; it should never happens, it's a bug in Kurtosis", enclaveId)
+		}
+		if numMatchingNetworks > 1 {
+			return nil, stacktrace.NewError(
+				"Expected exactly one network matching enclave ID '%v', but got %v",
+				enclaveId,
+				numMatchingNetworks,
+			)
+		}
+		return  enclaveNetworksFound[0], nil
+	}
+
 func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
+	enclaveNetworks := []*types.Network{}
+	if len(enclaveIds) == 0 {
+		return enclaveNetworks, nil
+	}
+
 	kurtosisNetworkLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
 	}
 
-	for enclaveId := range enclaveIds {
-		kurtosisNetworkLabels[label_key_consts.EnclaveIDLabelKey.GetString()] = string(enclaveId)
-	}
-
-	networks, err := backend.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
+	appNetworks, err := backend.dockerManager.GetNetworksByLabels(ctx, kurtosisNetworkLabels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis networks")
 	}
 
-	return networks, nil
-}
-
-// There is a 1:1 mapping between Docker network and enclave - no network, no enclave, and vice versa
-// We therefore use this function to check for the existence of an enclave, as well as get network info about existing enclaves
-func (backend *DockerKurtosisBackend) getEnclaveNetwork(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, bool, error) {
-	networkName := string(enclaveId)
-	allNetworksWithEnclaveIdInName, err := backend.dockerManager.GetNetworksByName(ctx, networkName)
-	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "An error occurred getting networks matching name '%v'", enclaveId)
-	}
-
-	// NOTE: GetNetworksByName will match networks that have the enclaveId *even as a substring*, so we have to filter again
-	// to get the network (if any) that has a name *exactly* == enclave ID
-	matchingNetworks := []*types.Network{}
-	for _, networkWithEnclaveId := range allNetworksWithEnclaveIdInName {
-		if networkWithEnclaveId.GetName() == string(enclaveId) {
-			matchingNetworks = append(matchingNetworks, networkWithEnclaveId)
+	for _, network := range appNetworks {
+		enclaveId, err := getEnclaveIdFromNetwork(network)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; it should never happens it's a bug in Kurtosis", network)
+		}
+		if _, found := enclaveIds[enclaveId]; found {
+			enclaveNetworks = append(enclaveNetworks, network)
 		}
 	}
 
-	numMatchingNetworks := len(matchingNetworks)
-	logrus.Debugf("Found %v networks matching name '%v': %+v", numMatchingNetworks, enclaveId, matchingNetworks)
-	if numMatchingNetworks > 1 {
-		return nil, false, stacktrace.NewError(
-			"Found %v networks matching name '%v' when we expected just one - this is likely a bug in Kurtosis!",
-			numMatchingNetworks,
-			enclaveId,
-		)
-	}
-	if numMatchingNetworks == 0 {
-		return nil, false, nil
-	}
-	network := matchingNetworks[0]
-	return network, true, nil
+	return enclaveNetworks, nil
 }
 
 func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
@@ -322,8 +335,12 @@ func (backend *DockerKurtosisBackend) getEnclaveStatusAndContainers(
 	resultEnclaveStatus := enclave.EnclaveStatus_Stopped
 	for _, enclaveContainer := range allEnclaveContainers {
 		containerStatus := enclaveContainer.GetStatus()
-		isEnclaveContainerRunning := containerStatus == types.ContainerStatus_Running || containerStatus == types.ContainerStatus_Restarting || containerStatus == types.ContainerStatus_Removing
-		if isEnclaveContainerRunning {
+		isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+		if !found {
+			// This should never happen because we enforce completeness in a unit test
+			return 0, nil, stacktrace.NewError("No is-running designation found for enclave container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+		}
+		if isContainerRunning {
 			resultEnclaveStatus = enclave.EnclaveStatus_Running
 		}
 	}
@@ -346,10 +363,9 @@ func (backend *DockerKurtosisBackend) getEnclaveContainers(
 }
 
 func isEnclaveStatusInEnclaveFilters(enclaveStatus enclave.EnclaveStatus, filters *enclave.EnclaveFilters) bool {
-	for expectedEnclaveStatus := range filters.Statuses {
-		if enclaveStatus == expectedEnclaveStatus {
-			return true
-		}
+	if _, found := filters.Statuses[enclaveStatus]; found {
+		return true
 	}
+
 	return false
 }
