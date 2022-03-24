@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -22,6 +23,13 @@ const(
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
 )
+
+// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
+var commandToRunWhenCreatingUserServiceShell = []string{
+	"sh",
+	"-c",
+	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
+}
 
 func (backendCore *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
@@ -275,7 +283,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 
 	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave id '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
 	privateIpAddr, found := userServiceContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
@@ -329,11 +337,26 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 
 func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 )(
-	resultErr error,
+	*shell.Shell,
+	error,
 ) {
-	panic("Implement me")
+
+	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+	}
+
+	hijackedResponse, err :=backendCore.dockerManager.ContainerExecCreate(ctx, userServiceContainer.GetId(), commandToRunWhenCreatingUserServiceShell)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing container exec create on user service with GUID '%v'", serviceGUID)
+	}
+
+	newShell := shell.NewShell(hijackedResponse.Conn, hijackedResponse.Reader)
+
+	return newShell, nil
 }
 
 func (backendCore *DockerKurtosisBackend) StopUserServices(
