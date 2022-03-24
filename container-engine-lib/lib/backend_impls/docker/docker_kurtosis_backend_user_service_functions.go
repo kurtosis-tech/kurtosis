@@ -1,17 +1,20 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"time"
 )
 
@@ -206,7 +209,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	for userServiceGuid, container := range userServiceContainers {
 		readCloserLogs, err := backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
 		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID '%v' and container ID '%v'", userServiceGuid, container.GetId())
+			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for user service with GUID '%v' and container ID '%v'", userServiceGuid, container.GetId())
 			erroredUserServices[userServiceGuid] = serviceError
 			continue
 		}
@@ -232,7 +235,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-	httpMethod string,
+	httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod,
 	port uint32,
 	path string,
 	requestBody string,
@@ -243,6 +246,10 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 )(
 	resultErr error,
 ) {
+
+	if requestBody != "" && httpMethod != wait_for_availability_http_methods.WaitForAvailabilityHttpMethod_POST {
+		return stacktrace.NewError("Is not possible to execute the http request with body '%v' using the http '%v' method, it is only possible to use http POST method with request body", requestBody, httpMethod)
+	}
 
 	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
@@ -257,20 +264,29 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, serviceGUID)
 	}
-
-
-
-	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceIdStr))
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
+	numOfUserServiceContainers := len(userServiceContainers)
+	if numOfUserServiceContainers == 0 {
+		return stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", serviceGUID, enclaveId)
+	}
+	if numOfUserServiceContainers > 1 {
+		return stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", serviceGUID, enclaveId, numOfUserServiceContainers)
 	}
 
-	url := fmt.Sprintf("http://%v:%v/%v", privateServiceIp, port, path)
+	userServiceContainer := userServiceContainers[serviceGUID]
+
+	privateIpAddr, found := userServiceContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
+	if !found {
+		return stacktrace.Propagate(err, "User service container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", userServiceContainer.GetId(), enclaveNetwork.GetId())
+	}
+
+	url := fmt.Sprintf("http://%v:%v/%v", privateIpAddr, port, path)
 
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
+	httpMethodStr := httpMethod.String()
+	var resp *http.Response
 	for i := uint32(0); i < retries; i++ {
-		resp, err = makeHttpRequest(httpMethod, url, requestBody)
+		resp, err = makeHttpRequest(httpMethodStr, url, requestBody)
 		if err == nil {
 			break
 		}
@@ -304,6 +320,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 			return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", bodyText, url, bodyStr)
 		}
 	}
+	return nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
@@ -372,4 +389,33 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 		successfulUserServiceGuids[userServiceGuid] = true
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+// ====================================================================================================
+//                                     Private Helper Methods
+// ====================================================================================================
+func makeHttpRequest(httpMethod string, url string, body string) (*http.Response, error) {
+	var (
+		resp *http.Response
+		err  error
+	)
+
+	if httpMethod == http.MethodPost {
+		var bodyByte = []byte(body)
+		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
+	} else if httpMethod == http.MethodGet {
+		resp, err = http.Get(url)
+	} else if httpMethod == http.MethodHead {
+		resp, err = http.Head(url)
+	} else {
+		return nil, stacktrace.NewError("HTTP method '%v' not allowed", httpMethod)
+	}
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An HTTP error occurred when sending GET request to endpoint '%v'", url)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
+	}
+	return resp, nil
 }

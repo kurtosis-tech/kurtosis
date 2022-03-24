@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
@@ -345,7 +346,7 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-	httpMethod string,
+	httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod,
 	port uint32,
 	path string,
 	requestBody string,

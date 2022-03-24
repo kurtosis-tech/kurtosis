@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
@@ -223,7 +224,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
-		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
+		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
