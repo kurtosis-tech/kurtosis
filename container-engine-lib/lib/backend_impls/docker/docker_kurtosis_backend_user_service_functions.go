@@ -221,14 +221,31 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 
 func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-	commandArgs []string,
+	command []string,
 )(
-	exitCode int32,
-	output string,
+	resultExitCode int32,
+	resultOutput string,
 	resultErr error,
 ){
-	panic("Implement me")
+
+	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	if err != nil {
+		return 0, "", stacktrace.Propagate(err, "An error occurred getting user service container by enclave id '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+	}
+
+	execOutputBuf := &bytes.Buffer{}
+	exitCode, err := backendCore.dockerManager.RunExecCommand(ctx, userServiceContainer.GetId(), command, execOutputBuf)
+	if err != nil {
+		return 0, "", stacktrace.Propagate(
+			err,
+			"An error occurred running exec command '%v' against service with GUID '%v'",
+			command,
+			serviceGUID)
+	}
+
+	return exitCode, execOutputBuf.String(), nil
 }
 
 func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
@@ -256,23 +273,10 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	userServiceGuids := map[service.ServiceGUID]bool{
-		serviceGUID: true,
-	}
-
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, userServiceGuids)
+	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, serviceGUID)
+		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave id '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
-	numOfUserServiceContainers := len(userServiceContainers)
-	if numOfUserServiceContainers == 0 {
-		return stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", serviceGUID, enclaveId)
-	}
-	if numOfUserServiceContainers > 1 {
-		return stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", serviceGUID, enclaveId, numOfUserServiceContainers)
-	}
-
-	userServiceContainer := userServiceContainers[serviceGUID]
 
 	privateIpAddr, found := userServiceContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
 	if !found {

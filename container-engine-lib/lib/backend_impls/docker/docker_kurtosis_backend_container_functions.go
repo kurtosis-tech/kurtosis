@@ -160,11 +160,41 @@ func (backendCore *DockerKurtosisBackend) getNetworkingSidecarContainersByEnclav
 	return networkingSidecarContainers, nil
 }
 
+func (backendCore *DockerKurtosisBackend) getUserServiceContainerByEnclaveIDAndUserServiceGUID(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuid service.ServiceGUID,
+)(
+	*types.Container,
+	error,
+) {
+	userServiceGuids := map[service.ServiceGUID]bool{
+		userServiceGuid: true,
+	}
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, userServiceGuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, userServiceGuid)
+	}
+	numOfUserServiceContainers := len(userServiceContainers)
+	if numOfUserServiceContainers == 0 {
+		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", userServiceGuid, enclaveId)
+	}
+	if numOfUserServiceContainers > 1 {
+		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServiceContainers)
+	}
+
+	userServiceContainer := userServiceContainers[userServiceGuid]
+
+	return userServiceContainer, nil
+}
+
 func (backendCore *DockerKurtosisBackend) getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuids map[service.ServiceGUID]bool,
 ) (map[service.ServiceGUID]*types.Container, error) {
+
 
 	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {

@@ -323,20 +323,21 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-	commandArgs []string,
+	command []string,
 )(
 	resultExitCode int32,
 	resultOutput string,
 	resultErr error,
 ) {
-	exitCode, output, err := backend.underlying.RunUserServiceExecCommand(ctx, serviceGUID, commandArgs)
+	exitCode, output, err := backend.underlying.RunUserServiceExecCommand(ctx, enclaveId, serviceGUID, command)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
-			"An error occurred running user service exec command with user service GUID '%v' and command args '%+v'",
+			"An error occurred running user service exec command '%v' in user service GUID '%v'",
+			command,
 			serviceGUID,
-			commandArgs,
 			)
 	}
 	return exitCode, output, nil
