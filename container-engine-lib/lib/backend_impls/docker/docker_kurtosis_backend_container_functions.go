@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -143,7 +144,7 @@ func (backendCore *DockerKurtosisBackend) getNetworkingSidecarContainersByEnclav
 
 	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
 	}
 
 	networkingSidecarContainers := map[networking_sidecar.NetworkingSidecarGUID]*types.Container{}
@@ -178,7 +179,7 @@ func (backendCore *DockerKurtosisBackend) getUserServiceContainerByEnclaveIDAndU
 	}
 	numOfUserServiceContainers := len(userServiceContainers)
 	if numOfUserServiceContainers == 0 {
-		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", userServiceGuid, enclaveId)
+		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
 	}
 	if numOfUserServiceContainers > 1 {
 		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServiceContainers)
@@ -198,7 +199,7 @@ func (backendCore *DockerKurtosisBackend) getUserServiceContainersByEnclaveIDAnd
 
 	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
 	}
 
 	userServiceContainers := map[service.ServiceGUID]*types.Container{}
@@ -225,6 +226,59 @@ func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
 		}
 	}
 	return nil
+}
+
+func (backendCore *DockerKurtosisBackend) getReplContainerByEnclaveIDAndReplGUID(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replGuid repl.ReplGUID,
+)(
+	*types.Container,
+	error,
+) {
+	replGuids := map[repl.ReplGUID]bool{
+		replGuid: true,
+	}
+
+	replContainers, err := backendCore.getReplContainersByEnclaveIDAndReplGUIDs(ctx, enclaveId, replGuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting repl containers by enclave ID '%v' and repl GUID '%v'", enclaveId, replGuid)
+	}
+	numOfReplContainers := len(replContainers)
+	if numOfReplContainers == 0 {
+		return nil, stacktrace.NewError("No repl with GUID '%v' in enclave with ID '%v' was found", replGuid, enclaveId)
+	}
+	if numOfReplContainers > 1 {
+		return nil, stacktrace.NewError("Expected to find only one repl with GUID '%v' in enclave with ID '%v', but '%v' was found", replGuid, enclaveId, numOfReplContainers)
+	}
+
+	replContainer := replContainers[replGuid]
+
+	return replContainer, nil
+}
+
+func (backendCore *DockerKurtosisBackend) getReplContainersByEnclaveIDAndReplGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replGuids map[repl.ReplGUID]bool,
+) (map[repl.ReplGUID]*types.Container, error) {
+
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
+	}
+
+	replContainers := map[repl.ReplGUID]*types.Container{}
+	for _, container := range enclaveContainers {
+		if isReplContainer(container) {
+			for replGuid := range replGuids {
+				if hasReplGuidLabel(container, replGuid){
+					replContainers[replGuid] = container
+				}
+			}
+		}
+	}
+	return replContainers, nil
 }
 
 func getServiceIdFromContainer(container *types.Container) (service.ServiceID, error) {
@@ -269,6 +323,20 @@ func isNetworkingSidecarContainer(container *types.Container) bool {
 	return false
 }
 
+func isReplContainer(container *types.Container) bool {
+	labels := container.GetLabels()
+	containerTypeValue, found := labels[label_key_consts.ContainerTypeLabelKey.GetString()]
+	if !found {
+		//TODO Do all containers should have container type label key??? we should return and error here if this answer is yes??
+		logrus.Debugf("Container with ID '%v' haven't label '%v'", container.GetId(), label_key_consts.ContainerTypeLabelKey.GetString())
+		return false
+	}
+	if containerTypeValue == label_value_consts.InteractiveREPLContainerTypeLabelValue.GetString() {
+		return true
+	}
+	return false
+}
+
 func hasEnclaveIdLabelAndUserServiceGuidLabel(
 		container *types.Container,
 		enclaveId enclave.EnclaveID,
@@ -289,12 +357,25 @@ func hasEnclaveIdLabelAndUserServiceGuidLabel(
 
 func hasUserServiceGuidLabel(container *types.Container, userServiceGuid service.ServiceGUID) bool {
 	labels := container.GetLabels()
-	userServiceGuidLabelValueStr, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	userServiceGuidLabelValueStr, found := labels[label_key_consts.GUIDLabelKey.GetString()]
 	if !found {
 		return false
 	}
 	userServiceGuidLabelValue := service.ServiceGUID(userServiceGuidLabelValueStr)
 	if userServiceGuidLabelValue == userServiceGuid {
+		return true
+	}
+	return false
+}
+
+func hasReplGuidLabel(container *types.Container, replGuid repl.ReplGUID) bool {
+	labels := container.GetLabels()
+	replGuidLabelValueStr, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	if !found {
+		return false
+	}
+	replGuidLabelValue := repl.ReplGUID(replGuidLabelValueStr)
+	if replGuidLabelValue == replGuid {
 		return true
 	}
 	return false

@@ -15,9 +15,10 @@ const (
 	engineContainerTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	apiContainerContainerTypeLabelValueStr = "api-container"
-	userServiceContainerTypeLabelValueStr = "user-service"
+	apiContainerContainerTypeLabelValueStr      = "api-container"
+	userServiceContainerTypeLabelValueStr       = "user-service"
 	networkingSidecarContainerTypeLabelValueStr = "networking-sidecar"
+	interactiveREPLContainerTypeLabelValueStr   = "interactive-repl"
 
 	trueValueStr = "true"
 
@@ -38,5 +39,6 @@ var EngineContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelV
 var APIContainerContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
 var UserServiceContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(userServiceContainerTypeLabelValueStr)
 var NetworkingSidecarContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
+var InteractiveREPLContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(interactiveREPLContainerTypeLabelValueStr)
 var NetworkPartitioningEnabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
 var NetworkPartitioningDisabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
