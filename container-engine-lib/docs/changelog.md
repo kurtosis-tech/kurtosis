@@ -11,7 +11,7 @@
 * Implemented the methods: `CreateUserService`, `GetUserServices`, `StopUserServices` and `DestroyUserServices` in `DockerKurtosisBackend`
 * Added `NetworkingSidecarContainerTypeLabelValue` label value constant
 * Implemented `GetUserServiceLogs` method in `DockerKurtosisBackend`
-* Implemented `WaitForUserServiceHttpEndpointAvailability` and `RunUserServiceExecCommand` methods in `DockerKurtosisBackend`
+* Implemented `WaitForUserServiceHttpEndpointAvailability`, `GetShellOnUserService` and `RunUserServiceExecCommand` methods in `DockerKurtosisBackend`
 * Added generic `Shell` object to interact with user services
 
 ### Breaking Changes

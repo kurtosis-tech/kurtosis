@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
@@ -240,8 +241,10 @@ type KurtosisBackend interface {
 	// Get an interactive shell to execute commands in an user service
 	GetShellOnUserService(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
 	)(
+		resultShell *shell.Shell,
 		resultErr error,
 	)
 

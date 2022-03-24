@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -389,14 +390,17 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 
 func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 )(
+	resultShell *shell.Shell,
 	resultErr error,
 ) {
-	if err := backend.underlying.GetShellOnUserService(ctx, serviceGUID); err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting shell on user service with GUID '%v'", serviceGUID)
+	newShell, err := backend.underlying.GetShellOnUserService(ctx, enclaveId, serviceGUID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting shell on user service with GUID '%v'", serviceGUID)
 	}
-	return nil
+	return newShell, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
