@@ -343,6 +343,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 
 func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 	httpMethod string,
 	port uint32,
@@ -357,6 +358,7 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 ) {
 	if err := backend.underlying.WaitForUserServiceHttpEndpointAvailability(
 		ctx,
+		enclaveId,
 		serviceGUID,
 		httpMethod,
 		port,
@@ -369,12 +371,13 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 		); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' from service with GUID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
+			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' from service with GUID '%v' in enclave with ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
 			path,
 			port,
 			requestBody,
 			bodyText,
 			serviceGUID,
+			enclaveId,
 			retries,
 			retriesDelayMilliseconds,
 		)

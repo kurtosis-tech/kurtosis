@@ -221,6 +221,7 @@ type KurtosisBackend interface {
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
 		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
 		port uint32, //The port of the service to check. For instance 8080

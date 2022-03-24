@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -9,7 +10,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"net"
+	"time"
 )
 
 const(
@@ -199,9 +202,9 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erroredUserServices := map[service.ServiceGUID]error{}
 
-	var readCloserLogs io.ReadCloser
+	//TODO use concurrency to improve perf
 	for userServiceGuid, container := range userServiceContainers {
-		readCloserLogs, err = backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+		readCloserLogs, err := backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
 		if err != nil {
 			serviceError := stacktrace.Propagate(err, "An error occurred getting service logs for user service with GUID '%v' and container ID '%v'", userServiceGuid, container.GetId())
 			erroredUserServices[userServiceGuid] = serviceError
@@ -227,6 +230,7 @@ func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
 
 func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 	httpMethod string,
 	port uint32,
@@ -239,7 +243,67 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 )(
 	resultErr error,
 ) {
-	panic("Implement me")
+
+	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+	}
+
+	userServiceGuids := map[service.ServiceGUID]bool{
+		serviceGUID: true,
+	}
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, userServiceGuids)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, serviceGUID)
+	}
+
+
+
+	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceIdStr))
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
+	}
+
+	url := fmt.Sprintf("http://%v:%v/%v", privateServiceIp, port, path)
+
+	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
+
+	for i := uint32(0); i < retries; i++ {
+		resp, err = makeHttpRequest(httpMethod, url, requestBody)
+		if err == nil {
+			break
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"The HTTP endpoint '%v' didn't return a success code, even after %v retries with %v milliseconds in between retries",
+			url,
+			retries,
+			retriesDelayMilliseconds,
+		)
+	}
+
+	if bodyText != "" {
+		body := resp.Body
+		defer body.Close()
+
+		bodyBytes, err := ioutil.ReadAll(body)
+
+		if err != nil {
+			return stacktrace.Propagate(err,
+				"An error occurred reading the response body from endpoint '%v'", url)
+		}
+
+		bodyStr := string(bodyBytes)
+
+		if bodyStr != bodyText {
+			return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", bodyText, url, bodyStr)
+		}
+	}
 }
 
 func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
