@@ -19,6 +19,14 @@ const (
 	// The location where the enclave data directory (on the Docker host machine) will be bind-mounted
 	//  on the API container
 	enclaveDataDirpathOnAPIContainer = "/kurtosis-enclave-data"
+
+	// The ID of the API container's GRPC port
+	grpcPortId = "grpc"
+
+	// grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers need a proxy
+	// that will translate grpc-web requests before they hit the main GRPC server
+	// This is the ID of the API container's GRPC proxy port
+	grpcProxyPortId = "grpcProxy"
 )
 
 func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
@@ -26,9 +34,7 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveId string,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
 	grpcProxyPortSpec *port_spec.PortSpec,
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,

@@ -95,9 +95,7 @@ type KurtosisBackend interface {
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
-		grpcPortId string,
 		grpcPortSpec *port_spec.PortSpec,
-		grpcProxyPortId string,
 		grpcProxyPortSpec *port_spec.PortSpec,
 		enclaveDataDirpathOnHostMachine string,	// TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
 		envVars map[string]string,
