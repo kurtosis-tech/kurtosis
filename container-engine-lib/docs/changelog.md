@@ -1,4 +1,11 @@
 # TBD
+### Features
+* Added `UserService` methods, `Modules` methods and `CreateRepartition` method in `KurtosisBackend` interface
+* Stubbing out methods for `UserService`, `Modules` and `CreateRepartition` into Docker implementation
+* Expose information of an `APIContainer` object
+* Implemented the methods: `CreateEnclave`, `GetEnclaves`, `StopEnclaves` and `DestroyEnclaves` in `DockerKurtosisBackend`
+* Added `IsNetworkPartitioningEnabledLabelKey` label key constant
+* Added `NetworkPartitioningEnabledLabelValue` and `NetworkPartitioningDisabledLabelValue` label value constants
 
 # 0.10.1
 ### Features

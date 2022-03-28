@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"strings"
@@ -24,7 +25,7 @@ type DockerObjectAttributesProvider interface {
 		grpcProxyPortId string,
 		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForEnclave(enclaveId string) (DockerEnclaveObjectAttributesProvider, error)
+	ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -90,10 +91,12 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	return objectAttributes, nil
 }
 
-func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveIdStr string) (DockerEnclaveObjectAttributesProvider, error) {
+func (provider *dockerObjectAttributesProviderImpl) ForEnclave(enclaveId enclave.EnclaveID) (DockerEnclaveObjectAttributesProvider, error) {
+	enclaveIdStr := string(enclaveId)
 	enclaveIdLabelValue, err := docker_label_value.CreateNewDockerLabelValue(enclaveIdStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value out of enclave ID string '%v'", enclaveIdStr)
 	}
+
 	return newDockerEnclaveObjectAttributesProviderImpl(enclaveIdLabelValue), nil
 }
