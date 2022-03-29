@@ -10,6 +10,7 @@ import (
 	"github.com/google/martian/log"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
@@ -41,7 +42,7 @@ func NewApiContainerLauncher(kurtosisBackend backend_interface.KurtosisBackend) 
 func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 	networkId string,
 	subnetMask string,
 	grpcListenPort uint16,
@@ -82,7 +83,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	ctx context.Context,
 	imageVersionTag string,
 	logLevel logrus.Level,
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 	networkId string,
 	subnetMask string,
 	grpcPortNum uint16,
@@ -107,7 +108,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		logLevel.String(),
 		grpcPortNum,
 		grpcProxyPortNum,
-		enclaveId,
+		string(enclaveId),
 		networkId,
 		subnetMask,
 		apiContainerIpAddr.String(),
@@ -148,8 +149,10 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
 		ctx,
 		containerImageAndTag,
-		"grpc-port", grpcPort,
-		"grpc-proxy-port", grpcProxyPort,
+		enclaveId,
+		apiContainerIpAddr,
+		grpcPort.GetNumber(),
+		grpcProxyPort.GetNumber(),
 		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)
