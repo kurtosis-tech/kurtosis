@@ -6,6 +6,7 @@
 * Implemented the methods: `CreateEnclave`, `GetEnclaves`, `StopEnclaves` and `DestroyEnclaves` in `DockerKurtosisBackend`
 * Added `IsNetworkPartitioningEnabledLabelKey` label key constant
 * Added `NetworkPartitioningEnabledLabelValue` and `NetworkPartitioningDisabledLabelValue` label value constants
+* Added API container CRUD methods
 
 # 0.10.1
 ### Features
