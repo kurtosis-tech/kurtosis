@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"github.com/docker/go-connections/nat"
@@ -35,14 +34,8 @@ const (
 	// means that its grpc-proxy must listen on TCP
 	enginePortProtocol          = port_spec.PortProtocol_TCP
 
-	// The protocol string we use in the netstat command used to ensure the engine container's grpc & grpc-proxy
-	// ports are available
-	netstatWaitForAvailabilityPortProtocol = "tcp"
-
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-
-	engineAvailabilityWaitingExecCmdSuccessExitCode = 0
 
 	// We leave a relatively short timeout so that the engine gets a chance to gracefully clean up, but the
 	// user isn't stuck waiting on a long-running operation when they tell the engine to stop
@@ -195,13 +188,20 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 		}
 	}()
 
-	if err := waitForEnginePortAvailability(ctx, backendCore.dockerManager, containerId, grpcPortNum); err != nil {
+	if err := waitForPortAvailabilityUsingNetstat(
+		ctx,
+		backendCore.dockerManager,
+		containerId,
+		privateGrpcPortSpec,
+		maxWaitForEngineAvailabilityRetries,
+		timeBetweenWaitForEngineAvailabilityRetries,
+	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
 	}
 
 	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
 	/*
-	if err := waitForEnginePortAvailability(ctx, backendCore.dockerManager, containerId, grpcProxyPortNum); err != nil {
+	if err := waitForPortAvailabilityUsingNetstat(ctx, backendCore.dockerManager, containerId, grpcProxyPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc proxy port to become available")
 	}
 	 */
@@ -216,13 +216,13 @@ func (backendCore *DockerKurtosisBackend) CreateEngine(
 }
 
 func (backendCore *DockerKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
-	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
+	matchingEngines, err := backendCore.getMatchingEngines(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
 	matchingEnginesByEngineId := map[string]*engine.Engine{}
-	for _, engineObj := range matchingEnginesByContainerId {
+	for _, engineObj := range matchingEngines {
 		matchingEnginesByEngineId[engineObj.GetID()] = engineObj
 	}
 
@@ -237,7 +237,7 @@ func (backendCore *DockerKurtosisBackend) StopEngines(
 	erroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
+	matchingEnginesByContainerId, err := backendCore.getMatchingEngines(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
@@ -264,7 +264,7 @@ func (backendCore *DockerKurtosisBackend) DestroyEngines(
 	erroredEngineIds map[string]error,
 	resultErr error,
 ) {
-	matchingEnginesByContainerId, err := backendCore.getMatchingEnginesByContainerId(ctx, filters)
+	matchingEnginesByContainerId, err := backendCore.getMatchingEngines(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
@@ -287,55 +287,8 @@ func (backendCore *DockerKurtosisBackend) DestroyEngines(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func waitForEnginePortAvailability(ctx context.Context, dockerManager *docker_manager.DockerManager, containerId string, listenPortNum uint16) error {
-	commandStr := fmt.Sprintf(
-		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
-		netstatWaitForAvailabilityPortProtocol,
-		listenPortNum,
-	)
-	execCmd := []string{
-		"sh",
-		"-c",
-		commandStr,
-	}
-	for i := 0; i < maxWaitForEngineAvailabilityRetries; i++ {
-		outputBuffer := &bytes.Buffer{}
-		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
-		if err == nil {
-			if exitCode == engineAvailabilityWaitingExecCmdSuccessExitCode {
-				return nil
-			}
-			logrus.Debugf(
-				"Engine server availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
-				commandStr,
-				engineAvailabilityWaitingExecCmdSuccessExitCode,
-				exitCode,
-				outputBuffer.String(),
-			)
-		} else {
-			logrus.Debugf(
-				"Engine server availability-waiting command '%v' experienced a Docker error:\n%v",
-				commandStr,
-				err,
-			)
-		}
-
-		// Tiny optimization to not sleep if we're not going to run the loop again
-		if i < maxWaitForEngineAvailabilityRetries {
-			time.Sleep(timeBetweenWaitForEngineAvailabilityRetries)
-		}
-	}
-
-	return stacktrace.NewError(
-		"The engine server didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
-		commandStr,
-		maxWaitForEngineAvailabilityRetries,
-		timeBetweenWaitForEngineAvailabilityRetries,
-	)
-}
-
 // Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingEnginesByContainerId(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
+func (backendCore *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),

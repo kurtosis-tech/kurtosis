@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
+	"net"
 )
 
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
@@ -100,8 +101,10 @@ type KurtosisBackend interface {
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
-		grpcPortSpec *port_spec.PortSpec,
-		grpcProxyPortSpec *port_spec.PortSpec,
+		enclaveId enclave.EnclaveID,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+		grpcPortNum uint16,
+		grpcProxyPortNum uint16,
 		enclaveDataDirpathOnHostMachine string,	// TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
 		envVars map[string]string,
 	) (
@@ -113,30 +116,30 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Matching API containers, keyed by their enclave ID
-		map[string]*api_container.APIContainer,
+		// Matching API containers, keyed by their enclave ID
+		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
 
 	// Stops API containers matching the given filters
 	StopAPIContainers(
 		ctx context.Context,
-		filters *enclave.EnclaveFilters,
+		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
-		successApiContainerIds map[string]bool,
-		erroredApiContainerIds map[string]error,
+		// Successful & errored API containers are keyed by their enclave ID
+		successfulApiContainerIds map[enclave.EnclaveID]bool,
+		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
 	)
 
 	// Stops API containers matching the given filters
 	DestroyAPIContainers(
 		ctx context.Context,
-		filters *enclave.EnclaveFilters,
+		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
-		successApiContainerIds map[string]bool,
-		erroredApiContainerIds map[string]error,
+		// Successful & errored API containers are keyed by their enclave ID
+		successfulApiContainerIds map[enclave.EnclaveID]bool,
+		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
 	)
 
