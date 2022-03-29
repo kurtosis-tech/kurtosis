@@ -406,6 +406,13 @@ github.com/kurtosis-tech/container-engine-lib v0.0.0-20220303202459-439ee9b1fc5a
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220303202459-439ee9b1fc5a/go.mod h1:vLUzJgett6ITr4U1OS79YVPfQ5z3H/lwMtPeBREkLF4=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220307182350-54b3c201fb28 h1:qtXhu49pu00j2T55R0RObjvHEd7/OPa99BFVntLg2kM=
 github.com/kurtosis-tech/container-engine-lib v0.0.0-20220307182350-54b3c201fb28/go.mod h1:vLUzJgett6ITr4U1OS79YVPfQ5z3H/lwMtPeBREkLF4=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220311142823-bdc0a9bf4801 h1:m9PPkY8WadO9jYAl5myiIvkcjfP8w5WSqrWTRoTFrro=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220311142823-bdc0a9bf4801/go.mod h1:vLUzJgett6ITr4U1OS79YVPfQ5z3H/lwMtPeBREkLF4=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220329003227-9e008f5d9cc1 h1:0D4m0oNh9YIqWHw5XNIrLYvj0hAnWDJ2+8kQFkuioP0=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220329003227-9e008f5d9cc1/go.mod h1:GF9CxWGs0slHwhP5nSkhGdPeNKtW3ZA5RO/M78xKOyk=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220329175706-0bdba7af775a h1:UwU7Qx3csPfIvHOo8ssDcS+QLBbOpclujl8/2Sy06h8=
+github.com/kurtosis-tech/container-engine-lib v0.0.0-20220329175706-0bdba7af775a/go.mod h1:GF9CxWGs0slHwhP5nSkhGdPeNKtW3ZA5RO/M78xKOyk=
+github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d/go.mod h1:1PoW/0l4K80JRSj7A13aONsnaTdTM+dM36DIfDbYmVs=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce h1:DoOmTbIcMJGY4VBwCFH6ZgxTdOKFM3KsBu7fi59ez+Y=
 github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce/go.mod h1:4hHaA6y92qFQjedsvcAZBjwyzdwd5NEQXAf2dsgltDI=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
