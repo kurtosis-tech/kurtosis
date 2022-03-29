@@ -144,7 +144,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		stacktrace.Propagate(err, "An error occurred creating a port spec for GRPC Proxy port '%v'", grpcProxyPortNum)
 	}
 
-	// TODO: Should CreateApiContainer also take in an enclaveId? Currently its being based in through the envVars for the container
 	log.Debugf("Launching Kurtosis API container...")
 	apiContainer, err := launcher.kurtosisBackend.CreateAPIContainer(
 		ctx,
