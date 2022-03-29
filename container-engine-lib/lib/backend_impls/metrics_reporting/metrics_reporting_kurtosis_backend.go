@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
+	"net"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -20,6 +21,13 @@ type MetricsReportingKurtosisBackend struct {
 
 func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBackend) *MetricsReportingKurtosisBackend {
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
+}
+
+func (backend *MetricsReportingKurtosisBackend) PullImage(image string) error {
+	if err := backend.underlying.PullImage(image); err != nil {
+		return stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
+	}
+	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, engineDataDirpathOnHostMachine string, envVars map[string]string) (*engine.Engine, error) {
@@ -122,20 +130,20 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
-	grpcPortId string,
-	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	result, err := backend.underlying.CreateAPIContainer(
 		ctx,
 		image,
-		grpcPortId,
-		grpcPortSpec,
-		grpcProxyPortId,
-		grpcProxyPortSpec,
+		enclaveId,
+		ipAddr,
+		grpcPortNum,
+		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)
@@ -150,7 +158,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
 	results, err := backend.underlying.GetAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters: %+v", filters)
@@ -158,7 +166,7 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping API containers using filters: %+v", filters)
@@ -166,7 +174,7 @@ func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Co
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
@@ -325,7 +333,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 			"An error occurred running user service exec command with user service GUID '%v' and command args '%+v'",
 			serviceGUID,
 			commandArgs,
-			)
+		)
 	}
 	return exitCode, output, nil
 }
