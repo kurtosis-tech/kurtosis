@@ -2,6 +2,7 @@ package api_container
 
 import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
@@ -10,7 +11,7 @@ import (
 // WARNING: Store this at your own risk!
 type APIContainer struct {
 	// The ID of the enclave the API container manages
-	enclaveId string
+	enclaveId enclave.EnclaveID
 
 	status container_status.ContainerStatus
 
@@ -27,14 +28,15 @@ type APIContainer struct {
 }
 
 func NewAPIContainer(
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 	status container_status.ContainerStatus,
 	privateIpAddr net.IP,
 	privateGrpcPort *port_spec.PortSpec,
 	privateGrpcProxyPort *port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicGrpcPort *port_spec.PortSpec,
-	publicGrpcProxyPort *port_spec.PortSpec) *APIContainer {
+	publicGrpcProxyPort *port_spec.PortSpec,
+) *APIContainer {
 	return &APIContainer{
 		enclaveId: enclaveId,
 		status: status,
@@ -46,7 +48,7 @@ func NewAPIContainer(
 		publicGrpcProxyPort: publicGrpcProxyPort}
 }
 
-func (apiContainer *APIContainer) GetEnclaveID() string {
+func (apiContainer *APIContainer) GetEnclaveID() enclave.EnclaveID {
 	return apiContainer.enclaveId
 }
 

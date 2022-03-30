@@ -254,8 +254,15 @@ func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	}
 
 	for userServiceGuid, networkingSidecarContainer := range networkingSidecarContainers {
-		if err := backendCore.removeContainer(ctx, networkingSidecarContainer); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred removing networking sidecar container with user service GUID '%v' and container ID '%v'", userServiceGuid, networkingSidecarContainer.GetId())
+		containersToRemove := []*types.Container{networkingSidecarContainer}
+		if _, erroredContainers := backendCore.removeContainers(ctx, containersToRemove); len(erroredContainers) > 0 {
+			containerError, found := erroredContainers[networkingSidecarContainer.GetId()]
+			var wrappedErr error
+			if !found {
+				wrappedErr = stacktrace.NewError("Expected to find an error for container with ID '%v' in error list '%+v' but it was not found; it should never happens, it's a bug in Kurtosis", networkingSidecarContainer.GetId(), erroredContainers)
+			} else {
+				wrappedErr = stacktrace.Propagate(containerError, "An error occurred removing networking sidecar container with user service GUID '%v' and container ID '%v'", userServiceGuid, networkingSidecarContainer.GetId())
+			}
 			erroredUserServiceGuids[userServiceGuid] = wrappedErr
 			continue
 		}
@@ -285,7 +292,7 @@ func (backendCore *DockerKurtosisBackend) getNetworkingSidecarContainersByEnclav
 	for _, container := range foundContainers {
 		for userServiceGuid := range userServiceGUIDs {
 			//TODO we could improve this doing only one container iteration? or is this ok this way because is not to expensive?
-			if hasEnclaveIdLabel(container, enclaveId) && hasUserServiceGuidLabel(container, userServiceGuid){
+			if hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGuid)){
 				networkingSidecarContainers[userServiceGuid] = container
 			}
 		}

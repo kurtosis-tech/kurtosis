@@ -179,7 +179,7 @@ func (backendCore *DockerKurtosisBackend) StopEnclaves(
 
 			// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
 			//  before we return
-			if _, erroredContainers := backendCore.waitForExitContainers(ctx, containers); len(erroredContainers) > 0 {
+			if _, erroredContainers := backendCore.waitForContainerExits(ctx, containers); len(erroredContainers) > 0 {
 				containerWaitErrorStrs := []string{}
 				for _, err = range erroredContainers{
 					containerWaitErrorStrs = append(containerWaitErrorStrs, err.Error())
