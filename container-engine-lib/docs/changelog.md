@@ -7,6 +7,7 @@
 * Added `IsNetworkPartitioningEnabledLabelKey` label key constant
 * Added `NetworkPartitioningEnabledLabelValue` and `NetworkPartitioningDisabledLabelValue` label value constants
 * Added API container CRUD methods
+* Added `KurtosisBackend.DumpEnclave`
 
 # 0.10.1
 ### Features
