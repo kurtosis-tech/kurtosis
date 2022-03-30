@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
@@ -17,6 +19,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -37,6 +40,8 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
+
+	netstatSuccessExitCode = 0
 
 	uninitializedPublicIpAddrStrValue = ""
 
@@ -78,6 +83,11 @@ func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *Dock
 		dockerNetworkAllocator: dockerNetworkAllocator,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
+}
+
+func (backendCore *DockerKurtosisBackend) PullImage(image string) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Engine methods in separate file
@@ -249,6 +259,60 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	}
 
 	return hostMachineIp, publicPortSpec, nil
+}
+
+func waitForPortAvailabilityUsingNetstat(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	containerId string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
 }
 
 func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
