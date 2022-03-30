@@ -15,10 +15,6 @@ import (
 	"net"
 )
 
-const (
-
-)
-
 func (backendCore *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
 	id module.ModuleID,
@@ -36,10 +32,20 @@ func (backendCore *DockerKurtosisBackend) GetModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 ) (
-	map[string]*module.Module,
+	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
-	panic("Implement me")
+	matchingModuleContainers, err := backendCore.getMatchingModuleContainers(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
+	}
+
+	matchingModuleContainersByModuleID := map[module.ModuleGUID]*module.Module{}
+	for _, moduleObj := range matchingModuleContainers {
+		matchingModuleContainersByModuleID[moduleObj.GetGUID()] = moduleObj
+	}
+
+	return matchingModuleContainersByModuleID, nil
 }
 
 func (backendCore *DockerKurtosisBackend) DestroyModules(
@@ -50,14 +56,37 @@ func (backendCore *DockerKurtosisBackend) DestroyModules(
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	panic("Implement me")
+	matchingModuleContainersByContainerId, err := backendCore.getMatchingModuleContainers(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
+	}
+
+	successIds := map[module.ModuleGUID]bool{}
+	errorIds := map[module.ModuleGUID]error{}
+	for containerId, moduleObj := range matchingModuleContainersByContainerId {
+		moduleGuid := moduleObj.GetGUID()
+		enclaveId := moduleObj.GetEnclaveID()
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing module container for GUID '%v' with container ID '%v' from enclave '%v'",
+				moduleGuid,
+				containerId,
+				enclaveId,
+			)
+			errorIds[moduleGuid] = wrappedErr
+		} else {
+			successIds[moduleGuid] = true
+		}
+	}
+	return successIds, errorIds, nil
 }
 
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+func (backendCore *DockerKurtosisBackend) getMatchingModuleContainers(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),

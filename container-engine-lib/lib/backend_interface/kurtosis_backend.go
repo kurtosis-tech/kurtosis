@@ -163,7 +163,7 @@ type KurtosisBackend interface {
 	)
 
 	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
-	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
+	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[module.ModuleGUID]*module.Module, error)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
 	DestroyModules(

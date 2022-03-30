@@ -140,6 +140,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
+	privateIpAddr net.IP,
 	moduleID string,
 	moduleGUID string,
 	privatePortId string,
@@ -151,6 +152,15 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the module container name object")
+	}
+
+	privateIpLabelValue, err := docker_label_value.CreateNewDockerLabelValue(privateIpAddr.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from module container private IP address '%v'",
+			privateIpAddr.String(),
+		)
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
@@ -167,6 +177,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
