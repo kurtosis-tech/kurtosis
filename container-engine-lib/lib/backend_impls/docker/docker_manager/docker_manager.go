@@ -336,6 +336,14 @@ func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName strin
 	return nil
 }
 
+func (manager *DockerManager) InspectContainer(ctx context.Context, containerId string) (types.ContainerJSON, error) {
+	result, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return types.ContainerJSON{}, stacktrace.Propagate(err, "An error occurred inspecting container '%v'", containerId)
+	}
+	return result, nil
+}
+
 /*
 CreateAndStartContainer
 Creates a Docker container with the given args and starts it.
@@ -1178,7 +1186,7 @@ func newNetworkFromDockerNetwork(dockerNetwork types.NetworkResource) (*docker_m
 		return nil, stacktrace.Propagate(err, "An error occurred parsing CIDR '%v'", firstIpamConfig.Subnet)
 	}
 
-	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask)
+	network := docker_manager_types.NewNetwork(dockerNetwork.Name, dockerNetwork.ID, ipAndMask, dockerNetwork.Labels)
 
 	return network, nil
 }

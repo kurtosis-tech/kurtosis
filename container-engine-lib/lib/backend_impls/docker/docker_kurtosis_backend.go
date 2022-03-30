@@ -1,17 +1,24 @@
 package docker
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	port_spec2 "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -32,6 +39,8 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
+
+	netstatSuccessExitCode = 0
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
@@ -47,25 +56,32 @@ var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
 }
 
 // Unfortunately, Docker doesn't have an enum for the protocols it supports, so we have to create this translation map
-var portSpecProtosToDockerPortProtos = map[port_spec2.PortProtocol]string{
-	port_spec2.PortProtocol_TCP:  "tcp",
-	port_spec2.PortProtocol_SCTP: "sctp",
-	port_spec2.PortProtocol_UDP:  "udp",
+var portSpecProtosToDockerPortProtos = map[port_spec.PortProtocol]string{
+	port_spec.PortProtocol_TCP:  "tcp",
+	port_spec.PortProtocol_SCTP: "sctp",
+	port_spec.PortProtocol_UDP:  "udp",
 }
 
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
+	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
+
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider
 }
 
-func NewDockerKurtosisBackend(
-	dockerManager *docker_manager.DockerManager,
-) *DockerKurtosisBackend {
+func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *DockerKurtosisBackend {
+	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
 		dockerManager:    dockerManager,
+		dockerNetworkAllocator: dockerNetworkAllocator,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
+}
+
+func (backendCore *DockerKurtosisBackend) PullImage(image string) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Engine methods in separate file
@@ -109,7 +125,7 @@ func (backendCore *DockerKurtosisBackend) GetEnginePublicIPAndPort(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-func transformPortSpecToDockerPort(portSpec *port_spec2.PortSpec) (nat.Port, error) {
+func transformPortSpecToDockerPort(portSpec *port_spec.PortSpec) (nat.Port, error) {
 	portSpecProto := portSpec.GetProtocol()
 	dockerProto, found := portSpecProtosToDockerPortProtos[portSpecProto]
 	if !found {
@@ -167,9 +183,9 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 }
 
 
-func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec2.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
+func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
-	resultPublicPortSpec *port_spec2.PortSpec,
+	resultPublicPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	portNum := privatePortSpec.GetNumber()
@@ -231,10 +247,76 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec2.PortSpe
 		)
 	}
 	hostMachinePortNumUint16 := uint16(hostMachinePortNumUint64) // Okay to do due to specifying the number of bits above
-	publicPortSpec, err := port_spec2.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
+	publicPortSpec, err := port_spec.NewPortSpec(hostMachinePortNumUint16, portSpecProto)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating public port spec with host machine port num '%v' and protocol '%v'", hostMachinePortNumUint16, portSpecProto.String())
 	}
 
 	return hostMachineIp, publicPortSpec, nil
 }
+
+func waitForPortAvailabilityUsingNetstat(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	containerId string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
+}
+
+
+func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
+	labels := network.GetLabels()
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		return "", stacktrace.NewError("Expected to find network's label with key '%v' but none was found", label_key_consts.EnclaveIDLabelKey.GetString())
+	}
+	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
+	return enclaveId, nil
+}
+

@@ -26,6 +26,8 @@ const (
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
 
+	isNetworkPartitioningEnabledKeyStr = labelNamespaceStr + "is-network-partitioning-enabled"
+
 	// TODO Remove this and instead use container domain names so we're not dependent on static IPs!
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
 )
@@ -43,4 +45,5 @@ var IDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeyStr)
 var GUIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
 var PortSpecsLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
 var EnclaveIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
+var IsNetworkPartitioningEnabledLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
