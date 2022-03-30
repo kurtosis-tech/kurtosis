@@ -193,7 +193,7 @@ type KurtosisBackend interface {
 		filters *service.ServiceFilters,
 	)(
 		successfulUserServices map[service.ServiceGUID]*service.Service,
-		erroredUserServiceIds map[service.ServiceGUID]error,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
 	)
 
@@ -205,7 +205,7 @@ type KurtosisBackend interface {
 		shouldFollowLogs bool,
 	)(
 		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
-		erroredUserServiceIds map[service.ServiceGUID]error,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
 	)
 
@@ -254,8 +254,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully stopped
-		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when stopping, with the error
+		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -265,8 +265,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed
-		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when destroying, with the error
+		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -287,18 +287,18 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
-		map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
+		map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
 		error,
 	)
 
-	//Executes shell commands inside a networking sidecar instance indenfified by its GUID
-	RunNetworkingSidecarsExecCommand(
+	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service GUIDs
+	RunNetworkingSidecarExecCommands(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
+		networkingSidecarsCommands map[service.ServiceGUID][]string,
 	)(
-		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
@@ -308,8 +308,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
-		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
@@ -319,8 +319,8 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
-		successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-		erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 

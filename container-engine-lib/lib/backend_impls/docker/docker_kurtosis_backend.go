@@ -11,7 +11,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
@@ -365,4 +367,34 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
 	return enclaveId, nil
+}
+
+func hasEnclaveIdLabel(
+	container *types.Container,
+	enclaveId enclave.EnclaveID) bool {
+
+	labels := container.GetLabels()
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		//TODO Do all containers should have enclave ID label key??? we should return and error here if this answer is yes??
+		logrus.Debugf("Container with ID '%v' haven't label '%v'", container.GetId(), label_key_consts.EnclaveIDLabelKey.GetString())
+		return false
+	}
+	if enclaveIdLabelValue == string(enclaveId) {
+		return true
+	}
+	return false
+}
+
+func hasUserServiceGuidLabel(container *types.Container, userServiceGuid service.ServiceGUID) bool {
+	labels := container.GetLabels()
+	userServiceGuidLabelValueStr, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		return false
+	}
+	userServiceGuidLabelValue := service.ServiceGUID(userServiceGuidLabelValueStr)
+	if userServiceGuidLabelValue == userServiceGuid {
+		return true
+	}
+	return false
 }

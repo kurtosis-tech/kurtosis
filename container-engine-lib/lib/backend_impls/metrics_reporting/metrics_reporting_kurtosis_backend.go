@@ -408,8 +408,8 @@ func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
@@ -424,8 +424,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyUserServices(ctx, enclaveId, filters)
@@ -456,7 +456,7 @@ func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
+	map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
 	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, enclaveId, filters)
@@ -466,20 +466,20 @@ func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 	return networkingSidecars, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarsExecCommand(
+func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
+	networkingSidecarsCommands map[service.ServiceGUID][]string,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.RunNetworkingSidecarsExecCommand(ctx, enclaveId, networkingSidecarsCommands)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveId, networkingSidecarsCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with ID '%v'", networkingSidecarsCommands, enclaveId)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
@@ -487,15 +487,15 @@ func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.StopNetworkingSidecars(ctx, enclaveId, filters)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.StopNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
@@ -503,13 +503,13 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, enclaveId, filters)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }

@@ -1132,6 +1132,9 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 		for networkId, endpointSettings := range dockerContainer.NetworkSettings.Networks {
 			ipAddressStr := endpointSettings.IPAddress
 			ip := net.ParseIP(ipAddressStr)
+			if ip == nil {
+				return nil, stacktrace.Propagate(err, "An error occurred parsing IP address '%v'", ipAddressStr)
+			}
 			networkIpAddresses[networkId] = ip
 		}
 	}

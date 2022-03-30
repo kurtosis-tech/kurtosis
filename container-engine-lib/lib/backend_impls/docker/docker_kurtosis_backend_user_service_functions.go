@@ -286,7 +286,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	privateIpAddr, found := userServiceContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
+	privateIpAddr, found := userServiceContainer.GetNetworkIPAddresses()[enclaveNetwork.GetId()]
 	if !found {
 		return stacktrace.Propagate(err, "User service container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", userServiceContainer.GetId(), enclaveNetwork.GetId())
 	}
