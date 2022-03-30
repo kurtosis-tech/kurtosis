@@ -262,7 +262,7 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred getting the containers in enclave '%v' so their logs could be dumped to disk",
+			"An error occurred getting the containers in enclave '%v' for dumping the enclave",
 			enclaveId,
 		)
 	}
