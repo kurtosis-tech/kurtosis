@@ -13,7 +13,7 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/gammazero/workerpool v1.1.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220308120154-5a34daa0625a
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220330183726-8d09487819fc
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220308120633-3d66b540433d
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220308121719-6ec64214c4a3
