@@ -7,6 +7,7 @@ require (
 	github.com/dmarkham/enumer v1.5.3
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/gammazero/workerpool v1.1.2 // indirect
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-1f73d028840d
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/morikuni/aec v1.0.0 // indirect
