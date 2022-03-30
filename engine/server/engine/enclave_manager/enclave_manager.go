@@ -132,15 +132,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	defer func() {
 		if shouldDestroyEnclave {
 			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId));
-			genericErrorStrFmt := "Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v"
 			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
 			if err != nil {
-				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
+				logrus.Errorf("Expected to be able to call the kackend and destroy enclave '%v', but an error occurred:\n%v", enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 				return
 			}
 			for enclaveId, err := range destroyEnclaveErrs {
-				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
+				logrus.Errorf("Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v", enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
 		}
@@ -175,11 +174,14 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	enclaveNetworkIpAddrTracker := createdEnclave.GetNetworkIpAddrTracker()
 	apiContainerPrivateIpAddr, err := enclaveNetworkIpAddrTracker.GetFreeIpAddr()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to get an interal IP address for enclave '%v', but an error occurred", enclaveId)
+	}
 
 	apiContainer, err := manager.launchApiContainer(setupCtx,
 		apiContainerImageVersionTag,
 		apiContainerLogLevel,
-		enclaveIdStr,
+		enclaveId,
 		enclaveNetworkId,
 		enclaveNetworkCidr,
 		apiContainerListenGrpcPortNumInsideNetwork,
@@ -197,16 +199,15 @@ func (manager *EnclaveManager) CreateEnclave(
 	shouldStopApiContainer := true
 	defer func() {
 		if shouldStopApiContainer {
-			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveId))
-			genericErrorStrFmt := "Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v"
+			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getApiContainerByEnclaveIdFilter(enclaveId))
 			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API Container for enclave '%v'!!!!!!"
 			if err != nil {
-				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
+				logrus.Errorf("Expected to be able to call the backend and destroy the API container for enclave '%v', but an error was thrown:\n%v", enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 				return
 			}
 			for enclaveId, err := range destroyApiContainerErrs {
-				logrus.Errorf(genericErrorStrFmt, enclaveId, err)
+				logrus.Errorf("Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v", enclaveId, err)
 				logrus.Errorf(manualActionRequiredStrFmt, enclaveId)
 			}
 		}
@@ -349,7 +350,8 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	*kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo,
 	error,
 ) {
-	enclaveApiContainers, err := manager.kurtosisBackend.GetAPIContainers(ctx, getApiContainerByEnclaveIdFilter(enclaveId))
+	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId);
+	enclaveApiContainers, err := manager.kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
@@ -529,7 +531,6 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 			enclaveId,
 		)
 	}
-
 	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
@@ -606,8 +607,8 @@ func getEnclaveByEnclaveIdFilter(enclaveId enclave.EnclaveID) *enclave.EnclaveFi
 
 func getApiContainerByEnclaveIdFilter(enclaveId enclave.EnclaveID) *api_container.APIContainerFilters {
 	return &api_container.APIContainerFilters{
-		EnclaveIDs: map[string]bool {
-			string(enclaveId): true,
+		EnclaveIDs: map[enclave.EnclaveID]bool {
+			enclaveId: true,
 		},
 	}
 }
@@ -616,7 +617,7 @@ func (manager *EnclaveManager) launchApiContainer(
 	ctx context.Context,
 	apiContainerImageVersionTag string,
 	logLevel logrus.Level,
-	enclaveId string,
+	enclaveId enclave.EnclaveID,
 	networkId string,
 	subnetMask string,
 	grpcListenPort uint16,
@@ -700,7 +701,7 @@ func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enc
 }
 
 // Returns nil if apiContainerMap is empty
-func getFirstApiContainerFromMap(apiContainerMap map[string]*api_container.APIContainer) *api_container.APIContainer {
+func getFirstApiContainerFromMap(apiContainerMap map[enclave.EnclaveID]*api_container.APIContainer) *api_container.APIContainer {
 	firstApiContainerFound := (*api_container.APIContainer) (nil)
 	for _, apiContainer := range apiContainerMap {
 		firstApiContainerFound = apiContainer
