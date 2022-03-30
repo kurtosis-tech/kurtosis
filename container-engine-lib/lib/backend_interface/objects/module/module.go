@@ -1,6 +1,8 @@
 package module
 
 import (
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 )
@@ -11,16 +13,22 @@ type ModuleGUID string
 // Object that represents POINT-IN-TIME information about a Kurtosis Module
 // Store this object and continue to reference it at your own risk!!!
 type Module struct {
+	enclaveId enclave.EnclaveID
 	id ModuleID
 	guid ModuleGUID
+	status container_status.ContainerStatus
 	privateIp net.IP
 	privatePort *port_spec.PortSpec
 	publicIp net.IP
 	publicPort *port_spec.PortSpec
 }
 
-func NewModule(id ModuleID, guid ModuleGUID, privateIp net.IP, privatePort *port_spec.PortSpec, publicIp net.IP, publicPort *port_spec.PortSpec) *Module {
-	return &Module{id: id, guid: guid, privateIp: privateIp, privatePort: privatePort, publicIp: publicIp, publicPort: publicPort}
+func NewModule(enclaveId enclave.EnclaveID, id ModuleID, guid ModuleGUID, status container_status.ContainerStatus, privateIp net.IP, privatePort *port_spec.PortSpec, publicIp net.IP, publicPort *port_spec.PortSpec) *Module {
+	return &Module{enclaveId: enclaveId, id: id, guid: guid, status: status, privateIp: privateIp, privatePort: privatePort, publicIp: publicIp, publicPort: publicPort}
+}
+
+func (module *Module) GetEnclaveID() enclave.EnclaveID {
+	return module.enclaveId
 }
 
 func (module *Module) GetID() ModuleID {
@@ -29,6 +37,10 @@ func (module *Module) GetID() ModuleID {
 
 func (module *Module) GetGUID() ModuleGUID {
 	return module.guid
+}
+
+func (module *Module) GetStatus() container_status.ContainerStatus {
+	return module.status
 }
 
 func (module *Module) GetPrivateIp() net.IP {

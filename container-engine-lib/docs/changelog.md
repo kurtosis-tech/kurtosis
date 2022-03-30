@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Added module CRUD methods
 
 # 0.10.2
 ### Features
