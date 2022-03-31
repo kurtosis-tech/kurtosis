@@ -10,8 +10,8 @@ type Container struct {
 	name   string
 	labels           map[string]string
 	status           ContainerStatus
-	hostPortBindings map[nat.Port]*nat.PortBinding
-	networksIPAdrresses map[string]net.IP
+	hostPortBindings   map[nat.Port]*nat.PortBinding
+	networkIPAddresses map[string]net.IP
 }
 
 func NewContainer(
@@ -20,15 +20,15 @@ func NewContainer(
 	labels map[string]string,
 	status ContainerStatus,
 	hostPortBindings map[nat.Port]*nat.PortBinding,
-	networksIPAdrresses map[string]net.IP,
+	networkIPAddresses map[string]net.IP,
 ) *Container {
 	return &Container{
-		id: id,
-		name: name,
-		labels: labels,
-		status: status,
-		hostPortBindings: hostPortBindings,
-		networksIPAdrresses: networksIPAdrresses,
+		id:                 id,
+		name:               name,
+		labels:             labels,
+		status:             status,
+		hostPortBindings:   hostPortBindings,
+		networkIPAddresses: networkIPAddresses,
 	}
 }
 
@@ -52,6 +52,6 @@ func (c Container) GetHostPortBindings() map[nat.Port]*nat.PortBinding {
 	return c.hostPortBindings
 }
 
-func (c *Container) GetNetworksIPAddresses() map[string]net.IP {
-	return c.networksIPAdrresses
+func (c *Container) GetNetworkIPAddresses() map[string]net.IP {
+	return c.networkIPAddresses
 }

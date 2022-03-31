@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/docker/go-connections/nat"
@@ -9,12 +11,15 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_network_allocator"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -35,6 +40,8 @@ const (
 	// Engine container port number string parsing constants
 	hostMachinePortNumStrParsingBase = 10
 	hostMachinePortNumStrParsingBits = 16
+
+	netstatSuccessExitCode = 0
 
 	uninitializedPublicIpAddrStrValue = ""
 
@@ -76,6 +83,11 @@ func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *Dock
 		dockerNetworkAllocator: dockerNetworkAllocator,
 		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
+}
+
+func (backendCore *DockerKurtosisBackend) PullImage(image string) error {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Engine methods in separate file
@@ -249,6 +261,60 @@ func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec
 	return hostMachineIp, publicPortSpec, nil
 }
 
+func waitForPortAvailabilityUsingNetstat(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+	containerId string,
+	portSpec *port_spec.PortSpec,
+	maxRetries uint,
+	timeBetweenRetries time.Duration,
+) error {
+	commandStr := fmt.Sprintf(
+		"[ -n \"$(netstat -anp %v | grep LISTEN | grep %v)\" ]",
+		strings.ToLower(portSpec.GetProtocol().String()),
+		portSpec.GetNumber(),
+	)
+	execCmd := []string{
+		"sh",
+		"-c",
+		commandStr,
+	}
+	for i := uint(0); i < maxRetries; i++ {
+		outputBuffer := &bytes.Buffer{}
+		exitCode, err := dockerManager.RunExecCommand(ctx, containerId, execCmd, outputBuffer)
+		if err == nil {
+			if exitCode == netstatSuccessExitCode {
+				return nil
+			}
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				commandStr,
+				netstatSuccessExitCode,
+				exitCode,
+				outputBuffer.String(),
+			)
+		} else {
+			logrus.Debugf(
+				"Netstat availability-waiting command '%v' experienced a Docker error:\n%v",
+				commandStr,
+				err,
+			)
+		}
+
+		// Tiny optimization to not sleep if we're not going to run the loop again
+		if i < maxRetries {
+			time.Sleep(timeBetweenRetries)
+		}
+	}
+
+	return stacktrace.NewError(
+		"The port didn't become available (as measured by the command '%v') even after retrying %v times with %v between retries",
+		commandStr,
+		maxRetries,
+		timeBetweenRetries,
+	)
+}
+
 func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
 	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
 	portIdsForDockerPortObjs := map[nat.Port]string{}
@@ -365,4 +431,160 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
 	return enclaveId, nil
+}
+
+func hasEnclaveIdLabel(
+	container *types.Container,
+	enclaveId enclave.EnclaveID) bool {
+
+	labels := container.GetLabels()
+	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		//TODO Do all containers should have enclave ID label key??? we should return and error here if this answer is yes??
+		logrus.Debugf("Container with ID '%v' haven't label '%v'", container.GetId(), label_key_consts.EnclaveIDLabelKey.GetString())
+		return false
+	}
+	if enclaveIdLabelValue == string(enclaveId) {
+		return true
+	}
+	return false
+}
+
+func hasGuidLabel(container *types.Container, guid string) bool {
+	labels := container.GetLabels()
+	guidLabelValue, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	if !found {
+		return false
+	}
+	if guidLabelValue == guid {
+		return true
+	}
+	return false
+}
+
+func (backendCore *DockerKurtosisBackend) killContainerAndWaitForExit(
+	ctx context.Context,
+	container *types.Container,
+) error {
+	containerId := container.GetId()
+	containerName := container.GetName()
+	if err := backendCore.dockerManager.KillContainer(ctx, containerId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred killing container '%v' with ID '%v'",
+			containerName,
+			containerId,
+		)
+	}
+	if _, err := backendCore.dockerManager.WaitForExit(ctx, containerId); err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred waiting for container '%v' with ID '%v' to exit after killing it",
+			container.GetName(),
+			containerId,
+		)
+	}
+
+	return nil
+}
+
+func (backendCore *DockerKurtosisBackend) killContainers(
+	ctx context.Context,
+	containers []*types.Container,
+)(
+	successfulContainers map[string]bool,
+	erroredContainers map[string]error,
+){
+
+	// TODO Parallelize for perf
+	for _, container := range containers {
+		containerId := container.GetId()
+		if err := backendCore.dockerManager.KillContainer(ctx, containerId); err != nil {
+			containerError :=  stacktrace.Propagate(
+				err,
+				"An error occurred killing container '%v' with ID '%v'",
+				container.GetName(),
+				containerId,
+			)
+			erroredContainers[container.GetId()] = containerError
+			continue
+		}
+		successfulContainers[containerId] = true
+	}
+
+	return successfulContainers, erroredContainers
+}
+
+func (backendCore *DockerKurtosisBackend) waitForContainerExits(
+	ctx context.Context,
+	containers []*types.Container,
+)(
+	successfulContainers map[string]bool,
+	erroredContainers map[string]error,
+){
+	// TODO Parallelize for perf
+	for _, container := range containers {
+		containerId := container.GetId()
+		if _, err := backendCore.dockerManager.WaitForExit(ctx, containerId); err != nil {
+			containerError := stacktrace.Propagate(
+				err,
+				"An error occurred waiting for container '%v' with ID '%v' to exit",
+				container.GetName(),
+				containerId,
+			)
+			erroredContainers[container.GetId()] = containerError
+			continue
+		}
+		successfulContainers[containerId] = true
+	}
+
+	return successfulContainers, erroredContainers
+}
+
+func (backendCore *DockerKurtosisBackend) removeContainers(
+	ctx context.Context,
+	containers []*types.Container,
+)(
+	map[string]bool,
+	map[string]error,
+){
+	successfulContainers := map[string]bool{}
+	erroredContainers := map[string]error{}
+	// TODO Parallelize for perf
+	for _, container := range containers {
+		containerId := container.GetId()
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			containerError := stacktrace.Propagate(
+				err,
+				"An error occurred removing container '%v' with ID '%v'",
+				container.GetName(),
+				containerId,
+			)
+			erroredContainers[container.GetId()] = containerError
+			continue
+		}
+		successfulContainers[containerId] = true
+	}
+
+	return successfulContainers, erroredContainers
+}
+
+
+func getPrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	if !found {
+		return  nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+	}
+
+	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		// TODO AFTER 2022-05-02 SWITCH THIS TO A PLAIN ERROR WHEN WE'RE SURE NOBODY WILL BE USING THE OLD PORT SPEC STRING!
+		oldPortSpecs, err := deserialize_pre_2022_03_02_PortSpecs(serializedPortSpecs)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v' even when trying the old method", serializedPortSpecs)
+		}
+		portSpecs = oldPortSpecs
+	}
+
+	return portSpecs, nil
 }

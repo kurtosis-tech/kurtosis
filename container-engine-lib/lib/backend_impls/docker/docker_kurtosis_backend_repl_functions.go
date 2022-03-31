@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,13 +28,14 @@ const (
 	EnclaveDataMountDirpathEnvVar = "ENCLAVE_DATA_DIR_MOUNTPOINT"
 
 	enclaveDataDirMountpointOnReplContainer = "/kurtosis-enclave-data"
+
+	shouldFetchStoppedContainersWhenGettingReplContainers = true
 )
 
 func (backendCore *DockerKurtosisBackend) CreateRepl(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	containerImageName string,
-	//serviceGuid service.ServiceGUID,
 	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 	stdoutFdInt int,
 	bindMounts map[string]string,
@@ -186,6 +191,58 @@ func getReplGUID() repl.ReplGUID {
 	replGuidStr :=  strconv.FormatInt(nowUnixSecs, guidBase)
 	replGuid := repl.ReplGUID(replGuidStr)
 	return replGuid
+}
+
+func (backendCore *DockerKurtosisBackend) getReplContainersByEnclaveIDAndReplGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replGuids map[repl.ReplGUID]bool,
+) (map[service.ServiceGUID]*types.Container, error) {
+
+
+	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
+	}
+
+	userServiceContainers := map[service.ServiceGUID]*types.Container{}
+	for _, container := range enclaveContainers {
+		if isUserServiceContainer(container) {
+			for userServiceGuid := range userServiceGuids {
+				if hasGuidLabel(container, string(userServiceGuid)){
+					userServiceContainers[userServiceGuid] = container
+				}
+			}
+		}
+	}
+	return userServiceContainers, nil
+}
+
+func (backendCore *DockerKurtosisBackend) getReplContainersByEnclaveIDAndReplGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replGuids map[repl.ReplGUID]bool,
+) (map[repl.ReplGUID]*types.Container, error) {
+
+	searchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.InteractiveREPLContainerTypeLabelValue.GetString(),
+	}
+	foundContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingReplContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers using labels '%+v'", searchLabels)
+	}
+
+	replContainers := map[repl.ReplGUID]*types.Container{}
+	for _, container := range foundContainers {
+		for userServiceGuid := range replGuids {
+			//TODO we could improve this doing only one container iteration? or is this ok this way because is not to expensive?
+			if hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGuid)){
+				replContainers[userServiceGuid] = container
+			}
+		}
+	}
+	return replContainers, nil
 }
 
 // TODO AttachToRepl

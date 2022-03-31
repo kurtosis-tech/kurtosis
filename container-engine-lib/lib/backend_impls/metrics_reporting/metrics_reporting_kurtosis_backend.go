@@ -26,6 +26,13 @@ func NewMetricsReportingKurtosisBackend(underlying backend_interface.KurtosisBac
 	return &MetricsReportingKurtosisBackend{underlying: underlying}
 }
 
+func (backend *MetricsReportingKurtosisBackend) PullImage(image string) error {
+	if err := backend.underlying.PullImage(image); err != nil {
+		return stacktrace.Propagate(err, "An error occurred pulling image '%v'", image)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, engineDataDirpathOnHostMachine string, envVars map[string]string) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, engineDataDirpathOnHostMachine, envVars)
 	if err != nil {
@@ -108,6 +115,17 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
 	return successes, failures, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) DumpEnclave(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	outputDirpath string,
+) error {
+	if err := backend.underlying.DumpEnclave(ctx, enclaveId, outputDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to path '%v'", enclaveId, outputDirpath)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
@@ -126,20 +144,20 @@ func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
-	grpcPortId string,
-	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
+	grpcPortNum uint16,
+	grpcProxyPortNum uint16,
 	enclaveDataDirpathOnHostMachine string,
 	envVars map[string]string,
 ) (*api_container.APIContainer, error) {
 	result, err := backend.underlying.CreateAPIContainer(
 		ctx,
 		image,
-		grpcPortId,
-		grpcPortSpec,
-		grpcProxyPortId,
-		grpcProxyPortSpec,
+		enclaveId,
+		ipAddr,
+		grpcPortNum,
+		grpcProxyPortNum,
 		enclaveDataDirpathOnHostMachine,
 		envVars,
 	)
@@ -154,7 +172,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	return result, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
 	results, err := backend.underlying.GetAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters: %+v", filters)
@@ -162,7 +180,7 @@ func (backend *MetricsReportingKurtosisBackend) GetAPIContainers(ctx context.Con
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping API containers using filters: %+v", filters)
@@ -170,7 +188,7 @@ func (backend *MetricsReportingKurtosisBackend) StopAPIContainers(ctx context.Co
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *enclave.EnclaveFilters) (successApiContainerIds map[string]bool, erroredApiContainerIds map[string]error, resultErr error) {
+func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
 	successes, failures, err := backend.underlying.DestroyAPIContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying API containers using filters: %+v", filters)
@@ -339,7 +357,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 			"An error occurred running user service exec command '%v' in user service GUID '%v'",
 			command,
 			serviceGUID,
-			)
+		)
 	}
 	return exitCode, output, nil
 }
@@ -408,8 +426,8 @@ func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
@@ -424,8 +442,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyUserServices(ctx, enclaveId, filters)
@@ -456,7 +474,7 @@ func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	map[networking_sidecar.NetworkingSidecarGUID]*networking_sidecar.NetworkingSidecar,
+	map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
 	error,
 ) {
 	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, enclaveId, filters)
@@ -466,20 +484,20 @@ func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
 	return networkingSidecars, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarsExecCommand(
+func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	networkingSidecarsCommands map[networking_sidecar.NetworkingSidecarGUID][]string,
+	networkingSidecarsCommands map[service.ServiceGUID][]string,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.RunNetworkingSidecarsExecCommand(ctx, enclaveId, networkingSidecarsCommands)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveId, networkingSidecarsCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with ID '%v'", networkingSidecarsCommands, enclaveId)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
@@ -487,15 +505,15 @@ func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.StopNetworkingSidecars(ctx, enclaveId, filters)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.StopNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
@@ -503,13 +521,13 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 	enclaveId enclave.EnclaveID,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 )(
-	successfulSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]bool,
-	erroredSidecarGuids map[networking_sidecar.NetworkingSidecarGUID]error,
-	resultErr error,
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
 ){
-	successfulSidecarGuids, erroredSidecarGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, enclaveId, filters)
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, enclaveId, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
 	}
-	return successfulSidecarGuids, erroredSidecarGuids, nil
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }

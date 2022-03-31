@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -22,6 +25,8 @@ import (
 const(
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
+
+	shouldFetchStoppedContainersWhenGettingUserServiceContainers = true
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -286,7 +291,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	privateIpAddr, found := userServiceContainer.GetNetworksIPAddresses()[enclaveNetwork.GetId()]
+	privateIpAddr, found := userServiceContainer.GetNetworkIPAddresses()[enclaveNetwork.GetId()]
 	if !found {
 		return stacktrace.Propagate(err, "User service container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", userServiceContainer.GetId(), enclaveNetwork.GetId())
 	}
@@ -409,8 +414,16 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	}
 
 	for userServiceGuid, userServiceContainer := range userServiceContainers {
-		if err := backendCore.removeContainer(ctx, userServiceContainer); err != nil {
-			erroredUserServiceGuids[userServiceGuid] = err
+		containersToRemove := []*types.Container{userServiceContainer}
+		if _, erroredContainers := backendCore.removeContainers(ctx, containersToRemove); len(erroredContainers) > 0 {
+			containerError, found := erroredContainers[userServiceContainer.GetId()]
+			var wrappedErr error
+			if !found {
+				wrappedErr = stacktrace.NewError("Expected to find an error for container with ID '%v' in error list '%+v' but it was not found; it should never happens, it's a bug in Kurtosis", userServiceContainer.GetId(), erroredContainers)
+			} else {
+				wrappedErr = stacktrace.Propagate(containerError, "An error occurred removing user service container with GUID '%v' and container ID '%v'", userServiceGuid, userServiceContainer.GetId())
+			}
+			erroredUserServiceGuids[userServiceGuid] = wrappedErr
 			continue
 		}
 		successfulUserServiceGuids[userServiceGuid] = true
@@ -445,4 +458,102 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
 	}
 	return resp, nil
+}
+
+func (backendCore *DockerKurtosisBackend) getUserServiceContainerByEnclaveIDAndUserServiceGUID(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuid service.ServiceGUID,
+)(
+	*types.Container,
+	error,
+) {
+	userServiceGuids := map[service.ServiceGUID]bool{
+		userServiceGuid: true,
+	}
+
+	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, userServiceGuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, userServiceGuid)
+	}
+	numOfUserServiceContainers := len(userServiceContainers)
+	if numOfUserServiceContainers == 0 {
+		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", userServiceGuid, enclaveId)
+	}
+	if numOfUserServiceContainers > 1 {
+		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServiceContainers)
+	}
+
+	userServiceContainer := userServiceContainers[userServiceGuid]
+
+	return userServiceContainer, nil
+}
+
+func (backendCore *DockerKurtosisBackend) getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	userServiceGuids map[service.ServiceGUID]bool,
+) (map[service.ServiceGUID]*types.Container, error) {
+
+
+	searchLabels := map[string]string{
+		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
+	}
+	foundContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingUserServiceContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting containers using labels '%+v'", searchLabels)
+	}
+
+	userServiceContainers := map[service.ServiceGUID]*types.Container{}
+	for _, container := range foundContainers {
+		for userServiceGuid := range userServiceGuids {
+			//TODO we could improve this doing only one container iteration? or is this ok this way because is not to expensive?
+			if hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGuid)){
+				userServiceContainers[userServiceGuid] = container
+			}
+		}
+	}
+	return userServiceContainers, nil
+}
+
+func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
+	containers []*types.Container,
+	enclaveId enclave.EnclaveID,
+	userServiceGUID service.ServiceGUID) (*types.Container, error) {
+
+	for _, container := range containers {
+		if isUserServiceContainer(container) && hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGUID)) {
+			return container, nil
+		}
+	}
+	return nil, stacktrace.NewError("No user service container with user service GUID '%v' was found in container list '%+v'", userServiceGUID, containers)
+}
+
+func getServiceIdFromContainer(container *types.Container) (service.ServiceID, error) {
+	if !isUserServiceContainer(container) {
+		return "", stacktrace.NewError("Can not possible to get service ID from container with ID '%v' because it's not a user service container", container.GetId())
+	}
+	labels := container.GetLabels()
+	serviceIdLabelValue, found := labels[label_key_consts.IDLabelKey.GetString()]
+	if !found {
+		return "",  stacktrace.NewError("Expected to find container's label with key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+	}
+	serviceId := service.ServiceID(serviceIdLabelValue)
+
+	return serviceId, nil
+}
+
+func isUserServiceContainer(container *types.Container) bool {
+	labels := container.GetLabels()
+	containerTypeValue, found := labels[label_key_consts.ContainerTypeLabelKey.GetString()]
+	if !found {
+		//TODO Do all containers should have container type label key??? we should return and error here if this answer is yes??
+		logrus.Debugf("Container with ID '%v' does not have label '%v'", container.GetId(), label_key_consts.ContainerTypeLabelKey.GetString())
+		return false
+	}
+	if containerTypeValue == label_value_consts.UserServiceContainerTypeLabelValue.GetString() {
+		return true
+	}
+	return false
 }
