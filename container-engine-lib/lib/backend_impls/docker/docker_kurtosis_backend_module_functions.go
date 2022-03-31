@@ -59,6 +59,8 @@ func (backendCore *DockerKurtosisBackend) CreateModule(
 
 
 	// Get the Docker network ID where we'll start the new API container
+	// TODO REPLACE THIS WITH A CALL TO getMatchingEnclaveNetworks SO THAT WE CENTRALIZE THE DOCKER
+	//  NETWORK RETRIEVAL IN A SINGLE PLACE
 	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, map[string]string{
 		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
 	})
