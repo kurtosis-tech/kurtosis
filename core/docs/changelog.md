@@ -38,6 +38,7 @@
 * Replaced  parameter `DockerManager` with `KurtosisBackend` in `standardSidecarExecCmdExecutor`
 * Upgraded to container-engine-lib xxxx, which brings the new `DockerKurtosisBackend` implementation to replace the `DockerManager` //TODO UPDATE VERSION HERE
 * Updated api_container_launcher to use kurtosis_backend for launching API container instances
+* Update user_service_launcher to use kurtosis_backend for launching services
 
 # 1.41.2
 ### Changes

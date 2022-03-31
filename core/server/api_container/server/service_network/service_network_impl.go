@@ -9,9 +9,9 @@ import (
 	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -48,9 +48,9 @@ type serviceRunInfo struct {
 
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
-	privatePorts      map[string]*enclave_container_launcher.EnclaveContainerPort
-	maybePublicIpAddr net.IP                                                      // Can be nil if the service doesn't declare any private ports
-	publicPorts       map[string]*enclave_container_launcher.EnclaveContainerPort // Will be empty if the service doesn't declare any private ports
+	privatePorts      map[string]*port_spec.PortSpec
+	maybePublicIpAddr net.IP                         // Can be nil if the service doesn't declare any private ports
+	publicPorts       map[string]*port_spec.PortSpec // Will be empty if the service doesn't declare any private ports
 }
 
 /*
@@ -245,7 +245,7 @@ func (network *ServiceNetworkImpl) StartService(
 	ctx context.Context,
 	serviceId service.ServiceID,
 	imageName string,
-	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
@@ -253,7 +253,7 @@ func (network *ServiceNetworkImpl) StartService(
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
-	resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	resultPublicPorts map[string]*port_spec.PortSpec,
 	resultErr error,
 ) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
@@ -271,7 +271,6 @@ func (network *ServiceNetworkImpl) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
 	}
 	serviceGuid := registrationInfo.serviceGUID
-	serviceIpAddr := registrationInfo.privateIpAddr
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -301,14 +300,16 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 	}
 
-	serviceContainerId, maybeServicePublicIpAddr, servicePublicPorts, err := network.userServiceLauncher.Launch(
+	privatePortSpecs := []*port_spec.PortSpec{}
+	for _, privatePort := range privatePorts {
+		privatePortSpecs = append(privatePortSpecs, privatePort)
+	}
+	userService, err := network.userServiceLauncher.Launch(
 		ctx,
-		serviceGuid,
-		string(serviceId),
-		serviceIpAddr,
+		service.ServiceGUID(serviceGuid),
+		service.ServiceID(serviceId),
 		imageName,
-		network.dockerNetworkId,
-		privatePorts,
+		privatePortSpecs,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,
@@ -319,8 +320,13 @@ func (network *ServiceNetworkImpl) StartService(
 			err,
 			"An error occurred creating the user service")
 	}
+
+	serviceContainerIdString := string(userService.GetID())
+	maybeServicePublicIpAddr := userService.GetMaybePublicIpAddr()
+	servicePublicPorts := userService.GetPublicPorts()
+
 	runInfo := serviceRunInfo{
-		containerId:              serviceContainerId,
+		containerId:              serviceContainerIdString,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
@@ -433,10 +439,11 @@ func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.
 	return registrationInfo.privateIpAddr, registrationInfo.serviceDirectory.GetDirpathRelativeToDataDirRoot(), nil
 }
 
+
 func (network *ServiceNetworkImpl) GetServiceRunInfo(serviceId service.ServiceID) (
-	privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	privatePorts map[string]*port_spec.PortSpec,
 	publicIpAddr net.IP,
-	publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+	publicPorts map[string]*port_spec.PortSpec,
 	enclaveDataDirMntDirpath string,
 	resultErr error,
 ) {

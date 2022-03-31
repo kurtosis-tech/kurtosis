@@ -7,8 +7,8 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"net"
@@ -49,7 +49,7 @@ type ServiceNetwork interface {
 		ctx context.Context,
 		serviceId service.ServiceID,
 		imageName string,
-		privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
@@ -57,7 +57,7 @@ type ServiceNetwork interface {
 		filesArtifactMountDirpaths map[string]string,
 	) (
 		resultPublicIpAddr net.IP,
-		resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		resultPublicPorts map[string]*port_spec.PortSpec,
 		resultErr error,
 	)
 
@@ -80,9 +80,9 @@ type ServiceNetwork interface {
 	)
 
 	GetServiceRunInfo(serviceId service.ServiceID) (
-		privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort,
+		privatePorts map[string]*port_spec.PortSpec,
 		maybePublicIpAddr net.IP, // Will be nil if the service didn't declare any private ports
-		publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort, // Will be empty if the service didn't declare any private ports
+		publicPorts map[string]*port_spec.PortSpec, // Will be empty if the service didn't declare any private ports
 		enclaveDataDirMntDirpath string, // The filepath on the service container where the enclave data dir is mounted
 		resultErr error,
 	)

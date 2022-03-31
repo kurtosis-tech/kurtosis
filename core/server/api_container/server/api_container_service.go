@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
@@ -40,11 +41,11 @@ const (
 	missingPublicIpAddrStr = ""
 )
 
-// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and enclave container port protos
-var apiContainerPortProtoToEnclaveContainerPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]enclave_container_launcher.EnclaveContainerPortProtocol{
-	kurtosis_core_rpc_api_bindings.Port_TCP:  enclave_container_launcher.EnclaveContainerPortProtocol_TCP,
-	kurtosis_core_rpc_api_bindings.Port_SCTP: enclave_container_launcher.EnclaveContainerPortProtocol_SCTP,
-	kurtosis_core_rpc_api_bindings.Port_UDP:  enclave_container_launcher.EnclaveContainerPortProtocol_UDP,
+// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
+var apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_Protocol]port_spec.PortProtocol{
+	kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.PortProtocol_TCP,
+	kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.PortProtocol_SCTP,
+	kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.PortProtocol_UDP,
 }
 
 type ApiContainerService struct {
@@ -415,6 +416,13 @@ func (service ApiContainerService) WaitForHttpPostEndpointAvailability(ctx conte
 		)
 	}
 
+	return &emptypb.Empty{}, nil
+}
+
+func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
+	if err := service.bulkCmdExecEngine.Process(ctx, []byte(args.SerializedCommands)); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred executing the bulk commands")
+	}
 	return &emptypb.Empty{}, nil
 }
 
