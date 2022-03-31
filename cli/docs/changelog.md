@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Switched `enclave dump` to use `KurtosisBackend`
 
 # 0.11.9
 ### Features
