@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -12,20 +13,166 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"net"
+	"time"
+)
+
+const (
+	// The module container uses gRPC so MUST listen on TCP (no other protocols are supported)
+	moduleContainerPortProtocol          = port_spec.PortProtocol_TCP
+
+	maxWaitForModuleContainerAvailabilityRetries         = 10
+	timeBetweenWaitForModuleContainerAvailabilityRetries = 1 * time.Second
 )
 
 func (backendCore *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
+	image string,
+	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
 	guid module.ModuleGUID,
-	containerImageName string,
-	serializedParams string,
+	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	grpcPortNum uint16,
+	enclaveDataDirpathOnHostMachine string,
+	envVars map[string]string,
 )(
 	newModule *module.Module,
 	resultErr error,
 ) {
-	panic("Implement me")
+	// Verify no module container with the given GUID already exists in the enclave
+	preexistingModuleFilters := &module.ModuleFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: map[module.ModuleGUID]bool{
+			guid: true,
+		},
+	}
+	preexistingModules, err := backendCore.GetModules(ctx, preexistingModuleFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules in enclave '%v' with GUID '%v'", enclaveId, guid)
+	}
+	if len(preexistingModules) > 0 {
+		return nil, stacktrace.NewError("Found existing module container(s) in enclave '%v' with GUID '%v'; cannot start a new one", enclaveId, guid)
+	}
+
+
+	// Get the Docker network ID where we'll start the new API container
+	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, map[string]string{
+		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+	})
+	numMatchingNetworks := len(matchingNetworks)
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
+	}
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError("Found '%v' enclave networks with ID '%v', which shouldn't happen", numMatchingNetworks, enclaveId)
+	}
+	enclaveNetwork := matchingNetworks[0]
+
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the module container's private grpc port spec object using number '%v' and protocol '%v'",
+			grpcPortNum,
+			enginePortProtocol.String(),
+		)
+	}
+
+	enclaveObjAttrProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
+	}
+
+	moduleContainerAttrs, err := enclaveObjAttrProvider.ForModuleContainer(
+		ipAddr,
+		string(id),
+		string(guid),
+		kurtosisInternalContainerGrpcPortId,
+		privateGrpcPortSpec,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the object attributes for the module container")
+	}
+
+	privateGrpcDockerPort, err := transformPortSpecToDockerPort(privateGrpcPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
+	}
+	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
+		privateGrpcDockerPort:      docker_manager.NewAutomaticPublishingSpec(),
+	}
+
+	bindMounts := map[string]string{
+		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
+	}
+
+	labelStrs := map[string]string{}
+	for labelKey, labelValue := range moduleContainerAttrs.GetLabels() {
+		labelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	// Best-effort pull attempt
+	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
+		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
+	}
+
+	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
+		image,
+		moduleContainerAttrs.GetName().GetString(),
+		enclaveNetwork.GetId(),
+	).WithEnvironmentVariables(
+		envVars,
+	).WithBindMounts(
+		bindMounts,
+	).WithUsedPorts(
+		usedPorts,
+	).WithLabels(
+		labelStrs,
+	).Build()
+
+	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred starting the module container")
+	}
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			// NOTE: We use the background context here so that the kill will still go off even if the reason for
+			// the failure was the original context being cancelled
+			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+				logrus.Errorf(
+					"Launching module container '%v' with container ID '%v' didn't complete successfully so we " +
+						"tried to kill the container we started, but doing so exited with an error:\n%v",
+					moduleContainerAttrs.GetName(),
+					containerId,
+					err,
+				)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop module container with ID '%v'!!!!!!", containerId)
+			}
+		}
+	}()
+
+	if err := waitForPortAvailabilityUsingNetstat(
+		ctx,
+		backendCore.dockerManager,
+		containerId,
+		privateGrpcPortSpec,
+		maxWaitForModuleContainerAvailabilityRetries,
+		timeBetweenWaitForModuleContainerAvailabilityRetries,
+	); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for the module container's grpc port to become available")
+	}
+
+	result, err := getModuleObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a module container object from container with ID '%v'", containerId)
+	}
+
+	shouldKillContainer = false
+	return result, nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetModules(
@@ -156,13 +303,20 @@ func getModuleObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected to find module GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
 	}
 
+	var privateIpAddr net.IP
 	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
-	}
-	privateIpAddr := net.ParseIP(privateIpAddrStr)
-	if privateIpAddr == nil {
-		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS MODULES WITHOUT THE PRIVATE IP ADDRESS LABEL
+	/*
+		if !found {
+			return nil, stacktrace.NewError("Expected to find module private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
+		}
+	*/
+	if found {
+		candidatePrivateIpAddr := net.ParseIP(privateIpAddrStr)
+		if candidatePrivateIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+		}
+		privateIpAddr = candidatePrivateIpAddr
 	}
 
 	privateGrpcPortSpec, err := getPrivateModulePorts(labels)

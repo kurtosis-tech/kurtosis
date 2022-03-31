@@ -133,6 +133,11 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	// Best-effort pull attempt
+	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
@@ -146,11 +151,6 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	).WithLabels(
 		labelStrs,
 	).Build()
-
-	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
-	}
 
 	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {

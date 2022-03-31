@@ -41,7 +41,13 @@ type DockerEnclaveObjectAttributesProvider interface {
 	// ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
-	ForModuleContainer(moduleID string, moduleGUID string, privateIpAddr net.IP, privatePortNum uint16) (DockerObjectAttributes, error)
+	ForModuleContainer(
+		privateIpAddr net.IP,
+		moduleID string,
+		moduleGUID string,
+		privatePortId string,
+		privatePortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
