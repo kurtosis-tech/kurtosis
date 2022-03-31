@@ -115,6 +115,17 @@ func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
 	return successes, failures, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) DumpEnclave(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	outputDirpath string,
+) error {
+	if err := backend.underlying.DumpEnclave(ctx, enclaveId, outputDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred dumping enclave '%v' to path '%v'", enclaveId, outputDirpath)
+	}
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,

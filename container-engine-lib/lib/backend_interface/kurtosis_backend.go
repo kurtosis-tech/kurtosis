@@ -90,6 +90,13 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Dumps the contents of the given enclave to the given directory
+	DumpEnclave(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		outputDirpath string,
+	) error
+
 	// Destroys enclaves matching the given filters
 	DestroyEnclaves(
 		ctx context.Context,

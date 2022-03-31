@@ -342,6 +342,14 @@ func (manager *DockerManager) RemoveVolume(ctx context.Context, volumeName strin
 	return nil
 }
 
+func (manager *DockerManager) InspectContainer(ctx context.Context, containerId string) (types.ContainerJSON, error) {
+	result, err := manager.dockerClient.ContainerInspect(ctx, containerId)
+	if err != nil {
+		return types.ContainerJSON{}, stacktrace.Propagate(err, "An error occurred inspecting container '%v'", containerId)
+	}
+	return result, nil
+}
+
 /*
 CreateAndStartContainer
 Creates a Docker container with the given args and starts it.
