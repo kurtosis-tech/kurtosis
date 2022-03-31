@@ -49,7 +49,7 @@ func (launcher UserServiceLauncher) Launch(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirMountDirpath string,
-// Mapping files artifact ID -> mountpoint on the container to launch
+	// Mapping files artifact ID -> mountpoint on the container to launch
 	filesArtifactIdsToMountpoints map[string]string,
 ) (
 	resultUserService *service.Service,
