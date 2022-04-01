@@ -538,33 +538,6 @@ func (backendCore *DockerKurtosisBackend) waitForContainerExits(
 	return successfulContainers, erroredContainers
 }
 
-func (backendCore *DockerKurtosisBackend) removeContainers(
-	ctx context.Context,
-	containerIds []string,
-)(
-	map[string]bool,
-	map[string]error,
-){
-	successfulContainers := map[string]bool{}
-	erroredContainers := map[string]error{}
-	// TODO Parallelize for perf
-	for _, containerId := range containerIds {
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
-			containerError := stacktrace.Propagate(
-				err,
-				"An error occurred removing container with ID '%v'",
-				containerId,
-			)
-			erroredContainers[containerId] = containerError
-			continue
-		}
-		successfulContainers[containerId] = true
-	}
-
-	return successfulContainers, erroredContainers
-}
-
-
 func getPrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
 	if !found {

@@ -289,7 +289,6 @@ type KurtosisBackend interface {
 	// Gets networking sidecars using the given filters, returning a map of matched networking sidecars identified by their GUID
 	GetNetworkingSidecars(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
@@ -310,7 +309,6 @@ type KurtosisBackend interface {
 	// Stop networking sidecars using the given filters,
 	StopNetworkingSidecars(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		successfulUserServiceGuids map[service.ServiceGUID]bool,
@@ -321,7 +319,6 @@ type KurtosisBackend interface {
 	// Destroy networking sidecars using the given filters,
 	DestroyNetworkingSidecars(
 		ctx context.Context,
-		enclaveId enclave.EnclaveID,
 		filters *networking_sidecar.NetworkingSidecarFilters,
 	)(
 		successfulUserServiceGuids map[service.ServiceGUID]bool,

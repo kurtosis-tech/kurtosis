@@ -347,15 +347,12 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	}
 
 	for containerId, userService := range userServices {
-		containersToRemove := []string{containerId}
-		if _, erroredContainers := backendCore.removeContainers(ctx, containersToRemove); len(erroredContainers) > 0 {
-			containerError, found := erroredContainers[containerId]
-			var wrappedErr error
-			if !found {
-				wrappedErr = stacktrace.NewError("Expected to find an error for container with ID '%v' in error list '%+v' but it was not found; it should never happens, it's a bug in Kurtosis", containerId, erroredContainers)
-			} else {
-				wrappedErr = stacktrace.Propagate(containerError, "An error occurred removing user service container with GUID '%v' and container ID '%v'", userService.GetGUID(), containerId)
-			}
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing container with ID '%v'",
+				containerId,
+			)
 			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
 			continue
 		}
@@ -534,7 +531,7 @@ func getUserServiceObjectFromContainerInfo(
 	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
-		return nil, stacktrace.NewError("No is-running designation found for module container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+		return nil, stacktrace.NewError("No is-running designation found for user service container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
 	var status container_status.ContainerStatus
 	if isContainerRunning {
