@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
@@ -325,16 +326,66 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// TODO CreateRepl
+	//Create a repl inside enclave
+	CreateRepl(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		containerImageName string,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+		stdoutFdInt int,
+		bindMounts map[string]string,
+	)(
+		*repl.Repl,
+		error,
+	)
 
-	// TODO AttachToRepl
+	//Attach repl
+	Attach(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		replGuid repl.ReplGUID,
+	)(
+		*shell.Shell,
+		error,
+	)
 
-	// TODO GetRepls
+	//Gets repls using the given filters, returning a map of repls identified by their GUID
+	GetRepls(
+		ctx context.Context,
+		filters *repl.ReplFilters,
+	)(
+		map[repl.ReplGUID]*repl.Repl,
+		error,
+	)
 
-	// TODO StopRepl
+	//Executes many shell commands inside multiple repl instances indenfified by repl GUIDs
+	RunReplExecCommands(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		replCommands map[repl.ReplGUID][]string,
+	)(
+		successfulReplGuids map[repl.ReplGUID]bool,
+		erroredReplGuids map[repl.ReplGUID]error,
+		resultErr error,
+	)
 
-	// TODO DestroyRepl
+	// Stop repls using the given filters,
+	StopRepls(
+		ctx context.Context,
+		filters *repl.ReplFilters,
+	)(
+		successfulReplGuids map[repl.ReplGUID]bool,
+		erroredReplGuids map[repl.ReplGUID]error,
+		resultErr error,
+	)
 
-	// TODO RunReplExecCommand
-
+	// Destroy repls using the given filters
+	DestroyRepls(
+		ctx context.Context,
+		filters *repl.ReplFilters,
+	)(
+		successfulReplGuids map[repl.ReplGUID]bool,
+		erroredReplGuids map[repl.ReplGUID]error,
+		resultErr error,
+	)
 }

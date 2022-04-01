@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
@@ -521,4 +522,104 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateRepl(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	containerImageName string,
+	ipAddr net.IP,
+	stdoutFdInt int,
+	bindMounts map[string]string,
+)(
+	*repl.Repl,
+	error,
+){
+	replObject, err := backend.underlying.CreateRepl(ctx, enclaveId, containerImageName, ipAddr, stdoutFdInt, bindMounts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating repl in enclave with ID '%v' from image name '%v' with private ip '%v' and std-out-file-descriptor-integer '%v' and bind mounts '%+v'", enclaveId, containerImageName, ipAddr, stdoutFdInt, bindMounts)
+	}
+
+	return replObject, nil
+}
+
+
+func (backend *MetricsReportingKurtosisBackend) Attach(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replGuid repl.ReplGUID,
+)(
+	*shell.Shell,
+	error,
+){
+	shellObject, err := backend.underlying.Attach(ctx, enclaveId, replGuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred attaching repl with GUID '%v' in enclave with ID '%v'", replGuid, enclaveId)
+	}
+
+	return shellObject, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetRepls(
+	ctx context.Context,
+	filters *repl.ReplFilters,
+)(
+	map[repl.ReplGUID]*repl.Repl,
+	error,
+){
+	succesfulReplGuids, err := backend.underlying.GetRepls(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting repls using filters '%+v'", filters)
+	}
+
+	return succesfulReplGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) RunReplExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replCommands map[repl.ReplGUID][]string,
+)(
+	successfulReplGuids map[repl.ReplGUID]bool,
+	erroredReplGuids map[repl.ReplGUID]error,
+	resultErr error,
+){
+	successfulReplGuids, erroredReplGuids, err := backend.underlying.RunReplExecCommands(ctx, enclaveId, replCommands)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred running repl exec commands '%+v' in enclave with ID '%v'", replCommands, enclaveId)
+	}
+
+	return successfulReplGuids, erroredReplGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopRepls(
+	ctx context.Context,
+	filters *repl.ReplFilters,
+)(
+	successfulReplGuids map[repl.ReplGUID]bool,
+	erroredReplGuids map[repl.ReplGUID]error,
+	resultErr error,
+){
+	successfulReplGuids, erroredReplGuids, err :=backend.underlying.StopRepls(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping repls using filters '%+v'", filters)
+	}
+
+	return successfulReplGuids, erroredReplGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyRepls(
+	ctx context.Context,
+	filters *repl.ReplFilters,
+)(
+	successfulReplGuids map[repl.ReplGUID]bool,
+	erroredReplGuids map[repl.ReplGUID]error,
+	resultErr error,
+){
+	successfulReplGuids, erroredReplGuids, err :=backend.underlying.DestroyRepls(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying repls using filters '%+v'", filters)
+	}
+
+	return successfulReplGuids, erroredReplGuids, nil
 }

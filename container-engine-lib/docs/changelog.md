@@ -6,10 +6,7 @@
 * Added `NetworkingSidecarContainerTypeLabelValue` label value constant
 * Added `UserServiceContainerTypeLabelValue` and `NetworkingSidecarContainerTypeLabelValue` label key constants
 * Added generic `Shell` object to interact with user services
-
-### Breaking Changes
-* Added `networkIPAdrresses` in `Container` struct to store the different container's ip addresses established on its Docker networks
-  * Users should add this new field on every `NewContainer` call
+* Implemented the methods: `CreateRepl`, `Attach`, `GetRepls`, `RunReplExecCommands`, `StopRepls` and `DestroyRepls` methods in `DockerKurtosisBackend`
 
 # 0.10.2
 ### Features

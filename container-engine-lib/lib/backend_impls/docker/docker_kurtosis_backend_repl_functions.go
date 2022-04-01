@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -192,11 +193,141 @@ func (backendCore *DockerKurtosisBackend) GetRepls(
 	}
 
 	successfulRepls := map[repl.ReplGUID]*repl.Repl{}
-	for _, repl := range repls {
-		successfulRepls[repl.GetGUID()] = repl
+	for _, replObject := range repls {
+		successfulRepls[replObject.GetGUID()] = replObject
 	}
 
 	return successfulRepls, nil
+}
+
+func (backendCore *DockerKurtosisBackend) RunReplExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	replCommands map[repl.ReplGUID][]string,
+)(
+	map[repl.ReplGUID]bool,
+	map[repl.ReplGUID]error,
+	error,
+){
+	successfulReplGuids := map[repl.ReplGUID]bool{}
+	erroredReplGuids := map[repl.ReplGUID]error{}
+
+	replGuids := map[repl.ReplGUID]bool{}
+	for replGuid := range replCommands {
+		replGuids[replGuid] = true
+	}
+
+	filters := &repl.ReplFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: replGuids,
+	}
+
+	repls, err := backendCore.getMatchingRepls(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting repls matching filters '%+v'", filters)
+	}
+
+	//TODO Parallelize to increase perf
+	for containerId, replObject := range repls {
+		replUnwrappedCommand := replCommands[replObject.GetGUID()]
+
+		replShWrappedCmd := wrapShCommand(replUnwrappedCommand)
+
+		execOutputBuf := &bytes.Buffer{}
+		exitCode, err := backendCore.dockerManager.RunExecCommand(
+			ctx,
+			containerId,
+			replShWrappedCmd,
+			execOutputBuf)
+		if err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred executing command '%+v' on repl with GUID '%v' and container ID '%v'",
+				replShWrappedCmd,
+				replObject.GetGUID(),
+				containerId,
+			)
+			erroredReplGuids[replObject.GetGUID()] = wrappedErr
+			continue
+		}
+		if exitCode != succesfulExecCmdExitCode {
+			exitCodeErr := stacktrace.NewError(
+				"Expected exit code '%v' when running exec command '%+v' on repl with GUID '%v', but got exit code '%v' instead with the following output:\n%v",
+				succesfulExecCmdExitCode,
+				replShWrappedCmd,
+				replObject.GetGUID(),
+				exitCode,
+				execOutputBuf.String(),
+			)
+			erroredReplGuids[replObject.GetGUID()] = exitCodeErr
+			continue
+		}
+		successfulReplGuids[replObject.GetGUID()] = true
+	}
+
+	return successfulReplGuids, erroredReplGuids, nil
+}
+
+func (backendCore *DockerKurtosisBackend) StopRepls(
+	ctx context.Context,
+	filters *repl.ReplFilters,
+) (
+	map[repl.ReplGUID]bool,
+	map[repl.ReplGUID]error,
+	error,
+) {
+
+	successfulReplGuids := map[repl.ReplGUID]bool{}
+	erroredReplGuids := map[repl.ReplGUID]error{}
+
+	repls, err := backendCore.getMatchingRepls(ctx, filters)
+	if err != nil {
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting repls matching filters '%+v'", filters)
+	}
+
+	for containerId, replObject := range repls {
+		if err := backendCore.killContainerAndWaitForExit(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred killing repl container with  GUID '%v' and container ID '%v'", replObject.GetGUID(), containerId)
+			erroredReplGuids[replObject.GetGUID()] = wrappedErr
+			continue
+		}
+		successfulReplGuids[replObject.GetGUID()] = true
+	}
+
+	return successfulReplGuids, erroredReplGuids, nil
+}
+
+func (backendCore *DockerKurtosisBackend) DestroyRepls(
+	ctx context.Context,
+	filters *repl.ReplFilters,
+) (
+	map[repl.ReplGUID]bool,
+	map[repl.ReplGUID]error,
+	error,
+) {
+	successfulReplGuids := map[repl.ReplGUID]bool{}
+	erroredReplGuids := map[repl.ReplGUID]error{}
+
+	repls, err := backendCore.getMatchingRepls(ctx, filters)
+	if err != nil {
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting repls matching filters '%+v'", filters)
+	}
+
+	for containerId, replObject := range repls {
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing container with ID '%v'",
+				containerId,
+			)
+			erroredReplGuids[replObject.GetGUID()] = wrappedErr
+			continue
+		}
+		successfulReplGuids[replObject.GetGUID()] = true
+	}
+	return successfulReplGuids, erroredReplGuids, nil
 }
 
 // ====================================================================================================
@@ -296,12 +427,7 @@ func getReplObjectFromContainerInfo(
 	return newObject, nil
 }
 
-// TODO AttachToRepl
-
-// TODO GetRepls
 
 // TODO StopRepl
 
 // TODO DestroyRepl
-
-// TODO RunReplExecCommand

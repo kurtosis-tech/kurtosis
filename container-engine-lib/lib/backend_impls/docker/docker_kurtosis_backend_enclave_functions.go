@@ -221,7 +221,7 @@ func (backendCore *DockerKurtosisBackend) StopEnclaves(
 	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
-func (backend *DockerKurtosisBackend) DumpEnclave(
+func (backendCore *DockerKurtosisBackend) DumpEnclave(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	outputDirpath string,
@@ -231,7 +231,7 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
-	enclaveContainers, err := backend.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldFetchStoppedContainersWhenDumpingEnclave)
+	enclaveContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldFetchStoppedContainersWhenDumpingEnclave)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -270,7 +270,7 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 		*/
 		jobToSubmit := createDumpContainerJob(
 			ctx,
-			backend.dockerManager,
+			backendCore.dockerManager,
 			outputDirpath,
 			resultErrsChan,
 			containerName,
