@@ -217,14 +217,13 @@ type KurtosisBackend interface {
 	)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommand (
+	RunUserServiceExecCommands (
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
-		serviceGUID service.ServiceGUID,
-		command []string,
+		userServiceCommands map[service.ServiceGUID][]string,
 	)(
-		exitCode int32,
-		output string,
+		succesfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
