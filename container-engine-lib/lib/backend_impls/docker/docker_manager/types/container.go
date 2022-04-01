@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/docker/go-connections/nat"
-	"net"
 )
 
 type Container struct {
@@ -11,7 +10,6 @@ type Container struct {
 	labels           map[string]string
 	status           ContainerStatus
 	hostPortBindings   map[nat.Port]*nat.PortBinding
-	networkIPAddresses map[string]net.IP
 }
 
 func NewContainer(
@@ -20,7 +18,6 @@ func NewContainer(
 	labels map[string]string,
 	status ContainerStatus,
 	hostPortBindings map[nat.Port]*nat.PortBinding,
-	networkIPAddresses map[string]net.IP,
 ) *Container {
 	return &Container{
 		id:                 id,
@@ -28,7 +25,6 @@ func NewContainer(
 		labels:             labels,
 		status:             status,
 		hostPortBindings:   hostPortBindings,
-		networkIPAddresses: networkIPAddresses,
 	}
 }
 
@@ -50,8 +46,4 @@ func (c *Container) GetStatus() ContainerStatus {
 
 func (c Container) GetHostPortBindings() map[nat.Port]*nat.PortBinding {
 	return c.hostPortBindings
-}
-
-func (c *Container) GetNetworkIPAddresses() map[string]net.IP {
-	return c.networkIPAddresses
 }

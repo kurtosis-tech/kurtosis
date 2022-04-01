@@ -464,23 +464,20 @@ func hasGuidLabel(container *types.Container, guid string) bool {
 
 func (backendCore *DockerKurtosisBackend) killContainerAndWaitForExit(
 	ctx context.Context,
-	container *types.Container,
+	containerId string,
 ) error {
-	containerId := container.GetId()
-	containerName := container.GetName()
+
 	if err := backendCore.dockerManager.KillContainer(ctx, containerId); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred killing container '%v' with ID '%v'",
-			containerName,
+			"An error occurred killing container with ID '%v'",
 			containerId,
 		)
 	}
 	if _, err := backendCore.dockerManager.WaitForExit(ctx, containerId); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred waiting for container '%v' with ID '%v' to exit after killing it",
-			container.GetName(),
+			"An error occurred waiting for container with ID '%v' to exit after killing it",
 			containerId,
 		)
 	}
@@ -543,7 +540,7 @@ func (backendCore *DockerKurtosisBackend) waitForContainerExits(
 
 func (backendCore *DockerKurtosisBackend) removeContainers(
 	ctx context.Context,
-	containers []*types.Container,
+	containerIds []string,
 )(
 	map[string]bool,
 	map[string]error,
@@ -551,16 +548,14 @@ func (backendCore *DockerKurtosisBackend) removeContainers(
 	successfulContainers := map[string]bool{}
 	erroredContainers := map[string]error{}
 	// TODO Parallelize for perf
-	for _, container := range containers {
-		containerId := container.GetId()
+	for _, containerId := range containerIds {
 		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			containerError := stacktrace.Propagate(
 				err,
-				"An error occurred removing container '%v' with ID '%v'",
-				container.GetName(),
+				"An error occurred removing container with ID '%v'",
 				containerId,
 			)
-			erroredContainers[container.GetId()] = containerError
+			erroredContainers[containerId] = containerError
 			continue
 		}
 		successfulContainers[containerId] = true

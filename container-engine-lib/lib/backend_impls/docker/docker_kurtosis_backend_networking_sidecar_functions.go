@@ -63,7 +63,7 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForNetworkingSidecarContainer(serviceGuid)
+	containerAttrs, err := enclaveObjAttrsProvider.ForNetworkingSidecarContainer(serviceGuid, ipAddr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the networking sidecar container attributes for user service with GUID '%v'", serviceGuid)
 	}
@@ -129,10 +129,11 @@ func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
 
 	networkingSidecars := map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar{}
 	for userServiceGuid, networkingSidecarContainer := range networkingSidecarContainers {
-		privateIpAddr, found := networkingSidecarContainer.GetNetworkIPAddresses()[enclaveNetwork.GetId()]
+		//TODO remove this part, use the private ip label to get the IP address
+		/*privateIpAddr, found := networkingSidecarContainer.GetNetworkIPAddresses()[enclaveNetwork.GetId()]
 		if !found {
 			return nil, stacktrace.Propagate(err, "Networking sidecar container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", networkingSidecarContainer.GetId(), enclaveNetwork.GetId())
-		}
+		}*/
 
 		networkingSidecar := networking_sidecar.NewNetworkingSidecar(userServiceGuid, privateIpAddr, enclaveId)
 

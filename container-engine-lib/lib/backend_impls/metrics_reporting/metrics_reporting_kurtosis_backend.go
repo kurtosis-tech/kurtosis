@@ -309,23 +309,20 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
 	error,
 ){
-	services, erroredServices, err := backend.underlying.GetUserServices(ctx, enclaveId, filters)
+	services,  err := backend.underlying.GetUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
 	}
-	return services, erroredServices, nil
+	return services, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
 )(
@@ -333,9 +330,9 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, enclaveId, filters, shouldFollowLogs)
+	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs of enclave with ID '%v' using filters '%+v'", enclaveId, filters)
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
 	}
 	return userServiceLogs, erroredUserServices, nil
 }
@@ -423,32 +420,30 @@ func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.StopUserServices(ctx, enclaveId, filters)
+	successes, failures, err := backend.underlying.StopUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services of enclave with ID '%v' using filters: %+v", enclaveId, filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping user services using filters: %+v", filters)
 	}
 	return successes, failures, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 )(
 	successfulUserServiceGuids map[service.ServiceGUID]bool,
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	successes, failures, err := backend.underlying.DestroyUserServices(ctx, enclaveId, filters)
+	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services of enclave with ID '%v' using filters: %+v", enclaveId, filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
 	return successes, failures, nil
 }
