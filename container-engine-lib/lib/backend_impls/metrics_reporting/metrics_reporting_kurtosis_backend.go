@@ -337,23 +337,22 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erroredUserServices, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands (
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
-	command []string,
+	userServiceCommands map[service.ServiceGUID][]string,
 )(
-	resultExitCode int32,
-	resultOutput string,
+	succesfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	exitCode, output, err := backend.underlying.RunUserServiceExecCommand(ctx, enclaveId, serviceGUID, command)
+	exitCode, output, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred running user service exec command '%v' in user service GUID '%v'",
-			command,
-			serviceGUID,
+			"An error occurred running user service exec commands '%+v' on enclave '%v'",
+			userServiceCommands,
+			enclaveId,
 		)
 	}
 	return exitCode, output, nil

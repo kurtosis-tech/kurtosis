@@ -181,33 +181,74 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
-func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand(
+func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
-	serviceGUID service.ServiceGUID,
-	command []string,
-) (
-	resultExitCode int32,
-	resultOutput string,
-	resultErr error,
-) {
+	userServiceCommands map[service.ServiceGUID][]string,
+)(
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
+){
+	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	userServiceContainerId, _, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
-	if err != nil {
-		return 0, "", stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+	userServiceGuids := map[service.ServiceGUID]bool{}
+	for userServiceGuid := range userServiceCommands {
+		userServiceGuids[userServiceGuid] = true
 	}
 
-	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := backendCore.dockerManager.RunExecCommand(ctx, userServiceContainerId, command, execOutputBuf)
-	if err != nil {
-		return 0, "", stacktrace.Propagate(
-			err,
-			"An error occurred running exec command '%v' against service with GUID '%v'",
-			command,
-			serviceGUID)
+	filters := &service.ServiceFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: userServiceGuids,
 	}
 
-	return exitCode, execOutputBuf.String(), nil
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	if err != nil {
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+	}
+
+	// TODO Parallelize to increase perf
+	for containerId, userService := range userServices {
+		userServiceUnwrappedCommand := userServiceCommands[userService.GetGUID()]
+
+		userServiceShWrappedCmd := wrapShCommand(userServiceUnwrappedCommand)
+
+		execOutputBuf := &bytes.Buffer{}
+		exitCode, err := backendCore.dockerManager.RunExecCommand(
+			ctx,
+			containerId,
+			userServiceShWrappedCmd,
+			execOutputBuf)
+		if err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred executing command '%+v' on user service with GUID '%v' and container ID '%v'",
+				userServiceShWrappedCmd,
+				userService.GetGUID(),
+				containerId,
+			)
+			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
+			continue
+		}
+		if exitCode != succesfulExecCmdExitCode {
+			exitCodeErr := stacktrace.NewError(
+				"Expected exit code '%v' when running exec command '%+v' on user service with GUID '%v', but got exit code '%v' instead with the following output:\n%v",
+				succesfulExecCmdExitCode,
+				userServiceShWrappedCmd,
+				userService.GetGUID(),
+				exitCode,
+				execOutputBuf.String(),
+			)
+			erroredUserServiceGuids[userService.GetGUID()] = exitCodeErr
+			continue
+		}
+		successfulUserServiceGuids[userService.GetGUID()] = true
+	}
+
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
 func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(

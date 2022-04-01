@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
-	"strings"
 )
 
 const (
@@ -164,7 +163,7 @@ func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	for containerId, networkingSidecar := range networkingSidecars {
 		networkingSidecarUnwrappedCommand := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
 
-		networkingSidecarShWrappedCmd := wrapNetworkingSidecarContainerShCommand(networkingSidecarUnwrappedCommand)
+		networkingSidecarShWrappedCmd := wrapShCommand(networkingSidecarUnwrappedCommand)
 
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backendCore.dockerManager.RunExecCommand(
@@ -263,16 +262,6 @@ func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-// Embeds the given command in a call to sh shell, so that a command with things
-//  like '&&' will get executed as expected
-func wrapNetworkingSidecarContainerShCommand(unwrappedCmd []string) []string {
-	return []string{
-		"sh",
-		"-c",
-		strings.Join(unwrappedCmd, " "),
-	}
-}
-
 func (backendCore *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
