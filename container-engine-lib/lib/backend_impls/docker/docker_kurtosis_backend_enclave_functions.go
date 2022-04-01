@@ -325,25 +325,31 @@ func (backendCore *DockerKurtosisBackend) DestroyEnclaves(
 
 	// Remove containers
 	for enclaveId := range resultSuccessfulEnclaveIds {
-		_, containers, err := backendCore.getEnclaveStatusAndContainers(ctx, enclaveId)
-
+		containers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
 		if err != nil {
-			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+			erroredEnclaveIds[enclaveId] = stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
 			continue
 		}
 
-		if _, erroredContainers := backendCore.removeContainers(ctx, containers); len(erroredContainers) > 0 {
+		for _, container := range containers {
 			removeContainerErrorStrs := []string{}
-			for _, err := range erroredContainers {
-				removeContainerErrorStrs = append(removeContainerErrorStrs, err.Error())
+			if err := backendCore.dockerManager.RemoveContainer(ctx, container.GetId()); err != nil {
+				wrappedErrStr := fmt.Sprintf(
+					"An error occurred removing container with ID '%v':\n%v",
+					container.GetId(),
+					err.Error(),
+				)
+				removeContainerErrorStrs = append(removeContainerErrorStrs, wrappedErrStr)
+				continue
 			}
-			errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
-
-			erroredEnclaveIds[enclaveId] = stacktrace.NewError(
-				"An error occurred removing one or more containers in enclave '%v':\n%v",
-				enclaveId,
-				errorStr,
-			)
+			if len(removeContainerErrorStrs) > 0 {
+				errorStr := strings.Join(removeContainerErrorStrs, "\n\n")
+				erroredEnclaveIds[enclaveId] = stacktrace.NewError(
+					"An error occurred removing one or more containers in enclave '%v':\n%v",
+					enclaveId,
+					errorStr,
+				)
+			}
 		}
 
 		successfulEnclaveIds[enclaveId] = true

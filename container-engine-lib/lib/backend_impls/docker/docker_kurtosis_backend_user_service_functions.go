@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -22,11 +24,9 @@ import (
 	"time"
 )
 
-const(
+const (
 	// The path on the user service container where the enclave data dir will be bind-mounted
 	serviceEnclaveDataDirMountpoint = "/kurtosis-enclave-data"
-
-	shouldFetchStoppedContainersWhenGettingUserServiceContainers = true
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -49,24 +49,24 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 	envVars map[string]string,
 	enclaveDataDirpathOnHostMachine string,
 	filesArtifactMountDirpaths map[string]string,
-)(
+) (
 	newUserService *service.Service,
 	resultErr error,
-){
+) {
 
 	enclaveObjAttrsProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(id, guid, privatePorts)
+	containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(id, guid, ipAddr, privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with GUID '%v'", guid)
 	}
 	containerName := containerAttrs.GetName()
 
 	labelStrs := map[string]string{}
-	for labelKey, labelValue := range containerAttrs.GetLabels(){
+	for labelKey, labelValue := range containerAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
@@ -75,7 +75,7 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	usedPorts, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
+	usedPorts, _, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
 	}
@@ -117,139 +117,88 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 		logrus.Warnf("Failed to pull the latest version of user service container image '%v'; you may be running an out-of-date version", containerImageName)
 	}
 
-	_, hostPortBindingsByPortObj, err  := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with GUID '%v'", guid)
 	}
 
-	var maybePublicIpAddr net.IP = nil
-	publicPorts := map[string]*port_spec.PortSpec{}
-	if len(privatePorts) > 0 {
-		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
-			hostPortBindingsByPortObj,
-			privatePorts,
-			portIdsForDockerPortObjs,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
-		}
+	userService, err := getUserServiceObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service object from container info")
 	}
-
-	userService := service.NewService(id, guid, enclaveId, maybePublicIpAddr, publicPorts)
 
 	return userService, nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-)(
+) (
 	map[service.ServiceGUID]*service.Service,
-	map[service.ServiceGUID]error,
 	error,
-){
+) {
 
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
 	successfulUserServices := map[service.ServiceGUID]*service.Service{}
-	erroredUserServices := map[service.ServiceGUID]error{}
-	for guid, container := range userServiceContainers {
-		id, err := getServiceIdFromContainer(container)
-		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting service ID from container with ID '%v'", container.GetId())
-			erroredUserServices[guid] = serviceError
-			continue
-		}
-
-		privatePorts, err := getPrivatePortsFromContainerLabels(container.GetLabels())
-		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting port specs from container labels '%+v'", container.GetLabels())
-			erroredUserServices[guid] = serviceError
-			continue
-		}
-
-		_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
-		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
-			erroredUserServices[guid] = serviceError
-			continue
-		}
-
-		var maybePublicIpAddr net.IP = nil
-		publicPorts := map[string]*port_spec.PortSpec{}
-		if len(privatePorts) > 0 {
-			maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
-				container.GetHostPortBindings(),
-				privatePorts,
-				portIdsForDockerPortObjs,
-			)
-			if err != nil {
-				serviceError := stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
-				erroredUserServices[guid] = serviceError
-				continue
-			}
-		}
-
-		service := service.NewService(id, guid, enclaveId, maybePublicIpAddr, publicPorts)
-		successfulUserServices[guid] = service
+	for _, userService := range userServices {
+		successfulUserServices[userService.GetGUID()] = userService
 	}
-	return successfulUserServices, erroredUserServices, nil
+	return successfulUserServices,  nil
 }
 
 func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
-)(
+) (
 	map[service.ServiceGUID]io.ReadCloser,
 	map[service.ServiceGUID]error,
 	error,
-){
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+) {
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
 	successfulUserServicesLogs := map[service.ServiceGUID]io.ReadCloser{}
 	erroredUserServices := map[service.ServiceGUID]error{}
 
 	//TODO use concurrency to improve perf
-	for userServiceGuid, container := range userServiceContainers {
-		readCloserLogs, err := backendCore.dockerManager.GetContainerLogs(ctx, container.GetId(), shouldFollowLogs)
+	for containerId, userService := range userServices {
+		readCloserLogs, err := backendCore.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
 		if err != nil {
-			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for user service with GUID '%v' and container ID '%v'", userServiceGuid, container.GetId())
-			erroredUserServices[userServiceGuid] = serviceError
+			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for user service with GUID '%v' and container ID '%v'", userService.GetGUID(), containerId)
+			erroredUserServices[userService.GetGUID()] = serviceError
 			continue
 		}
-		successfulUserServicesLogs[userServiceGuid] = readCloserLogs
+		successfulUserServicesLogs[userService.GetGUID()] = readCloserLogs
 	}
 
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
-func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand (
+func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommand(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 	command []string,
-)(
+) (
 	resultExitCode int32,
 	resultOutput string,
 	resultErr error,
-){
+) {
 
-	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	userServiceContainerId, _, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(err, "An error occurred getting user service container by enclave id '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+		return 0, "", stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
 	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := backendCore.dockerManager.RunExecCommand(ctx, userServiceContainer.GetId(), command, execOutputBuf)
+	exitCode, err := backendCore.dockerManager.RunExecCommand(ctx, userServiceContainerId, command, execOutputBuf)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
@@ -273,7 +222,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	initialDelayMilliseconds uint32,
 	retries uint32,
 	retriesDelayMilliseconds uint32,
-)(
+) (
 	resultErr error,
 ) {
 
@@ -281,22 +230,12 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 		return stacktrace.NewError("Is not possible to execute the http request with body '%v' using the http '%v' method, it is only possible to use http POST method with request body", requestBody, httpMethod)
 	}
 
-	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	_, userService, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
-	}
-
-	privateIpAddr, found := userServiceContainer.GetNetworkIPAddresses()[enclaveNetwork.GetId()]
-	if !found {
-		return stacktrace.Propagate(err, "User service container with container ID '%v' does not have and IP address defined in Docker Network with ID '%v'; it should never happen it's a bug in Kurtosis", userServiceContainer.GetId(), enclaveNetwork.GetId())
-	}
-
-	url := fmt.Sprintf("http://%v:%v/%v", privateIpAddr, port, path)
+	url := fmt.Sprintf("http://%v:%v/%v", userService.GetPrivateIp(), port, path)
 
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
@@ -344,17 +283,17 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-)(
+) (
 	*shell.Shell,
 	error,
 ) {
 
-	userServiceContainer, err := backendCore.getUserServiceContainerByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	containerId, _, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service container by enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
+		return nil, stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	hijackedResponse, err :=backendCore.dockerManager.ContainerExecCreate(ctx, userServiceContainer.GetId(), commandToRunWhenCreatingUserServiceShell)
+	hijackedResponse, err := backendCore.dockerManager.ContainerExecCreate(ctx, containerId, commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing container exec create on user service with GUID '%v'", serviceGUID)
 	}
@@ -366,9 +305,8 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 
 func (backendCore *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-)(
+) (
 	map[service.ServiceGUID]bool,
 	map[service.ServiceGUID]error,
 	error,
@@ -376,17 +314,17 @@ func (backendCore *DockerKurtosisBackend) StopUserServices(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	for userServiceGuid, userServiceContainer := range userServiceContainers {
-		if err := backendCore.killContainerAndWaitForExit(ctx, userServiceContainer); err != nil {
-			erroredUserServiceGuids[userServiceGuid] = err
+	for containerId, userService := range userServices {
+		if err := backendCore.killContainerAndWaitForExit(ctx, containerId); err != nil {
+			erroredUserServiceGuids[userService.GetGUID()] = err
 			continue
 		}
-		successfulUserServiceGuids[userServiceGuid] = true
+		successfulUserServiceGuids[userService.GetGUID()] = true
 	}
 
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
@@ -394,9 +332,8 @@ func (backendCore *DockerKurtosisBackend) StopUserServices(
 
 func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
 	filters *service.ServiceFilters,
-)(
+) (
 	map[service.ServiceGUID]bool,
 	map[service.ServiceGUID]error,
 	error,
@@ -404,29 +341,22 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, filters.GUIDs)
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' and user service GUIDs '%+v'", enclaveId, filters.GUIDs)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking-sidecar-containers by enclave ID '%v' and networking sidecar GUIDs '%+v'", enclaveId, filters.GUIDs)
-	}
-
-	for userServiceGuid, userServiceContainer := range userServiceContainers {
-		containersToRemove := []*types.Container{userServiceContainer}
-		if _, erroredContainers := backendCore.removeContainers(ctx, containersToRemove); len(erroredContainers) > 0 {
-			containerError, found := erroredContainers[userServiceContainer.GetId()]
-			var wrappedErr error
-			if !found {
-				wrappedErr = stacktrace.NewError("Expected to find an error for container with ID '%v' in error list '%+v' but it was not found; it should never happens, it's a bug in Kurtosis", userServiceContainer.GetId(), erroredContainers)
-			} else {
-				wrappedErr = stacktrace.Propagate(containerError, "An error occurred removing user service container with GUID '%v' and container ID '%v'", userServiceGuid, userServiceContainer.GetId())
-			}
-			erroredUserServiceGuids[userServiceGuid] = wrappedErr
+	for containerId, userService := range userServices {
+		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred removing container with ID '%v'",
+				containerId,
+			)
+			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
 			continue
 		}
-		successfulUserServiceGuids[userServiceGuid] = true
+		successfulUserServiceGuids[userService.GetGUID()] = true
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
@@ -460,61 +390,183 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 	return resp, nil
 }
 
-func (backendCore *DockerKurtosisBackend) getUserServiceContainerByEnclaveIDAndUserServiceGUID(
+func (backendCore *DockerKurtosisBackend) getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,
-)(
-	*types.Container,
+) (
+	string,
+	*service.Service,
 	error,
 ) {
-	userServiceGuids := map[service.ServiceGUID]bool{
-		userServiceGuid: true,
+
+	filters := &service.ServiceFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: map[service.ServiceGUID]bool{
+			userServiceGuid: true,
+		},
 	}
 
-	userServiceContainers, err := backendCore.getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(ctx, enclaveId, userServiceGuids)
+	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user-service-containers by enclave ID '%v' user service GUID '%v'", enclaveId, userServiceGuid)
+		return "", nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
 	}
-	numOfUserServiceContainers := len(userServiceContainers)
-	if numOfUserServiceContainers == 0 {
-		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found to wait for availability", userServiceGuid, enclaveId)
+	numOfUserServices := len(userServices)
+	if numOfUserServices == 0 {
+		return "", nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", userServiceGuid, enclaveId)
 	}
-	if numOfUserServiceContainers > 1 {
-		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServiceContainers)
+	if numOfUserServices > 1 {
+		return "", nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", userServiceGuid, enclaveId, numOfUserServices)
 	}
 
-	userServiceContainer := userServiceContainers[userServiceGuid]
+	var resultUserServiceContainerId string
+	var resultUserService *service.Service
 
-	return userServiceContainer, nil
+	for containerId, userService := range userServices {
+		resultUserServiceContainerId = containerId
+		resultUserService = userService
+	}
+
+	return resultUserServiceContainerId, resultUserService, nil
 }
 
-func (backendCore *DockerKurtosisBackend) getUserServiceContainersByEnclaveIDAndUserServiceGUIDs(
+func (backendCore *DockerKurtosisBackend) getMatchingUserServices(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	userServiceGuids map[service.ServiceGUID]bool,
-) (map[service.ServiceGUID]*types.Container, error) {
-
+	filters *service.ServiceFilters,
+) (map[string]*service.Service, error) {
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
 	}
-	foundContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingUserServiceContainers)
+	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting containers using labels '%+v'", searchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
 	}
 
-	userServiceContainers := map[service.ServiceGUID]*types.Container{}
-	for _, container := range foundContainers {
-		for userServiceGuid := range userServiceGuids {
-			//TODO we could improve this doing only one container iteration? or is this ok this way because is not to expensive?
-			if hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGuid)){
-				userServiceContainers[userServiceGuid] = container
+	matchingObjects := map[string]*service.Service{}
+	for _, container := range matchingContainers {
+		containerId := container.GetId()
+		object, err := getUserServiceObjectFromContainerInfo(
+			containerId,
+			container.GetLabels(),
+			container.GetStatus(),
+			container.GetHostPortBindings(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into a user service object", container.GetId())
+		}
+
+		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
+				continue
 			}
 		}
+
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[object.GetGUID()]; !found {
+				continue
+			}
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[object.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		matchingObjects[containerId] = object
 	}
-	return userServiceContainers, nil
+
+	return matchingObjects, nil
+}
+
+func getUserServiceObjectFromContainerInfo(
+	containerId string,
+	labels map[string]string,
+	containerStatus types.ContainerStatus,
+	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
+) (*service.Service, error) {
+
+	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected the user service's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+	}
+
+	id, found := labels[label_key_consts.IDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find user service ID label key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
+	}
+
+	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find user service GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
+	}
+
+	privatePorts, err := getPrivatePortsFromContainerLabels(labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container '%v' with labels '%+v'", containerId, labels)
+	}
+
+	_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+	}
+
+	var maybePublicIpAddr net.IP = nil
+	publicPorts := map[string]*port_spec.PortSpec{}
+	if len(privatePorts) > 0 {
+		maybePublicIpAddr, publicPorts, err = condensePublicNetworkInfoFromHostMachineBindings(
+			allHostMachinePortBindings,
+			privatePorts,
+			portIdsForDockerPortObjs,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred extracting public IP addr & ports from the host machine ports returned by the container engine")
+		}
+	}
+
+	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return nil, stacktrace.NewError("No is-running designation found for user service container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+	}
+	var status container_status.ContainerStatus
+	if isContainerRunning {
+		status = container_status.ContainerStatus_Running
+	} else {
+		status = container_status.ContainerStatus_Stopped
+	}
+
+	var privateIpAddr net.IP
+	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
+	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS USER SERVICES WITHOUT THE PRIVATE IP ADDRESS LABEL
+	/*
+		if !found {
+			return nil, stacktrace.NewError("Expected to find user service private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
+		}
+	*/
+	if found {
+		candidatePrivateIpAddr := net.ParseIP(privateIpAddrStr)
+		if candidatePrivateIpAddr == nil {
+			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+		}
+		privateIpAddr = candidatePrivateIpAddr
+	}
+
+	newObject := service.NewService(
+		service.ServiceID(id),
+		service.ServiceGUID(guid),
+		status,
+		enclave.EnclaveID(enclaveId),
+		maybePublicIpAddr,
+		publicPorts,
+		privateIpAddr,
+	)
+
+	return newObject, nil
 }
 
 func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
@@ -528,20 +580,6 @@ func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
 		}
 	}
 	return nil, stacktrace.NewError("No user service container with user service GUID '%v' was found in container list '%+v'", userServiceGUID, containers)
-}
-
-func getServiceIdFromContainer(container *types.Container) (service.ServiceID, error) {
-	if !isUserServiceContainer(container) {
-		return "", stacktrace.NewError("Can not possible to get service ID from container with ID '%v' because it's not a user service container", container.GetId())
-	}
-	labels := container.GetLabels()
-	serviceIdLabelValue, found := labels[label_key_consts.IDLabelKey.GetString()]
-	if !found {
-		return "",  stacktrace.NewError("Expected to find container's label with key '%v' but none was found", label_key_consts.IDLabelKey.GetString())
-	}
-	serviceId := service.ServiceID(serviceIdLabelValue)
-
-	return serviceId, nil
 }
 
 func isUserServiceContainer(container *types.Container) bool {

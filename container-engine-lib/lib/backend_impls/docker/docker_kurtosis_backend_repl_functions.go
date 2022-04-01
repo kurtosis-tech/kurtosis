@@ -8,9 +8,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -28,8 +28,6 @@ const (
 	EnclaveDataMountDirpathEnvVar = "ENCLAVE_DATA_DIR_MOUNTPOINT"
 
 	enclaveDataDirMountpointOnReplContainer = "/kurtosis-enclave-data"
-
-	shouldFetchStoppedContainersWhenGettingReplContainers = true
 )
 
 func (backendCore *DockerKurtosisBackend) CreateRepl(
@@ -78,8 +76,8 @@ func (backendCore *DockerKurtosisBackend) CreateRepl(
 	}
 
 	apiContainerFilters := &api_container.APIContainerFilters{
-		EnclaveIDs: map[string]bool{
-			string(enclaveId): true,
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
 		},
 	}
 
@@ -94,7 +92,7 @@ func (backendCore *DockerKurtosisBackend) CreateRepl(
 		return nil, stacktrace.NewError("Expected to find only one api container on enclave with ID '%v', but '%v' was found; it should never happens it is a bug in Kurtosis", enclaveId, len(apiContainers))
 	}
 
-	apiContainer := apiContainers[string(enclaveId)]
+	apiContainer := apiContainers[enclaveId]
 
 	kurtosisApiContainerSocket := fmt.Sprintf("%v:%v", apiContainer.GetPrivateIPAddress(), apiContainer.GetPrivateGRPCPort())
 
@@ -128,7 +126,10 @@ func (backendCore *DockerKurtosisBackend) CreateRepl(
 		return nil, stacktrace.Propagate(err, "An error occurred starting the repl container")
 	}
 
-	newRepl := repl.NewRepl(replGuid, enclaveId)
+	newRepl, err := getReplObjectFromContainerInfo(labels, types.ContainerStatus_Running)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting repl object from container info with labels '%+v' and status '%v'", labels, types.ContainerStatus_Running)
+	}
 
 	return newRepl, nil
 }
@@ -142,12 +143,33 @@ func (backendCore *DockerKurtosisBackend) Attach(
 	error,
 ){
 
-	replContainer, err := backendCore.getReplContainerByEnclaveIDAndReplGUID(ctx, enclaveId, replGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting repl container by enclave id '%v' and repl GUID '%v'", enclaveId, replGuid)
+	filters := &repl.ReplFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: map[repl.ReplGUID]bool{
+			replGuid: true,
+		},
 	}
 
-	hijackedResponse, err := backendCore.dockerManager.AttachToContainer(ctx, replContainer.GetId())
+	repls, err := backendCore.getMatchingRepls(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting repls matching filters '%+v'", filters)
+	}
+	numOfRepls := len(repls)
+	if numOfRepls == 0 {
+		return nil, stacktrace.NewError("No repl with GUID '%v' in enclave with ID '%v' was found", replGuid, enclaveId)
+	}
+	if numOfRepls > 1 {
+		return nil, stacktrace.NewError("Expected to find only one repl with GUID '%v' in enclave with ID '%v', but '%v' was found", replGuid, enclaveId, numOfRepls)
+	}
+
+	var replContainerId string
+	for containerId:= range repls {
+		replContainerId = containerId
+	}
+
+	hijackedResponse, err := backendCore.dockerManager.AttachToContainer(ctx, replContainerId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't attack to the REPL container")
 	}
@@ -159,26 +181,22 @@ func (backendCore *DockerKurtosisBackend) Attach(
 
 func (backendCore *DockerKurtosisBackend) GetRepls(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	filters repl.ReplFilters,
+	filters *repl.ReplFilters,
 )(
 	map[repl.ReplGUID]*repl.Repl,
-	map[repl.ReplGUID]error,
 	error,
 ){
-	replContainers, err := backendCore.getReplContainersByEnclaveIDAndReplGUIDs(ctx, enclaveId, filters.GUIDs)
+	repls, err := backendCore.getMatchingRepls(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting repl containers by enclave ID '%v' and repl GUIDs '%+v'", enclaveId, filters.GUIDs)
+		return nil, stacktrace.Propagate(err, "An error occurred getting repls matching filters '%+v'", filters)
 	}
 
 	successfulRepls := map[repl.ReplGUID]*repl.Repl{}
-	erroredRepls := map[repl.ReplGUID]error{}
-	for guid, _ := range replContainers {
-		newRepl := repl.NewRepl(guid, enclaveId)
-		successfulRepls[guid] = newRepl
+	for _, repl := range repls {
+		successfulRepls[repl.GetGUID()] = repl
 	}
 
-	return successfulRepls, erroredRepls, nil
+	return successfulRepls, nil
 }
 
 // ====================================================================================================
@@ -193,56 +211,89 @@ func getReplGUID() repl.ReplGUID {
 	return replGuid
 }
 
-func (backendCore *DockerKurtosisBackend) getReplContainersByEnclaveIDAndReplGUIDs(
+func (backendCore *DockerKurtosisBackend) getMatchingRepls(
 	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	replGuids map[repl.ReplGUID]bool,
-) (map[service.ServiceGUID]*types.Container, error) {
-
-
-	enclaveContainers, err := backendCore.getEnclaveContainers(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave containers for enclave with ID '%v'", enclaveId)
-	}
-
-	userServiceContainers := map[service.ServiceGUID]*types.Container{}
-	for _, container := range enclaveContainers {
-		if isUserServiceContainer(container) {
-			for userServiceGuid := range userServiceGuids {
-				if hasGuidLabel(container, string(userServiceGuid)){
-					userServiceContainers[userServiceGuid] = container
-				}
-			}
-		}
-	}
-	return userServiceContainers, nil
-}
-
-func (backendCore *DockerKurtosisBackend) getReplContainersByEnclaveIDAndReplGUIDs(
-	ctx context.Context,
-	enclaveId enclave.EnclaveID,
-	replGuids map[repl.ReplGUID]bool,
-) (map[repl.ReplGUID]*types.Container, error) {
+	filters *repl.ReplFilters,
+) (map[string]*repl.Repl, error) {
 
 	searchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.InteractiveREPLContainerTypeLabelValue.GetString(),
 	}
-	foundContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchStoppedContainersWhenGettingReplContainers)
+	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting containers using labels '%+v'", searchLabels)
+		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
 	}
 
-	replContainers := map[repl.ReplGUID]*types.Container{}
-	for _, container := range foundContainers {
-		for userServiceGuid := range replGuids {
-			//TODO we could improve this doing only one container iteration? or is this ok this way because is not to expensive?
-			if hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGuid)){
-				replContainers[userServiceGuid] = container
+	matchingObjects := map[string]*repl.Repl{}
+	for _, container := range matchingContainers {
+		containerId := container.GetId()
+		object, err := getReplObjectFromContainerInfo(
+			container.GetLabels(),
+			container.GetStatus(),
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into a repl object", container.GetId())
+		}
+
+		if filters.EnclaveIDs != nil && len(filters.EnclaveIDs) > 0 {
+			if _, found := filters.EnclaveIDs[object.GetEnclaveID()]; !found {
+				continue
 			}
 		}
+
+		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
+			if _, found := filters.GUIDs[object.GetGUID()]; !found {
+				continue
+			}
+		}
+
+		if filters.Statuses != nil && len(filters.Statuses) > 0 {
+			if _, found := filters.Statuses[object.GetStatus()]; !found {
+				continue
+			}
+		}
+
+		matchingObjects[containerId] = object
 	}
-	return replContainers, nil
+
+	return matchingObjects, nil
+}
+
+func getReplObjectFromContainerInfo(
+	labels map[string]string,
+	containerStatus types.ContainerStatus,
+) (*repl.Repl, error) {
+
+	enclaveId, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected the repl's enclave ID to be found under label '%v' but the label wasn't present", label_key_consts.EnclaveIDLabelKey.GetString())
+	}
+
+	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find repl GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
+	}
+
+	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
+	if !found {
+		// This should never happen because we enforce completeness in a unit test
+		return nil, stacktrace.NewError("No is-running designation found for repl container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
+	}
+	var status container_status.ContainerStatus
+	if isContainerRunning {
+		status = container_status.ContainerStatus_Running
+	} else {
+		status = container_status.ContainerStatus_Stopped
+	}
+
+	newObject := repl.NewRepl(
+		repl.ReplGUID(guid),
+		enclave.EnclaveID(enclaveId),
+		status,
+	)
+
+	return newObject, nil
 }
 
 // TODO AttachToRepl
