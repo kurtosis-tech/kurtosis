@@ -15,6 +15,7 @@ const (
 	//
 	appIdLabelValueStr = "kurtosis"
 	engineContainerTypeLabelValueStr = "kurtosis-engine"
+	moduleContainerTypeLabelValueStr = "module"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	apiContainerContainerTypeLabelValueStr = "api-container"
@@ -31,6 +32,7 @@ const (
 //
 var AppIDLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 var EngineContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
+var ModuleContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(moduleContainerTypeLabelValueStr)
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var APIContainerContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)

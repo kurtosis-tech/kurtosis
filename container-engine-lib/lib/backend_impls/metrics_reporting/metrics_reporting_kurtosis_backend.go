@@ -196,30 +196,38 @@ func (backend *MetricsReportingKurtosisBackend) DestroyAPIContainers(ctx context
 
 func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	ctx context.Context,
+	image string,
+	enclaveId enclave.EnclaveID,
 	id module.ModuleID,
 	guid module.ModuleGUID,
-	containerImageName string,
-	serializedParams string,
+	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	grpcPortNum uint16,
+	enclaveDataDirpathOnHostMachine string,
+	envVars map[string]string,
 )(
 	newModule *module.Module,
 	resultErr error,
 ) {
 	module, err := backend.underlying.CreateModule(
 		ctx,
+		image,
+		enclaveId,
 		id,
 		guid,
-		containerImageName,
-		serializedParams,
-		)
+		ipAddr,
+		grpcPortNum,
+		enclaveDataDirpathOnHostMachine,
+		envVars,
+	)
 	if err != nil {
 		return nil,
 		stacktrace.Propagate(
 			err,
-			"An error occurred creating module with ID '%v', GUID '%v', container image name '%v' and serialized params '%+v'",
+			"An error occurred creating module with ID '%v', GUID '%v', and image '%v'",
 			id,
 			guid,
-			containerImageName,
-			serializedParams)
+			image,
+		)
 	}
 
 	return module, nil
@@ -229,7 +237,7 @@ func (backend *MetricsReportingKurtosisBackend) GetModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 )(
-	map[string]*module.Module,
+	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
 	modules, err := backend.underlying.GetModules(ctx, filters)

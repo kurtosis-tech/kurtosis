@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added module CRUD methods
+
+### Fixes
+* Fixed a bug in `CreateAPIContainer` where the wrong label was being used to check for enclave ID
 
 # 0.10.2
 ### Features
