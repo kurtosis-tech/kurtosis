@@ -59,11 +59,12 @@ func (backendCore *DockerKurtosisBackend) CreateModule(
 
 
 	// Get the Docker network ID where we'll start the new API container
-	// TODO REPLACE THIS WITH A CALL TO getMatchingEnclaveNetworks SO THAT WE CENTRALIZE THE DOCKER
-	//  NETWORK RETRIEVAL IN A SINGLE PLACE
-	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, map[string]string{
-		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+	matchingNetworks, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
+		enclaveId: true,
 	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks for enclave ID '%v'", enclaveId)
+	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 {
 		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
@@ -184,7 +185,7 @@ func (backendCore *DockerKurtosisBackend) GetModules(
 	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
-	matchingModuleContainers, err := backendCore.getMatchingModuleContainers(ctx, filters)
+	matchingModuleContainers, err := backendCore.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -205,7 +206,7 @@ func (backendCore *DockerKurtosisBackend) DestroyModules(
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	matchingModuleContainersByContainerId, err := backendCore.getMatchingModuleContainers(ctx, filters)
+	matchingModuleContainersByContainerId, err := backendCore.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -234,8 +235,8 @@ func (backendCore *DockerKurtosisBackend) DestroyModules(
 // ====================================================================================================
 //                                     Private Helper Methods
 // ====================================================================================================
-// Gets engines matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingModuleContainers(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+// Gets modules matching the search filters, indexed by their container ID
+func (backendCore *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),
@@ -264,14 +265,14 @@ func (backendCore *DockerKurtosisBackend) getMatchingModuleContainers(ctx contex
 			}
 		}
 
-		// If the ID filter is specified, drop engines not matching it
+		// If the ID filter is specified, drop modules not matching it
 		if filters.GUIDs != nil && len(filters.GUIDs) > 0 {
 			if _, found := filters.GUIDs[moduleObj.GetGUID()]; !found {
 				continue
 			}
 		}
 
-		// If status filter is specified, drop engines not matching it
+		// If status filter is specified, drop modules	 not matching it
 		if filters.Statuses != nil && len(filters.Statuses) > 0 {
 			if _, found := filters.Statuses[moduleObj.GetStatus()]; !found {
 				continue

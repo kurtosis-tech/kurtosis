@@ -62,9 +62,12 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Get the Docker network ID where we'll start the new API container
-	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, map[string]string{
-		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+	matchingNetworks, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
+		enclaveId: true,
 	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks for enclave ID '%v'", enclaveId)
+	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 {
 		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
