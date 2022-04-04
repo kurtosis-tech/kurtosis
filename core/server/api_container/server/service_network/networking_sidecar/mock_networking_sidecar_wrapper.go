@@ -7,7 +7,7 @@ package networking_sidecar
 
 import (
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"net"
 )
 
@@ -19,7 +19,7 @@ func NewMockNetworkingSidecarWrapper() *MockNetworkingSidecarWrapper {
 	return &MockNetworkingSidecarWrapper{updateFunctionCallsPacketLossConfig: []map[string]float32{}}
 }
 
-func (sidecar MockNetworkingSidecarWrapper) GetGUID() networking_sidecar.NetworkingSidecarGUID {
+func (sidecar MockNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
 	return ""
 }
 

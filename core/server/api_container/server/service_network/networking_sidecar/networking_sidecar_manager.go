@@ -66,12 +66,12 @@ func (manager *StandardNetworkingSidecarManager) Add(
 
 	execCmdExecutor := newStandardSidecarExecCmdExecutor(
 		manager.kurtosisBackend,
-		networkingSidecar.GetGuid(),
-		networkingSidecar.GetEnclaveId())
+		networkingSidecar.GetServiceGUID(),
+		networkingSidecar.GetEnclaveID())
 
 	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with GUID '%v'", networkingSidecar.GetGuid())
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with service GUID '%v'", networkingSidecar.GetServiceGUID())
 	}
 
 	return networkingSidecarWrapper, nil
@@ -82,8 +82,8 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 	networkingSidecarWrapper NetworkingSidecarWrapper) error {
 
 	filters := &networking_sidecar.NetworkingSidecarFilters{
-		GUIDs: map[networking_sidecar.NetworkingSidecarGUID]bool{
-			networkingSidecarWrapper.GetGUID(): true,
+		UserServiceGUIDs: map[service.ServiceGUID]bool{
+			networkingSidecarWrapper.GetServiceGUID(): true,
 		},
 	}
 
@@ -92,8 +92,8 @@ func (manager *StandardNetworkingSidecarManager) Remove(
 		return stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filter '%+v'", filters)
 	}
 	if len(erroredNetworkingSidecars) > 0 {
-		sidecarError := erroredNetworkingSidecars[networkingSidecarWrapper.GetGUID()]
-		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarWrapper.GetGUID())
+		sidecarError := erroredNetworkingSidecars[networkingSidecarWrapper.GetServiceGUID()]
+		return stacktrace.Propagate(sidecarError, "An error occurred stopping networking sidecar with GUID '%v'", networkingSidecarWrapper.GetServiceGUID())
 	}
 
 	manager.freeIpAddrTracker.ReleaseIpAddr(networkingSidecarWrapper.GetIPAddr())

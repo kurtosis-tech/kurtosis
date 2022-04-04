@@ -8,6 +8,7 @@ package networking_sidecar
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/stretchr/testify/require"
 	"net"
@@ -22,8 +23,8 @@ const (
 	packetLossPercentageValueForSoftPartition       float32 = 25
 
 	testServiceGUID                  = "test"
-	testNetworkingSidecarGUID = testServiceGUID + "-1647546280"
-	testEnclaveID = "kt2022-03-17t16.33.01.495"
+	testEnclaveID              = "kt2022-03-17t16.33.01.495"
+	testContainerStatusRunning = container_status.ContainerStatus_Running
 
 	expectedCommandsForExecutingInitTrafficControl = "tc qdisc add dev eth1 root handle 1: htb && tc class add dev" +
 		" eth1 parent 1: classid 1:1 htb rate 100% && tc class add dev eth1 parent 1: classid 1:2 htb rate 100% &&" +
@@ -376,10 +377,10 @@ func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*
 	execCmdExecutor := newMockSidecarExecCmdExecutor()
 
 	networkingSidecar := networking_sidecar.NewNetworkingSidecar(
-		testNetworkingSidecarGUID,
+		testServiceGUID,
 		testNetworkinSidecarIP,
-		testEnclaveID)
-
+		testEnclaveID,
+		testContainerStatusRunning)
 
 	sidecar, err := NewStandardNetworkingSidecarWrapper(
 		networkingSidecar,

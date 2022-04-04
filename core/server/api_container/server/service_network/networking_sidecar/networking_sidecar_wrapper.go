@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -71,7 +72,7 @@ const (
 // ==========================================================================================
 // Extracted as interface for testing
 type NetworkingSidecarWrapper interface {
-	GetGUID() networking_sidecar.NetworkingSidecarGUID
+	GetServiceGUID() service.ServiceGUID
 	GetIPAddr() net.IP
 	InitializeTrafficControl(ctx context.Context) error
 	UpdateTrafficControl(ctx context.Context, allPacketLossPercentageForIpAddresses map[string]float32) error
@@ -117,8 +118,8 @@ func NewStandardNetworkingSidecarWrapper(
 	}, nil
 }
 
-func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetGUID() networking_sidecar.NetworkingSidecarGUID {
-	return sidecarWrapper.networkingSidecar.GetGuid()
+func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetServiceGUID() service.ServiceGUID {
+	return sidecarWrapper.networkingSidecar.GetServiceGUID()
 }
 
 func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetIPAddr() net.IP {
@@ -137,7 +138,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl
 	cmdDescription := "tc init"
 
 	if err := sidecarWrapper.executeCmdInSidecar(ctx, initCmd, cmdDescription); err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetGUID())
+		return stacktrace.Propagate(err, "An error occurred executing cmd '%v' in networking sidecar with GUID '%v'", initCmd, sidecarWrapper.GetServiceGUID())
 	}
 
 	sidecarWrapper.qdiscInUse = initialKurtosisQdiscId
@@ -485,10 +486,10 @@ func mergeCommandListInOneLineCommand(commandList [][]string) []string {
 func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx context.Context, cmd []string, cmdDescription string) error {
 
 	logrus.Infof(
-		"Running %v command '%+v' in networking sidecar with GUID '%v'...",
+		"Running %v command '%+v' in networking sidecar with service GUID '%v'...",
 		cmdDescription,
 		cmd,
-		sidecarWrapper.networkingSidecar.GetGuid())
+		sidecarWrapper.networkingSidecar.GetServiceGUID())
 
 	if err := sidecarWrapper.execCmdExecutor.exec(ctx, cmd); err != nil {
 		return stacktrace.Propagate(
@@ -497,7 +498,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) executeCmdInSidecar(ctx 
 			cmdDescription)
 	}
 
-	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetGUID())
+	logrus.Infof("Successfully executed %v command against networking sidecar with GUID '%v'", cmdDescription, sidecarWrapper.GetServiceGUID())
 
 	return nil
 }
