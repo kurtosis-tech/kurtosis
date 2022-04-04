@@ -62,9 +62,12 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	}
 
 	// Get the Docker network ID where we'll start the new API container
-	matchingNetworks, err := backendCore.dockerManager.GetNetworksByLabels(ctx, map[string]string{
-		label_key_consts.IDLabelKey.GetString(): string(enclaveId),
+	matchingNetworks, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
+		enclaveId: true,
 	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks for enclave ID '%v'", enclaveId)
+	}
 	numMatchingNetworks := len(matchingNetworks)
 	if numMatchingNetworks == 0 {
 		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
@@ -133,6 +136,11 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	// Best-effort pull attempt
+	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
+	}
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
@@ -146,11 +154,6 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	).WithLabels(
 		labelStrs,
 	).Build()
-
-	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
-	}
 
 	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
