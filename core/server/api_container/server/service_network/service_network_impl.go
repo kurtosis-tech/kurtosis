@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	defaultPartitionId                                    service_network_types.PartitionID = "default"
-	startingDefaultConnectionPacketLossValue                                                = 0
+	defaultPartitionId                       service_network_types.PartitionID = "default"
+	startingDefaultConnectionPacketLossValue                                   = 0
 )
 
 // Information that gets created with a service's registration
@@ -48,7 +48,7 @@ type serviceRunInfo struct {
 	// NOTE: When we want to make restart-able enclaves, we'll need to read these values from the container every time
 	//  we need them (rather than storing them in-memory on the API container, which means the API container can't be restarted)
 	privatePorts      map[string]*enclave_container_launcher.EnclaveContainerPort
-	maybePublicIpAddr net.IP // Can be nil if the service doesn't declare any private ports
+	maybePublicIpAddr net.IP                                                      // Can be nil if the service doesn't declare any private ports
 	publicPorts       map[string]*enclave_container_launcher.EnclaveContainerPort // Will be empty if the service doesn't declare any private ports
 }
 
@@ -126,10 +126,10 @@ func NewServiceNetworkImpl(
 Completely repartitions the network, throwing away the old topology
 */
 func (network *ServiceNetworkImpl) Repartition(
-		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]map[service_network_types.ServiceID]bool,
-		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-		newDefaultConnection partition_topology.PartitionConnection) error {
+	ctx context.Context,
+	newPartitionServices map[service_network_types.PartitionID]map[service_network_types.ServiceID]bool,
+	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
+	newDefaultConnection partition_topology.PartitionConnection) error {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 	if network.isDestroyed {
@@ -155,7 +155,7 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
-	servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
+	servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
 			" after repartition, meaning that no partitions are actually being enforced!")
@@ -170,8 +170,8 @@ func (network *ServiceNetworkImpl) Repartition(
 // Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetworkImpl) RegisterService(
-		serviceId service_network_types.ServiceID,
-		partitionId service_network_types.PartitionID) (net.IP, string, error) {
+	serviceId service_network_types.ServiceID,
+	partitionId service_network_types.PartitionID) (net.IP, string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -295,7 +295,7 @@ func (network *ServiceNetworkImpl) StartService(
 	// This means that when the new service is launched, even if its own qdisc isn't yet updated, all the services
 	//  it would communicate are already dropping traffic to it.
 	if network.isPartitioningEnabled {
-		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
+		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 				" to know what packet loss updates to apply on the new node")
@@ -355,7 +355,7 @@ func (network *ServiceNetworkImpl) StartService(
 
 		// TODO Getting packet loss configuration by service GUID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
 		//  Getting packet loss configuration by service GUID not an expensive call
-		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceGUID()
+		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
 				" to know what packet loss updates to apply on the new node")
@@ -374,9 +374,9 @@ func (network *ServiceNetworkImpl) StartService(
 }
 
 func (network *ServiceNetworkImpl) RemoveService(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		containerStopTimeout time.Duration) error {
+	ctx context.Context,
+	serviceId service_network_types.ServiceID,
+	containerStopTimeout time.Duration) error {
 	// TODO switch to a wrapper function
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -391,9 +391,9 @@ func (network *ServiceNetworkImpl) RemoveService(
 }
 
 func (network *ServiceNetworkImpl) ExecCommand(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		command []string) (int32, string, error) {
+	ctx context.Context,
+	serviceId service_network_types.ServiceID,
+	command []string) (int32, string, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
@@ -483,9 +483,9 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.Ser
 // 									   Private helper methods
 // ====================================================================================================
 func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
-		ctx context.Context,
-		serviceId service_network_types.ServiceID,
-		containerStopTimeout time.Duration) error {
+	ctx context.Context,
+	serviceId service_network_types.ServiceID,
+	containerStopTimeout time.Duration) error {
 
 	serviceGuid := network.serviceIDsToGUIDs[serviceId]
 

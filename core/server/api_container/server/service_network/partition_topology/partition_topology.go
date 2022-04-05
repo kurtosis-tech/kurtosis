@@ -20,20 +20,20 @@ type PartitionConnection struct {
 type PartitionTopology struct {
 	defaultConnection PartitionConnection
 
-	servicePartitions map[service.ServiceGUID]service_network_types.PartitionID
+	servicePartitions map[service.ServiceID]service_network_types.PartitionID
 
 	partitionConnections map[service_network_types.PartitionConnectionID]PartitionConnection
 
 	// A service can be a part of exactly one partition at a time
-	partitionServices map[service_network_types.PartitionID]map[service.ServiceGUID]bool // partitionId -> set<serviceId>
+	partitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool // partitionId -> set<serviceId>
 }
 
 func NewPartitionTopology(defaultPartition service_network_types.PartitionID, defaultConnection PartitionConnection) *PartitionTopology {
 	return &PartitionTopology{
-		servicePartitions:    map[service.ServiceGUID]service_network_types.PartitionID{},
+		servicePartitions:    map[service.ServiceID]service_network_types.PartitionID{},
 		partitionConnections: map[service_network_types.PartitionConnectionID]PartitionConnection{},
-		partitionServices: map[service_network_types.PartitionID]map[service.ServiceGUID]bool{
-			defaultPartition: map[service.ServiceGUID]bool{},
+		partitionServices: map[service_network_types.PartitionID]map[service.ServiceID]bool{
+			defaultPartition: map[service.ServiceID]bool{},
 		},
 		defaultConnection: defaultConnection,
 	}
@@ -43,7 +43,7 @@ func NewPartitionTopology(defaultPartition service_network_types.PartitionID, de
 //                                        Public Methods
 // ================================================================================================
 func (topology *PartitionTopology) Repartition(
-	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceGUID]bool,
+	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
 	newPartitionConnections map[service_network_types.PartitionConnectionID]PartitionConnection,
 	newDefaultConnection PartitionConnection) error {
 	// Validate we have at least one partition
@@ -52,25 +52,25 @@ func (topology *PartitionTopology) Repartition(
 	}
 
 	// Validate that each existing service in the testnet gets exactly one partition allocation
-	allServicesInNetwork := map[service.ServiceGUID]bool{}
-	servicesNeedingAllocation := map[service.ServiceGUID]bool{}
-	for serviceGuid := range topology.servicePartitions {
-		allServicesInNetwork[serviceGuid] = true
-		servicesNeedingAllocation[serviceGuid] = true
+	allServicesInNetwork := map[service.ServiceID]bool{}
+	servicesNeedingAllocation := map[service.ServiceID]bool{}
+	for serviceId := range topology.servicePartitions {
+		allServicesInNetwork[serviceId] = true
+		servicesNeedingAllocation[serviceId] = true
 	}
-	allocatedServices := map[service.ServiceGUID]bool{}
-	unknownServices := map[service.ServiceGUID]bool{}
-	duplicatedAllocations := map[service.ServiceGUID]bool{}
+	allocatedServices := map[service.ServiceID]bool{}
+	unknownServices := map[service.ServiceID]bool{}
+	duplicatedAllocations := map[service.ServiceID]bool{}
 	for _, servicesForPartition := range newPartitionServices {
-		for serviceGuid := range servicesForPartition {
-			if doesServiceSetContainsElement(allocatedServices, serviceGuid) {
-				duplicatedAllocations[serviceGuid] = true
+		for serviceId := range servicesForPartition {
+			if doesServiceSetContainsElement(allocatedServices, serviceId) {
+				duplicatedAllocations[serviceId] = true
 			}
-			if !doesServiceSetContainsElement(allServicesInNetwork, serviceGuid) {
-				unknownServices[serviceGuid] = true
+			if !doesServiceSetContainsElement(allServicesInNetwork, serviceId) {
+				unknownServices[serviceId] = true
 			}
-			allocatedServices[serviceGuid] = true
-			delete(servicesNeedingAllocation, serviceGuid)
+			allocatedServices[serviceId] = true
+			delete(servicesNeedingAllocation, serviceId)
 		}
 	}
 	if len(servicesNeedingAllocation) > 0 {
@@ -113,12 +113,12 @@ func (topology *PartitionTopology) Repartition(
 	}
 
 	// Defensive copies
-	newPartitionServicesCopy := map[service_network_types.PartitionID]map[service.ServiceGUID]bool{}
-	newServicePartitionsCopy := map[service.ServiceGUID]service_network_types.PartitionID{}
+	newPartitionServicesCopy := map[service_network_types.PartitionID]map[service.ServiceID]bool{}
+	newServicePartitionsCopy := map[service.ServiceID]service_network_types.PartitionID{}
 	for partitionId, servicesForPartition := range newPartitionServices {
 		newPartitionServicesCopy[partitionId] = copyServiceSet(servicesForPartition)
-		for serviceGuid := range servicesForPartition {
-			newServicePartitionsCopy[serviceGuid] = partitionId
+		for serviceId := range servicesForPartition {
+			newServicePartitionsCopy[serviceId] = partitionId
 		}
 	}
 	newPartitionConnectionsCopy := map[service_network_types.PartitionConnectionID]PartitionConnection{}
@@ -134,11 +134,11 @@ func (topology *PartitionTopology) Repartition(
 	return nil
 }
 
-func (topology *PartitionTopology) AddService(serviceGuid service.ServiceGUID, partitionId service_network_types.PartitionID) error {
-	if existingPartition, found := topology.servicePartitions[serviceGuid]; found {
+func (topology *PartitionTopology) AddService(serviceId service.ServiceID, partitionId service_network_types.PartitionID) error {
+	if existingPartition, found := topology.servicePartitions[serviceId]; found {
 		return stacktrace.NewError(
 			"Cannot add service '%v' to partition '%v' because the service is already assigned to partition '%v'",
-			serviceGuid,
+			serviceId,
 			partitionId,
 			existingPartition)
 	}
@@ -147,37 +147,37 @@ func (topology *PartitionTopology) AddService(serviceGuid service.ServiceGUID, p
 	if !found {
 		return stacktrace.NewError(
 			"Cannot assign service '%v' to partition '%v'; the partition doesn't exist",
-			serviceGuid,
+			serviceId,
 			partitionId)
 	}
-	servicesForPartition[serviceGuid] = true
-	topology.servicePartitions[serviceGuid] = partitionId
+	servicesForPartition[serviceId] = true
+	topology.servicePartitions[serviceId] = partitionId
 	return nil
 }
 
 /*
 Removes the given service from the toplogy, if it exists. If it doesn't exist, this is a no-op.
 */
-func (topology *PartitionTopology) RemoveService(serviceGuid service.ServiceGUID) {
-	partitionId, found := topology.servicePartitions[serviceGuid]
+func (topology *PartitionTopology) RemoveService(serviceId service.ServiceID) {
+	partitionId, found := topology.servicePartitions[serviceId]
 	if !found {
 		return
 	}
-	delete(topology.servicePartitions, serviceGuid)
+	delete(topology.servicePartitions, serviceId)
 
 	servicesForPartition, found := topology.partitionServices[partitionId]
-	delete(servicesForPartition, serviceGuid)
+	delete(servicesForPartition, serviceId)
 }
 
-func (topology PartitionTopology) GetPartitionServices() map[service_network_types.PartitionID]map[service.ServiceGUID]bool {
+func (topology PartitionTopology) GetPartitionServices() map[service_network_types.PartitionID]map[service.ServiceID]bool {
 	return topology.partitionServices
 }
 
-func (topology PartitionTopology) GetServicePacketLossConfigurationsByServiceGUID() (map[service.ServiceGUID]map[service.ServiceGUID]float32, error) {
-	result := map[service.ServiceGUID]map[service.ServiceGUID]float32{}
+func (topology PartitionTopology) GetServicePacketLossConfigurationsByServiceID() (map[service.ServiceID]map[service.ServiceID]float32, error) {
+	result := map[service.ServiceID]map[service.ServiceID]float32{}
 	for partitionId, servicesInPartition := range topology.partitionServices {
-		for serviceGuid := range servicesInPartition{
-			otherServicesPacketLossConfigMap := map[service.ServiceGUID]float32{}
+		for serviceId := range servicesInPartition {
+			otherServicesPacketLossConfigMap := map[service.ServiceID]float32{}
 			for otherPartitionId, servicesInOtherPartition := range topology.partitionServices {
 				if partitionId == otherPartitionId {
 					// Two services in the same partition will never block each other
@@ -187,11 +187,11 @@ func (topology PartitionTopology) GetServicePacketLossConfigurationsByServiceGUI
 				if err != nil {
 					return nil, stacktrace.NewError("Couldn't get connection between partitions '%v' and '%v'", partitionId, otherPartitionId)
 				}
-				for otherServiceGuid := range servicesInOtherPartition {
-					otherServicesPacketLossConfigMap[otherServiceGuid] = connection.PacketLossPercentage
+				for otherServiceId := range servicesInOtherPartition {
+					otherServicesPacketLossConfigMap[otherServiceId] = connection.PacketLossPercentage
 				}
 			}
-			result[serviceGuid] = otherServicesPacketLossConfigMap
+			result[serviceId] = otherServicesPacketLossConfigMap
 		}
 	}
 	return result, nil
@@ -217,7 +217,7 @@ func (topology PartitionTopology) getPartitionConnection(
 	return connection, nil
 }
 
-func serviceIdSetToCommaStr(serviceSet map[service.ServiceGUID]bool) string {
+func serviceIdSetToCommaStr(serviceSet map[service.ServiceID]bool) string {
 	strSlice := []string{}
 	for serviceId := range serviceSet {
 		strSlice = append(strSlice, string(serviceId))
@@ -225,15 +225,15 @@ func serviceIdSetToCommaStr(serviceSet map[service.ServiceGUID]bool) string {
 	return strings.Join(strSlice, ", ")
 }
 
-func doesServiceSetContainsElement(serviceSet map[service.ServiceGUID]bool, element service.ServiceGUID) bool {
+func doesServiceSetContainsElement(serviceSet map[service.ServiceID]bool, element service.ServiceID) bool {
 	if _, found := serviceSet[element]; found {
 		return true
 	}
 	return false
 }
 
-func copyServiceSet(serviceSet map[service.ServiceGUID]bool) map[service.ServiceGUID]bool {
-	newServiceSet := map[service.ServiceGUID]bool{}
+func copyServiceSet(serviceSet map[service.ServiceID]bool) map[service.ServiceID]bool {
+	newServiceSet := map[service.ServiceID]bool{}
 	for serviceGuid := range serviceSet {
 		newServiceSet[serviceGuid] = true
 	}
