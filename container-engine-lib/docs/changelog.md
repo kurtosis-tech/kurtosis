@@ -8,6 +8,13 @@
 * Added generic `Shell` object to interact with user services
 * Implemented the methods: `CreateRepl`, `Attach`, `GetRepls`, `RunReplExecCommands`, `StopRepls` and `DestroyRepls` methods in `DockerKurtosisBackend`
 
+# 0.10.3
+### Features
+* Added module CRUD methods
+
+### Fixes
+* Fixed a bug in `CreateAPIContainer` where the wrong label was being used to check for enclave ID
+
 # 0.10.2
 ### Features
 * Added `UserService` methods, `Modules` methods and `CreateRepartition` method in `KurtosisBackend` interface

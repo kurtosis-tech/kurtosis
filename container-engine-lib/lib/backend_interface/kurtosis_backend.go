@@ -155,17 +155,27 @@ type KurtosisBackend interface {
 	// Create a module from a container image with serialized params
 	CreateModule(
 		ctx context.Context,
+		image string,
+		enclaveId enclave.EnclaveID,
 		id module.ModuleID,
 		guid module.ModuleGUID,
-		containerImageName string,
-		serializedParams string,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+		grpcPortNum uint16,
+		enclaveDataDirpathOnHostMachine string,
+		envVars map[string]string,
 	)(
 		newModule *module.Module,
 		resultErr error,
 	)
 
-	// Gets modules using the given filters, returning a map of matched modules identified by their module GUID
-	GetModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error)
+	// Gets modules using the given filters, returning a map of matched modules identified by their module ID
+	GetModules(
+		ctx context.Context,
+		filters *module.ModuleFilters,
+	) (
+		map[module.ModuleGUID]*module.Module,
+		error,
+	)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
 	DestroyModules(

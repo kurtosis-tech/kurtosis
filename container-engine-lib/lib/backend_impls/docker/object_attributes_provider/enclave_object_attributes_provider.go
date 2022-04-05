@@ -39,7 +39,13 @@ type DockerEnclaveObjectAttributesProvider interface {
 	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
-	// ForModuleContainer(moduleID string, moduleGUID string, privatePortNum uint16) (DockerObjectAttributes, error)
+	ForModuleContainer(
+		privateIpAddr net.IP,
+		moduleID string,
+		moduleGUID string,
+		privatePortId string,
+		privatePortSpec *port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -214,6 +220,55 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 
 	return objectAttributes, nil
 }
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
+	privateIpAddr net.IP,
+	moduleID string,
+	moduleGUID string,
+	privatePortId string,
+	privatePortSpec *port_spec.PortSpec,
+) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject([]string{
+		moduleContainerNameFragment,
+		moduleGUID,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the module container name object")
+	}
+
+	privateIpLabelValue, err := docker_label_value.CreateNewDockerLabelValue(privateIpAddr.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from module container private IP address '%v'",
+			privateIpAddr.String(),
+		)
+	}
+
+	usedPorts := map[string]*port_spec.PortSpec{
+		privatePortId: privatePortSpec,
+	}
+	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(usedPorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following module container ports object to a string for storing in the ports label: %+v", usedPorts)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(moduleID, moduleGUID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the module labels using ID '%v' and GUID '%v'", moduleID, moduleGUID)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeLabelValue
+	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
 // ====================================================================================================
 //                                      Private Helper Functions
 // ====================================================================================================
