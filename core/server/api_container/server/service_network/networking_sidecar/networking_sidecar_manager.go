@@ -49,7 +49,8 @@ func NewStandardNetworkingSidecarManager(kurtosisBackend backend_interface.Kurto
 // Adds a sidecar container attached to the given service ID
 func (manager *StandardNetworkingSidecarManager) Add(
 	ctx context.Context,
-	serviceGUID service.ServiceGUID) (NetworkingSidecarWrapper, error) {
+	serviceGUID service.ServiceGUID,
+) (NetworkingSidecarWrapper, error) {
 
 	sidecarIp, err := manager.freeIpAddrTracker.GetFreeIpAddr()
 	if err != nil {
@@ -59,7 +60,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 			serviceGUID)
 	}
 
-	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId,serviceGUID, sidecarIp)
+	networkingSidecar, err := manager.kurtosisBackend.CreateNetworkingSidecar(ctx, manager.enclaveId, serviceGUID, sidecarIp)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for service with GUID '%v' in enclave with ID '%v'", serviceGUID, manager.enclaveId)
 	}

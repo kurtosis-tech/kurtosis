@@ -151,13 +151,13 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
-	servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+	servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
+		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 			" after repartition, meaning that no partitions are actually being enforced!")
 	}
 
-	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceGUID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
+	if err := updateTrafficControlConfiguration(ctx, servicePacketLossConfigurationsByServiceID, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
 		return stacktrace.Propagate(err, "An error occurred updating the traffic control configuration to match the target service packet loss configurations after repartitioning")
 	}
 	return nil
@@ -213,28 +213,27 @@ func (network ServiceNetworkImpl) RegisterService(
 		return nil, "", stacktrace.Propagate(err, "An error occurred creating a new service directory for service with GUID '%v'", serviceGuid)
 	}
 
-	serviceRegistrationInfo := serviceRegistrationInfo{
+	newServiceRegistrationInfo := serviceRegistrationInfo{
 		privateIpAddr:    ip,
 		serviceDirectory: serviceDirectory,
 	}
 
-	network.serviceRegistrationInfo[serviceGuid] = serviceRegistrationInfo
-	network.serviceIDsToGUIDs[serviceId] = serviceGuid
+	network.serviceRegistrationInfo[serviceId] = newServiceRegistrationInfo
 	shouldUndoRegistrationInfoAdd := true
 	defer func() {
 		// If an error occurs, the service ID won't be used so we need to delete it from the map
 		if shouldUndoRegistrationInfoAdd {
-			delete(network.serviceRegistrationInfo, serviceGuid)
-			delete(network.serviceIDsToGUIDs, serviceId)
+			delete(network.serviceRegistrationInfo, serviceId)
 		}
 	}()
 
-	if err := network.topology.AddService(serviceGuid, partitionId); err != nil {
+	if err := network.topology.AddService(serviceId, partitionId); err != nil {
 		return nil, "", stacktrace.Propagate(
 			err,
-			"An error occurred adding service with GUID '%v' to partition '%v' in the topology",
-			serviceGuid,
-			partitionId)
+			"An error occurred adding service with ID '%v' to partition '%v' in the topology",
+			serviceId,
+			partitionId,
+		)
 	}
 
 	shouldFreeIpAddr = false
@@ -274,7 +273,7 @@ func (network *ServiceNetworkImpl) StartService(
 
 	registrationInfo, registrationInfoFound := network.serviceRegistrationInfo[serviceId]
 	if !registrationInfoFound {
-		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that GUID has been registered", serviceId)
+		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; no service with that ID has been registered", serviceId)
 	}
 	if _, found := network.serviceRunInfo[serviceId]; found {
 		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
@@ -342,22 +341,22 @@ func (network *ServiceNetworkImpl) StartService(
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding the networking sidecar")
 		}
-		network.networkingSidecars[serviceGuid] = sidecar
+		network.networkingSidecars[serviceId] = sidecar
 
 		if err := sidecar.InitializeTrafficControl(ctx); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration")
 		}
 
-		// TODO Getting packet loss configuration by service GUID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
-		//  Getting packet loss configuration by service GUID not an expensive call
-		servicePacketLossConfigurationsByServiceGUID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
+		// TODO Getting packet loss configuration by service ID is an expensive call and, as of 2021-11-23, we do it twice - the solution is to make
+		//  Getting packet loss configuration by service ID not an expensive call
+		servicePacketLossConfigurationsByServiceID, err := network.topology.GetServicePacketLossConfigurationsByServiceID()
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service GUID "+
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
 				" to know what packet loss updates to apply on the new node")
 		}
-		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceGUID[serviceGuid]
-		updatesToApply := map[service.ServiceGUID]map[service.ServiceGUID]float32{
-			serviceGuid: newNodeServicePacketLossConfiguration,
+		newNodeServicePacketLossConfiguration := servicePacketLossConfigurationsByServiceID[serviceId]
+		updatesToApply := map[service.ServiceID]map[service.ServiceID]float32{
+			serviceId: newNodeServicePacketLossConfiguration,
 		}
 		if err := updateTrafficControlConfiguration(ctx, updatesToApply, network.serviceRegistrationInfo, network.networkingSidecars); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred applying the traffic control configuration on the new node to partition it "+
