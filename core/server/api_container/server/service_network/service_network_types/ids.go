@@ -7,7 +7,7 @@ package service_network_types
 
 //TODO Once we switch completely to KurtosisBackend, this should be removed and we should use service.ServiceID
 // from container-engine-lib instead
-type ServiceID string
+// type ServiceID string
 
 // This is the Service Global Unique Identifier necessary to identify the service's container and
 //the service's folder in the enclave data dir when two services with the same ID are loaded

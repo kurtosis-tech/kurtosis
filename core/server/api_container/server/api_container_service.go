@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
@@ -182,7 +183,7 @@ func (service ApiContainerService) RegisterFilesArtifacts(ctx context.Context, a
 }
 
 func (service ApiContainerService) RegisterService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RegisterServiceArgs) (*kurtosis_core_rpc_api_bindings.RegisterServiceResponse, error) {
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	partitionId := service_network_types.PartitionID(args.PartitionId)
 
 	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.RegisterService(serviceId, partitionId)
@@ -199,7 +200,7 @@ func (service ApiContainerService) RegisterService(ctx context.Context, args *ku
 
 func (service ApiContainerService) StartService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServiceArgs) (*kurtosis_core_rpc_api_bindings.StartServiceResponse, error) {
 	logrus.Debugf("Received request to start service with the following args: %+v", args)
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 	privateApiPorts := args.PrivatePorts
 	privateEnclaveContainerPorts := map[string]*enclave_container_launcher.EnclaveContainerPort{}
 	for portId, privateApiPort := range privateApiPorts {
@@ -247,7 +248,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 
 func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServiceInfoArgs) (*kurtosis_core_rpc_api_bindings.GetServiceInfoResponse, error) {
 	serviceIdStr := args.GetServiceId()
-	serviceId := service_network_types.ServiceID(serviceIdStr)
+	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	privateIpAddr, relativeServiceDirpath, err := service.serviceNetwork.GetServiceRegistrationInfo(serviceId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
@@ -282,7 +283,7 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 }
 
 func (service ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*emptypb.Empty, error) {
-	serviceId := service_network_types.ServiceID(args.ServiceId)
+	serviceId := kurtosis_backend_service.ServiceID(args.ServiceId)
 
 	containerStopTimeoutSeconds := args.ContainerStopTimeoutSeconds
 	containerStopTimeout := time.Duration(containerStopTimeoutSeconds) * time.Second
@@ -296,12 +297,12 @@ func (service ApiContainerService) RemoveService(ctx context.Context, args *kurt
 
 func (service ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
 	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[service_network_types.PartitionID]map[service_network_types.ServiceID]bool{}
+	partitionServices := map[service_network_types.PartitionID]map[kurtosis_backend_service.ServiceID]bool{}
 	for partitionIdStr, servicesInPartition := range args.PartitionServices {
 		partitionId := service_network_types.PartitionID(partitionIdStr)
-		serviceIdSet := map[service_network_types.ServiceID]bool{}
+		serviceIdSet := map[kurtosis_backend_service.ServiceID]bool{}
 		for serviceIdStr := range servicesInPartition.ServiceIdSet {
-			serviceId := service_network_types.ServiceID(serviceIdStr)
+			serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 			serviceIdSet[serviceId] = true
 		}
 		partitionServices[partitionId] = serviceIdSet
@@ -343,7 +344,7 @@ func (service ApiContainerService) Repartition(ctx context.Context, args *kurtos
 
 func (service ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdStr := args.ServiceId
-	serviceId := service_network_types.ServiceID(serviceIdStr)
+	serviceId := kurtosis_backend_service.ServiceID(serviceIdStr)
 	command := args.CommandArgs
 	exitCode, logOutput, err := service.serviceNetwork.ExecCommand(ctx, serviceId, command)
 	if err != nil {
@@ -529,7 +530,7 @@ func (service ApiContainerService) waitForEndpointAvailability(
 		err  error
 	)
 
-	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(service_network_types.ServiceID(serviceIdStr))
+	privateServiceIp, _, err := service.serviceNetwork.GetServiceRegistrationInfo(kurtosis_backend_service.ServiceID(serviceIdStr))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the registration info for service '%v'", serviceIdStr)
 	}
