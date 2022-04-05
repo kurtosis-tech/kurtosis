@@ -1,4 +1,5 @@
 # TBD
+* Updated api_container_launcher to use kurtosis_backend for launching API container instances
 
 # 1.41.2
 ### Changes
