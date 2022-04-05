@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 )
 
-func (backendCore *DockerKurtosisBackend) CreateModule(
+func (backend *DockerKurtosisBackend) CreateModule(
 	ctx context.Context,
 	id module.ModuleID,
 	guid module.ModuleGUID,
@@ -18,7 +18,7 @@ func (backendCore *DockerKurtosisBackend) CreateModule(
 	panic("Implement me")
 }
 
-func (backendCore *DockerKurtosisBackend) GetModules(
+func (backend *DockerKurtosisBackend) GetModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 ) (
@@ -28,7 +28,7 @@ func (backendCore *DockerKurtosisBackend) GetModules(
 	panic("Implement me")
 }
 
-func (backendCore *DockerKurtosisBackend) DestroyModules(
+func (backend *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,
 ) (

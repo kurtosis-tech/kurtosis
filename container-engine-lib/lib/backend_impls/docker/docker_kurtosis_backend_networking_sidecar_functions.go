@@ -27,7 +27,7 @@ var sidecarContainerCommand = []string{
 	"sleep", "infinity",
 }
 
-func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
+func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGuid service.ServiceGUID,
@@ -37,12 +37,12 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 	error,
 ){
 	// Get the Docker network ID where we'll start the new sidecar container
-	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	enclaveStatus, enclaveContainers, err := backendCore.getEnclaveStatusAndContainers(ctx, enclaveId)
+	enclaveStatus, enclaveContainers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 	}
@@ -56,7 +56,7 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service container with GUID '%v' from container list '%+v' which are part of enclave with ID '%v'", serviceGuid, enclaveContainers, enclaveId)
 	}
 
-	enclaveObjAttrsProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
@@ -91,25 +91,42 @@ func (backendCore *DockerKurtosisBackend) CreateNetworkingSidecar(
 	).Build()
 
 	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, networkingSidecarImageName); err != nil {
+	if err = backend.dockerManager.PullImage(ctx, networkingSidecarImageName); err != nil {
 		logrus.Warnf("Failed to pull the latest version of networking sidecar container image '%v'; you may be running an out-of-date version", networkingSidecarImageName)
 	}
 
-	_, _, err = backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the networking sidecar container")
 	}
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			// NOTE: We use the background context here so that the kill will still go off even if the reason for
+			// the failure was the original context being cancelled
+			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+				logrus.Errorf(
+					"Launching networking sidecar container '%v' with container ID '%v' didn't complete successfully so we " +
+						"tried to kill the container we started, but doing so exited with an error:\n%v",
+					containerName.GetString(),
+					containerId,
+					err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop networking sidecar container with ID '%v'!!!!!!", containerId)
+			}
+		}
+	}()
 
 	networkingSidecar, err := getNetworkingSidecarObjectFromContainerInfo(containerLabels, types.ContainerStatus_Running)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecar object from container info with labels '%+v' and container status '%v'", containerLabels, types.ContainerStatus_Running)
 	}
 
+	shouldKillContainer = false
 	return networkingSidecar, nil
 
 }
 
-func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
+func (backend *DockerKurtosisBackend) GetNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -117,7 +134,7 @@ func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
 	error,
 ) {
 
-	networkingSidecars, err := backendCore.getMatchingNetworkingSidecars(ctx, filters)
+	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
@@ -130,7 +147,7 @@ func (backendCore *DockerKurtosisBackend) GetNetworkingSidecars(
 	return successfulNetworkingSidecars, nil
 }
 
-func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
+func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
@@ -154,19 +171,37 @@ func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 		UserServiceGUIDs: userServiceGuids,
 	}
 
-	networkingSidecars, err := backendCore.getMatchingNetworkingSidecars(ctx, filters)
+	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
+	}
+
+	expectedToRunCommandsUserServiceGuids := map[service.ServiceGUID]bool{}
+	for userServiceGuid := range networkingSidecarsCommands {
+		expectedToRunCommandsUserServiceGuids[userServiceGuid] = true
 	}
 
 	// TODO Parallelize to increase perf
 	for containerId, networkingSidecar := range networkingSidecars {
-		networkingSidecarUnwrappedCommand := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
+		networkingSidecarUnwrappedCommand, found := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
+		if !found {
+			return nil,
+			nil,
+			stacktrace.NewError(
+				"Networking sidecar with user service GUID '%v' was found when getting matching " +
+					"networking sidecars with filters '%+v' but it was not declared in the networking " +
+					"sidecar exec commands list '%+v', so not commands will be executed on this",
+					networkingSidecar.GetServiceGUID(),
+					filters,
+					networkingSidecarsCommands,
+					)
+		}
 
 		networkingSidecarShWrappedCmd := wrapShCommand(networkingSidecarUnwrappedCommand)
 
+		delete(expectedToRunCommandsUserServiceGuids, networkingSidecar.GetServiceGUID())
 		execOutputBuf := &bytes.Buffer{}
-		exitCode, err := backendCore.dockerManager.RunExecCommand(
+		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
 			containerId,
 			networkingSidecarShWrappedCmd,
@@ -196,10 +231,19 @@ func (backendCore *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 		successfulUserServiceGuids[networkingSidecar.GetServiceGUID()] = true
 	}
 
+	if len(expectedToRunCommandsUserServiceGuids) > 0 {
+		for userServiceGuid := range expectedToRunCommandsUserServiceGuids{
+			err := stacktrace.NewError(
+				"Networking sidecar with user service GUID '%v' was not found, " +
+					"so no commands were executed", userServiceGuid)
+			erroredUserServiceGuids[userServiceGuid] = err
+		}
+	}
+
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
-func (backendCore *DockerKurtosisBackend) StopNetworkingSidecars(
+func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -211,24 +255,28 @@ func (backendCore *DockerKurtosisBackend) StopNetworkingSidecars(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	networkingSidecars, err := backendCore.getMatchingNetworkingSidecars(ctx, filters)
+	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
 	for containerId, networkingSidecar := range networkingSidecars {
-		if err := backendCore.killContainerAndWaitForExit(ctx, containerId); err != nil {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing networking sidecar container with user service GUID '%v' and container ID '%v'", networkingSidecar.GetServiceGUID(), containerId)
-			erroredUserServiceGuids[networkingSidecar.GetServiceGUID()] = wrappedErr
+		userServiceGuid := networkingSidecar.GetServiceGUID()
+		containerIdsSet := map[string]bool{
+			containerId: true,
+		}
+		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred killing user service with GUID '%v' with container ID '%v'", userServiceGuid, containerId)
+			erroredUserServiceGuids[userServiceGuid] = wrappedErr
 			continue
 		}
-		successfulUserServiceGuids[networkingSidecar.GetServiceGUID()] = true
+		successfulUserServiceGuids[userServiceGuid] = true
 	}
 
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
-func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
+func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (
@@ -239,13 +287,13 @@ func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	networkingSidecars, err := backendCore.getMatchingNetworkingSidecars(ctx, filters)
+	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
 	for containerId, networkingSidecar := range networkingSidecars {
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred removing container with ID '%v'",
@@ -262,7 +310,7 @@ func (backendCore *DockerKurtosisBackend) DestroyNetworkingSidecars(
 // ====================================================================================================
 // 									   Private helper methods
 // ====================================================================================================
-func (backendCore *DockerKurtosisBackend) getMatchingNetworkingSidecars(
+func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 	ctx context.Context,
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (map[string]*networking_sidecar.NetworkingSidecar, error) {
@@ -271,7 +319,7 @@ func (backendCore *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeLabelValue.GetString(),
 	}
-	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
 	}
@@ -323,7 +371,7 @@ func getNetworkingSidecarObjectFromContainerInfo(
 
 	guid, found := labels[label_key_consts.GUIDLabelKey.GetString()]
 	if !found {
-		return nil, stacktrace.NewError("Expected to find user service GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
 	}
 
 	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
@@ -338,25 +386,8 @@ func getNetworkingSidecarObjectFromContainerInfo(
 		status = container_status.ContainerStatus_Stopped
 	}
 
-	var privateIpAddr net.IP
-	privateIpAddrStr, found := labels[label_key_consts.PrivateIPLabelKey.GetString()]
-	// UNCOMMENT THIS AFTER 2022-06-30 WHEN NOBODY HAS NETWORKING SIDECAR WITHOUT THE PRIVATE IP ADDRESS LABEL
-	/*
-		if !found {
-			return nil, stacktrace.NewError("Expected to find networking sidecar private IP label key '%v' but none was found", label_key_consts.PrivateIPLabelKey.GetString())
-		}
-	*/
-	if found {
-		candidatePrivateIpAddr := net.ParseIP(privateIpAddrStr)
-		if candidatePrivateIpAddr == nil {
-			return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
-		}
-		privateIpAddr = candidatePrivateIpAddr
-	}
-
 	newObject := networking_sidecar.NewNetworkingSidecar(
 		service.ServiceGUID(guid),
-		privateIpAddr,
 		enclave.EnclaveID(enclaveId),
 		status,
 	)

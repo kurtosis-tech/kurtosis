@@ -127,7 +127,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -176,7 +176,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -196,28 +196,17 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
 	}
 
-	privateIpLabelValue, err := docker_label_value.CreateNewDockerLabelValue(privateIpAddr.String())
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a Docker label value object from networking sidecar container private IP address '%v'",
-			privateIpAddr.String(),
-		)
-	}
-
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceGUIDSidecarAttachedTo))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeLabelValue
-	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
-
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)
@@ -252,28 +241,26 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	}
 }
 
-
-func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error){
+func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithGUID(guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels := provider.getLabelsForEnclaveObject()
-	dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(guid)
+	guidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred trying to create a new Docker label value for '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
-	labels[label_key_consts.GUIDLabelKey] = dockerLabelValue
+	labels[label_key_consts.GUIDLabelKey] = guidLabelValue
 	return labels, nil
 }
-
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObjectWithIDAndGUID(id, guid string) (map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue, error) {
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave object labels with GUID '%v'", guid)
 	}
-	dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
+	idLabelValue, err := docker_label_value.CreateNewDockerLabelValue(id)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred trying to create a new Docker label value for '%v'", id)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from ID string '%v'", id)
 	}
-	labels[label_key_consts.IDLabelKey] = dockerLabelValue
+	labels[label_key_consts.IDLabelKey] = idLabelValue
 	return labels, nil
 }
 

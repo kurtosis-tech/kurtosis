@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarsExecCommand`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
+* Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarExecCommands`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
 * Implemented the methods: `CreateUserService`, `GetUserServices`, `StopUserServices`, `GetUserServiceLogs` and `DestroyUserServices` in `DockerKurtosisBackend`
 * Implemented the methods: `WaitForUserServiceHttpEndpointAvailability`, `GetShellOnUserService` and `RunUserServiceExecCommand` methods in `DockerKurtosisBackend`
 * Added `NetworkingSidecarContainerTypeLabelValue` label value constant

@@ -88,9 +88,9 @@ const (
 
 	shouldFollowContainerLogsWhenGettingFailedContainerLogs = false
 
-	shouldAttachStdinWhenCreatingContainerExec = true
-	shouldAttachStdstrmToTtyWhenCreatingContainerExec = true
-	shouldAttachStderrWhenCreatingContainerExec = true
+	shouldAttachStdinWhenCreatingContainerExec                = true
+	shouldAttachStandardStreamsToTtyWhenCreatingContainerExec = true
+	shouldAttachStderrWhenCreatingContainerExec               = true
 	shouldAttachStdoutWhenCreatingContainerExec = true
 	shouldExecuteInDetachModeWhenCreatingContainerExec = false
 )
@@ -851,10 +851,10 @@ func (manager DockerManager) PullImage(context context.Context, imageName string
 	return nil
 }
 
-func (manager DockerManager) ContainerExecCreate(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
+func (manager DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
 	config := types.ExecConfig{
 		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
-		Tty:          shouldAttachStdstrmToTtyWhenCreatingContainerExec,
+		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
 		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
 		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
 		Detach:       shouldExecuteInDetachModeWhenCreatingContainerExec,

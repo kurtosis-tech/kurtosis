@@ -206,6 +206,7 @@ type KurtosisBackend interface {
 	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
+	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
 		filters *service.ServiceFilters,
@@ -236,7 +237,7 @@ type KurtosisBackend interface {
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
 		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
 		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries

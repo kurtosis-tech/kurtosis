@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -21,6 +22,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -36,7 +38,7 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 	"if command -v 'bash' > /dev/null; then echo \"Found bash on container; creating bash shell...\"; bash; else echo \"No bash found on container; dropping down to sh shell...\"; sh; fi",
 }
 
-func (backendCore *DockerKurtosisBackend) CreateUserService(
+func (backend *DockerKurtosisBackend) CreateUserService(
 	ctx context.Context,
 	id service.ServiceID,
 	guid service.ServiceGUID,
@@ -54,7 +56,7 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 	resultErr error,
 ) {
 
-	enclaveObjAttrsProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
@@ -70,11 +72,12 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	enclaveNetwork, err := backendCore.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
+	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
 	usedPorts, _, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
@@ -113,24 +116,41 @@ func (backendCore *DockerKurtosisBackend) CreateUserService(
 	createAndStartArgs := createAndStartArgsBuilder.Build()
 
 	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, containerImageName); err != nil {
+	if err = backend.dockerManager.PullImage(ctx, containerImageName); err != nil {
 		logrus.Warnf("Failed to pull the latest version of user service container image '%v'; you may be running an out-of-date version", containerImageName)
 	}
 
-	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the user service container for user service with GUID '%v'", guid)
 	}
+	shouldKillContainer := true
+	defer func() {
+		if shouldKillContainer {
+			// NOTE: We use the background context here so that the kill will still go off even if the reason for
+			// the failure was the original context being cancelled
+			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+				logrus.Errorf(
+					"Launching user service container '%v' with container ID '%v' didn't complete successfully so we " +
+						"tried to kill the container we started, but doing so exited with an error:\n%v",
+					containerName.GetString(),
+					containerId,
+					err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop user service container with ID '%v'!!!!!!", containerId)
+			}
+		}
+	}()
 
 	userService, err := getUserServiceObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service object from container info")
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service object from container info, using container ID '%v' and labels '%+v'", containerId, labelStrs)
 	}
 
+	shouldKillContainer = false
 	return userService, nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetUserServices(
+func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (
@@ -138,7 +158,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 	error,
 ) {
 
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -150,7 +170,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServices(
 	return successfulUserServices,  nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
+func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 	shouldFollowLogs bool,
@@ -159,7 +179,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
@@ -169,7 +189,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 
 	//TODO use concurrency to improve perf
 	for containerId, userService := range userServices {
-		readCloserLogs, err := backendCore.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
+		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
 		if err != nil {
 			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for user service with GUID '%v' and container ID '%v'", userService.GetGUID(), containerId)
 			erroredUserServices[userService.GetGUID()] = serviceError
@@ -181,7 +201,7 @@ func (backendCore *DockerKurtosisBackend) GetUserServiceLogs(
 	return successfulUserServicesLogs, erroredUserServices, nil
 }
 
-func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommands(
+func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
@@ -205,19 +225,37 @@ func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommands(
 		GUIDs: userServiceGuids,
 	}
 
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
+	expectedToRunCommandsUserServiceGuids := map[service.ServiceGUID]bool{}
+	for userServiceGuid := range userServiceCommands {
+		expectedToRunCommandsUserServiceGuids[userServiceGuid] = true
+	}
+
 	// TODO Parallelize to increase perf
 	for containerId, userService := range userServices {
-		userServiceUnwrappedCommand := userServiceCommands[userService.GetGUID()]
+		userServiceUnwrappedCommand, found  := userServiceCommands[userService.GetGUID()]
+		if !found {
+			return nil,
+				nil,
+				stacktrace.NewError(
+					"User service with GUID '%v' was found when getting matching " +
+						"user services with filters '%+v' but it was not declared in the user " +
+						"service exec commands list '%+v', so not commands will be executed on this",
+					userService.GetGUID(),
+					filters,
+					userServiceCommands,
+				)
+		}
 
 		userServiceShWrappedCmd := wrapShCommand(userServiceUnwrappedCommand)
 
+		delete(expectedToRunCommandsUserServiceGuids, userService.GetGUID())
 		execOutputBuf := &bytes.Buffer{}
-		exitCode, err := backendCore.dockerManager.RunExecCommand(
+		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
 			containerId,
 			userServiceShWrappedCmd,
@@ -248,10 +286,19 @@ func (backendCore *DockerKurtosisBackend) RunUserServiceExecCommands(
 		successfulUserServiceGuids[userService.GetGUID()] = true
 	}
 
+	if len(expectedToRunCommandsUserServiceGuids) > 0 {
+		for userServiceGuid := range expectedToRunCommandsUserServiceGuids{
+			err := stacktrace.NewError(
+				"User service with GUID '%v' was not found, " +
+					"so no commands were executed", userServiceGuid)
+			erroredUserServiceGuids[userServiceGuid] = err
+		}
+	}
+
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
-func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
+func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
@@ -259,7 +306,7 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	port uint32,
 	path string,
 	requestBody string,
-	bodyText string,
+	expectedResponseBody string,
 	initialDelayMilliseconds uint32,
 	retries uint32,
 	retriesDelayMilliseconds uint32,
@@ -267,16 +314,12 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	resultErr error,
 ) {
 
-	if requestBody != "" && httpMethod != wait_for_availability_http_methods.WaitForAvailabilityHttpMethod_POST {
-		return stacktrace.NewError("Is not possible to execute the http request with body '%v' using the http '%v' method, it is only possible to use http POST method with request body", requestBody, httpMethod)
-	}
-
-	_, userService, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	_, userService, err := backend.getSingleUserService(ctx, enclaveId, serviceGUID)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	url := fmt.Sprintf("http://%v:%v/%v", userService.GetPrivateIp(), port, path)
+	url := fmt.Sprintf("http://%v:%v/%v", userService.GetPrivateIP(), port, path)
 
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
@@ -285,6 +328,23 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 	for i := uint32(0); i < retries; i++ {
 		resp, err = makeHttpRequest(httpMethodStr, url, requestBody)
 		if err == nil {
+			if expectedResponseBody != "" {
+				body := resp.Body
+				defer body.Close()
+
+				bodyBytes, err := ioutil.ReadAll(body)
+
+				if err != nil {
+					return stacktrace.Propagate(err,
+						"An error occurred reading the response body from endpoint '%v'", url)
+				}
+
+				bodyStr := string(bodyBytes)
+
+				if bodyStr != expectedResponseBody {
+					return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", expectedResponseBody, url, bodyStr)
+				}
+			}
 			break
 		}
 		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
@@ -300,27 +360,10 @@ func (backendCore *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailabi
 		)
 	}
 
-	if bodyText != "" {
-		body := resp.Body
-		defer body.Close()
-
-		bodyBytes, err := ioutil.ReadAll(body)
-
-		if err != nil {
-			return stacktrace.Propagate(err,
-				"An error occurred reading the response body from endpoint '%v'", url)
-		}
-
-		bodyStr := string(bodyBytes)
-
-		if bodyStr != bodyText {
-			return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", bodyText, url, bodyStr)
-		}
-	}
 	return nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
+func (backend *DockerKurtosisBackend) GetShellOnUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
@@ -329,12 +372,12 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	error,
 ) {
 
-	containerId, _, err := backendCore.getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(ctx, enclaveId, serviceGUID)
+	containerId, _, err := backend.getSingleUserService(ctx, enclaveId, serviceGUID)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting container ID and user service object for enclave ID '%v' and user service GUID '%v'", enclaveId, serviceGUID)
 	}
 
-	hijackedResponse, err := backendCore.dockerManager.ContainerExecCreate(ctx, containerId, commandToRunWhenCreatingUserServiceShell)
+	hijackedResponse, err := backend.dockerManager.CreateContainerExec(ctx, containerId, commandToRunWhenCreatingUserServiceShell)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred executing container exec create on user service with GUID '%v'", serviceGUID)
 	}
@@ -344,7 +387,7 @@ func (backendCore *DockerKurtosisBackend) GetShellOnUserService(
 	return newShell, nil
 }
 
-func (backendCore *DockerKurtosisBackend) StopUserServices(
+func (backend *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (
@@ -355,23 +398,28 @@ func (backendCore *DockerKurtosisBackend) StopUserServices(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
 	for containerId, userService := range userServices {
-		if err := backendCore.killContainerAndWaitForExit(ctx, containerId); err != nil {
-			erroredUserServiceGuids[userService.GetGUID()] = err
+		userServiceGuid := userService.GetGUID()
+		containerIdsSet := map[string]bool{
+			containerId: true,
+		}
+		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred killing user service with GUID '%v' with container ID '%v'", userServiceGuid, containerId)
+			erroredUserServiceGuids[userServiceGuid] = wrappedErr
 			continue
 		}
-		successfulUserServiceGuids[userService.GetGUID()] = true
+		successfulUserServiceGuids[userServiceGuid] = true
 	}
 
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
-func (backendCore *DockerKurtosisBackend) DestroyUserServices(
+func (backend *DockerKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (
@@ -382,16 +430,16 @@ func (backendCore *DockerKurtosisBackend) DestroyUserServices(
 	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
 	for containerId, userService := range userServices {
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred removing container with ID '%v'",
+				"An error occurred removing user service container with ID '%v'",
 				containerId,
 			)
 			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
@@ -411,6 +459,10 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 		err  error
 	)
 
+	if body != "" && httpMethod != http.MethodPost {
+		return nil, stacktrace.NewError("Is not possible to execute the http request with body '%v' using the http '%v' method", body, httpMethod)
+	}
+
 	if httpMethod == http.MethodPost {
 		var bodyByte = []byte(body)
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(bodyByte))
@@ -423,22 +475,22 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 	}
 
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An HTTP error occurred when sending GET request to endpoint '%v'", url)
+		return nil, stacktrace.Propagate(err, "An HTTP error occurred sending a request to endpoint '%v' using http method '%v'", url, httpMethod)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, stacktrace.NewError("Received non-OK status code: '%v'", resp.StatusCode)
+		return nil, stacktrace.NewError("Received non-OK status code: '%v' when calling http url '%v'", resp.StatusCode, url)
 	}
 	return resp, nil
 }
 
-func (backendCore *DockerKurtosisBackend) getContainerIDAndUserServiceObjectByEnclaveIDAndUserServiceGUID(
+func (backend *DockerKurtosisBackend) getSingleUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	userServiceGuid service.ServiceGUID,
 ) (
-	string,
-	*service.Service,
-	error,
+	containerId string,
+	userService *service.Service,
+	error error,
 ) {
 
 	filters := &service.ServiceFilters{
@@ -450,7 +502,7 @@ func (backendCore *DockerKurtosisBackend) getContainerIDAndUserServiceObjectByEn
 		},
 	}
 
-	userServices, err := backendCore.getMatchingUserServices(ctx, filters)
+	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
 	}
@@ -473,7 +525,7 @@ func (backendCore *DockerKurtosisBackend) getContainerIDAndUserServiceObjectByEn
 	return resultUserServiceContainerId, resultUserService, nil
 }
 
-func (backendCore *DockerKurtosisBackend) getMatchingUserServices(
+func (backend *DockerKurtosisBackend) getMatchingUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (map[string]*service.Service, error) {
@@ -482,7 +534,7 @@ func (backendCore *DockerKurtosisBackend) getMatchingUserServices(
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.UserServiceContainerTypeLabelValue.GetString(),
 	}
-	matchingContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingContainers, err := backend.dockerManager.GetContainersByLabels(ctx, searchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching containers using labels: %+v", searchLabels)
 	}
@@ -546,14 +598,15 @@ func getUserServiceObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected to find user service GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
 	}
 
-	privatePorts, err := getPrivatePortsFromContainerLabels(labels)
+	privatePorts, err := getUserServicePrivatePortsFromContainerLabels(labels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting port specs from container '%v' with labels '%+v'", containerId, labels)
 	}
 
+	// TODO Replace with the (simpler) way that's currently done when creating API container/engine container
 	_, portIdsForDockerPortObjs, err := getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting used port from private port spec '%+v'", privatePorts)
+		return nil, stacktrace.Propagate(err, "An error occurred getting used ports from private ports spec '%+v'", privatePorts)
 	}
 
 	var maybePublicIpAddr net.IP = nil
@@ -610,6 +663,22 @@ func getUserServiceObjectFromContainerInfo(
 	return newObject, nil
 }
 
+func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]string) (map[string]*port_spec.PortSpec, error) {
+	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsLabelKey.GetString()]
+	if !found {
+		return  nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsLabelKey.GetString())
+	}
+
+	portSpecs, err := port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
+	if err != nil {
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v'", serializedPortSpecs)
+		}
+	}
+
+	return portSpecs, nil
+}
+
 func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
 	containers []*types.Container,
 	enclaveId enclave.EnclaveID,
@@ -635,4 +704,114 @@ func isUserServiceContainer(container *types.Container) bool {
 		return true
 	}
 	return false
+}
+
+// TODO Replace with the method that the API containers use for getting & retrieving port specs
+func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
+	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
+	portIdsForDockerPortObjs := map[nat.Port]string{}
+	for portId, portSpec := range privatePorts {
+		dockerPort, err := transformPortSpecToDockerPort(portSpec)
+		if err != nil {
+			return nil, nil,  stacktrace.Propagate(err, "An error occurred transforming the '%+v' port spec to a Docker port", portSpec)
+		}
+		publishSpecs[dockerPort] =  docker_manager.NewAutomaticPublishingSpec()
+
+		if preexistingPortId, found := portIdsForDockerPortObjs[dockerPort]; found {
+			return nil, nil, stacktrace.NewError(
+				"Port '%v' declares Docker port spec '%v', but this port spec is already in use by port '%v'",
+				portId,
+				dockerPort,
+				preexistingPortId,
+			)
+		}
+		portIdsForDockerPortObjs[dockerPort] = portId
+
+	}
+	return publishSpecs, portIdsForDockerPortObjs, nil
+}
+
+// TODO Replace with the simpler method that the API container uses for getting public port specs using private port specs
+// condensePublicNetworkInfoFromHostMachineBindings
+// Condenses declared private port bindings and the host machine port bindings returned by the container engine lib into:
+//  1) a single host machine IP address
+//  2) a map of private port binding IDs -> public ports
+// An error is thrown if there are multiple host machine IP addresses
+func condensePublicNetworkInfoFromHostMachineBindings(
+	hostMachinePortBindings map[nat.Port]*nat.PortBinding,
+	privatePorts map[string]*port_spec.PortSpec,
+	portIdsForDockerPortObjs map[nat.Port]string,
+) (
+	resultPublicIpAddr net.IP,
+	resultPublicPorts map[string]*port_spec.PortSpec,
+	resultErr error,
+) {
+	if len(hostMachinePortBindings) == 0 {
+		return nil, nil, stacktrace.NewError("Cannot condense public network info if no host machine port bindings are provided")
+	}
+
+	publicIpAddrStr := uninitializedPublicIpAddrStrValue
+	publicPorts := map[string]*port_spec.PortSpec{}
+	for dockerPortObj, hostPortBinding := range hostMachinePortBindings {
+		portId, found := portIdsForDockerPortObjs[dockerPortObj]
+		if !found {
+			// If the container engine reports a host port binding that wasn't declared in the input used-ports object, ignore it
+			// This could happen if a port is declared in the Dockerfile
+			continue
+		}
+
+		privatePort, found := privatePorts[portId]
+		if !found {
+			return nil,  nil, stacktrace.NewError(
+				"The container engine returned a host machine port binding for Docker port spec '%v', but this port spec didn't correspond to any port ID; this is very likely a bug in Kurtosis",
+				dockerPortObj,
+			)
+		}
+
+		hostIpAddr := hostPortBinding.HostIP
+		if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+			publicIpAddrStr = hostIpAddr
+		} else if publicIpAddrStr != hostIpAddr {
+			return nil, nil, stacktrace.NewError(
+				"A public IP address '%v' was already declared for the service, but Docker port object '%v' declares a different public IP address '%v'",
+				publicIpAddrStr,
+				dockerPortObj,
+				hostIpAddr,
+			)
+		}
+
+		hostPortStr := hostPortBinding.HostPort
+		hostPortUint64, err := strconv.ParseUint(hostPortStr, dockerContainerPortNumUintBase, dockerContainerPortNumUintBits)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred parsing host machine port string '%v' into a uint with %v bits and base %v",
+				hostPortStr,
+				dockerContainerPortNumUintBits,
+				dockerContainerPortNumUintBase,
+			)
+		}
+		hostPortUint16 := uint16(hostPortUint64) // Safe to do because our ParseUint declares the expected number of bits
+		portProtocol := privatePort.GetProtocol()
+
+		portSpec, err := port_spec.NewPortSpec(hostPortUint16, portProtocol)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating a new public port spec object using number '%v' and protocol '%v'",
+				hostPortUint16,
+				portProtocol,
+			)
+		}
+
+		publicPorts[portId] = portSpec
+	}
+	if publicIpAddrStr == uninitializedPublicIpAddrStrValue {
+		return nil, nil, stacktrace.NewError("No public IP address string was retrieved from host port bindings: %+v", hostMachinePortBindings)
+	}
+	publicIpAddr := net.ParseIP(publicIpAddrStr)
+	if publicIpAddr == nil {
+		return nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
+	}
+	return publicIpAddr, publicPorts, nil
 }
