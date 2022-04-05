@@ -5,11 +5,7 @@
 
 package container_name_provider
 
-import (
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
-)
-
+/*
 const (
 	userServiceNameLabel        = "user-service"
 	networkingSidecarNameSuffix = "networking-sidecar"
@@ -57,3 +53,6 @@ func (provider ContainerNameElementsProvider) GetForModule(moduleId module_store
 func (provider ContainerNameElementsProvider) addPrefix(toElems []string) []string {
 	return append(provider.prefixElems, toElems...)
 }
+
+
+*/

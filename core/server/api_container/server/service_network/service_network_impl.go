@@ -125,7 +125,7 @@ Completely repartitions the network, throwing away the old topology
 */
 func (network *ServiceNetworkImpl) Repartition(
 	ctx context.Context,
-	newPartitionServices map[service_network_types.PartitionID]map[service_network_types.ServiceID]bool,
+	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceID]bool,
 	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
 	newDefaultConnection partition_topology.PartitionConnection) error {
 	network.mutex.Lock()

@@ -5,6 +5,7 @@
 
 package service_network_types
 
+/*
 // Stupid Go... why can't it just have generics so all this is part of stdlib
 type ServiceIDSet struct {
 	elems map[ServiceID]bool
@@ -74,3 +75,5 @@ func (set *ServiceIDSet) RemoveElems(elems *ServiceIDSet) {
 		set.RemoveElem(elem)
 	}
 }
+
+*/
