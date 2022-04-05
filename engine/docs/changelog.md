@@ -15,6 +15,7 @@
 * Upgraded to Kurt Core 1.41.2 which uses `files artifact expansion volumes` and `files artifact expander` objects
 
 # 1.13.2
+
 ### Fixes
 * Bumped dependencies for Core 1.41.1 and Container Engine Lib 0.13.0
 

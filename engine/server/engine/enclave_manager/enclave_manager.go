@@ -121,13 +121,17 @@ type EnclaveManager struct {
 }
 
 func NewEnclaveManager(
-	kurtosisBackend backend_interface.KurtosisBackend,
+	dockerManager *docker_manager.DockerManager,
+	objectAttributesProvider schema.ObjectAttributesProvider,
 	engineDataDirpathOnHostMachine string,
 	engineDataDirpathOnEngineContainer string,
 ) *EnclaveManager {
+	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
 		mutex:                              &sync.Mutex{},
-		kurtosisBackend:					kurtosisBackend,
+		dockerManager:                      dockerManager,
+		objAttrsProvider:                   objectAttributesProvider,
+		dockerNetworkAllocator:             dockerNetworkAllocator,
 		engineDataDirpathOnHostMachine:     engineDataDirpathOnHostMachine,
 		engineDataDirpathOnEngineContainer: engineDataDirpathOnEngineContainer,
 	}
@@ -797,79 +801,30 @@ func parseHostMachinePortNumStrToUint16(input string) (uint16, error) {
 
 // Both StopEnclave and DestroyEnclave need to be able to stop enclaves, but both have a mutex guard. Because Go mutexes
 //  aren't reentrant, DestroyEnclave can't just call StopEnclave so we use this helper function
-func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
-	_, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
+func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
+	_, enclaveStopErrs, err := manager.kurtosisBackend.StopEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for the existence of a network for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "Attempted to stop enclave '%v' but the backend threw an error", enclaveId)
 	}
-	if !found {
-		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
-	}
-
-	enclaveContainerSearchLabels := map[string]string{
-		schema.EnclaveIDContainerLabel: enclaveId,
-	}
-	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(ctx, enclaveContainerSearchLabels, shouldKillAlreadyStoppedContainersWhenStoppingEnclave)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting containers for enclave '%v'", enclaveId)
-	}
-	logrus.Debugf("Containers in enclave '%v' that will be killed: %+v", enclaveId, allEnclaveContainers)
-
-	// TODO Parallelize for perf
-	containerKillErrorStrs := []string{}
-	for _, enclaveContainer := range allEnclaveContainers {
-		containerId := enclaveContainer.GetId()
-		containerName := enclaveContainer.GetName()
-		if err := manager.dockerManager.KillContainer(ctx, containerId); err != nil {
-			wrappedContainerKillErr := stacktrace.Propagate(
+	// Handle any err thrown by the backend
+	enclaveStopErrStrings := []string{}
+	for enclaveId, err := range enclaveStopErrs {
+		if err != nil {
+			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred killing container '%v' with ID '%v'",
-				containerName,
-				containerId,
+				"An error occurred stopping Enclave `%v'",
+				enclaveId,
 			)
-			containerKillErrorStrs = append(
-				containerKillErrorStrs,
-				wrappedContainerKillErr.Error(),
-			)
+			enclaveStopErrStrings = append(enclaveStopErrStrings, wrappedErr.Error())
 		}
 	}
-
-	if len(containerKillErrorStrs) > 0 {
-		errorStr := strings.Join(containerKillErrorStrs, "\n\n")
+	if len(enclaveStopErrStrings) > 0 {
 		return stacktrace.NewError(
-			"One or more errors occurred killing the containers in enclave '%v':\n%v",
-			enclaveId,
-			errorStr,
-		)
-	}
-
-	// If all the kills went off successfully, wait for all the containers we just killed to definitively exit
-	//  before we return
-	containerWaitErrorStrs := []string{}
-	for _, enclaveContainer := range allEnclaveContainers {
-		containerName := enclaveContainer.GetName()
-		containerId := enclaveContainer.GetId()
-		if _, err := manager.dockerManager.WaitForExit(ctx, containerId); err != nil {
-			wrappedContainerWaitErr := stacktrace.Propagate(
-				err,
-				"An error occurred waiting for container '%v' with ID '%v' to exit after killing",
-				containerName,
-				containerId,
-			)
-			containerWaitErrorStrs = append(
-				containerWaitErrorStrs,
-				wrappedContainerWaitErr.Error(),
-			)
-		}
-	}
-
-	if len(containerWaitErrorStrs) > 0 {
-		errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
-		return stacktrace.NewError(
-			"One or more errors occurred waiting for containers in enclave '%v' to exit after killing, meaning we can't guarantee the enclave is completely stopped:\n%v",
-			enclaveId,
-			errorStr,
-		)
+			"One or more errors occurred stopping the enclave(s):\n%v",
+			strings.Join(
+				enclaveStopErrStrings,
+				"\n\n",
+			))
 	}
 
 	return nil
@@ -1095,30 +1050,41 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 		)
 	}
 
-	// Next, delete all enclave containers
-	enclaveContainersSearchLabels := map[string]string{
-		schema.EnclaveIDContainerLabel: enclaveIdStr,
 	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
 		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
+
+	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(
+		ctx,
+		enclaveContainersSearchLabels,
+		shouldFetchStoppedContainersWhenDestroyingEnclave,
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveId)
 	}
-	// Handle any err thrown by the backend
-	enclaveDestroyErrStrings := []string{}
-	for enclaveId, err := range enclaveDestroyErrs {
-		if err != nil {
+	removeContainerErrorStrs := []string{}
+	for _, container := range allEnclaveContainers {
+		containerName := container.GetName()
+		containerId := container.GetId()
+		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred destroying Enclave `%v'",
-				enclaveId,
+				"An error occurred removing container '%v' with ID '%v'",
+				containerName,
+				containerId,
 			)
-			enclaveDestroyErrStrings = append(enclaveDestroyErrStrings, wrappedErr.Error())
+			removeContainerErrorStrs = append(
+				removeContainerErrorStrs,
+				wrappedErr.Error(),
+			)
 		}
 	}
-	if len(enclaveDestroyErrs) > 0 {
+	if len(removeContainerErrorStrs) > 0 {
 		return stacktrace.NewError(
-			"One or more errors occurred destroying the enclave(s):\n%v",
+			"An error occurred removing one or more containers in enclave '%v':\n%v",
+			enclaveId,
 			strings.Join(
-				enclaveDestroyErrStrings,
+				removeContainerErrorStrs,
 				"\n\n",
 			))
 			),

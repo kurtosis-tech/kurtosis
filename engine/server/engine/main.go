@@ -16,7 +16,6 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
