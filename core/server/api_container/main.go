@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/kurtosis-core/server/commons/enclave_data_directory"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
@@ -180,6 +181,22 @@ func createServiceNetworkAndModuleStore(
 		args.GrpcListenPortNum,
 	)
 
+	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
+	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
+	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
+	}
+
+	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
+		args.EnclaveDataDirpathOnHostMachine,
+		dockerManager,
+		enclaveObjAttrsProvider,
+		dockerNetworkId,
+		freeIpAddrTracker,
+		filesArtifactCache,
+	)
+
 	enclaveContainerLauncher := enclave_container_launcher.NewEnclaveContainerLauncher(
 		dockerManager,
 		enclaveObjAttrsProvider,
@@ -188,6 +205,7 @@ func createServiceNetworkAndModuleStore(
 
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		kurtosisBackend,
+		filesArtifactExpander,
 		freeIpAddrTracker,
 	)
 

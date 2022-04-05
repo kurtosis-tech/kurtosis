@@ -321,6 +321,7 @@ func (network *ServiceNetworkImpl) StartService(
 			"An error occurred creating the user service")
 	}
 
+	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
 	serviceContainerIdString := string(userService.GetID())
 	maybeServicePublicIpAddr := userService.GetMaybePublicIpAddr()
 	servicePublicPorts := userService.GetPublicPorts()

@@ -8,11 +8,14 @@ package user_service_launcher
 import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
+	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 /*
@@ -20,12 +23,12 @@ Convenience struct whose only purpose is launching user services
 */
 type UserServiceLauncher struct {
 	kurtosisBackend backend_interface.KurtosisBackend
-
+	filesArtifactExpander *files_artifact_expander.FilesArtifactExpander
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 }
 
-func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, freeIpAddrTracker *lib.FreeIpAddrTracker) *UserServiceLauncher {
-	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, freeIpAddrTracker: freeIpAddrTracker}
+func NewUserServiceLauncher(kurtosisBackend backend_interface.KurtosisBackend, filesArtifactExpander *files_artifact_expander.FilesArtifactExpander, freeIpAddrTracker *lib.FreeIpAddrTracker) *UserServiceLauncher {
+	return &UserServiceLauncher{kurtosisBackend: kurtosisBackend, filesArtifactExpander: filesArtifactExpander, freeIpAddrTracker: freeIpAddrTracker}
 }
 
 /**
@@ -39,8 +42,10 @@ func (launcher UserServiceLauncher) Launch(
 	ctx context.Context,
 	serviceGUID service.ServiceGUID,
 	serviceId service.ServiceID,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
 	imageName string,
-	privatePorts []*port_spec.PortSpec,
+	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
@@ -56,6 +61,8 @@ func (launcher UserServiceLauncher) Launch(
 		serviceId,
 		serviceGUID,
 		imageName,
+		enclaveId,
+		ipAddr,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
