@@ -1,4 +1,9 @@
 # TBD
+* Updated enclave_manager to use kurtosis_backend for enclave operations
+* Updated enclave_manager to use kurtosis_backend for api container operations in an enclave
+* Removed cleanMetadataAcquisitionTestsuites from enclave_manager
+* Removed docker specific code from enclave_manager
+* Removed docker_network_allocator code
 
 # 1.13.3
 ### Features

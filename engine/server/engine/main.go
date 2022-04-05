@@ -7,9 +7,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis-engine-server/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-engine-server/launcher/engine_server_launcher"
@@ -73,17 +71,8 @@ func runMain () error {
 		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
 	}
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
-	}
-	dockerManager := docker_manager.NewDockerManager(dockerClient)
-
-	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveManager := enclave_manager.NewEnclaveManager(
 		kurtosisBackend,
-		dockerManager,
-		objAttrsProvider,
 		serverArgs.EngineDataDirpathOnHostMachine,
 		engine_server_launcher.EngineDataDirpathOnEngineServerContainer,
 	)

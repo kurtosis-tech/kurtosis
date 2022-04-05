@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"io/ioutil"
@@ -111,13 +113,6 @@ type EnclaveManager struct {
 	mutex *sync.Mutex
 
 	kurtosisBackend backend_interface.KurtosisBackend
-
-	dockerManager *docker_manager.DockerManager
-
-	objAttrsProvider schema.ObjectAttributesProvider
-
-	dockerNetworkAllocator *docker_network_allocator.DockerNetworkAllocator
-
 	// We need this so that when the engine container starts enclaves & containers, it can tell Docker where the enclave
 	//  data directory is on the host machine os Docker can bind-mount it in
 	engineDataDirpathOnHostMachine string
@@ -127,18 +122,12 @@ type EnclaveManager struct {
 
 func NewEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
-	dockerManager *docker_manager.DockerManager,
-	objectAttributesProvider schema.ObjectAttributesProvider,
 	engineDataDirpathOnHostMachine string,
 	engineDataDirpathOnEngineContainer string,
 ) *EnclaveManager {
-	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
 		mutex:                              &sync.Mutex{},
-		kurtosisBackend: 					kurtosisBackend,
-		dockerManager:                      dockerManager,
-		objAttrsProvider:                   objectAttributesProvider,
-		dockerNetworkAllocator:             dockerNetworkAllocator,
+		kurtosisBackend:					kurtosisBackend,
 		engineDataDirpathOnHostMachine:     engineDataDirpathOnHostMachine,
 		engineDataDirpathOnEngineContainer: engineDataDirpathOnEngineContainer,
 	}
@@ -1069,26 +1058,17 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveIdStr string) error {
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
-
-	enclaveNetwork, found, err := manager.getEnclaveNetwork(ctx, enclaveIdStr)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for a network for enclave '%v'", enclaveIdStr)
-	}
-	if !found {
-		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveIdStr)
-	}
-
-	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveIdStr); err != nil {
+func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId enclave.EnclaveID) error {
+	//Stop the enclaves
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
-			enclaveIdStr,
+			enclaveId,
 		)
 	}
 
-	//First, delete all files artifact expansion volumes
+	//Then, delete all files artifact expansion volumes
 	enclaveFilesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
@@ -1118,39 +1098,29 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 	// Next, delete all enclave containers
 	enclaveContainersSearchLabels := map[string]string{
 		schema.EnclaveIDContainerLabel: enclaveIdStr,
-	}
-	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(
-		ctx,
-		enclaveContainersSearchLabels,
-		shouldFetchStoppedContainersWhenDestroyingEnclave,
-	)
+	_, enclaveDestroyErrs, err := manager.kurtosisBackend.DestroyEnclaves(ctx, getEnclaveByEnclaveIdFilter(enclaveId))
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveIdStr)
+		return stacktrace.Propagate(err, "Attempted to destroy enclave '%v' but the backend threw an error", enclaveId)
 	}
-	removeContainerErrorStrs := []string{}
-	for _, container := range allEnclaveContainers {
-		containerName := container.GetName()
-		containerId := container.GetId()
-		if err := manager.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+	// Handle any err thrown by the backend
+	enclaveDestroyErrStrings := []string{}
+	for enclaveId, err := range enclaveDestroyErrs {
+		if err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
-				"An error occurred removing container '%v' with ID '%v'",
-				containerName,
-				containerId,
+				"An error occurred destroying Enclave `%v'",
+				enclaveId,
 			)
-			removeContainerErrorStrs = append(
-				removeContainerErrorStrs,
-				wrappedErr.Error(),
-			)
+			enclaveDestroyErrStrings = append(enclaveDestroyErrStrings, wrappedErr.Error())
 		}
 	}
-	if len(removeContainerErrorStrs) > 0 {
+	if len(enclaveDestroyErrs) > 0 {
 		return stacktrace.NewError(
-			"An error occurred removing one or more containers in enclave '%v':\n%v",
-			enclaveIdStr,
+			"One or more errors occurred destroying the enclave(s):\n%v",
 			strings.Join(
-				removeContainerErrorStrs,
+				enclaveDestroyErrStrings,
 				"\n\n",
+			))
 			),
 		)
 	}
