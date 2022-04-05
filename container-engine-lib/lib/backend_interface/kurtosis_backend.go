@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
@@ -323,69 +322,6 @@ type KurtosisBackend interface {
 	)(
 		successfulUserServiceGuids map[service.ServiceGUID]bool,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
-		resultErr error,
-	)
-
-	//Create a repl inside enclave
-	CreateRepl(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		containerImageName string,
-		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-		stdoutFdInt int,
-		bindMounts map[string]string,
-	)(
-		*repl.Repl,
-		error,
-	)
-
-	//Attach repl
-	Attach(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		replGuid repl.ReplGUID,
-	)(
-		*shell.Shell,
-		error,
-	)
-
-	//Gets repls using the given filters, returning a map of repls identified by their GUID
-	GetRepls(
-		ctx context.Context,
-		filters *repl.ReplFilters,
-	)(
-		map[repl.ReplGUID]*repl.Repl,
-		error,
-	)
-
-	//Executes many shell commands inside multiple repl instances indenfified by repl GUIDs
-	RunReplExecCommands(
-		ctx context.Context,
-		enclaveId enclave.EnclaveID,
-		replCommands map[repl.ReplGUID][]string,
-	)(
-		successfulReplGuids map[repl.ReplGUID]bool,
-		erroredReplGuids map[repl.ReplGUID]error,
-		resultErr error,
-	)
-
-	// Stop repls using the given filters,
-	StopRepls(
-		ctx context.Context,
-		filters *repl.ReplFilters,
-	)(
-		successfulReplGuids map[repl.ReplGUID]bool,
-		erroredReplGuids map[repl.ReplGUID]error,
-		resultErr error,
-	)
-
-	// Destroy repls using the given filters
-	DestroyRepls(
-		ctx context.Context,
-		filters *repl.ReplFilters,
-	)(
-		successfulReplGuids map[repl.ReplGUID]bool,
-		erroredReplGuids map[repl.ReplGUID]error,
 		resultErr error,
 	)
 }

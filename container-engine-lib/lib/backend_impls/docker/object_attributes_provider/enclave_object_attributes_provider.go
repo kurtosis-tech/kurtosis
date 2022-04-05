@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/repl"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -18,8 +17,6 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-
-	interactiveReplContainerNameFragment = "interactive-repl"
 
 	apiContainerNameSuffix                 = "kurtosis-api"
 	userServiceContainerNameFragment       = "user-service"
@@ -38,7 +35,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortId string,
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForInteractiveREPLContainer(replGuid repl.ReplGUID) (DockerObjectAttributes,error)
 	ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
@@ -215,37 +211,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeLabelValue
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
-
-
-	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-
-	return objectAttributes, nil
-}
-
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForInteractiveREPLContainer(replGuid repl.ReplGUID) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject(
-		[]string{
-			interactiveReplContainerNameFragment,
-			string(replGuid),
-		},
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the repl Docker container name object")
-	}
-
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(replGuid))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", replGuid)
-	}
-	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.InteractiveREPLContainerTypeLabelValue
 
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
