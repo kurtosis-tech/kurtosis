@@ -187,7 +187,6 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 	return nil
 }
 
-
 func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
 	resultPublicPortSpec *port_spec.PortSpec,
@@ -322,35 +321,6 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	}
 	enclaveId := enclave.EnclaveID(enclaveIdLabelValue)
 	return enclaveId, nil
-}
-
-func hasEnclaveIdLabel(
-	container *types.Container,
-	enclaveId enclave.EnclaveID) bool {
-
-	labels := container.GetLabels()
-	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
-	if !found {
-		//TODO Do all containers should have enclave ID label key??? we should return and error here if this answer is yes??
-		logrus.Debugf("Container with ID '%v' haven't label '%v'", container.GetId(), label_key_consts.EnclaveIDLabelKey.GetString())
-		return false
-	}
-	if enclaveIdLabelValue == string(enclaveId) {
-		return true
-	}
-	return false
-}
-
-func hasGuidLabel(container *types.Container, guid string) bool {
-	labels := container.GetLabels()
-	guidLabelValue, found := labels[label_key_consts.GUIDLabelKey.GetString()]
-	if !found {
-		return false
-	}
-	if guidLabelValue == guid {
-		return true
-	}
-	return false
 }
 
 func (backend *DockerKurtosisBackend) killContainers(

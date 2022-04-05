@@ -13,12 +13,12 @@ const (
 	//
 	appIdLabelValueStr = "kurtosis"
 	engineContainerTypeLabelValueStr = "kurtosis-engine"
-	moduleContainerTypeLabelValueStr = "module"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	apiContainerContainerTypeLabelValueStr      = "api-container"
 	userServiceContainerTypeLabelValueStr       = "user-service"
 	networkingSidecarContainerTypeLabelValueStr = "networking-sidecar"
+	moduleContainerTypeLabelValueStr = "module"
 
 	trueValueStr = "true"
 

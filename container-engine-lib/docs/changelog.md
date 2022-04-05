@@ -2,11 +2,9 @@
 ### Features
 * Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarExecCommands`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
 * Implemented the methods: `CreateUserService`, `GetUserServices`, `StopUserServices`, `GetUserServiceLogs` and `DestroyUserServices` in `DockerKurtosisBackend`
-* Implemented the methods: `WaitForUserServiceHttpEndpointAvailability`, `GetShellOnUserService` and `RunUserServiceExecCommand` methods in `DockerKurtosisBackend`
+* Implemented the methods: `WaitForUserServiceHttpEndpointAvailability`, `GetConnectionWithUserService` and `RunUserServiceExecCommands` methods in `DockerKurtosisBackend`
 * Added `NetworkingSidecarContainerTypeLabelValue` label value constant
 * Added `UserServiceContainerTypeLabelValue` and `NetworkingSidecarContainerTypeLabelValue` label key constants
-* Added generic `Shell` object to interact with user services
-* Implemented the methods: `CreateRepl`, `Attach`, `GetRepls`, `RunReplExecCommands`, `StopRepls` and `DestroyRepls` methods in `DockerKurtosisBackend`
 
 # 0.10.3
 ### Features

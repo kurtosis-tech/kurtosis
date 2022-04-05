@@ -42,18 +42,30 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
 
-	enclaveStatus, enclaveContainers, err := backend.getEnclaveStatusAndContainers(ctx, enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
+	userServiceFilters := &service.ServiceFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGuid: true,
+		},
 	}
 
-	if enclaveStatus != enclave.EnclaveStatus_Running {
-		return nil, stacktrace.NewError("Networking sidecar for user service with GUID '%v' can not be created inside enclave with ID '%v' because its current status is '%v' and it must be '%v' to accept new nodes", serviceGuid, enclaveId, enclaveStatus, enclave.EnclaveStatus_Running.String())
+	userServices, err := backend.getMatchingUserServices(ctx, userServiceFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting matching user services using filters '%+v'", userServiceFilters)
+	}
+	numOfUserServices := len(userServices)
+	if numOfUserServices == 0 {
+		return nil, stacktrace.NewError("No user service with GUID '%v' in enclave with ID '%v' was found", serviceGuid, enclaveId)
+	}
+	if numOfUserServices > 1 {
+		return nil, stacktrace.NewError("Expected to find only one user service with GUID '%v' in enclave with ID '%v', but '%v' was found", serviceGuid, enclaveId, numOfUserServices)
 	}
 
-	userServiceContainer, err := getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(enclaveContainers, enclaveId, serviceGuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service container with GUID '%v' from container list '%+v' which are part of enclave with ID '%v'", serviceGuid, enclaveContainers, enclaveId)
+	var userServiceContainerId string
+	for containerId := range userServices {
+		userServiceContainerId = containerId
 	}
 
 	enclaveObjAttrsProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
@@ -83,7 +95,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 	).WithAddedCapabilities(map[docker_manager.ContainerCapability]bool{
 		docker_manager.NetAdmin: true,
 	}).WithNetworkMode(
-		docker_manager.NewContainerNetworkMode(userServiceContainer.GetId()),
+		docker_manager.NewContainerNetworkMode(userServiceContainerId),
 	).WithCmdArgs(
 		sidecarContainerCommand,
 	).WithLabels(
@@ -176,30 +188,30 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	expectedToRunCommandsUserServiceGuids := map[service.ServiceGUID]bool{}
-	for userServiceGuid := range networkingSidecarsCommands {
-		expectedToRunCommandsUserServiceGuids[userServiceGuid] = true
+	if len(networkingSidecarsCommands) != len(networkingSidecars) {
+		return nil, nil, stacktrace.NewError("The amount of networking sidecars found '%v' are not equal to the amount of networking sidecars to run exec commands '%v'", len(networkingSidecars), len(networkingSidecarsCommands))
+	}
+	for _, networkingSidecar := range networkingSidecars{
+		if _,found := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]; !found {
+			return nil,
+				nil,
+				stacktrace.NewError(
+					"Networking sidecar with user service GUID '%v' was found when getting matching " +
+						"networking sidecars with filters '%+v' but it was not declared in the networking " +
+						"sidecar exec commands list '%+v'",
+					networkingSidecar.GetServiceGUID(),
+					filters,
+					networkingSidecarsCommands,
+				)
+		}
 	}
 
 	// TODO Parallelize to increase perf
 	for containerId, networkingSidecar := range networkingSidecars {
-		networkingSidecarUnwrappedCommand, found := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
-		if !found {
-			return nil,
-			nil,
-			stacktrace.NewError(
-				"Networking sidecar with user service GUID '%v' was found when getting matching " +
-					"networking sidecars with filters '%+v' but it was not declared in the networking " +
-					"sidecar exec commands list '%+v', so not commands will be executed on this",
-					networkingSidecar.GetServiceGUID(),
-					filters,
-					networkingSidecarsCommands,
-					)
-		}
+		networkingSidecarUnwrappedCommand := networkingSidecarsCommands[networkingSidecar.GetServiceGUID()]
 
 		networkingSidecarShWrappedCmd := wrapShCommand(networkingSidecarUnwrappedCommand)
 
-		delete(expectedToRunCommandsUserServiceGuids, networkingSidecar.GetServiceGUID())
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
@@ -229,15 +241,6 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 			continue
 		}
 		successfulUserServiceGuids[networkingSidecar.GetServiceGUID()] = true
-	}
-
-	if len(expectedToRunCommandsUserServiceGuids) > 0 {
-		for userServiceGuid := range expectedToRunCommandsUserServiceGuids{
-			err := stacktrace.NewError(
-				"Networking sidecar with user service GUID '%v' was not found, " +
-					"so no commands were executed", userServiceGuid)
-			erroredUserServiceGuids[userServiceGuid] = err
-		}
 	}
 
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil

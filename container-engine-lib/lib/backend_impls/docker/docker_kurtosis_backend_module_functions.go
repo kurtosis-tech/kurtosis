@@ -57,22 +57,11 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		return nil, stacktrace.NewError("Found existing module container(s) in enclave '%v' with GUID '%v'; cannot start a new one", enclaveId, guid)
 	}
 
-
 	// Get the Docker network ID where we'll start the new API container
-	matchingNetworks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
-		enclaveId: true,
-	})
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks for enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
-	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
-	}
-	if numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError("Found '%v' enclave networks with ID '%v', which shouldn't happen", numMatchingNetworks, enclaveId)
-	}
-	enclaveNetwork := matchingNetworks[0]
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, moduleContainerPortProtocol)
 	if err != nil {

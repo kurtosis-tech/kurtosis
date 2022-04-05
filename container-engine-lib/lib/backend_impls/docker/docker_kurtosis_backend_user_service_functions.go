@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/shell"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -227,33 +226,33 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 
 	userServices, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	expectedToRunCommandsUserServiceGuids := map[service.ServiceGUID]bool{}
-	for userServiceGuid := range userServiceCommands {
-		expectedToRunCommandsUserServiceGuids[userServiceGuid] = true
+	if len(userServiceCommands) != len(userServices) {
+		return nil, nil, stacktrace.NewError("The amount of user services found '%v' are not equal to the amount of user service to run exec commands '%v'", len(userServices), len(userServiceCommands))
 	}
-
-	// TODO Parallelize to increase perf
-	for containerId, userService := range userServices {
-		userServiceUnwrappedCommand, found  := userServiceCommands[userService.GetGUID()]
-		if !found {
+	for _, userService := range userServices{
+		if _,found := userServiceCommands[userService.GetGUID()]; !found {
 			return nil,
 				nil,
 				stacktrace.NewError(
 					"User service with GUID '%v' was found when getting matching " +
 						"user services with filters '%+v' but it was not declared in the user " +
-						"service exec commands list '%+v', so not commands will be executed on this",
+						"service exec commands list '%+v'",
 					userService.GetGUID(),
 					filters,
 					userServiceCommands,
 				)
 		}
+	}
+
+	// TODO Parallelize to increase perf
+	for containerId, userService := range userServices {
+		userServiceUnwrappedCommand:= userServiceCommands[userService.GetGUID()]
 
 		userServiceShWrappedCmd := wrapShCommand(userServiceUnwrappedCommand)
 
-		delete(expectedToRunCommandsUserServiceGuids, userService.GetGUID())
 		execOutputBuf := &bytes.Buffer{}
 		exitCode, err := backend.dockerManager.RunExecCommand(
 			ctx,
@@ -286,15 +285,6 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 		successfulUserServiceGuids[userService.GetGUID()] = true
 	}
 
-	if len(expectedToRunCommandsUserServiceGuids) > 0 {
-		for userServiceGuid := range expectedToRunCommandsUserServiceGuids{
-			err := stacktrace.NewError(
-				"User service with GUID '%v' was not found, " +
-					"so no commands were executed", userServiceGuid)
-			erroredUserServiceGuids[userServiceGuid] = err
-		}
-	}
-
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }
 
@@ -324,27 +314,9 @@ func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability
 	time.Sleep(time.Duration(initialDelayMilliseconds) * time.Millisecond)
 
 	httpMethodStr := httpMethod.String()
-	var resp *http.Response
 	for i := uint32(0); i < retries; i++ {
-		resp, err = makeHttpRequest(httpMethodStr, url, requestBody)
-		if err == nil {
-			if expectedResponseBody != "" {
-				body := resp.Body
-				defer body.Close()
-
-				bodyBytes, err := ioutil.ReadAll(body)
-
-				if err != nil {
-					return stacktrace.Propagate(err,
-						"An error occurred reading the response body from endpoint '%v'", url)
-				}
-
-				bodyStr := string(bodyBytes)
-
-				if bodyStr != expectedResponseBody {
-					return stacktrace.NewError("Expected response body text '%v' from endpoint '%v' but got '%v' instead", expectedResponseBody, url, bodyStr)
-				}
-			}
+		resp, err := makeHttpRequest(httpMethodStr, url, requestBody)
+		if err == nil && doesHttpResponseMatchExpected(expectedResponseBody, resp.Body, url) {
 			break
 		}
 		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
@@ -363,12 +335,12 @@ func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) GetShellOnUserService(
+func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
 	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 ) (
-	*shell.Shell,
+	net.Conn,
 	error,
 ) {
 
@@ -382,9 +354,9 @@ func (backend *DockerKurtosisBackend) GetShellOnUserService(
 		return nil, stacktrace.Propagate(err, "An error occurred executing container exec create on user service with GUID '%v'", serviceGUID)
 	}
 
-	newShell := shell.NewShell(hijackedResponse.Conn, hijackedResponse.Reader)
+	newConnection := hijackedResponse.Conn
 
-	return newShell, nil
+	return newConnection, nil
 }
 
 func (backend *DockerKurtosisBackend) StopUserServices(
@@ -679,33 +651,6 @@ func getUserServicePrivatePortsFromContainerLabels(containerLabels map[string]st
 	return portSpecs, nil
 }
 
-func getUserServiceContainerFromContainerListByEnclaveIdAndUserServiceGUID(
-	containers []*types.Container,
-	enclaveId enclave.EnclaveID,
-	userServiceGUID service.ServiceGUID) (*types.Container, error) {
-
-	for _, container := range containers {
-		if isUserServiceContainer(container) && hasEnclaveIdLabel(container, enclaveId) && hasGuidLabel(container, string(userServiceGUID)) {
-			return container, nil
-		}
-	}
-	return nil, stacktrace.NewError("No user service container with user service GUID '%v' was found in container list '%+v'", userServiceGUID, containers)
-}
-
-func isUserServiceContainer(container *types.Container) bool {
-	labels := container.GetLabels()
-	containerTypeValue, found := labels[label_key_consts.ContainerTypeLabelKey.GetString()]
-	if !found {
-		//TODO Do all containers should have container type label key??? we should return and error here if this answer is yes??
-		logrus.Debugf("Container with ID '%v' does not have label '%v'", container.GetId(), label_key_consts.ContainerTypeLabelKey.GetString())
-		return false
-	}
-	if containerTypeValue == label_value_consts.UserServiceContainerTypeLabelValue.GetString() {
-		return true
-	}
-	return false
-}
-
 // TODO Replace with the method that the API containers use for getting & retrieving port specs
 func getUsedPortsFromPrivatePortSpecMapAndPortIdsForDockerPortObjs(privatePorts map[string]*port_spec.PortSpec) (map[nat.Port]docker_manager.PortPublishSpec, map[nat.Port]string, error) {
 	publishSpecs := map[nat.Port]docker_manager.PortPublishSpec{}
@@ -814,4 +759,28 @@ func condensePublicNetworkInfoFromHostMachineBindings(
 		return nil, nil, stacktrace.NewError("Couldn't parse service's public IP address string '%v' to an IP object", publicIpAddrStr)
 	}
 	return publicIpAddr, publicPorts, nil
+}
+
+func doesHttpResponseMatchExpected(
+	expectedResponseBody string,
+	responseBody io.ReadCloser,
+	url string) bool {
+
+	defer responseBody.Close()
+	if expectedResponseBody != "" {
+
+		bodyBytes, err := ioutil.ReadAll(responseBody)
+		if err != nil {
+			logrus.Errorf("An error occurred reading the response body from endpoint '%v':\n%v", url, err)
+			return false
+		}
+
+		bodyStr := string(bodyBytes)
+
+		if bodyStr != expectedResponseBody {
+			logrus.Errorf("Expected response body text '%v' from endpoint '%v' but got '%v' instead", expectedResponseBody, url, bodyStr)
+			return false
+		}
+	}
+	return true
 }
