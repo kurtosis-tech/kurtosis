@@ -138,16 +138,7 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
 	}
 
-	kurtosisBackendPartitionServices := map[service_network_types.PartitionID]map[service.ServiceID]bool{}
-	for partitionId, serviceNetworkServiceIds := range newPartitionServices {
-		kurtosisBackendServiceIds := map[service.ServiceID]bool{}
-		for serviceNetworkServiceId := range serviceNetworkServiceIds {
-			kurtosisBackendServiceIds[service.ServiceID(serviceNetworkServiceId)] = true
-		}
-		kurtosisBackendPartitionServices[partitionId] = kurtosisBackendServiceIds
-	}
-
-	if err := network.topology.Repartition(kurtosisBackendPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
+	if err := network.topology.Repartition(newPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
@@ -214,6 +205,7 @@ func (network ServiceNetworkImpl) RegisterService(
 	}
 
 	newServiceRegistrationInfo := serviceRegistrationInfo{
+		serviceGUID:      serviceGuid,
 		privateIpAddr:    ip,
 		serviceDirectory: serviceDirectory,
 	}
