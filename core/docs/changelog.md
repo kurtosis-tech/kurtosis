@@ -31,6 +31,8 @@
   * Users have to update the calls to `Launch` method using the new parameter type
 * Replaced the type of `serviceGUID` parameter from `service_network_types.ServiceGUID` to `service.ServiceGUID` in the `EnclaveDataDirectory.GetServiceDirectory` method
   * Users have to update the calls to `GetServiceDirectory` method using the new parameter type
+* Removed `service_network_types.ServiceID` and `service_network_types.ServiceGUID`
+  * Users should use the `ServiceID` and `ServiceGUID` objects from `container-engine-lib`
 
 ### Changes
 * Replaced  parameter `DockerManager` with `KurtosisBackend` in `standardSidecarExecCmdExecutor`
