@@ -49,7 +49,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 			guid: true,
 		},
 	}
-	preexistingModules, err := backendCore.GetModules(ctx, preexistingModuleFilters)
+	preexistingModules, err := backend.GetModules(ctx, preexistingModuleFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting preexisting modules in enclave '%v' with GUID '%v'", enclaveId, guid)
 	}
@@ -59,7 +59,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 
 
 	// Get the Docker network ID where we'll start the new API container
-	matchingNetworks, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
+	matchingNetworks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
 		enclaveId: true,
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		)
 	}
 
-	enclaveObjAttrProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
@@ -118,7 +118,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 	}
 
 	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
+	if err = backend.dockerManager.PullImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of module container image '%v'; you may be running an out-of-date version", image)
 	}
 
@@ -136,7 +136,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		labelStrs,
 	).Build()
 
-	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the module container")
 	}
@@ -145,7 +145,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 		if shouldKillContainer {
 			// NOTE: We use the background context here so that the kill will still go off even if the reason for
 			// the failure was the original context being cancelled
-			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
 					"Launching module container '%v' with container ID '%v' didn't complete successfully so we " +
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
@@ -160,7 +160,7 @@ func (backend *DockerKurtosisBackend) CreateModule(
 
 	if err := waitForPortAvailabilityUsingNetstat(
 		ctx,
-		backendCore.dockerManager,
+		backend.dockerManager,
 		containerId,
 		privateGrpcPortSpec,
 		maxWaitForModuleContainerAvailabilityRetries,
@@ -185,7 +185,7 @@ func (backend *DockerKurtosisBackend) GetModules(
 	map[module.ModuleGUID]*module.Module,
 	error,
 ) {
-	matchingModuleContainers, err := backendCore.getMatchingModules(ctx, filters)
+	matchingModuleContainers, err := backend.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -206,7 +206,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 	erroredModuleIds map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-	matchingModuleContainersByContainerId, err := backendCore.getMatchingModules(ctx, filters)
+	matchingModuleContainersByContainerId, err := backend.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting module containers matching the following filters: %+v", filters)
 	}
@@ -216,7 +216,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 	for containerId, moduleObj := range matchingModuleContainersByContainerId {
 		moduleGuid := moduleObj.GetGUID()
 		enclaveId := moduleObj.GetEnclaveID()
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred removing module container for GUID '%v' with container ID '%v' from enclave '%v'",
@@ -236,12 +236,12 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 //                                     Private Helper Methods
 // ====================================================================================================
 // Gets modules matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),
 	}
-	matchingModuleContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	matchingModuleContainers, err := backend.dockerManager.GetContainersByLabels(ctx, moduleContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching module containers using labels: %+v", moduleContainerSearchLabels)
 	}
