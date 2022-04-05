@@ -138,7 +138,6 @@ func (launcher ModuleLauncher) Launch(
 	}
 	moduleClient := kurtosis_core_rpc_api_bindings.NewExecutableModuleServiceClient(conn)
 
-	//
 	logrus.Debugf("Waiting for module container to become available...")
 	if err := waitUntilModuleContainerIsAvailable(ctx, moduleClient); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for module '%v' to become available", moduleID)
