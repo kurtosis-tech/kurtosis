@@ -84,7 +84,7 @@ type ServiceNetworkImpl struct {
 
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
-	serviceRegistrationInfo map[service.ServiceGUID]serviceRegistrationInfo
+	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
 	serviceRunInfo          map[service_network_types.ServiceID]serviceRunInfo
 
 	networkingSidecars map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper
@@ -140,18 +140,16 @@ func (network *ServiceNetworkImpl) Repartition(
 		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
 	}
 
-	partitionServices := map[service_network_types.PartitionID]map[service.ServiceGUID]bool{}
-
-	for partitionId, serviceIds := range newPartitionServices {
-		serviceGUIDs := map[service.ServiceGUID]bool{}
-		for serviceId := range serviceIds {
-			serviceGuid := network.serviceIDsToGUIDs[serviceId]
-			serviceGUIDs[serviceGuid] = true
+	kurtosisBackendPartitionServices := map[service_network_types.PartitionID]map[service.ServiceID]bool{}
+	for partitionId, serviceNetworkServiceIds := range newPartitionServices {
+		kurtosisBackendServiceIds := map[service.ServiceID]bool{}
+		for serviceNetworkServiceId := range serviceNetworkServiceIds {
+			kurtosisBackendServiceIds[service.ServiceID(serviceNetworkServiceId)] = true
 		}
-		partitionServices[partitionId] = serviceGUIDs
+		kurtosisBackendPartitionServices[partitionId] = kurtosisBackendServiceIds
 	}
 
-	if err := network.topology.Repartition(partitionServices, newPartitionConnections, newDefaultConnection); err != nil {
+	if err := network.topology.Repartition(kurtosisBackendPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
 		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
 	}
 
