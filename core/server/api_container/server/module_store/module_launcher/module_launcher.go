@@ -93,7 +93,6 @@ func (launcher ModuleLauncher) Launch(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the module container environment variables from args '%+v'", args)
 	}
 
-	// TODO: Update!!
 	createdModule, err := launcher.kurtosisBackend.CreateModule(
 		ctx,
 		containerImage,
@@ -101,7 +100,8 @@ func (launcher ModuleLauncher) Launch(
 		moduleID,
 		moduleGUID,
 		privateIpAddr,
-		modulePortNum, // huh where is this??
+		modulePortNum,
+		// TODO Fix! Figure out how to get enclaveDataDirPathOnHostMachine with kurtosis_backend?
 		"/enclave-data-dir-path",
 		envVars,
 	)

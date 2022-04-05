@@ -39,6 +39,7 @@
 * Upgraded to container-engine-lib xxxx, which brings the new `DockerKurtosisBackend` implementation to replace the `DockerManager` //TODO UPDATE VERSION HERE
 * Updated api_container_launcher to use kurtosis_backend for launching API container instances
 * Update user_service_launcher to use kurtosis_backend for launching services
+* Updated module_store and module_launcher to use kurtosis_backend for module operations
 
 # 1.41.2
 ### Changes
