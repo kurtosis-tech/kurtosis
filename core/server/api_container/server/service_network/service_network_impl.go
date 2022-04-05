@@ -33,6 +33,7 @@ const (
 
 // Information that gets created with a service's registration
 type serviceRegistrationInfo struct {
+	serviceGUID      service.ServiceGUID
 	privateIpAddr    net.IP
 	serviceDirectory *enclave_data_directory.ServiceDirectory
 }
@@ -80,14 +81,12 @@ type ServiceNetworkImpl struct {
 
 	topology *partition_topology.PartitionTopology
 
-	serviceIDsToGUIDs map[service_network_types.ServiceID]service.ServiceGUID
-
 	// These are separate maps, rather than being bundled into a single containerInfo-valued map, because
 	//  they're registered at different times (rather than in one atomic operation)
 	serviceRegistrationInfo map[service.ServiceID]serviceRegistrationInfo
-	serviceRunInfo          map[service_network_types.ServiceID]serviceRunInfo
+	serviceRunInfo          map[service.ServiceID]serviceRunInfo
 
-	networkingSidecars map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper
+	networkingSidecars map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper
 
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 }
@@ -114,10 +113,9 @@ func NewServiceNetworkImpl(
 			defaultPartitionId,
 			defaultPartitionConnection,
 		),
-		serviceIDsToGUIDs:        map[service_network_types.ServiceID]service.ServiceGUID{},
-		serviceRegistrationInfo:  map[service.ServiceGUID]serviceRegistrationInfo{},
-		serviceRunInfo:           map[service_network_types.ServiceID]serviceRunInfo{},
-		networkingSidecars:       map[service.ServiceGUID]networking_sidecar.NetworkingSidecarWrapper{},
+		serviceRegistrationInfo:  map[service.ServiceID]serviceRegistrationInfo{},
+		serviceRunInfo:           map[service.ServiceID]serviceRunInfo{},
+		networkingSidecars:       map[service.ServiceID]networking_sidecar.NetworkingSidecarWrapper{},
 		networkingSidecarManager: networkingSidecarManager,
 	}
 }
@@ -168,8 +166,9 @@ func (network *ServiceNetworkImpl) Repartition(
 // Registers a service for use with the network (creating the IPs and so forth), but doesn't start it
 // If the partition ID is empty, registers the service with the default partition
 func (network ServiceNetworkImpl) RegisterService(
-	serviceId service_network_types.ServiceID,
-	partitionId service_network_types.PartitionID) (net.IP, string, error) {
+	serviceId service.ServiceID,
+	partitionId service_network_types.PartitionID,
+) (net.IP, string, error) {
 	// TODO extract this into a wrapper function that can be wrapped around every service call (so we don't forget)
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -482,18 +481,15 @@ func (network *ServiceNetworkImpl) GetServiceIDs() map[service_network_types.Ser
 // ====================================================================================================
 func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	ctx context.Context,
-	serviceId service_network_types.ServiceID,
+	serviceId service.ServiceID,
 	containerStopTimeout time.Duration) error {
 
-	serviceGuid := network.serviceIDsToGUIDs[serviceId]
-
-	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceGuid]
+	registrationInfo, foundRegistrationInfo := network.serviceRegistrationInfo[serviceId]
 	if !foundRegistrationInfo {
 		return stacktrace.NewError("No registration info found for service '%v'", serviceId)
 	}
-	network.topology.RemoveService(serviceGuid)
-	delete(network.serviceRegistrationInfo, serviceGuid)
-	delete(network.serviceIDsToGUIDs, serviceId)
+	network.topology.RemoveService(serviceId)
+	delete(network.serviceRegistrationInfo, serviceId)
 
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
@@ -579,7 +575,7 @@ func updateTrafficControlConfiguration(
 	return nil
 }
 
-func newServiceGUID(serviceID service_network_types.ServiceID) service.ServiceGUID {
+func newServiceGUID(serviceID service.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	return service.ServiceGUID(string(serviceID) + "-" + suffix)
 }
