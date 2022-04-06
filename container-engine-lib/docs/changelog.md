@@ -1,4 +1,6 @@
 # TBD
+
+# 0.10.4
 ### Features
 * Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarExecCommands`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`
 * Implemented the methods: `CreateUserService`, `GetUserServices`, `StopUserServices`, `GetUserServiceLogs` and `DestroyUserServices` in `DockerKurtosisBackend`
