@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.0
 ### Features
 * Added `ExecResult` object to represent the result of commands execution inside an instance
 
