@@ -219,7 +219,7 @@ func createServiceNetworkAndModuleStore(
 		enclaveId,
 		isPartitioningEnabled,
 		freeIpAddrTracker,
-		dockerManager,
+		kurtosisBackend,
 		dockerNetworkId,
 		enclaveDataDir,
 		userServiceLauncher,
