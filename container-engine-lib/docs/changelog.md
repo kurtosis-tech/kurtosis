@@ -1,5 +1,13 @@
 # TBD
 
+# 0.11.0
+### Features
+* Added `ExecResult` object to represent the result of commands execution inside an instance
+
+### Breaking Changes
+* Replaced the first returned var type `map[service.ServiceGUID]bool` in `RunUserServiceExecCommands` and `RunNetworkingSidecarExecCommands` with `map[service.ServiceGUID]*exec_result.ExecResult`
+  * Users can get the new returned map and use the `ExecResult` object to obtain the execution exit code and output 
+
 # 0.10.4
 ### Features
 * Implemented the methods: `CreateNetworkingSidecar`, `GetNetworkingSidecars`, `RunNetworkingSidecarExecCommands`, `StopNetworkingSidecars` and `DestroyNetworkingSidecars` in `DockerKurtosisBackend`

@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -232,7 +233,7 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		userServiceCommands map[service.ServiceGUID][]string,
 	)(
-		succesfulUserServiceGuids map[service.ServiceGUID]bool,
+		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
@@ -310,7 +311,7 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		networkingSidecarsCommands map[service.ServiceGUID][]string,
 	)(
-		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		successfulNetworkingSidecarExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
