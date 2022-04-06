@@ -56,6 +56,32 @@ func (launcher UserServiceLauncher) Launch(
 	resultUserService *service.Service,
 	resultErr error,
 ) {
+	usedArtifactIdSet := map[string]bool{}
+	for artifactId := range filesArtifactIdsToMountpoints {
+		usedArtifactIdSet[artifactId] = true
+	}
+
+	// First expand the files artifacts into volumes, so that any errors get caught early
+	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
+	//  and delete them at the end of the test to keep things cleaner
+	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
+	}
+
+	artifactVolumeMounts := map[string]string{}
+	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
+		artifactVolume, found := artifactIdsToVolumes[artifactId]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the "+
+					"expanded contents was found; this is a bug in Kurtosis",
+				artifactId,
+			)
+		}
+		artifactVolumeMounts[artifactVolume] = mountpoint
+	}
+
 	launchedUserService, err := launcher.kurtosisBackend.CreateUserService(
 		ctx,
 		serviceId,
@@ -68,10 +94,10 @@ func (launcher UserServiceLauncher) Launch(
 		cmdArgs,
 		envVars,
 		enclaveDataDirMountDirpath,
-		filesArtifactIdsToMountpoints,
+		artifactVolumeMounts,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting the container for user service in enclave '%v' with image '%v'", imageName)
+		return nil, stacktrace.Propagate(err, "An error occurred starting the container for user service in enclave '%v' with image '%v'", enclaveId, imageName)
 	}
 	shouldKillService := true
 	defer func() {

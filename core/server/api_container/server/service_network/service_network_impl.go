@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -58,6 +59,8 @@ This is the in-memory representation of the service network that the API contain
 	any changes to the test network, this struct must be used.
 */
 type ServiceNetworkImpl struct {
+	enclaveId enclave.EnclaveID
+
 	// When the network is destroyed, all requests will fail
 	// This ensures that when the initializer tells the API container to destroy everything, the still-running
 	//  testsuite can't create more work
@@ -92,6 +95,7 @@ type ServiceNetworkImpl struct {
 }
 
 func NewServiceNetworkImpl(
+	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -101,6 +105,7 @@ func NewServiceNetworkImpl(
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
 	defaultPartitionConnection := partition_topology.PartitionConnection{PacketLossPercentage: startingDefaultConnectionPacketLossValue}
 	return &ServiceNetworkImpl{
+		enclaveId:             enclaveId,
 		isDestroyed:           false,
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
@@ -271,6 +276,7 @@ func (network *ServiceNetworkImpl) StartService(
 		return nil, nil, stacktrace.NewError("Cannot start container for service with ID '%v'; that service ID already has run information associated with it", serviceId)
 	}
 	serviceGuid := registrationInfo.serviceGUID
+	serviceIpAddr := registrationInfo.privateIpAddr
 
 	// When partitioning is enabled, there's a race condition where:
 	//   a) we need to start the service before we can launch the sidecar but
@@ -300,16 +306,14 @@ func (network *ServiceNetworkImpl) StartService(
 		}
 	}
 
-	privatePortSpecs := []*port_spec.PortSpec{}
-	for _, privatePort := range privatePorts {
-		privatePortSpecs = append(privatePortSpecs, privatePort)
-	}
 	userService, err := network.userServiceLauncher.Launch(
 		ctx,
-		service.ServiceGUID(serviceGuid),
-		service.ServiceID(serviceId),
+		serviceGuid,
+		serviceId,
+		network.enclaveId,
+		serviceIpAddr,
 		imageName,
-		privatePortSpecs,
+		privatePorts,
 		entrypointArgs,
 		cmdArgs,
 		dockerEnvVars,

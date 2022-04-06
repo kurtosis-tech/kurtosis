@@ -7,8 +7,8 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/stacktrace"
@@ -33,7 +33,7 @@ func (m MockServiceNetwork) RegisterService(serviceId service.ServiceID, partiti
 	panic("This is unimplemented for the mock network")
 }
 
-func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMountDirpath string, filesArtifactMountDirpaths map[string]string) (resultMaybePublicIpAddr net.IP, resultPublicPorts map[string]*enclave_container_launcher.EnclaveContainerPort, resultErr error) {
+func (m MockServiceNetwork) StartService(ctx context.Context, serviceId service.ServiceID, imageName string, privatePorts map[string]*port_spec.PortSpec, entrypointArgs []string, cmdArgs []string, dockerEnvVars map[string]string, enclaveDataDirMountDirpath string, filesArtifactMountDirpaths map[string]string) (resultMaybePublicIpAddr net.IP, resultPublicPorts map[string]*port_spec.PortSpec, resultErr error) {
 	panic("This is unimplemented for the mock network")
 }
 
@@ -53,7 +53,7 @@ func (m MockServiceNetwork) GetServiceRegistrationInfo(serviceId service.Service
 	return ip, "", nil
 }
 
-func (m MockServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (privatePorts map[string]*enclave_container_launcher.EnclaveContainerPort, maybePublicIpAddr net.IP, publicPorts map[string]*enclave_container_launcher.EnclaveContainerPort, enclaveDataDirMntDirpath string, resultErr error) {
+func (m MockServiceNetwork) GetServiceRunInfo(serviceId service.ServiceID) (privatePorts map[string]*port_spec.PortSpec, maybePublicIpAddr net.IP, publicPorts map[string]*port_spec.PortSpec, enclaveDataDirMntDirpath string, resultErr error) {
 	dataDirMntDirpath, found := m.serviceEnclaveDataDirMntDirpaths[serviceId]
 	if !found {
 		return nil, nil, nil, "", stacktrace.NewError("No enclave data directory mount dirpath defined for service with ID '%v'", serviceId)

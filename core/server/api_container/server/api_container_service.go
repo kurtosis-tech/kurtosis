@@ -105,12 +105,10 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
-	// NON FUNCTIONING: Need to replace when doing refactoring work with modules
 	privateApiPort, err := transformEnclaveContainerPortToApiPort(privateEnclaveContainerPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private enclave container port to an API port")
 	}
-	// NON FUNCTIONING: Need to replace when doing refactoring work with modules
 	publicApiPort, err := transformEnclaveContainerPortToApiPort(publicEnclaveContainerPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
@@ -495,13 +493,13 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 	portNumUint16 := uint16(portNumUint32)
 	portSpecProto, found := apiContainerPortProtoToPortSpecPortProto[apiProto]
 	if !found {
-		return nil, stacktrace.NewError("Couldn't find an enclave container port proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
+		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating enclave container port object with port num '%v' and protocol '%v'",
+			"An error occurred creating port spec object with port num '%v' and protocol '%v'",
 			portNumUint16,
 			portSpecProto,
 		)
@@ -538,6 +536,26 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 		}
 		result[portId] = publicApiPort
 	}
+	return result, nil
+}
+
+func transformEnclaveContainerPortToApiPort(port *enclave_container_launcher.EnclaveContainerPort) (*kurtosis_core_rpc_api_bindings.Port, error) {
+	portNumUint16 := port.GetNumber()
+	enclaveContainerProto := port.GetProtocol()
+	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
+	var apiProto kurtosis_core_rpc_api_bindings.Port_Protocol
+	foundApiProto := false
+	for mappedApiProto, mappedEnclaveContainerProto := range apiContainerPortProtoToEnclaveContainerPortProto {
+		if enclaveContainerProto == mappedEnclaveContainerProto {
+			apiProto = mappedApiProto
+			foundApiProto = true
+			break
+		}
+	}
+	if !foundApiProto {
+		return nil, stacktrace.NewError("Couldn't find an API port proto for enclave container port proto '%v'; this should never happen, and is a bug in Kurtosis!", enclaveContainerProto)
+	}
+	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto)
 	return result, nil
 }
 

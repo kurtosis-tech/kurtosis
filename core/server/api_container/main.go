@@ -172,6 +172,13 @@ func createServiceNetworkAndModuleStore(
 	objAttrsProvider := schema.GetObjectAttributesProvider()
 	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveId)
 
+	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
+	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
+	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
+	}
+
 	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
@@ -180,13 +187,6 @@ func createServiceNetworkAndModuleStore(
 		args.ApiContainerIpAddr,
 		args.GrpcListenPortNum,
 	)
-
-	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
-	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
-	filesArtifactCache, err := enclaveDataDir.GetFilesArtifactCache()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
-	}
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
@@ -216,6 +216,7 @@ func createServiceNetworkAndModuleStore(
 		dockerNetworkId)
 
 	serviceNetwork := service_network.NewServiceNetworkImpl(
+		enclaveId,
 		isPartitioningEnabled,
 		freeIpAddrTracker,
 		dockerManager,
