@@ -9,20 +9,6 @@ export class ApiContainerServiceClient {
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
 
-  startExternalContainerRegistration(
-    request: google_protobuf_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.StartExternalContainerRegistrationResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StartExternalContainerRegistrationResponse>;
-
-  finishExternalContainerRegistration(
-    request: api_container_service_pb.FinishExternalContainerRegistrationArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
-
   loadModule(
     request: api_container_service_pb.LoadModuleArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -141,16 +127,6 @@ export class ApiContainerServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
-
-  startExternalContainerRegistration(
-    request: google_protobuf_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.StartExternalContainerRegistrationResponse>;
-
-  finishExternalContainerRegistration(
-    request: api_container_service_pb.FinishExternalContainerRegistrationArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
 
   loadModule(
     request: api_container_service_pb.LoadModuleArgs,

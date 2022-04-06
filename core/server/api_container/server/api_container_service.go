@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
@@ -55,8 +54,6 @@ type ApiContainerService struct {
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
-	externalContainerStore *external_container_store.ExternalContainerStore
-
 	serviceNetwork service_network.ServiceNetwork
 
 	moduleStore *module_store.ModuleStore
@@ -68,14 +65,12 @@ type ApiContainerService struct {
 
 func NewApiContainerService(
 	enclaveDirectory *enclave_data_directory.EnclaveDataDirectory,
-	externalContainerStore *external_container_store.ExternalContainerStore,
 	serviceNetwork service_network.ServiceNetwork,
 	moduleStore *module_store.ModuleStore,
 	metricsClient client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		enclaveDataDir:         enclaveDirectory,
-		externalContainerStore: externalContainerStore,
 		serviceNetwork:         serviceNetwork,
 		moduleStore:            moduleStore,
 		metricsClient:          metricsClient,
@@ -92,27 +87,6 @@ func NewApiContainerService(
 	service.bulkCmdExecEngine = bulkCmdExecEngine
 
 	return service, nil
-}
-
-func (service ApiContainerService) StartExternalContainerRegistration(ctx context.Context, empty *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.StartExternalContainerRegistrationResponse, error) {
-	registrationKey, ip, err := service.externalContainerStore.StartRegistration()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred starting the registration with the external container store")
-	}
-	result := &kurtosis_core_rpc_api_bindings.StartExternalContainerRegistrationResponse{
-		RegistrationKey: registrationKey,
-		IpAddr:          ip.String(),
-	}
-	return result, nil
-}
-
-func (service ApiContainerService) FinishExternalContainerRegistration(ctx context.Context, args *kurtosis_core_rpc_api_bindings.FinishExternalContainerRegistrationArgs) (*emptypb.Empty, error) {
-	registrationKey := args.RegistrationKey
-	containerId := args.ContainerId
-	if err := service.externalContainerStore.FinishRegistration(registrationKey, containerId); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred finishing external container registration with registration key '%v' and container ID '%v'", registrationKey, containerId)
-	}
-	return &emptypb.Empty{}, nil
 }
 
 func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
