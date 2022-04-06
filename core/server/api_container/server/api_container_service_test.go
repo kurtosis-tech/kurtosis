@@ -13,14 +13,14 @@ import (
 )
 
 func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
-	// Ensure all EnclaveContainerPort protos are covered
+	// Ensure all port spec protos are covered
 	require.Equal(t, len(kurtosis_core_rpc_api_bindings.Port_Protocol_name), len(apiContainerPortProtoToPortSpecPortProto))
 	for enumInt, enumName := range kurtosis_core_rpc_api_bindings.Port_Protocol_name {
 		_, found := apiContainerPortProtoToPortSpecPortProto[kurtosis_core_rpc_api_bindings.Port_Protocol(enumInt)]
 		require.True(t, found, "No port spec port proto found for API port proto '%v'", enumName)
 	}
 
-	// Ensure no duplicates in the object attributes schema port protos
+	// Ensure no duplicates in the kurtosis backend port protos
 	require.Equal(t, len(port_spec.PortProtocolValues()), len(apiContainerPortProtoToPortSpecPortProto))
 	seenPortSpecProtos := map[port_spec.PortProtocol]kurtosis_core_rpc_api_bindings.Port_Protocol{}
 	for apiPortProto, portSpecProto := range apiContainerPortProtoToPortSpecPortProto {
@@ -28,7 +28,7 @@ func TestOneToOneApiAndPortSpecProtoMapping(t *testing.T) {
 		require.False(
 			t,
 			found,
-			"Enclave container port proto '%v' is already mapped to API port protocol '%v'",
+			"port spec proto '%v' is already mapped to API port protocol '%v'",
 			portSpecProto,
 			preexistingApiPortProto.String(),
 		)

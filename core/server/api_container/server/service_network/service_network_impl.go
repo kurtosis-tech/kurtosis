@@ -8,7 +8,7 @@ package service_network
 import (
 	"bytes"
 	"context"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -42,7 +42,7 @@ type serviceRegistrationInfo struct {
 // Information that gets created when a container is started for a service
 type serviceRunInfo struct {
 	// Service's container ID
-	containerId string
+	serviceGUID service.ServiceGUID
 
 	// Where the enclave data dir is bind-mounted on the service
 	enclaveDataDirMntDirpath string
@@ -73,8 +73,7 @@ type ServiceNetworkImpl struct {
 
 	freeIpAddrTracker *lib.FreeIpAddrTracker
 
-	//TODO it must be replaced with kurtosisBackend after all functionality will be implemented
-	dockerManager *docker_manager.DockerManager
+	kurtosisBackend backend_interface.KurtosisBackend
 
 	dockerNetworkId string
 
@@ -98,7 +97,7 @@ func NewServiceNetworkImpl(
 	enclaveId enclave.EnclaveID,
 	isPartitioningEnabled bool,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
-	dockerManager *docker_manager.DockerManager,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	dockerNetworkId string,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	userServiceLauncher *user_service_launcher.UserServiceLauncher,
@@ -109,7 +108,7 @@ func NewServiceNetworkImpl(
 		isDestroyed:           false,
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
-		dockerManager:         dockerManager,
+		kurtosisBackend:       kurtosisBackend,
 		dockerNetworkId:       dockerNetworkId,
 		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
@@ -326,12 +325,12 @@ func (network *ServiceNetworkImpl) StartService(
 	}
 
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
-	serviceContainerIdString := string(userService.GetID())
+	serviceGUID := userService.GetGUID()
 	maybeServicePublicIpAddr := userService.GetMaybePublicIpAddr()
 	servicePublicPorts := userService.GetPublicPorts()
 
 	runInfo := serviceRunInfo{
-		containerId:              serviceContainerIdString,
+		serviceGUID:              serviceGUID,
 		enclaveDataDirMntDirpath: enclaveDataDirMntDirpath,
 		privatePorts:             privatePorts,
 		maybePublicIpAddr:        maybeServicePublicIpAddr,
@@ -412,8 +411,16 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
 	// In the future, this will likely be insufficient
 
+	userServiceCommand := map[service.ServiceGUID][]string{
+		runInfo.serviceGUID: command,
+	}
+
 	execOutputBuf := &bytes.Buffer{}
-	exitCode, err := network.dockerManager.RunExecCommand(ctx, runInfo.containerId, command, execOutputBuf)
+	// How to get Service Exec Codes?
+	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
+		ctx,
+		network.enclaveId,
+		userServiceCommand)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
@@ -495,21 +502,35 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 	// TODO PERF: Parallelize the shutdown of the service container and the sidecar container
 	runInfo, foundRunInfo := network.serviceRunInfo[serviceId]
 	if foundRunInfo {
-		serviceContainerId := runInfo.containerId
+		serviceGUID := runInfo.serviceGUID
 		// Make a best-effort attempt to stop the service container
-		logrus.Debugf("Stopping container ID '%v' for service ID '%v'...", serviceContainerId, serviceId)
-		if err := network.dockerManager.StopContainer(ctx, serviceContainerId, containerStopTimeout); err != nil {
-			return stacktrace.Propagate(err, "An error occurred stopping the container with ID %v", serviceContainerId)
+		logrus.Debugf("Stopping service with GUID '%v' for service ID '%v'...", serviceGUID, serviceId)
+		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(ctx, getServiceByServiceGUIDFilter(serviceGUID))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred calling the backend to stop service with GUID '%v'", serviceGUID)
+		}
+		if len(failedToStopServiceErrs) > 0 {
+			serviceStopErrs := []string{}
+			for serviceGUID, err := range failedToStopServiceErrs {
+				wrappedErr := stacktrace.Propagate(
+					err,
+					"An error occurred stopping service with GUID `%v'",
+					serviceGUID,
+				)
+				serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
+			}
+			return stacktrace.NewError(
+				"One or more errors occurred stopping the service(s) '%v:' \n%v",
+				serviceGUID,
+				strings.Join(
+					serviceStopErrs,
+					"\n\n",
+				),
+			)
 		}
 		delete(network.serviceRunInfo, serviceId)
-		logrus.Debugf("Successfully stopped container ID '%v'", serviceContainerId)
-		logrus.Debugf("Disconnecting container ID '%v' from network ID '%v'...", serviceContainerId, network.dockerNetworkId)
-		//Disconnect the container from the network in order to free the network container's alias if a new service with same alias
-		//is loaded in the network
-		if err := network.dockerManager.DisconnectContainerFromNetwork(ctx, serviceContainerId, network.dockerNetworkId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred disconnecting the container with ID %v from network with ID %v", serviceContainerId, network.dockerNetworkId)
-		}
-		logrus.Debugf("Successfully disconnected container ID '%v'", serviceContainerId)
+		logrus.Debugf("Successfully stopped service GUID '%v'", serviceGUID)
+		// Should we also destroy the User Service?
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
@@ -580,4 +601,12 @@ func updateTrafficControlConfiguration(
 func newServiceGUID(serviceID service.ServiceID) service.ServiceGUID {
 	suffix := current_time_str_provider.GetCurrentTimeStr()
 	return service.ServiceGUID(string(serviceID) + "-" + suffix)
+}
+
+func getServiceByServiceGUIDFilter(serviceGUID service.ServiceGUID) *service.ServiceFilters {
+	return &service.ServiceFilters{
+		GUIDs: map[service.ServiceGUID]bool{
+			serviceGUID: true,
+		},
+	}
 }

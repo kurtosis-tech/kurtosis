@@ -102,14 +102,14 @@ func (launcher UserServiceLauncher) Launch(
 	shouldKillService := true
 	defer func() {
 		if shouldKillService {
-			_, erroredUserServices, err := launcher.kurtosisBackend.DestroyUserServices(ctx, getServiceByServiceGUIDFilter(serviceGUID))
+			_, erroredUserServices, err := launcher.kurtosisBackend.StopUserServices(ctx, getServiceByServiceGUIDFilter(serviceGUID))
 			if err != nil {
-				logrus.Errorf("Launching the service failed, but an error occurred calling the backend to destroy the service:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill service with ID '%v'", serviceGUID)
+				logrus.Errorf("Launching the service failed, but an error occurred calling the backend to stop the service:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop service with ID '%v'", serviceGUID)
 			}
 			for serviceGUID, err := range erroredUserServices {
-				logrus.Errorf("Launching the service failed, but an error occurred destroying the service:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill service with ID '%v'", serviceGUID)
+				logrus.Errorf("Launching the service failed, but an error occurred stopping the service:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop service with ID '%v'", serviceGUID)
 			}
 		}
 	}()
