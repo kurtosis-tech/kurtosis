@@ -41,6 +41,11 @@ const (
 	hostMachinePortNumStrParsingBits = 16
 
 	netstatSuccessExitCode = 0
+
+	uninitializedPublicIpAddrStrValue = ""
+
+	dockerContainerPortNumUintBase = 10
+	dockerContainerPortNumUintBits = 16
 )
 
 // This maps a Docker container's status to a binary "is the container considered running?" determiner
@@ -79,7 +84,7 @@ func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *Dock
 	}
 }
 
-func (backendCore *DockerKurtosisBackend) PullImage(image string) error {
+func (backend *DockerKurtosisBackend) PullImage(image string) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -181,7 +186,6 @@ func buildCombinedError(errorsById map[string]error, titleStr string) error {
 
 	return nil
 }
-
 
 func getPublicPortBindingFromPrivatePortSpec(privatePortSpec *port_spec.PortSpec, allHostMachinePortBindings map[nat.Port]*nat.PortBinding) (
 	resultPublicIpAddr net.IP,
@@ -309,7 +313,6 @@ func waitForPortAvailabilityUsingNetstat(
 	)
 }
 
-
 func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) {
 	labels := network.GetLabels()
 	enclaveIdLabelValue, found := labels[label_key_consts.EnclaveIDLabelKey.GetString()]
@@ -320,3 +323,60 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 	return enclaveId, nil
 }
 
+func (backend *DockerKurtosisBackend) killContainers(
+	ctx context.Context,
+	containerIdsSet map[string]bool,
+)(
+	successfulContainers map[string]bool,
+	erroredContainers map[string]error,
+){
+
+	// TODO Parallelize for perf
+	for containerId := range containerIdsSet {
+		if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
+			containerError :=  stacktrace.Propagate(
+				err,
+				"An error occurred killing container with ID '%v'",
+				containerId,
+			)
+			erroredContainers[containerId] = containerError
+			continue
+		}
+		successfulContainers[containerId] = true
+	}
+
+	return successfulContainers, erroredContainers
+}
+
+func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
+	enclaveIDs := map[enclave.EnclaveID]bool{
+		enclaveId: true,
+	}
+
+	enclaveNetworksFound, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIDs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting Docker networks by enclave ID '%v'", enclaveId)
+	}
+	numMatchingNetworks := len(enclaveNetworksFound)
+	if numMatchingNetworks == 0 {
+		return nil, stacktrace.Propagate(err, "No network was found for enclave with ID '%v'", enclaveId)
+	}
+	if numMatchingNetworks > 1 {
+		return nil, stacktrace.NewError(
+			"Expected exactly one network matching enclave ID '%v', but got %v",
+			enclaveId,
+			numMatchingNetworks,
+		)
+	}
+	return  enclaveNetworksFound[0], nil
+}
+
+// Embeds the given command in a call to sh shell, so that a command with things
+//  like '&&' will get executed as expected
+func wrapShCommand(unwrappedCmd []string) []string {
+	return []string{
+		"sh",
+		"-c",
+		strings.Join(unwrappedCmd, " "),
+	}
+}

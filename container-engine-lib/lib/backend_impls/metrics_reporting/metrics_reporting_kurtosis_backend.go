@@ -7,8 +7,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net"
@@ -208,7 +210,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 	newModule *module.Module,
 	resultErr error,
 ) {
-	module, err := backend.underlying.CreateModule(
+	newModule, err := backend.underlying.CreateModule(
 		ctx,
 		image,
 		enclaveId,
@@ -230,7 +232,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateModule(
 		)
 	}
 
-	return module, nil
+	return newModule, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetModules(
@@ -267,11 +269,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 	id service.ServiceID,
 	guid service.ServiceGUID,
 	containerImageName string,
-	privatePorts []*port_spec.PortSpec,
+	enclaveId enclave.EnclaveID,
+	ipAddr net.IP,
+	privatePorts map[string]*port_spec.PortSpec,
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	enclaveDataDirMntDirpath string,
+	enclaveDataDirpathOnHostMachine string,
 	filesArtifactMountDirpaths map[string]string,
 )(
 	newUserService *service.Service,
@@ -282,11 +286,13 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 		id,
 		guid,
 		containerImageName,
+		enclaveId,
+		ipAddr,
 		privatePorts,
 		entrypointArgs,
 		cmdArgs,
 		envVars,
-		enclaveDataDirMntDirpath,
+		enclaveDataDirpathOnHostMachine,
 		filesArtifactMountDirpaths,
 		)
 	if err != nil {
@@ -301,7 +307,7 @@ func (backend *MetricsReportingKurtosisBackend) CreateUserService(
 			entrypointArgs,
 			cmdArgs,
 			envVars,
-			enclaveDataDirMntDirpath,
+			enclaveDataDirpathOnHostMachine,
 			filesArtifactMountDirpaths,
 			)
 	}
@@ -315,7 +321,7 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 	map[service.ServiceGUID]*service.Service,
 	error,
 ){
-	services, err := backend.underlying.GetUserServices(ctx, filters)
+	services,  err := backend.underlying.GetUserServices(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", filters)
 	}
@@ -325,33 +331,35 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServices(
 func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	ctx context.Context,
 	filters *service.ServiceFilters,
+	shouldFollowLogs bool,
 )(
 	map[service.ServiceGUID]io.ReadCloser,
+	map[service.ServiceGUID]error,
 	error,
 ) {
-	userServiceLogs, err := backend.underlying.GetUserServiceLogs(ctx, filters)
+	userServiceLogs, erroredUserServices, err := backend.underlying.GetUserServiceLogs(ctx, filters, shouldFollowLogs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", filters)
 	}
-	return userServiceLogs, nil
+	return userServiceLogs, erroredUserServices, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands (
 	ctx context.Context,
-	serviceGUID service.ServiceGUID,
-	commandArgs []string,
+	enclaveId enclave.EnclaveID,
+	userServiceCommands map[service.ServiceGUID][]string,
 )(
-	resultExitCode int32,
-	resultOutput string,
+	succesfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	exitCode, output, err := backend.underlying.RunUserServiceExecCommand(ctx, serviceGUID, commandArgs)
+	exitCode, output, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(
+		return nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred running user service exec command with user service GUID '%v' and command args '%+v'",
-			serviceGUID,
-			commandArgs,
+			"An error occurred running user service exec commands '%+v' on enclave '%v'",
+			userServiceCommands,
+			enclaveId,
 		)
 	}
 	return exitCode, output, nil
@@ -359,12 +367,13 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommand (
 
 func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
-	httpMethod string,
+	httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod,
 	port uint32,
 	path string,
 	requestBody string,
-	bodyText string,
+	expectedResponseBody string,
 	initialDelayMilliseconds uint32,
 	retries uint32,
 	retriesDelayMilliseconds uint32,
@@ -373,24 +382,26 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 ) {
 	if err := backend.underlying.WaitForUserServiceHttpEndpointAvailability(
 		ctx,
+		enclaveId,
 		serviceGUID,
 		httpMethod,
 		port,
 		path,
 		requestBody,
-		bodyText,
+		expectedResponseBody,
 		initialDelayMilliseconds,
 		retries,
 		retriesDelayMilliseconds,
 		); err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', body text '%v' from service with GUID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
+			"An error occurred waiting for http endpoint with path '%v', port '%v', request body '%v', expected response body '%v' from service with GUID '%v' in enclave with ID '%v' to become available after '%v' retries and '%v' milliseconds between retries,",
 			path,
 			port,
 			requestBody,
-			bodyText,
+			expectedResponseBody,
 			serviceGUID,
+			enclaveId,
 			retries,
 			retriesDelayMilliseconds,
 		)
@@ -398,24 +409,27 @@ func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAv
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(
+func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(
 	ctx context.Context,
+	enclaveId enclave.EnclaveID,
 	serviceGUID service.ServiceGUID,
 )(
+	resultConn net.Conn,
 	resultErr error,
 ) {
-	if err := backend.underlying.GetShellOnUserService(ctx, serviceGUID); err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting shell on user service with GUID '%v'", serviceGUID)
+	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveId, serviceGUID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v'", serviceGUID)
 	}
-	return nil
+	return newConn, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.StopUserServices(ctx, filters)
@@ -429,8 +443,8 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 )(
-	successfulUserServiceIds map[service.ServiceGUID]bool,
-	erroredUserServiceIds map[service.ServiceGUID]error,
+	successfulUserServiceGuids map[service.ServiceGUID]bool,
+	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
 	successes, failures, err := backend.underlying.DestroyUserServices(ctx, filters)
@@ -438,4 +452,80 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying user services using filters: %+v", filters)
 	}
 	return successes, failures, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+)(
+	*networking_sidecar.NetworkingSidecar,
+	error,
+){
+	networkingSidecar, err := backend.underlying.CreateNetworkingSidecar(ctx, enclaveId, serviceGuid, ipAddr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for user service with GUID '%v' in enclave with ID '%v'", serviceGuid, enclaveId)
+	}
+	return networkingSidecar, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
+	ctx context.Context,
+	filters *networking_sidecar.NetworkingSidecarFilters,
+)(
+	map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
+	error,
+) {
+	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars using filters '%+v'", filters)
+	}
+	return networkingSidecars, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	networkingSidecarsCommands map[service.ServiceGUID][]string,
+)(
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
+){
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveId, networkingSidecarsCommands)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with ID '%v'", networkingSidecarsCommands, enclaveId)
+	}
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
+	ctx context.Context,
+	filters *networking_sidecar.NetworkingSidecarFilters,
+)(
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
+){
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.StopNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filters '%+v'", filters)
+	}
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
+	ctx context.Context,
+	filters *networking_sidecar.NetworkingSidecarFilters,
+)(
+	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]error,
+	error,
+){
+	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
+	}
+	return successfulUserServiceGuids, erroredUserServiceGuids, nil
 }

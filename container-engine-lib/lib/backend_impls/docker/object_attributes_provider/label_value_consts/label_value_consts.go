@@ -4,8 +4,6 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 )
 
-
-
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// If these value change, it will lead to the Kurtosis engine losing track of old containers
@@ -15,10 +13,12 @@ const (
 	//
 	appIdLabelValueStr = "kurtosis"
 	engineContainerTypeLabelValueStr = "kurtosis-engine"
-	moduleContainerTypeLabelValueStr = "module"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	apiContainerContainerTypeLabelValueStr = "api-container"
+	apiContainerContainerTypeLabelValueStr      = "api-container"
+	userServiceContainerTypeLabelValueStr       = "user-service"
+	networkingSidecarContainerTypeLabelValueStr = "networking-sidecar"
+	moduleContainerTypeLabelValueStr = "module"
 
 	trueValueStr = "true"
 
@@ -36,5 +36,7 @@ var ModuleContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelV
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 var APIContainerContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
+var UserServiceContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(userServiceContainerTypeLabelValueStr)
+var NetworkingSidecarContainerTypeLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
 var NetworkPartitioningEnabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
 var NetworkPartitioningDisabledLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
