@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 	"strings"
@@ -16,8 +17,6 @@ import (
 
 const (
 	artifactExpansionObjectTimestampFormat = "2006-01-02T15.04.05.000"
-
-	interactiveReplContainerNameFragment = "interactive-repl"
 
 	apiContainerNameSuffix                 = "kurtosis-api"
 	userServiceContainerNameFragment       = "user-service"
@@ -36,9 +35,8 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortId string,
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	// ForInteractiveREPLContainer(interactiveReplGuid string) (DockerObjectAttributes,error)
-	// ForUserServiceContainer(serviceID string, serviceGUID string, privatePorts map[string]*PortSpec) (DockerObjectAttributes, error)
-	// ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo string) (DockerObjectAttributes, error)
+	ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error)
+	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
 	ForModuleContainer(
@@ -101,7 +99,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
-			provider.enclaveId.GetString(),
 			apiContainerNameSuffix,
 		},
 	)
@@ -136,7 +133,86 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels %+v",
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject(
+		[]string{
+			userServiceContainerNameFragment,
+			string(serviceGUID),
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the user service Docker container name object")
+	}
+
+	serializedPortsSpec, err := port_spec_serializer.SerializePortSpecs(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service ports object to a string for storing in the ports label: %+v", privatePorts)
+	}
+
+	privateIpLabelValue, err := docker_label_value.CreateNewDockerLabelValue(privateIpAddr.String())
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating a Docker label value object from user service container private IP address '%v'",
+			privateIpAddr.String(),
+		)
+	}
+
+	serviceIdStr := string(serviceID)
+	serviceGuidStr := string(serviceGUID)
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceIdStr, serviceGuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with ID '%v' and GUID '%v'", serviceID, serviceGUID)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.UserServiceContainerTypeLabelValue
+	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
+	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
+			name.GetString(),
+			getLabelKeyValuesAsStrings(labels),
+		)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error) {
+	name, err := provider.getNameForEnclaveObject(
+		[]string{
+			networkingSidecarContainerNameFragment,
+			string(serviceGUIDSidecarAttachedTo),
+		},
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceGUIDSidecarAttachedTo))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDSidecarAttachedTo)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.NetworkingSidecarContainerTypeLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
 			name.GetString(),
 			getLabelKeyValuesAsStrings(labels),
 		)

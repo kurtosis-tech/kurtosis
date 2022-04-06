@@ -6,8 +6,10 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
 	"io"
 	"net"
 )
@@ -104,7 +106,6 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-
 	CreateAPIContainer(
 		ctx context.Context,
 		image string,
@@ -191,43 +192,61 @@ type KurtosisBackend interface {
 		id service.ServiceID,
 		guid service.ServiceGUID,
 		containerImageName string,
-		privatePorts []*port_spec.PortSpec,
+		enclaveId enclave.EnclaveID,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+		privatePorts map[string]*port_spec.PortSpec,
 		entrypointArgs []string,
 		cmdArgs []string,
 		envVars map[string]string,
-		enclaveDataDirMntDirpath string,
+		enclaveDataDirpathOnHostMachine string,
 		filesArtifactMountDirpaths map[string]string,
     )(
 		newUserService *service.Service,
 		resultErr error,
 	)
 
-	// Gets user services using the given filters, returning a map of matched user services identified by their ID
-	GetUserServices(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]*service.Service, error)
+	// Gets user services using the given filters, returning a map of matched user services identified by their GUID
+	GetUserServices(
+		ctx context.Context,
+		filters *service.ServiceFilters,
+	)(
+		successfulUserServices map[service.ServiceGUID]*service.Service,
+		resultError error,
+	)
 
 	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
-	GetUserServiceLogs(ctx context.Context, filters *service.ServiceFilters) (map[service.ServiceGUID]io.ReadCloser, error)
+	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
+	GetUserServiceLogs(
+		ctx context.Context,
+		filters *service.ServiceFilters,
+		shouldFollowLogs bool,
+	)(
+		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultError error,
+	)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommand (
+	RunUserServiceExecCommands (
 		ctx context.Context,
-		serviceGUID service.ServiceGUID,
-		commandArgs []string,
+		enclaveId enclave.EnclaveID,
+		userServiceCommands map[service.ServiceGUID][]string,
 	)(
-		exitCode int32,
-		output string,
+		succesfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
 	)
 
 	// Wait for succesful http endpoint response which can be used to check if the service is available
 	WaitForUserServiceHttpEndpointAvailability(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
-		httpMethod string, //The httpMethod used to execute the request. Valid values: GET and POST
+		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
 		port uint32, //The port of the service to check. For instance 8080
 		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		bodyText string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
 		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
 		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
@@ -235,11 +254,13 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Get an interactive shell to execute commands in an user service
-	GetShellOnUserService(
+	// Get a connection with user service to execute commands in
+	GetConnectionWithUserService(
 		ctx context.Context,
+		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
 	)(
+		resultConn net.Conn,
 		resultErr error,
 	)
 
@@ -248,8 +269,8 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully stopped
-		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when stopping, with the error
+		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
@@ -258,21 +279,59 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *service.ServiceFilters,
 	)(
-		successfulUserServiceIds map[service.ServiceGUID]bool, // "set" of user service IDs that were successfully destroyed
-		erroredUserServiceIds map[service.ServiceGUID]error, // "set" of user service IDs that errored when destroying, with the error
+		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
+		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	// TODO CreateRepl
+	//Create a user service's  networking sidecar inside enclave
+	CreateNetworkingSidecar(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	)(
+		*networking_sidecar.NetworkingSidecar,
+		error,
+	)
 
-	// TODO AttachToRepl
+	// Gets networking sidecars using the given filters, returning a map of matched networking sidecars identified by their GUID
+	GetNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
+		error,
+	)
 
-	// TODO GetRepls
+	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service GUIDs
+	RunNetworkingSidecarExecCommands(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		networkingSidecarsCommands map[service.ServiceGUID][]string,
+	)(
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
 
-	// TODO StopRepl
+	// Stop networking sidecars using the given filters,
+	StopNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
 
-	// TODO DestroyRepl
-
-	// TODO RunReplExecCommand
-
+	// Destroy networking sidecars using the given filters,
+	DestroyNetworkingSidecars(
+		ctx context.Context,
+		filters *networking_sidecar.NetworkingSidecarFilters,
+	)(
+		successfulUserServiceGuids map[service.ServiceGUID]bool,
+		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
 }

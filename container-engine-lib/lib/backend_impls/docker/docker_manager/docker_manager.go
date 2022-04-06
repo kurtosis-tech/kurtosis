@@ -87,6 +87,12 @@ const (
 	shouldKillContainersWhenRemovingContainers         = true
 
 	shouldFollowContainerLogsWhenGettingFailedContainerLogs = false
+
+	shouldAttachStdinWhenCreatingContainerExec                = true
+	shouldAttachStandardStreamsToTtyWhenCreatingContainerExec = true
+	shouldAttachStderrWhenCreatingContainerExec               = true
+	shouldAttachStdoutWhenCreatingContainerExec = true
+	shouldExecuteInDetachModeWhenCreatingContainerExec = false
 )
 
 /*
@@ -845,6 +851,38 @@ func (manager DockerManager) PullImage(context context.Context, imageName string
 	return nil
 }
 
+func (manager DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {
+	config := types.ExecConfig{
+		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
+		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
+		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
+		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
+		Detach:       shouldExecuteInDetachModeWhenCreatingContainerExec,
+		Cmd:          cmd,
+	}
+
+	response, err := manager.dockerClient.ContainerExecCreate(context, containerId, config)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while creating the ContainerExec in container with ID '%v'", containerId)
+	}
+
+	execID := response.ID
+	if execID == "" {
+		return nil,  stacktrace.NewError("the Exec ID was empty")
+	}
+
+	execStartCheck := types.ExecStartCheck{
+		Detach: false,
+		Tty:    true,
+	}
+
+	hijackedResponse, err := manager.dockerClient.ContainerExecAttach(context, execID, execStartCheck)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error while attaching connection to the execution process with ID '%v' in container with ID '%v'", execID, containerId)
+	}
+
+	return &hijackedResponse, nil
+}
 
 // =================================================================================================================
 //                                          INSTANCE HELPER FUNCTIONS
@@ -1101,7 +1139,8 @@ func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_m
 		containerName,
 		dockerContainer.Labels,
 		containerStatus,
-		containerHostPortBindings)
+		containerHostPortBindings,
+	)
 
 	return newContainer, nil
 }

@@ -37,7 +37,7 @@ const (
 	pre_2022_03_28_IpAddrLabel = "com.kurtosistech.api-container-ip"
 )
 
-func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
+func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	ctx context.Context,
 	image string,
 	enclaveId enclave.EnclaveID,
@@ -53,29 +53,19 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 			enclaveId: true,
 		},
 	}
-	preexistingApiContainersInEnclave, err := backendCore.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
+	preexistingApiContainersInEnclave, err := backend.GetAPIContainers(ctx, apiContainersInEnclaveFilters)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking if API containers already exist in encalve '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred checking if API containers already exist in enclave '%v'", enclaveId)
 	}
 	if len(preexistingApiContainersInEnclave) > 0 {
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
 	// Get the Docker network ID where we'll start the new API container
-	matchingNetworks, err := backendCore.getEnclaveNetworksByEnclaveIds(ctx, map[enclave.EnclaveID]bool{
-		enclaveId: true,
-	})
+	enclaveNetwork, err := backend.getEnclaveNetworkByEnclaveId(ctx, enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks for enclave ID '%v'", enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave ID '%v'", enclaveId)
 	}
-	numMatchingNetworks := len(matchingNetworks)
-	if numMatchingNetworks == 0 {
-		return nil, stacktrace.NewError("No network found for enclave with ID '%v'", enclaveId)
-	}
-	if numMatchingNetworks > 1 {
-		return nil, stacktrace.NewError("Found '%v' enclave networks with ID '%v', which shouldn't happen", numMatchingNetworks, enclaveId)
-	}
-	enclaveNetwork := matchingNetworks[0]
 
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerPortProtocol)
 	if err != nil {
@@ -96,7 +86,7 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		)
 	}
 
-	enclaveObjAttrProvider, err := backendCore.objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveId)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
@@ -136,11 +126,6 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	// Best-effort pull attempt
-	if err = backendCore.dockerManager.PullImage(ctx, image); err != nil {
-		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
-	}
-
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
@@ -155,7 +140,12 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).Build()
 
-	containerId, hostMachinePortBindings, err := backendCore.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
+	// Best-effort pull attempt
+	if err = backend.dockerManager.PullImage(ctx, image); err != nil {
+		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
+	}
+
+	containerId, hostMachinePortBindings, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the API container")
 	}
@@ -164,7 +154,7 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 		if shouldKillContainer {
 			// NOTE: We use the background context here so that the kill will still go off even if the reason for
 			// the failure was the original context being cancelled
-			if err := backendCore.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
 					"Launching API container '%v' with container ID '%v' didn't complete successfully so we " +
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
@@ -178,7 +168,7 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 
 	if err := waitForPortAvailabilityUsingNetstat(
 		ctx,
-		backendCore.dockerManager,
+		backend.dockerManager,
 		containerId,
 		privateGrpcPortSpec,
 		maxWaitForApiContainerAvailabilityRetries,
@@ -189,7 +179,7 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 
 	if err := waitForPortAvailabilityUsingNetstat(
 		ctx,
-		backendCore.dockerManager,
+		backend.dockerManager,
 		containerId,
 		privateGrpcPortSpec,
 		maxWaitForApiContainerAvailabilityRetries,
@@ -207,8 +197,8 @@ func (backendCore *DockerKurtosisBackend) CreateAPIContainer(
 	return result, nil
 }
 
-func (backendCore *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
-	matchingApiContainers, err := backendCore.getMatchingApiContainers(ctx, filters)
+func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveID]*api_container.APIContainer, error) {
+	matchingApiContainers, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
@@ -221,8 +211,8 @@ func (backendCore *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, 
 	return matchingApiContainersByEnclaveID, nil
 }
 
-func (backendCore *DockerKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
-	matchingApiContainersByContainerId, err := backendCore.getMatchingApiContainers(ctx, filters)
+func (backend *DockerKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+	matchingApiContainersByContainerId, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
@@ -231,23 +221,21 @@ func (backendCore *DockerKurtosisBackend) StopAPIContainers(ctx context.Context,
 	errorIds := map[enclave.EnclaveID]error{}
 	for containerId, engineObj := range matchingApiContainersByContainerId {
 		enclaveId := engineObj.GetEnclaveID()
-		if err := backendCore.dockerManager.StopContainer(ctx, containerId, apiContainerStopTimeout); err != nil {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred stopping API container for enclave '%v' with container ID '%v'",
-				enclaveId,
-				containerId,
-			)
-			errorIds[enclaveId] = wrappedErr
-		} else {
-			successIds[enclaveId] = true
+		containerIdsSet := map[string]bool{
+			containerId: true,
 		}
+		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
+			wrappedErr := stacktrace.Propagate(err, "An error occurred killing enclave '%v' with container ID '%v'", enclaveId, containerId)
+			errorIds[enclaveId] = wrappedErr
+			continue
+		}
+		successIds[enclaveId] = true
 	}
 	return successIds, errorIds, nil
 }
 
-func (backendCore *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
-	matchingApiContainersByContainerId, err := backendCore.getMatchingApiContainers(ctx, filters)
+func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+	matchingApiContainersByContainerId, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
@@ -256,7 +244,7 @@ func (backendCore *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Conte
 	errorIds := map[enclave.EnclaveID]error{}
 	for containerId, engineObj := range matchingApiContainersByContainerId {
 		enclaveId := engineObj.GetEnclaveID()
-		if err := backendCore.dockerManager.RemoveContainer(ctx, containerId); err != nil {
+		if err := backend.dockerManager.RemoveContainer(ctx, containerId); err != nil {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred removing API container for enclave '%v' with container ID '%v'",
@@ -275,13 +263,13 @@ func (backendCore *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Conte
 //                                      Private Helper Functions
 // ====================================================================================================
 // Gets API containers matching the search filters, indexed by their container ID
-func (backendCore *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
+func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
 	apiContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.APIContainerContainerTypeLabelValue.GetString(),
 		// NOTE: we do NOT use the enclave ID label here, and instead do postfiltering, because Docker has no way to do disjunctive search!
 	}
-	allApiContainers, err := backendCore.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
+	allApiContainers, err := backend.dockerManager.GetContainersByLabels(ctx, apiContainerSearchLabels, shouldFetchAllContainersWhenRetrievingContainers)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred fetching API containers using labels: %+v", apiContainerSearchLabels)
 	}
