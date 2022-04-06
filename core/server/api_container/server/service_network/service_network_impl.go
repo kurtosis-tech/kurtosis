@@ -6,7 +6,6 @@
 package service_network
 
 import (
-	"bytes"
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -326,7 +325,7 @@ func (network *ServiceNetworkImpl) StartService(
 
 	// TODO Restart-able enclaves: Don't store any service information in memory; instead, get it all from the KurtosisBackend when required
 	serviceGUID := userService.GetGUID()
-	maybeServicePublicIpAddr := userService.GetMaybePublicIpAddr()
+	maybeServicePublicIpAddr := userService.GetMaybePublicIP()
 	servicePublicPorts := userService.GetPublicPorts()
 
 	runInfo := serviceRunInfo{
@@ -411,11 +410,11 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
 	// In the future, this will likely be insufficient
 
+	serviceGuid := runInfo.serviceGUID
 	userServiceCommand := map[service.ServiceGUID][]string{
-		runInfo.serviceGUID: command,
+		serviceGuid: command,
 	}
 
-	execOutputBuf := &bytes.Buffer{}
 	// How to get Service Exec Codes?
 	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
 		ctx,
@@ -424,12 +423,39 @@ func (network *ServiceNetworkImpl) ExecCommand(
 	if err != nil {
 		return 0, "", stacktrace.Propagate(
 			err,
-			"An error occurred running exec command '%v' against service '%v'",
+			"An error occurred calling kurtosis backend to exec command '%v' against service '%v'",
 			command,
 			serviceId)
 	}
+	if len(failedExecCommands) > 0 {
+		serviceStopErrs := []string{}
+		for serviceGUID, err := range failedExecCommands {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred attempting to run a command in a service with GUID `%v'",
+				serviceGUID,
+			)
+			serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
+		}
+		return 0, "", stacktrace.NewError(
+			"One or more errors occurred attempting to exec command(s) in the service(s): \n%v",
+			strings.Join(
+				serviceStopErrs,
+				"\n\n",
+			),
+		)
+	}
 
-	return exitCode, execOutputBuf.String(), nil
+	exitOutput, isFound := successfulExecCommands[serviceGuid]
+	if !isFound {
+		return 0, "", stacktrace.NewError(
+			"Unable to find output from running exec command '%v' against service '%v'",
+			command,
+			serviceGuid)
+	}
+
+
+	return exitOutput.GetExitCode(), exitOutput.GetOutput(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.ServiceID) (
@@ -520,8 +546,7 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 				serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
 			}
 			return stacktrace.NewError(
-				"One or more errors occurred stopping the service(s) '%v:' \n%v",
-				serviceGUID,
+				"One or more errors occurred stopping the service(s): \n%v",
 				strings.Join(
 					serviceStopErrs,
 					"\n\n",
