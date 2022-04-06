@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/wait_for_availability_http_methods"
@@ -205,11 +206,11 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
 )(
-	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
 ){
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	succesfulUserServiceExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
 	userServiceGuids := map[service.ServiceGUID]bool{}
@@ -270,22 +271,11 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 			erroredUserServiceGuids[userService.GetGUID()] = wrappedErr
 			continue
 		}
-		if exitCode != succesfulExecCmdExitCode {
-			exitCodeErr := stacktrace.NewError(
-				"Expected exit code '%v' when running exec command '%+v' on user service with GUID '%v', but got exit code '%v' instead with the following output:\n%v",
-				succesfulExecCmdExitCode,
-				userServiceShWrappedCmd,
-				userService.GetGUID(),
-				exitCode,
-				execOutputBuf.String(),
-			)
-			erroredUserServiceGuids[userService.GetGUID()] = exitCodeErr
-			continue
-		}
-		successfulUserServiceGuids[userService.GetGUID()] = true
+		newExecResult := exec_result.NewExecResult(exitCode, execOutputBuf.String())
+		succesfulUserServiceExecResults[userService.GetGUID()] = newExecResult
 	}
 
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
