@@ -43,12 +43,9 @@ const (
 
 	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey  = "engine-client"
-
-	shouldExamineStoppedContainersWhenPrintingEnclaveStatus = true
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error{
-	"Interactive REPLs": printInteractiveRepls,
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
