@@ -93,6 +93,7 @@ func (launcher ModuleLauncher) Launch(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the module container environment variables from args '%+v'", args)
 	}
 
+	// NON-FUNCTIONING: CreateModule changes need to be merged with recent changes for network partitioning in the container-engine-lib?
 	createdModule, err := launcher.kurtosisBackend.CreateModule(
 		ctx,
 		containerImage,
@@ -107,7 +108,7 @@ func (launcher ModuleLauncher) Launch(
 	)
 
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the Docker container for module '%v'", containerImage)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching  for module '%v'", containerImage)
 	}
 	shouldKillContainer := true
 	defer func() {
