@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -164,11 +165,11 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
 )(
-	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
 ){
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	successfulNetworkingSidecarExecResults := map[service.ServiceGUID]*exec_result.ExecResult{}
 	erroredUserServiceGuids := map[service.ServiceGUID]error{}
 
 	userServiceGuids := map[service.ServiceGUID]bool{}
@@ -228,22 +229,11 @@ func (backend *DockerKurtosisBackend) RunNetworkingSidecarExecCommands(
 			erroredUserServiceGuids[networkingSidecar.GetServiceGUID()] = wrappedErr
 			continue
 		}
-		if exitCode != succesfulExecCmdExitCode {
-			exitCodeErr := stacktrace.NewError(
-				"Expected exit code '%v' when running exec command '%+v' on networking sidecar with user service GUID '%v', but got exit code '%v' instead with the following output:\n%v",
-				succesfulExecCmdExitCode,
-				networkingSidecarShWrappedCmd,
-				containerId,
-				exitCode,
-				execOutputBuf.String(),
-			)
-			erroredUserServiceGuids[networkingSidecar.GetServiceGUID()] = exitCodeErr
-			continue
-		}
-		successfulUserServiceGuids[networkingSidecar.GetServiceGUID()] = true
+		newExecResult := exec_result.NewExecResult(exitCode, execOutputBuf.String())
+		successfulNetworkingSidecarExecResults[networkingSidecar.GetServiceGUID()] = newExecResult
 	}
 
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+	return successfulNetworkingSidecarExecResults, erroredUserServiceGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) StopNetworkingSidecars(

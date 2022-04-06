@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -349,11 +350,11 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands (
 	enclaveId enclave.EnclaveID,
 	userServiceCommands map[service.ServiceGUID][]string,
 )(
-	succesfulUserServiceGuids map[service.ServiceGUID]bool,
+	succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 	erroredUserServiceGuids map[service.ServiceGUID]error,
 	resultErr error,
 ) {
-	exitCode, output, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands)
+	succesfulUserServiceExecResults, erroredUserServiceGuids, err := backend.underlying.RunUserServiceExecCommands(ctx, enclaveId, userServiceCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
@@ -362,7 +363,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands (
 			enclaveId,
 		)
 	}
-	return exitCode, output, nil
+	return succesfulUserServiceExecResults, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) WaitForUserServiceHttpEndpointAvailability(
@@ -489,15 +490,15 @@ func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands
 	enclaveId enclave.EnclaveID,
 	networkingSidecarsCommands map[service.ServiceGUID][]string,
 )(
-	map[service.ServiceGUID]bool,
+	map[service.ServiceGUID]*exec_result.ExecResult,
 	map[service.ServiceGUID]error,
 	error,
 ){
-	successfulUserServiceGuids, erroredUserServiceGuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveId, networkingSidecarsCommands)
+	successfulNetworkingSidecarExecResults, erroredUserServiceGuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveId, networkingSidecarsCommands)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with ID '%v'", networkingSidecarsCommands, enclaveId)
 	}
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+	return successfulNetworkingSidecarExecResults, erroredUserServiceGuids, nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
