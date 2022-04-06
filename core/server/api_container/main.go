@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/external_container_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
@@ -87,8 +86,6 @@ func runMain() error {
 		serverArgs.TakenIpAddrs,
 	)
 
-	externalContainerStore := external_container_store.NewExternalContainerStore(freeIpAddrTracker)
-
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
@@ -121,7 +118,6 @@ func runMain() error {
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
 		enclaveDataDir,
-		externalContainerStore,
 		serviceNetwork,
 		moduleStore,
 		metricsClient,
