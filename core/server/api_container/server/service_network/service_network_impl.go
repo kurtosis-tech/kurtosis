@@ -74,8 +74,6 @@ type ServiceNetworkImpl struct {
 
 	kurtosisBackend backend_interface.KurtosisBackend
 
-	dockerNetworkId string
-
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	userServiceLauncher *user_service_launcher.UserServiceLauncher
@@ -97,7 +95,6 @@ func NewServiceNetworkImpl(
 	isPartitioningEnabled bool,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	dockerNetworkId string,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	userServiceLauncher *user_service_launcher.UserServiceLauncher,
 	networkingSidecarManager networking_sidecar.NetworkingSidecarManager) *ServiceNetworkImpl {
@@ -108,7 +105,6 @@ func NewServiceNetworkImpl(
 		isPartitioningEnabled: isPartitioningEnabled,
 		freeIpAddrTracker:     freeIpAddrTracker,
 		kurtosisBackend:       kurtosisBackend,
-		dockerNetworkId:       dockerNetworkId,
 		enclaveDataDir:        enclaveDataDir,
 		userServiceLauncher:   userServiceLauncher,
 		mutex:                 &sync.Mutex{},
