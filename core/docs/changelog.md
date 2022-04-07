@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed dependency version for `github.com/kurtosis-tech/container-engine-lib` in `launcher/go.sum` and `server/go.sum` files
 
 # 1.40.0
 ### Breaking Changes
