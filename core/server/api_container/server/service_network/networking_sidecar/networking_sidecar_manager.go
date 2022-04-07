@@ -70,7 +70,7 @@ func (manager *StandardNetworkingSidecarManager) Add(
 		networkingSidecar.GetServiceGUID(),
 		networkingSidecar.GetEnclaveID())
 
-	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor)
+	networkingSidecarWrapper, err := NewStandardNetworkingSidecarWrapper(networkingSidecar, execCmdExecutor, sidecarIp)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar wrapper for networking sidecar with service GUID '%v'", networkingSidecar.GetServiceGUID())
 	}

@@ -91,6 +91,7 @@ type StandardNetworkingSidecarWrapper struct {
 
 	networkingSidecar *networking_sidecar.NetworkingSidecar
 
+	sidecarIpAddr net.IP
 	// Tracks which of the main qdiscs (qdiscA and qdiscB) is the primary qdisc, so we know
 	//  which qdisc is in the background that we can flush and rebuild
 	//  when we're changing them
@@ -102,6 +103,7 @@ type StandardNetworkingSidecarWrapper struct {
 func NewStandardNetworkingSidecarWrapper(
 	networkingSidecar *networking_sidecar.NetworkingSidecar,
 	execCmdExecutor sidecarExecCmdExecutor,
+	sidecarIpAddr net.IP,
 )(
 	*StandardNetworkingSidecarWrapper,
 	error,
@@ -115,6 +117,7 @@ func NewStandardNetworkingSidecarWrapper(
 		networkingSidecar: networkingSidecar,
 		qdiscInUse: undefinedQdiscId,
 		execCmdExecutor: execCmdExecutor,
+		sidecarIpAddr: sidecarIpAddr,
 	}, nil
 }
 
@@ -123,7 +126,7 @@ func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetServiceGUID() service
 }
 
 func (sidecarWrapper *StandardNetworkingSidecarWrapper) GetIPAddr() net.IP {
-	return sidecarWrapper.networkingSidecar.GetPrivateIpAddr()
+	return sidecarWrapper.sidecarIpAddr
 }
 
 func (sidecarWrapper *StandardNetworkingSidecarWrapper) InitializeTrafficControl(ctx context.Context) error {

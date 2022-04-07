@@ -378,13 +378,13 @@ func createNewStandardNetworkingSidecarAndMockedExecCmdExecutor(t *testing.T) (*
 
 	networkingSidecar := networking_sidecar.NewNetworkingSidecar(
 		testServiceGUID,
-		testNetworkinSidecarIP,
 		testEnclaveID,
 		testContainerStatusRunning)
 
 	sidecar, err := NewStandardNetworkingSidecarWrapper(
 		networkingSidecar,
 		execCmdExecutor,
+		testNetworkinSidecarIP,
 		)
 
 	require.NoErrorf(t, err, "An error occurred creating standard networking sidecar wrapper with mocked exec command executor")
