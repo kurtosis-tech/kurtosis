@@ -1,5 +1,9 @@
 # TBD
 
+# 1.39.10
+### Fixes
+* Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
+
 # 1.39.9
 ### Features
 * Upgraded to container-engine-lib 0.10.1, which has enclave & API container CRUD functions
