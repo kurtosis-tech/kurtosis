@@ -20,4 +20,4 @@ TIMEOUT="3m"   # This must be Go-parseable timeout
 cd "${lang_root_dirpath}"
 go build ./...
 # The count=1 disables caching for the testsuite (which we want, because the engine server might have changed even though the test code didn't)
-go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
+CGO_ENABLED=0 go test ./... -p "${PARALLELISM}" -count=1 -timeout "${TIMEOUT}"
