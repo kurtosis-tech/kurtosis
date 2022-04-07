@@ -9,15 +9,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -92,7 +91,7 @@ func NewApiContainerService(
 }
 
 func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.LoadModuleArgs) (*kurtosis_core_rpc_api_bindings.LoadModuleResponse, error) {
-	moduleId := module_store_types.ModuleID(args.ModuleId)
+	moduleId := module.ModuleID(args.ModuleId)
 	image := args.ContainerImage
 	serializedParams := args.SerializedParams
 
@@ -101,17 +100,17 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 		logrus.Errorf("An error occurred tracking load module event\n%v", err)
 	}
 
-	privateIpAddr, privateEnclaveContainerPort, publicIpAddr, publicEnclaveContainerPort, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
+	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := service.moduleStore.LoadModule(ctx, moduleId, image, serializedParams)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading module '%v' with container image '%v' and serialized params '%v'", moduleId, image, serializedParams)
 	}
-	privateApiPort, err := transformEnclaveContainerPortToApiPort(privateEnclaveContainerPort)
+	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private enclave container port to an API port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
 	}
-	publicApiPort, err := transformEnclaveContainerPortToApiPort(publicEnclaveContainerPort)
+	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
 	}
 
 	result := binding_constructors.NewLoadModuleResponse(
@@ -124,7 +123,7 @@ func (service ApiContainerService) LoadModule(ctx context.Context, args *kurtosi
 }
 
 func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnloadModuleArgs) (*emptypb.Empty, error) {
-	moduleId := module_store_types.ModuleID(args.ModuleId)
+	moduleId := module.ModuleID(args.ModuleId)
 
 	if err := service.metricsClient.TrackUnloadModule(args.ModuleId); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
@@ -139,7 +138,7 @@ func (service ApiContainerService) UnloadModule(ctx context.Context, args *kurto
 }
 
 func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteModuleArgs) (*kurtosis_core_rpc_api_bindings.ExecuteModuleResponse, error) {
-	moduleId := module_store_types.ModuleID(args.ModuleId)
+	moduleId := module.ModuleID(args.ModuleId)
 	serializedParams := args.SerializedParams
 
 	if err := service.metricsClient.TrackExecuteModule(args.ModuleId, serializedParams); err != nil {
@@ -157,20 +156,18 @@ func (service ApiContainerService) ExecuteModule(ctx context.Context, args *kurt
 }
 
 func (service ApiContainerService) GetModuleInfo(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetModuleInfoArgs) (*kurtosis_core_rpc_api_bindings.GetModuleInfoResponse, error) {
-	moduleIdStr := args.ModuleId
-	privateIpAddr, privateEnclaveContainerPort, publicIpAddr, publicEnclaveContainerPort, err := service.moduleStore.GetModuleInfo(module_store_types.ModuleID(moduleIdStr))
+	moduleId := module.ModuleID(args.ModuleId)
+	privateIpAddr, privateModulePort, publicIpAddr, publicModulePort, err := service.moduleStore.GetModuleInfo(moduleId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the IP address for module '%v'", moduleId)
 	}
-	// NON FUNCTIONING: Need to replace when refactoring modules to use backend
-	privateApiPort, err := transformEnclaveContainerPortToApiPort(privateEnclaveContainerPort)
+	privateApiPort, err := transformPortSpecToApiPort(privateModulePort)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private enclave container port to an API port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's private port spec port to an API port")
 	}
-	// NON FUNCTIONING: Need to replace when refactoring modules to use backend
-	publicApiPort, err := transformEnclaveContainerPortToApiPort(publicEnclaveContainerPort)
+	publicApiPort, err := transformPortSpecToApiPort(publicModulePort)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public enclave container port to an API port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the module's public port spec port to an API port")
 	}
 	response := binding_constructors.NewGetModuleInfoResponse(
 		privateIpAddr.String(),
@@ -221,11 +218,11 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 	privateApiPorts := args.PrivatePorts
 	privateServicePorts := map[string]*port_spec.PortSpec{}
 	for portId, privateApiPort := range privateApiPorts {
-		privateEnclaveContainerPort, err := transformApiPortToPortSpec(privateApiPort)
+		privateServicePort, err := transformApiPortToPortSpec(privateApiPort)
 		if err != nil {
-			return nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into an enclave container port", portId)
+			return nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portId)
 		}
-		privateServicePorts[portId] = privateEnclaveContainerPort
+		privateServicePorts[portId] = privateServicePort
 	}
 	maybePublicIpAddr, publicServicePorts, err := service.serviceNetwork.StartService(
 		ctx,
@@ -282,11 +279,11 @@ func (service ApiContainerService) GetServiceInfo(ctx context.Context, args *kur
 	}
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private enclave container ports to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port spec ports to API ports")
 	}
 	publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePorts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public enclave container ports to API ports")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
 	}
 
 	serviceInfoResponse := binding_constructors.NewGetServiceInfoResponse(
@@ -485,7 +482,7 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 	apiProto := port.GetProtocol()
 	if portNumUint32 > math.MaxUint16 {
 		return nil, stacktrace.NewError(
-			"API port num '%v' is bigger than max allowed enclave container port num '%v'",
+			"API port num '%v' is bigger than max allowed port spec port num '%v'",
 			portNumUint32,
 			math.MaxUint16,
 		)
@@ -539,25 +536,6 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	return result, nil
 }
 
-func transformEnclaveContainerPortToApiPort(port *enclave_container_launcher.EnclaveContainerPort) (*kurtosis_core_rpc_api_bindings.Port, error) {
-	portNumUint16 := port.GetNumber()
-	enclaveContainerProto := port.GetProtocol()
-	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
-	var apiProto kurtosis_core_rpc_api_bindings.Port_Protocol
-	foundApiProto := false
-	for mappedApiProto, mappedEnclaveContainerProto := range apiContainerPortProtoToEnclaveContainerPortProto {
-		if enclaveContainerProto == mappedEnclaveContainerProto {
-			apiProto = mappedApiProto
-			foundApiProto = true
-			break
-		}
-	}
-	if !foundApiProto {
-		return nil, stacktrace.NewError("Couldn't find an API port proto for enclave container port proto '%v'; this should never happen, and is a bug in Kurtosis!", enclaveContainerProto)
-	}
-	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto)
-	return result, nil
-}
 
 func (service ApiContainerService) waitForEndpointAvailability(
 	serviceIdStr string,
