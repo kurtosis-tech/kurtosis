@@ -195,7 +195,6 @@ func (backend *DockerKurtosisBackend) StopModules(
 	resultErroredModuleGuids map[module.ModuleGUID]error,
 	resultErr error,
 ) {
-
 	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
