@@ -1,5 +1,9 @@
 # TBD
 
+# 1.40.1
+### Fixes
+* Fixed dependency version for `github.com/kurtosis-tech/container-engine-lib` in `launcher/go.sum` and `server/go.sum` files
+
 # 1.40.0
 ### Breaking Changes
 * Removed `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` from `ApiContainerService` because we removed the option to create containers from outside the API core
