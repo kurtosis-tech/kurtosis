@@ -1,4 +1,6 @@
 # TBD
+
+# 1.12.0
 ### Breaking Changes
 * Upgraded to Kurt Core 1.40.1, which removes external-container-registration features
 
