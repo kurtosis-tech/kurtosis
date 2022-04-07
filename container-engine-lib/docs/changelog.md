@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.1
 ### Features
 * Added `KurtosisBackend.StopModules`
 
