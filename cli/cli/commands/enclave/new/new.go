@@ -20,15 +20,21 @@ const (
 	apiContainerVersionArg   = "api-container-version"
 	apiContainerLogLevelArg  = "api-container-log-level"
 	isPartitioningEnabledArg = "with-partitioning"
+	enclaveIdArg = "id"
 
 	defaultIsPartitioningEnabled = false
 	shouldPublishPorts           = true
+
+	// Signifies that an enclave ID should be auto-generated
+	autogenerateEnclaveIdKeyword = ""
 )
 
 var apiContainerVersion string
 var isPartitioningEnabled bool
 var kurtosisLogLevelStr string
+var enclaveIdStr string
 
+// TODO RENAME THIS TO 'add' TO MATCH SERVICE
 var NewCmd = &cobra.Command{
 	Use:   command_str_consts.EnclaveNewCmdStr,
 	Short: "Creates a new, empty Kurtosis enclave",
@@ -60,6 +66,13 @@ func init() {
 		defaultIsPartitioningEnabled,
 		"Enable network partitioning functionality (repartitioning won't work if this is set to false)",
 	)
+	NewCmd.Flags().StringVarP(
+		&enclaveIdStr,
+		enclaveIdArg,
+		"i",
+		autogenerateEnclaveIdKeyword,
+		"The enclave ID to give the new enclave (emptystring will autogenerate an enclave ID)",
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -78,7 +91,12 @@ func run(cmd *cobra.Command, args []string) error {
 	defer closeClientFunc()
 
 	logrus.Info("Creating new enclave...")
-	enclaveId := execution_ids.GetExecutionID()
+	var enclaveId string
+	if enclaveIdStr == autogenerateEnclaveIdKeyword {
+		enclaveId = execution_ids.GetExecutionID()
+	} else {
+		enclaveId = enclaveIdStr
+	}
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveId:              enclaveId,
 		ApiContainerVersionTag: apiContainerVersion,
