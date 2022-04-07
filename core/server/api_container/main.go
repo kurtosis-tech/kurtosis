@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
-	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_launcher"
@@ -200,12 +199,6 @@ func createServiceNetworkAndModuleStore(
 		filesArtifactCache,
 	)
 
-	enclaveContainerLauncher := enclave_container_launcher.NewEnclaveContainerLauncher(
-		dockerManager,
-		enclaveObjAttrsProvider,
-		args.EnclaveDataDirpathOnHostMachine,
-	)
-
 	userServiceLauncher := user_service_launcher.NewUserServiceLauncher(
 		kurtosisBackend,
 		filesArtifactExpander,
@@ -231,12 +224,11 @@ func createServiceNetworkAndModuleStore(
 		enclaveId,
 		kurtosisBackend,
 		apiContainerSocketInsideNetwork,
-		enclaveContainerLauncher,
+		args.EnclaveDataDirpathOnHostMachine,
 		freeIpAddrTracker,
-		dockerNetworkId,
 	)
 
-	moduleStore := module_store.NewModuleStore(dockerManager, moduleLauncher)
+	moduleStore := module_store.NewModuleStore(kurtosisBackend, moduleLauncher)
 
 	return serviceNetwork, moduleStore, nil
 }

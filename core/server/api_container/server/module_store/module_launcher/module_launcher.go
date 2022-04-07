@@ -56,11 +56,18 @@ type ModuleLauncher struct {
 	// Modules have a connection to the API container, so the launcher must know what socket to pass to modules
 	apiContainerSocketInsideNetwork string
 
-	freeIpAddrTracker *lib.FreeIpAddrTracker
+	enclaveDataDirPath string
+	freeIpAddrTracker  *lib.FreeIpAddrTracker
 }
 
-func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string, freeIpAddrTracker *lib.FreeIpAddrTracker) *ModuleLauncher {
-	return &ModuleLauncher{enclaveId: enclaveId, kurtosisBackend: kurtosisBackend, apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork, freeIpAddrTracker: freeIpAddrTracker}
+func NewModuleLauncher(enclaveId enclave.EnclaveID, kurtosisBackend backend_interface.KurtosisBackend, apiContainerSocketInsideNetwork string, enclaveDataDirPath string, freeIpAddrTracker *lib.FreeIpAddrTracker) *ModuleLauncher {
+	return &ModuleLauncher{
+		enclaveId:                       enclaveId,
+		kurtosisBackend:                 kurtosisBackend,
+		apiContainerSocketInsideNetwork: apiContainerSocketInsideNetwork,
+		freeIpAddrTracker:               freeIpAddrTracker,
+		enclaveDataDirPath:              enclaveDataDirPath,
+	}
 }
 
 func (launcher ModuleLauncher) Launch(
@@ -93,7 +100,6 @@ func (launcher ModuleLauncher) Launch(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the module container environment variables from args '%+v'", args)
 	}
 
-	// NON-FUNCTIONING: CreateModule changes need to be merged with recent changes for network partitioning in the container-engine-lib?
 	createdModule, err := launcher.kurtosisBackend.CreateModule(
 		ctx,
 		containerImage,
@@ -102,8 +108,7 @@ func (launcher ModuleLauncher) Launch(
 		moduleGUID,
 		privateIpAddr,
 		modulePortNum,
-		// TODO Fix! Figure out how to get enclaveDataDirPathOnHostMachine with kurtosis_backend?
-		"/enclave-data-dir-path",
+		launcher.enclaveDataDirPath,
 		envVars,
 	)
 
