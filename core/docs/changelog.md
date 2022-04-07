@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Removed `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` from `ApiContainerService` because we removed the option to create containers from outside the API core
+  * Users should not need to create any container type than `user services` and `modules` and there are specific methods for this, such as `AddService` and `LoadModule`
 
 # 1.39.9
 ### Features
@@ -15,7 +18,6 @@
 # 1.39.6
 ### Features
 * Bumped 'object-attributes-schema' 0.8.0
-
 
 # 1.39.5
 ### Fixes
