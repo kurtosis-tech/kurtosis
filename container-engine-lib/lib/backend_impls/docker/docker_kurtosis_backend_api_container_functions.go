@@ -211,27 +211,46 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	return matchingApiContainersByEnclaveID, nil
 }
 
-func (backend *DockerKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {
+func (backend *DockerKurtosisBackend) StopAPIContainers(
+	ctx context.Context,
+	filters *api_container.APIContainerFilters,
+) (
+	resultSuccessfulEnclaveIds map[enclave.EnclaveID]bool,
+	resultErroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
+) {
 	matchingApiContainersByContainerId, err := backend.getMatchingApiContainers(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
 	}
 
-	successIds := map[enclave.EnclaveID]bool{}
-	errorIds := map[enclave.EnclaveID]error{}
-	for containerId, engineObj := range matchingApiContainersByContainerId {
-		enclaveId := engineObj.GetEnclaveID()
-		containerIdsSet := map[string]bool{
-			containerId: true,
-		}
-		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing enclave '%v' with container ID '%v'", enclaveId, containerId)
-			errorIds[enclaveId] = wrappedErr
-			continue
-		}
-		successIds[enclaveId] = true
+	containerIdsToKill := map[string]bool{}
+	for containerId := range matchingApiContainersByContainerId {
+		containerIdsToKill[containerId] = true
 	}
-	return successIds, errorIds, nil
+
+	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	for containerId := range successfulContainerIds {
+		apiContainerObj, found := matchingApiContainersByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		successfulEnclaveIds[apiContainerObj.GetEnclaveID()] = true
+	}
+
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+	for containerId := range erroredContainerIds {
+		apiContainerObj, found := matchingApiContainersByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		wrappedErr := stacktrace.Propagate(err, "An error occurred killing API container in enclave '%v' with container ID '%v'", apiContainerObj.GetEnclaveID(), containerId)
+		erroredEnclaveIds[apiContainerObj.GetEnclaveID()] = wrappedErr
+	}
+
+	return successfulEnclaveIds, erroredEnclaveIds, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (successfulApiContainerIds map[enclave.EnclaveID]bool, erroredApiContainerIds map[enclave.EnclaveID]error, resultErr error) {

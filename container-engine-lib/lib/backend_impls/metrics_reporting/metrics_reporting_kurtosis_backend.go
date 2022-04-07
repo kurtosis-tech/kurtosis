@@ -250,6 +250,14 @@ func (backend *MetricsReportingKurtosisBackend) GetModules(
 	return modules, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) StopModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
+	successes, failures, err := backend.underlying.StopModules(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping modules using filters: %+v", filters)
+	}
+	return successes, failures, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,

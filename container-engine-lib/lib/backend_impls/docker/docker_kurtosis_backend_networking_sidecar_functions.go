@@ -244,29 +244,38 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 	map[service.ServiceGUID]error,
 	error,
 ) {
-
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-
-	networkingSidecars, err := backend.getMatchingNetworkingSidecars(ctx, filters)
+	matchingNetworkingSidecarsByContainerId, err := backend.getMatchingNetworkingSidecars(ctx, filters)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	for containerId, networkingSidecar := range networkingSidecars {
-		userServiceGuid := networkingSidecar.GetServiceGUID()
-		containerIdsSet := map[string]bool{
-			containerId: true,
-		}
-		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing user service with GUID '%v' with container ID '%v'", userServiceGuid, containerId)
-			erroredUserServiceGuids[userServiceGuid] = wrappedErr
-			continue
-		}
-		successfulUserServiceGuids[userServiceGuid] = true
+	containerIdsToKill := map[string]bool{}
+	for containerId := range matchingNetworkingSidecarsByContainerId {
+		containerIdsToKill[containerId] = true
 	}
 
-	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+
+	successfulNetworkingSidecarGuids := map[service.ServiceGUID]bool{}
+	for containerId := range successfulContainerIds {
+		networkingSidecarObj, found := matchingNetworkingSidecarsByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		successfulNetworkingSidecarGuids[networkingSidecarObj.GetServiceGUID()] = true
+	}
+
+	erroredNetworkingSidecarGuids := map[service.ServiceGUID]error{}
+	for containerId := range erroredContainerIds {
+		networkingSidecarObj, found := matchingNetworkingSidecarsByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		wrappedErr := stacktrace.Propagate(err, "An error occurred killing networking sidecar with service GUID '%v' and container ID '%v'", networkingSidecarObj.GetServiceGUID(), containerId)
+		erroredNetworkingSidecarGuids[networkingSidecarObj.GetServiceGUID()] = wrappedErr
+	}
+
+	return successfulNetworkingSidecarGuids, erroredNetworkingSidecarGuids, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(

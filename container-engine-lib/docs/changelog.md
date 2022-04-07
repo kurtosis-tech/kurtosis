@@ -1,5 +1,12 @@
 # TBD
 
+# 0.11.1
+### Features
+* Added `KurtosisBackend.StopModules`
+
+### Fixes
+* Fixed a bug where we weren't being efficient when killing containers in the `StopXXXXXX` calls
+
 # 0.11.0
 ### Features
 * Added `ExecResult` object to represent the result of commands execution inside an instance

@@ -233,30 +233,42 @@ func (backend *DockerKurtosisBackend) StopEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 ) (
-	successfulEngineIds map[string]bool,
-	erroredEngineIds map[string]error,
+	resultSuccessfulEngineIds map[string]bool,
+	resultErroredEngineIds map[string]error,
 	resultErr error,
 ) {
 	matchingEnginesByContainerId, err := backend.getMatchingEngines(ctx, filters)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching filters '%+v'", filters)
 	}
 
-	successIds := map[string]bool{}
-	errorIds := map[string]error{}
-	for containerId, engineObj := range matchingEnginesByContainerId {
-		engineId := engineObj.GetID()
-		containerIdsSet := map[string]bool{
-			containerId: true,
-		}
-		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing engine '%v' with container ID '%v'", engineId, containerId)
-			errorIds[engineId] = wrappedErr
-			continue
-		}
-		successIds[engineId] = true
+	containerIdsToKill := map[string]bool{}
+	for containerId := range matchingEnginesByContainerId {
+		containerIdsToKill[containerId] = true
 	}
-	return successIds, errorIds, nil
+
+	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+
+	successfulEngineIds := map[string]bool{}
+	for containerId := range successfulContainerIds {
+		engineObj, found := matchingEnginesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		successfulEngineIds[engineObj.GetID()] = true
+	}
+
+	erroredEngineIds := map[string]error{}
+	for containerId := range erroredContainerIds {
+		engineObj, found := matchingEnginesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		wrappedErr := stacktrace.Propagate(err, "An error occurred killing engine with ID '%v' and container ID '%v'", engineObj.GetID(), containerId)
+		erroredEngineIds[engineObj.GetID()] = wrappedErr
+	}
+
+	return successfulEngineIds, erroredEngineIds, nil
 }
 
 func (backend *DockerKurtosisBackend) DestroyEngines(
