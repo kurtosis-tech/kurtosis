@@ -14,8 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/engine"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/module"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/repl"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/sandbox"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/commands/version"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/host_machine_directories"
@@ -49,7 +47,6 @@ const (
 	upgradeCLIInstructionsDocsPageURL = "https://docs.kurtosistech.com/installation.html#upgrading-kurtosis-cli"
 
 	latestCLIReleaseCacheFileContentSeparator               = ";"
-	latestCLIReleaseCacheFilePermissionsForOpenOrCreateFile = 0755
 	latestCLIReleaseCacheFileExpirationHours                = 24
 	latestCLIReleaseCacheFileContentColumnsAmount           = 2
 	latestCLIReleaseCacheFileContentDateIndex               = 0
@@ -84,11 +81,9 @@ func init() {
 		"Sets the level that the CLI will log at ("+strings.Join(logrus_log_levels.GetAcceptableLogLevelStrs(), "|")+")",
 	)
 
-	RootCmd.AddCommand(sandbox.SandboxCmd)
 	RootCmd.AddCommand(enclave.EnclaveCmd)
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(module.ModuleCmd)
-	RootCmd.AddCommand(repl.REPLCmd)
 	RootCmd.AddCommand(engine.EngineCmd)
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())

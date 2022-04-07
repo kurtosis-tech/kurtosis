@@ -15,7 +15,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220308120154-5a34daa0625a
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220308120633-3d66b540433d
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220407202748-0f0c81910dba
 	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220308121719-6ec64214c4a3
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220308121704-0e45f03f462e
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
