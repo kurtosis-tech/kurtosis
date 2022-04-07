@@ -118,17 +118,17 @@ func (launcher ModuleLauncher) Launch(
 	shouldKillContainer := true
 	defer func() {
 		if shouldKillContainer {
-			_, failedModules, err := launcher.kurtosisBackend.DestroyModules(ctx, getModuleByModuleGUIDFilter(moduleGUID))
+			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGUID))
 			if err != nil {
-				logrus.Error("Launching the module failed, but an error occurred calling the backend to kill the module we started:")
+				logrus.Error("Launching the module failed, but an error occurred calling the backend to stop the module we started:")
 				fmt.Fprintln(logrus.StandardLogger().Out, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", moduleGUID)
 			}
 			if len(failedModules) > 0 {
 				for failedModuleGUID, failedModuleErr := range failedModules {
-					logrus.Error("Launching the module failed, but an error occurred killing module we started:")
+					logrus.Error("Launching the module failed, but an error occurred stopping module we started:")
 					fmt.Fprintln(logrus.StandardLogger().Out, failedModuleErr)
-					logrus.Errorf("ACTION REQUIRED: You'll need to manually kill the module with GUID '%v'", failedModuleGUID)
+					logrus.Errorf("ACTION REQUIRED: You'll need to manually stop the module with GUID '%v'", failedModuleGUID)
 				}
 			}
 		}

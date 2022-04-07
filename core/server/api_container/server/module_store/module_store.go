@@ -110,13 +110,13 @@ func (store *ModuleStore) UnloadModule(ctx context.Context, moduleId module.Modu
 	}
 
 	moduleGuid := infoForModule.moduleGUID
-	_, failedToDestroyModules, err := store.kurtosisBackend.DestroyModules(ctx, getModuleByModuleGUIDFilter(moduleGuid))
+	_, failedToStopModules, err := store.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGuid))
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred killing module container '%v' while unloading the module from the store", moduleId)
 	}
-	if len(failedToDestroyModules) > 0 {
+	if len(failedToStopModules) > 0 {
 		moduleStopErrs := []string{}
-		for moduleGUID, err := range failedToDestroyModules {
+		for moduleGUID, err := range failedToStopModules {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred stopping module `%v'",
