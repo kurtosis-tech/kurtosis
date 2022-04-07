@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/user_service_launcher/files_artifact_expander"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"net"
 )
 
@@ -99,29 +98,5 @@ func (launcher UserServiceLauncher) Launch(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the container for user service in enclave '%v' with image '%v'", enclaveId, imageName)
 	}
-	shouldKillService := true
-	defer func() {
-		if shouldKillService {
-			_, erroredUserServices, err := launcher.kurtosisBackend.StopUserServices(ctx, getServiceByServiceGUIDFilter(serviceGUID))
-			if err != nil {
-				logrus.Errorf("Launching the service failed, but an error occurred calling the backend to stop the service:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop service with ID '%v'", serviceGUID)
-			}
-			for serviceGUID, err := range erroredUserServices {
-				logrus.Errorf("Launching the service failed, but an error occurred stopping the service:\n%v", err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop service with ID '%v'", serviceGUID)
-			}
-		}
-	}()
-
-	shouldKillService = false
 	return launchedUserService, nil
-}
-
-func getServiceByServiceGUIDFilter(serviceGUID service.ServiceGUID) *service.ServiceFilters {
-	return &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGUID: true,
-		},
-	}
 }

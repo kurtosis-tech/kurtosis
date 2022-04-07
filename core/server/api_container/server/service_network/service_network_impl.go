@@ -411,8 +411,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 		serviceGuid: command,
 	}
 
-	// How to get Service Exec Codes?
-	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
+	successfulExecCommands, erredExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
 		ctx,
 		network.enclaveId,
 		userServiceCommand)
@@ -423,9 +422,9 @@ func (network *ServiceNetworkImpl) ExecCommand(
 			command,
 			serviceId)
 	}
-	if len(failedExecCommands) > 0 {
+	if len(erredExecCommands) > 0 {
 		serviceStopErrs := []string{}
-		for serviceGUID, err := range failedExecCommands {
+		for serviceGUID, err := range erredExecCommands {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred attempting to run a command in a service with GUID `%v'",
@@ -527,7 +526,10 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		serviceGUID := runInfo.serviceGUID
 		// Make a best-effort attempt to stop the service container
 		logrus.Debugf("Stopping service with GUID '%v' for service ID '%v'...", serviceGUID, serviceId)
-		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(ctx, getServiceByServiceGUIDFilter(serviceGUID))
+		_, failedToStopServiceErrs, err := network.kurtosisBackend.StopUserServices(
+			ctx,
+			getServiceByServiceGUIDFilter(serviceGUID),
+		)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred calling the backend to stop service with GUID '%v'", serviceGUID)
 		}
@@ -551,7 +553,6 @@ func (network *ServiceNetworkImpl) removeServiceWithoutMutex(
 		}
 		delete(network.serviceRunInfo, serviceId)
 		logrus.Debugf("Successfully stopped service GUID '%v'", serviceGUID)
-		// Should we also destroy the User Service?
 	}
 	network.freeIpAddrTracker.ReleaseIpAddr(registrationInfo.privateIpAddr)
 
