@@ -113,11 +113,11 @@ func (launcher ModuleLauncher) Launch(
 	)
 
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred launching  for module '%v'", containerImage)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred launching module '%v' with image '%v'", moduleID, containerImage)
 	}
-	shouldKillContainer := true
+	shouldStopModule := true
 	defer func() {
-		if shouldKillContainer {
+		if shouldStopModule {
 			_, failedModules, err := launcher.kurtosisBackend.StopModules(ctx, getModuleByModuleGUIDFilter(moduleGUID))
 			if err != nil {
 				logrus.Error("Launching the module failed, but an error occurred calling the backend to stop the module we started:")
@@ -149,7 +149,7 @@ func (launcher ModuleLauncher) Launch(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for module '%v' to become available", moduleID)
 	}
 
-	shouldKillContainer = false
+	shouldStopModule = false
 	return createdModule, moduleClient, nil
 }
 
