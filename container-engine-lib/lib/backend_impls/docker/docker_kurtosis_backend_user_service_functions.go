@@ -353,29 +353,39 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (
-	map[service.ServiceGUID]bool,
-	map[service.ServiceGUID]error,
-	error,
+	resultSuccessfulServiceGUIDs map[service.ServiceGUID]bool,
+	resultErroredServiceGUIDs map[service.ServiceGUID]error,
+	resultErr error,
 ) {
-	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
-	erroredUserServiceGuids := map[service.ServiceGUID]error{}
-
-	userServices, err := backend.getMatchingUserServices(ctx, filters)
+	matchingUserServicesByContainerId, err := backend.getMatchingUserServices(ctx, filters)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	for containerId, userService := range userServices {
-		userServiceGuid := userService.GetGUID()
-		containerIdsSet := map[string]bool{
-			containerId: true,
+	containerIdsToKill := map[string]bool{}
+	for containerId := range matchingUserServicesByContainerId {
+		containerIdsToKill[containerId] = true
+	}
+
+	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+
+	successfulUserServiceGuids := map[service.ServiceGUID]bool{}
+	for containerId := range successfulContainerIds {
+		serviceObj, found := matchingUserServicesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
 		}
-		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing user service with GUID '%v' with container ID '%v'", userServiceGuid, containerId)
-			erroredUserServiceGuids[userServiceGuid] = wrappedErr
-			continue
+		successfulUserServiceGuids[serviceObj.GetGUID()] = true
+	}
+
+	erroredUserServiceGuids := map[service.ServiceGUID]error{}
+	for containerId := range erroredContainerIds {
+		serviceObj, found := matchingUserServicesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
 		}
-		successfulUserServiceGuids[userServiceGuid] = true
+		wrappedErr := stacktrace.Propagate(err, "An error occurred killing service with GUID '%v' and container ID '%v'", serviceObj.GetGUID(), containerId)
+		erroredUserServiceGuids[serviceObj.GetGUID()] = wrappedErr
 	}
 
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil

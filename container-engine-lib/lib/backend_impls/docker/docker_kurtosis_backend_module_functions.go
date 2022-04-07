@@ -187,6 +187,49 @@ func (backend *DockerKurtosisBackend) GetModules(
 	return matchingModuleContainersByModuleID, nil
 }
 
+func (backend *DockerKurtosisBackend) StopModules(
+	ctx context.Context,
+	filters *module.ModuleFilters,
+) (
+	resultSuccessfulModuleGuids map[module.ModuleGUID]bool,
+	resultErroredModuleGuids map[module.ModuleGUID]error,
+	resultErr error,
+) {
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
+	}
+
+	containerIdsToKill := map[string]bool{}
+	for containerId := range matchingModulesByContainerId {
+		containerIdsToKill[containerId] = true
+	}
+
+	successfulContainerIds, erroredContainerIds := backend.killContainers(ctx, containerIdsToKill)
+
+	successfulModuleGuids := map[module.ModuleGUID]bool{}
+	for containerId := range successfulContainerIds {
+		moduleObj, found := matchingModulesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("Successfully killed container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		successfulModuleGuids[moduleObj.GetGUID()] = true
+	}
+
+	erroredModuleGuids := map[module.ModuleGUID]error{}
+	for containerId := range erroredContainerIds {
+		moduleObj, found := matchingModulesByContainerId[containerId]
+		if !found {
+			return nil, nil, stacktrace.NewError("An error occurred killing container with ID '%v' that wasn't requested; this is a bug in Kurtosis!", containerId)
+		}
+		wrappedErr := stacktrace.Propagate(err, "An error occurred killing module with GUID '%v' and container ID '%v'", moduleObj.GetGUID(), containerId)
+		erroredModuleGuids[moduleObj.GetGUID()] = wrappedErr
+	}
+
+	return successfulModuleGuids, erroredModuleGuids, nil
+}
+
+
 func (backend *DockerKurtosisBackend) DestroyModules(
 	ctx context.Context,
 	filters *module.ModuleFilters,

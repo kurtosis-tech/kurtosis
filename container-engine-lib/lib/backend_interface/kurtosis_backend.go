@@ -177,6 +177,16 @@ type KurtosisBackend interface {
 		error,
 	)
 
+	// Stops the modules matching the given filters
+	StopModules(
+		ctx context.Context,
+		filters *module.ModuleFilters,
+	) (
+		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
+		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
+		resultErr error, // Represents an error with the function itself, rather than the modules
+	)
+
 	// Destroys the modules with the given filters, regardless of if they're running or not
 	DestroyModules(
 		ctx context.Context,

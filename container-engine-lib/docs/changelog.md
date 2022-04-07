@@ -1,4 +1,9 @@
 # TBD
+### Features
+* Added `KurtosisBackend.StopModules`
+
+### Fixes
+* Fixed a bug where we weren't being efficient when killing containers in the `StopXXXXXX` calls
 
 # 0.11.0
 ### Features
