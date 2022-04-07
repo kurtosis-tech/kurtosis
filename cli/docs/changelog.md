@@ -2,6 +2,10 @@
 ### Changes
 * Switched `enclave dump` to use `KurtosisBackend`
 
+# 0.11.10
+### Fixes
+* Go testing now includes with CGO_ENABLED=0 variable so the user doesn't have to specify environment variables before running scripts.
+
 # 0.11.9
 ### Features
 * Added the `service add` command for adding a service to an enclave

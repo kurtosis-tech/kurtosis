@@ -48,7 +48,7 @@ fi
         echo "Error: Couldn't cd to the CLI module directory in preparation for running Go tests" >&2
         exit 1
     fi
-    if ! go test "./..."; then
+    if ! CGO_ENABLED=0 go test "./..."; then
         echo "Error: Go tests failed" >&2
         exit 1
     fi
