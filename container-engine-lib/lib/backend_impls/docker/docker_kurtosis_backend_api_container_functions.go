@@ -225,7 +225,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(ctx context.Context, fil
 			containerId: true,
 		}
 		if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
-			wrappedErr := stacktrace.Propagate(err, "An error occurred killing enclave '%v' with container ID '%v'", enclaveId, containerId)
+			wrappedErr := stacktrace.Propagate(err, "An error occurred killing API container in enclave '%v' with container ID '%v'", enclaveId, containerId)
 			errorIds[enclaveId] = wrappedErr
 			continue
 		}
