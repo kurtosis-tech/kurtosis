@@ -8,13 +8,6 @@ option go_package = "github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_
 import "google/protobuf/empty.proto";
 
 service ApiContainerService {
-  // Starts the registration of an external container (started by a third-party source, not the API container)
-  rpc StartExternalContainerRegistration(google.protobuf.Empty) returns (StartExternalContainerRegistrationResponse) {};
-
-  // Finishes the registration of an container (started by a third-party source, not the API contianer) that was started previously
-  // NOTE: It's important not to forget to finish this registration, else the external container won't be recognized by the API container!
-  rpc FinishExternalContainerRegistration(FinishExternalContainerRegistrationArgs) returns (google.protobuf.Empty) {};
-
   // Starts a module container in the enclave
   rpc LoadModule(LoadModuleArgs) returns (LoadModuleResponse) {};
 
@@ -79,29 +72,6 @@ message Port {
 
   // The protocol that the port is listening on
   Protocol protocol = 2;
-}
-
-// ==============================================================================================
-//                           Start External Container Registration 
-// ==============================================================================================
-message StartExternalContainerRegistrationResponse {
-  // A key that should be passed to the call to finish external container registration
-  string registration_key = 1;
-
-  // The IP address that the API container has set aside for the container-to-be-registered
-  string ip_addr = 2;
-}
-
-
-// ==============================================================================================
-//                           Finish External Container Registration 
-// ==============================================================================================
-message FinishExternalContainerRegistrationArgs {
-  // The key that was returned from the call to start external container registration
-  string registration_key = 1;
-
-  // The container ID of the container that is now inside the enclave
-  string container_id = 2;
 }
 
 // ==============================================================================================
