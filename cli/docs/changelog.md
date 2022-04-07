@@ -1,4 +1,7 @@
 # TBD
+### Breaking Changes
+* Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
+  * Users do not need to use `Repl` and `Sandbox` anymore, now the CLI contains commands to facilitate the creation of an `enclave` and running any kind of `user service` inside it
 
 # 0.11.7
 ### Features
@@ -218,7 +221,6 @@
 ### Features
 * Upgrade to engine server 1.8.2 which adds the removal of dangling folders in the clean endpoint
 
-
 # 0.8.5
 ### Features
 * Upgrade to engine server 1.8.1 which adds `Kurtosis Engine` checker in `KurtosisContext` creation
@@ -240,7 +242,6 @@
 # 0.8.3
 ### Features
 * Added call to clean endpoint
-
 
 # 0.8.2
 ### Fixes
