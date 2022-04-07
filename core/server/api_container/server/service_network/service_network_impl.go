@@ -411,7 +411,7 @@ func (network *ServiceNetworkImpl) ExecCommand(
 		serviceGuid: command,
 	}
 
-	successfulExecCommands, erredExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
+	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
 		ctx,
 		network.enclaveId,
 		userServiceCommand)
@@ -422,35 +422,34 @@ func (network *ServiceNetworkImpl) ExecCommand(
 			command,
 			serviceId)
 	}
-	if len(erredExecCommands) > 0 {
-		serviceStopErrs := []string{}
-		for serviceGUID, err := range erredExecCommands {
+	if len(failedExecCommands) > 0 {
+		serviceExecErrs := []string{}
+		for serviceGUID, err := range failedExecCommands {
 			wrappedErr := stacktrace.Propagate(
 				err,
 				"An error occurred attempting to run a command in a service with GUID `%v'",
 				serviceGUID,
 			)
-			serviceStopErrs = append(serviceStopErrs, wrappedErr.Error())
+			serviceExecErrs = append(serviceExecErrs, wrappedErr.Error())
 		}
 		return 0, "", stacktrace.NewError(
 			"One or more errors occurred attempting to exec command(s) in the service(s): \n%v",
 			strings.Join(
-				serviceStopErrs,
+				serviceExecErrs,
 				"\n\n",
 			),
 		)
 	}
 
-	exitOutput, isFound := successfulExecCommands[serviceGuid]
+	execResult, isFound := successfulExecCommands[serviceGuid]
 	if !isFound {
 		return 0, "", stacktrace.NewError(
-			"Unable to find output from running exec command '%v' against service '%v'",
+			"Unable to find result from running exec command '%v' against service '%v'",
 			command,
 			serviceGuid)
 	}
 
-
-	return exitOutput.GetExitCode(), exitOutput.GetOutput(), nil
+	return execResult.GetExitCode(), execResult.GetOutput(), nil
 }
 
 func (network *ServiceNetworkImpl) GetServiceRegistrationInfo(serviceId service.ServiceID) (
