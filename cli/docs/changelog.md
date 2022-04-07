@@ -3,6 +3,10 @@
 * Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
   * Users do not need to use `Repl` and `Sandbox` anymore, now the CLI contains commands to facilitate the creation of an `enclave` and running any kind of `user service` inside it
 
+### Changes
+* Upgraded the kurtosis core to 1.40.1
+* Upgraded the kurtosis engine to 1.12.0
+
 # 0.11.7
 ### Features
 * Upgraded container-engine-lib, core, and engine-server to allow for the new API container & enclave CRUD function stubs
