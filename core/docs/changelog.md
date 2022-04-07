@@ -1,4 +1,6 @@
 # TBD
+
+# 1.40.0
 ### Breaking Changes
 * Removed `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` from `ApiContainerService` because we removed the option to create containers from outside the API core
   * Users should not need to create any container type than `user services` and `modules` and there are specific methods for this, such as `AddService` and `LoadModule`
