@@ -11,5 +11,5 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 cd "${lang_root_dirpath}"
 yarn install
-yarn test
+CGO_ENABLED=0 yarn test
 yarn build

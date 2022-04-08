@@ -1,5 +1,9 @@
 # TBD
 
+# 1.40.2
+### Fixes
+* Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
+
 # 1.40.1
 ### Fixes
 * Fixed dependency version for `github.com/kurtosis-tech/container-engine-lib` in `launcher/go.sum` and `server/go.sum` files
@@ -8,6 +12,7 @@
 ### Breaking Changes
 * Removed `StartExternalContainerRegistration` and `FinishExternalContainerRegistration` from `ApiContainerService` because we removed the option to create containers from outside the API core
   * Users should not need to create any container type than `user services` and `modules` and there are specific methods for this, such as `AddService` and `LoadModule`
+
 
 # 1.39.9
 ### Features
