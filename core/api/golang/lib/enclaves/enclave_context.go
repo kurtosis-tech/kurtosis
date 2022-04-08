@@ -415,15 +415,6 @@ func (enclaveCtx *EnclaveContext) WaitForHttpPostEndpointAvailability(serviceId 
 }
 
 // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-func (enclaveCtx *EnclaveContext) ExecuteBulkCommands(bulkCommandsJson string) error {
-	args := binding_constructors.NewExecuteBulkCommandsArgs(bulkCommandsJson)
-	if _, err := enclaveCtx.client.ExecuteBulkCommands(context.Background(), args); err != nil {
-		return stacktrace.Propagate(err, "An error occurred executing the following bulk commands: %v", bulkCommandsJson)
-	}
-	return nil
-}
-
-// Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceID]bool, error) {
 	response, err := enclaveCtx.client.GetServices(context.Background(), &emptypb.Empty{})
 	if err != nil {

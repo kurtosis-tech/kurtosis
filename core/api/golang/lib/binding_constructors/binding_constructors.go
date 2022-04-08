@@ -278,12 +278,3 @@ func NewWaitForHttpPostEndpointAvailabilityArgs(
 		BodyText:                 bodyText,
 	}
 }
-
-// ==============================================================================================
-//                                      Execute Bulk Commands
-// ==============================================================================================
-func NewExecuteBulkCommandsArgs(serializedCommands string) *kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs {
-	return &kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs{
-		SerializedCommands: serializedCommands,
-	}
-}
