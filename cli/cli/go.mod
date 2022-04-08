@@ -11,13 +11,12 @@ require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200514193020-5da88705cccc+incompatible
-	github.com/gammazero/workerpool v1.1.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220308120154-5a34daa0625a
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220330183726-8d09487819fc
 	github.com/kurtosis-tech/kurtosis-cli/commons v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220308120633-3d66b540433d
-	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220308121719-6ec64214c4a3
-	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220308121704-0e45f03f462e
+	github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220407202748-0f0c81910dba
+	github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220407205244-7e643ab03500
+	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0-20220407205222-fab28f7b60cd
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
 	github.com/kurtosis-tech/object-attributes-schema-lib v0.0.0-20220225193403-74da3f3b98ce
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
@@ -28,7 +27,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
-	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 )
