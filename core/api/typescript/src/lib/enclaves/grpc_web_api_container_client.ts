@@ -12,7 +12,6 @@ import {
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    ExecuteBulkCommandsArgs,
     StartServiceResponse,
     GetServicesResponse,
     LoadModuleArgs,
@@ -266,24 +265,6 @@ export class GrpcWebApiContainerClient implements GenericApiContainerClient {
         const resultWaitForHttpPostEndpointAvailability: Result<null, Error> = await promiseWaitForHttpPostEndpointAvailability;
         if (resultWaitForHttpPostEndpointAvailability.isErr()) {
             return err(resultWaitForHttpPostEndpointAvailability.error);
-        }
-
-        return ok(null);
-    }
-
-    public async executeBulkCommands(executeBulkCommandsArgs: ExecuteBulkCommandsArgs): Promise<Result<null, Error>> {
-        const promiseExecuteBulkCommands: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.executeBulkCommands(executeBulkCommandsArgs, {}, (error: grpc_web.RpcError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultExecuteBulkCommands: Result<null, Error> = await promiseExecuteBulkCommands;
-        if (resultExecuteBulkCommands.isErr()) {
-            return err(resultExecuteBulkCommands.error);
         }
 
         return ok(null);

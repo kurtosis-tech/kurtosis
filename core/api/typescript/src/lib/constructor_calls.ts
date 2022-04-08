@@ -17,7 +17,6 @@ import {
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    ExecuteBulkCommandsArgs,
     LoadModuleArgs,
     UnloadModuleArgs,
     ExecuteModuleArgs,
@@ -279,17 +278,6 @@ export function newWaitForHttpPostEndpointAvailabilityArgs(
     result.setRetries(retries);
     result.setRetriesDelayMilliseconds(retriesDelayMilliseconds);
     result.setBodyText(bodyText);
-
-    return result;
-}
-
-
-// ==============================================================================================
-//                                      Execute Bulk Commands
-// ==============================================================================================
-export function newExecuteBulkCommandsArgs(serializedCommands: string): ExecuteBulkCommandsArgs {
-    const result: ExecuteBulkCommandsArgs = new ExecuteBulkCommandsArgs();
-    result.setSerializedCommands(serializedCommands);
 
     return result;
 }
