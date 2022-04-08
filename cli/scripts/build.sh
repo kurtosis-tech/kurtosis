@@ -10,7 +10,6 @@ root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-REPLS_DIRNAME="repls"
 CLI_DIRNAME="cli"
 TESTSUITES_DIRNAME="internal_testsuites"
 
@@ -57,13 +56,6 @@ TESTSUITES_DIRNAME="internal_testsuites"
 # ==================================================================================================
 #                                             Main Logic
 # ==================================================================================================
-# Build the REPL images first
-repls_buildscript_filepath="${root_dirpath}/${REPLS_DIRNAME}/scripts/build.sh"
-if ! "${repls_buildscript_filepath}"; then
-    echo "Error: An error occurred building the REPL images" >&2
-    exit 1
-fi
-
 # Next, build the CLI (which will restart the engine with the CLI's version)
 cli_buildscript_filepath="${root_dirpath}/${CLI_DIRNAME}/scripts/build.sh"
 if ! "${cli_buildscript_filepath}"; then
