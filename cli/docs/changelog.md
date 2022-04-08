@@ -1,4 +1,6 @@
 # TBD
+
+# 0.12.0
 ### Breaking Changes
 * Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
   * Users do not need to use `Repl` and `Sandbox` anymore, now the CLI contains commands to facilitate the creation of an `enclave` and running any kind of `user service` inside it
