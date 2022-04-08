@@ -1,5 +1,9 @@
 # TBD
 
+# 0.11.2
+### Fixes
+* Set CGO_ENABLED=0 for tests. Completes tests without prompting for GCC-5 now.
+
 # 0.11.1
 ### Features
 * Added `KurtosisBackend.StopModules`
