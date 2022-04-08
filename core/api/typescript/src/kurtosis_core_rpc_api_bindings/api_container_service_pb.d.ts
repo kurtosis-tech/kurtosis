@@ -31,50 +31,6 @@ export namespace Port {
   }
 }
 
-export class StartExternalContainerRegistrationResponse extends jspb.Message {
-  getRegistrationKey(): string;
-  setRegistrationKey(value: string): StartExternalContainerRegistrationResponse;
-
-  getIpAddr(): string;
-  setIpAddr(value: string): StartExternalContainerRegistrationResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartExternalContainerRegistrationResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: StartExternalContainerRegistrationResponse): StartExternalContainerRegistrationResponse.AsObject;
-  static serializeBinaryToWriter(message: StartExternalContainerRegistrationResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartExternalContainerRegistrationResponse;
-  static deserializeBinaryFromReader(message: StartExternalContainerRegistrationResponse, reader: jspb.BinaryReader): StartExternalContainerRegistrationResponse;
-}
-
-export namespace StartExternalContainerRegistrationResponse {
-  export type AsObject = {
-    registrationKey: string,
-    ipAddr: string,
-  }
-}
-
-export class FinishExternalContainerRegistrationArgs extends jspb.Message {
-  getRegistrationKey(): string;
-  setRegistrationKey(value: string): FinishExternalContainerRegistrationArgs;
-
-  getContainerId(): string;
-  setContainerId(value: string): FinishExternalContainerRegistrationArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): FinishExternalContainerRegistrationArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: FinishExternalContainerRegistrationArgs): FinishExternalContainerRegistrationArgs.AsObject;
-  static serializeBinaryToWriter(message: FinishExternalContainerRegistrationArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): FinishExternalContainerRegistrationArgs;
-  static deserializeBinaryFromReader(message: FinishExternalContainerRegistrationArgs, reader: jspb.BinaryReader): FinishExternalContainerRegistrationArgs;
-}
-
-export namespace FinishExternalContainerRegistrationArgs {
-  export type AsObject = {
-    registrationKey: string,
-    containerId: string,
-  }
-}
-
 export class LoadModuleArgs extends jspb.Message {
   getModuleId(): string;
   setModuleId(value: string): LoadModuleArgs;

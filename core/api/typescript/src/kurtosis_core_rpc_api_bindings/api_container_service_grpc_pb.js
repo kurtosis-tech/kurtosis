@@ -60,17 +60,6 @@ function deserialize_api_container_api_ExecuteModuleResponse(buffer_arg) {
   return api_container_service_pb.ExecuteModuleResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_FinishExternalContainerRegistrationArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.FinishExternalContainerRegistrationArgs)) {
-    throw new Error('Expected argument of type api_container_api.FinishExternalContainerRegistrationArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_FinishExternalContainerRegistrationArgs(buffer_arg) {
-  return api_container_service_pb.FinishExternalContainerRegistrationArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_GetModuleInfoArgs(arg) {
   if (!(arg instanceof api_container_service_pb.GetModuleInfoArgs)) {
     throw new Error('Expected argument of type api_container_api.GetModuleInfoArgs');
@@ -214,17 +203,6 @@ function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
   return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_StartExternalContainerRegistrationResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.StartExternalContainerRegistrationResponse)) {
-    throw new Error('Expected argument of type api_container_api.StartExternalContainerRegistrationResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StartExternalContainerRegistrationResponse(buffer_arg) {
-  return api_container_service_pb.StartExternalContainerRegistrationResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_StartServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.StartServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.StartServiceArgs');
@@ -293,31 +271,6 @@ function deserialize_google_protobuf_Empty(buffer_arg) {
 
 
 var ApiContainerServiceService = exports.ApiContainerServiceService = {
-  // Starts the registration of an external container (started by a third-party source, not the API container)
-startExternalContainerRegistration: {
-    path: '/api_container_api.ApiContainerService/StartExternalContainerRegistration',
-    requestStream: false,
-    responseStream: false,
-    requestType: google_protobuf_empty_pb.Empty,
-    responseType: api_container_service_pb.StartExternalContainerRegistrationResponse,
-    requestSerialize: serialize_google_protobuf_Empty,
-    requestDeserialize: deserialize_google_protobuf_Empty,
-    responseSerialize: serialize_api_container_api_StartExternalContainerRegistrationResponse,
-    responseDeserialize: deserialize_api_container_api_StartExternalContainerRegistrationResponse,
-  },
-  // Finishes the registration of an container (started by a third-party source, not the API contianer) that was started previously
-// NOTE: It's important not to forget to finish this registration, else the external container won't be recognized by the API container!
-finishExternalContainerRegistration: {
-    path: '/api_container_api.ApiContainerService/FinishExternalContainerRegistration',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.FinishExternalContainerRegistrationArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_FinishExternalContainerRegistrationArgs,
-    requestDeserialize: deserialize_api_container_api_FinishExternalContainerRegistrationArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
-  },
   // Starts a module container in the enclave
 loadModule: {
     path: '/api_container_api.ApiContainerService/LoadModule',
