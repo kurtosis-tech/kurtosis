@@ -1,5 +1,10 @@
 # TBD
 
+# 1.41.0
+### Breaking Changes
+* Removed `ExecuteBulkCommands`.
+* The API no longer supports ExecuteBulkCommands. Users should take steps to remove usage from their projects.
+
 # 1.40.2
 ### Fixes
 * Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
