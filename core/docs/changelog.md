@@ -1,6 +1,4 @@
 # TBD
-
-# 1.41.0
 ### Breaking Changes
 * Removed `ExecuteBulkCommands`.
 * The API no longer supports ExecuteBulkCommands. Users should take steps to remove usage from their projects.
