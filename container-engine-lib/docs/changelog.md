@@ -1,4 +1,6 @@
 # TBD
+
+# 0.11.3
 ### Features
 * Added `KurtosisBackend.GetModuleLogs`
 
