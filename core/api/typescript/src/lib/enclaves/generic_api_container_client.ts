@@ -8,7 +8,6 @@ import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty
 import {
     ExecCommandArgs,
     ExecCommandResponse,
-    ExecuteBulkCommandsArgs,
     ExecuteModuleArgs,
     ExecuteModuleResponse,
     GetModuleInfoArgs,
@@ -43,7 +42,6 @@ export interface GenericApiContainerClient {
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
-    executeBulkCommands(executeBulkCommandsArgs: ExecuteBulkCommandsArgs): Promise<Result<null, Error>>
     getServices(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetServicesResponse, Error>>
     getModules(emptyArg: google_protobuf_empty_pb.Empty): Promise<Result<GetModulesResponse, Error>>
     executeModule(executeModuleArgs: ExecuteModuleArgs): Promise<Result<ExecuteModuleResponse, Error>>

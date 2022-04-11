@@ -100,13 +100,6 @@ export class ApiContainerServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
-  executeBulkCommands(
-    request: api_container_service_pb.ExecuteBulkCommandsArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
-
   getServices(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -190,11 +183,6 @@ export class ApiContainerServicePromiseClient {
 
   waitForHttpPostEndpointAvailability(
     request: api_container_service_pb.WaitForHttpPostEndpointAvailabilityArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
-
-  executeBulkCommands(
-    request: api_container_service_pb.ExecuteBulkCommandsArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
