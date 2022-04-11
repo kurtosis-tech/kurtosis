@@ -1,8 +1,6 @@
 # TBD
 
 ### Fixes
-* Fixed the changelog for building releases. I was supposed to have an empty newline separating the new log and TBD, I did not.
-* If the empty new line is not there, it will not build a release.
 * Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
 
 ### Breaking Changes
