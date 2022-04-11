@@ -3,15 +3,12 @@
 ### Fixes
 * Fixed the changelog for building releases. I was supposed to have an empty newline separating the new log and TBD, I did not.
 * If the empty new line is not there, it will not build a release.
+* Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
 
 # 1.40.3
 ### Breaking Changes
 * Removed `ExecuteBulkCommands`.
 * The API no longer supports ExecuteBulkCommands. Users should take steps to remove usage from their projects.
-
-# 1.40.2
-### Fixes
-* Go testing includes CGO_ENABLED=0 environment variables so developers don't have to specify them before running tests.
 
 # 1.40.1
 ### Fixes
