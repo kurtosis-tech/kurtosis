@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	"net"
 	"time"
 )
@@ -185,6 +186,37 @@ func (backend *DockerKurtosisBackend) GetModules(
 	}
 
 	return matchingModuleContainersByModuleID, nil
+}
+
+func (backend *DockerKurtosisBackend)  GetModuleLogs(
+	ctx context.Context,
+	filters *module.ModuleFilters,
+	shouldFollowLogs bool,
+)(
+	map[module.ModuleGUID]io.ReadCloser,
+	map[module.ModuleGUID]error,
+	error,
+) {
+	matchingModulesByContainerId, err := backend.getMatchingModules(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting modules matching filters '%+v'", filters)
+	}
+
+	successfulModuleLogs := map[module.ModuleGUID]io.ReadCloser{}
+	erroredModules := map[module.ModuleGUID]error{}
+
+	//TODO use concurrency to improve perf
+	for containerId, module := range matchingModulesByContainerId {
+		readCloserLogs, err := backend.dockerManager.GetContainerLogs(ctx, containerId, shouldFollowLogs)
+		if err != nil {
+			serviceError := stacktrace.Propagate(err, "An error occurred getting logs for module with GUID '%v' and container ID '%v'", module.GetGUID(), containerId)
+			erroredModules[module.GetGUID()] = serviceError
+			continue
+		}
+		successfulModuleLogs[module.GetGUID()] = readCloserLogs
+	}
+
+	return successfulModuleLogs, erroredModules, nil
 }
 
 func (backend *DockerKurtosisBackend) StopModules(
