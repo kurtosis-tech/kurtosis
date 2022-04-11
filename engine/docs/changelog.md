@@ -1,6 +1,5 @@
 # TBD
 
-# 1.12.0
 ### Fixes
 * Added CGO_ENABLED for go tests.
 
