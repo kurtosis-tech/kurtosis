@@ -1,4 +1,10 @@
 # TBD
+
+### Fixes
+* Fixed the changelog for building releases. I was supposed to have an empty newline separating the new log and TBD, I did not.
+* If the empty new line is not there, it will not build a release.
+
+# 1.40.3
 ### Breaking Changes
 * Removed `ExecuteBulkCommands`.
 * The API no longer supports ExecuteBulkCommands. Users should take steps to remove usage from their projects.
