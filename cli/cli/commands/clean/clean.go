@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
@@ -33,6 +34,7 @@ const (
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
 
+	kurtosisBackendCtxKey = "kurtosis-backend"
 	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey = "engine-client"
 )
@@ -44,6 +46,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
 		shouldCleanRunningEnclavesFlagKey,
 	),
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
@@ -60,6 +63,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 
 func run(
 	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,

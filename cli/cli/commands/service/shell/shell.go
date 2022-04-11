@@ -146,7 +146,6 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 	}
 
-
 	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveId, guid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", guid, enclaveId)

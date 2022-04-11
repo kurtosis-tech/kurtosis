@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -46,6 +47,7 @@ const (
 	portNumberUintParsingBase = 10
 	portNumberUintParsingBits = 16
 
+	kurtosisBackendCtxKey = "kurtosis-backend"
 	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey  = "engine-client"
 
@@ -66,6 +68,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			"the string '%v' in the CMD args will be replaced with the container's IP address inside the enclave)",
 		serviceIpAddrReplaceKeyword,
 	),
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -137,6 +140,7 @@ var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 
 func run(
 	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
