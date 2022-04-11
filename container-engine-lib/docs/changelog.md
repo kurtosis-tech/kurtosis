@@ -1,4 +1,5 @@
 # TBD
+* Fixed assigning entry to nil map in `killContainers` in `docker_kurtosis_backend`
 
 # 0.11.2
 ### Fixes
