@@ -177,6 +177,18 @@ type KurtosisBackend interface {
 		error,
 	)
 
+	// Get module logs using the given filters, returning a map of matched modules identified by their GUID and a readCloser object for each one
+	// User is responsible for closing the 'ReadCloser' object returned in the successfulModuleLogs map
+	GetModuleLogs(
+		ctx context.Context,
+		filters *module.ModuleFilters,
+		shouldFollowLogs bool,
+	)(
+		successfulModuleLogs map[module.ModuleGUID]io.ReadCloser,
+		erroredModuleGuids map[module.ModuleGUID]error,
+		resultError error,
+	)
+
 	// Stops the modules matching the given filters
 	StopModules(
 		ctx context.Context,
@@ -225,7 +237,7 @@ type KurtosisBackend interface {
 		resultError error,
 	)
 
-	// Get user service logs using the given filters, returning a map of matched user services identified by their ID and a readCloser object for each one
+	// Get user service logs using the given filters, returning a map of matched user services identified by their GUID and a readCloser object for each one
 	// User is responsible for closing the 'ReadCloser' object returned in the successfulUserServiceLogs map
 	GetUserServiceLogs(
 		ctx context.Context,
