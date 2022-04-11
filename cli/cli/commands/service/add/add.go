@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -18,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 	"strconv"
 	"strings"
 )
@@ -146,10 +148,11 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave ID value using key '%v'", enclaveIdArgKey)
 	}
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	serviceId, err := args.GetNonGreedyArg(serviceIdArgKey)
 	if err != nil {
@@ -181,17 +184,19 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the ports string using key '%v'", portsFlagKey)
 	}
 
-	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+
+	//TODO I'm not really sure if we need to do this because
+	/*enclave, err := getEnclave(ctx, kurtosisBackend, enclaveId)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
+		return stacktrace.Propagate(err, "An error occurred getting enclave with ID '%v'", enclaveId)
+	}*/
+
+	apiContainer, err := getApiContainer(ctx, kurtosisBackend, enclaveId)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting api container for enclave with ID '%v'", enclaveId)
 	}
 
-	infoForEnclave, found := getEnclavesResp.EnclaveInfo[enclaveId]
-	if !found {
-		return stacktrace.Propagate(err, "No enclave with ID '%v' exists", enclaveId)
-	}
-
-	enclaveCtx, err := getEnclaveContextFromEnclaveInfo(infoForEnclave)
+	enclaveCtx, err := getEnclaveContextFromApiContainer(apiContainer)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
 	}
@@ -253,19 +258,16 @@ func run(
 	return nil
 }
 
+// ====================================================================================================
+//                                       Private Helper Functions
+// ====================================================================================================
 // TODO TODO REMOVE ALL THIS WHEN NewEnclaveContext CAN JUST TAKE IN IP ADDR & PORT NUM!!!
-func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*enclaves.EnclaveContext, error) {
-	enclaveId := infoForEnclave.EnclaveId
-
-	apiContainerHostMachineIpAddr, apiContainerHostMachineGrpcPortNum, err := enclave_liveness_validator.ValidateEnclaveLiveness(infoForEnclave)
-	if err != nil {
-		return nil, stacktrace.NewError("Cannot add service because the API container in enclave '%v' is not running", enclaveId)
-	}
+func getEnclaveContextFromApiContainer(apiContainer *api_container.APIContainer) (*enclaves.EnclaveContext, error) {
 
 	apiContainerHostMachineUrl := fmt.Sprintf(
 		"%v:%v",
-		apiContainerHostMachineIpAddr,
-		apiContainerHostMachineGrpcPortNum,
+		apiContainer.GetPublicIPAddress(),
+		apiContainer.GetPublicGRPCPort(),
 	)
 	conn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithInsecure())
 	if err != nil {
@@ -273,13 +275,14 @@ func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bi
 			err,
 			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
 			apiContainerHostMachineUrl,
-			enclaveId,
+			apiContainer.GetEnclaveID(),
 		)
 	}
 	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
 	enclaveCtx := enclaves.NewEnclaveContext(
 		apiContainerClient,
-		enclaves.EnclaveID(enclaveId),
+		apiContainer.GetEnclaveID(),
+		apiContainer.
 		infoForEnclave.EnclaveDataDirpathOnHostMachine,
 	)
 
@@ -461,4 +464,61 @@ func parsePortSpecStr(specStr string) (*services.PortSpec, error) {
 	portProtocol := services.PortProtocol(portProtocolEnumInt)
 
 	return services.NewPortSpec(portNumberUint16, portProtocol), nil
+}
+
+func getEnclave(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) (*enclave.Enclave, error) {
+	enclaveFilters := &enclave.EnclaveFilters{
+		IDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		Statuses: map[enclave.EnclaveStatus]bool{
+			enclave.EnclaveStatus_Running: true,
+		},
+	}
+
+	enclaves, err := kurtosisBackend.GetEnclaves(ctx, enclaveFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", enclaveFilters)
+	}
+	numOfEnclaves := len(enclaves)
+	if numOfEnclaves == 0 {
+		return nil, stacktrace.NewError("No enclave with ID '%v' and status '%v' was found", enclaveId, enclave.EnclaveStatus_Running)
+	}
+	if numOfEnclaves > 1 {
+		return nil, stacktrace.NewError("Expected to find only one enclave with ID '%v' and status '%v', but '%v' was found", enclaveId, enclave.EnclaveStatus_Running, numOfEnclaves)
+	}
+	enclave, found := enclaves[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find enclave with ID '%v' in enclave map '%+v', but none was found; it's a bug in Kurtosis", enclaveId, enclaves)
+	}
+	return enclave, nil
+}
+
+func getApiContainer(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) (*api_container.APIContainer, error) {
+	apiContainerFilters := &api_container.APIContainerFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Running: true,
+		},
+	}
+
+	apiContainers, err := kurtosisBackend.GetAPIContainers(ctx, apiContainerFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting api containers using filters '%+v'", apiContainerFilters)
+	}
+	numOfApiContainers := len(apiContainers)
+	if numOfApiContainers == 0 {
+		return nil, stacktrace.NewError("No api container for enclave with ID '%v' and status '%v' was found", enclaveId, container_status.ContainerStatus_Running)
+	}
+	if numOfApiContainers > 1 {
+		return nil, stacktrace.NewError("Expected to find only one api container for enclave with ID '%v' and status '%v', but '%v' was found; it should never happens, it is a bug in Kurtosis", enclaveId, container_status.ContainerStatus_Running, numOfApiContainers)
+	}
+	apiContainer, found := apiContainers[enclaveId]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find the api container for enclave with ID '%v' in api container map '%+v', but none was found; it's a bug in Kurtosis", enclaveId, apiContainers)
+	}
+
+	return apiContainer, nil
 }
