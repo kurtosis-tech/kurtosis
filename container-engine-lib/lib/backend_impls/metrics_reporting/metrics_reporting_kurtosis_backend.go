@@ -250,6 +250,22 @@ func (backend *MetricsReportingKurtosisBackend) GetModules(
 	return modules, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) GetModuleLogs(
+	ctx context.Context,
+	filters *module.ModuleFilters,
+	shouldFollowLogs bool,
+)(
+	map[module.ModuleGUID]io.ReadCloser,
+	map[module.ModuleGUID]error,
+	error,
+) {
+	moduleLogs, erroredModules, err := backend.underlying.GetModuleLogs(ctx, filters, shouldFollowLogs)
+	if err != nil {
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting module logs using filters '%+v'", filters)
+	}
+	return moduleLogs, erroredModules, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StopModules(ctx context.Context, filters *module.ModuleFilters) (successfulModuleIds map[module.ModuleGUID]bool, erroredModuleIds map[module.ModuleGUID]error, resultErr error) {
 	successes, failures, err := backend.underlying.StopModules(ctx, filters)
 	if err != nil {
