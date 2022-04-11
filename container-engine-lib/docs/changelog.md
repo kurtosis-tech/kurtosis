@@ -6,9 +6,6 @@
 
 ### Fixes
 * Fixed assigning entry to nil map in `killContainers` in `docker_kurtosis_backend`
-
-# 0.11.2
-### Fixes
 * Set CGO_ENABLED=0 for tests. Complete tests without prompting for GCC-5 now.
 
 # 0.11.1
