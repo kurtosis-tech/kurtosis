@@ -78,9 +78,9 @@ type DockerKurtosisBackend struct {
 func NewDockerKurtosisBackend(dockerManager *docker_manager.DockerManager) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
-		dockerManager:    dockerManager,
+		dockerManager:          dockerManager,
 		dockerNetworkAllocator: dockerNetworkAllocator,
-		objAttrsProvider: object_attributes_provider.GetDockerObjectAttributesProvider(),
+		objAttrsProvider:       object_attributes_provider.GetDockerObjectAttributesProvider(),
 	}
 }
 
@@ -326,26 +326,27 @@ func getEnclaveIdFromNetwork(network *types.Network) (enclave.EnclaveID, error) 
 func (backend *DockerKurtosisBackend) killContainers(
 	ctx context.Context,
 	containerIdsSet map[string]bool,
-)(
+) (
 	successfulContainers map[string]bool,
 	erroredContainers map[string]error,
-){
-
+) {
+	killedContainers := map[string]bool{}
+	failedToKillContainers := map[string]error{}
 	// TODO Parallelize for perf
 	for containerId := range containerIdsSet {
 		if err := backend.dockerManager.KillContainer(ctx, containerId); err != nil {
-			containerError :=  stacktrace.Propagate(
+			containerError := stacktrace.Propagate(
 				err,
 				"An error occurred killing container with ID '%v'",
 				containerId,
 			)
-			erroredContainers[containerId] = containerError
+			failedToKillContainers[containerId] = containerError
 			continue
 		}
-		successfulContainers[containerId] = true
+		killedContainers[containerId] = true
 	}
 
-	return successfulContainers, erroredContainers
+	return killedContainers, failedToKillContainers
 }
 
 func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.Context, enclaveId enclave.EnclaveID) (*types.Network, error) {
@@ -368,7 +369,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworkByEnclaveId(ctx context.C
 			numMatchingNetworks,
 		)
 	}
-	return  enclaveNetworksFound[0], nil
+	return enclaveNetworksFound[0], nil
 }
 
 // Embeds the given command in a call to sh shell, so that a command with things
