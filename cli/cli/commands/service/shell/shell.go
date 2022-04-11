@@ -6,16 +6,15 @@
 package shell
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/logrus_log_levels"
-	labels_helper "github.com/kurtosis-tech/kurtosis-cli/cli/helpers/service_container_labels_by_enclave_id"
 	"github.com/kurtosis-tech/kurtosis-cli/commons/positional_arg_parser"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -76,11 +75,13 @@ func run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the positional args")
 	}
-	enclaveID := parsedPositionalArgs[enclaveIDArg]
-	guid := parsedPositionalArgs[guidArg]
+	enclaveIdStr := parsedPositionalArgs[enclaveIDArg]
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
+	guidStr := parsedPositionalArgs[guidArg]
+	guid := service.ServiceGUID(guidStr)
 
 	// TODO Remove once KurtosisBackend can create an interactive shell on a container
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	/*dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
@@ -138,16 +139,31 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 	defer hijackedResponse.Close()
 
+	 */
+
+	kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
+	}
+
+
+	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveId, guid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting connection with user service with GUID '%v' in enclave '%v'", guid, enclaveId)
+	}
+
+	newReader := bufio.NewReader(conn)
+
 	// From this point on down, I don't know why it works.... but it does
 	// I just followed the solution here: https://stackoverflow.com/questions/58732588/accept-user-input-os-stdin-to-container-using-golang-docker-sdk-interactive-co
 	// This channel is being used to know the user exited the ContainerExec
 	finishChan := make(chan bool)
 	go func() {
-		io.Copy(os.Stdout, hijackedResponse.Reader)
+		io.Copy(os.Stdout, newReader)
 		finishChan <- true
 	}()
-	go io.Copy(os.Stderr, hijackedResponse.Reader)
-	go io.Copy(hijackedResponse.Conn, os.Stdin)
+	go io.Copy(os.Stderr, newReader)
+	go io.Copy(conn, os.Stdin)
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
