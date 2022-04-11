@@ -10,7 +10,6 @@
 * Upgraded the kurtosis engine to 1.12.0
 * Switched `enclave dump` to use `KurtosisBackend`
 
-# 0.11.10
 ### Fixes
 * Go testing now includes with CGO_ENABLED=0 variable so the user doesn't have to specify environment variables before running scripts.
 
