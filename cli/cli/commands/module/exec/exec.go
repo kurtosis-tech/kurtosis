@@ -9,14 +9,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	docker_manager_types "github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/best_effort_image_puller"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/execution_ids"
@@ -140,7 +140,7 @@ func run(cmd *cobra.Command, args []string) error {
 	moduleImage := parsedPositionalArgs[moduleImageArg]
 
 	// TODO REMOVE THIS WHEN THE KurtosisBackend HANDLES EVERYTHING!
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	/*dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker client")
 	}
@@ -148,25 +148,29 @@ func run(cmd *cobra.Command, args []string) error {
 
 	best_effort_image_puller.PullImageBestEffort(ctx, dockerManager, moduleImage)
 
+	 */
+
 	imageNameWithUnixTimestamp := getImageNameWithUnixTimestamp(moduleImage)
 
-	enclaveId := userRequestedEnclaveId
-	if enclaveId == defaultEnclaveId {
-		enclaveId = imageNameWithUnixTimestamp
+	enclaveIdStr := userRequestedEnclaveId
+	if enclaveIdStr == defaultEnclaveId {
+		enclaveIdStr = imageNameWithUnixTimestamp
 	}
-	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveId))
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
+
+	validEnclaveId, err := regexp.Match(allowedEnclaveIdCharsRegexStr, []byte(enclaveIdStr))
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred validating that enclave ID '%v' matches allowed enclave ID regex '%v'",
-			enclaveId,
+			enclaveIdStr,
 			allowedEnclaveIdCharsRegexStr,
 		)
 	}
 	if !validEnclaveId {
 		return stacktrace.NewError(
 			"Enclave ID '%v' doesn't match allowed enclave ID regex '%v'",
-			enclaveId,
+			enclaveIdStr,
 			allowedEnclaveIdCharsRegexStr,
 		)
 	}
@@ -187,13 +191,13 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred getting the existing enclaves")
 	}
 
-	enclaveInfo, foundExistingEnclave := getEnclavesResp.EnclaveInfo[enclaveId]
+	enclaveInfo, foundExistingEnclave := getEnclavesResp.EnclaveInfo[enclaveIdStr]
 	// If no enclave with the requested ID exists, create it
 	didModuleExecutionCompleteSuccessfully := false
 	if !foundExistingEnclave {
-		logrus.Infof("Creating enclave '%v' for the module to execute inside...", enclaveId)
+		logrus.Infof("Creating enclave '%v' for the module to execute inside...", enclaveIdStr)
 		createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
-			EnclaveId:              enclaveId,
+			EnclaveId:              enclaveIdStr,
 			ApiContainerVersionTag: apiContainerVersion,
 			ApiContainerLogLevel:   apiContainerLogLevelStr,
 			IsPartitioningEnabled:  isPartitioningEnabled,
@@ -202,7 +206,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 		response, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveId)
+			return stacktrace.Propagate(err, "An error occurred creating an enclave with ID '%v'", enclaveIdStr)
 		}
 		didModuleExecutionCompleteSuccessfully = true
 		defer func() {
@@ -212,12 +216,12 @@ func run(cmd *cobra.Command, args []string) error {
 					command_str_consts.KurtosisCmdStr,
 					command_str_consts.EnclaveCmdStr,
 					command_str_consts.EnclaveStopCmdStr,
-					enclaveId,
+					enclaveIdStr,
 				)
 			}
 		}()
 		enclaveInfo = response.GetEnclaveInfo()
-		logrus.Infof("Enclave '%v' created successfully", enclaveId)
+		logrus.Infof("Enclave '%v' created successfully", enclaveIdStr)
 	}
 
 	apicHostMachineIp, apicHostMachineGrpcPort, err := enclave_liveness_validator.ValidateEnclaveLiveness(enclaveInfo)
@@ -236,7 +240,7 @@ func run(cmd *cobra.Command, args []string) error {
 			err,
 			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
 			apiContainerHostGrpcUrl,
-			enclaveId,
+			enclaveIdStr,
 		)
 	}
 	defer func() {
@@ -248,10 +252,14 @@ func run(cmd *cobra.Command, args []string) error {
 		"Loading module '%v' with load params '%v' inside enclave '%v'...",
 		moduleImage,
 		loadParamsStr,
-		enclaveId,
+		enclaveIdStr,
 	)
 	moduleId := imageNameWithUnixTimestamp
 	loadModuleArgs := binding_constructors.NewLoadModuleArgs(moduleId, moduleImage, loadParamsStr)
+
+	//TODO me quedé clavado acá porque necesitamos que LOADMODULE retorne el guid para poder usarlo después en moduleFilters
+	//TODO pero estoy esperando que Blaise haga un release de Core para poder agregar esta parte
+
 	if _, err := apiContainerClient.LoadModule(ctx, loadModuleArgs); err != nil {
 		return stacktrace.Propagate(err, "An error occurred loading the module with image '%v'", moduleImage)
 	}
@@ -259,19 +267,30 @@ func run(cmd *cobra.Command, args []string) error {
 		if !didModuleExecutionCompleteSuccessfully {
 			 logrus.Warnf(
 				 "Module execution didn't complete successfully; we've left the module and the services it started inside enclave '%v' for debugging",
-				 enclaveId,
+				 enclaveIdStr,
 			 )
 		}
 	}()
 	logrus.Info("Module loaded successfully")
 
-	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveId, moduleId)
+	moduleFilters := module.ModuleFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		GUIDs: map[module.ModuleGUID]bool{
+			moduleId: true,
+		},
+	}
+
+	modules, err := kurtosisBackend.GetModules(ctx,)
+
+	moduleContainer, err := getModuleContainer(ctx, dockerManager, enclaveIdStr, moduleId)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the module container")
 	}
 
 	if moduleContainer == nil {
-		return stacktrace.Propagate(err, "It was not found any container with enclave ID '%v' and module ID '%v'", enclaveId, moduleId)
+		return stacktrace.Propagate(err, "It was not found any container with enclave ID '%v' and module ID '%v'", enclaveIdStr, moduleId)
 	}
 
 	readCloserLogs, err := dockerManager.GetContainerLogs(ctx, moduleContainer.GetId(), shouldFollowContainerLogs)
