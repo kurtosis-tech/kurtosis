@@ -48,9 +48,6 @@ service ApiContainerService {
   // Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
-  // Executes multiple commands at once
-  rpc ExecuteBulkCommands(ExecuteBulkCommandsArgs) returns (google.protobuf.Empty) {};
-
   // Returns the IDs of the current services in the enclave
   rpc GetServices(google.protobuf.Empty) returns (GetServicesResponse) {};
 
@@ -340,14 +337,6 @@ message WaitForHttpPostEndpointAvailabilityArgs {
   uint32 retries_delay_milliseconds = 7;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
   string body_text = 8;
-}
-
-// ==============================================================================================
-//                                      Execute Bulk Commands
-// ==============================================================================================
-message ExecuteBulkCommandsArgs {
-  // Commands, serialized as JSON
-  string serialized_commands = 1;
 }
 
 // ==============================================================================================

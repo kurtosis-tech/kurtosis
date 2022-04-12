@@ -50,8 +50,6 @@ type ApiContainerServiceClient interface {
 	WaitForHttpGetEndpointAvailability(ctx context.Context, in *WaitForHttpGetEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(ctx context.Context, in *WaitForHttpPostEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Executes multiple commands at once
-	ExecuteBulkCommands(ctx context.Context, in *ExecuteBulkCommandsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
@@ -183,15 +181,6 @@ func (c *apiContainerServiceClient) WaitForHttpPostEndpointAvailability(ctx cont
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) ExecuteBulkCommands(ctx context.Context, in *ExecuteBulkCommandsArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/ExecuteBulkCommands", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetServicesResponse, error) {
 	out := new(GetServicesResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/GetServices", in, out, opts...)
@@ -241,8 +230,6 @@ type ApiContainerServiceServer interface {
 	WaitForHttpGetEndpointAvailability(context.Context, *WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error)
-	// Executes multiple commands at once
-	ExecuteBulkCommands(context.Context, *ExecuteBulkCommandsArgs) (*emptypb.Empty, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *emptypb.Empty) (*GetServicesResponse, error)
 	// Returns the IDs of the Kurtosis modules that have been loaded into the enclave
@@ -292,9 +279,6 @@ func (UnimplementedApiContainerServiceServer) WaitForHttpGetEndpointAvailability
 }
 func (UnimplementedApiContainerServiceServer) WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WaitForHttpPostEndpointAvailability not implemented")
-}
-func (UnimplementedApiContainerServiceServer) ExecuteBulkCommands(context.Context, *ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExecuteBulkCommands not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *emptypb.Empty) (*GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
@@ -549,24 +533,6 @@ func _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_ExecuteBulkCommands_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExecuteBulkCommandsArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).ExecuteBulkCommands(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api_container_api.ApiContainerService/ExecuteBulkCommands",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).ExecuteBulkCommands(ctx, req.(*ExecuteBulkCommandsArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -661,10 +627,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "WaitForHttpPostEndpointAvailability",
 			Handler:    _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler,
-		},
-		{
-			MethodName: "ExecuteBulkCommands",
-			Handler:    _ApiContainerService_ExecuteBulkCommands_Handler,
 		},
 		{
 			MethodName: "GetServices",

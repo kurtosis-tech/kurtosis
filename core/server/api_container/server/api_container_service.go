@@ -12,8 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine"
-	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/bulk_command_execution_engine/v0_bulk_command_execution"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/module_store/module_store_types"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network"
@@ -58,8 +56,6 @@ type ApiContainerService struct {
 
 	moduleStore *module_store.ModuleStore
 
-	bulkCmdExecEngine *bulk_command_execution_engine.BulkCommandExecutionEngine
-
 	metricsClient client.MetricsClient
 }
 
@@ -75,16 +71,6 @@ func NewApiContainerService(
 		moduleStore:            moduleStore,
 		metricsClient:          metricsClient,
 	}
-
-	// NOTE: This creates a circular dependency between ApiContainerService <-> BulkCommandExecutionEngine, but out
-	//  necessity: the API service must farm bulk commands out to the bulk command execution engine, which must call
-	//  back to the API service to actually do work.
-	v0BulkCmdProcessor, err := v0_bulk_command_execution.NewV0BulkCommandProcessor(serviceNetwork, service)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the v0 bulk command processor")
-	}
-	bulkCmdExecEngine := bulk_command_execution_engine.NewBulkCommandExecutionEngine(v0BulkCmdProcessor)
-	service.bulkCmdExecEngine = bulkCmdExecEngine
 
 	return service, nil
 }
@@ -428,13 +414,6 @@ func (service ApiContainerService) WaitForHttpPostEndpointAvailability(ctx conte
 		)
 	}
 
-	return &emptypb.Empty{}, nil
-}
-
-func (service ApiContainerService) ExecuteBulkCommands(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecuteBulkCommandsArgs) (*emptypb.Empty, error) {
-	if err := service.bulkCmdExecEngine.Process(ctx, []byte(args.SerializedCommands)); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred executing the bulk commands")
-	}
 	return &emptypb.Empty{}, nil
 }
 

@@ -27,17 +27,6 @@ function deserialize_api_container_api_ExecCommandResponse(buffer_arg) {
   return api_container_service_pb.ExecCommandResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_ExecuteBulkCommandsArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.ExecuteBulkCommandsArgs)) {
-    throw new Error('Expected argument of type api_container_api.ExecuteBulkCommandsArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_ExecuteBulkCommandsArgs(buffer_arg) {
-  return api_container_service_pb.ExecuteBulkCommandsArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_ExecuteModuleArgs(arg) {
   if (!(arg instanceof api_container_service_pb.ExecuteModuleArgs)) {
     throw new Error('Expected argument of type api_container_api.ExecuteModuleArgs');
@@ -425,18 +414,6 @@ waitForHttpPostEndpointAvailability: {
     responseType: google_protobuf_empty_pb.Empty,
     requestSerialize: serialize_api_container_api_WaitForHttpPostEndpointAvailabilityArgs,
     requestDeserialize: deserialize_api_container_api_WaitForHttpPostEndpointAvailabilityArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
-  },
-  // Executes multiple commands at once
-executeBulkCommands: {
-    path: '/api_container_api.ApiContainerService/ExecuteBulkCommands',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.ExecuteBulkCommandsArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_ExecuteBulkCommandsArgs,
-    requestDeserialize: deserialize_api_container_api_ExecuteBulkCommandsArgs,
     responseSerialize: serialize_google_protobuf_Empty,
     responseDeserialize: deserialize_google_protobuf_Empty,
   },

@@ -868,67 +868,6 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.waitForHttpPo
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.ExecuteBulkCommandsArgs,
- *   !proto.google.protobuf.Empty>}
- */
-const methodDescriptor_ApiContainerService_ExecuteBulkCommands = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/ExecuteBulkCommands',
-  grpc.web.MethodType.UNARY,
-  proto.api_container_api.ExecuteBulkCommandsArgs,
-  google_protobuf_empty_pb.Empty,
-  /**
-   * @param {!proto.api_container_api.ExecuteBulkCommandsArgs} request
-   * @return {!Uint8Array}
-   */
-  function(request) {
-    return request.serializeBinary();
-  },
-  google_protobuf_empty_pb.Empty.deserializeBinary
-);
-
-
-/**
- * @param {!proto.api_container_api.ExecuteBulkCommandsArgs} request The
- *     request proto
- * @param {?Object<string, string>} metadata User defined
- *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
- *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
- *     The XHR Node Readable Stream
- */
-proto.api_container_api.ApiContainerServiceClient.prototype.executeBulkCommands =
-    function(request, metadata, callback) {
-  return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteBulkCommands',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteBulkCommands,
-      callback);
-};
-
-
-/**
- * @param {!proto.api_container_api.ExecuteBulkCommandsArgs} request The
- *     request proto
- * @param {?Object<string, string>=} metadata User defined
- *     call metadata
- * @return {!Promise<!proto.google.protobuf.Empty>}
- *     Promise that resolves to the response
- */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.executeBulkCommands =
-    function(request, metadata) {
-  return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/ExecuteBulkCommands',
-      request,
-      metadata || {},
-      methodDescriptor_ApiContainerService_ExecuteBulkCommands);
-};
-
-
-/**
- * @const
- * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.api_container_api.GetServicesResponse>}
  */

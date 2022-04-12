@@ -24,14 +24,12 @@ import type {
     GetServiceInfoArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
-    ExecuteBulkCommandsArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
 import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import { ModuleContext, ModuleID } from "../modules/module_context";
 import { 
-    newExecuteBulkCommandsArgs,
     newGetModuleInfoArgs,
     newGetServiceInfoArgs,
     newLoadModuleArgs,
@@ -495,19 +493,6 @@ export class EnclaveContext {
             bodyText);
 
         return this.backend.waitForHttpPostEndpointAvailability(availabilityArgs)
-    }
-
-    // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
-    public async executeBulkCommands(bulkCommandsJson: string): Promise<Result<null, Error>> {
-        const executeBulkCommandsArgs: ExecuteBulkCommandsArgs = newExecuteBulkCommandsArgs(bulkCommandsJson);
-
-        const executeBulkCommandsResult = await this.backend.executeBulkCommands(executeBulkCommandsArgs)
-        if(executeBulkCommandsResult.isErr()){
-            return err(executeBulkCommandsResult.error)
-        }
-
-        const result = executeBulkCommandsResult.value
-        return ok(result)
     }
 
     // Docs available at https://docs.kurtosistech.com/kurtosis-core/lib-documentation
