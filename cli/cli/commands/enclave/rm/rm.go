@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
@@ -28,7 +27,6 @@ const (
 	defaultShouldForceRemove = "false"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey = "engine-client"
 )
 
@@ -37,7 +35,6 @@ var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	ShortDescription:        "Destroys the specified enclaves",
 	LongDescription:         "Destroys the specified enclaves, removing all resources associated with them",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
@@ -62,7 +59,6 @@ var EnclaveRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,

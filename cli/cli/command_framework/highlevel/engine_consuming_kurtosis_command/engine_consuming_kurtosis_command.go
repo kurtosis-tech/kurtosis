@@ -2,9 +2,7 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
-	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/container-engine-lib/lib"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -34,10 +32,6 @@ type EngineConsumingKurtosisCommand struct {
 	// The name of the key that will be set during PreValidationAndRun where the KurtosisBackend can be found
 	KurtosisBackendContextKey string
 
-	// TODO remove this when we replace it with KurtosisBackend in all commands
-	// The name of the key that will be set during PreValidationAndRun where the DockerManager can be found
-	DockerManagerContextKey string
-
 	// The name of the key that will be set during PreValidationAndRun where the engine client will be made available
 	EngineClientContextKey string
 
@@ -49,7 +43,6 @@ type EngineConsumingKurtosisCommand struct {
 	RunFunc func(
 		ctx context.Context,
 		kurtosisBackend backend_interface.KurtosisBackend,
-		dockerManager *docker_manager.DockerManager, // TODO remove this when we replace it with KurtosisBackend in all commands
 		engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 		flags *flags.ParsedFlags,
 		args *args.ParsedArgs,
@@ -66,14 +59,7 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 			engineClientCloseFuncCtxKey,
 		))
 	}
-	if cmd.DockerManagerContextKey == engineClientCloseFuncCtxKey {
-		panic(stacktrace.NewError(
-			"Docker manager context key '%v' on command '%v' is equal to engine client close function context key '%v'; this is a bug in Kurtosis!",
-			cmd.DockerManagerContextKey,
-			cmd.CommandStr,
-			engineClientCloseFuncCtxKey,
-		))
-	}
+
 	if cmd.EngineClientContextKey == engineClientCloseFuncCtxKey {
 		panic(stacktrace.NewError(
 			"Engine client context key '%v' on command '%v' is equal to engine client close function context key '%v'; this is a bug in Kurtosis!",
@@ -82,28 +68,12 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 			engineClientCloseFuncCtxKey,
 		))
 	}
-	if cmd.DockerManagerContextKey == cmd.EngineClientContextKey {
-		panic(stacktrace.NewError(
-			"Docker manager context key '%v' on command '%v' is equal to engine client close function context key '%v'; this is a bug in Kurtosis!",
-			cmd.DockerManagerContextKey,
-			cmd.CommandStr,
-			cmd.EngineClientContextKey,
-		))
-	}
 	if cmd.KurtosisBackendContextKey == cmd.EngineClientContextKey {
 		panic(stacktrace.NewError(
 			"Kurtosis backend context key '%v' on command '%v' is equal to engine client close function context key '%v'; this is a bug in Kurtosis!",
-			cmd.DockerManagerContextKey,
-			cmd.CommandStr,
-			cmd.EngineClientContextKey,
-		))
-	}
-	if cmd.KurtosisBackendContextKey == cmd.DockerManagerContextKey {
-		panic(stacktrace.NewError(
-			"Kurtosis backend context key '%v' on command '%v' is equal to Docker manager context key '%v'; this is a bug in Kurtosis!",
 			cmd.KurtosisBackendContextKey,
 			cmd.CommandStr,
-			cmd.DockerManagerContextKey,
+			cmd.EngineClientContextKey,
 		))
 	}
 
@@ -124,18 +94,6 @@ func (cmd *EngineConsumingKurtosisCommand) MustGetCobraCommand() *cobra.Command 
 func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) (context.Context, error) {
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
-
-		dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating the Docker client")
-		}
-
-		// TODO get rid of this once we have all operations flowing through the KurtosisBackend!!
-		dockerManager := docker_manager.NewDockerManager(
-			dockerClient,
-		)
-
-		result = context.WithValue(result, cmd.DockerManagerContextKey, dockerManager)
 
 		kurtosisBackend, err := lib.GetLocalDockerKurtosisBackend()
 		if err != nil {
@@ -177,17 +135,7 @@ func (cmd *EngineConsumingKurtosisCommand) getRunFunc() func(context.Context, *f
 			return stacktrace.NewError("Found an object that should be the Kurtosis backend stored in the context under key '%v', but this object wasn't of the correct type", cmd.KurtosisBackendContextKey)
 		}
 
-		// TODO GET RID OF THIS!!! Everything should be doable through the engine client
-		uncastedDockerManager := ctx.Value(cmd.DockerManagerContextKey)
-		if uncastedDockerManager == nil {
-			return stacktrace.NewError("Expected a Docker manager to have been stored in the context under key '%v', but none was found; this is a bug in Kurtosis!", cmd.DockerManagerContextKey)
-		}
-		dockerManager, ok := uncastedDockerManager.(*docker_manager.DockerManager)
-		if !ok {
-			return stacktrace.NewError("Found an object that should be the Docker manager stored in the context under key '%v', but this object wasn't of the correct type", cmd.DockerManagerContextKey)
-		}
-
-		if err := cmd.RunFunc(ctx, kurtosisBackend, dockerManager, engineClient, flags, args); err != nil {
+		if err := cmd.RunFunc(ctx, kurtosisBackend, engineClient, flags, args); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred calling the run function for command '%v'",
