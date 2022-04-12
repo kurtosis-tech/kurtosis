@@ -501,6 +501,9 @@ func (backend *DockerKurtosisBackend) getMatchingUserServices(
 	ctx context.Context,
 	filters *service.ServiceFilters,
 ) (map[string]*service.Service, error) {
+	if filters == nil {
+		filters = &service.ServiceFilters{}
+	}
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),

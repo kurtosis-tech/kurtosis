@@ -304,6 +304,10 @@ func (backend *DockerKurtosisBackend) DestroyEngines(
 // ====================================================================================================
 // Gets engines matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingEngines(ctx context.Context, filters *engine.EngineFilters) (map[string]*engine.Engine, error) {
+	if filters == nil {
+		filters = &engine.EngineFilters{}
+	}
+
 	engineContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.EngineContainerTypeLabelValue.GetString(),
