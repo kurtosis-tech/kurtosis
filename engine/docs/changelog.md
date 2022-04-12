@@ -1,5 +1,10 @@
 # TBD
 
+### Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0
+  * Users using the ExecuteBulkCommands API should remove code referencing it.
+  * Additionally Enclaves should be restarted.
+
 ### Fixes
 * Added CGO_ENABLED for go tests.
 
