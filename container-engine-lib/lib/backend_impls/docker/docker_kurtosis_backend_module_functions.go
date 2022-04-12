@@ -81,8 +81,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 
 	moduleContainerAttrs, err := enclaveObjAttrProvider.ForModuleContainer(
 		ipAddr,
-		string(id),
-		string(guid),
+		id,
+		guid,
 		kurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
 	)
