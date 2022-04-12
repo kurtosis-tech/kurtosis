@@ -1,9 +1,10 @@
 # TBD
 
 # Breaking Changes
-* Bumped Dependencies for Kurtosis Core which is now version 1.41.0
-    * Users should remove references to ExecuteBulkCommands in any code or documentation they have made for its usage.
-    
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
+    * Users using the ExecuteBulkCommands API should remove code referencing it.
+    * Additionally Enclaves should be restarted.
+* Bumped Dependencies for Kurtosis Engine Server which is now version 1.13.0.
 
 # 0.12.0
 ### Breaking Changes
