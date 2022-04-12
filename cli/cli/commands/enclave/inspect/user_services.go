@@ -3,57 +3,58 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/forever_constants"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
+	"sort"
 )
 
 const (
 	userServiceGUIDColHeader                                    = "GUID"
 	userServiceIDColHeader                                      = "ID"
 	userServiceHostMachinePortBindingsColHeader                 = "LocalPortBindings"
-	shouldShowStoppedContainersWhenGettingUserServiceContainers = true
 
 	noUserServiceHostPortBindingsPlaceholder = "<none>"
 )
 
-func printUserServices(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error {
-	userServiceLabels := getLabelsForListEnclaveUserServices(enclaveId)
+func printUserServices(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error {
 
-	containers, err := dockerManager.GetContainersByLabels(ctx, userServiceLabels, shouldShowStoppedContainersWhenGettingUserServiceContainers)
+	userServiceFilters := &service.ServiceFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Stopped: true,
+			container_status.ContainerStatus_Running: true,
+		},
+	}
+
+	userServices, err := kurtosisBackend.GetUserServices(ctx, userServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service containers by labels: '%+v'", userServiceLabels)
+		return stacktrace.Propagate(err, "An error occurred getting user services using filters '%+v'", userServiceFilters)
 	}
 
 	tablePrinter := output_printers.NewTablePrinter(userServiceGUIDColHeader, userServiceIDColHeader, userServiceHostMachinePortBindingsColHeader)
-	sortedContainers, err := sortContainersByGUID(containers)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred sorting user service containers by GUID")
-	}
-	for _, container := range sortedContainers {
-		serviceGuid, found := container.GetLabels()[schema.GUIDLabel]
-		if !found {
-			return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", schema.GUIDLabel, container.GetId(), container.GetLabels())
-		}
-		serviceId, found := container.GetLabels()[schema.IDLabel]
-		if !found {
-			return stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", schema.IDLabel, container.GetId(), container.GetLabels())
-		}
+	sortedUserServices:= getSortedUserServiceSliceFromUserServiceMap(userServices)
+	for _, userService := range sortedUserServices {
 
-		hostPortBindingsStrings := getContainerHostPortBindingStrings(container)
+		hostPortBindingsStrings := getContainerHostPortBindingStrings(userService)
 		firstHostPortBindingStr := noUserServiceHostPortBindingsPlaceholder
 		if hostPortBindingsStrings != nil {
 			firstHostPortBindingStr = hostPortBindingsStrings[0]
 			hostPortBindingsStrings = hostPortBindingsStrings[1:]
 		}
-		if err := tablePrinter.AddRow(serviceGuid, serviceId, firstHostPortBindingStr); err != nil {
+		guidStr := string(userService.GetGUID())
+		idStr := string(userService.GetID())
+
+		if err := tablePrinter.AddRow(guidStr, idStr, firstHostPortBindingStr); err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred adding row for user service container '%v' to the table printer",
-				serviceGuid,
+				"An error occurred adding row for user service with GUID '%v' to the table printer",
+				guidStr,
 			)
 		}
 
@@ -61,9 +62,9 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 			if err := tablePrinter.AddRow("", "", additionalHostPortBindingStr); err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred adding additional host port binding '%v' row for user service container '%v' to the table printer",
+					"An error occurred adding additional host port binding '%v' row for user service wit GUID '%v' to the table printer",
 					additionalHostPortBindingStr,
-					serviceGuid,
+					guidStr,
 				)
 			}
 		}
@@ -73,19 +74,30 @@ func printUserServices(ctx context.Context, dockerManager *docker_manager.Docker
 	return nil
 }
 
-func getContainerHostPortBindingStrings(container *types.Container) []string {
-	var allHosPortBindings []string
-	hostPortBindings := container.GetHostPortBindings()
-	for hostPortBindingKey, hostPortBinding := range hostPortBindings {
-		hostPortBindingString := fmt.Sprintf("%v -> %v:%v", hostPortBindingKey, hostPortBinding.HostIP, hostPortBinding.HostPort)
-		allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
+func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.ServiceGUID]*service.Service) []*service.Service {
+	userServicesResult := make([]*service.Service, 0, len(userServices))
+	for _, userService := range userServices {
+		userServicesResult = append(userServicesResult, userService)
 	}
-	return allHosPortBindings
+
+	sort.Slice(userServicesResult, func(i, j int) bool {
+		return userServicesResult[i].GetGUID() < userServicesResult[j].GetGUID()
+	})
+
+	return userServicesResult
 }
 
-func getLabelsForListEnclaveUserServices(enclaveId string) map[string]string {
-	labels := map[string]string{}
-	labels[forever_constants.ContainerTypeLabel] = schema.ContainerTypeUserServiceContainer
-	labels[schema.EnclaveIDContainerLabel] = enclaveId
-	return labels
+func getContainerHostPortBindingStrings(userService *service.Service) []string {
+	var allHosPortBindings []string
+	publicPorts := userService.GetPublicPorts()
+	if len(publicPorts) > 0 {
+		//IF the service has at least one public port it will have set the public IP address
+		publicIp := userService.GetMaybePublicIP()
+		for portID, portSpec := range publicPorts {
+			hostPortBindingString := fmt.Sprintf("%v -> %v:%v", portID, publicIp, portSpec.GetNumber())
+			allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
+		}
+	}
+
+	return allHosPortBindings
 }

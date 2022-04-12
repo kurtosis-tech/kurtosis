@@ -42,7 +42,7 @@ func printModules(ctx context.Context, kurtosisBackend backend_interface.Kurtosi
 		localPortBindingString :=
 			fmt.Sprintf("%v/%v -> %v:%v",
 				module.GetPrivatePort().GetNumber(),
-				module.GetPrivatePort().GetProtocol(),
+				module.GetPrivatePort().GetProtocol().String(),
 				module.GetPublicIp(),
 				module.GetPublicPort().GetNumber(),
 			)
