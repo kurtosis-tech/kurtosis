@@ -6,6 +6,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/file_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/file_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -45,8 +47,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully stopped
-		erroredEngineIds map[string]error, // "set" of engine IDs that errored when stopping, with the error
-		resultErr error, // Represents an error with the function itself, rather than the engines
+		erroredEngineIds map[string]error,   // "set" of engine IDs that errored when stopping, with the error
+		resultErr error,                     // Represents an error with the function itself, rather than the engines
 	)
 
 	// Destroys the engines matching the given filters, regardless of if they're running or not
@@ -55,8 +57,8 @@ type KurtosisBackend interface {
 		filters *engine.EngineFilters,
 	) (
 		successfulEngineIds map[string]bool, // "set" of engine IDs that were successfully destroyed
-		erroredEngineIds map[string]error, // "set" of engine IDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the engines
+		erroredEngineIds map[string]error,   // "set" of engine IDs that errored when destroying, with the error
+		resultErr error,                     // Represents an error with the function itself, rather than the engines
 	)
 
 	// Creates an enclave with the given enclave ID
@@ -114,7 +116,7 @@ type KurtosisBackend interface {
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
 		grpcPortNum uint16,
 		grpcProxyPortNum uint16,
-		enclaveDataDirpathOnHostMachine string,	// TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
+		enclaveDataDirpathOnHostMachine string, // TODO DELETE WHEN WE HAVE AN ENCLAVE DATA VOLUME!
 		envVars map[string]string,
 	) (
 		*api_container.APIContainer,
@@ -125,7 +127,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Matching API containers, keyed by their enclave ID
+	// Matching API containers, keyed by their enclave ID
 		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
@@ -135,7 +137,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Successful & errored API containers are keyed by their enclave ID
+	// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -146,7 +148,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-		// Successful & errored API containers are keyed by their enclave ID
+	// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -163,7 +165,7 @@ type KurtosisBackend interface {
 		grpcPortNum uint16,
 		enclaveDataDirpathOnHostMachine string,
 		envVars map[string]string,
-	)(
+	) (
 		newModule *module.Module,
 		resultErr error,
 	)
@@ -183,7 +185,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *module.ModuleFilters,
 		shouldFollowLogs bool,
-	)(
+	) (
 		successfulModuleLogs map[module.ModuleGUID]io.ReadCloser,
 		erroredModuleGuids map[module.ModuleGUID]error,
 		resultError error,
@@ -195,8 +197,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully stopped
-		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when being stopped, with the error
-		resultErr error, // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when being stopped, with the error
+		resultErr error,                                // Represents an error with the function itself, rather than the modules
 	)
 
 	// Destroys the modules with the given filters, regardless of if they're running or not
@@ -205,8 +207,8 @@ type KurtosisBackend interface {
 		filters *module.ModuleFilters,
 	) (
 		successfulModuleIds map[module.ModuleGUID]bool, // "set" of module IDs that were successfully destroyed
-		erroredModuleIds map[module.ModuleGUID]error, // "set" of module IDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the modules
+		erroredModuleIds map[module.ModuleGUID]error,   // "set" of module IDs that errored when destroying, with the error
+		resultErr error,                                // Represents an error with the function itself, rather than the modules
 	)
 
 	// Creates a user service inside an enclave with the given configuration
@@ -223,7 +225,7 @@ type KurtosisBackend interface {
 		envVars map[string]string,
 		enclaveDataDirpathOnHostMachine string,
 		filesArtifactMountDirpaths map[string]string,
-    )(
+	) (
 		newUserService *service.Service,
 		resultErr error,
 	)
@@ -232,7 +234,7 @@ type KurtosisBackend interface {
 	GetUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
-	)(
+	) (
 		successfulUserServices map[service.ServiceGUID]*service.Service,
 		resultError error,
 	)
@@ -243,18 +245,18 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *service.ServiceFilters,
 		shouldFollowLogs bool,
-	)(
+	) (
 		successfulUserServiceLogs map[service.ServiceGUID]io.ReadCloser,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultError error,
 	)
 
 	// Executes a shell command inside an user service instance indenfified by its ID
-	RunUserServiceExecCommands (
+	RunUserServiceExecCommands(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		userServiceCommands map[service.ServiceGUID][]string,
-	)(
+	) (
 		succesfulUserServiceExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
@@ -266,14 +268,14 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
 		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
-		port uint32, //The port of the service to check. For instance 8080
-		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
-		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
-		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
-		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
-	)(
+		port uint32,                                                                 //The port of the service to check. For instance 8080
+		path string,                                                                 //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+		requestBody string,                                                          //The content of the request body. Only valid when the httpMethod is POST
+		expectedResponseBody string,                                                 //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+		initialDelayMilliseconds uint32,                                             //The number of milliseconds to wait until executing the first HTTP call
+		retries uint32,                                                              //Max number of HTTP call attempts that this will execute until giving up and returning an error
+		retriesDelayMilliseconds uint32,                                             //Number of milliseconds to wait between retries
+	) (
 		resultErr error,
 	)
 
@@ -282,7 +284,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
-	)(
+	) (
 		resultConn net.Conn,
 		resultErr error,
 	)
@@ -291,20 +293,20 @@ type KurtosisBackend interface {
 	StopUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
-	)(
+	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully stopped
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when stopping, with the error
-		resultErr error, // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when stopping, with the error
+		resultErr error,                                         // Represents an error with the function itself, rather than the user services
 	)
 
 	// Destroy user services using the given filters,
 	DestroyUserServices(
 		ctx context.Context,
 		filters *service.ServiceFilters,
-	)(
+	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool, // "set" of user service GUIDs that were successfully destroyed
-		erroredUserServiceGuids map[service.ServiceGUID]error, // "set" of user service GUIDs that errored when destroying, with the error
-		resultErr error, // Represents an error with the function itself, rather than the user services
+		erroredUserServiceGuids map[service.ServiceGUID]error,   // "set" of user service GUIDs that errored when destroying, with the error
+		resultErr error,                                         // Represents an error with the function itself, rather than the user services
 	)
 
 	//Create a user service's  networking sidecar inside enclave
@@ -313,7 +315,7 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
 		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
-	)(
+	) (
 		*networking_sidecar.NetworkingSidecar,
 		error,
 	)
@@ -322,7 +324,7 @@ type KurtosisBackend interface {
 	GetNetworkingSidecars(
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
-	)(
+	) (
 		map[service.ServiceGUID]*networking_sidecar.NetworkingSidecar,
 		error,
 	)
@@ -332,7 +334,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		networkingSidecarsCommands map[service.ServiceGUID][]string,
-	)(
+	) (
 		successfulNetworkingSidecarExecResults map[service.ServiceGUID]*exec_result.ExecResult,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
@@ -342,7 +344,7 @@ type KurtosisBackend interface {
 	StopNetworkingSidecars(
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
-	)(
+	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
 		resultErr error,
@@ -352,9 +354,30 @@ type KurtosisBackend interface {
 	DestroyNetworkingSidecars(
 		ctx context.Context,
 		filters *networking_sidecar.NetworkingSidecarFilters,
-	)(
+	) (
 		successfulUserServiceGuids map[service.ServiceGUID]bool,
 		erroredUserServiceGuids map[service.ServiceGUID]error,
+		resultErr error,
+	)
+
+	//Create a file artifact exansion volume for user service and file artifact id
+	CreateFileArtifactExpansionVolume(
+		ctx context.Context,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		fileArtifactId file_artifact.FilterArtifactID,
+	) (
+		*file_artifact_expansion_volume.FileArtifactExpansionVolume,
+		error,
+	)
+
+	//Destroy file artifact expansion volumes using the given filters
+	DestroyFileArtifactExpansionVolumes(
+		ctx context.Context,
+		filters *file_artifact_expansion_volume.FileArtifactExpansionVolumeFilters,
+	) (
+		successfulFileArtifactExpansionVolumeNames map[file_artifact_expansion_volume.FileArtifactExpansionVolumeName]bool,
+		erroredFileArtifactExpansionVolumeNames map[file_artifact_expansion_volume.FileArtifactExpansionVolumeName]error,
 		resultErr error,
 	)
 }

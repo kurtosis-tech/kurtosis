@@ -1,4 +1,13 @@
 # TBD
+### Features
+* Added `FileArtifactExpansionVolume` general object
+* Added `KurtosisBackend.CreateFileArtifactsExpansionVolume` and `KurtosisBackend.DestroyArtifactsExpansionVolumes`
+* Added `DockerEnclaveObjectAttributesProvider.ForFilesArtifactExpansionVolume`
+
+### Breaking Changes
+* Change `DockerManager.GetVolumesByLabels` returned type, now it returns a `volume` Docker object list instead of a volume name list
+  * Users can use the new returned object and get the name from it.
+
 ### Fixes
 * Fixed nil pointer dereference error when calling kurtosis backend's methods with nil filters argument
 

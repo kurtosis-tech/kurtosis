@@ -286,16 +286,21 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(serviceGUID service.ServiceGUID, fileArtifactID file_artifact.FilterArtifactID) (DockerObjectAttributes, error) {
+	serviceGUIDStr := string(serviceGUID)
+
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpansionVolumeNameFragment,
-		string(serviceGUID),
+		serviceGUIDStr,
 		string(fileArtifactID),
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the file artifacts expansion volume name object")
 	}
 
-	labels := provider.getLabelsForEnclaveObject()
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(serviceGUIDStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", serviceGUIDStr)
+	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
