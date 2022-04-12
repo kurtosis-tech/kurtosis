@@ -4,6 +4,7 @@
 * Removed cleanMetadataAcquisitionTestsuites from enclave_manager
 * Removed docker specific code from enclave_manager
 * Removed docker_network_allocator code
+* Updated enclave_manager to handle reporting on stopped containers where the GRPC port_specs are nil
 
 # 1.13.3
 ### Features
