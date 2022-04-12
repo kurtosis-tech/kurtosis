@@ -1,5 +1,15 @@
 # TBD
 
+# 1.13.0
+
+### Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0
+  * Users using the ExecuteBulkCommands API should remove code referencing it.
+  * Additionally Enclaves should be restarted.
+
+### Fixes
+* Added CGO_ENABLED for go tests.
+
 # 1.12.0
 ### Breaking Changes
 * Upgraded to Kurt Core 1.40.1, which removes external-container-registration features
