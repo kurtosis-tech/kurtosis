@@ -1,5 +1,10 @@
 # TBD
 
+# Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0
+    * Users should remove references to ExecuteBulkCommands in any code or documentation they have made for its usage.
+    
+
 # 0.12.0
 ### Breaking Changes
 * Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
