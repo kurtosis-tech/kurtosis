@@ -1,4 +1,6 @@
 # TBD
+### Fixes
+* Fixed nil pointer dereference error when calling enclave's methods with nil filters argument
 
 # 0.11.3
 ### Features

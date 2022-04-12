@@ -120,7 +120,12 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	error,
 ) {
 
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
+	enclaveIds := map[enclave.EnclaveID]bool{}
+	if filters != nil && filters.IDs != nil {
+		enclaveIds = filters.IDs
+	}
+
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIds)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
 	}
@@ -138,7 +143,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave status and containers for enclave with ID '%v'", enclaveId)
 		}
 
-		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+		if filters == nil || filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
 			// TODO We're returning nil here for gatewayIp and freeIpAddrProvider as a temporary hack, until we can fully push all Docker stuff under the KurtosisBackend
 			newEnclave := enclave.NewEnclave(enclaveId, enclaveStatus, network.GetId(), network.GetIpAndMask().String(), nil, nil)
 			result[enclaveId] = newEnclave
@@ -158,7 +163,12 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 	resultErr error,
 ) {
 
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
+	enclaveIds := map[enclave.EnclaveID]bool{}
+	if filters != nil && filters.IDs != nil {
+		enclaveIds = filters.IDs
+	}
+
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIds)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
 	}
@@ -178,7 +188,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 			continue
 		}
 
-		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
+		if filters == nil || filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
 			containerIdsSet := map[string]bool{}
 			for _, container := range containers{
 				containerIdsSet[container.GetId()] = true
@@ -310,10 +320,14 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	successfulEnclaveIds map[enclave.EnclaveID]bool,
-	erroredEnclaveIds map[enclave.EnclaveID]error,
-	resultErr error,
+	map[enclave.EnclaveID]bool,
+	map[enclave.EnclaveID]error,
+	error,
 ) {
+
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
+
 	// Stop containers
 	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
 	if err != nil {
@@ -378,10 +392,11 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 // 									   Private helper methods
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
-	enclaveNetworks := []*types.Network{}
-	if len(enclaveIds) == 0 {
-		return enclaveNetworks, nil
+	if enclaveIds == nil {
+		enclaveIds = map[enclave.EnclaveID]bool{}
 	}
+
+	enclaveNetworks := []*types.Network{}
 
 	kurtosisNetworkLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
@@ -397,7 +412,8 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; it should never happens it's a bug in Kurtosis", network)
 		}
-		if _, found := enclaveIds[enclaveId]; found {
+		numOfEnclaveIds := len(enclaveIds)
+		if _, found := enclaveIds[enclaveId]; found || numOfEnclaveIds == 0{
 			enclaveNetworks = append(enclaveNetworks, network)
 		}
 	}
@@ -453,6 +469,10 @@ func (backend *DockerKurtosisBackend) getEnclaveContainers(
 }
 
 func isEnclaveStatusInEnclaveFilters(enclaveStatus enclave.EnclaveStatus, filters *enclave.EnclaveFilters) bool {
+	if filters == nil {
+		return false
+	}
+
 	if _, found := filters.Statuses[enclaveStatus]; found {
 		return true
 	}
