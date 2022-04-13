@@ -1,6 +1,6 @@
 # TBD
 ### Fixes
-* Fixed nil pointer dereference error when calling kurtosis backend's methods with nil filters argument
+* Fixed nil pointer dereference error when sending nil `filter.IDs` value in `enclave` CRUD methods
 
 # 0.11.3
 ### Features
