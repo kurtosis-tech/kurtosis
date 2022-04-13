@@ -55,11 +55,11 @@ github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a
 github.com/kurtosis-tech/example-api-server/api/golang v0.0.0-20211207020812-00a54fc29318/go.mod h1:HI+M5KdzhZ165JPV7vQvldNNE8m86ZIeg86PzwS6cqs=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6 h1:0LRCDs1zd30kFyEVdapKnVHuq9gdMNzpLQ6glahob9k=
 github.com/kurtosis-tech/example-datastore-server/api/golang v0.0.0-20211207020830-504dbf5ed1a6/go.mod h1:LB2yqaqWgd0oSew+GsdpcI1jRTq3W7toM7tX8rcS7c4=
-github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220412163932-b786e3c29782 h1:i2F70qHuYmLoyzQ9oYuGt/Ppo0ct/lWhaqEKXc0El0M=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220412163932-b786e3c29782/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
+github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220413194922-08b1b7107a25 h1:+Xw8p5F7xPPMRGmAjMn++0OdhWvBYb1a5JYsYcJlyk4=
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220413194922-08b1b7107a25/go.mod h1:v5+SKdp9oZLfNngQoe2nwflFgcfuZdOXr2TOogoKo2Y=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220412215348-f2260bde6da8 h1:CDtpstIY796rnu+08bQzAAzYPg5wVgDxAFlSJqcetXI=
-github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220412215348-f2260bde6da8/go.mod h1:0hQnttQ514U/Fm46WcX1MW5q1X2GHngIAEJWC7JEJhw=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413143632-6bf8771ae84f h1:t5y+yLHcnIqVWdWVs0S5/EGvEazlD2yZ5Iy2fqDDZIY=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413143632-6bf8771ae84f/go.mod h1:0hQnttQ514U/Fm46WcX1MW5q1X2GHngIAEJWC7JEJhw=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413211240-2a06609c29c0 h1:BF11Uv8RXEXs8JIQg2bwEY+MVqHMMVMSalQ956MRlp4=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413211240-2a06609c29c0/go.mod h1:eIp50hmVQg6tm/XjMUNLHIwEJBfjQSJaEFbttZkDhmQ=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
