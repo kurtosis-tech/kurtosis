@@ -81,8 +81,8 @@ func (backend *DockerKurtosisBackend) CreateModule(
 
 	moduleContainerAttrs, err := enclaveObjAttrProvider.ForModuleContainer(
 		ipAddr,
-		string(id),
-		string(guid),
+		id,
+		guid,
 		kurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
 	)
@@ -301,6 +301,7 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 // ====================================================================================================
 // Gets modules matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
+
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.ModuleContainerTypeLabelValue.GetString(),

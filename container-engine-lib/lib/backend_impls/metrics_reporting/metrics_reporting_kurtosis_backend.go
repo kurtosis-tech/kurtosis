@@ -7,6 +7,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -553,4 +555,37 @@ func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
 	}
 	return successfulUserServiceGuids, erroredUserServiceGuids, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) CreateFilesArtifactExpansionVolume(
+	ctx context.Context,
+	enclaveId enclave.EnclaveID,
+	serviceGuid service.ServiceGUID,
+	filesArtifactId files_artifact.FilesArtifactID,
+)(
+	*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
+	error,
+) {
+	newFileArtifactExpansionVolume, err := backend.underlying.CreateFilesArtifactExpansionVolume(ctx, enclaveId, serviceGuid, filesArtifactId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expansion volume for user service with GUID '%v' and files artifact ID '%v' in enclave with ID '%v'", serviceGuid, filesArtifactId, enclaveId)
+	}
+
+	return newFileArtifactExpansionVolume, nil
+}
+
+func (backend *MetricsReportingKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
+	ctx context.Context,
+	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
+) (
+	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
+	map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
+	error,
+) {
+	successfulExpansionVolumeNames, erroredExpansionVolumeNames, err := backend.underlying.DestroyFilesArtifactExpansionVolumes(ctx, filters)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying file artifact expansion volumes using filters '%+v'", filters)
+	}
+
+	return successfulExpansionVolumeNames, erroredExpansionVolumeNames, nil
 }
