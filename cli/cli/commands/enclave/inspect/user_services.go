@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
@@ -25,10 +24,6 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 	userServiceFilters := &service.ServiceFilters{
 		EnclaveIDs: map[enclave.EnclaveID]bool{
 			enclaveId: true,
-		},
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Stopped: true,
-			container_status.ContainerStatus_Running: true,
 		},
 	}
 
@@ -62,7 +57,7 @@ func printUserServices(ctx context.Context, kurtosisBackend backend_interface.Ku
 			if err := tablePrinter.AddRow("", "", additionalHostPortBindingStr); err != nil {
 				return stacktrace.Propagate(
 					err,
-					"An error occurred adding additional host port binding '%v' row for user service wit GUID '%v' to the table printer",
+					"An error occurred adding additional host port binding '%v' row for user service with GUID '%v' to the table printer",
 					additionalHostPortBindingStr,
 					guidStr,
 				)
@@ -88,16 +83,16 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 }
 
 func getContainerHostPortBindingStrings(userService *service.Service) []string {
-	var allHosPortBindings []string
+	var allHostPortBindings []string
 	publicPorts := userService.GetPublicPorts()
 	if len(publicPorts) > 0 {
 		//IF the service has at least one public port it will have set the public IP address
 		publicIp := userService.GetMaybePublicIP()
 		for portID, portSpec := range publicPorts {
 			hostPortBindingString := fmt.Sprintf("%v -> %v:%v", portID, publicIp, portSpec.GetNumber())
-			allHosPortBindings = append(allHosPortBindings, hostPortBindingString)
+			allHostPortBindings = append(allHostPortBindings, hostPortBindingString)
 		}
 	}
 
-	return allHosPortBindings
+	return allHostPortBindings
 }

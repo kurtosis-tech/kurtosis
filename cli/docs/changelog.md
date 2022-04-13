@@ -7,9 +7,7 @@
   * `clean` command
   * `enclave inspect` command
   * `enclave rm` command
-  * `service add` command
   * `service logs` command
-  * `service rm` command
   * `service shell` command
 
 # 0.12.1

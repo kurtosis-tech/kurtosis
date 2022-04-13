@@ -2,16 +2,21 @@ package rm
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/enclave_liveness_validator"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/stacktrace"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -19,11 +24,14 @@ const (
 	isEnclaveIdArgOptional = false
 	isEnclaveIdArgGreedy   = false
 
-	serviceGuidArgKey = "service-guid"
+	serviceIdArgKey = "service-id"
+
+	timeoutFlagKey = "timeout"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey  = "engine-client"
 
+	defaultContainerStopTimeoutSeconds = uint32(0)
 )
 
 var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -40,10 +48,17 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 			isEnclaveIdArgGreedy,
 		),
 		{
-			Key: serviceGuidArgKey,
+			Key: serviceIdArgKey,
 		},
 	},
-	Flags: nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       timeoutFlagKey,
+			Usage:     "Number of seconds to wait for the service to gracefully stop before sending SIGKILL",
+			Type:      flags.FlagType_Uint32,
+			Default:   fmt.Sprintf("%v", defaultContainerStopTimeoutSeconds),
+		},
+	},
 	RunFunc: run,
 }
 
@@ -54,39 +69,71 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave ID value using key '%v'", enclaveIdArgKey)
 	}
-	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
-	serviceGuidStr, err := args.GetNonGreedyArg(serviceGuidArgKey)
+	serviceId, err := args.GetNonGreedyArg(serviceIdArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service GUID value using key '%v'", serviceGuidArgKey)
-	}
-	serviceGuid := service.ServiceGUID(serviceGuidStr)
-
-	userServiceFilters := &service.ServiceFilters{
-		GUIDs: map[service.ServiceGUID]bool{
-			serviceGuid: true,
-		},
-		EnclaveIDs: map[enclave.EnclaveID]bool{
-			enclaveId: true,
-		},
+		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdArgKey)
 	}
 
-	_, erroredUserServiceGuids, err := kurtosisBackend.DestroyUserServices(ctx, userServiceFilters)
+	timeoutSeconds, err := flags.GetUint32(timeoutFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying user services using filters")
+		return stacktrace.Propagate(err, "An error occurred getting the timeout seconds value using key '%v'", timeoutFlagKey)
 	}
 
-	if len(erroredUserServiceGuids) > 0 {
-		err, found := erroredUserServiceGuids[serviceGuid]
-		if !found {
-			return stacktrace.NewError("Expected to find an error for user service with GUID '%v' on user service error map '%+v' but was not found; it should never happens, it is a bug in Kurtosis", serviceGuid, erroredUserServiceGuids)
-		}
-		return stacktrace.Propagate(err, "An error occurred destroying user service with GUID '%v'", serviceGuid)
+	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting existing enclaves")
 	}
 
+	infoForEnclave, found := getEnclavesResp.EnclaveInfo[enclaveId]
+	if !found {
+		return stacktrace.Propagate(err, "No enclave with ID '%v' exists", enclaveId)
+	}
+
+	enclaveCtx, err := getEnclaveContextFromEnclaveInfo(infoForEnclave)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveId)
+	}
+
+	if err := enclaveCtx.RemoveService(services.ServiceID(serviceId), uint64(timeoutSeconds)); err != nil {
+		return stacktrace.Propagate(err, "An error occurred removing service '%v' from enclave '%v'", serviceId, enclaveId)
+	}
 	return nil
+}
+
+// TODO TODO REMOVE ALL THIS WHEN NewEnclaveContext CAN JUST TAKE IN IP ADDR & PORT NUM!!!
+func getEnclaveContextFromEnclaveInfo(infoForEnclave *kurtosis_engine_rpc_api_bindings.EnclaveInfo) (*enclaves.EnclaveContext, error) {
+	enclaveId := infoForEnclave.EnclaveId
+
+	apiContainerHostMachineIpAddr, apiContainerHostMachineGrpcPortNum, err := enclave_liveness_validator.ValidateEnclaveLiveness(infoForEnclave)
+	if err != nil {
+		return nil, stacktrace.NewError("Cannot add service because the API container in enclave '%v' is not running", enclaveId)
+	}
+
+	apiContainerHostMachineUrl := fmt.Sprintf(
+		"%v:%v",
+		apiContainerHostMachineIpAddr,
+		apiContainerHostMachineGrpcPortNum,
+	)
+	conn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithInsecure())
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the API container grpc port at '%v' in enclave '%v'",
+			apiContainerHostMachineUrl,
+			enclaveId,
+		)
+	}
+	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+	enclaveCtx := enclaves.NewEnclaveContext(
+		apiContainerClient,
+		enclaves.EnclaveID(enclaveId),
+		infoForEnclave.EnclaveDataDirpathOnHostMachine,
+	)
+
+	return enclaveCtx, nil
 }
