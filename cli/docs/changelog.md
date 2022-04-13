@@ -1,5 +1,7 @@
 # TBD
 
+# 0.12.1
+
 # Breaking Changes
 * Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
     * Users using the ExecuteBulkCommands API should remove code referencing it.
