@@ -1,5 +1,8 @@
 # TBD
 
+### Fixes
+* Bumping dependencies on Engine Server 1.13.2 and Container Engine Lib 0.13.0
+
 # 0.12.1
 
 # Breaking Changes
