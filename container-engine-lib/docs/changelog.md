@@ -1,5 +1,7 @@
 # TBD
 
+# 0.13.0
+
 ### Breaking Changes
 * Reverted the port specification delimeters back to new style
   * From: rpc.8545-TCP_ws.8546-TCP_tcpDiscovery.30303-TCP_udpDiscovery.30303-UDP
