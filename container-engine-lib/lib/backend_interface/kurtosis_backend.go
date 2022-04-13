@@ -6,8 +6,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/file_artifact"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/file_artifact_expansion_volume"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
@@ -127,7 +127,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Matching API containers, keyed by their enclave ID
+		// Matching API containers, keyed by their enclave ID
 		map[enclave.EnclaveID]*api_container.APIContainer,
 		error,
 	)
@@ -137,7 +137,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		filters *api_container.APIContainerFilters,
 	) (
-	// Successful & errored API containers are keyed by their enclave ID
+		// Successful & errored API containers are keyed by their enclave ID
 		successfulApiContainerIds map[enclave.EnclaveID]bool,
 		erroredApiContainerIds map[enclave.EnclaveID]error,
 		resultErr error,
@@ -268,13 +268,13 @@ type KurtosisBackend interface {
 		enclaveId enclave.EnclaveID,
 		serviceGUID service.ServiceGUID,
 		httpMethod wait_for_availability_http_methods.WaitForAvailabilityHttpMethod, //The httpMethod used to execute the request.
-		port uint32,                                                                 //The port of the service to check. For instance 8080
-		path string,                                                                 //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-		requestBody string,                                                          //The content of the request body. Only valid when the httpMethod is POST
-		expectedResponseBody string,                                                 //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-		initialDelayMilliseconds uint32,                                             //The number of milliseconds to wait until executing the first HTTP call
-		retries uint32,                                                              //Max number of HTTP call attempts that this will execute until giving up and returning an error
-		retriesDelayMilliseconds uint32,                                             //Number of milliseconds to wait between retries
+		port uint32, //The port of the service to check. For instance 8080
+		path string, //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+		requestBody string, //The content of the request body. Only valid when the httpMethod is POST
+		expectedResponseBody string, //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+		initialDelayMilliseconds uint32, //The number of milliseconds to wait until executing the first HTTP call
+		retries uint32, //Max number of HTTP call attempts that this will execute until giving up and returning an error
+		retriesDelayMilliseconds uint32, //Number of milliseconds to wait between retries
 	) (
 		resultErr error,
 	)
@@ -360,24 +360,24 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	//Create a file artifact exansion volume for user service and file artifact id
-	CreateFileArtifactExpansionVolume(
+	//Create a files artifact exansion volume for user service and file artifact id
+	CreateFilesArtifactExpansionVolume(
 		ctx context.Context,
 		enclaveId enclave.EnclaveID,
 		serviceGuid service.ServiceGUID,
-		fileArtifactId file_artifact.FilterArtifactID,
+		filesArtifactId files_artifact.FilesArtifactID,
 	) (
-		*file_artifact_expansion_volume.FileArtifactExpansionVolume,
+		*files_artifact_expansion_volume.FilesArtifactExpansionVolume,
 		error,
 	)
 
-	//Destroy file artifact expansion volumes using the given filters
-	DestroyFileArtifactExpansionVolumes(
+	//Destroy files artifact expansion volumes using the given filters
+	DestroyFilesArtifactExpansionVolumes(
 		ctx context.Context,
-		filters *file_artifact_expansion_volume.FileArtifactExpansionVolumeFilters,
+		filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
 	) (
-		successfulFileArtifactExpansionVolumeNames map[file_artifact_expansion_volume.FileArtifactExpansionVolumeName]bool,
-		erroredFileArtifactExpansionVolumeNames map[file_artifact_expansion_volume.FileArtifactExpansionVolumeName]error,
+		successfulFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
+		erroredFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
 		resultErr error,
 	)
 }

@@ -1,7 +1,7 @@
 # TBD
 ### Features
-* Added `FileArtifactExpansionVolume` general object
-* Added `KurtosisBackend.CreateFileArtifactsExpansionVolume` and `KurtosisBackend.DestroyArtifactsExpansionVolumes`
+* Added `FilesArtifactExpansionVolume` general object
+* Added `KurtosisBackend.CreateFilesArtifactExpansionVolume` and `KurtosisBackend.DestroyFilesArtifactExpansionVolumes`
 * Added `DockerEnclaveObjectAttributesProvider.ForFilesArtifactExpansionVolume`
 
 ### Breaking Changes
