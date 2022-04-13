@@ -1,5 +1,10 @@
 # TBD
 
+# 1.13.2
+
+### Fixes
+* Bumped dependencies for Core 1.41.1 and Container Engine Lib 0.13.0
+
 # 1.13.1
 ### Changes
 * Upgrade to container-engine-lib 0.12.0
