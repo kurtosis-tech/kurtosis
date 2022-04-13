@@ -1,9 +1,18 @@
 # TBD
 ### Changes
-* Upgraded the container engine lib to x.x.x
+* Upgraded `container engine lib` to 0.12.0
+* Upgraded `kurtosis engine lib` to 1.13.1
+* Replaced `DockerManager` with `KurtosisBackend` in:
+  * `EngineConsumingKurtosisCommand` struct and in `RunFunc`
+  * `clean` command
+  * `enclave inspect` command
+  * `enclave rm` command
+  * `service add` command
+  * `service logs` command
+  * `service rm` command
+  * `service shell` command
 
 # 0.12.1
-
 # Breaking Changes
 * Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
     * Users using the ExecuteBulkCommands API should remove code referencing it.
