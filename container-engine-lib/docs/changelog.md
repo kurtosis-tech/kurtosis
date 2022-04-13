@@ -1,5 +1,11 @@
 # TBD
 
+### Breaking Changes
+* Changed container naming system.
+  * Users should upgrade the Kurtosis Client.
+  * Users should restart enclaves.
+
+
 # 0.11.3
 ### Features
 * Added `KurtosisBackend.GetModuleLogs`
