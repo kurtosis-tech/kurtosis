@@ -317,10 +317,6 @@ func (backend *DockerKurtosisBackend) getMatchingNetworkingSidecars(
 	filters *networking_sidecar.NetworkingSidecarFilters,
 ) (map[string]*networking_sidecar.NetworkingSidecar, error) {
 
-	if filters == nil {
-		filters = &networking_sidecar.NetworkingSidecarFilters{}
-	}
-
 	searchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.ContainerTypeLabelKey.GetString(): label_value_consts.NetworkingSidecarContainerTypeLabelValue.GetString(),

@@ -283,9 +283,6 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 // ====================================================================================================
 // Gets API containers matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[string]*api_container.APIContainer, error) {
-	if filters == nil {
-		filters = &api_container.APIContainerFilters{}
-	}
 
 	apiContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
