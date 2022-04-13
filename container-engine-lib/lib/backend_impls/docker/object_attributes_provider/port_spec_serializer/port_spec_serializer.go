@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	portIdAndInfoSeparator      = ":"
-	portNumAndProtocolSeparator = "/"
-	portSpecsSeparator          = ","
+	portIdAndInfoSeparator      = "."
+	portNumAndProtocolSeparator = "-"
+	portSpecsSeparator          = "_"
 
 	expectedNumPortIdAndSpecFragments      = 2
 	expectedNumPortNumAndProtocolFragments = 2
