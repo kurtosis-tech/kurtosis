@@ -28,13 +28,13 @@ const (
 	containerLogsFilename          = "output.log"
 
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
-	numContainersToDumpAtOnce = 20
+	numContainersToDumpAtOnce                      = 20
 
 	// Permisssions for the files & directories we create as a result of the dump
 	createdDirPerms  = 0755
 	createdFilePerms = 0644
 
-	shouldFollowContainerLogsWhenDumping    = false
+	shouldFollowContainerLogsWhenDumping = false
 
 	containerSpecJsonSerializationIndent = "  "
 	containerSpecJsonSerializationPrefix = ""
@@ -108,6 +108,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(
 
 	newEnclave := enclave.NewEnclave(enclaveId, enclave.EnclaveStatus_Empty, networkId, networkIpAndMask.String(), gatewayIp, freeIpAddrTracker)
 
+	shouldDeleteNetwork = false
 	return newEnclave, nil
 }
 
@@ -120,14 +121,9 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	error,
 ) {
 
-	enclaveIds := map[enclave.EnclaveID]bool{}
-	if filters.IDs != nil {
-		enclaveIds = filters.IDs
-	}
-
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIds)
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", enclaveIds)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
 	}
 
 	result := map[enclave.EnclaveID]*enclave.Enclave{}
@@ -163,17 +159,12 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 	resultErr error,
 ) {
 
-	enclaveIds := map[enclave.EnclaveID]bool{}
-	if filters.IDs != nil {
-		enclaveIds = filters.IDs
-	}
-
-	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, enclaveIds)
+	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", enclaveIds)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
 	}
 	if len(networks) == 0 {
-		return nil, nil, stacktrace.Propagate(err, "No Enclave was found with IDs '%+v'", enclaveIds)
+		return nil, nil, stacktrace.NewError("No Enclave was found with IDs '%+v'", filters.IDs)
 	}
 
 	for _, network := range networks {
@@ -190,7 +181,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 
 		if filters.Statuses == nil || isEnclaveStatusInEnclaveFilters(enclaveStatus, filters) {
 			containerIdsSet := map[string]bool{}
-			for _, container := range containers{
+			for _, container := range containers {
 				containerIdsSet[container.GetId()] = true
 			}
 
@@ -198,7 +189,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 
 			if _, erroredContainers := backend.killContainers(ctx, containerIdsSet); len(erroredContainers) > 0 {
 				containerKillErrorStrs := []string{}
-				for _, err = range erroredContainers{
+				for _, err = range erroredContainers {
 					containerKillErrorStrs = append(containerKillErrorStrs, err.Error())
 				}
 				errorStr := strings.Join(containerKillErrorStrs, "\n\n")
@@ -214,7 +205,7 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 			//  before we return
 			if _, erroredContainers := backend.waitForContainerExits(ctx, containers); len(erroredContainers) > 0 {
 				containerWaitErrorStrs := []string{}
-				for _, err = range erroredContainers{
+				for _, err = range erroredContainers {
 					containerWaitErrorStrs = append(containerWaitErrorStrs, err.Error())
 				}
 				errorStr := strings.Join(containerWaitErrorStrs, "\n\n")
@@ -238,7 +229,7 @@ func (backend *DockerKurtosisBackend) DumpEnclave(
 	outputDirpath string,
 ) error {
 	enclaveContainerSearchLabels := map[string]string{
-		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
+		label_key_consts.AppIDLabelKey.GetString():     label_value_consts.AppIDLabelValue.GetString(),
 		label_key_consts.EnclaveIDLabelKey.GetString(): string(enclaveId),
 	}
 
@@ -320,14 +311,10 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	map[enclave.EnclaveID]bool,
-	map[enclave.EnclaveID]error,
-	error,
+	successfulEnclaveIds map[enclave.EnclaveID]bool,
+	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultErr error,
 ) {
-
-	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
-	erroredEnclaveIds := map[enclave.EnclaveID]error{}
-
 	// Stop containers
 	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
 	if err != nil {
@@ -392,11 +379,10 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 // 									   Private helper methods
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
-	if enclaveIds == nil {
-		enclaveIds = map[enclave.EnclaveID]bool{}
-	}
-
 	enclaveNetworks := []*types.Network{}
+	if len(enclaveIds) == 0 {
+		return enclaveNetworks, nil
+	}
 
 	kurtosisNetworkLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
@@ -413,7 +399,7 @@ func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context
 			return nil, stacktrace.Propagate(err, "An error occurred getting enclave ID from network '%+v'; it should never happens it's a bug in Kurtosis", network)
 		}
 		numOfEnclaveIds := len(enclaveIds)
-		if _, found := enclaveIds[enclaveId]; found || numOfEnclaveIds == 0{
+		if _, found := enclaveIds[enclaveId]; found || numOfEnclaveIds == 0 {
 			enclaveNetworks = append(enclaveNetworks, network)
 		}
 	}
@@ -588,10 +574,10 @@ func dumpContainerInfo(
 func (backend *DockerKurtosisBackend) waitForContainerExits(
 	ctx context.Context,
 	containers []*types.Container,
-)(
+) (
 	successfulContainers map[string]bool,
 	erroredContainers map[string]error,
-){
+) {
 	// TODO Parallelize for perf
 	for _, container := range containers {
 		containerId := container.GetId()

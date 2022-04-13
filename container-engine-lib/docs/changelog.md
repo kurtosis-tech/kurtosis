@@ -15,6 +15,8 @@
 
 ### Fixes
 * Fixed nil pointer dereference error when sending nil `filter.IDs` value in `enclave` CRUD methods
+* Fixed nil pointer dereference error when calling enclave's methods with nil filters argument
+* Fixed propagating a nil error in docker implementation of `StopEnclaves`
 
 # 0.13.0
 ### Breaking Changes
