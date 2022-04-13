@@ -1,5 +1,13 @@
 # TBD
 
+# 0.12.1
+
+# Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
+    * Users using the ExecuteBulkCommands API should remove code referencing it.
+    * Additionally Enclaves should be restarted.
+* Bumped Dependencies for Kurtosis Engine Server which is now version 1.13.0.
+
 # 0.12.0
 ### Breaking Changes
 * Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
@@ -10,7 +18,6 @@
 * Upgraded the kurtosis engine to 1.12.0
 * Switched `enclave dump` to use `KurtosisBackend`
 
-# 0.11.10
 ### Fixes
 * Go testing now includes with CGO_ENABLED=0 variable so the user doesn't have to specify environment variables before running scripts.
 
