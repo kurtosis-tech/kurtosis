@@ -1996,10 +1996,10 @@ kurtosis-core-api-lib@1.41.0:
     neverthrow "^4.2.2"
     path-browserify "^1.0.1"
 
-kurtosis-engine-api-lib@1.13.0:
-  version "1.13.0"
-  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.13.0.tgz#ef6d38e3287108d9aa373cec46925b3cff4b2cfb"
-  integrity sha512-QIXKuqmoW+2jO6xmRgz7bbdh/wrLiXQj2qGfXz0IWh3Gutyf0SVWSUpRktn0hdLy8/fKRINQMz9+BGAvgaUGDA==
+kurtosis-engine-api-lib@1.13.1:
+  version "1.13.1"
+  resolved "https://registry.yarnpkg.com/kurtosis-engine-api-lib/-/kurtosis-engine-api-lib-1.13.1.tgz#487c530a08431306025b42b01e6507be6a94d4f5"
+  integrity sha512-BvWNof8yjJYtbz4DZyAogxoohAFMwbmItuuGLq+SL2ApRSly1J0j3aVeobVhyW3/UsBlpBr3vkHdwiyvhMbhdg==
   dependencies:
     "@grpc/grpc-js" "^1.4.4"
     "@types/semver" "^7.3.9"

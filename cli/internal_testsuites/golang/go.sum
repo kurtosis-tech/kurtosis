@@ -59,6 +59,8 @@ github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220412163932-
 github.com/kurtosis-tech/kurtosis-core-api-lib/api/golang v0.0.0-20220412163932-b786e3c29782/go.mod h1:Q+zVN05WMA73yz6Y4huHHFxFjM1eCLeEipE79r2aTOQ=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220412215348-f2260bde6da8 h1:CDtpstIY796rnu+08bQzAAzYPg5wVgDxAFlSJqcetXI=
 github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220412215348-f2260bde6da8/go.mod h1:0hQnttQ514U/Fm46WcX1MW5q1X2GHngIAEJWC7JEJhw=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413143632-6bf8771ae84f h1:t5y+yLHcnIqVWdWVs0S5/EGvEazlD2yZ5Iy2fqDDZIY=
+github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang v0.0.0-20220413143632-6bf8771ae84f/go.mod h1:0hQnttQ514U/Fm46WcX1MW5q1X2GHngIAEJWC7JEJhw=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
