@@ -1,7 +1,10 @@
 # TBD
 
 ### Fixes
-* Bumping dependencies on Engine Server 1.13.2 and Container Engine Lib 0.13.0
+* Bumping dependencies on:
+    * Engine Server 1.13.2
+    * Container Engine Lib 0.13.0
+    * Core 1.41.1
 
 # 0.12.1
 
