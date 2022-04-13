@@ -1,5 +1,11 @@
 # TBD
 
+# Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
+    * Users using the ExecuteBulkCommands API should remove code referencing it.
+    * Additionally Enclaves should be restarted.
+* Bumped Dependencies for Kurtosis Engine Server which is now version 1.13.0.
+
 # 0.12.0
 ### Breaking Changes
 * Removed `Repl` and `Sandbox` commands because now CLI contains several tools to start enclaves, add user services and get access from outside on an easy way
