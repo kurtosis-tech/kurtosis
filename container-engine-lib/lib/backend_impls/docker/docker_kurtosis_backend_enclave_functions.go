@@ -120,10 +120,6 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 	error,
 ) {
 
-	if filters == nil {
-		filters = &enclave.EnclaveFilters{}
-	}
-
 	enclaveIds := map[enclave.EnclaveID]bool{}
 	if filters.IDs != nil {
 		enclaveIds = filters.IDs
@@ -166,10 +162,6 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 	erroredEnclaveIds map[enclave.EnclaveID]error,
 	resultErr error,
 ) {
-
-	if filters == nil {
-		filters = &enclave.EnclaveFilters{}
-	}
 
 	enclaveIds := map[enclave.EnclaveID]bool{}
 	if filters.IDs != nil {
@@ -332,10 +324,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	map[enclave.EnclaveID]error,
 	error,
 ) {
-
-	if filters == nil {
-		filters = &enclave.EnclaveFilters{}
-	}
 
 	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
 	erroredEnclaveIds := map[enclave.EnclaveID]error{}

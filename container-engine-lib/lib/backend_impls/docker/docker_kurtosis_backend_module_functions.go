@@ -301,9 +301,6 @@ func (backend *DockerKurtosisBackend) DestroyModules(
 // ====================================================================================================
 // Gets modules matching the search filters, indexed by their container ID
 func (backend *DockerKurtosisBackend) getMatchingModules(ctx context.Context, filters *module.ModuleFilters) (map[string]*module.Module, error) {
-	if filters == nil {
-		filters = &module.ModuleFilters{}
-	}
 
 	moduleContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString():         label_value_consts.AppIDLabelValue.GetString(),
