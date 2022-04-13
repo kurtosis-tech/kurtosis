@@ -8,9 +8,8 @@ package inspect
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_framework/lowlevel/args"
@@ -18,7 +17,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis-cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis-cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis-engine-api-lib/api/golang/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/object-attributes-schema-lib/schema"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -43,11 +41,10 @@ const (
 	headerPadChar    = "="
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
-	dockerManagerCtxKey = "docker-manager"
 	engineClientCtxKey  = "engine-client"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, dockerManager *docker_manager.DockerManager, enclaveId string) error{
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclaveId enclave.EnclaveID) error{
 	"User Services":     printUserServices,
 	"Kurtosis Modules":  printModules,
 }
@@ -57,7 +54,6 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	ShortDescription:        "Inspect an enclave",
 	LongDescription:         "List information about the enclave's status and contents",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
-	DockerManagerContextKey: dockerManagerCtxKey,
 	EngineClientContextKey:  engineClientCtxKey,
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIDArg(
@@ -73,24 +69,24 @@ var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 func run(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	dockerManager *docker_manager.DockerManager,
 	engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient,
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveId, err := args.GetNonGreedyArg(enclaveIdArgKey)
+	enclaveIdStr, err := args.GetNonGreedyArg(enclaveIdArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave ID arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdArgKey)
 	}
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	getEnclavesResp, err := engineClient.GetEnclaves(ctx, &emptypb.Empty{})
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting enclaves, which is necessary to display the state for enclave '%v'", enclaveIdStr)
 	}
 
-	enclaveInfo, found := getEnclavesResp.EnclaveInfo[enclaveId]
+	enclaveInfo, found := getEnclavesResp.EnclaveInfo[enclaveIdStr]
 	if !found {
-		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveId)
+		return stacktrace.NewError("No enclave with ID '%v' exists", enclaveIdStr)
 	}
 
 	enclaveDataDirpath := enclaveInfo.GetEnclaveDataDirpathOnHostMachine()
@@ -98,7 +94,7 @@ func run(
 	enclaveApiContainerStatus := enclaveInfo.ApiContainerStatus
 
 	keyValuePrinter := output_printers.NewKeyValuePrinter()
-	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveId)
+	keyValuePrinter.AddPair(enclaveIdTitleName, enclaveIdStr)
 	keyValuePrinter.AddPair(enclaveDataDirpathTitleName, enclaveDataDirpath)
 	// TODO Refactor these to use a user-friendly string and not the enum name
 	keyValuePrinter.AddPair(enclaveStatusTitleName, enclaveContainersStatus.String())
@@ -139,7 +135,8 @@ func run(
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Println(fmt.Sprintf("%v %v %v", padStr, header, padStr))
 
-		if err := printingFunc(ctx, dockerManager, enclaveId); err != nil {
+
+		if err := printingFunc(ctx, kurtosisBackend, enclaveId); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
@@ -154,31 +151,4 @@ func run(
 	}
 
 	return nil
-}
-
-// ====================================================================================================
-// 									   Private helper methods
-// ====================================================================================================
-func sortContainersByGUID(containers []*types.Container) ([]*types.Container, error) {
-	containersSet := map[string]*types.Container{}
-	for _, container := range containers {
-		if container != nil {
-			containerGUID, found := container.GetLabels()[schema.GUIDLabel]
-			if !found {
-				return nil, stacktrace.NewError("No '%v' container label was found in container ID '%v' with labels '%+v'", schema.GUIDLabel, container.GetId(), container.GetLabels())
-			}
-			containersSet[containerGUID] = container
-		}
-	}
-
-	containersResult := make([]*types.Container, 0, len(containersSet))
-	for _, container := range containersSet {
-		containersResult = append(containersResult, container)
-	}
-
-	sort.Slice(containersResult, func(i, j int) bool {
-		return containersResult[i].GetLabels()[schema.GUIDLabel] < containersResult[j].GetLabels()[schema.GUIDLabel]
-	})
-
-	return containersResult, nil
 }

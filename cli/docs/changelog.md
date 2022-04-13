@@ -1,6 +1,23 @@
 # TBD
 ### Changes
-* Upgraded the container engine lib to x.x.x
+* Upgraded `container engine lib` to 0.12.0
+* Upgraded `kurtosis engine lib` to 1.13.1
+* Replaced `DockerManager` with `KurtosisBackend` in:
+  * `EngineConsumingKurtosisCommand` struct and in `RunFunc`
+  * `clean` command
+  * `enclave inspect` command
+  * `enclave rm` command
+  * `service add` command
+  * `service logs` command
+  * `service rm` command
+  * `service shell` command
+
+# 0.12.1
+# Breaking Changes
+* Bumped Dependencies for Kurtosis Core which is now version 1.41.0.
+    * Users using the ExecuteBulkCommands API should remove code referencing it.
+    * Additionally Enclaves should be restarted.
+* Bumped Dependencies for Kurtosis Engine Server which is now version 1.13.0.
 
 # 0.12.0
 ### Breaking Changes
@@ -12,7 +29,6 @@
 * Upgraded the kurtosis engine to 1.12.0
 * Switched `enclave dump` to use `KurtosisBackend`
 
-# 0.11.10
 ### Fixes
 * Go testing now includes with CGO_ENABLED=0 variable so the user doesn't have to specify environment variables before running scripts.
 
