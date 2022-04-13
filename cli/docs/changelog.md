@@ -1,5 +1,7 @@
 # TBD
 
+# 0.12.2
+
 ### Fixes
 * Bumping dependencies on:
     * Engine Server 1.13.2
