@@ -1,7 +1,12 @@
 # TBD
+# Breaking Changes
+* Upgraded `kurtosis engine lib` to 1.14.0
+  * Users should upgrade to `kurtosis-engine-api-lib` 1.14.0
+
+
 ### Changes
-* Upgraded `container engine lib` to 0.12.0
-* Upgraded `kurtosis engine lib` to 1.13.1
+* Upgraded `container engine lib` to 0.14.1
+* Upgraded `kurtosis core lib` to 1.42.0
 * Replaced `DockerManager` with `KurtosisBackend` in:
   * `EngineConsumingKurtosisCommand` struct and in `RunFunc`
   * `clean` command
