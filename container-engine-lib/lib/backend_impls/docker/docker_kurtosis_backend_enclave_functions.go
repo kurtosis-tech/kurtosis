@@ -154,11 +154,13 @@ func (backend *DockerKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	successfulEnclaveIds map[enclave.EnclaveID]bool,
-	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultSuccessfulEnclaveIds map[enclave.EnclaveID]bool,
+	resultErroredEnclaveIds map[enclave.EnclaveID]error,
 	resultErr error,
 ) {
 
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	networks, err := backend.getEnclaveNetworksByEnclaveIds(ctx, filters.IDs)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting enclave networks by enclave IDs '%+v'", filters.IDs)
@@ -311,10 +313,12 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	successfulEnclaveIds map[enclave.EnclaveID]bool,
-	erroredEnclaveIds map[enclave.EnclaveID]error,
+	resultSuccessfulEnclaveIds map[enclave.EnclaveID]bool,
+	resultErroredEnclaveIds map[enclave.EnclaveID]error,
 	resultErr error,
 ) {
+	successfulEnclaveIds := map[enclave.EnclaveID]bool{}
+	erroredEnclaveIds := map[enclave.EnclaveID]error{}
 	// Stop containers
 	resultSuccessfulEnclaveIds, resultErroredEnclaveIds, err := backend.StopEnclaves(ctx, filters)
 	if err != nil {
@@ -575,9 +579,11 @@ func (backend *DockerKurtosisBackend) waitForContainerExits(
 	ctx context.Context,
 	containers []*types.Container,
 ) (
-	successfulContainers map[string]bool,
-	erroredContainers map[string]error,
+	resultSuccessfulContainers map[string]bool,
+	resultErroredContainers map[string]error,
 ) {
+	successfulContainers := map[string]bool{}
+	erroredContainers := map[string]error{}
 	// TODO Parallelize for perf
 	for _, container := range containers {
 		containerId := container.GetId()
