@@ -384,9 +384,6 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 // ====================================================================================================
 func (backend *DockerKurtosisBackend) getEnclaveNetworksByEnclaveIds(ctx context.Context, enclaveIds map[enclave.EnclaveID]bool) ([]*types.Network, error) {
 	enclaveNetworks := []*types.Network{}
-	if len(enclaveIds) == 0 {
-		return enclaveNetworks, nil
-	}
 
 	kurtosisNetworkLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
