@@ -7,6 +7,7 @@ package enclave_data_directory
 
 import (
 	"bufio"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"net/http"
@@ -53,8 +54,9 @@ func (cache FilesArtifactCache) DownloadFilesArtifact(artifactId string, url str
 }
 
 // Gets the artifact with the given URL, or throws an error if it doesn't exist
-func (cache FilesArtifactCache) GetFilesArtifact(artifactId string) (*EnclaveDataDirFile, error) {
-	result, err := cache.underlying.GetFile(artifactId)
+func (cache FilesArtifactCache) GetFilesArtifact(artifactId files_artifact.FilesArtifactID) (*EnclaveDataDirFile, error) {
+	artifactIdStr := string(artifactId)
+	result, err := cache.underlying.GetFile(artifactIdStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact with ID '%v' from the cache", artifactId)
 	}

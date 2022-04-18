@@ -8,7 +8,10 @@ package main
 import (
 	"fmt"
 	"github.com/docker/docker/client"
+	kurtosis_backend_lib "github.com/kurtosis-tech/container-engine-lib/lib"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/api/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/args"
@@ -86,6 +89,11 @@ func runMain() error {
 		serverArgs.TakenIpAddrs,
 	)
 
+	kurtosisBackend, err := kurtosis_backend_lib.GetLocalDockerKurtosisBackend()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting a Kurtosis backend connected to local Docker")
+	}
+
 	dockerManager, err := createDockerManager()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the Docker manager")
@@ -93,7 +101,7 @@ func runMain() error {
 
 	enclaveDataDir := enclave_data_directory.NewEnclaveDataDirectory(serverArgs.EnclaveDataDirpathOnAPIContainer)
 
-	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(dockerManager, enclaveDataDir, freeIpAddrTracker, serverArgs)
+	serviceNetwork, moduleStore, err := createServiceNetworkAndModuleStore(kurtosisBackend, dockerManager, enclaveDataDir, freeIpAddrTracker, serverArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the service network & module store")
 	}
@@ -156,14 +164,16 @@ func createDockerManager() (*docker_manager.DockerManager, error) {
 }
 
 func createServiceNetworkAndModuleStore(
+	kurtosisBackend backend_interface.KurtosisBackend,
 	dockerManager *docker_manager.DockerManager,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
 	freeIpAddrTracker *lib.FreeIpAddrTracker,
 	args *args.APIContainerArgs) (service_network.ServiceNetwork, *module_store.ModuleStore, error) {
-	enclaveId := args.EnclaveId
+	enclaveIdStr := args.EnclaveId
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
 
 	objAttrsProvider := schema.GetObjectAttributesProvider()
-	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveId)
+	enclaveObjAttrsProvider := objAttrsProvider.ForEnclave(enclaveIdStr)
 
 	// TODO We don't want to have the artifact cache inside the enclave data dir anymore - it should prob be a separate directory local filesystem
 	//  This is because, with Kurtosis interactive, it will need to be independent of executions of Kurtosis
@@ -183,9 +193,9 @@ func createServiceNetworkAndModuleStore(
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
-		dockerManager,
+		kurtosisBackend,
 		enclaveObjAttrsProvider,
-		dockerNetworkId,
+		enclaveId,
 		freeIpAddrTracker,
 		filesArtifactCache,
 	)
@@ -219,7 +229,7 @@ func createServiceNetworkAndModuleStore(
 		networkingSidecarManager)
 
 	moduleLauncher := module_launcher.NewModuleLauncher(
-		enclaveId,
+		enclaveIdStr,
 		dockerManager,
 		apiContainerSocketInsideNetwork,
 		enclaveContainerLauncher,

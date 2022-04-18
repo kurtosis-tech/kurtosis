@@ -9,6 +9,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
 	"github.com/kurtosis-tech/kurtosis-core/launcher/enclave_container_launcher"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/service_network_types"
@@ -124,22 +126,27 @@ func (launcher UserServiceLauncher) Launch(
 		return userServiceContainerAttrs, nil
 	}
 
-	usedArtifactIdSet := map[string]bool{}
-	for artifactId := range filesArtifactIdsToMountpoints {
+	usedArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
+	for artifactIdStr := range filesArtifactIdsToMountpoints {
+		artifactId := files_artifact.FilesArtifactID(artifactIdStr)
 		usedArtifactIdSet[artifactId] = true
 	}
 
+	//TODO we should remove this var when whe replace `service_network_types.ServiceGUID` with `service.ServiceGUID`
+	//TODO in all this project
+	adaptedServiceGuid := service.ServiceGUID(serviceGUID)
 	// First expand the files artifacts into volumes, so that any errors get caught early
 	// NOTE: if users don't need to investigate the volume contents, we could keep track of the volumes we create
 	//  and delete them at the end of the test to keep things cleaner
-	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, serviceGUID, usedArtifactIdSet)
+	artifactIdsToVolumes, err := launcher.filesArtifactExpander.ExpandArtifactsIntoVolumes(ctx, adaptedServiceGuid, usedArtifactIdSet)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred expanding the requested files artifacts into volumes")
 	}
 
 	artifactVolumeMounts := map[string]string{}
-	for artifactId, mountpoint := range filesArtifactIdsToMountpoints {
-		artifactVolume, found := artifactIdsToVolumes[artifactId]
+	for artifactIdStr, mountpoint := range filesArtifactIdsToMountpoints {
+		artifactId := files_artifact.FilesArtifactID(artifactIdStr)
+		artifactVolumeName, found := artifactIdsToVolumes[artifactId]
 		if !found {
 			return "", nil, nil, stacktrace.NewError(
 				"Even though we declared that we need files artifact '%v' to be expanded, no volume containing the " +
@@ -147,7 +154,8 @@ func (launcher UserServiceLauncher) Launch(
 				artifactId,
 			)
 		}
-		artifactVolumeMounts[artifactVolume] = mountpoint
+		artifactVolumeNameStr := string(artifactVolumeName)
+		artifactVolumeMounts[artifactVolumeNameStr] = mountpoint
 	}
 
 	containerId, publicIpAddr, publicPorts, err := launcher.enclaveContainerLauncher.Launch(
