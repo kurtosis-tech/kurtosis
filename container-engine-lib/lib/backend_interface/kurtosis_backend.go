@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -379,5 +380,32 @@ type KurtosisBackend interface {
 		successfulFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]bool,
 		erroredFileArtifactExpansionVolumeNames map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]error,
 		resultErr error,
+	)
+
+	//Run a files artifact expander
+	RunFilesArtifactExpander(
+		ctx context.Context,
+		guid files_artifact_expander.FilesArtifactExpanderGUID,
+		enclaveId enclave.EnclaveID,
+		serviceGuid service.ServiceGUID,
+		filesArtifactId files_artifact.FilesArtifactID,
+		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
+		enclaveDataDirpathOnHostMachine string,
+		destVolMntDirpathOnExpander string,
+		filesArtifactFilepathRelativeToEnclaveDatadirRoot string,
+		ipAddr net.IP, // TODO REMOVE THIS ONCE WE FIX THE STATIC IP PROBLEM!!
+	)(
+		*files_artifact_expander.FilesArtifactExpander,
+		error,
+	)
+
+	//Destroy files artifact expanders using the given filters
+	DestroyFilesArtifactExpanders(
+		ctx context.Context,
+		filters *files_artifact_expander.FilesArtifactExpanderFilters,
+	) (
+		successfulFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]bool,
+		erroredFilesArtifactExpanderGuids map[files_artifact_expander.FilesArtifactExpanderGUID]error,
+		resultError error,
 	)
 }

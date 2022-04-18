@@ -74,7 +74,7 @@ func (backend *DockerKurtosisBackend) DestroyFilesArtifactExpansionVolumes(
 
 	expansionVolumes, err := backend.getMatchingFileArtifactExpansionVolumes(ctx, filters)
 	if err != nil {
-		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting file artifact expansion volumes matching filters '%+v'", filters)
+		return nil, nil,  stacktrace.Propagate(err, "An error occurred getting files artifact expansion volumes matching filters '%+v'", filters)
 	}
 
 	//TODO execute concurrently to improve perf
@@ -102,10 +102,6 @@ func (backend *DockerKurtosisBackend) getMatchingFileArtifactExpansionVolumes(
 	ctx context.Context,
 	filters *files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters,
 ) (map[files_artifact_expansion_volume.FilesArtifactExpansionVolumeName]*files_artifact_expansion_volume.FilesArtifactExpansionVolume, error) {
-	if filters == nil {
-		filters = &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{}
-	}
-
 	searchLabels := map[string]string{
 		label_key_consts.AppIDLabelKey.GetString(): label_value_consts.AppIDLabelValue.GetString(),
 	}
