@@ -284,8 +284,9 @@ func waitForPortAvailabilityUsingNetstat(
 			if exitCode == netstatSuccessExitCode {
 				return nil
 			}
+			logrus.Debugf("Hey BLAISE! LOOK AT THIS OUTPUT BUFFER: ")
 			logrus.Debugf(
-				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n%v",
+				"Netstat availability-waiting command '%v' returned without a Docker error, but exited with non-%v exit code '%v' and logs:\n %v",
 				commandStr,
 				netstatSuccessExitCode,
 				exitCode,
