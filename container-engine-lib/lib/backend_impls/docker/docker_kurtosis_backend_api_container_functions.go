@@ -25,7 +25,7 @@ const (
 
 	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
 	// means that its grpc-proxy must listen on TCP
-	apiContainerPortProtocol          = port_spec.PortProtocol_TCP
+	apiContainerPortProtocol = port_spec.PortProtocol_TCP
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
 	timeBetweenWaitForApiContainerAvailabilityRetries = 1 * time.Second
@@ -117,7 +117,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 
 	bindMounts := map[string]string{
 		// Necessary so that the API container can interact with the Docker engine
-		dockerSocketFilepath:           dockerSocketFilepath,
+		dockerSocketFilepath:            dockerSocketFilepath,
 		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnAPIContainer,
 	}
 
@@ -136,6 +136,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		bindMounts,
 	).WithUsedPorts(
 		usedPorts,
+	).WithStaticIP(
+		ipAddr,
 	).WithLabels(
 		labelStrs,
 	).Build()
@@ -156,7 +158,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 			// the failure was the original context being cancelled
 			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
 				logrus.Errorf(
-					"Launching API container '%v' with container ID '%v' didn't complete successfully so we " +
+					"Launching API container '%v' with container ID '%v' didn't complete successfully so we "+
 						"tried to kill the container we started, but doing so exited with an error:\n%v",
 					apiContainerAttrs.GetName(),
 					containerId,

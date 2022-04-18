@@ -749,6 +749,7 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
+	// For some reason it doesnt write any bytes to logOutput?
 	bytesWritten, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader)
 	if err != nil {
 		return 0, stacktrace.Propagate(
