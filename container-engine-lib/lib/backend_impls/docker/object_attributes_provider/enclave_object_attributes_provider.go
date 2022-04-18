@@ -49,8 +49,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpanderContainer(
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
-		serviceGUID service.ServiceGUID,
-		filesArtifactID files_artifact.FilesArtifactID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactExpansionVolume(
 		serviceGUID service.ServiceGUID,
@@ -319,39 +317,24 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpan
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpanderContainer(
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
-	serviceGUID service.ServiceGUID,
-	filesArtifactID files_artifact.FilesArtifactID,
 )(
 	DockerObjectAttributes,
 	error,
 ) {
-	filesArtifactIdStr := string(filesArtifactID)
-	serviceGuidStr := string(serviceGUID)
+	guidStr := string(guid)
 	name, err := provider.getNameForEnclaveObject([]string{
 		artifactExpanderContainerNameFragment,
-		serviceGuidStr,
-		filesArtifactIdStr,
+		guidStr,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expander container name object")
 	}
 
-	filesArtifactIdValue, err := docker_label_value.CreateNewDockerLabelValue(filesArtifactIdStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating a Docker label value object from files artifact ID '%v'",
-			filesArtifactIdStr,
-		)
-	}
-
-	guidStr := string(guid)
 	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeLabelValue
-	labels[label_key_consts.FilesArtifactIDLabelKey] = filesArtifactIdValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

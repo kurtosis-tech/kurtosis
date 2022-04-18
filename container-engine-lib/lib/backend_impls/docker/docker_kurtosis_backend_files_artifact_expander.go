@@ -8,10 +8,8 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
-	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
@@ -32,8 +30,6 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	ctx context.Context,
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactId files_artifact.FilesArtifactID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	enclaveDataDirpathOnHostMachine string,
 	destVolMntDirpathOnExpander string,
@@ -51,9 +47,9 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 		return nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveId)
 	}
 
-	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(guid, serviceGuid, filesArtifactId)
+	containerAttrs, err := enclaveObjAttrsProvider.ForFilesArtifactExpanderContainer(guid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expander ID '%v' and user service with GUID '%v' and files artifact ID '%v'", guid, serviceGuid, filesArtifactId)
+		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the files artifact expander container attributes for files artifact expander GUID '%v'", guid)
 	}
 	containerName := containerAttrs.GetName().GetString()
 	containerLabels := map[string]string{}
@@ -90,10 +86,8 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 	).Build()
 	containerId, _, err := backend.dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactId, filesArtifactExpansionVolumeNameStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the Docker container to expand the file artifact '%v' into the volume '%v'", filesArtifactFilepathRelativeToEnclaveDatadirRoot, filesArtifactExpansionVolumeNameStr)
 	}
-
-	containerStatus := types.ContainerStatus_Running
 
 	exitCode, err := backend.dockerManager.WaitForExit(ctx, containerId)
 	if err != nil {
@@ -107,7 +101,7 @@ func (backend *DockerKurtosisBackend) RunFilesArtifactExpander(
 			exitCode)
 	}
 
-	containerStatus = types.ContainerStatus_Exited
+	containerStatus := types.ContainerStatus_Exited
 
 	newFilesArtifactExpander, err := getFilesArtifactExpanderObjectFromContainerInfo(containerLabels, containerStatus)
 
@@ -226,11 +220,6 @@ func getFilesArtifactExpanderObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Expected to find GUID label key '%v' but none was found", label_key_consts.GUIDLabelKey.GetString())
 	}
 
-	filesArtifactIdStr, found := labels[label_key_consts.FilesArtifactIDLabelKey.GetString()]
-	if !found {
-		return nil, stacktrace.NewError("Expected to find files artifact ID label key '%v' but none was found", label_key_consts.FilesArtifactIDLabelKey.GetString())
-	}
-
 	isContainerRunning, found := isContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
@@ -246,7 +235,6 @@ func getFilesArtifactExpanderObjectFromContainerInfo(
 	newObject := files_artifact_expander.NewFilesArtifactExpander(
 		files_artifact_expander.FilesArtifactExpanderGUID(guidStr),
 		enclave.EnclaveID(enclaveIdStr),
-		files_artifact.FilesArtifactID(filesArtifactIdStr),
 		status,
 	)
 

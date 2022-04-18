@@ -387,8 +387,6 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		guid files_artifact_expander.FilesArtifactExpanderGUID,
 		enclaveId enclave.EnclaveID,
-		serviceGuid service.ServiceGUID,
-		filesArtifactId files_artifact.FilesArtifactID,
 		filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 		enclaveDataDirpathOnHostMachine string,
 		destVolMntDirpathOnExpander string,

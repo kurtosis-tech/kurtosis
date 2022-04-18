@@ -30,8 +30,6 @@ const (
 
 	// TODO Remove this and instead use container domain names so we're not dependent on static IPs!
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
-
-	filesArtifactIdLabelKeyStr = labelNamespaceStr + "files-artifact-id"
 )
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // If these value change, it will lead to the Kurtosis engine losing track of old containers
@@ -49,4 +47,3 @@ var PortSpecsLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLa
 var EnclaveIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
 var IsNetworkPartitioningEnabledLabelKey = docker_label_key.MustCreateNewDockerLabelKey(isNetworkPartitioningEnabledKeyStr)
 var PrivateIPLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
-var FilesArtifactIDLabelKey = docker_label_key.MustCreateNewDockerLabelKey(filesArtifactIdLabelKeyStr)

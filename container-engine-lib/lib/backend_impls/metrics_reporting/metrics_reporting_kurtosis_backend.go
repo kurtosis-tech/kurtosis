@@ -595,8 +595,6 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 	ctx context.Context,
 	guid files_artifact_expander.FilesArtifactExpanderGUID,
 	enclaveId enclave.EnclaveID,
-	serviceGuid service.ServiceGUID,
-	filesArtifactId files_artifact.FilesArtifactID,
 	filesArtifactExpansionVolumeName files_artifact_expansion_volume.FilesArtifactExpansionVolumeName,
 	enclaveDataDirpathOnHostMachine string,
 	destVolMntDirpathOnExpander string,
@@ -607,15 +605,13 @@ func (backend *MetricsReportingKurtosisBackend) RunFilesArtifactExpander(
 		ctx,
 		guid,
 		enclaveId,
-		serviceGuid,
-		filesArtifactId,
 		filesArtifactExpansionVolumeName,
 		enclaveDataDirpathOnHostMachine,
 		destVolMntDirpathOnExpander,
 		filesArtifactFilepathRelativeToEnclaveDatadirRoot,
 		ipAddr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expander with GUID '%v' and user service with GUID '%v' and files artifact ID '%v' and files artifact expansion volume name '%v' in enclave with ID '%v'", guid, serviceGuid, filesArtifactId, filesArtifactExpansionVolumeName, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred creating files artifact expander with GUID '%v' with files artifact expansion volume name '%v' in enclave with ID '%v'", guid, filesArtifactExpansionVolumeName, enclaveId)
 	}
 
 	return newFilesArtifactExpander, nil
