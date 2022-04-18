@@ -749,15 +749,11 @@ func (manager DockerManager) RunExecCommand(context context.Context, containerId
 
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
-	// For some reason it doesnt write any bytes to logOutput?
-	bytesWritten, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader)
-	if err != nil {
+	if _, err := stdcopy.StdCopy(logOutput, logOutput, attachResp.Reader); err != nil {
 		return 0, stacktrace.Propagate(
 			err,
 			"An error occurred copying the exec command output to the given output writer")
 	}
-
-	logrus.Debugf("Hey BLAISE: total bytes written %v", bytesWritten)
 
 	inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 	if err != nil {
