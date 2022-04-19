@@ -7,6 +7,9 @@ import (
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/port_spec_serializer"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expander"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
@@ -35,14 +38,26 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateGrpcProxyPortId string,
 		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForUserServiceContainer(serviceID service.ServiceID, serviceGUID service.ServiceGUID, privateIpAddr net.IP, privatePorts map[string]*port_spec.PortSpec) (DockerObjectAttributes, error)
-	ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error)
-	// ForFilesArtifactExpanderContainer(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
-	// ForFilesArtifactExpansionVolume(serviceGUID string, artifactId string) (DockerObjectAttributes, error)
+	ForUserServiceContainer(
+		serviceID service.ServiceID,
+		serviceGUID service.ServiceGUID,
+		privateIpAddr net.IP,
+		privatePorts map[string]*port_spec.PortSpec,
+	) (DockerObjectAttributes, error)
+	ForNetworkingSidecarContainer(
+		serviceGUIDSidecarAttachedTo service.ServiceGUID,
+	) (DockerObjectAttributes, error)
+	ForFilesArtifactExpanderContainer(
+		guid files_artifact_expander.FilesArtifactExpanderGUID,
+	) (DockerObjectAttributes, error)
+	ForFilesArtifactExpansionVolume(
+		serviceGUID service.ServiceGUID,
+		fileArtifactID files_artifact.FilesArtifactID,
+	) (DockerObjectAttributes, error)
 	ForModuleContainer(
 		privateIpAddr net.IP,
-		moduleID string,
-		moduleGUID string,
+		moduleID module.ModuleID,
+		moduleGUID module.ModuleGUID,
 		privatePortId string,
 		privatePortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
@@ -191,7 +206,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl)ForUserServiceContaine
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID, privateIpAddr net.IP) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceGUIDSidecarAttachedTo service.ServiceGUID) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
 			networkingSidecarContainerNameFragment,
@@ -223,14 +238,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarC
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 	privateIpAddr net.IP,
-	moduleID string,
-	moduleGUID string,
+	moduleID module.ModuleID,
+	moduleGUID module.ModuleGUID,
 	privatePortId string,
 	privatePortSpec *port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject([]string{
 		moduleContainerNameFragment,
-		moduleGUID,
+		string(moduleGUID),
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the module container name object")
@@ -253,13 +268,73 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForModuleContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following module container ports object to a string for storing in the ports label: %+v", usedPorts)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(moduleID, moduleGUID)
+	moduleIDStr := string(moduleID)
+	moduleGUIDStr := string(moduleGUID)
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(moduleIDStr, moduleGUIDStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the module labels using ID '%v' and GUID '%v'", moduleID, moduleGUID)
 	}
 	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.ModuleContainerTypeLabelValue
 	labels[label_key_consts.PortSpecsLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPLabelKey] = privateIpLabelValue
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpansionVolume(
+	serviceGUID service.ServiceGUID,
+	fileArtifactID files_artifact.FilesArtifactID,
+)(
+	DockerObjectAttributes,
+	error,
+){
+	serviceGUIDStr := string(serviceGUID)
+
+	name, err := provider.getNameForEnclaveObject([]string{
+		artifactExpansionVolumeNameFragment,
+		serviceGUIDStr,
+		string(fileArtifactID),
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object")
+	}
+
+	labels := provider.getLabelsForEnclaveObject()
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactExpanderContainer(
+	guid files_artifact_expander.FilesArtifactExpanderGUID,
+)(
+	DockerObjectAttributes,
+	error,
+) {
+	guidStr := string(guid)
+	name, err := provider.getNameForEnclaveObject([]string{
+		artifactExpanderContainerNameFragment,
+		guidStr,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expander container name object")
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with GUID '%v'", guid)
+	}
+	labels[label_key_consts.ContainerTypeLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

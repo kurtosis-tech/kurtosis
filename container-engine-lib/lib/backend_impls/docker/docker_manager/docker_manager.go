@@ -313,18 +313,19 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 GetVolumesByLabels
 Gets the volumes matching the given labels
  */
-func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]string, error) {
+func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*types.Volume, error) {
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
 	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
 	}
 
-	respNames := []string{}
-	for _, foundVolume := range resp.Volumes {
-		respNames = append(respNames, foundVolume.Name)
+	result := []*types.Volume{}
+	if resp.Volumes != nil {
+		result = resp.Volumes
 	}
-	return respNames, nil
+
+	return result, nil
 }
 
 /*
