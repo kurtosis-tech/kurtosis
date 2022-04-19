@@ -3,6 +3,9 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact_expansion_volume"
 	"io/ioutil"
 	"net"
 	"os"
@@ -107,6 +110,8 @@ type EnclaveManager struct {
 	//  enclave modifications are atomic
 	mutex *sync.Mutex
 
+	kurtosisBackend backend_interface.KurtosisBackend
+
 	dockerManager *docker_manager.DockerManager
 
 	objAttrsProvider schema.ObjectAttributesProvider
@@ -121,6 +126,7 @@ type EnclaveManager struct {
 }
 
 func NewEnclaveManager(
+	kurtosisBackend backend_interface.KurtosisBackend,
 	dockerManager *docker_manager.DockerManager,
 	objectAttributesProvider schema.ObjectAttributesProvider,
 	engineDataDirpathOnHostMachine string,
@@ -129,6 +135,7 @@ func NewEnclaveManager(
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &EnclaveManager{
 		mutex:                              &sync.Mutex{},
+		kurtosisBackend: 					kurtosisBackend,
 		dockerManager:                      dockerManager,
 		objAttrsProvider:                   objectAttributesProvider,
 		dockerNetworkAllocator:             dockerNetworkAllocator,
@@ -1062,26 +1069,55 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 }
 
 // Destroys an enclave, deleting all objects associated with it in the container engine (containers, volumes, networks, etc.)
-func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveId string) error {
-	enclaveNetwork, found, err := manager.getEnclaveNetwork(ctx, enclaveId)
+func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, enclaveIdStr string) error {
+	enclaveId := enclave.EnclaveID(enclaveIdStr)
+
+	enclaveNetwork, found, err := manager.getEnclaveNetwork(ctx, enclaveIdStr)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for a network for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred checking for a network for enclave '%v'", enclaveIdStr)
 	}
 	if !found {
-		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveId)
+		return stacktrace.NewError("Cannot destroy enclave '%v' because no enclave with that ID exists", enclaveIdStr)
 	}
 
-	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveId); err != nil {
+	if err := manager.stopEnclaveWithoutMutex(ctx, enclaveIdStr); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred stopping enclave with ID '%v', which is a prerequisite for destroying the enclave",
-			enclaveId,
+			enclaveIdStr,
 		)
 	}
 
-	// First, delete all enclave containers
+	//First, delete all files artifact expansion volumes
+	enclaveFilesArtifactExpansionVolumeFilters := &files_artifact_expansion_volume.FilesArtifactExpansionVolumeFilters{
+		EnclaveIDs: map[enclave.EnclaveID]bool{
+			enclaveId: true,
+		},
+	}
+
+	_, erroredFileArtifactExpansionVolumeNames, err := manager.kurtosisBackend.DestroyFilesArtifactExpansionVolumes(ctx, enclaveFilesArtifactExpansionVolumeFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying files artifact expansion volumes using filters '%+v'", enclaveFilesArtifactExpansionVolumeFilters)
+	}
+	if len(erroredFileArtifactExpansionVolumeNames) > 0 {
+		erroredVolumeNamesStrs := []string{}
+		for volumeName, volumeErr := range erroredFileArtifactExpansionVolumeNames {
+			wrappedErr := stacktrace.Propagate(volumeErr, "An error occurred destroying files artifact expansion volume '%v'", volumeName)
+			erroredVolumeNamesStrs = append(erroredVolumeNamesStrs, wrappedErr.Error())
+		}
+		return stacktrace.NewError(
+			"An error occurred destroying one or more files artifact expansion volumes in enclave '%v':\n%v",
+			enclaveIdStr,
+			strings.Join(
+				erroredVolumeNamesStrs,
+				"\n\n",
+			),
+		)
+	}
+
+	// Next, delete all enclave containers
 	enclaveContainersSearchLabels := map[string]string{
-		schema.EnclaveIDContainerLabel: enclaveId,
+		schema.EnclaveIDContainerLabel: enclaveIdStr,
 	}
 	allEnclaveContainers, err := manager.dockerManager.GetContainersByLabels(
 		ctx,
@@ -1089,7 +1125,7 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 		shouldFetchStoppedContainersWhenDestroyingEnclave,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred getting the containers in enclave '%v'", enclaveIdStr)
 	}
 	removeContainerErrorStrs := []string{}
 	for _, container := range allEnclaveContainers {
@@ -1111,7 +1147,7 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 	if len(removeContainerErrorStrs) > 0 {
 		return stacktrace.NewError(
 			"An error occurred removing one or more containers in enclave '%v':\n%v",
-			enclaveId,
+			enclaveIdStr,
 			strings.Join(
 				removeContainerErrorStrs,
 				"\n\n",
@@ -1120,7 +1156,7 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 	}
 
 	// Next, remove the enclave data dir (if it exists)
-	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveId)
+	_, enclaveDataDirpathOnEngineContainer := manager.getEnclaveDataDirpath(enclaveIdStr)
 	if _, statErr := os.Stat(enclaveDataDirpathOnEngineContainer); !os.IsNotExist(statErr) {
 		if removeErr := os.RemoveAll(enclaveDataDirpathOnEngineContainer); removeErr != nil {
 			return stacktrace.Propagate(removeErr, "An error occurred removing enclave data dir '%v' on engine container", enclaveDataDirpathOnEngineContainer)
@@ -1129,7 +1165,7 @@ func (manager *EnclaveManager) destroyEnclaveWithoutMutex(ctx context.Context, e
 
 	// Finally, remove the network
 	if err := manager.dockerManager.RemoveNetwork(ctx, enclaveNetwork.GetId()); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveId)
+		return stacktrace.Propagate(err, "An error occurred removing the network for enclave '%v'", enclaveIdStr)
 	}
 
 	return nil
