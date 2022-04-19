@@ -45,7 +45,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	cmdArgs []string,
 	envVars map[string]string,
 	enclaveDataDirpathOnHostMachine string,
-	enclaveDataDirpathOnServiceMachine string,
+	enclaveDataDirpathOnServiceContainer string,
 	filesArtifactMountDirpaths map[string]string,
 ) (
 	newUserService *service.Service,
@@ -80,7 +80,7 @@ func (backend *DockerKurtosisBackend) CreateUserService(
 	}
 
 	bindMounts := map[string]string{
-		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceMachine,
+		enclaveDataDirpathOnHostMachine: enclaveDataDirpathOnServiceContainer,
 	}
 
 	createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
