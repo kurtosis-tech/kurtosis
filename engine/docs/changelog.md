@@ -1,7 +1,8 @@
 # TBD
+### Changes
+* Upgraded to `container-engine-lib` 0.14.0, which implement `files artifact expansion volume` and `files artifact expander` objects
 
 # 1.13.2
-
 ### Fixes
 * Bumped dependencies for Core 1.41.1 and Container Engine Lib 0.13.0
 
