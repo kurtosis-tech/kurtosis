@@ -5,15 +5,14 @@ go 1.15
 replace (
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang => ../api/golang
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher => ../launcher
-	github.com/kurtosis-tech/container-engine-lib => ../../container-engine-lib
 )
 
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220418180940-58f0ed10ef68
+	github.com/kurtosis-tech/container-engine-lib v0.0.0-20220419151940-244505cb60fc
 	github.com/kurtosis-tech/free-ip-addr-tracker-lib v0.0.0-20211106222342-d3be9e82993e // indirect
-	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220415024741-99092bf0369b
+	github.com/kurtosis-tech/kurtosis-core/launcher v0.0.0-20220419152809-c628b1c02b26
 	github.com/kurtosis-tech/kurtosis-engine-server/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis-engine-server/launcher v0.0.0
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20220215151652-4f1a58645739
