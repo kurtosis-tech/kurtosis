@@ -2,12 +2,10 @@
 ### Features
 * Updated the destroy-enclave process adding `destroy-files-artifact-expansion-volumes` flow on it
 
-### Breaking Changes
-* Added new `kurtosisBackend` argument in `EnclaveManager.NewEnclaveManager`
-  * Users must pass an `backend_interface.KurtosisBackend` argument in all `NewEnclaveManager` calls
-
 ### Changes
+* Added new `KurtosisBackend` object in `EnclaveManager.NewEnclaveManager`
 * Upgraded to `container-engine-lib` 0.14.0, which implement `files artifact expansion volume` and `files artifact expander` objects
+* Upgraded to Kurt Core 1.41.2 which uses `files artifact expansion volumes` and `files artifact expander` objects
 
 # 1.13.2
 ### Fixes
