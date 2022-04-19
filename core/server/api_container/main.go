@@ -180,8 +180,6 @@ func createServiceNetworkAndModuleStore(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the files artifact cache")
 	}
-
-	dockerNetworkId := args.NetworkId
 	isPartitioningEnabled := args.IsPartitioningEnabled
 
 	apiContainerSocketInsideNetwork := fmt.Sprintf(
@@ -192,9 +190,9 @@ func createServiceNetworkAndModuleStore(
 
 	filesArtifactExpander := files_artifact_expander.NewFilesArtifactExpander(
 		args.EnclaveDataDirpathOnHostMachine,
-		dockerManager,
+		kurtosisBackend,
 		enclaveObjAttrsProvider,
-		dockerNetworkId,
+		enclaveId,
 		freeIpAddrTracker,
 		filesArtifactCache,
 	)

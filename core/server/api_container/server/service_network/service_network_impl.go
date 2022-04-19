@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -249,7 +250,7 @@ func (network *ServiceNetworkImpl) StartService(
 	cmdArgs []string,
 	dockerEnvVars map[string]string,
 	enclaveDataDirMntDirpath string,
-	filesArtifactMountDirpaths map[string]string,
+	filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 ) (
 	resultMaybePublicIpAddr net.IP, // Will be nil if the service doesn't declare any private ports
 	resultPublicPorts map[string]*port_spec.PortSpec,

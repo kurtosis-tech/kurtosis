@@ -7,6 +7,7 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis-core/server/api_container/server/service_network/partition_topology"
@@ -54,7 +55,7 @@ type ServiceNetwork interface {
 		cmdArgs []string,
 		dockerEnvVars map[string]string,
 		enclaveDataDirMountDirpath string,
-		filesArtifactMountDirpaths map[string]string,
+		filesArtifactMountDirpaths map[files_artifact.FilesArtifactID]string,
 	) (
 		resultPublicIpAddr net.IP,
 		resultPublicPorts map[string]*port_spec.PortSpec,

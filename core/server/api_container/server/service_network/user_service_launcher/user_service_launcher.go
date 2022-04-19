@@ -9,6 +9,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/free-ip-addr-tracker-lib/lib"
@@ -51,12 +52,12 @@ func (launcher UserServiceLauncher) Launch(
 	envVars map[string]string,
 	enclaveDataDirMountDirpath string,
 	// Mapping files artifact ID -> mountpoint on the container to launch
-	filesArtifactIdsToMountpoints map[string]string,
+	filesArtifactIdsToMountpoints map[files_artifact.FilesArtifactID]string,
 ) (
 	resultUserService *service.Service,
 	resultErr error,
 ) {
-	usedArtifactIdSet := map[string]bool{}
+	usedArtifactIdSet := map[files_artifact.FilesArtifactID]bool{}
 	for artifactId := range filesArtifactIdsToMountpoints {
 		usedArtifactIdSet[artifactId] = true
 	}
@@ -79,7 +80,7 @@ func (launcher UserServiceLauncher) Launch(
 				artifactId,
 			)
 		}
-		artifactVolumeMounts[artifactVolume] = mountpoint
+		artifactVolumeMounts[string(artifactVolume)] = mountpoint
 	}
 
 	launchedUserService, err := launcher.kurtosisBackend.CreateUserService(

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/files_artifact"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/module"
 	"github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/port_spec"
 	kurtosis_backend_service "github.com/kurtosis-tech/container-engine-lib/lib/backend_interface/objects/service"
@@ -210,6 +211,10 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		}
 		privateServicePortSpecs[portId] = privateServicePortSpec
 	}
+	filesArtifactMountDirPathsKeyedByFilesArtifactId := map[files_artifact.FilesArtifactID]string{}
+	for filesArtifactIdStr, mountDirPath := range args.FilesArtifactMountDirpaths {
+		filesArtifactMountDirPathsKeyedByFilesArtifactId[files_artifact.FilesArtifactID(filesArtifactIdStr)] = mountDirPath
+	}
 	maybePublicIpAddr, publicServicePortSpecs, err := service.serviceNetwork.StartService(
 		ctx,
 		serviceId,
@@ -219,7 +224,7 @@ func (service ApiContainerService) StartService(ctx context.Context, args *kurto
 		args.CmdArgs,
 		args.DockerEnvVars,
 		args.EnclaveDataDirMntDirpath,
-		args.FilesArtifactMountDirpaths)
+		filesArtifactMountDirPathsKeyedByFilesArtifactId)
 	if err != nil {
 		// TODO IP: Leaks internal information about the API container
 		return nil, stacktrace.Propagate(err, "An error occurred starting the service in the service network")
