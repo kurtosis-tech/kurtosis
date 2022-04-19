@@ -1,4 +1,6 @@
 # TBD
+
+# 0.14.0
 ### Features
 * Added `FilesArtifactExpander` general object
 * Added `KurtosisBackend.RunFilesArtifactExpander` and `KurtosisBackend.DestroyFilesArtifactExpanders`
